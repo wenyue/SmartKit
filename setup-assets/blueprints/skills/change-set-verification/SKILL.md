@@ -11,9 +11,10 @@ change set or implement semantic repairs.
 
 ## Evidence
 
-Inspect the target repository's `Project Tools` rule, broader and more-specific rules, effective
-callable tool surface, tool configuration, manifests, package boundaries, test layout, CI
-workflows, generated-source policy, and repository-owned verification selectors. Establish:
+Inspect the target repository's applicable rules governing tool use, mutation, verification,
+generated sources, and dependency boundaries; then inspect the effective callable tool surface,
+tool configuration, manifests, test layout, CI workflows, and repository-owned verification
+selectors. Establish:
 
 - formatter, fixer, analyzer, linter, test, build, runtime, and diff-integrity surfaces actually
   supported by the repository;

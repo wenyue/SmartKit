@@ -11,9 +11,10 @@ own the worktree lifecycle.
 
 ## Evidence
 
-Inspect the target repository's `Project Tools` rule, manifests, lock files, toolchain pins, setup
-and generation entry points, CI workflows, generated-source policy, required assets, environment
-variables, credentials, local services, and readiness checks. Establish:
+Inspect the target repository's applicable rules governing environment setup, tool use, mutation,
+generated sources, and readiness; then inspect manifests, lock files, toolchain pins, setup and
+generation entry points, CI workflows, required assets, environment variables, credentials, local
+services, and readiness checks. Establish:
 
 - how to identify the repository root, its common Git directory, and an already-created linked
   worktree before any mutation;

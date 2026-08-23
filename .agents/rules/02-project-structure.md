@@ -55,6 +55,11 @@ Place repository assets in the areas below and preserve the declared dependency 
 
 ## Dependency Direction
 
+- Rules may name or invoke Skills. A Skill or Skill generation contract may require the applicable
+  project or repository policy for a governed concern, but it must discover that policy by concern
+  rather than name, link to, or assume a specific Rule ID, title, path, or numbering.
+  `setup-project-agents` and its owned implementation are the sole exception, limited to
+  discovering, generating, preserving, and validating declared Rule targets.
 - Plugin Hooks depend on `runtime/recommended-tools/`, which depends only on
   `policies/recommended-tools/`, `mcp/registry.json`, an optional target `.agents/config.json`, and
   the Python standard library.

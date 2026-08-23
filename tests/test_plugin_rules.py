@@ -82,12 +82,14 @@ class PluginRuleContractTest(unittest.TestCase):
     def test_registry_order_and_harness_delivery_contract(self):
         registry = json.loads((ROOT / 'rules/registry.json').read_text(encoding='utf-8'))
         rules = registry['rules']
-        self.assertEqual(rules[0]['id'], 'smartkit/core-rule-config')
+        self.assertEqual(rules[0]['id'], 'smartkit/core-instruction-governance')
         self.assertEqual(rules[0]['strength'], 'Mandatory')
         self.assertEqual(rules[0]['trigger'], {'type': 'always'})
         rule_ids = [item['id'] for item in rules]
-        self.assertIn('smartkit/core-skill-governance', rule_ids)
+        self.assertIn('smartkit/core-third-party-skill-policy', rule_ids)
         self.assertIn('smartkit/core-workspace-policy', rule_ids)
+        self.assertNotIn('smartkit/core-rule-config', rule_ids)
+        self.assertNotIn('smartkit/core-skill-governance', rule_ids)
         self.assertNotIn('smartkit/core-skill-config', rule_ids)
         self.assertEqual(len({item['id'] for item in rules}), len(rules))
         self.assertTrue(all((ROOT / 'rules' / item['source']).is_file() for item in rules))
@@ -116,7 +118,7 @@ class PluginRuleContractTest(unittest.TestCase):
                     context = session['hookSpecificOutput']['additionalContext']
                     self.assertEqual(context.count('Rule-ID: smartkit/harness-codex;'), 1)
                     self.assertLess(
-                        context.index('Rule-ID: smartkit/core-rule-config;'),
+                        context.index('Rule-ID: smartkit/core-instruction-governance;'),
                         context.index('Rule-ID: smartkit/harness-codex;'),
                     )
                     self.assertLess(
@@ -165,7 +167,7 @@ class PluginRuleContractTest(unittest.TestCase):
                 plugin_data=plugin_data,
             )['hookSpecificOutput']['additionalContext']
             self.assertEqual(compact.count('Rule-ID: smartkit/harness-codex;'), 1)
-            self.assertIn('smartkit/core-rule-config', compact)
+            self.assertIn('smartkit/core-instruction-governance', compact)
             self.assertIn('smartkit/file-go', compact)
 
             retry = self.run_dispatch(
@@ -185,14 +187,16 @@ class PluginRuleContractTest(unittest.TestCase):
             root = Path(temp_dir)
             source = root / 'rules/source'
             source.mkdir(parents=True)
-            (source / 'core-rule-config.md').write_text('core\n', encoding='utf-8')
+            (source / 'core-instruction-governance.md').write_text(
+                'core\n', encoding='utf-8'
+            )
             (source / 'harness-bad.md').write_text('bad\n', encoding='utf-8')
             for invalid in ('cursor', 'vscode'):
                 with self.subTest(invalid=invalid):
                     (root / 'rules/registry.json').write_text(json.dumps({'rules': [
                         {
-                            'id': 'smartkit/core-rule-config',
-                            'source': 'source/core-rule-config.md',
+                            'id': 'smartkit/core-instruction-governance',
+                            'source': 'source/core-instruction-governance.md',
                             'strength': 'Mandatory',
                             'trigger': {'type': 'always'},
                         },
@@ -257,13 +261,15 @@ class PluginRuleContractTest(unittest.TestCase):
             registry.parent.mkdir(parents=True)
             source = root / 'rules/source'
             source.mkdir()
-            (source / 'core-rule-config.md').write_text('core\n', encoding='utf-8')
+            (source / 'core-instruction-governance.md').write_text(
+                'core\n', encoding='utf-8'
+            )
             (source / 'file-example.md').write_text('example\n', encoding='utf-8')
             registry.write_text(json.dumps({
                 'rules': [
                     {
-                        'id': 'smartkit/core-rule-config',
-                        'source': 'source/core-rule-config.md',
+                        'id': 'smartkit/core-instruction-governance',
+                        'source': 'source/core-instruction-governance.md',
                         'strength': 'Mandatory',
                         'trigger': {'type': 'always'},
                     },
@@ -304,8 +310,8 @@ class PluginRuleContractTest(unittest.TestCase):
             registry.parent.mkdir(parents=True)
             registry.write_text(json.dumps({
                 'rules': [{
-                    'id': 'smartkit/core-rule-config',
-                    'source': 'source/core-rule-config.md',
+                    'id': 'smartkit/core-instruction-governance',
+                    'source': 'source/core-instruction-governance.md',
                     'strength': 'Mandatory',
                     'trigger': {'type': 'always'},
                 }],
@@ -330,7 +336,7 @@ class PluginRuleContractTest(unittest.TestCase):
 
             self.assertEqual(runtime.returncode, 1)
             self.assertEqual(adapter.returncode, 2)
-            expected = 'missing source for smartkit/core-rule-config'
+            expected = 'missing source for smartkit/core-instruction-governance'
             self.assertIn(expected, runtime.stderr.decode())
             self.assertIn(expected, adapter.stderr.decode())
 
@@ -339,14 +345,16 @@ class PluginRuleContractTest(unittest.TestCase):
             root = Path(temp_dir)
             source = root / 'rules/source'
             source.mkdir(parents=True)
-            (source / 'core-rule-config.md').write_text('core\n', encoding='utf-8')
+            (source / 'core-instruction-governance.md').write_text(
+                'core\n', encoding='utf-8'
+            )
             (source / 'file-old.md').write_text('old\n', encoding='utf-8')
             registry = root / 'rules/registry.json'
 
             def write_registry(rule_id: str | None, filename: str | None) -> None:
                 rules = [{
-                    'id': 'smartkit/core-rule-config',
-                    'source': 'source/core-rule-config.md',
+                    'id': 'smartkit/core-instruction-governance',
+                    'source': 'source/core-instruction-governance.md',
                     'strength': 'Mandatory',
                     'trigger': {'type': 'always'},
                 }]
@@ -387,7 +395,7 @@ class PluginRuleContractTest(unittest.TestCase):
                 'codex', 'session', {'session_id': 'router'}, plugin_data=plugin_data
             )
             always = session['hookSpecificOutput']['additionalContext']
-            self.assertIn('smartkit/core-rule-config', always)
+            self.assertIn('smartkit/core-instruction-governance', always)
             self.assertNotIn('smartkit/file-flutter', always)
 
             prompt = self.run_dispatch(
@@ -398,7 +406,7 @@ class PluginRuleContractTest(unittest.TestCase):
             )
             context = prompt['hookSpecificOutput']['additionalContext']
             self.assertIn('smartkit/file-flutter', context)
-            self.assertNotIn('smartkit/core-rule-config', context)
+            self.assertNotIn('smartkit/core-instruction-governance', context)
             self.assertNotIn('smartkit/file-cpp', context)
 
             root_file = self.run_dispatch(
@@ -642,7 +650,7 @@ class PluginRuleContractTest(unittest.TestCase):
             )
             self.assertEqual(blocked['permissionDecision'], 'deny')
             reason = blocked['permissionDecisionReason']
-            self.assertIn('smartkit/core-rule-config', reason)
+            self.assertIn('smartkit/core-instruction-governance', reason)
             self.assertIn('smartkit/file-go', reason)
             self.assertIn('smartkit/file-python', reason)
             self.assertNotIn('smartkit/harness-codex', reason)
@@ -674,7 +682,7 @@ class PluginRuleContractTest(unittest.TestCase):
                 {'sessionId': 'compact-prompt', 'transformedPrompt': 'Continue'},
                 plugin_data=plugin_data,
             )['modifiedTransformedPrompt']
-            self.assertIn('smartkit/core-rule-config', restored)
+            self.assertIn('smartkit/core-instruction-governance', restored)
             self.assertIn('smartkit/file-go', restored)
             self.assertNotIn('smartkit/harness-codex', restored)
             self.assertTrue(restored.endswith('Continue'))
@@ -714,7 +722,7 @@ class PluginRuleContractTest(unittest.TestCase):
                 plugin_data=plugin_data,
             )
             self.assertEqual(blocked['decision'], 'block')
-            self.assertIn('smartkit/core-rule-config', blocked['reason'])
+            self.assertIn('smartkit/core-instruction-governance', blocked['reason'])
             self.assertIn('smartkit/file-go', blocked['reason'])
             self.assertNotIn('smartkit/harness-codex', blocked['reason'])
 

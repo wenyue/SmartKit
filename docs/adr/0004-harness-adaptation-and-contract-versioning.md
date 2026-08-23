@@ -1,5 +1,10 @@
 # ADR 0004: Model Agent Hosts as Harnesses and Reuse Rule Delivery for Adaptation
 
+> **Historical terminology:** This ADR records `core-rule-config` and
+> `core-skill-governance` as the names introduced by its original decision. The current contract
+> uses `core-instruction-governance` and `core-third-party-skill-policy`; the historical names below
+> are not current Rule IDs or entry points.
+
 Status: Accepted
 
 Date: 2026-08-15

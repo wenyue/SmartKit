@@ -73,9 +73,11 @@ def load_registry(root: Path) -> list[dict[str, object]]:
             raise RuleConfigError(f'missing source for {rule_id}')
     first = rules[0]
     if (
-        first['id'] != 'smartkit/core-rule-config'
+        first['id'] != 'smartkit/core-instruction-governance'
         or first['strength'] != 'Mandatory'
         or first['trigger'] != {'type': 'always'}
     ):
-        raise RuleConfigError('the first Rule must be mandatory always core-rule-config')
+        raise RuleConfigError(
+            'the first Rule must be mandatory always core-instruction-governance'
+        )
     return rules

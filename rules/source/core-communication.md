@@ -22,9 +22,11 @@ communication and Agent-consumed artifacts.
 
 ## Agent-Consumed Artifacts
 
-- Write Specs, Plans, documentation, Rules, Skills, and other Agent-consumed artifacts precisely,
-  clearly, and concisely enough for another Agent to determine the required decision or action
-  without inventing a condition, fact, owner, step, or exit.
+- Apply `writing-for-agents` when creating or materially editing an artifact that instructs or
+  constrains an Agent's decisions or actions.
+- Make Agent-consumed artifacts direct and easy to execute, with little additional reasoning
+  required. Another Agent must be able to determine the required decision or action without
+  inventing a condition, fact, owner, step, or exit.
 - State applicable predicates, required outcomes, exceptions, ownership, completion conditions, and
   stop conditions when they can change execution. Use ordered steps only when order affects the
   result.
