@@ -26,4 +26,5 @@ Use the five default canonical triage labels. See `docs/agents/triage-labels.md`
 
 ### Domain docs
 
-This repository uses a single-context domain documentation layout. See `docs/agents/domain.md`.
+This repository uses a multi-context domain documentation layout. Read `CONTEXT-MAP.md` and each
+context relevant to the current topic; see `docs/agents/domain.md` for consumer rules.

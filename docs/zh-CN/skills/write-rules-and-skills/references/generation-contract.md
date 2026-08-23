@@ -1,7 +1,7 @@
 # 生成契约
 
 生成契约（Generation Contract）是一个独立的指导工件，用来指导另一个 Agent 编写完整的未来
-Rule 或 Skill。本 reference 负责契约本身；未来目标的类型选择 `rule.md` 或 `skill.md`。
+Rule 或 Skill。本 reference 负责契约本身；未来目标的类型选择 `rule-semantics.md` 或 `skill-semantics.md`。
 
 ## 确立 Generation Frame
 

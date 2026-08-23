@@ -37,7 +37,7 @@ fresh Agent 执行计划用于候选 Acceptance 的同一任务。保留原始�
 
 ## 验收代表性使用
 
-所选的 `rule.md` 或 `skill.md` 提供类型专属案例。应用父 Skill 选定的通用 Acceptance Runner 协议。
+所选的 `rule-semantics.md` 或 `skill-semantics.md` 提供类型专属案例。应用父 Skill 选定的通用 Acceptance Runner 协议。
 
 - 对 Project-local 工件，检查其仓库声明、owner 边界、真实入口或执行点，以及相关本地案例。
 - 对 Shared 工件，使用一个有代表性且可追溯的上下文，加上证明政策或工作不依赖项目本地事实的

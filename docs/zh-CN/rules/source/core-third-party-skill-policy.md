@@ -6,6 +6,7 @@
 
 ## 产物语言
 
+- `$smartkit:wait-what` 重新表述消息时，使用简体中文编写重新表述的内容。
 - 第三方 Skill 创建或编辑 `CONTEXT.md` 时，每个规范术语都写成
-  `**{英文术语}（{简体中文术语}）**:`。新增或重命名时，同时处理两个规范名称。
+  `**{English term}（{Simplified Chinese term}）**:`。新增或重命名时，同时处理两个规范名称。
 - 第三方 Skill 在 `docs/adr/` 下写入 ADR 时，使用英文编写该 ADR。

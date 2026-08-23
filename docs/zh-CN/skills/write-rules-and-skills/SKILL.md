@@ -49,10 +49,10 @@ owner 后才能继续。
 
 | 候选工件 | 完整读取 |
 | --- | --- |
-| 普通 Rule | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) 和 [`references/rule.md`](references/rule.md) |
-| 普通 Skill | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) 和 [`references/skill.md`](references/skill.md) |
-| Rule 生成契约 | [`references/generation-contract.md`](references/generation-contract.md) 和 [`references/rule.md`](references/rule.md) |
-| Skill 生成契约 | [`references/generation-contract.md`](references/generation-contract.md) 和 [`references/skill.md`](references/skill.md) |
+| 普通 Rule | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) 和 [`references/rule-semantics.md`](references/rule-semantics.md) |
+| 普通 Skill | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) 和 [`references/skill-semantics.md`](references/skill-semantics.md) |
+| Rule 生成契约 | [`references/generation-contract.md`](references/generation-contract.md) 和 [`references/rule-semantics.md`](references/rule-semantics.md) |
+| Skill 生成契约 | [`references/generation-contract.md`](references/generation-contract.md) 和 [`references/skill-semantics.md`](references/skill-semantics.md) |
 
 当 Owner Gate 返回 `split` 时，创建用户所选、分别拥有 owner 的 Rule 与 Skill 候选工件。当每个
 候选工件都有一个生命周期、一个语义类型、一个 owner，且两个 reference 均已加载时，路由才算

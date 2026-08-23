@@ -2,8 +2,8 @@
 
 Strength: `Mandatory`
 
-Scope: Rule strength and precedence, Skill authority and overlap, and reporting of semantic
-conflicts encountered during execution.
+Scope: Direct-instruction authority, Rule and Skill precedence, and warnings for conflicts
+encountered during execution.
 
 ## Strength Levels
 
@@ -12,36 +12,33 @@ conflicts encountered during execution.
   outcome.
 - `Advisory`: Adapt to the task context when useful.
 
-## Rule Precedence
+## Precedence
 
-The active Harness defines direct-instruction precedence. Resolve conflicts between applicable
-Rules by this tuple:
+The active Harness defines direct-instruction precedence. Apply compatible requirements from every
+applicable Rule and Skill. Resolve incompatible requirements by the Rule and Skill precedence
+below. When the applicable precedence still leaves a tie, perform only the read-only investigation
+needed to establish it, then stop before any side effect and ask the user to resolve it. Delivery
+order does not break a tie. For Rules, compare:
 
 1. Strength: `Mandatory` > `Default` > `Advisory`.
 2. Owner at equal strength: project > plugin.
 3. Specificity at equal strength and owner: narrower applicable file scope > broader applicable
-   file scope > the global tier. Globally applicable Rules and Rules scoped only by Harness share
-   the global tier.
+   file scope > the global tier. A Harness selector controls activation, not specificity.
 
 ## Skill Composition
 
-- Apply every Skill within direct instructions and applicable Rules, including when it specializes
-  procedure or completion gates.
-- When applicable Skills overlap, apply the more-specific Skill. At equal specificity, apply a
-  project-local Skill before a plugin-distributed Skill; external provenance alone creates no
-  additional precedence tier.
+- Apply every Skill within direct instructions and applicable Rules.
+- For conflicting Skill requirements, one Skill is more specific only when its declared trigger and
+  owned outcome form a strict subset of the other's for the current task. The more-specific Skill
+  controls only the conflict.
+- When specificity does not resolve a Skill conflict, a project-local Skill takes precedence over a
+  plugin-distributed Skill. External provenance adds no precedence tier.
 
-## Conflicts Encountered During Execution
+## Conflict Warnings
 
-- A semantic conflict is encountered when, under the same supported facts, two applicable
-  requirements cannot be satisfied by one action or outcome. Handle a conflict when execution
-  exposes it; do not add a separate conflict audit, preflight check, or configuration-time
-  inference.
-- Apply the governing instruction precedence and the Rule precedence tuple to every encountered
-  conflict. When precedence selects one requirement, follow it and continue execution.
-- When incompatible requirements remain tied after precedence, perform only the read-only
-  investigation needed to establish the tie, then stop before any side effect and ask the user to
-  resolve it. Do not use delivery order as an implicit tiebreaker.
-- Report every encountered conflict in the user-facing work report, whether precedence resolved it
-  or execution stopped. Identify the conflicting requirements and their sources, state the
-  precedence facts and result, and explain the action taken or the unresolved decision requested.
+- When normal execution exposes a semantic conflict—two applicable requirements that one action or
+  outcome cannot satisfy under the same supported facts—include a warning in the user-facing work
+  report. Do not run a separate conflict audit or preflight.
+- Using only details that may be disclosed to the user, identify the conflicting requirements and
+  their sources, state the precedence result, and explain the action taken or the decision
+  requested.

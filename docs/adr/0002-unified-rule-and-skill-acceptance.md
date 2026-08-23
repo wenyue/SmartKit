@@ -87,8 +87,9 @@ remain temporary.
 
 The reusable authoring Skill has one shared workflow and four disclosed references. The main file
 owns routing, readiness, evidence, candidate state, validation, review, correction, and handoff.
-`ordinary-artifact.md` and `generation-contract.md` own the two lifecycle branches; `rule.md` and
-`skill.md` own the two semantic types. Each route loads one reference from each pair. An ordinary
+`ordinary-artifact.md` and `generation-contract.md` own the two lifecycle branches;
+`rule-semantics.md` and `skill-semantics.md` own the two semantic types. Each route loads one
+reference from each pair. An ordinary
 artifact selects its own semantic type; a generation contract is an instruction artifact and
 selects the type of its future target. Authoring and Acceptance requirements for one concern remain
 co-located in that concern's reference.
