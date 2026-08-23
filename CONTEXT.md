@@ -124,6 +124,84 @@ The complete current content state of one authored candidate. Validation, Review
 evidence applies only while that state is unchanged; it does not require a copied tree.
 _Avoid_: Revision directory, inherited verdict
 
+**Owner Gate（所有者门控）**:
+The pre-authoring decision point that classifies each obligation and its complete artifact as Rule,
+Skill, Split, Environment-owned, or Ambiguous, then compares that verdict with the requested or
+current owner.
+_Avoid_: Approval gate, Rule approval
+
+**Ownership Review（所有权审查）**:
+The read-only `write-rules-and-skills` branch that applies the Owner Gate to existing artifacts and
+exits with supported ownership verdicts without creating a Candidate Revision.
+_Avoid_: Separate Skill, Candidate Review
+
+**Policy Frame（政策框架）**:
+The semantic structure of one Rule, relating its owner and strength, scope and applicability,
+observable predicate-to-outcome mappings, exceptions, precedence, and ownership boundaries without
+describing a triggered job procedure.
+_Avoid_: Rule workflow, policy rationale
+
+**Generation Frame（生成框架）**:
+The semantic structure of one Generation Contract, relating its future target and owner, required
+evidence and obligations, permitted writes, validation, handoff, and material-ambiguity stops while
+leaving unsupported authoring method and order to Agent judgment.
+_Avoid_: Generated target outline, mandatory authoring recipe
+
+**Skill Shape（技能形态）**:
+The authoring posture selected for one Skill from supported evidence: Judgment-led,
+Procedure-led, or Hybrid.
+_Avoid_: Skill type, document format
+
+**Judgment-led Skill（判断主导型技能）**:
+A Skill that constrains its objective, evidence, principles, invariants, decision boundaries, and
+exits while leaving the method to Agent judgment.
+_Avoid_: Descriptive Skill, unstructured Skill
+
+**Procedure-led Skill（流程主导型技能）**:
+A Skill that prescribes supported actions or ordering because the process materially affects
+correctness, safety, external protocol compliance, coordination, recovery, or the accepted outcome.
+_Avoid_: Detailed Skill, complete workflow
+
+**Hybrid Skill（混合型技能）**:
+A Judgment-led Skill containing one or more evidence-backed Procedural Islands while leaving the
+remaining method to Agent judgment.
+_Avoid_: Partially specified Skill, mixed document
+
+**Judgment Frame（判断框架）**:
+The semantic structure of a Judgment-led Skill, relating its objective, evidence, principles,
+invariants, decision boundaries, and prioritized exits without prescribing an unsupported method.
+_Avoid_: Job Graph, procedure outline
+
+**Job Graph（作业图）**:
+The semantic structure of a Procedure-led Skill or Procedural Island, relating its entry, actions,
+branches, runtime resources, and prioritized exits independently of any document outline.
+_Avoid_: Markdown outline, procedure draft
+
+**Execution Path（执行路径）**:
+One reachable route through a Job Graph from its entry to exactly one prioritized completion, stop,
+or failure exit.
+_Avoid_: Phase list, branch inventory
+
+**Procedural Island（流程岛）**:
+One bounded Procedure-led part of a Hybrid Skill that returns control to Agent judgment after its
+prioritized exit.
+_Avoid_: Workflow phase, procedural Skill
+
+**Artifact Projection（工件投影）**:
+The placement of each Judgment Frame, Job Graph, or Procedural Island obligation into its narrowest
+reliable runtime owner and loading tier without changing the Skill's observable behavior.
+_Avoid_: Content splitting, editorial reorganization
+
+**Entry Sufficiency（入口充分性）**:
+The property that a Skill's main file identifies its Skill Shape, objective or entry, applicable
+Judgment Frame or Execution Path, and conditionally required resources without unrelated detail.
+_Avoid_: Self-contained main file, short main file
+
+**Path Sufficiency（路径充分性）**:
+The property that a Skill's main file plus the resources selected by one Execution Path are enough
+to execute that path to its unique prioritized exit.
+_Avoid_: Whole-Skill self-containment, eager resource loading
+
 **Frozen Canary（冻结金丝雀）**:
 A Canary Candidate whose own machine validation, semantic review, and representative acceptance
 have passed and whose evidence has not been invalidated.

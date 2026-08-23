@@ -97,7 +97,7 @@ class PluginManifestTest(unittest.TestCase):
             },
             {
                 '00-project-tools.md',
-                '01-project-rules.md',
+                '01-project-contracts.md',
                 '02-project-structure.md',
             },
         )
@@ -176,6 +176,7 @@ class PluginManifestTest(unittest.TestCase):
                 'SKILL.md',
                 'agents/openai.yaml',
                 'references/ordinary-artifact.md',
+                'references/owner-gate.md',
                 'references/generation-contract.md',
                 'references/rule.md',
                 'references/skill.md',
@@ -194,6 +195,7 @@ class PluginManifestTest(unittest.TestCase):
             reference_links,
             {
                 'references/ordinary-artifact.md',
+                'references/owner-gate.md',
                 'references/generation-contract.md',
                 'references/rule.md',
                 'references/skill.md',
