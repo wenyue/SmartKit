@@ -1,20 +1,20 @@
-# 本地合并
+# 本地 Merge
 
-将已记录的本地 base 分支推进到唯一且已验证的 Task Commit。当 task 为 **Already Delivered** 时，
-重新检查本地 base 仍指向已证明 target，将 integration 视为完成，只执行此 outcome 授权的 cleanup，
-报告 proof 和保留的 state，然后停止。
+把记录的本地 target branch 推进到 verified delivery head。scope 为 **Already Delivered** 时，复核
+local target 仍指向已证明 commit，只执行此 outcome 授权的 cleanup，报告 proof 和 preserved state，
+然后停止。
 
-1. 确认 base checkout 位于已记录的 base 分支。如果任何任务路径与 staged、unstaged 或 untracked
-   的 base 本地工作重叠，而且合并可能覆盖它们，保持两个 checkout 不变，并改为提供返回供审查。
-2. 要求已记录 base `HEAD` 等于 Task Commit 的唯一 parent。base 已移动时，返回 target
-   synchronization，然后将已改变的 task 交回其 implementation workflow，在 consolidation 或
-   integration 前执行 verification 和 formal review。
-3. 集成前立即复查 Task Commit、base 分支、base `HEAD` 及 base 本地快照，然后从 base checkout
-   运行 `git merge --ff-only <task-branch>`。
-4. 从 base checkout 重新运行相关验证。证明 base 现在指向 Task Commit，并且每个无关的 base 本地
-   变更仍与快照一致。
-5. 验证通过后，请已记录的生命周期负责人移除宿主创建的 worktree。对于 Git 创建的 worktree，
-   从 base checkout 移除该准确且干净的 worktree，并使用 Git 的安全分支删除来删除已合并任务分支。
+1. 确认 target checkout 位于记录的 target branch。任何 scope path 与 staged、unstaged 或 untracked
+   target-local work 重叠且 merge 可能覆盖它们时，保持两个 checkouts 不变，改为提供
+   return-for-review。
+2. 要求记录的 target `HEAD` 等于 Finalization Contract 的 `expected_head`，并且是 delivery head
+   要求的 history boundary。moved target 返回 **Finalize Reviewed History**。
+3. 从 target checkout 运行 `git merge --ff-only <source-branch>`。
+4. 从 target checkout 重新运行 relevant verification。证明 target 现在指向 delivery head，且每个
+   unrelated target-local change 仍与其 snapshot 匹配。
+5. verification 通过后，请记录的 lifecycle owner 移除 host-created worktree。对于 Git-created
+   worktree，从 target checkout 移除该准确 clean worktree，并使用 Git safe branch deletion 删除已
+   merge 的 source branch。
 
-如果 fast-forward 集成或合并后验证失败，保留任务分支、worktree 和 recovery ref，并报告最终 base
-状态。不得自动改写或回滚 base。
+fast-forward integration 或 post-merge verification 失败时，保留 source branch、worktree 和 recovery
+refs，并报告 resulting target state。不得自动 rewrite 或 rollback target。

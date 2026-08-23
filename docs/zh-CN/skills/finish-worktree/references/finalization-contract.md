@@ -1,26 +1,25 @@
-# Finalization Contract
+# 收尾契约
 
-只接受一个闭合契约，其 `mode` 等于 `standalone-task`、`stage-ticket-into-batch` 或
-`deliver-ticket-batch`。
+只接受一个闭合 contract。它提供：
 
-每种模式都提供：
+- `source` worktree、branch、准确 base、`head` 和 `tree`、`creation_owner` 及 `scope_owner`；
+- `target` checkout、branch、`expected_head` 和 `target_policy`；
+- `evidence` fixed point、acceptance sources、review kind 和 result、reviewed head 和 tree、
+  verification commands 和 results 以及 findings；
+- 等于 `consolidate-checkpoints` 或 `preserve-commits` 的 `history_policy`，以及其完整 owned range；
+- recovery refs、当前和后续 owners；
+- authorized cleanup 和 retained state；
+- 一个等于 `merge-locally`、`create-pull-request`、`keep-for-later` 或 `return-for-review` 的
+  `authorized_outcome`。
 
-- `source` worktree、分支、精确的 `head` 与 `tree`、`creation_owner` 和 `scope_owner`；
-- `target` checkout、分支、`expected_head` 和 `target_policy`；
-- `evidence` fixed point、验收来源、review 种类和结果、已 review 的 head 与 tree、验证命令和结果，
-  以及 findings；
-- `history_policy` 及其完整自有范围；
-- 恢复 refs 以及当前和下一个 owner；
-- 获准的清理和保留状态；以及
-- 一个 `authorized_outcome`。
-
-拒绝未知模式、跨模式字段、缺失值和隐含的远程权限。
+拒绝 unknown policies 或 outcomes、missing values、tracker data 和 implicit remote authority。
 
 ## 证明当前状态
 
-重新推导每个具名 Git identity、干净的自有状态、祖先关系、范围、发布情况、证据、恢复事实和
-owner。快照每个受影响 checkout 的分支、`HEAD`、index tree、staged、unstaged 与 untracked 状态。
-每次变更前立即复查它所依赖的事实。遇到过期、模糊、已发布或无关状态时停止。
+重新推导每个具名 Git identity、clean owned state、ancestry、range、publication、evidence、recovery
+fact 和 owner。snapshot 每个受影响 checkout 的 branch、`HEAD`、index tree、staged、unstaged 和
+untracked 状态。每次 mutation 前立即复核其依赖 facts。存在 stale、ambiguous、published 或 unrelated
+state 时停止。
 
-只有一个闭合模式、精确 source 与 target、当前证据、获准的恢复与清理，以及不相关状态均得到证明
-时，公共契约才通过。随后由所选 mode reference 验证其自有历史、结果和附加字段。
+只有准确 source 和 target、完整 owned history、current evidence、authorized recovery 和 cleanup，
+以及 preserved unrelated state 都得到证明时，contract 才通过。

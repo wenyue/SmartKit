@@ -1,4 +1,4 @@
 interface:
   display_name: "Finish Worktree"
-  short_description: "Finalize a worktree through a closed mode"
+  short_description: "Finalize an isolated worktree safely"
   default_prompt: "Use $finish-worktree to validate and execute this worktree's finalization contract."

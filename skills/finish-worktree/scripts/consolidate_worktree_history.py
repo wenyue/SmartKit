@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Consolidate a clean checkpoint branch into one hook-validated Task Commit."""
+"""Consolidate a clean worktree branch into one hook-validated Delivery Commit."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def git_output(repository: Path, *args: str) -> str:
 
 def require_clean(repository: Path) -> None:
     if run_git(repository, "status", "--porcelain=v1", "-z").stdout:
-        raise ConsolidationError("Task Worktree is not clean")
+        raise ConsolidationError("source worktree is not clean")
 
 
 def validate_recovery_ref(repository: Path, recovery_ref: str) -> None:
@@ -49,7 +49,7 @@ def validate_recovery_ref(repository: Path, recovery_ref: str) -> None:
         raise ConsolidationError(f"recovery ref already exists: {recovery_ref}")
 
 
-def restore_task_checkout(
+def restore_source_checkout(
     repository: Path,
     branch_name: str,
     old_head: str,
@@ -74,11 +74,11 @@ def consolidate(
     message_file = message_file.resolve()
     message = message_file.read_text(encoding="utf-8")
     if not message.strip():
-        raise ConsolidationError("Task Commit message is empty")
+        raise ConsolidationError("Delivery Commit message is empty")
 
     branch_ref = git_output(repository, "symbolic-ref", "-q", "HEAD")
     if not branch_ref.startswith("refs/heads/"):
-        raise ConsolidationError("Task Worktree HEAD is detached")
+        raise ConsolidationError("source worktree HEAD is detached")
     branch_name = branch_ref.removeprefix("refs/heads/")
     require_clean(repository)
 
@@ -104,33 +104,33 @@ def consolidate(
             raise ConsolidationError("checkpoint tree has no delivery change from target")
 
         run_git(repository, "commit", "--file", str(message_file))
-        task_commit = git_output(repository, "rev-parse", "HEAD^{commit}")
+        delivery_commit = git_output(repository, "rev-parse", "HEAD^{commit}")
         candidate_ref = f"{recovery_ref}-candidate"
-        run_git(repository, "update-ref", candidate_ref, task_commit, ZERO_OID)
-        task_tree = git_output(repository, "rev-parse", f"{task_commit}^{{tree}}")
-        parents = git_output(repository, "show", "-s", "--format=%P", task_commit).split()
+        run_git(repository, "update-ref", candidate_ref, delivery_commit, ZERO_OID)
+        delivery_tree = git_output(repository, "rev-parse", f"{delivery_commit}^{{tree}}")
+        parents = git_output(repository, "show", "-s", "--format=%P", delivery_commit).split()
         if parents != [target_head]:
-            raise ConsolidationError("Task Commit does not have the delivery target as sole parent")
-        if task_tree != old_tree:
-            raise ConsolidationError("Task Commit tree differs from checkpoint HEAD")
+            raise ConsolidationError("Delivery Commit does not have the target as sole parent")
+        if delivery_tree != old_tree:
+            raise ConsolidationError("Delivery Commit tree differs from source HEAD")
 
-        run_git(repository, "update-ref", branch_ref, task_commit, old_head)
+        run_git(repository, "update-ref", branch_ref, delivery_commit, old_head)
         branch_updated = True
         run_git(repository, "checkout", "--quiet", branch_name)
         require_clean(repository)
-        if git_output(repository, "rev-parse", "HEAD^{commit}") != task_commit:
-            raise ConsolidationError("task branch does not point to Task Commit")
-        run_git(repository, "update-ref", "-d", candidate_ref, task_commit)
+        if git_output(repository, "rev-parse", "HEAD^{commit}") != delivery_commit:
+            raise ConsolidationError("source branch does not point to Delivery Commit")
+        run_git(repository, "update-ref", "-d", candidate_ref, delivery_commit)
         return {
             "branch": branch_name,
             "checkpoint_head": old_head,
             "target": target_head,
-            "task_commit": task_commit,
-            "tree": task_tree,
+            "delivery_commit": delivery_commit,
+            "tree": delivery_tree,
             "recovery_ref": recovery_ref,
         }
     except (ConsolidationError, OSError) as error:
-        recovery_error = restore_task_checkout(repository, branch_name, old_head, branch_updated)
+        recovery_error = restore_source_checkout(repository, branch_name, old_head, branch_updated)
         detail = str(error)
         if candidate_ref is not None:
             detail += f"; candidate retained at {candidate_ref}"

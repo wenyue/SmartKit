@@ -43,7 +43,7 @@ separate accepted evidence requires an explicit policy.
 
 ## Accept representative use
 
-The selected `rule.md` or `skill.md` supplies the type-specific cases. Apply the common Acceptance
+The selected `rule-semantics.md` or `skill-semantics.md` supplies the type-specific cases. Apply the common Acceptance
 Runner protocol selected by the parent Skill.
 
 - For a Project-local artifact, check its repository claims, owner boundary, real entry or

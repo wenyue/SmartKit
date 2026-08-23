@@ -1,24 +1,26 @@
-# 返回供审查
+# 返回 Review
 
-在不推进 base 分支或改变其 index 的情况下，将 Task Commit 的净结果放入 base working tree。当
-task 为 **Already Delivered** 时，重新检查 base 仍没有 task diff，保持其 working tree 和 index
-不变，保留 task branch 和 worktree 作为 review evidence，报告 proof 和保留的 state，然后停止。
+把 delivery head 的净结果 materialize 到 target working tree，不推进其 branch，也不改变其 index。
+scope 为 **Already Delivered** 时，复核 target 仍没有 scope diff，保持其 working tree 和 index 不变，
+保留 source branch 和 worktree 作为 review evidence，报告 proof 和 preserved state，然后停止。
 
-1. 记录 base `HEAD`、index tree、staged 变更、unstaged 变更和 untracked 路径。在仓库外备份每个
-   任务路径，并在 manifest 中记录原始文件类型和原本不存在的路径。
-2. 从 Task Commit 的唯一 parent 与其 tree 之间的完整 diff 推导任务结果。对于没有 base 本地变更的任务路径，
-   先检查 transfer，再通过不改变 index 的方式只更新 working tree。
-3. 对重叠的文本路径，在临时文件中以 merge-base 内容、当前 base working file 和任务结果执行三方
-   合并。将相同路径名视为可合并证据，而不是冲突本身。
-4. 只解决无歧义、属于任务范围且可验证的合并。遇到 delete/modify 冲突、复杂 rename、二进制冲突、
-   互斥行为、有歧义的 generated output 或任何无法验证的结果时停止。只有项目提供确定性 generator 且其变更
-   已被单独授权时，才从源头重新生成文件。
-5. 在 base checkout 中只运行已知 non-mutating checks。没有足够的检查可用时，报告这一限制，不得
-   改为运行 formatter、generator 或 fixer。
-6. 证明已记录的 base `HEAD` 和 index tree 未改变、原有 staged 状态得到保留、合并后的文件同时包含
-   兼容的本地工作和任务工作，并且返回的任务变更是 unstaged 或 untracked。
-7. 保留任务分支、worktree 和外部备份。报告其位置，确保用户接受审查结果前，任务来源和恢复数据
-   均可被独立检查。
+1. 记录 target `HEAD`、index tree、staged changes、unstaged changes 和 untracked paths。在仓库外备份
+   每个 scope path，并在 manifest 中记录 original file types 和 absent paths。
+2. 从 recorded target boundary 与 delivery head tree 之间的完整 diff 推导 accepted result。对没有
+   target-local changes 的 scope paths，先检查 transfer，然后只通过不改变 index 的 mode 更新 working
+   tree。
+3. 对重叠 text paths，在 temporary files 中 three-way merge merge-base content、当前 target working
+   file 和 accepted result。仅 pathname 相同只是 mergeable evidence，不是 conflict。
+4. 只解决 unambiguous、scope-owned、verifiable merges。遇到 delete/modify conflicts、complex renames、
+   binary conflicts、mutually exclusive behavior、ambiguous generated output，或任何无法验证的结果时
+   停止。只有项目提供 deterministic generator 且该 mutation 已单独授权时，才从 source 重新生成
+   generated files。
+5. 只在 target checkout 中运行 known non-mutating checks。没有 adequate checks 时，报告 limitation，
+   不运行 formatter、generator 或 fixer。
+6. 证明记录的 target `HEAD` 和 index tree 未改变、original staged state 已保留、merged files 同时包含
+   compatible local 和 accepted work，且 returned scope changes 为 unstaged 或 untracked。
+7. 保留 source branch、worktree 和 external backup。报告其 locations，使 source 和 recovery data 在
+   用户接受 review result 前仍可独立检查。
 
-如果传输在形成完整结果前失败，只从外部备份恢复被触碰的路径。如果传输后验证失败，保留返回的
-结果和所有恢复数据供人工审查。
+完整结果存在前 transfer 失败时，只从 external backup 恢复 touched paths。transfer 后 verification
+失败时，保留 returned result 和全部 recovery data 供 manual review。

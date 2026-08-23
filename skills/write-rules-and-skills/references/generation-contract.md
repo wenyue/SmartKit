@@ -2,7 +2,7 @@
 
 A Generation Contract is a standalone instruction artifact that guides another Agent in authoring
 a complete future Rule or Skill. This reference owns the contract itself; the future target type
-selects `rule.md` or `skill.md`.
+selects `rule-semantics.md` or `skill-semantics.md`.
 
 ## Establish the Generation Frame
 

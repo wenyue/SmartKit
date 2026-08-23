@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0007
+---
+
 # Consolidate task-worktree checkpoints into one delivery commit
 
 SmartKit permits an Agent to create recoverable Checkpoint Commits only in a Task Worktree whose

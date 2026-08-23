@@ -1,20 +1,19 @@
 # Finalization Contract
 
-Accept exactly one closed contract with `mode` equal to `standalone-task`,
-`stage-ticket-into-batch`, or `deliver-ticket-batch`.
+Accept exactly one closed contract. It supplies:
 
-Every mode supplies:
-
-- `source` worktree, branch, exact `head` and `tree`, `creation_owner`, and `scope_owner`;
+- `source` worktree, branch, exact base, `head` and `tree`, `creation_owner`, and `scope_owner`;
 - `target` checkout, branch, `expected_head`, and `target_policy`;
 - `evidence` fixed point, acceptance sources, review kind and result, reviewed head and tree,
   verification commands and results, and findings;
-- `history_policy` and its complete owned range;
+- `history_policy` equal to `consolidate-checkpoints` or `preserve-commits`, with its complete
+  owned range;
 - recovery refs and current and next owners;
 - authorized cleanup and retained state; and
-- one `authorized_outcome`.
+- one `authorized_outcome` equal to `merge-locally`, `create-pull-request`, `keep-for-later`, or
+  `return-for-review`.
 
-Reject unknown modes, cross-mode fields, missing values, and implicit remote authority.
+Reject unknown policies or outcomes, missing values, tracker data, and implicit remote authority.
 
 ## Prove Current State
 
@@ -23,6 +22,5 @@ recovery fact, and owner. Snapshot each affected checkout's branch, `HEAD`, inde
 unstaged, and untracked state. Immediately before every mutation, recheck the facts it depends on.
 Stop on stale, ambiguous, published, or unrelated state.
 
-The common contract passes only when one closed mode, exact source and target, current evidence,
-authorized recovery and cleanup, and preserved unrelated state are proven. The selected mode
-reference then validates its owned history, outcome, and additional fields.
+The contract passes only when the exact source and target, complete owned history, current evidence,
+authorized recovery and cleanup, and preserved unrelated state are proven.

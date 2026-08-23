@@ -1,18 +1,16 @@
 # 创建 Pull Request
 
-发布已验证的 Task Commit 且不改写它，并保留其本地 worktree 供后续处理。当 task 为 **Already
-Delivered** 时，重新检查已解析 pull-request base 仍没有 task diff，保留 task branch 和 worktree，
-报告 proof 和跳过的 publication，然后停止，不 push 或创建空 pull request。
+发布 verified delivery head，并保留其本地 worktree 供 follow-up。scope 为 **Already Delivered** 时，
+复核 resolved pull-request base 仍没有 scope diff，保留 source branch 和 worktree，报告 proof 和
+skipped publication，然后停止，不 push，也不创建 empty pull request。
 
-1. 确定准确的 remote、base 分支、head 分支、pull-request 标题、正文和 draft 状态。仓库证据和已接受
-   请求都无法确定的值必须询问用户。
-2. 再次确认 Task Worktree 干净，Task Commit 的唯一 parent 是已解析的 pull request base commit，
-   且 review 和验证仍然有效。base 已移动时返回最终化。
-3. 不使用 force 推送准确的任务分支，然后通过可用的宿主原生或仓库授权接口创建 pull request。
-4. 验证远程分支提交、pull-request base 和 head、draft 状态，以及返回的 URL。
-5. 保留本地任务分支和 worktree 以处理审查更新。将后续已发布的 review-fix commit 保留为 review
-   历史；最终 squash 行为由仓库 pull request 策略决定。只有后续单独授权了完成结果，才能移除本地
-   状态。
-
-用户选择此结果即授权解析出的分支推送和 pull-request 创建。它不授权无关推送、删除远程分支、合并
-pull request 或本地清理。
+1. 解析准确 remote、base branch、head branch、pull-request title、body 和 draft state。repository
+   evidence 和 accepted request 无法确定任何值时询问。
+2. 再次确认 source worktree clean、resolved pull-request base 是完整 owned range 要求的 history
+   boundary，并且 review 和 verification 仍 current。moved base 返回 finalization。
+3. 不 force 地 push 准确 source branch，然后通过 available host-native 或 repository-authorized
+   interface 创建 pull request。
+4. 验证 remote branch commit、pull-request base 和 head、draft state 及返回 URL。
+5. 保留本地 source branch 和 worktree 供 review updates。把后续 published review-fix commits 保留为
+   review history；由 repository 的 pull-request policy 负责 repository-host finalization。只有之后
+   单独授权 completion outcome，才移除 local state。

@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0007
+---
+
 # Review ticket batches once while retaining per-ticket Task Commits
 
 For a dependency-ordered Ticket Batch, SmartKit stages one Task Commit per ticket on an isolated

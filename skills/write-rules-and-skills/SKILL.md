@@ -51,10 +51,10 @@ file extension or packaging, selects the semantic-type reference.
 
 | Candidate | Read completely |
 | --- | --- |
-| Ordinary Rule | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) and [`references/rule.md`](references/rule.md) |
-| Ordinary Skill | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) and [`references/skill.md`](references/skill.md) |
-| Rule Generation Contract | [`references/generation-contract.md`](references/generation-contract.md) and [`references/rule.md`](references/rule.md) |
-| Skill Generation Contract | [`references/generation-contract.md`](references/generation-contract.md) and [`references/skill.md`](references/skill.md) |
+| Ordinary Rule | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) and [`references/rule-semantics.md`](references/rule-semantics.md) |
+| Ordinary Skill | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) and [`references/skill-semantics.md`](references/skill-semantics.md) |
+| Rule Generation Contract | [`references/generation-contract.md`](references/generation-contract.md) and [`references/rule-semantics.md`](references/rule-semantics.md) |
+| Skill Generation Contract | [`references/generation-contract.md`](references/generation-contract.md) and [`references/skill-semantics.md`](references/skill-semantics.md) |
 
 When the Owner Gate returns `split`, create the separately owned Rule and Skill candidates selected
 by the user. Routing is complete when every candidate has one lifecycle, one semantic type, one

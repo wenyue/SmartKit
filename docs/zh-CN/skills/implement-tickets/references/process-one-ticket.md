@@ -1,70 +1,65 @@
 # 处理一个 Ticket
 
-以选定的 dependency-ready frozen ticket、unchanged Batch Worktree 和 controller 当前的 batch
-record 进入。这个 path 只有一个 `staged` exit；其他所有结果都进入主 Skill 中的 **停止与恢复**。
+进入时应有选定的 dependency-ready ticket、准确的当前 Batch Worktree 和 controller 当前 ticket
+graph。此路径只有一个 `completed-in-batch` exit；其他结果都进入主 Skill 中的 **停止和恢复**。
 
-## Claim 并隔离
+## Claim 并 Handoff
 
-1. 在 claim 前立即重新读取 ticket 及其 blockers。出现 material status、requirement 或 edge change
-   时停止。
-2. 使用配置 tracker 所记录的 compare-and-set Ticket Batch claim 和 staged-blocker proof。记录 prior
-   state 和 claim；没有记录安全的 claim operation 时停止。
-3. 记录 Batch Worktree path、branch、精确 `HEAD`、tree 和 immutable base。选择不存在的 ticket
-   专属 task slug、path 和 branch。
-4. 将这些记录的事实视为 worker 的 isolation request。由 worker 而不是 controller 创建并认定
-   Ticket Task Worktree。
+1. claim 前立即重新读取 ticket 及其 blockers。status、requirement 或 edge 有实质变化时停止。
+2. 使用已配置 tracker 记录的 compare-and-set Ticket Batch claim 和 Ticket Commit proof。记录 prior
+   state 和 claim；没有记录安全 claim operation 时停止。
+3. 记录 Batch Worktree path、branch、准确 `HEAD`、tree、immutable base、clean 或归属明确的 recovery
+   state，并把 selected ticket 作为其唯一当前 scope。另一个 worker 仍拥有该 worktree 或较早 ticket
+   有 unresolved state 时停止。
 
 ## 派发一个 Worker
 
-启动一个 fresh write-capable worker Agent，并向其提供一个完整 handoff：
+启动一个 fresh write-capable worker Agent，并提供一个完整 handoff：
 
-- `ticket`：identifier、完整 contract、acceptance sources 和 frozen blocker proof；
-- `batch`：worktree、branch、精确 `head` 和 `tree`、immutable base 和 controller identity；
-- `task_worktree`：预期 slug、path、branch，以 worker 为 scope owner、controller 为 integration
-  owner，以及获准的 cleanup owner；
+- `ticket`：canonical identifier、完整 contract、acceptance sources 和 blocker proof；
+- `batch`：worktree、branch、准确 `head` 和 `tree`、immutable base 和 controller identity；
+- `history`：既有 ticket boundaries、当前 ticket base、准确的
+  `SmartKit-Ticket: <canonical-id>` completion trailer 和 worker commit authority；
 - `verification`：focused 和 repository-required commands；
-- `finalization`：`mode=stage-ticket-into-batch`、Batch Worktree target、
-  `target_policy=exact-head-fast-forward-only`、向 controller 转移 recovery，以及 authorized cleanup；
-  和
 - `tracker_boundary`：worker 不执行 claim、release、completion 或其他 tracker transition。
 
-worker 在其现有 Agent context 中执行以下完整生命周期：
+worker 在其现有 Agent context 中执行此完整生命周期：
 
-1. 重新检查每项 supplied Batch 和 intended task identity，然后从精确 supplied Batch Worktree
-   `HEAD` 调用 `create-worktree`。仅当 qualified Task Worktree 的 owners、base、path、branch 和
-   baseline 与 handoff 匹配时才继续。
-2. 建立当前 mechanism 和 seams，只实施该 ticket，在 behavior 存在可测试 seam 时使用 `tdd`，并通过
-   正常 commit workflow 创建可恢复的 Checkpoint Commits。
-3. 实施期间运行 focused verification，并在结束时运行仓库要求的每项检查。
-4. 对照 acceptance criteria self-review 完整 ticket diff，并纠正每个 observed mismatch。worker
-   不调用正式 `code-review`。
-5. 使用根据当前证据得出的完整 `stage-ticket-into-batch` Finalization Contract 调用
-   `finish-worktree`。
-6. 独立重新检查 finalizer result，并将其连同 ticket 和 worker identities 以及 verification 和
-   self-review evidence 原样返回。finalizer 负责其 result fields。
+1. 复核提供的 Batch Worktree、ticket base、prior ticket boundaries、ownership 和本地状态。只在该
+   Batch Worktree 中工作，并且只处理此 ticket。
+2. 建立当前 mechanism 和 seams，只实施该 ticket；behavior 有 testable seam 时使用 `tdd`；通过正常
+   commit workflow 创建任何有用且可恢复的 Checkpoint Commits。
+3. 实施期间运行 focused verification，并在最后运行每个 repository-required check。
+4. 根据 acceptance criteria self-review 完整 ticket diff，并修正每个 observed mismatch。worker 不调用
+   正式 `code-review`。
+5. 结束时 worktree 必须 clean，并有一个最终、通过 hooks 验证且准确包含所提供 completion trailer 的
+   Ticket Commit。该 ticket 可以有之前的 Checkpoint Commits。没有剩余内容可 commit 时，创建一个
+   通过 hooks 验证的 empty Ticket Commit，不重写另一个 ticket 的历史。
+6. 返回准确 Ticket Commit、ticket 和 worker identities、当前 Batch Worktree head 和 tree、
+   verification 与 self-review evidence。
 
-在调用 `finish-worktree` 之前的任何 phase 中，non-complete result 或 missing decision 都返回一个
-structured Worker Recovery Handoff，其中包含：
+Ticket Commit 得到证明前的任何阶段出现非 complete 结果或缺少 decision 时，返回一个 structured
+Worker Recovery Handoff，其中包含：
 
 - `status`（`stopped` 或 `failed`）、ticket 和 worker identities、`completed_phase` 和
   `failed_phase`；
-- Task Worktree path、branch、精确 base、`HEAD`、tree、qualification 和 owned local-state facts；
-- 精确 Checkpoint Commit range、trees、publication facts 和 uncommitted state；
-- 每个 verification command、result 及其关联的 `HEAD` 和 tree，以及 self-review evidence 和
-  unresolved findings；
-- 每个 retained worktree、branch、commit、recovery ref 和其他有用的 recovery state；
-- exact blocker、mismatch、error 或 missing decision；以及
-- `next_owner` 和 exact next action。
+- Batch Worktree path、branch、immutable base、ticket base、`HEAD`、tree 和归属明确的本地状态 facts；
+- 准确的当前 ticket Checkpoint Commit range、trees、publication facts 和 uncommitted state；
+- 每个 verification command、result 及关联 `HEAD` 和 tree，加上 self-review evidence 和 unresolved
+  findings；
+- 每个 retained branch、commit、recovery ref 和其他有用 recovery state；
+- 准确 blocker、mismatch、error 或缺少的 decision；
+- `next_owner` 和准确 next action。
 
-保留所有已报告的 Git 和 recovery state。在进入 **停止与恢复** 前，controller 既不替换 worker，
-也不处理另一个 ticket。
+保留所有已报告 Git 和 recovery state。controller 在进入 **停止和恢复** 前，不替换 worker，也不处理
+另一个 ticket。
 
-## 验证 Staging
+## 验证 Ticket 边界
 
-1. 要求 worker result 为 complete，并独立验证 worker 和 ticket mapping、Task Commit parent 和
-   tree、evidence、cleanup、transferred recovery refs，以及 Batch Worktree 是否从 supplied ticket
-   base 准确推进一个 returned Task Commit。任何 mismatch 都进入 **停止与恢复**。
-2. 保持 ticket 为 claimed，并在 frozen graph 中记录其 Task Commit。Staged Ticket 可以在本次运行内
-   解锁 dependants，但既未 delivered，也未 completed。
-3. 重新读取 frozen contracts。material contract change 进入 **停止与恢复**；否则向主 Skill 返回
-   `staged` exit。
+1. 要求完整 worker result，并独立验证 worker 与 ticket mapping、准确 trailer、commit ancestry、
+   evidence、clean Batch Worktree，以及 supplied ticket base 之后的每个 commit 都属于此 ticket。
+   任何 mismatch 都进入 **停止和恢复**。
+2. 保持 ticket claimed。已证明的 Ticket Commit 可以在本次运行中解锁 dependants，但它既不是 Batch
+   Delivery，也不是 Ticket Completion。
+3. 重新读取 selected contracts。实质 contract change 进入 **停止和恢复**；否则向主 Skill 返回
+   `completed-in-batch` exit。
