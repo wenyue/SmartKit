@@ -119,6 +119,7 @@ class PluginManifestTest(unittest.TestCase):
         chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
         source_paths = set()
         for root_name in (
+            '.agents',
             'agents/source',
             'rules/source',
             'setup-assets/blueprints',
