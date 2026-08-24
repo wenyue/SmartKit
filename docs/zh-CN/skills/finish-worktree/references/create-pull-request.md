@@ -1,16 +1,16 @@
 # 创建 Pull Request
 
-发布 verified delivery head，并保留其本地 worktree 供 follow-up。scope 为 **Already Delivered** 时，
-复核 resolved pull-request base 仍没有 scope diff，保留 source branch 和 worktree，报告 proof 和
-skipped publication，然后停止，不 push，也不创建 empty pull request。
+发布已验证的交付提交头，并保留其本地工作树供后续工作。范围为**已交付**时，
+复核已解析的拉取请求基点仍没有范围 diff，保留源分支和工作树，报告证明和
+skipped 发布状态，然后停止，不 push，也不创建 empty 拉取请求。
 
-1. 解析准确 remote、base branch、head branch、pull-request title、body 和 draft state。repository
-   evidence 和 accepted request 无法确定任何值时询问。
-2. 再次确认 source worktree clean、resolved pull-request base 是完整 owned range 要求的 history
-   boundary，并且 review 和 verification 仍 current。moved base 返回 finalization。
-3. 不 force 地 push 准确 source branch，然后通过 available host-native 或 repository-authorized
-   interface 创建 pull request。
-4. 验证 remote branch commit、pull-request base 和 head、draft state 及返回 URL。
-5. 保留本地 source branch 和 worktree 供 review updates。把后续 published review-fix commits 保留为
-   review history；由 repository 的 pull-request policy 负责 repository-host finalization。只有之后
-   单独授权 completion outcome，才移除 local state。
+1. 解析准确远程、基点分支、提交头分支、拉取请求 title、body 和 draft 状态。仓库
+   证据和已确认的请求无法确定任何值时询问。
+2. 再次确认源工作树 clean、已解析的拉取请求基点是完整自有的范围要求的历史
+   边界，并且审查和验证仍当前。moved 基点返回收尾。
+3. 不强制地推送准确源分支，然后通过可用的宿主原生或仓库授权的
+   接口创建拉取请求。
+4. 验证远程分支提交、拉取请求基点和提交头、draft 状态及返回 URL。
+5. 保留本地源分支和工作树供审查更新。把后续已发布审查修复提交保留为
+   审查历史；由仓库的拉取请求政策负责代码托管平台收尾。只有之后
+   单独授权完成结果，才移除 local 状态。

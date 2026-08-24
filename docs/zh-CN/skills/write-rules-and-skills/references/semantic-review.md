@@ -1,27 +1,25 @@
-# Semantic Review
+# 语义审查
 
-本 reference 负责 review packet、Semantic Review 关卡和 reviewer verdict。父 Skill 负责关卡顺序、
-reviewer 隔离、finding 分类处理、修正和 handoff。所选生命周期与语义类型 reference 负责适用的
-counterexample 和 Acceptance portfolio。
+本引用规定审查材料包、语义审查门控和审查者判定。父 Skill 负责门控顺序、审查者隔离、问题分类、
+修正和交接；选定的生命周期与语义类型引用负责适用的反例和验收方案集。
 
-## 提供 Context Packet
+## 提供上下文包
 
-向 reviewer 提供：
+向审查者提供：
 
 - 已接受结果和语义账本；
-- Readiness 要求 Behavior Control 时所选的任务及其原始结果；
+- 准备阶段要求行为对照时，所选任务及其原始结果；
 - 完整候选工件、自有资源以及加载或分发表面；
-- 治理证据和适用 reference；以及
+- 治理证据和适用引用；
 - 精确的机器验证结果和未测试表面。
 
-排除 diff、作者推理、怀疑的缺陷、预期修复和预期 verdict。
-不要提供工具或工作区路径。缺少判断所需语义输入时，返回 `CONTEXT_REQUIRED`，不要自行发现上下文。
+不能提供 diff、作者推理、疑似缺陷、预期修复或预期判定，也不能提供工具或工作区路径。缺少判断所需
+的语义输入时返回 `CONTEXT_REQUIRED`，不得自行查找上下文。
 
 ## 尝试证伪候选工件
 
-完整阅读候选工件，并用两到四个风险最高且有证据支持的反例尝试证伪它。返回单独的 Semantic
-Review `PASS` 或 `FAIL`。
+完整阅读候选工件，用两到四个风险最高且有证据支持的反例尝试推翻它，然后单独返回语义审查 `PASS`
+或 `FAIL`。
 
-每个阻塞 finding 都要指出其关卡、证据、具体反例，以及一种共享 finding 分类。对于
-`decision-required`，还要指出确切的未决选择、decision owner，以及每种有依据且实质不同的结果所
-对应的证据；finding 的数量不构成这种证据。
+每个阻塞问题都要写明所属门控、证据、具体反例和统一的问题分类。对于 `decision-required`，还要
+指出准确的未决选择、决定者，以及每种有依据且实质不同结果的证据；问题数量本身不算证据。

@@ -1,10 +1,10 @@
 # 留待以后处理
 
-保留 completed delivery head，不进行 integration、publication 或 cleanup。scope 为
-**Already Delivered** 时，复核已证明 target，完全按记录保留 source branch 和 worktree，报告 proof
-和 preserved state，然后停止。
+保留已完成交付提交头，不进行 integration、发布状态或清理。范围为
+**已交付**时，复核已证明目标，完全按记录保留源分支和工作树，报告证明
+和保留的状态，然后停止。
 
-1. 不进行 branch、checkout、index、worktree、filesystem 或 remote mutation。
-2. 再次确认 source branch 指向记录的 delivery head，且 worktree clean。
-3. 报告 target branch 和 commit、source branch 和 delivery head、history policy、worktree path、
-   creation owner、verification result、publication state，以及剩余 integration 或 cleanup owner。
+1. 不进行分支、检出目录、索引、工作树、filesystem 或远程修改。
+2. 再次确认源分支指向记录的交付提交头，且工作树 clean。
+3. 报告目标分支和提交、源分支和交付提交头、历史政策、工作树路径、
+   creation 归属、验证结果、发布状态，以及剩余 integration 或清理归属。

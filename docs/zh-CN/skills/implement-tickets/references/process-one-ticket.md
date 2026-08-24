@@ -1,65 +1,48 @@
-# 处理一个 Ticket
+# 处理一个工单
 
-进入时应有选定的 dependency-ready ticket、准确的当前 Batch Worktree 和 controller 当前 ticket
-graph。此路径只有一个 `completed-in-batch` exit；其他结果都进入主 Skill 中的 **停止和恢复**。
+进入此流程时，应当已经选定依赖条件均满足的工单、准确的当前批次工作树，并取得控制器当前的工单依赖图。此路径只有一个 `completed-in-batch` 出口；其他所有结果都进入主 Skill 的**停止和恢复**。
 
-## Claim 并 Handoff
+## 认领并交接
 
-1. claim 前立即重新读取 ticket 及其 blockers。status、requirement 或 edge 有实质变化时停止。
-2. 使用已配置 tracker 记录的 compare-and-set Ticket Batch claim 和 Ticket Commit proof。记录 prior
-   state 和 claim；没有记录安全 claim operation 时停止。
-3. 记录 Batch Worktree path、branch、准确 `HEAD`、tree、immutable base、clean 或归属明确的 recovery
-   state，并把 selected ticket 作为其唯一当前 scope。另一个 worker 仍拥有该 worktree 或较早 ticket
-   有 unresolved state 时停止。
+1. 认领前立即重新读取工单及其阻塞项。状态、要求或依赖关系发生实质变化时停止。
+2. 按已配置跟踪器文档中的“比较并设置”操作认领工单批次，并提供工单提交证明。记录认领前的状态和认领结果；如果文档没有提供安全的认领操作，则停止。
+3. 记录批次工作树的路径、分支、准确的 `HEAD`、树、不可变基点、干净或归属明确的恢复状态，并把选定工单作为它当前唯一的工作范围。如果另一名执行智能体仍占用该工作树，或者更早的工单仍有未解决状态，则停止。
 
-## 派发一个 Worker
+## 派发一名执行智能体
 
-启动一个 fresh write-capable worker Agent，并提供一个完整 handoff：
+启动一名新的、可以写入文件的执行智能体，并提供一份完整交接：
 
-- `ticket`：canonical identifier、完整 contract、acceptance sources 和 blocker proof；
-- `batch`：worktree、branch、准确 `head` 和 `tree`、immutable base 和 controller identity；
-- `history`：既有 ticket boundaries、当前 ticket base、准确的
-  `SmartKit-Ticket: <canonical-id>` completion trailer 和 worker commit authority；
-- `verification`：focused 和 repository-required commands；
-- `tracker_boundary`：worker 不执行 claim、release、completion 或其他 tracker transition。
+- `ticket`：规范标识符、完整契约、验收依据和阻塞项证明；
+- `batch`：工作树、分支、准确的 `head` 和 `tree`、不可变基点和控制器标识；
+- `history`：已有的工单边界、当前工单基点、准确的
+  `SmartKit-Ticket: <canonical-id>` 完成标记，以及执行智能体的提交权限；
+- `verification`：定向验证命令和仓库要求的命令；
+- `tracker_boundary`：执行智能体不得认领、释放或完成工单，也不得执行其他跟踪器状态转换。
 
-worker 在其现有 Agent context 中执行此完整生命周期：
+执行智能体在当前智能体上下文中完成以下整个生命周期：
 
-1. 复核提供的 Batch Worktree、ticket base、prior ticket boundaries、ownership 和本地状态。只在该
-   Batch Worktree 中工作，并且只处理此 ticket。
-2. 建立当前 mechanism 和 seams，只实施该 ticket；behavior 有 testable seam 时使用 `tdd`；通过正常
-   commit workflow 创建任何有用且可恢复的 Checkpoint Commits。
-3. 实施期间运行 focused verification，并在最后运行每个 repository-required check。
-4. 根据 acceptance criteria self-review 完整 ticket diff，并修正每个 observed mismatch。worker 不调用
-   正式 `code-review`。
-5. 结束时 worktree 必须 clean，并有一个最终、通过 hooks 验证且准确包含所提供 completion trailer 的
-   Ticket Commit。该 ticket 可以有之前的 Checkpoint Commits。没有剩余内容可 commit 时，创建一个
-   通过 hooks 验证的 empty Ticket Commit，不重写另一个 ticket 的历史。
-6. 返回准确 Ticket Commit、ticket 和 worker identities、当前 Batch Worktree head 和 tree、
-   verification 与 self-review evidence。
+1. 复核交接中的批次工作树、工单基点、之前的工单边界、归属和本地状态。只能在该批次工作树中工作，并且只能处理这个工单。
+2. 查明当前机制和接缝，只实施这个工单；行为存在可测试接缝时使用 `tdd`；通过正常提交工作流创建有助于恢复的检查点提交。
+3. 实施期间运行定向验证，结束时运行仓库要求的每项检查。
+4. 根据验收条件自行审查完整的工单差异，并修正发现的每一处不符合项。执行智能体不调用正式的 `code-review`。
+5. 结束时，工作树必须干净，并且有一个最终的工单提交：它通过钩子验证，并准确包含交接中给出的完成标记。该工单之前可以有检查点提交。如果没有内容需要提交，则创建一个通过钩子验证的空工单提交，不得重写其他工单的历史。
+6. 返回准确的工单提交、工单和执行智能体标识、当前批次工作树的提交头和树，以及验证与自行审查证据。
 
-Ticket Commit 得到证明前的任何阶段出现非 complete 结果或缺少 decision 时，返回一个 structured
-Worker Recovery Handoff，其中包含：
+在工单提交得到证明前，无论处于哪个阶段，只要结果并非完成或仍缺少决定，就返回一份结构化的执行智能体恢复交接，其中包含：
 
-- `status`（`stopped` 或 `failed`）、ticket 和 worker identities、`completed_phase` 和
+- `status`（`stopped` 或 `failed`）、工单和执行智能体标识、`completed_phase` 和
   `failed_phase`；
-- Batch Worktree path、branch、immutable base、ticket base、`HEAD`、tree 和归属明确的本地状态 facts；
-- 准确的当前 ticket Checkpoint Commit range、trees、publication facts 和 uncommitted state；
-- 每个 verification command、result 及关联 `HEAD` 和 tree，加上 self-review evidence 和 unresolved
-  findings；
-- 每个 retained branch、commit、recovery ref 和其他有用 recovery state；
-- 准确 blocker、mismatch、error 或缺少的 decision；
-- `next_owner` 和准确 next action。
+- 批次工作树路径、分支、不可变基点、工单基点、`HEAD`、树，以及归属明确的本地状态事实；
+- 当前工单准确的检查点提交范围、各棵树、发布事实和未提交状态；
+- 每条验证命令、结果及其对应的 `HEAD` 和树，以及自行审查证据和未解决的问题；
+- 每个保留的分支、提交、恢复引用和其他有用的恢复状态；
+- 准确的阻塞项、不符合项、错误或缺少的决定；
+- `next_owner` 和准确的下一步操作。
 
-保留所有已报告 Git 和 recovery state。controller 在进入 **停止和恢复** 前，不替换 worker，也不处理
-另一个 ticket。
+保留报告中的所有 Git 状态和恢复状态。在进入**停止和恢复**前，控制器既不能替换执行智能体，也不能处理另一个工单。
 
-## 验证 Ticket 边界
+## 验证工单边界
 
-1. 要求完整 worker result，并独立验证 worker 与 ticket mapping、准确 trailer、commit ancestry、
-   evidence、clean Batch Worktree，以及 supplied ticket base 之后的每个 commit 都属于此 ticket。
-   任何 mismatch 都进入 **停止和恢复**。
-2. 保持 ticket claimed。已证明的 Ticket Commit 可以在本次运行中解锁 dependants，但它既不是 Batch
-   Delivery，也不是 Ticket Completion。
-3. 重新读取 selected contracts。实质 contract change 进入 **停止和恢复**；否则向主 Skill 返回
-   `completed-in-batch` exit。
+1. 要求执行智能体返回完整结果，并独立验证执行智能体与工单的对应关系、准确的完成标记、提交祖先关系、证据、干净的批次工作树，以及交接所给工单基点之后的每个提交都属于这个工单。任何不符合项都进入**停止和恢复**。
+2. 保持工单已认领。已证明的工单提交可以在本次运行中解除后续工单的依赖，但它既不等于批次交付，也不等于工单完成。
+3. 重新读取选定的契约。契约发生实质变化时进入**停止和恢复**；否则向主 Skill 返回 `completed-in-batch` 出口。

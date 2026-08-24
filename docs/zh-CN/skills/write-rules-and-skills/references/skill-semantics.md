@@ -1,74 +1,69 @@
 # Skill
 
-Skill 负责一项完整的触发式工作。本 reference 应用于候选工件本身。
+Skill 负责一项完整的触发式工作。本引用直接适用于候选工件。
 
-## 确立工作与 Skill Shape
+## 明确工作和技能设计形态
 
-根据已接受意图、当前 Skill mechanics 和治理证据，确定 objective、actor、trigger、evidence、
-inputs、preconditions、outcome、owner、boundaries、completion、stop、failure、validation 和
-handoff。只有证据表明 actions、ordering、recovery、resources 和 commands 会改变执行时才确定
-它们。每个适用字段都需要一个有依据的值；只有当证据证明字段不会改变工作时才省略它。
+根据已经确认的意图、当前 Skill 机制和治理证据，明确目标、执行者、触发条件、证据、输入、前置条件、
+结果、归属、边界、完成、停止、失败、验证和交接。只有证据表明动作、顺序、恢复、资源或命令会影响
+实际执行时，才需要把它们固定下来。每个适用字段都必须有证据支持的值；只有证据能证明某字段不会
+改变这项工作时，才能省略。
 
-选择一种 Skill Shape：
+选择一种技能设计形态：
 
-- **Judgment-led** 是默认值。根据 objective、evidence、principles、invariants、decision
-  boundaries 和 prioritized exits 构建 Judgment Frame，并把方法留给 Agent 判断。
-- **Procedure-led** 仅在流程会改变正确性、安全性、外部协议合规性、协调、恢复或已接受结果时，
-  使用 Job Graph 和 Execution Paths。
-- **Hybrid** 从 Judgment Frame 开始，只添加有界 Procedural Islands。每个 island 在其
-  prioritized exit 后把控制权交还 Agent 判断。
+- **Judgment-led**是默认形态。根据目标、证据、原则、不变量、决策边界和出口优先级建立判断框架，
+  具体方法由智能体判断。
+- **Procedure-led**只在执行流程会影响正确性、安全性、外部协议合规性、协调、恢复或已经确认的结果
+  时，才使用任务执行图和执行路径。
+- **Hybrid**从判断框架出发，只添加有边界的固定流程片段。每个固定流程片段到达自己的优先出口后，都要
+  把控制权交还智能体判断。
 
-作者偏好的大纲、希望显得完整，或未经验证的历史顺序，都不能证明规定流程合理。当一个建议步骤只
-为改变 Agent 默认行为而存在，且没有观察到的 failure 证明其必要性时，使用生命周期 reference 的
-Behavior Control。
+作者偏好的大纲、为了显得完整，或未经验证的历史顺序，都不能成为规定流程的理由。如果一个拟议步骤
+唯一的作用是改变智能体默认行为，又没有已经观察到的失败证明它有必要，就使用生命周期引用规定的
+行为对照。
 
-## 确定 invocation metadata
+## 确定调用元数据
 
-在首次写入候选工件之前，把 model invocation 作为默认值，并根据已接受意图和证据判断是否有必要使用
-user-only invocation。保持两种 Harness 表示一致：
+首次写入候选工件前，默认允许模型调用，再根据已经确认的意图和证据判断是否必须限制为仅用户调用。
+两种智能体宿主表示必须保持一致：
 
-- 对于新 Skill，使用 model invocation 继续，无需向用户显示选择；只有当证据表明该 Skill 不应被自动
-  发现或调用时才例外。在该例外中，主动建议 user-only invocation，说明实质取舍，并停止等待用户选择。
-- 对于现有 Skill，保留其有依据的 invocation 选择。当证据支持更改该选择，或当前表示相互冲突时，
-  给出建议及其影响，然后停止等待用户选择；否则，无需向用户显示选择即可继续。
-- 通过省略 `disable-model-invocation` 表示 model invocation；省略
+- 新 Skill 默认允许模型调用，不必向用户提出选择。只有证据表明该 Skill 不应被自动发现或调用时，
+  才主动建议限制为仅用户调用，说明重要取舍，并停止等待用户选择。
+- 现有 Skill 保留已有依据支持的调用方式。只有证据支持改变方式，或当前两种表示互相冲突时，才说明
+  建议及影响并等待用户选择；其它情况直接继续。
+- 省略 `disable-model-invocation` 表示允许模型调用；省略
   `policy.allow_implicit_invocation` 仍是其有效默认值。当自动路由或另一个 Skill 触达该工作属于其契约
-  时，建议显式设置 `policy.allow_implicit_invocation: true`，并把省略视为差异。user-only invocation
-  使用 `disable-model-invocation: true` 和 `policy.allow_implicit_invocation: false` 表示。
+  时，建议显式设置 `policy.allow_implicit_invocation: true`，并把省略视为不同结果。仅用户调用则用
+  `disable-model-invocation: true` 和 `policy.allow_implicit_invocation: false` 表示。
 
-在同一个 Candidate Revision 中维护 Skill 的 `agents/openai.yaml`。缺失时创建；更新时保留有依据的
-interface metadata；只根据上述已确定的选择更改 invocation policy。
+在同一个候选修订版中维护 Skill 的 `agents/openai.yaml`：缺失时创建，更新时保留有依据支持的接口
+元数据；调用政策只能按上面已经确定的选择更改。
 
 ## 投影一项完整工作
 
-- 让主文件具备 Entry Sufficiency：识别 Skill Shape、objective 或 entry、适用的 Judgment Frame
-  或 Execution Path，以及每个有条件需要的 resource，而不加载无关细节。
-- 对 Judgment-led 工作，陈述 evidence、principles、invariants、decision boundaries 和
-  prioritized exits，不规定没有依据的方法。
-- 对 Procedure-led 工作，让每条真实 Execution Path 可见且 Path-sufficient。把每个分支放在其
-  trigger 旁边，且仅当顺序会改变正确性、安全性或结果时使用有序步骤。
-- 对 Hybrid 工作，让 Judgment Frame 保持主要地位，只在触达 trigger 时披露对应 Procedural
-  Island。
-- 为每个 Judgment Frame 和 Execution Path 指定一个有优先级的 completion、stop 或 failure
-  出口。说明条件重合时由哪个出口决定；completion 不能绕过必需的 validation、cleanup、
-  preservation 或 handoff。
-- 只为已验证且允许恢复的 failure 声明 recovery。保留有用的 partial state，并把缺失的决定、
-  权限或范围交给其 owner。
-- 仅对重复、脆弱且确定性的工作使用自有脚本。定义其 dependencies、inputs、outputs、failures、
-  recovery 和安全的代表性 tests。
-- 只引用运行工作需要的 resource，并说明何时读取或执行。把持久政策保留在单独拥有的 Rule 中。
-- 使用 heading 表示工作阶段或真实分支，使用 numbered list 表示有序动作，使用 bullet 表示独立要求。
+- 主文件要具备入口信息完备性：说明技能设计形态、目标或入口、适用的判断框架或执行路径，以及所有
+  按条件需要的资源，同时不加载无关细节。
+- 判断主导型工作写清证据、原则、不变量、决策边界和出口优先级，但不规定没有依据的方法。
+- 流程主导型工作要让每条真实执行路径都清楚可见并具备路径信息完备性。每个分支紧跟触发条件；只有
+  顺序会影响正确性、安全性或结果时，才使用有序步骤。
+- 混合型工作以判断框架为主，只在触发条件出现时披露对应的固定流程片段。
+- 每个判断框架和执行路径都要有一个优先级明确的完成、停止或失败出口。条件同时成立时，写明
+  哪个出口优先；完成出口不能绕过必要的验证、清理、保留或交接。
+- 只有经过验证、并且确实允许恢复的失败才声明恢复方式。保留有用的中间状态；缺少决定、权限或范围
+  时，交回对应归属处理。
+- 自有脚本只用于重复、脆弱且确定性的工作，并明确其依赖、输入、输出、失败、恢复和安全的代表性测试。
+- 只引用运行时真正需要的资源，并说明何时读取或执行。长期有效的政策放在另有归属的 Rule 中。
+- 标题用于工作阶段或真实分支；编号列表用于有顺序的动作；项目符号用于互相独立的要求。
 
 ## 审查并验收 Skill 语义
 
-Semantic Review 根据候选工件和证据重建完整工作、所选 Skill Shape、Judgment Frame 和适用的
-Execution Paths。以下情况应判定失败：字段隐含、规定没有依据的流程、虚构 action、command、
-dependency、owner、recovery 或 result、缺少 prioritized exit、出口不可达或过早完成。
+语义审查根据候选工件和证据重建完整工作、选定的技能设计形态、判断框架及适用的执行路径。以下
+情况必须判定失败：字段未明确写出；规定了没有依据的流程；虚构动作、命令、依赖、归属、恢复或结果；
+缺少有优先级的出口；出口不可达；或过早宣告完成。
 
 只选择风险最高的相关案例：
 
-- normal completion；以及
-- 候选工件影响的 non-completion 路径，例如 missing precondition、stop、failure、recovery、
-  handoff 或 coincident condition。
+- 正常完成路径；
+- 候选工件影响的非完成路径，例如缺少前置条件、停止、失败、恢复、交接或条件同时成立。
 
-对触发式工作和任务应用通用 Acceptance Runner 协议。
+对触发式工作及其任务应用通用验收执行者协议。

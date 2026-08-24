@@ -2,9 +2,9 @@
 
 强度：`Advisory`
 
-适用范围：为目标仓库生成基于证据的放置建议的 Setup Authoring Contract。
+适用范围：为目标仓库生成基于证据的放置建议的项目设置编写契约。
 
-## Setup Contract Frame
+## 项目设置契约框架
 
 将 `.agents/rules/02-project-structure.md` 编写为项目本地的普通 Advisory Rule。它只回答在应用目标的
 Mandatory Project Contracts 后，改动应放在哪里，以及如何对合理的架构放置方案进行排序。每项输出都
@@ -19,12 +19,12 @@ Mandatory Project Contracts 后，改动应放在哪里，以及如何对合理�
 
 ## 证据与建议
 
-- 追踪直接调用和 import、registry 与 schema 关系、generator 流程、runtime 入口点和行为测试。
+- 追踪直接调用和 import、注册表与 schema 关系、generator 流程、runtime 入口点和行为测试。
   这些信号的优先级高于仅凭目录名称、共置关系、命名以及 plugin 或 package 边界得出的判断。
 - 找出决定相关行为或策略的最窄既有责任方、使用它的消费者，以及观察它的测试。当单个消费者可将决策、
   落实决策的机制及观察决策的测试保持内聚，且很少向相邻区域泄漏知识时，倾向本地放置。当多个独立消费者
   需要同一项稳定决策，或本地副本反复造成跨责任方耦合时，倾向建立共享边界。
-- 追踪表征转换，直到为消费者、host、target 或渲染形式适配上游意图的边界。当该边界投射上游意图而非
+- 追踪表征转换，直到为消费者、智能体宿主、目标或渲染形式适配上游意图的边界。当该边界投射上游意图而非
   决定上游行为时，倾向这一面向消费者的边界。
 - 如果存在从编写意图到选择或转换、runtime 行为、交付和观察的各个阶段，应重建其概念流。反复出现的
   下游策略或稳定的跨目标机制倾向最早具备足够上下文的既有责任方；如果上移会抹去决策所需的上下文，
@@ -34,7 +34,7 @@ Mandatory Project Contracts 后，改动应放在哪里，以及如何对合理�
 
 ## 所有权边界
 
-关于 canonical source 与 generated source、安装、交付、依赖、暴露、fixture 及其他有效性边界的硬性
+关于规范的源与生成的源、安装、交付、依赖、暴露、fixture 及其他有效性边界的硬性
 要求归 Mandatory Project Contracts 所有。应引用适用的契约，而不是将其约束改写为结构指导。命令执行、
 编写工作流和验证流程仍由其当前责任方负责。
 
@@ -51,5 +51,5 @@ Mandatory Project Contracts 后，改动应放在哪里，以及如何对合理�
 
 验证每项生成的建议都可追溯到目标的权威证据，能够回答放置方案比较，且不重复 Mandatory Project
 Contract。
-将真实目标交给当前 Ordinary Artifact 路径，由目标负责 machine validation、Semantic Review、
-Acceptance 和交接。
+将真实目标交给当前直接使用型工件路径，由目标负责 machine 验证、Semantic 审查、
+验收和交接。

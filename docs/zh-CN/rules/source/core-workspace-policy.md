@@ -1,35 +1,32 @@
-# 工作区政策
+# 工作区管理规则
 
 强度：`Mandatory`
 
-适用范围：工作区选择、本地 Git 状态、commit 权限和远程操作授权。
+适用范围：工作区选择、本地 Git 状态、提交权限和远程操作授权。
 
-## 所有 Checkout
+## 所有检出目录
 
-- 本节适用于当前 checkout 和每个 linked worktree。
-- 在实施和 review 已接受任务时，保留所有既有 staged、unstaged 和 untracked 工作。
-- 某项任务操作会覆盖、stash、reset、clean 或丢弃这些状态时，改用无损方案；没有无损方案时请求用户
-  决定。
+- 本节适用于当前检出目录和每个关联工作树。
+- 实施和审查已确认的任务时，保留所有既有的已暂存、未暂存和未跟踪改动。
+- 如果任务操作会覆盖、stash、reset、clean 或丢弃这些状态，应改用无损方案；找不到无损方案时，
+  请用户决定。
 - 同一文件同时包含既有改动和任务改动时，能够区分两者并验证结果完整保留既有改动才继续；否则停止
   并请求用户决定。
-- 除非用户另行授权 commit，或 worktree 已取得下文规定的特定 commit 权限，否则保留未提交的任务
-  改动。
+- 除非用户另行授权提交，或工作树已经取得下文规定的特定提交权限，否则不要提交任务改动。
 
-## Worktree 选择与 Commit 权限
+## 工作树选择与提交权限
 
-- 当用户、Harness 和适用 Skill 都不要求隔离，并行工作不需要独立状态，且 checkout 既有状态可以
-  原地保留时，使用当前 checkout。
-- 当用户、Harness 或适用 Skill 要求隔离、并行工作需要独立状态，或必须通过隔离保护 checkout 既有
-  状态时，应用 `create-worktree`。由其负责 linked-worktree 的选择、创建、验证、就绪和机械性 handoff。
-- `create-worktree` 返回 ready 结果且调用方复核后，所属 workflow 可以无需单独授权，在该 worktree
-  中通过仓库正常 commit hooks 创建仅含该 scope 改动的 Checkpoint Commits。后续 Agent 只有在已
-  接受的 workflow 标识出准确的 worktree 和 base，且当前 Git evidence 证明此后每个 commit 和本地
-  改动都属于同一 scope 时，才能延续该权限；存在歧义时停止创建新 commit。
-- implementation workflow 准备收束或交付时，应用 `finish-worktree`。implementation workflow
-  负责正式 review；`finish-worktree` 负责 finalization，并且只有在证明同一 head 和 tree 已通过验证
-  与正式 review，且不存在 blocking finding 后，才能交付。
-- synchronization 改变 reviewed content 时，将其交回 implementation workflow，在交付前重新验证
-  并进行正式 review。
+- 当用户、智能体宿主和适用 Skill 都不要求隔离，并行工作不需要独立状态，而且能够原地保留当前检出目录
+  的既有状态时，就使用当前检出目录。
+- 如果用户、智能体宿主或适用 Skill 要求隔离，并行工作需要独立状态，或者必须靠隔离保护检出目录中的
+  既有状态，就应用 `create-worktree`。由它负责选择、创建和验证关联工作树，并完成就绪检查与操作性交接。
+- `create-worktree` 返回就绪结果且调用方复核后，所属工作流无需另行授权，即可通过仓库正常的提交
+  hook，在该工作树中创建只包含本任务范围改动的检查点提交。后续智能体只有在已确认的工作流明确
+  指出工作树及其基点，并且当前 Git 证据能证明其间所有提交和本地改动都属于同一任务范围时，才能
+  继续使用该权限；存在歧义时，不得再创建提交。
+- 实施工作流准备合并或交付时，应用 `finish-worktree`。实施工作流负责正式审查，`finish-worktree`
+  负责收尾；只有证明同一提交头和树已经通过验证及正式审查，并且没有阻塞问题，才能交付。
+- 如果同步操作改变了已经审查的内容，应把内容交回实施工作流，在交付前重新验证并正式审查。
 
 ## 远程操作
 

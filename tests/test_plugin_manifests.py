@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import unittest
+from collections import Counter
 from pathlib import Path
 
 
@@ -71,6 +72,52 @@ def markdown_structure(text: str) -> tuple[str, ...]:
         else:
             structure.append('paragraph')
     return tuple(structure)
+
+
+def fenced_code_blocks(text: str) -> tuple[str, ...]:
+    return tuple(
+        re.findall(
+            r'^(?:```[^\n]*\n.*?^```\s*$|~~~[^\n]*\n.*?^~~~\s*$)',
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+    )
+
+
+def without_fenced_code(text: str) -> str:
+    return re.sub(
+        r'^(?:```[^\n]*\n.*?^```\s*$|~~~[^\n]*\n.*?^~~~\s*$)',
+        '',
+        text,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+
+
+def inline_code_literals(text: str) -> Counter[str]:
+    literals = re.findall(r'(?<!`)`([^`]+)`(?!`)', without_fenced_code(text))
+    return Counter(literal.replace('\n', ' ') for literal in literals)
+
+
+def markdown_link_targets(text: str) -> Counter[str]:
+    return Counter(re.findall(r'\[[^\]]*\]\(([^)]+)\)', text))
+
+
+def canonical_term_pairs() -> tuple[tuple[str, str], ...]:
+    pairs = []
+    for context_path in sorted((REPO_ROOT / 'contexts').glob('*/CONTEXT.md')):
+        pairs.extend(
+            re.findall(
+                r'^\*\*([^*（]+)（([^）]+)）\*\*:',
+                context_path.read_text(encoding='utf-8'),
+                re.MULTILINE,
+            )
+        )
+    return tuple(pairs)
+
+
+def without_literal_markdown_surfaces(text: str) -> str:
+    prose = without_fenced_code(text)
+    return re.sub(r'(`+[^`]*?`+|\]\([^)]*\))', '', prose, flags=re.DOTALL)
 
 
 class PluginManifestTest(unittest.TestCase):
@@ -158,6 +205,83 @@ class PluginManifestTest(unittest.TestCase):
                     markdown_structure(translation),
                     markdown_structure(source),
                 )
+
+    def test_chinese_documentation_preserves_literal_markdown_surfaces(self):
+        chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
+        for translation_path in sorted(chinese_root.rglob('*.md')):
+            source_path = REPO_ROOT / translation_path.relative_to(chinese_root)
+            source = source_path.read_text(encoding='utf-8')
+            translation = translation_path.read_text(encoding='utf-8')
+            with self.subTest(path=source_path.relative_to(REPO_ROOT).as_posix()):
+                self.assertEqual(fenced_code_blocks(translation), fenced_code_blocks(source))
+                self.assertEqual(inline_code_literals(translation), inline_code_literals(source))
+                self.assertEqual(markdown_link_targets(translation), markdown_link_targets(source))
+
+                if source.startswith('---\n'):
+                    source_frontmatter = source.split('---\n', 2)[1]
+                    translation_frontmatter = translation.split('---\n', 2)[1]
+                    source_name = re.search(r'^name:\s*(.+)$', source_frontmatter, re.MULTILINE)
+                    translation_name = re.search(
+                        r'^name:\s*(.+)$', translation_frontmatter, re.MULTILINE
+                    )
+                    self.assertEqual(
+                        translation_name.group(1) if translation_name else None,
+                        source_name.group(1) if source_name else None,
+                    )
+                    if re.search(r'^description:', source_frontmatter, re.MULTILINE):
+                        self.assertRegex(translation_frontmatter, r'(?m)^description:')
+
+    def test_chinese_documentation_has_no_han_separating_ascii_spaces(self):
+        chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
+        han_space = re.compile(
+            r'[\u3400-\u9fff] +(?=(?:\*{1,2})?[\u3400-\u9fff])'
+            r'|[\u3400-\u9fff] +\*'
+            r'|\* +[\u3400-\u9fff]'
+        )
+        protected = re.compile(r'(`+[^`]*?`+|\]\([^)]*\))')
+
+        for translation_path in sorted(chinese_root.rglob('*.md')):
+            text = without_fenced_code(translation_path.read_text(encoding='utf-8'))
+            prose = protected.sub('X', text)
+            with self.subTest(path=translation_path.relative_to(chinese_root).as_posix()):
+                self.assertIsNone(han_space.search(prose))
+
+    def test_chinese_canonical_terms_match_source_emphasis(self):
+        chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
+        term_pairs = canonical_term_pairs()
+
+        for translation_path in sorted(chinese_root.rglob('*.md')):
+            source_path = REPO_ROOT / translation_path.relative_to(chinese_root)
+            source = without_literal_markdown_surfaces(
+                source_path.read_text(encoding='utf-8')
+            )
+            translation = without_literal_markdown_surfaces(
+                translation_path.read_text(encoding='utf-8')
+            )
+            for english, chinese in term_pairs:
+                source_bold = len(
+                    re.findall(r'\*\*' + re.escape(english) + r'\*\*', source)
+                )
+                translation_bold = len(
+                    re.findall(r'\*\*' + re.escape(chinese) + r'\*\*', translation)
+                )
+                source_italic = len(
+                    re.findall(
+                        r'(?<!\*)\*' + re.escape(english) + r'\*(?!\*)', source
+                    )
+                )
+                translation_italic = len(
+                    re.findall(
+                        r'(?<!\*)\*' + re.escape(chinese) + r'\*(?!\*)',
+                        translation,
+                    )
+                )
+                with self.subTest(
+                    path=translation_path.relative_to(chinese_root).as_posix(),
+                    term=english,
+                ):
+                    self.assertEqual(translation_bold, source_bold)
+                    self.assertEqual(translation_italic, source_italic)
 
     def test_project_catalog_matches_native_plugin_version(self):
         catalog = load_json('setup-assets/catalog/assets.json')

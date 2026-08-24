@@ -82,10 +82,20 @@ surface.
   document under `docs/zh-CN/`.
 - Treat `docs/zh-CN/` as documentation only, never as a runtime source, plugin entry point, setup
   input, or target-installation asset.
-- Keep each Chinese translation one-to-one with its English source: preserve order, Markdown
-  structure, commands, identifiers, code blocks, and behavioral meaning without translation-only
-  additions or omissions. Review fidelity independently; a fidelity failure blocks adoption but
-  does not invalidate unchanged canonical evidence.
+- Keep each Chinese translation in block-level one-to-one correspondence with its English source:
+  preserve corresponding block order and Markdown structure, commands, identifiers, code, code
+  blocks, literal syntax, and every behavioral condition, relationship, exception, emphasis, and
+  outcome without translation-only additions or omissions. Prefer plain, idiomatic,
+  easy-to-understand Simplified Chinese over literal translation. Within a corresponding paragraph
+  or list item, sentence order and punctuation may change only while meaning and logical
+  relationships remain unchanged. In Chinese prose, use each canonical term's Simplified-Chinese
+  name; in non-Chinese prose, use its English canonical name. Style canonical-term references as
+  normal prose without adding Markdown emphasis merely to identify them. If the English source
+  independently emphasizes a reference for contrast or stress, preserve that emphasis level
+  without stacking. Keep bilingual canonical-term definition entries bold.
+  Review semantic fidelity and
+  Chinese readability independently; failure of either blocks adoption but does not invalidate
+  unchanged canonical evidence.
 - Treat `.agents/rules/` as this repository's development-policy source. Keep this repository's
   `.agents/` content limited to local plugin configuration, Rules, and the two declared
   project-private authoring Skills; it is not a generated target-project snapshot.

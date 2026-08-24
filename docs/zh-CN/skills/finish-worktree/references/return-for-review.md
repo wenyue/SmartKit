@@ -1,26 +1,26 @@
 # 返回 Review
 
-把 delivery head 的净结果 materialize 到 target working tree，不推进其 branch，也不改变其 index。
-scope 为 **Already Delivered** 时，复核 target 仍没有 scope diff，保持其 working tree 和 index 不变，
-保留 source branch 和 worktree 作为 review evidence，报告 proof 和 preserved state，然后停止。
+把交付提交头的净结果 materialize 到目标工作树，不推进其分支，也不改变其索引。
+范围为**已交付**时，复核目标仍没有范围 diff，保持其工作树和索引不变，
+保留源分支和工作树作为审查证据，报告证明和保留的状态，然后停止。
 
-1. 记录 target `HEAD`、index tree、staged changes、unstaged changes 和 untracked paths。在仓库外备份
-   每个 scope path，并在 manifest 中记录 original file types 和 absent paths。
-2. 从 recorded target boundary 与 delivery head tree 之间的完整 diff 推导 accepted result。对没有
-   target-local changes 的 scope paths，先检查 transfer，然后只通过不改变 index 的 mode 更新 working
-   tree。
-3. 对重叠 text paths，在 temporary files 中 three-way merge merge-base content、当前 target working
-   file 和 accepted result。仅 pathname 相同只是 mergeable evidence，不是 conflict。
-4. 只解决 unambiguous、scope-owned、verifiable merges。遇到 delete/modify conflicts、complex renames、
-   binary conflicts、mutually exclusive behavior、ambiguous generated output，或任何无法验证的结果时
-   停止。只有项目提供 deterministic generator 且该 mutation 已单独授权时，才从 source 重新生成
-   generated files。
-5. 只在 target checkout 中运行 known non-mutating checks。没有 adequate checks 时，报告 limitation，
-   不运行 formatter、generator 或 fixer。
-6. 证明记录的 target `HEAD` 和 index tree 未改变、original staged state 已保留、merged files 同时包含
-   compatible local 和 accepted work，且 returned scope changes 为 unstaged 或 untracked。
-7. 保留 source branch、worktree 和 external backup。报告其 locations，使 source 和 recovery data 在
-   用户接受 review result 前仍可独立检查。
+1. 记录目标 `HEAD`、索引树、已暂存改动、未暂存改动和未跟踪路径。在仓库外备份
+   每个范围路径，并在清单中记录 original file types 和 absent 路径。
+2. 从记录的目标边界与交付提交头树之间的完整 diff 推导已确认的结果。对没有
+   目标本地改动的范围路径，先检查转移，然后只通过不改变索引的模式更新工作
+   树。
+3. 对重叠 text 路径，在 temporary files 中 three-way 合并 merge-base content、当前目标工作
+   file 和已确认的结果。仅 pathname 相同只是 mergeable 证据，不是 conflict。
+4. 只解决 unambiguous、范围-owned、verifiable merges。遇到 delete/modify conflicts、complex renames、
+   binary conflicts、mutually exclusive 行为、ambiguous 生成的输出，或任何无法验证的结果时
+   停止。只有项目提供 deterministic generator 且该修改已单独授权时，才从源重新生成
+   生成的 files。
+5. 只在目标检出目录中运行 known non-mutating checks。没有 adequate checks 时，报告 limitation，
+   不运行 formatter、generator 或修复者。
+6. 证明记录的目标 `HEAD` 和索引树未改变、original 已暂存状态已保留、merged files 同时包含
+   compatible local 和已确认的 work，且 returned 范围改动为未暂存或未跟踪。
+7. 保留源分支、工作树和外部 backup。报告其 locations，使源和恢复 data 在
+   用户接受审查结果前仍可独立检查。
 
-完整结果存在前 transfer 失败时，只从 external backup 恢复 touched paths。transfer 后 verification
-失败时，保留 returned result 和全部 recovery data 供 manual review。
+完整结果存在前转移失败时，只从外部 backup 恢复 touched 路径。转移后验证
+失败时，保留 returned 结果和全部恢复 data 供 manual 审查。
