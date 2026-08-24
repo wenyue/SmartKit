@@ -2,10 +2,10 @@
 
 Strength: `Mandatory`
 
-Scope: Generation contract for the target repository's safe command execution, synchronization,
+Scope: Setup Authoring Contract for the target repository's safe command execution, synchronization,
 mutation, complete-change verification, and existing Skill handoffs.
 
-## Generation Frame
+## Setup Contract Frame
 
 Produce one target-owned `.agents/rules/00-project-tools.md` as a project-local Ordinary Mandatory
 Rule. Its persistent policy answers only how an agent executes repository tooling safely, which

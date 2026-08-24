@@ -6,7 +6,7 @@ description: Use when creating or revising a target repository's environment set
 # Worktree Environment Setup
 
 Author a complete target-owned skill that prepares an already-created linked Git worktree and stops
-when the repository is ready for implementation. This generation contract does not perform setup or
+when the repository is ready for implementation. This Setup Authoring Contract does not perform setup or
 own the worktree lifecycle.
 
 ## Evidence
@@ -46,7 +46,7 @@ check.
 5. Read the complete generated directory without relying on the old target skill or its diff, then
    revise it until every instruction and resource has one clear owner and execution meaning.
 
-## Generated Skill Contract
+## Setup Contract Frame
 
 - Discovery metadata must trigger only for preparing an already-created linked worktree in the
   target repository. The body must state the environment result and the point at which setup ends.

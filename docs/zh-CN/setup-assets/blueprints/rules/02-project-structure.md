@@ -2,9 +2,9 @@
 
 强度：`Advisory`
 
-适用范围：为目标仓库生成基于证据的放置建议的生成契约。
+适用范围：为目标仓库生成基于证据的放置建议的 Setup Authoring Contract。
 
-## 生成框架
+## Setup Contract Frame
 
 将 `.agents/rules/02-project-structure.md` 编写为项目本地的普通 Advisory Rule。它只回答在应用目标的
 Mandatory Project Contracts 后，改动应放在哪里，以及如何对合理的架构放置方案进行排序。每项输出都

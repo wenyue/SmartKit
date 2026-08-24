@@ -1,0 +1,6 @@
+interface:
+  display_name: "Write Setup Authoring Contracts"
+  short_description: "Author project Setup Authoring Contracts"
+  default_prompt: "Use $write-setup-authoring-contracts to author or revise a Setup Authoring Contract."
+policy:
+  allow_implicit_invocation: true

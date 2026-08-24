@@ -2,10 +2,10 @@
 
 强度：`Mandatory`
 
-适用范围：生成契约，用于定义目标仓库变更在能力归属、安装、文档、评估、契约演进、分发以及硬性依赖或
+适用范围：Setup Authoring Contract，用于定义目标仓库变更在能力归属、安装、文档、评估、契约演进、分发以及硬性依赖或
 暴露边界方面持续有效所必须满足的条件。
 
-## 生成契约
+## Setup Contract Frame
 
 生成由目标项目负责的 `.agents/rules/01-project-contracts.md`，标题为 `Project Contracts`；它应当是
 项目本地的普通强制性 Rule，并回答：项目变更必须持续满足哪些条件才能保持有效？

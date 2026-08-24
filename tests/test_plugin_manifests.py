@@ -112,7 +112,7 @@ class PluginManifestTest(unittest.TestCase):
 
         self.assertEqual(
             {path.name for path in (REPO_ROOT / '.agents').iterdir()},
-            {'plugins', 'rules'},
+            {'plugins', 'rules', 'skills'},
         )
 
     def test_chinese_documentation_has_one_to_one_english_mirrors(self):
@@ -164,50 +164,9 @@ class PluginManifestTest(unittest.TestCase):
         self.assertEqual(catalog['plugin']['id'], 'smartkit')
         self.assertEqual(catalog['plugin']['version'], version)
 
-    def test_rule_and_skill_authoring_is_one_routed_skill(self):
-        skill_root = REPO_ROOT / 'skills' / 'write-rules-and-skills'
-        self.assertEqual(
-            {
-                path.relative_to(skill_root).as_posix()
-                for path in skill_root.rglob('*')
-                if path.is_file()
-            },
-            {
-                'SKILL.md',
-                'agents/openai.yaml',
-                'references/ordinary-artifact.md',
-                'references/owner-gate.md',
-                'references/generation-contract.md',
-                'references/rule-semantics.md',
-                'references/skill-semantics.md',
-                'references/pruning-agent.md',
-                'references/semantic-review.md',
-                'references/acceptance-runner.md',
-            },
-        )
-
-        skill = (skill_root / 'SKILL.md').read_text(encoding='utf-8')
-        self.assertIn('name: write-rules-and-skills', skill)
-        reference_links = set(
-            re.findall(r'\]\((references/[^)]+\.md)\)', skill)
-        )
-        self.assertEqual(
-            reference_links,
-            {
-                'references/ordinary-artifact.md',
-                'references/owner-gate.md',
-                'references/generation-contract.md',
-                'references/rule-semantics.md',
-                'references/skill-semantics.md',
-                'references/pruning-agent.md',
-                'references/semantic-review.md',
-                'references/acceptance-runner.md',
-            },
-        )
-        for relative_path in reference_links:
-            self.assertTrue((skill_root / relative_path).is_file())
-
+    def test_rule_and_skill_authoring_has_one_public_and_two_private_skills(self):
         custom = load_json('skills/registry.json')['custom']
+        public_root = REPO_ROOT / 'skills' / 'write-rules-and-skills'
         self.assertIn(
             {
                 'id': 'smartkit/write-rules-and-skills',
@@ -215,6 +174,49 @@ class PluginManifestTest(unittest.TestCase):
             },
             custom,
         )
+
+        private_root = REPO_ROOT / '.agents' / 'skills'
+        self.assertEqual(
+            {path.name for path in private_root.iterdir() if path.is_dir()},
+            {
+                'write-setup-authoring-contracts',
+                'write-shared-rules-and-skills',
+            },
+        )
+        public_ids = {item['id'] for item in custom}
+        self.assertNotIn('smartkit/write-setup-authoring-contracts', public_ids)
+        self.assertNotIn('smartkit/write-shared-rules-and-skills', public_ids)
+
+        private_names = (
+            'write-setup-authoring-contracts',
+            'write-shared-rules-and-skills',
+        )
+        authoring_roots = (public_root, *(private_root / name for name in private_names))
+        for skill_root in authoring_roots:
+            with self.subTest(authoring_skill=skill_root.name):
+                skill_text = (skill_root / 'SKILL.md').read_text(encoding='utf-8')
+                self.assertRegex(
+                    skill_text,
+                    rf'(?m)^name:\s*{re.escape(skill_root.name)}\s*$',
+                )
+                for relative_path in re.findall(
+                    r'\]\((references/[^)]+\.md)\)', skill_text
+                ):
+                    self.assertTrue((skill_root / relative_path).is_file())
+
+        for name in private_names:
+            with self.subTest(private_skill=name):
+                private_skill = private_root / name
+                metadata = (private_skill / 'agents' / 'openai.yaml').read_text(
+                    encoding='utf-8'
+                )
+                self.assertRegex(metadata, r'(?m)^interface:\s*$')
+                self.assertRegex(metadata, r'(?m)^\s+display_name:\s+.+$')
+                self.assertRegex(metadata, r'(?m)^\s+short_description:\s+.+$')
+                self.assertRegex(metadata, r'(?m)^\s+default_prompt:\s+.+$')
+                self.assertIn(f'${name}', metadata)
+                self.assertRegex(metadata, r'(?m)^policy:\s*$')
+                self.assertIn('allow_implicit_invocation: true', metadata)
 
     def test_custom_skills_keep_invocation_metadata_aligned(self):
         custom = load_json('skills/registry.json')['custom']

@@ -2,6 +2,9 @@
 
 Status: Accepted
 
+Partially superseded by [ADR 0008](0008-probe-qualified-soft-isolation.md) for authoring entry
+points, Setup Authoring Contract qualification, and probe-qualified soft isolation.
+
 Date: 2026-08-14
 
 ## Context

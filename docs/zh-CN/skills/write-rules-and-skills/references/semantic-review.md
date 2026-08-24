@@ -4,7 +4,7 @@
 reviewer 隔离、finding 分类处理、修正和 handoff。所选生命周期与语义类型 reference 负责适用的
 counterexample 和 Acceptance portfolio。
 
-## 提供有界 packet
+## 提供 Context Packet
 
 向 reviewer 提供：
 
@@ -15,6 +15,7 @@ counterexample 和 Acceptance portfolio。
 - 精确的机器验证结果和未测试表面。
 
 排除 diff、作者推理、怀疑的缺陷、预期修复和预期 verdict。
+不要提供工具或工作区路径。缺少判断所需语义输入时，返回 `CONTEXT_REQUIRED`，不要自行发现上下文。
 
 ## 尝试证伪候选工件
 

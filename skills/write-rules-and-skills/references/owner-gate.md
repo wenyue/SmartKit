@@ -17,8 +17,7 @@ owners, and discoverable environment facts. Classify each independently:
 
 Return one complete verdict: `rule`, `skill`, `split`, `environment-owned`, or `ambiguous`.
 `split` requires at least one independently owned Rule obligation and one independently owned Skill
-obligation. For a Generation Contract, classify the future target obligations and keep target
-runtime policy or procedure outside the contract itself.
+obligation.
 
 ## Compare ownership
 
@@ -30,8 +29,6 @@ owner.
 - When they conflict, explain the evidence, the behavioral and loading effects of each supported
   placement, and the recommended retain, move, or split result. Return `decision-required` and stop
   before candidate writes until the user selects the owner.
-- Apply the same boundary in both directions: Rule-to-Skill and Skill-to-Rule reassignment each
-  require that explicit ownership decision.
 - Return `decision-required` when the verdict is `ambiguous`. Do not use the requested packaging to
   settle semantic ownership.
 

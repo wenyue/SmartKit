@@ -1,174 +1,127 @@
 ---
 name: write-rules-and-skills
-description: Use when creating, rewriting, or materially updating a SmartKit Rule, Agent Skill, or Rule/Skill generation contract, including project-local or shared artifacts, owned resources, and discovery or distribution surfaces.
+description: Author or materially revise one Rule or Agent Skill in an explicitly supplied context; excludes Setup Authoring Contracts and shared-portability qualification.
 ---
 
 # Write Rules and Skills
 
-Author the smallest complete artifact from accepted intent and verified evidence. Apply
-`writing-for-agents` first for information hierarchy, purposeful Markdown, and Skill invocation
-mechanics. This Hybrid Skill owns the shared gates; selected references own ownership, lifecycle,
-and semantic-type decisions.
+Author the smallest complete Rule or Skill from accepted intent and verified evidence. Apply
+`writing-for-agents` for information hierarchy, purposeful Markdown, and Skill mechanics. This
+Hybrid Skill owns ordinary candidate authoring and the common qualification gates; a more-specific
+caller may add scope proof but may not weaken them.
 
-## Establish the obligations
+The active Agent is the controller, not a semantic Author or Reviewer. It may discover authorized
+project facts, select evidence, start fresh Agents, apply returned content unchanged, and run
+deterministic checks. Semantic roles receive only explicit Context Packets.
 
-Before the first candidate write, establish from accepted intent and current evidence:
+## Establish obligations and ownership
 
-- the requested outcome, preserved semantics, approved changes, non-goals, and safety boundaries;
-- the requested and current artifact owners, permitted writes, broader and narrower owners, and
-  affected loading, resource, generation, and distribution surfaces; and
-- the current behavior, applicable project Rules and host mechanics, validation seams, and every
-  environmental fact that can change a policy, action, target, or exit.
+Before authoring, establish:
 
-Record one temporary semantic-ledger row for each independently changeable obligation:
+- the requested outcome, preserved semantics, accepted changes, non-goals, and safety boundaries;
+- the current and requested artifact owners, permitted writes, and affected loading, resource,
+  discovery, generation, and distribution surfaces; and
+- the applicable Rules, current behavior, validation seams, and environmental facts that can change
+  a policy, job, action, target, or exit.
 
-| Obligation | Evidence | Requested or current owner | Disposition |
-| --- | --- | --- | --- |
+Keep one in-context semantic-ledger row for each independently changeable obligation, with its
+evidence, requested or current owner, and `preserve`, `change`, `add`, `move`, or `retire`
+disposition. Keep the ledger, authoring models, provenance, and review evidence out of runtime
+artifacts.
 
-Split rows only when a predicate, exception, owner, action, recovery, or exit can change
-independently. Give every row one `preserve`, `change`, `add`, `move`, or `retire` disposition.
-Keep the ledger, authoring models, provenance, and review evidence out of runtime artifacts.
+Read [`references/owner-gate.md`](references/owner-gate.md) completely and apply it. For an
+explicitly read-only Ownership Review, return its verdict and stop. Otherwise continue only when
+every candidate has one supported Rule or Skill owner.
 
-## Pass the Owner Gate
+## Route and reach readiness
 
-Read [`references/owner-gate.md`](references/owner-gate.md) completely and apply it to the ledger.
-Stop for its exact ownership decision when the supported verdict conflicts with the requested or
-current owner.
+Every candidate is an Ordinary Artifact used directly. Read
+[`references/ordinary-artifact.md`](references/ordinary-artifact.md) completely, then read exactly
+one semantic reference:
 
-For an explicitly read-only Ownership Review, return the gate's verdict and stop. Otherwise continue
-only when every candidate has one supported owner.
-
-## Route the candidate
-
-Classify two independent properties before writing:
-
-1. **Lifecycle** — an Ordinary Artifact is used directly; a Generation Contract instructs another
-   Agent to author a future target.
-2. **Semantic type** — Rule for one persistent policy; Skill for one triggered job.
-
-A Generation Contract is a standalone instruction artifact. Its future target, not the contract's
-file extension or packaging, selects the semantic-type reference.
-
-| Candidate | Read completely |
+| Candidate | Semantic reference |
 | --- | --- |
-| Ordinary Rule | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) and [`references/rule-semantics.md`](references/rule-semantics.md) |
-| Ordinary Skill | [`references/ordinary-artifact.md`](references/ordinary-artifact.md) and [`references/skill-semantics.md`](references/skill-semantics.md) |
-| Rule Generation Contract | [`references/generation-contract.md`](references/generation-contract.md) and [`references/rule-semantics.md`](references/rule-semantics.md) |
-| Skill Generation Contract | [`references/generation-contract.md`](references/generation-contract.md) and [`references/skill-semantics.md`](references/skill-semantics.md) |
+| Rule | [`references/rule-semantics.md`](references/rule-semantics.md) |
+| Skill | [`references/skill-semantics.md`](references/skill-semantics.md) |
 
 When the Owner Gate returns `split`, create the separately owned Rule and Skill candidates selected
-by the user. Routing is complete when every candidate has one lifecycle, one semantic type, one
-owner, and both references loaded.
+by the user. Ask only when supported evidence still permits materially different behavior,
+ownership, writes, authority, side effects, or exits. Otherwise record the uniquely supported fact
+and continue.
 
-## Reach readiness
+Read [`references/soft-isolation.md`](references/soft-isolation.md) completely. The top-level
+controller must obtain one Soft-Isolation Probe `PASS` before starting a Behavior Control, Author,
+Pruner, Reviewer, or Acceptance Runner. A more-specific caller may supply that `PASS` only from the
+same top-level run and fresh-Agent launch mechanism. Never continue after Probe failure.
 
-Before writing, apply any Behavior Control required by the selected lifecycle reference and retain
-its selected task and raw result for review.
+Apply any Behavior Control required by the Ordinary Artifact reference. Readiness passes when the
+selected references can be applied without a material unknown.
 
-Ask only when supported evidence still permits materially different behavior, ownership, write
-targets, authority, side effects, or exits. Otherwise record the uniquely supported fact and
-continue. Keep project facts in their active owners; the reusable Skill discovers them rather than
-caching them.
+## Author one Candidate Revision
 
-Readiness passes when every selected reference can be applied without a material unknown.
+Build a temporary Policy Frame for a Rule or the selected supported Skill Shape for a Skill. Project
+each obligation into its narrowest reliable runtime owner and loading tier. Leave environment-owned
+facts discoverable, disclose conditional material only at its trigger, and use a script only for
+repeated fragile deterministic mechanics. An existing artifact is omission evidence, not the new
+outline.
 
-## Model and project one Candidate Revision
+Start a Soft-isolated, tool-free Author with one Context Packet containing the accepted outcome,
+semantic ledger, selected frame, complete current candidate and owned resources when they exist,
+permitted evidence, applicable authoring guidance, and the complete canonical target map. For
+project-aware authoring, include every required project fact or Rule body explicitly. The Author
+returns either `CONTEXT_REQUIRED` or complete replacement content for every changed target; it does
+not edit files.
 
-Use the semantic-type and lifecycle references to form the candidate's temporary model before
-writing:
+On `CONTEXT_REQUIRED`, stop or build a complete replacement packet and start a new fresh Author.
+Otherwise apply the returned content unchanged to the authorized canonical paths and verify the
+result before continuing. The controller must not make a semantic correction while writing it.
 
-- a Rule uses a Policy Frame;
-- a Skill uses its supported Judgment-led, Procedure-led, or Hybrid shape; and
-- a Generation Contract uses a Generation Frame plus the future target's selected semantic model.
+A Candidate Revision is the complete current content state after that verified write. Read it
+without its predecessor or diff. Continue only when another Agent can use it without inventing a
+condition, fact, action, owner, or exit.
 
-Project every obligation into its narrowest reliable runtime owner and loading tier. Leave
-environment-owned facts discoverable, disclose conditional material only from its trigger, use a
-script only for repeated fragile deterministic mechanics, and keep each meaning in one owner. Use
-an existing artifact as omission evidence, not as the new outline.
+Classify every blocking finding independently:
 
-A **Candidate Revision** is one complete current content state in the work area selected by the
-active project or host. It is not a copied revision tree or mandatory report. Read it without its
-predecessor or diff. Continue only when the lifecycle and semantic-type requirements pass and
-another Agent can use the artifact without inventing a condition, fact, step, owner, or exit.
-
-## Classify blocking findings
-
-Use these classes throughout Pruning, Review, and correction:
-
-- `uniquely-forced` — current evidence determines one in-scope correction without new policy,
+- `uniquely-forced`: current evidence determines one in-scope correction without new policy,
   authority, behavior, scope, or side effects;
-- `decision-required` — current evidence leaves two or more materially different supported
-  outcomes, or the correction requires new intent, evidence, authority, scope, or external action.
+- `decision-required`: evidence leaves materially different supported outcomes or correction needs
+  new intent, evidence, authority, scope, or external action. Name the exact unresolved choice, its
+  decision owner, and evidence for each outcome.
 
-Classify each finding independently. The number of findings does not change their class; apply all
-current `uniquely-forced` corrections together. Every
-`decision-required` finding names the exact unresolved choice, its decision owner, and the evidence
-for each materially different supported outcome. Without those elements, classify the finding as
-`uniquely-forced` or non-blocking rather than asking for confirmation.
+## Prune, validate, review, and accept
 
-## Run the Pruning Gate
+1. Read [`references/pruning-agent.md`](references/pruning-agent.md) completely. Give the candidate
+   to one Soft-isolated, tool-free Pruning Agent that did not author it. Keep that same Agent through
+   pruning corrections. It cannot later review or run Acceptance.
+2. Run the caller environment's required machine checks for every changed owner and affected
+   surface. Machine checks prove structure and execution, not natural-language meaning. Stop on a
+   nonzero required result and report the exact command, final exit, relevant output, unrun gates,
+   and unverified surfaces.
+3. Freeze writes. Read [`references/semantic-review.md`](references/semantic-review.md) and
+   [`references/acceptance-runner.md`](references/acceptance-runner.md) completely. Give one new
+   Soft-isolated, tool-free Reviewer the complete bounded evidence. It returns Semantic Review
+   `PASS` or `FAIL` before Acceptance begins.
+4. For each selected case, use a new Soft-isolated Acceptance Runner. The Reviewer judges its
+   observable result and returns a separate Acceptance `PASS` or `FAIL`.
 
-Before machine validation, read [`references/pruning-agent.md`](references/pruning-agent.md)
-completely and apply it with one fresh Pruning Agent that did not author the candidate.
-
-Apply **Correct until stable** without adding behavior and keep the same Pruning Agent through
-correction. Reconcile every revision with the ledger and require each baseline increase to map to a
-distinct supported obligation.
-
-The Pruning Agent writes no candidate file and cannot later serve as that candidate's Reviewer or
-Acceptance Runner. Stop and report when a fresh Pruning Agent is unavailable.
-
-## Validate and freeze
-
-Run the active project's required checks for every changed owner and affected loading, resource,
-generation, or distribution surface. Machine validation may prove schemas, identifiers,
-registration, resource reachability, generated relationships, filesystem effects, script results,
-state transitions, and process exits. It cannot prove natural-language meaning; keyword checks,
-prose snapshots, complete-heading snapshots, copied expectations, or author-written policy
-interpreters do not satisfy Semantic Review.
-
-If a required machine check fails, stop before semantic gates. Report its exact command, final exit,
-relevant output, unrun gates, and unverified surfaces. Do not call a walkthrough machine PASS.
-
-Record successful commands, final exits, untested surfaces, the Owner Gate verdict, and the selected
-Policy Frame, Skill Shape, or Generation Frame in a bounded Review Packet. Create no persistent
-validation report unless an active owner requires it.
-
-Freeze candidate writes before review.
-
-## Review and accept
-
-Read [`references/semantic-review.md`](references/semantic-review.md) completely and apply it with
-one fresh reviewer that did not author the candidate. For an Ordinary Artifact, also read
-[`references/acceptance-runner.md`](references/acceptance-runner.md) completely before the reviewer
-starts Acceptance.
-
-The reviewer returns a Semantic Review `PASS` or `FAIL` first. Start Acceptance only after that
-gate passes. Apply the selected lifecycle and semantic-type portfolio: Ordinary Artifact
-Acceptance uses an isolated fresh Runner; Generation Contract Acceptance is a static reviewer
-walkthrough with no Runner or target generation. Return a separate Acceptance `PASS` or `FAIL`.
-
-Apply the shared finding classes to every blocking result.
-
-Each candidate gets its own fresh reviewer; independent candidate reviews may run concurrently,
-but they do not share evidence or verdicts. Stop and report an unavailable fresh reviewer.
+Stop when a required fresh Agent is unavailable. A tool-enabled Acceptance case is exceptional and
+must satisfy the matching Probe and packet rules in the Acceptance Runner reference before it runs.
 
 ## Correct until stable
 
-Stop before correction on any valid `decision-required` finding and ask only for its exact missing
-decision. When every finding is `uniquely-forced`, apply all current corrections together without asking for
-confirmation. A content change creates a new Candidate Revision and invalidates every dependent
-machine, Review, and Acceptance result; rerun those gates in their normal order. A corrected
-revision receives whole-candidate Semantic Review and affected Acceptance, using a new isolated
-Runner for each affected Ordinary Artifact case.
+Stop for a valid `decision-required` finding. When all findings are `uniquely-forced`, give all of
+them to the Author together. The Author returns complete revised content; the controller applies it
+unchanged and verifies it. That write creates a new Candidate Revision and invalidates every
+dependent machine, Review, and Acceptance result. Rerun gates in order with the same Pruning Agent,
+a new Reviewer, and a new Runner for each affected case.
 
-Continue until all gates pass. Stop for no progress when the same finding recurs unchanged after
-its correction or a proposed correction would not change the candidate. Report that blocker
-without asking the user to authorize another identical attempt.
+Stop for no progress when the same finding recurs unchanged or a correction would not change the
+candidate. Success requires Pruning, machine validation, Semantic Review, and Acceptance to pass
+for the same Candidate Revision.
 
-Success requires the Pruning Gate, machine validation, Semantic Review, and Acceptance to pass for
-the same Candidate Revision. Report the candidate's lifecycle, semantic type, owner, preserved and
-approved changes, affected surfaces, size comparison, exact commands and exits, pruning, review,
-acceptance, and correction verdicts, and every unresolved or untested surface. Every stop reports
-the blocker, completed evidence, unrun gates, and next owner. Leave publication, installation,
-commit, push, and other external actions to their owners.
+Report the artifact type, owner, preserved and accepted changes, affected surfaces, baseline size
+comparison, exact commands and exits, Probe and gate verdicts, corrections, and unresolved or
+untested surfaces. Keep Context Packets, ledgers, Probe results, and review evidence in Agent context;
+create no workflow report or temporary authoring directory. Leave shared-portability claims, Setup
+Authoring Contract authoring, publication, installation, commit, push, and other external actions to
+their owners.

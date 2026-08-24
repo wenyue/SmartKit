@@ -2,9 +2,9 @@
 
 Strength: `Advisory`
 
-Scope: Generation contract for the target repository's evidence-based placement recommendations.
+Scope: Setup Authoring Contract for the target repository's evidence-based placement recommendations.
 
-## Generation Frame
+## Setup Contract Frame
 
 Author `.agents/rules/02-project-structure.md` as a project-local Ordinary Advisory Rule. It answers
 only where a change should live and how plausible architectural placements rank after the target's

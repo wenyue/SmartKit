@@ -3,17 +3,18 @@
 本 reference 负责 Pruning Agent 的 packet、任务、verdict 和 recheck。父 Skill 负责该关卡的
 运行时机、角色隔离、finding 分类处理、修正及后续出口。
 
-## 提供有界 packet
+## 提供 Context Packet
 
 向 Agent 提供：
 
 - 已接受结果和语义账本；
-- Owner Gate 结论和所选 Policy Frame、Skill Shape 或 Generation Frame；
+- Owner Gate 结论和所选 Policy Frame 或 Skill Shape；
 - 完整候选工件、自有资源以及加载或分发表面；
 - 治理证据和适用 reference；以及
 - 存在前一版本时的基线行数、词数和字节数。
 
 排除前一版本、diff、作者推理、怀疑的缺陷、预期编辑和预期 verdict。
+不要提供工具或工作区路径。缺少判断所需语义输入时，返回 `CONTEXT_REQUIRED`，不要自行发现上下文。
 
 ## 检验保持语义的缩减
 
@@ -23,12 +24,10 @@ owner，或者可由 trigger、input、step 或相邻上下文唯一推出。
 
 还要质疑：
 
-- 与受支持的 Owner Gate 结论冲突、却放在 Rule、Skill、Generation Contract 或运行时资源中的
-  义务；
+- 与受支持的 Owner Gate 结论冲突、却放在 Rule、Skill 或运行时资源中的义务；
 - 没有证据表明流程会影响正确性、安全性、外部协议合规性、协调、恢复或已接受结果，却规定的
   Skill 动作或顺序；
 - 让一个 Procedural Island 把无关判断也变成工作流的 Hybrid Skill；
-- 复制未来目标大纲或规定无依据编写方法的 Generation Contract；以及
 - 急切加载条件性细节，或无法通过显式指针到达一个完整所选 frame 或 path 的主文件。
 
 仅当删除一项指令不会改变任何代表性动作、选择、权限、安全边界以及 completion、stop 或 failure
@@ -42,4 +41,4 @@ Control 支持。
 共享 finding 分类。
 
 每次获授权的修正后，使用修订后的候选工件和先前 finding 再次检查。`FAIL` 指出所有剩余缩减，
-以及已应用的 finding 是否原样再次出现。除非活动 owner 要求，否则不要创建持久 pruning 报告。
+以及已应用的 finding 是否原样再次出现。不要创建持久 pruning 报告。

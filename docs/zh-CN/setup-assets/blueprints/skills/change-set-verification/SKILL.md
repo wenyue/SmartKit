@@ -6,7 +6,7 @@ description: 创建或修订目标仓库的 Skill，以便在交付前规范化�
 # 变更集验证
 
 编写一份完整、由目标项目负责的 Skill，在交付前规范化并验证一个内在一致、已经完成的变更集。
-本生成契约负责定义 verifier；它不会验证当前变更，也不会实现语义修复。
+本 Setup Authoring Contract 负责定义 verifier；它不会验证当前变更，也不会实现语义修复。
 
 ## 证据
 
@@ -23,7 +23,7 @@ description: 创建或修订目标仓库的 Skill，以便在交付前规范化�
 
 每项命令、归属映射和受支持范围都必须有证据。
 
-## Generation Frame
+## Setup Contract Frame
 
 生成工件是 Hybrid Skill。其 Judgment Frame 根据当前仓库证据选择内在一致的变更集、足以证明结果的
 最小检查、扩大范围的条件和有效工具。其有界验证流程只负责会影响变更安全和后续证据可信度的顺序。

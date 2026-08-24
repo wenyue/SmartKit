@@ -65,6 +65,11 @@ surface.
 - Keep shared generation inputs under `setup-assets/` and the setup control plane under
   `skills/setup-project-agents/`. In production, only the recommended-tool Hook and maintenance
   pipeline consumes its private runtime and policies; the setup control plane consumes setup assets.
+- Keep `write-setup-authoring-contracts` and `write-shared-rules-and-skills` project-private under
+  `.agents/skills/`. The first exclusively authors setup blueprint contracts; the second exclusively
+  owns source-context exclusion and portability qualification for shared SmartKit Rule and Skill
+  candidates. Neither enters plugin Skill registries, root plugin manifests, setup catalogs, or
+  target installation.
 
 ## Documentation Contracts
 
@@ -82,8 +87,8 @@ surface.
   additions or omissions. Review fidelity independently; a fidelity failure blocks adoption but
   does not invalidate unchanged canonical evidence.
 - Treat `.agents/rules/` as this repository's development-policy source. Keep this repository's
-  `.agents/` content limited to its local plugin configuration and Rules; it is not a generated
-  target-project snapshot.
+  `.agents/` content limited to local plugin configuration, Rules, and the two declared
+  project-private authoring Skills; it is not a generated target-project snapshot.
 
 ## Evidence and Acceptance
 
@@ -92,13 +97,11 @@ surface.
   Natural-language meaning and wording quality require whole-artifact semantic review and
   representative Acceptance. Prose snapshots, keyword checks, physical line wrapping, complete
   heading inventories, or similarity to an external exemplar are not semantic evidence.
-- Keep authoring-evaluation fixture roots immutable inputs. Generated candidates, mutable project
-  state, Git state, expected prose, verdicts, reports, and sandboxes remain outside them; copy a
-  fixture project only when an executable project-local case requires mutable state.
-- When the SmartKit Rule and Skill Acceptance Standard changes, qualify the candidate against the
-  previously accepted Standard plus the current accepted task specification. Campaign-only
-  canaries, scheduling, evidence, and adoption scope remain in that specification; ADRs remain
-  decision records rather than runtime policy.
+- When the SmartKit Rule and Skill Acceptance Standard changes, first qualify and content-freeze the
+  Proposed Standard Change through a probe-qualified Soft-isolated Review. Then qualify the
+  candidate against the Previous Accepted Standard plus that Accepted Standard Change.
+  Campaign-only canaries, scheduling, evidence, and adoption scope remain in the accepted task
+  source; ADRs remain decision records rather than runtime policy.
 - A material change to either governing source invalidates every prior Semantic Review or
   Representative Acceptance verdict that depended on the changed requirement. Retain structured
   proof only when the change cannot affect what it proves.
@@ -118,7 +121,7 @@ surface.
 
 ## Distribution and Dependency Direction
 
-- Rules may name or invoke Skills. A Skill or Skill generation contract may require the applicable
+- Rules may name or invoke Skills. A Skill or Setup Authoring Contract may require the applicable
   project or repository policy for a governed concern, but it must discover that policy by concern
   rather than name, link to, or assume a specific Rule ID, title, path, or numbering.
   `setup-project-agents` and its owned implementation are the sole exception, limited to

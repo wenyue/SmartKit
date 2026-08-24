@@ -5,7 +5,7 @@ Skill owns gate order, reviewer isolation, finding-class handling, correction, a
 selected lifecycle and semantic-type references own the applicable counterexamples and Acceptance
 portfolio.
 
-## Give the bounded packet
+## Give the Context Packet
 
 Give the reviewer:
 
@@ -16,6 +16,8 @@ Give the reviewer:
 - exact machine-validation results and untested surfaces.
 
 Exclude the diff, author reasoning, suspected defects, intended fixes, and expected verdicts.
+Give the Reviewer no tools or workspace paths. It returns `CONTEXT_REQUIRED` rather than reading or
+inventing missing context.
 
 ## Try to falsify the candidate
 

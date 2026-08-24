@@ -2,9 +2,10 @@
 
 强度：`Mandatory`
 
-适用范围：用于目标仓库安全执行命令、同步、状态修改、完整变更验证以及已有 Skill 交接的生成契约。
+适用范围：用于目标仓库安全执行命令、同步、状态修改、完整变更验证以及已有 Skill 交接的 Setup
+Authoring Contract。
 
-## 生成框架
+## Setup Contract Frame
 
 生成一份由目标负责的 `.agents/rules/00-project-tools.md`，其类型为项目本地的普通 Mandatory
 Rule。它的持续性政策只回答以下问题：Agent 如何安全执行仓库工具，观察到哪些源文件变更时需要

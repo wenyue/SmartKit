@@ -6,7 +6,7 @@ description: 为目标仓库创建或修订环境准备 Skill，供已经创建�
 # Worktree 环境准备
 
 编写一份完整、由目标项目负责的 Skill，用于准备已经创建的关联 Git worktree，并在仓库可以开始
-实现工作时结束。本生成契约不执行环境准备，也不负责 worktree 生命周期。
+实现工作时结束。本 Setup Authoring Contract 不执行环境准备，也不负责 worktree 生命周期。
 
 ## 证据
 
@@ -36,7 +36,7 @@ description: 为目标仓库创建或修订环境准备 Skill，供已经创建�
 5. 不依赖旧版目标 Skill 或 diff，从头阅读完整生成目录。反复调整，直到每条指令和每项资源都只有一个
    明确责任方，也只有一种执行含义。
 
-## 生成 Skill 契约
+## Setup Contract Frame
 
 - 发现元数据只应在准备目标仓库中已经创建的关联 worktree 时触发。正文必须写明环境结果，以及准备
   到哪里结束。

@@ -6,7 +6,7 @@ description: Use when creating or revising a target repository's skill for norma
 # Change-Set Verification
 
 Author a complete target-owned skill that normalizes and verifies one coherent completed change set
-before handoff. This generation contract defines the verifier; it does not verify the current
+before handoff. This Setup Authoring Contract defines the verifier; it does not verify the current
 change set or implement semantic repairs.
 
 ## Evidence
@@ -31,7 +31,7 @@ selectors. Establish:
 
 Require evidence for every command, ownership mapping, and supported scope.
 
-## Generation Frame
+## Setup Contract Frame
 
 The generated artifact is a Hybrid Skill. Its Judgment Frame selects the coherent change set,
 minimum sufficient checks, broadening conditions, and effective tools from current repository

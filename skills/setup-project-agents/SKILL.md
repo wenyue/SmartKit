@@ -64,11 +64,10 @@ nor owns `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`,
    again. Keep the request unchanged after start.
 
 5. Fulfil every `generation_requests` entry under `GENERATED/<target>`, preserving the complete
-   target path. Resolve each request's blueprint from `source_root` and use the matching authoring
-   contract:
-
-   - apply the Rule branch of `write-rules-and-skills` to Rule targets; and
-   - apply the Skill branch of `write-rules-and-skills` to Skill targets.
+   target path. Resolve each request's Setup Authoring Contract from `source_root`, then invoke
+   `$write-rules-and-skills` in the target-repository context for the contract's Rule or Skill
+   target. Treat each resolved contract as immutable setup input; setup does not create or change
+   it.
 
    The request contains exactly five generated targets:
 

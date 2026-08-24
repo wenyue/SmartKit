@@ -1,8 +1,6 @@
 # Rule
 
-A Rule owns one persistent policy. For an Ordinary Artifact, this reference applies to the
-candidate itself. For a Generation Contract, it defines the semantics the guidance must establish
-for the future target.
+A Rule owns one persistent policy. This reference applies to the candidate itself.
 
 ## Establish the Policy Frame
 
@@ -12,10 +10,6 @@ intent, the active Rule schema, and governing evidence. Together these form its 
 Every applicable field needs one supported value; omit a field only when evidence proves that it
 cannot change the policy.
 
-For a Generation Contract, require the guidance to identify the evidence that selects every
-applicable target field and to stop when the evidence still permits materially different policies.
-Do not invent target policy merely to make the contract appear complete.
-
 ## Write one policy
 
 - Lead with the governing policy. Co-locate each predicate with its required outcome and exception.
@@ -24,8 +18,7 @@ Do not invent target policy merely to make the contract appear complete.
 - Use observable predicates and outcomes. For each threshold, overlap, range, exception, and
   exclusion, reject its nearest false positive and false negative without relying on an undefined
   label.
-- Keep ordered execution procedure in a Skill. Use order in Rule-generation guidance only when it
-  changes the authored result.
+- Keep ordered execution procedure in a Skill.
 - Leave discoverable environment facts in their active owner. Keep rationale and decision history
   in their documentation owner unless they change how the policy applies.
 - Use headings for stable policy regions or real applicability branches, lists for peer
@@ -44,8 +37,5 @@ Select only the highest-risk relevant cases:
 - an affected threshold, range, overlap, exception, or owner boundary; and
 - a precedence or conflict combination when another Rule can change the result.
 
-With `ordinary-artifact.md`, apply the common Acceptance Runner protocol at the real policy seam and
-require an observable decision or action; explaining what the Rule says is not application. With
-`generation-contract.md`, the fresh reviewer statically verifies that the guidance obtains the
-required evidence and chooses one action or stop for the same input classes. Do not start a Runner
-or create a target for contract Acceptance.
+Apply the common Acceptance Runner protocol at the real policy seam and require an observable
+decision or action; explaining what the Rule says is not application.

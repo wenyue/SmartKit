@@ -55,10 +55,9 @@ Matt repository context 是独立的项目自有前置条件。本工作流既�
    session，修正 canonical project input，再重新 start。Start 后保持 request 不变。
 
 5. 在 `GENERATED/<target>` 下完成每个 `generation_requests` 条目，并保留完整 target 路径。从
-   `source_root` 解析每项 blueprint，并使用匹配的编写契约：
-
-   - 对 Rule target 应用 `write-rules-and-skills` 的 Rule 分支；
-   - 对 Skill target 应用 `write-rules-and-skills` 的 Skill 分支。
+   `source_root` 解析每项 Setup Authoring Contract，然后在 target 仓库上下文中为契约的 Rule 或
+   Skill target 调用 `$write-rules-and-skills`。把每份已解析契约视为不可变 setup 输入；setup 不会
+   创建或修改它。
 
    Request 恰好包含五个 generated target：
 

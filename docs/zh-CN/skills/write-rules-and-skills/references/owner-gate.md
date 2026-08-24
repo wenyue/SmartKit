@@ -15,8 +15,7 @@ Revision 前运行，也为父 Skill 提供只读的 Ownership Review 出口。
 - `ambiguous`——当前证据仍支持实质不同的 owner。
 
 返回一个完整结论：`rule`、`skill`、`split`、`environment-owned` 或 `ambiguous`。
-`split` 要求至少有一项由 Rule 独立拥有的义务和一项由 Skill 独立拥有的义务。对于生成契约，
-分类未来目标的义务，并把目标运行时政策或流程留在契约之外。
+`split` 要求至少有一项由 Rule 独立拥有的义务和一项由 Skill 独立拥有的义务。
 
 ## 比较所有权
 
@@ -25,7 +24,6 @@ Revision 前运行，也为父 Skill 提供只读的 Ownership Review 出口。
 - 二者一致时，不询问所有权问题并继续。不能仅因为创建或编辑的是 Rule 就要求另行批准。
 - 二者冲突时，说明证据、每种有依据的放置方式对行为和加载的影响，以及建议的保留、移动或拆分
   结果。返回 `decision-required`，并在用户选择 owner 前停止写入候选。
-- 两个方向使用同一边界：Rule 到 Skill 与 Skill 到 Rule 的重新归属都需要这个明确的所有权决定。
 - 结论为 `ambiguous` 时返回 `decision-required`。不要用请求的包装方式来决定语义所有权。
 
 完整结论为 `environment-owned` 时，指出活动 owner 和可发现证据，返回 no-candidate 结果，并停止，

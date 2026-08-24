@@ -1,7 +1,6 @@
 # Skill
 
-Skill 负责一项完整的触发式工作。对于普通工件，本 reference 应用于候选工件本身。对于生成契约，
-它定义指导必须为未来目标确定的语义。
+Skill 负责一项完整的触发式工作。本 reference 应用于候选工件本身。
 
 ## 确立工作与 Skill Shape
 
@@ -22,9 +21,6 @@ handoff。只有证据表明 actions、ordering、recovery、resources 和 comma
 作者偏好的大纲、希望显得完整，或未经验证的历史顺序，都不能证明规定流程合理。当一个建议步骤只
 为改变 Agent 默认行为而存在，且没有观察到的 failure 证明其必要性时，使用生命周期 reference 的
 Behavior Control。
-
-对于生成契约，要求指导识别用于选择每个适用目标字段的证据，并在证据仍允许实质不同的工作、owner、
-resource、command 或 exit 时停止。不要仅为了让契约看起来完整而虚构目标工作流。
 
 ## 确定 invocation metadata
 
@@ -75,6 +71,4 @@ dependency、owner、recovery 或 result、缺少 prioritized exit、出口不�
 - 候选工件影响的 non-completion 路径，例如 missing precondition、stop、failure、recovery、
   handoff 或 coincident condition。
 
-与 `ordinary-artifact.md` 一起使用时，对触发式工作和任务应用通用 Acceptance Runner 协议。与
-`generation-contract.md` 一起使用时，fresh reviewer 静态验证指导能获取所需证据，并为相同输入
-类别选择一个动作或 stop。不要为契约 Acceptance 启动 Runner 或创建目标。
+对触发式工作和任务应用通用 Acceptance Runner 协议。

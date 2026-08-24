@@ -3,18 +3,19 @@
 This reference owns the Pruning Agent's packet, task, verdict, and recheck. The parent Skill
 owns when the gate runs, role isolation, finding-class handling, correction, and later exits.
 
-## Give the bounded packet
+## Give the Context Packet
 
 Give the Agent:
 
 - the accepted outcome and semantic ledger;
-- the Owner Gate verdict and selected Policy Frame, Skill Shape, or Generation Frame;
+- the Owner Gate verdict and selected Policy Frame or Skill Shape;
 - the complete candidate, owned resources, and loading or distribution surfaces;
 - governing evidence and applicable references; and
 - baseline line, word, and byte counts when a predecessor exists.
 
 Exclude the predecessor, diff, author reasoning, suspected defects, intended edits, and expected
-verdict.
+verdict. Give the Agent no tools or workspace paths. It returns `CONTEXT_REQUIRED` rather than
+reading or inventing missing context.
 
 ## Test for semantic-preserving reduction
 
@@ -25,13 +26,11 @@ loaded broader owner, or follow uniquely from the trigger, inputs, steps, or adj
 
 Also challenge:
 
-- an obligation placed in a Rule, Skill, Generation Contract, or runtime resource that conflicts
-  with the supported Owner Gate verdict;
+- an obligation placed in a Rule, Skill, or runtime resource that conflicts with the supported
+  Owner Gate verdict;
 - prescribed Skill actions or ordering without evidence that process affects correctness, safety,
   external protocol compliance, coordination, recovery, or the accepted outcome;
 - a Hybrid Skill that lets one Procedural Island turn unrelated judgment into a workflow;
-- a Generation Contract that copies a future target outline or prescribes unsupported authoring
-  method; and
 - a main file that loads conditional detail eagerly or cannot reach a complete selected frame or
   path through explicit pointers.
 
@@ -47,4 +46,4 @@ proposed reduction, unchanged behavior, preserved obligations, and one shared fi
 
 After each authorized correction, use the revised candidate and prior findings for another check.
 `FAIL` identifies every remaining reduction and whether an applied finding recurred unchanged.
-Create no persistent pruning report unless an active owner requires it.
+Create no persistent pruning report.

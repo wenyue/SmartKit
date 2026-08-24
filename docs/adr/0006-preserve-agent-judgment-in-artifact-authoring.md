@@ -1,5 +1,9 @@
 # Preserve Agent Judgment in Rule and Skill Authoring
 
+Partially superseded by [ADR 0008](0008-probe-qualified-soft-isolation.md) for the three authoring
+entry points and their environment ownership. The judgment and procedural-island decision remains
+accepted.
+
 SmartKit authors each obligation through an Owner Gate, then projects Rules through a Policy Frame,
 Skills through a supported Judgment-led, Procedure-led, or Hybrid shape, and Generation Contracts
 through a Generation Frame. Judgment-led is the default: prescribed process needs evidence that

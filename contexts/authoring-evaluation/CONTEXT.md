@@ -1,7 +1,7 @@
 # Authoring Evaluation
 
 Authoring Evaluation defines how SmartKit classifies, authors, qualifies, reviews, corrects, and
-adopts Rules, Skills, and Generation Contracts.
+adopts Rules, Skills, and Setup Authoring Contracts.
 
 ## Language
 
@@ -10,10 +10,11 @@ A Rule or Skill used directly as policy or as a triggered job rather than as ins
 authoring another Rule or Skill.
 _Avoid_: Runtime artifact, generated target
 
-**Generation Contract（生成契约）**:
-A standalone instruction artifact that guides another Agent in authoring a complete future Rule or
-Skill. The future target determines whether Rule or Skill semantics apply; the contract itself uses
-static walkthrough, while a real target is reviewed later as an Ordinary Artifact.
+**Setup Authoring Contract（Setup 编写契约）**:
+A project-owned input under `setup-assets/blueprints/` that guides `setup-project-agents` in using
+the public authoring Skill to create one complete future project-local Rule or Skill. The contract
+uses one role-fresh static review; the real target is later reviewed as an independent Ordinary
+Artifact.
 _Avoid_: Generated target, generator fixture
 
 **Qualification Campaign（资格认定活动）**:
@@ -22,18 +23,18 @@ to qualify the SmartKit authoring workflow.
 _Avoid_: Separate acceptance standard, full rewrite, canary cycle
 
 **Acceptance Standard（验收标准）**:
-The single quality contract every authored Rule, Skill, or Generation Contract must satisfy through
+The single quality contract every authored Rule, Skill, or Setup Authoring Contract must satisfy through
 evidence-backed authoring, machine validation, fresh semantic review, risk-matched acceptance, and
 explicit handoff.
 _Avoid_: Qualification-only gate, ordinary acceptance
 
 **Acceptance Portfolio（验收组合）**:
-The artifact-specific cases, evidence contexts, executable checks, static walkthroughs, and
-regression defects used to demonstrate that one candidate satisfies the Acceptance Standard.
+The artifact-specific cases, evidence contexts, executable checks, and static walkthroughs used to
+demonstrate that one candidate satisfies the Acceptance Standard.
 _Avoid_: Acceptance level, alternate standard
 
 **Canary Candidate（金丝雀候选项）**:
-One independently evaluated version of a representative Ordinary Artifact or Generation Contract
+One independently evaluated version of a representative Ordinary Artifact or Setup Authoring Contract
 in a Qualification Campaign.
 _Avoid_: Candidate bundle, whole-campaign version
 
@@ -59,8 +60,8 @@ observable predicate-to-outcome mappings, exceptions, precedence, and ownership 
 describing a triggered job procedure.
 _Avoid_: Rule workflow, policy rationale
 
-**Generation Frame（生成框架）**:
-The semantic structure of one Generation Contract, relating its future target and owner, required
+**Setup Contract Frame（Setup 契约框架）**:
+The semantic structure of one Setup Authoring Contract, relating its future target and owner, required
 evidence and obligations, permitted writes, validation, handoff, and material-ambiguity stops while
 leaving unsupported authoring method and order to Agent judgment.
 _Avoid_: Generated target outline, mandatory authoring recipe
@@ -135,42 +136,70 @@ The authoring cycle that applies all current uniquely forced findings, reruns in
 continues while each revision makes progress toward a passing Candidate Revision.
 _Avoid_: User-confirmed retry, fixed correction budget, one-finding patch
 
+**Role-fresh Agent（角色独立 Agent）**:
+An Agent that did not perform the role whose output it now evaluates. Role freshness prevents
+authoring commitments or prior case results from entering a later judgment, but does not prove
+source-project context isolation.
+_Avoid_: New prompt in the same conversation, soft-isolated Agent
+
+**Soft-isolated Agent（软隔离 Agent）**:
+A fresh Agent with no inherited turns that runs only after the current top-level workflow passes a
+Soft-Isolation Probe and receives all semantic input through one explicit Context Packet. It is a
+verified behavioral boundary, not a filesystem or security boundary.
+_Avoid_: Context-clean Agent, ordinary source-project subagent, role-fresh Agent
+
+**Soft-Isolation Probe（软隔离探针）**:
+One disposable, tool-free fresh Agent run before the first Soft-isolated Agent in a top-level
+authoring workflow. It proves that the launch receives its prompt but not parent-turn content,
+project Rule bodies, SmartKit Rule bodies, Harness Rule bodies, or complete Skill bodies; failure
+stops the workflow without fallback.
+_Avoid_: Acceptance canary, per-role probe, Harness exception
+
+**Context Packet（上下文包）**:
+The complete semantic input explicitly supplied to one Soft-isolated Agent, including the candidate
+or original content, accepted intent, selected evidence and dependencies, and any allowed tools or
+file contents. Missing context returns to the controller for a new packet and fresh Agent.
+_Avoid_: Workspace discovery, repository snapshot, persistent packet file
+
+**Ambient Context（环境附带上下文）**:
+Context a Harness exposes outside the Context Packet. Project entry-file content and its Rule or
+Skill pointers, plus Skill catalog metadata, may be observable, but the Agent must not follow those
+pointers; any Rule or complete Skill body in Ambient Context invalidates soft-isolation qualification.
+_Avoid_: Context Packet, accepted dependency
+
 **Fresh Reviewer（独立审查者）**:
-An Agent that did not author the Candidate Revision it evaluates. A generation contract and a real
-target created later default to different Fresh Reviewers, receive separate reviews, and do not
-inherit verdicts.
+A Soft-isolated, Role-fresh Agent that did not author the Candidate Revision it evaluates. A Setup
+Authoring Contract and a real target created later receive separate Reviewers and do not inherit
+verdicts.
 _Avoid_: Author self-review, inherited reviewer
 
+**Accepted Standard Change（已接受标准变更）**:
+A content-frozen statement of explicit Acceptance Standard changes, preserved obligations, and
+non-goals that passed an independent Soft-isolated Review. It combines with the Previous Accepted
+Standard to judge a self-modifying candidate before that candidate can become the latest Standard.
+_Avoid_: Candidate-derived requirement, latest candidate standard
+
 **Acceptance Runner（验收执行者）**:
-An isolated fresh Agent that applies one Ordinary Artifact to one representative task using only
-the candidate's runtime-visible content, the task, and its required context or tools. The Runner
+A Soft-isolated Agent that applies one Ordinary Artifact to one representative task using only its
+Context Packet. It receives tools only when the artifact's observable behavior requires them and
 does not receive the semantic ledger, expected result, diff, author reasoning, review findings, or
-prior case output; the Fresh Reviewer judges its observable result.
+prior case output; the Fresh Reviewer judges its returned result.
 _Avoid_: Acceptance reviewer, prepared-answer agent, paper walkthrough
 
 **Behavior Control（行为对照）**:
-One isolated run before authoring that uses the previously accepted artifact for a rewrite or no
-candidate for a new artifact. Use it only when a proposed instruction's sole supported purpose is
-to change default Agent behavior and no observed failure already establishes that need.
+One Soft-isolated run before authoring that uses the previously accepted artifact for a rewrite or
+no candidate for a new artifact. Use it only when a proposed instruction's sole supported purpose
+is to change default Agent behavior and no observed failure already establishes that need.
 _Avoid_: Mandatory baseline, repeated sampling, generation target
 
 **Candidate Review（候选审查）**:
 One bounded task in which a Fresh Reviewer performs Semantic Review first, then judges the
-candidate's Acceptance Portfolio from isolated Acceptance Runner results or the Generation
-Contract's static walkthrough, and returns a separate verdict for each gate.
+candidate's Acceptance Portfolio from Soft-isolated Acceptance Runner results. A Setup Authoring
+Contract instead receives its project-private static review, and each route returns distinct
+verdicts for its required gates.
 _Avoid_: Review Board, combined verdict
-
-**Regression Corpus（回归语料库）**:
-The maintained set of minimal, previously demonstrated authoring defects replayed in later
-Qualification Campaigns.
-_Avoid_: Exhaustive scenario matrix, ad hoc mutants
 
 **Review Packet（审查材料包）**:
 The bounded evidence shared with the Fresh Reviewer for one candidate, excluding author reasoning,
 suspected defects, intended fixes, and expected verdicts.
 _Avoid_: Repository snapshot, author handoff
-
-**Defect Card（缺陷卡片）**:
-One minimal Regression Corpus case containing a supported input, one injected semantic defect, and
-the review gate it should violate.
-_Avoid_: Full broken candidate, string assertion

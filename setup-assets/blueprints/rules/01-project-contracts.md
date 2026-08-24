@@ -2,11 +2,11 @@
 
 Strength: `Mandatory`
 
-Scope: Generation contract for the persistent conditions that make a target repository change
+Scope: Setup Authoring Contract for the persistent conditions that make a target repository change
 valid across capability ownership, installation, documentation, evaluation, contract evolution,
 distribution, and hard dependency or exposure boundaries.
 
-## Generation Contract
+## Setup Contract Frame
 
 Produce target-owned `.agents/rules/01-project-contracts.md` titled `Project Contracts` as a
 project-local Ordinary Mandatory Rule answering: what persistent conditions must remain true for a

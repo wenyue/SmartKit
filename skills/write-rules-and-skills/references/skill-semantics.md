@@ -1,8 +1,6 @@
 # Skill
 
-A Skill owns one complete triggered job. For an Ordinary Artifact, this reference applies to the
-candidate itself. For a Generation Contract, it defines the semantics the guidance must establish
-for the future target.
+A Skill owns one complete triggered job. This reference applies to the candidate itself.
 
 ## Establish the job and Skill Shape
 
@@ -24,11 +22,6 @@ Select one Skill Shape:
 An author's preferred outline, a desire to appear complete, or an unverified historical sequence
 does not justify prescribed process. When a proposed step exists only to change Agent defaults and
 no observed failure establishes the need, use the lifecycle reference's Behavior Control.
-
-For a Generation Contract, require the guidance to identify the evidence that selects every
-applicable target field and to stop when the evidence still permits materially different jobs,
-owners, resources, commands, or exits. Do not invent target workflow merely to make the contract
-appear complete.
 
 ## Resolve invocation metadata
 
@@ -89,7 +82,4 @@ Select only the highest-risk relevant cases:
 - the non-completion paths affected by the candidate, such as a missing precondition, stop,
   failure, recovery, handoff, or coincident condition.
 
-With `ordinary-artifact.md`, apply the common Acceptance Runner protocol to the triggered job and
-task. With `generation-contract.md`, the fresh reviewer statically verifies that the guidance
-obtains the required evidence and chooses one action or stop for the same input classes. Do not
-start a Runner or create a target for contract Acceptance.
+Apply the common Acceptance Runner protocol to the triggered job and task.
