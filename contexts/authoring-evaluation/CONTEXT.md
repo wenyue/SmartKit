@@ -3,6 +3,10 @@
 Authoring Evaluation defines how SmartKit classifies, authors, qualifies, reviews, corrects, and
 adopts Rules, Skills, and Setup Authoring Contracts.
 
+This glossary is unstable, non-normative conversational guidance. Operative requirements remain in
+the applicable project Rules, Skills, and accepted ADRs; no runtime artifact may depend on this
+file.
+
 ## Language
 
 **Setup Authoring Contract（项目设置编写契约）**:
@@ -10,43 +14,37 @@ A project-owned input under `setup-assets/blueprints/` that guides `setup-projec
 the public authoring Skill to create one complete future project-local Rule or Skill. The contract
 is generic across target projects but legitimately depends on this repository's setup catalog,
 blueprint owner, and representative target evidence, so its simpler Author, machine-validation, and
-static-review correction flow uses the Default Fresh Role Adapter rather than Soft Isolation. The
-real target is later reviewed independently as a Rule or Skill candidate.
+static-review correction flow explicitly selects the Default Fresh Role Adapter rather than using
+risk-matched Executable Acceptance. The real target is later reviewed independently as a Rule or
+Skill candidate.
 _Avoid_: Generated target, generator fixture
 
-**Qualification Campaign（资格验证活动）**:
-One bounded application of the Acceptance Standard across the representative canary classes needed
-to qualify the SmartKit authoring workflow.
-_Avoid_: Separate acceptance standard, full rewrite, canary cycle
-
 **Acceptance Standard（验收标准）**:
-The single quality contract every authored Rule, Skill, or Setup Authoring Contract must satisfy through
-evidence-backed authoring, machine validation, fresh semantic review, risk-matched acceptance, and
-explicit handoff.
+The quality contract for authored Rules and Skills: evidence-backed authoring, applicable machine
+validation, fresh semantic review, conditional Executable Acceptance, and explicit handoff. Setup
+Authoring Contracts instead use their independently owned machine-validation and Static Reviewer
+flow.
 _Avoid_: Qualification-only gate, ordinary acceptance
 
 **Acceptance Portfolio（验收方案集）**:
 The Controller-frozen set of executable cases for material runtime risks not already established
 with supported high confidence. It contains at least one case for each distinct remaining risk,
-always covers the applicable normal path, and adds an error or recovery path only when its behavior
-is materially different. It has no fixed case count. When no such risk exists, the Executable
-Acceptance Gate returns `NOT_REQUIRED`; a Setup Authoring Contract's representative walkthrough
+normally covers an applicable success path when that path remains materially at risk, and adds an
+error or recovery path only when its behavior is materially different. It has no fixed case count.
+When no such risk exists, Executable
+Acceptance returns `NOT_REQUIRED`; a Setup Authoring Contract's representative walkthrough
 belongs to Static Contract Review rather than this portfolio.
 _Avoid_: Acceptance level, alternate standard, static acceptance
 
-**Executable Acceptance Gate（执行验收判定关口）**:
+**Executable Acceptance（执行验收）**:
 The Controller-owned risk decision that requires an Acceptance Runner only when a candidate defines
-sufficiently concrete or complex runtime behavior whose material correctness is not already
-established with supported high confidence by machine validation, static Review, or an unchanged
-previously accepted mechanism. Broad procedural guidance without a concrete tool protocol, and
-simple environment-independent behavior with supported high confidence, do not require
-Representative Acceptance. Skill Shape alone does not determine the verdict.
+sufficiently concrete, complex, or high-risk runtime behavior whose material correctness is not
+already established with supported evidence and high confidence by machine validation, static
+Review, or an unchanged previously accepted mechanism. It is conditional, not a normal requirement
+for every candidate. Broad procedural guidance without a concrete tool protocol, and simple
+environment-independent behavior with supported high confidence, do not require Executable
+Acceptance. Skill Shape alone does not determine the verdict.
 _Avoid_: Every Procedure-led Skill, Author confidence, any ordered list
-
-**Canary Candidate（试点候选项）**:
-One independently evaluated version of a representative Rule, Skill, or Setup Authoring Contract in
-a Qualification Campaign.
-_Avoid_: Candidate bundle, whole-campaign version
 
 **Candidate Version（候选版本）**:
 The complete current content state of one authored candidate. A content change creates a new
@@ -70,17 +68,18 @@ opens only a targeted diff when those inputs are inconsistent or insufficient.
 _Avoid_: Candidate Fingerprint, full replacement content, Author impact verdict
 
 **Candidate Write Lock（候选写锁）**:
-The Controller-enforced single-writer interval around each Author turn. It records the starting
-Candidate Fingerprint, permits no other role or machine check to modify candidate paths, and compares
-the ending fingerprint and changed path set with the Role File Allowlist and Author Change Summary.
-An out-of-allowlist or unattributable change invalidates the result and stops without overwriting,
-reverting, or concealing the conflicting state.
+The Controller-enforced single-writer interval acquired before the first Author and retained through
+workflow finalization. It permits no other role or machine check to modify candidate paths and uses
+Candidate Fingerprints, changed paths, the Role File Allowlist, and Author Change Summaries to audit
+each turn. An out-of-allowlist or unattributable change invalidates the result and stops without
+overwriting, reverting, or concealing the conflicting state.
 _Avoid_: Filesystem lock file, automatic rollback, concurrent reviewer edit
 
 **Owner Gate（归属判定关口）**:
-The pre-authoring decision point that classifies each obligation and its complete artifact as Rule,
-Skill, Split, Environment-owned, or Ambiguous, then compares that verdict with the requested or
-current owner.
+The pre-authoring decision point that first routes any applicable more-specific authoring owner
+before a Run Contract, role, or write. When none applies, it classifies each obligation and its
+complete artifact as Rule, Skill, Split, Environment-owned, or Ambiguous, then compares that verdict
+with the requested or current owner.
 _Avoid_: Approval gate, Rule approval
 
 **Ownership Review（归属审查）**:
@@ -158,76 +157,46 @@ The property that a Skill's main file plus the resources selected by one Executi
 to execute that path to its unique prioritized exit.
 _Avoid_: Whole-Skill self-containment, eager resource loading
 
-**Frozen Canary（已冻结试点候选项）**:
-A Canary Candidate whose own machine validation, semantic review, and representative acceptance
-have passed and whose evidence has not been invalidated.
-_Avoid_: Approved campaign, immutable file
-
-**Adoption Gate（仓库纳入关口）**:
-The all-or-none boundary that permits repository adoption only after every required Canary Candidate
-has passed its own gates.
-_Avoid_: Campaign restart, per-canary writeback
-
-**Correction Loop（修正循环）**:
-The authoring cycle that applies all current uniquely forced findings, reruns invalidated gates, and
-continues while each revision makes progress toward a passing Candidate Version.
-_Avoid_: User-confirmed retry, fixed correction budget, one-finding patch
-
 **No-progress Stop（无进展停止）**:
-The Controller-owned failure exit with no fixed total-round limit. It applies when the same finding
-survives two consecutive Author repairs with no new viable approach; two complete repair
-oscillations cannot satisfy all findings together; correction requires an unauthorized decision;
-accepted requirements conflict; two materially different recoveries cannot clear one execution
-blocker; or required isolation or role capacity cannot qualify. The Controller records the stage
-and case, unresolved finding or blocker, attempted repairs or recoveries, latest Candidate Version,
-valid and invalidated evidence, and the decision or external condition needed before closing the
-Author and Reviewers.
+The Controller-owned exit when correction has no new supported path or needs a missing decision,
+authority, isolation boundary, or role capacity. It identifies the blocker and what would be needed
+to continue rather than treating an ordinary first failure as terminal.
 _Avoid_: Retry budget, first failed revision, lack of immediate PASS
 
 **Correction Cycle Protocol（修正周期协议）**:
-The common single-stage protocol in which the same Reviewer or Reviewer group inspects, sends every
-Review Finding to the persistent Author for a Finding Disposition, and reinspects the complete
-candidate and dispositions after each Author revision until it returns Stage-local PASS. The
-Reviewers remain active while the Controller makes the Revision Impact Decision and, when that
-decision rewinds the Evaluation Sequence, until the sequence returns and they recheck. They finish
-only when the Controller confirms the stage can close or a stop condition applies.
+The common review cycle in which a persistent Reviewer or Reviewer pair reinspects the complete
+candidate and the Author's dispositions after each revision until its scope passes or a stop
+condition applies. Runtime owners define the exact rewind and role-lifecycle behavior.
 _Avoid_: One Reviewer per revision, immediate rewind, Reviewer-authored fix
 
 **Stage-local PASS（阶段内通过）**:
-A provisional stage verdict that its current evidence satisfies that stage's PASS condition. It
-triggers the Controller's Revision Impact Decision after an Author revision but does not itself
-close the stage or its Reviewers.
-_Avoid_: Final acceptance, workflow completion, Reviewer shutdown
+The Acceptance-only result in which the current case's Reviewer finds nothing worth fixing for the
+current Candidate Version after successful attempt finalization. Before sequential replay starts at
+an invalidated earlier Acceptance case, the Controller records the current case PASS at Stage-local
+PASS and closes its Reviewer. Stage-local PASS alone is not Acceptance PASS and does not establish
+that every frozen case still passes.
+_Avoid_: Generic stage verdict, final acceptance, workflow completion
 
 **Evaluation Sequence（评估顺序）**:
-The fixed order Quality Review Cycle, machine validation, Correctness Review Cycle, then
-Representative Acceptance only when required by the Executable Acceptance Gate. A stage not yet
-reached has no evidence to invalidate and is executed normally when the sequence reaches it.
+The ordered evaluation lifecycle owned by the public authoring protocol. A stage not yet reached
+has no evidence; its exact stages, order, and conditional branches remain defined by that owner.
 _Avoid_: Parallel gates, validation matrix, unordered checklist
 
 **Machine Validation Cycle（机器验证周期）**:
-The deterministic Evaluation Sequence stage in which the Controller runs required checks, sends
-each exact failing command, final exit, and relevant output to the persistent Author, and reruns the
-checks after each Author revision until they pass. No Reviewer participates. After Stage-local PASS,
-the Controller makes the Revision Impact Decision; the No-progress Stop applies to two consecutive
-repairs of the same failure with no new viable approach.
+The deterministic stage in which the Controller runs applicable machine checks and routes failures
+to the persistent Author. No Reviewer participates, and passing checks do not establish semantic
+correctness.
 _Avoid_: First-failure stop, Controller-authored fix, semantic review
 
 **Revision Impact Decision（修订影响判定）**:
-The Controller-owned decision after an active stage returns Stage-local PASS following an Author
-revision. It uses the accumulated Author Change Summaries, changed path set, and Candidate
-Fingerprints, inspecting only a targeted diff when those inputs are insufficient, then selects the
-earliest already-passed stage whose evidence is invalidated. The Evaluation Sequence resumes from
-that stage; when no earlier stage is invalidated, the active stage closes and the sequence advances.
-Future stages are not classified as invalidated. The Author cannot waive or select independent
-checks.
+The Controller-owned decision about which prior evidence a Candidate Version change may have
+invalidated. The Author reports changes and uncertainty but cannot waive checks or determine which
+evidence remains valid.
 _Avoid_: Author self-classification, validation matrix, future-stage invalidation
 
 **Quality Review Cycle（质量审查周期）**:
-The Correction Cycle Protocol whose Semantic Economy Reviewer and Information Design Reviewer
-return Stage-local PASS when neither has an unresolved Review Finding that prevents passage after
-considering the Author's Finding Dispositions. A later candidate change after the Controller closes
-this cycle starts a new cycle with new Reviewers.
+The Correction Cycle Protocol for semantic economy and information design. Its Reviewer pair owns
+the Quality Review verdict for its scope.
 _Avoid_: Pruning Gate, correctness review, permanent reviewer session
 
 **Semantic Economy Reviewer（语义精简审查者）**:
@@ -244,11 +213,8 @@ candidate is semantically correct or providing replacement prose.
 _Avoid_: Style reviewer, documentation linter, executability reviewer
 
 **Correctness Review Cycle（正确性审查周期）**:
-The Correction Cycle Protocol whose Semantic Fidelity and Ownership Reviewer and Agent
-Executability and Behavioral Closure Reviewer return Stage-local PASS when neither has an unresolved
-Review Finding that prevents passage after considering the Author's Finding Dispositions. Both
-Reviewers recheck the complete candidate after every revision and remain active until the Controller
-closes the cycle or a stop condition applies.
+The Correction Cycle Protocol for semantic fidelity and ownership and for Agent executability and
+behavior. Its Reviewer pair owns the Correctness Review verdict for its scope.
 _Avoid_: One-reviewer-per-revision, acceptance run, author self-verification
 
 **Semantic Fidelity and Ownership Reviewer（语义保真与归属审查者）**:
@@ -277,26 +243,30 @@ _Avoid_: Required edit, Worth-fixing Finding, unsupported preference
 
 **Scope Transfer Note（职责转交说明）**:
 A non-verdict observation used when a Reviewer sees a plausible issue outside its exclusive scope.
-It names the evidence and intended owning Reviewer but neither creates a Review Finding nor blocks
-the originating Reviewer's Stage-local PASS. The Controller routes it mechanically once; the
-receiving persistent Reviewer independently decides whether its own scope supports a finding. If no
-Reviewer owns a material issue, the workflow stops with an explicit ownership gap instead of passing
-it between roles.
+It names the evidence and intended owner, which is either a Reviewer scope or a Controller-owned
+stage action, but neither creates a Review Finding nor affects the originating Reviewer's verdict.
+The Controller routes it mechanically once. A receiving Reviewer alone decides whether its scope
+supports a semantic finding and owns the resulting verdict. For a Controller-owned stage, the
+Controller only performs or reruns the existing stage action under that stage's evidence contract;
+it does not create a Reviewer or make the semantic decision. Missing authority or a required
+decision stops the workflow.
 _Avoid_: Cross-scope finding, Controller semantic triage, reviewer ping-pong
 
 **Finding Disposition（问题处置）**:
-The persistent Author's `repair` or `decline` decision for one Review Finding. `repair` makes the
-finding Worth-fixing; `decline` gives a concise supported reason. The same Reviewer considers the
-disposition and revised complete candidate and alone decides its stage verdict. The Controller does
-not make the semantic choice. The same unresolved Author-Reviewer disagreement after two complete
-rounds triggers the No-progress Stop or an exact decision-required exit.
+The persistent Author's `repair` or `decline` decision for one Review Finding. A `repair` changes the
+candidate; a `decline` gives a concise supported reason. The same Reviewer considers the disposition
+and current complete candidate and alone decides whether an unresolved finding remains worth fixing,
+prevents PASS, or has been resolved. The Controller does not make either semantic choice. The same
+unresolved Author-Reviewer disagreement after two complete rounds triggers the No-progress Stop or
+an exact decision-required exit.
 _Avoid_: Controller triage, Reviewer-authored correction, hidden rejection
 
 **Worth-fixing Finding（值得修复的问题）**:
-A Review Finding whose Author Finding Disposition is `repair` after considering severity, Repair
-Scope, candidate coherence, and regression risk. Critical and material findings normally justify
-repair whenever correction is authorized; an advisory finding with a Local Repair is presumed worth
-fixing. A supported `decline` remains visible to the same Reviewer for its independent stage verdict.
+A Review Finding that the same Reviewer judges still prevents PASS after considering its evidence,
+severity, the current complete candidate, and the Author's Finding Disposition. The Author owns the
+`repair` or `decline` choice but does not decide worth-fixing status. An advisory finding with a Local
+Repair is presumed worth fixing when the repair preserves meaning. A supported `decline` remains
+visible to the same Reviewer for its independent stage verdict.
 _Avoid_: Reviewer-mandated edit, every suggestion, severity label
 
 **Repair Scope（修复范围）**:
@@ -320,122 +290,88 @@ Agents receive project evidence.
 _Avoid_: Project-local workflow, shared workflow, role launcher
 
 **Context-document Independence（上下文文档独立性）**:
-The candidate property that no terminology or operative trigger, obligation, decision, branch, tool
-use, permission, dependency, validation, handoff, or exit is derived from a project `CONTEXT.md` or
-equivalent domain-context document. Those unstable, non-normative documents may be consulted only to
-interpret or explain language in user communication; they are not authoring or Review evidence.
-Every durable meaning and name must instead come from an independently accepted source. A candidate
-may use the same words only when it establishes their required meaning independently, remains usable
-without the context document, and never instructs a runtime Agent to read it. Shared Rules and
-Skills and Setup Authoring Contracts satisfy the same property through their existing cross-project
-independence requirements.
+The property that a candidate derives no durable terminology or operative meaning from a project
+context document. Such documents are unstable, non-normative conversational aids rather than
+authoring or Review evidence or runtime dependencies.
 _Avoid_: Context glossary as evidence, runtime CONTEXT.md dependency, glossary-driven naming
 
 **Persistent Author（持续作者）**:
-The one role Agent that writes the initial candidate and every later correction through the selected
-Role Launch Adapter. It may discover project evidence only through its Adapter, edits only the Role
-File Allowlist under the Candidate Write Lock, and returns an Author Change Summary,
-CONTEXT_REQUIRED, or ACCESS_REQUIRED. It does not run validation, Review, Acceptance, network
-access, or delegation, and remains available until workflow success or stop.
+The one role Agent that owns the candidate's meaning and writes its initial content and later
+corrections. It remains the same identity throughout the workflow but does not own validation,
+Review, or Acceptance verdicts.
 _Avoid_: Controller editor, per-revision Author, author-verifier
 
 **Role Launch Interface（角色启动接口）**:
-The seam through which the Authoring Protocol qualifies, starts, continues, and finishes role
-Agents while preserving their required independence, lifecycle, capacity, access, and failure
-behavior. One Role Launch Adapter is selected before the first role starts and remains fixed for
-the run.
+The seam through which the Authoring Protocol qualifies and manages role Agents. One Adapter is
+explicitly selected before the Run Contract freezes and preserves the required identity,
+independence, access, audit, and finalization properties for the run. A direct invocation selects
+the Default Fresh Role Adapter. A more-specific caller explicitly selects that public Default when
+no mechanics override is needed or supplies one complete caller-owned Adapter; omission fails
+without fallback.
 _Avoid_: Isolation mode, prompt override, subagent helper
 
 **Role Capacity Gate（角色容量关口）**:
-The pre-Author host qualification whose Rule or Skill branch requires capacity for at least four
-concurrently active Agent roles including the Controller and at least two concurrently running
-Subagent turns. Active capacity is distinct from retained identity capacity: an Acceptance rewind
-can require the Controller, persistent Author, persistent Acceptance Reviewer, and two earlier-stage
-Reviewers to remain resumable as five identities even though they do not all run simultaneously. A
-host that counts idle identities against one limit must therefore support that retained set. The
-Setup Authoring Contract branch requires three retained role identities and no parallel Subagent
-turns. Both branches require resumable idle Agents, prompt-declared and expandable per-role access,
-and enough observable evidence for a Role Boundary Audit after every Subagent callback. The Rule or
-Skill branch also requires creation of a replacement Fresh Acceptance Runner after a prior Runner
-finishes. Failure or uncertainty stops before the Author starts; the Controller must not serialize a
-Reviewer pair, skip auditing, or replace a persistent role to fit a smaller host.
+The pre-authoring qualification that the host can preserve the identities, concurrency, access,
+freshness, and observable audit evidence required by the selected workflow. Uncertain or inadequate
+capacity stops before the Author starts.
 _Avoid_: Codex product limit, best-effort parallelism, total-identity and active-turn conflation
 
 **Role Boundary Audit（角色边界审计）**:
-The Controller check immediately after every Subagent callback and before using its result or
-continuing that Agent. It compares the most recent turn's observed tools, paths, commands, reads,
-writes, network activity, delegation, and output behavior with the selected Adapter, Role File
-Allowlist, allowed tools, and role contract. It uses all host-observed operation records available,
-the required Agent Operation Summary, Candidate Fingerprints, and changed paths. Soft Isolation is a
-behavioral contract, so the absence of a complete host trace alone does not fail the Gate. PASS
-admits the result; an observed violation or irreconcilable conflict among the available evidence
-quarantines the result, invalidates affected Candidate or Soft-Isolation evidence, and stops without
-automatic rollback.
+The Controller's reconciliation of a role's reported and observed operations against its Adapter,
+access, and role contract after every callback and available terminal report. Runner termination
+also requires a Candidate Fingerprint comparison even when no report is available. It is behavioral
+evidence rather than proof of a hard security boundary; a supported violation prevents use of the
+result.
 _Avoid_: Final-workflow audit, hard-sandbox proof, ignored evidence conflict
 
 **Operation Summary（操作摘要）**:
-The concise Subagent report for its most recent turn, listing tools, commands, paths read or changed,
-network activity, delegation, and any attempted operation outside its role contract. The Controller
-cross-checks it against host-observed records, Candidate Fingerprints, and changed paths during the
-Role Boundary Audit.
+The role's report of `read`, `write`, `create`, `delete`, `network`, `delegation`, and `machine
+checks` from its latest callback or available terminal report, using `none` for an empty category.
+It is used with host-observed evidence in the Role Boundary Audit.
 _Avoid_: Audit proof, workflow report, semantic change summary
 
 **Default Fresh Role Adapter（默认独立角色适配器）**:
-The public Role Launch Adapter that starts Agents without inherited parent turns and permits
-role-appropriate read-only discovery of the current project plus Author writes within the Role File
-Allowlist. Reviewers remain read-only. It is selected when no more-specific caller supplies another
-Adapter.
+The public Adapter for fresh, project-aware role Agents. Direct public invocation selects it. A
+more-specific caller may explicitly select it when no mechanics override is needed; omission never
+selects it as an implicit fallback.
 _Avoid_: Project-local mode, Soft Isolation, Project Explorer
 
 **Soft-Isolated Role Adapter（软隔离角色适配器）**:
-The project-private Role Launch Adapter that qualifies Soft Isolation, excludes source-project
-context, supplies declared semantic input, and states each role's Role File Allowlist as an explicit
-prompt contract for shared portability evaluation. The Author may read and write its allowlist;
-Reviewers may only read theirs; an Acceptance Runner receives only its case files and explicitly
-required tools. No Soft-isolated role delegates. The Adapter does not claim that the host makes
-undeclared paths technically inaccessible.
+The project-private Adapter for shared portability evaluation. It supplies declared semantic input
+and uses a prompt-enforced behavioral access boundary that excludes source-project context without
+claiming technical filesystem isolation.
 _Avoid_: Shared mode, public isolation option, prompt override
 
 **Role File Allowlist（角色文件白名单）**:
-The Controller-approved minimum behavioral access contract for candidate canonical files and owned
-resources, with separate `read`, `write`, `create`, and `delete` modes for each path. The Controller
-states it explicitly in the role prompt and audits observable behavior after each callback. Prefer
-exact files. A Skill candidate may expose its own Skill root as one candidate-owned subtree so the
-Author can manage references, scripts, assets, and interface metadata; this never grants its parent
-`skills/` directory. A Rule normally exposes its exact file. Expansion requires ACCESS_REQUIRED,
-owner and portability checks, and renewed qualification of the effective access boundary. It never
-includes the repository root, unrelated source-project content, or undeclared dependencies. `write`
-does not imply `create` or `delete`, and deletion always requires explicit permission.
+The Controller-approved behavioral access contract for a role's candidate files and owned
+resources. It distinguishes operation modes and can expand only through the runtime owner's access
+and qualification rules.
 _Avoid_: Workspace permission, broad glob, implicit access
 
 **Role-fresh Agent（角色独立智能体）**:
-An Agent that did not perform the role whose output it now evaluates. Role freshness prevents
-authoring commitments or prior case results from entering a later judgment, but does not prove
-source-project context isolation.
+An Agent that did not perform the role whose output it evaluates. Freshness supports independent
+judgment but does not prove source-project context isolation.
 _Avoid_: New prompt in the same conversation, soft-isolated Agent
 
 **Soft-isolated Agent（软隔离智能体）**:
-A fresh Agent with no inherited turns that runs only after the current top-level workflow passes a
-Soft-Isolation Probe and receives all semantic input through an explicit initial Context Packet and
-any Context Supplements or declared files in its Role File Allowlist. A Soft-isolated Author edits
-the allowed candidate files directly and returns a concise change summary. Soft isolation is a
-verified behavioral boundary, not an adversarial security boundary.
+A fresh Agent supplied only declared semantic input and behavioral access under the Soft-Isolated
+Role Adapter. Soft isolation is a verified behavioral boundary, not an adversarial security boundary.
 _Avoid_: Context-clean Agent, ordinary source-project subagent, role-fresh Agent
 
-**Soft-Isolation Probe（软隔离探针）**:
-One disposable fresh Agent run with the same effective launch and file-access policy before the
-first Soft-isolated Agent in a top-level authoring workflow and after each Role File Allowlist
-expansion. It checks that the launch receives no inherited parent turns, receives its declared
-prompt and files, and follows the behavioral access contract in the observable probe task. It does
-not claim that undeclared filesystem paths are technically inaccessible. An observed violation or
-contradictory evidence stops the workflow without fallback.
-_Avoid_: Acceptance canary, per-role probe, Harness exception
+**Role Launch Probe（角色启动探针）**:
+The selected Adapter's one post-freeze qualification gate, resolved before any semantic role starts:
+run its disposable Probe once when required, otherwise record `NOT_REQUIRED`. The Probe checks the
+Adapter-specific launch and access properties declared in the frozen contract. An eligible Role File
+Allowlist expansion preserves that result and does not rerun the Probe; a material or out-of-envelope
+change requires a new run. An observed violation or contradictory evidence stops without Adapter
+substitution or fallback.
+_Avoid_: Acceptance canary, per-role probe, allowlist-expansion reprobe
 
 **Portability Qualification（可迁移性验证）**:
 The shared workflow's composite result rather than a separate Reviewer or correction cycle. PASS
-requires the current Soft-Isolation Probe, declared dependency closure, both Correctness Reviewers'
-shared-scope checks across representative target contexts, and Representative Acceptance when the
-Executable Acceptance Gate requires it, all for the same Candidate Version.
+requires the selected Adapter's post-freeze Role Launch Probe result, declared dependency closure,
+both Correctness Reviewers' shared-scope checks across representative target contexts, and
+Acceptance when Executable Acceptance requires it, all for the same Candidate Version.
 _Avoid_: Fifth Reviewer, portability review stage, source-project simulation
 
 **Context Packet（上下文包）**:
@@ -466,10 +402,10 @@ _Avoid_: Project Explorer request, automatic role restart, speculative completio
 A non-verdict role response that names each additional exact file or narrowly owned directory,
 requested `read`, `write`, `create`, or `delete` mode, and why the role cannot continue without it.
 The Controller grants only authorized candidate or owned-resource access that preserves the selected
-Adapter's boundary, then renews required qualification and continues the same Agent. A request for
-undeclared source-project context is answered through an eligible Context Supplement or stops; it
-is not added to a shared Role File Allowlist. If the host cannot expand access while preserving the
-persistent Agent, the Role Capacity Gate fails.
+Adapter's boundary, then continues the same Agent without rerunning the completed Role Launch Probe.
+A request for undeclared source-project context is answered through an eligible Context Supplement
+or stops; it is not added to a shared Role File Allowlist. If the host cannot expand access while
+preserving the persistent Agent, the Role Capacity Gate fails.
 _Avoid_: Repository access, implicit permission expansion, context request
 
 **Ambient Context（宿主附带上下文）**:
@@ -488,45 +424,55 @@ _Avoid_: Author self-review, inherited reviewer
 **Acceptance Runner（验收执行者）**:
 A Role-fresh Agent started through the selected Role Launch Adapter that applies one candidate to
 one representative task. It receives tools only when the artifact's observable behavior requires
-them and does not receive the semantic ledger, expected result, diff, author reasoning, review
-findings, or prior case output. It reports observable operations, output, and side effects without
-judging whether they pass.
+them and receives the frozen observable pass criteria needed for that case, but no Reviewer verdict
+or intended interpretation beyond those criteria. It does not receive the semantic ledger, diff,
+author reasoning, review findings, or prior case output. Each attempt uses a fresh Runner. It
+reports observable operations, output, and side effects without judging whether they pass; the
+Controller must end it and establish quiescence before cleanup or Reviewer activity.
 _Avoid_: Acceptance reviewer, prepared-answer agent, paper walkthrough
 
 **Acceptance Reviewer（验收审查者）**:
-A Role-fresh Agent that compares an Acceptance Runner's reported observations with the frozen case
-and pass conditions, then returns PASS or supported findings without executing the candidate or
-modifying it. A failed observation is classified with evidence as `candidate-defect`,
-`fixture-or-environment-defect`, or `ambiguous`; the Controller only routes that classification.
+A Role-fresh Agent started only after the case's first Runner attempt finalizes successfully. It
+compares captured execution and finalization evidence with the frozen case and pass conditions,
+then returns PASS or supported Candidate findings without executing or modifying the candidate.
+When no Candidate finding is supported, a failing or inconclusive observation has exactly two
+special classifications: `fixture/environment defect` or `ambiguous`; the Controller only performs
+the bounded orchestration in that Reviewer-owned payload.
 _Avoid_: Acceptance Runner, Author, self-judging executor
 
 **Acceptance Correction Cycle（验收修正周期）**:
-The Correction Cycle Protocol in which an Acceptance Reviewer returns Stage-local PASS when its
-frozen case and pass conditions are satisfied. Each execution attempt uses a new Acceptance Runner.
-The same Reviewer remains active across Author revisions, Revision Impact Decisions, rewinds, and
-reruns until the Controller closes the case or a stop condition applies. The Controller freezes the
-complete Acceptance Portfolio first, then runs its cases sequentially from highest to lowest risk.
-A Candidate Version change invalidates only the previously passed cases selected by the Revision
-Impact Decision; each invalidated case starts a new cycle with a new Reviewer. A fixture or
-environment defect leaves the Candidate Version unchanged and reruns only each affected case after
-the defect is corrected without changing the frozen pass conditions. An ambiguous failure receives
-one targeted observation attempt from a new Runner while the same Reviewer persists; failure to
-classify it then stops without modifying the candidate or weakening the case.
+The Correction Cycle Protocol in which the Controller runs and successfully finalizes a case's first
+fresh-Runner attempt before starting its Acceptance Reviewer. Started-attempt finalization captures
+evidence, audits, establishes Runner quiescence, and then cleans up. Its terminal priority is
+`ATTEMPT_INVALID`, `RUNNER_NOT_QUIESCENT`, then `CLEANUP_FAILED`; missing permission, isolation, or
+authority before a Runner starts is `EXECUTION_UNAVAILABLE`. A terminal result starts or resumes no
+Reviewer. The same Reviewer persists through later successfully finalized attempts, Author
+correction, fixture or environment recovery, ambiguity observation, and case PASS.
+
+The Controller freezes the Acceptance Portfolio first, runs cases sequentially from highest to
+lowest risk, and keeps only one current case Reviewer. If an earlier passed Acceptance case is
+invalidated, it records the current case PASS at Stage-local PASS and closes that Reviewer before
+replay restarts at the earliest invalidated case. That evidence remains valid on the same Candidate
+Version; a later affecting Author change invalidates and reruns it normally. Replay preserves other
+unaffected case evidence and runs a fresh first attempt before each fresh Reviewer. A fixture or
+environment defect leaves the Candidate Version unchanged and retries with a fresh Runner after its
+bounded correction. An ambiguous result receives one targeted fresh-Runner observation under full
+attempt finalization while the same Reviewer persists.
 _Avoid_: One-shot acceptance, Runner self-repair, bypassed evaluation sequence
 
 **Static Contract Review Cycle（静态契约审查周期）**:
 The Setup Authoring Contract's simplified Correction Cycle Protocol with one persistent Static
 Reviewer. After machine validation, the Reviewer jointly checks judgment-only form, minimality,
 semantic completeness, and one representative walkthrough. Review Findings return to the persistent
-Author until Stage-local PASS; the Controller then applies the normal Revision Impact Decision so an
-invalidated machine check reruns before final closure. Quality and Correctness Reviewer pairs and
-Acceptance Runners do not participate.
+Author until Static Reviewer PASS. After every Author edit, the Controller applies machine-result
+invalidation and reruns every affected machine check before the same Static Reviewer rechecks the
+Candidate Version. Quality and Correctness Reviewer pairs and Acceptance Runners do not participate.
 _Avoid_: Rule or Skill Evaluation Sequence, generated target test, procedural contract review
 
 **Handoff Report（交接报告）**:
 The Controller's concise final account of candidate paths, semantic type and owner, final Candidate
-Fingerprint, machine commands and exits, every applicable review-stage verdict, Representative
-Acceptance cases or its NOT_REQUIRED result when that branch exists, Role Boundary Audit status,
+Fingerprint, machine commands and exits, every applicable review-stage verdict, Acceptance case
+verdicts or `NOT_REQUIRED` when that branch exists, Role Boundary Audit status,
 untested or unresolved surfaces, and any rewind, Context Supplement, or Role File Allowlist
 expansion. It excludes complete Context Packets, finding history, Agent prompts, complete diffs,
 and the internal semantic ledger.

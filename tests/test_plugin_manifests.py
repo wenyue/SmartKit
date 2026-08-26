@@ -40,6 +40,7 @@ MATT_PROMOTED = {
 EXPLICIT_MODEL_INVOKED_CUSTOM_SKILLS = {
     'implement-tickets',
     'setup-project-agents',
+    'write-rules-and-skills',
 }
 
 
@@ -100,24 +101,6 @@ def inline_code_literals(text: str) -> Counter[str]:
 
 def markdown_link_targets(text: str) -> Counter[str]:
     return Counter(re.findall(r'\[[^\]]*\]\(([^)]+)\)', text))
-
-
-def canonical_term_pairs() -> tuple[tuple[str, str], ...]:
-    pairs = []
-    for context_path in sorted((REPO_ROOT / 'contexts').glob('*/CONTEXT.md')):
-        pairs.extend(
-            re.findall(
-                r'^\*\*([^*（]+)（([^）]+)）\*\*:',
-                context_path.read_text(encoding='utf-8'),
-                re.MULTILINE,
-            )
-        )
-    return tuple(pairs)
-
-
-def without_literal_markdown_surfaces(text: str) -> str:
-    prose = without_fenced_code(text)
-    return re.sub(r'(`+[^`]*?`+|\]\([^)]*\))', '', prose, flags=re.DOTALL)
 
 
 class PluginManifestTest(unittest.TestCase):
@@ -246,50 +229,13 @@ class PluginManifestTest(unittest.TestCase):
             with self.subTest(path=translation_path.relative_to(chinese_root).as_posix()):
                 self.assertIsNone(han_space.search(prose))
 
-    def test_chinese_canonical_terms_match_source_emphasis(self):
-        chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
-        term_pairs = canonical_term_pairs()
-
-        for translation_path in sorted(chinese_root.rglob('*.md')):
-            source_path = REPO_ROOT / translation_path.relative_to(chinese_root)
-            source = without_literal_markdown_surfaces(
-                source_path.read_text(encoding='utf-8')
-            )
-            translation = without_literal_markdown_surfaces(
-                translation_path.read_text(encoding='utf-8')
-            )
-            for english, chinese in term_pairs:
-                source_bold = len(
-                    re.findall(r'\*\*' + re.escape(english) + r'\*\*', source)
-                )
-                translation_bold = len(
-                    re.findall(r'\*\*' + re.escape(chinese) + r'\*\*', translation)
-                )
-                source_italic = len(
-                    re.findall(
-                        r'(?<!\*)\*' + re.escape(english) + r'\*(?!\*)', source
-                    )
-                )
-                translation_italic = len(
-                    re.findall(
-                        r'(?<!\*)\*' + re.escape(chinese) + r'\*(?!\*)',
-                        translation,
-                    )
-                )
-                with self.subTest(
-                    path=translation_path.relative_to(chinese_root).as_posix(),
-                    term=english,
-                ):
-                    self.assertEqual(translation_bold, source_bold)
-                    self.assertEqual(translation_italic, source_italic)
-
     def test_project_catalog_matches_native_plugin_version(self):
         catalog = load_json('setup-assets/catalog/assets.json')
         version = (REPO_ROOT / 'VERSION').read_text(encoding='utf-8').strip()
         self.assertEqual(catalog['plugin']['id'], 'smartkit')
         self.assertEqual(catalog['plugin']['version'], version)
 
-    def test_rule_and_skill_authoring_has_one_public_and_two_private_skills(self):
+    def test_rule_and_skill_authoring_has_one_public_and_three_private_skills(self):
         custom = load_json('skills/registry.json')['custom']
         public_root = REPO_ROOT / 'skills' / 'write-rules-and-skills'
         self.assertIn(
@@ -304,6 +250,7 @@ class PluginManifestTest(unittest.TestCase):
         self.assertEqual(
             {path.name for path in private_root.iterdir() if path.is_dir()},
             {
+                'translate-agent-artifacts',
                 'write-setup-authoring-contracts',
                 'write-shared-rules-and-skills',
             },
@@ -311,12 +258,36 @@ class PluginManifestTest(unittest.TestCase):
         public_ids = {item['id'] for item in custom}
         self.assertNotIn('smartkit/write-setup-authoring-contracts', public_ids)
         self.assertNotIn('smartkit/write-shared-rules-and-skills', public_ids)
+        self.assertNotIn('smartkit/translate-agent-artifacts', public_ids)
 
         private_names = (
+            'translate-agent-artifacts',
             'write-setup-authoring-contracts',
             'write-shared-rules-and-skills',
         )
         authoring_roots = (public_root, *(private_root / name for name in private_names))
+        expected_references = {
+            'write-rules-and-skills': {
+                'acceptance.md',
+                'author.md',
+                'correction-cycle.md',
+                'correctness-review.md',
+                'machine-validation.md',
+                'owner-gate.md',
+                'quality-review.md',
+                'role-launch.md',
+                'rule-semantics.md',
+                'skill-semantics.md',
+            },
+            'write-shared-rules-and-skills': {
+                'portability.md',
+                'soft-isolated-role-adapter.md',
+            },
+            'write-setup-authoring-contracts': {
+                'setup-authoring-contract.md',
+            },
+            'translate-agent-artifacts': set(),
+        }
         for skill_root in authoring_roots:
             with self.subTest(authoring_skill=skill_root.name):
                 skill_text = (skill_root / 'SKILL.md').read_text(encoding='utf-8')
@@ -328,6 +299,13 @@ class PluginManifestTest(unittest.TestCase):
                     r'\]\((references/[^)]+\.md)\)', skill_text
                 ):
                     self.assertTrue((skill_root / relative_path).is_file())
+                self.assertEqual(
+                    {
+                        path.name
+                        for path in (skill_root / 'references').glob('*.md')
+                    },
+                    expected_references[skill_root.name],
+                )
 
         for name in private_names:
             with self.subTest(private_skill=name):

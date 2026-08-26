@@ -56,21 +56,14 @@ Matt 仓库上下文是独立的项目自有前置条件。本工作流既不生
 
 5. 在 `GENERATED/<target>` 下完成每个 `generation_requests` 条目，并保留完整目标路径。从
    `source_root` 解析每项项目设置编写契约，然后在目标仓库上下文中为契约的 Rule 或
-   Skill 目标调用 `$write-rules-and-skills`。把每份已解析契约视为不可变 setup 输入；setup 不会
-   创建或修改它。
-
-   Request 恰好包含五个生成的目标：
-
-   - `.agents/rules/00-project-tools.md`
-   - `.agents/rules/01-project-contracts.md`
-   - `.agents/rules/02-project-structure.md`
-   - `.agents/skills/change-set-verification/SKILL.md`
-   - `.agents/skills/worktree-environment-setup/SKILL.md`
+   Skill 目标调用 `$write-rules-and-skills`。为每次调用显式选择公共 Default Fresh Role Adapter；
+   setup 本身不提供 Adapter 或隔离机制。把每份已解析契约视为不可变 setup 输入；setup 不会创建或
+   修改它。
 
    Matt 上下文永远不会成为 generation 请求。
 
    使用当前仓库证据；除非用户要求重新配置，否则保留完整的项目自有内容。只有 `GENERATED` 恰好
-   包含全部请求目标且没有未声明路径时才继续。
+   包含由 `generation_requests` 声明的全部完整目标路径且没有未声明路径时才继续。
 
 6. 审查 Gate 通过后，恰好完成同一个会话一次：
 

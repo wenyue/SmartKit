@@ -20,8 +20,7 @@ Select one Skill Shape:
   returns control to Agent judgment after its prioritized exit.
 
 An author's preferred outline, a desire to appear complete, or an unverified historical sequence
-does not justify prescribed process. When a proposed step exists only to change Agent defaults and
-no observed failure establishes the need, use the lifecycle reference's Behavior Control.
+does not justify prescribed process.
 
 ## Resolve invocation metadata
 
@@ -35,13 +34,13 @@ aligned:
 - For an existing Skill, preserve its supported invocation choice. Present the recommendation and
   effects, then stop until the user chooses, when evidence warrants changing that choice or the
   current representations conflict. Otherwise continue without surfacing the choice.
-- Encode model invocation by omitting `disable-model-invocation`; omission of
-  `policy.allow_implicit_invocation` remains its valid default. When autonomous routing or another
-  Skill reaching the job is part of its contract, recommend an explicit
-  `policy.allow_implicit_invocation: true` and treat omission as a difference. Encode user-only
-  invocation with `disable-model-invocation: true` and `policy.allow_implicit_invocation: false`.
+- Use the active `writing-for-agents` mechanics for generic invocation-frontmatter encoding.
+  Omission of `policy.allow_implicit_invocation` remains the valid model-invocation default. When
+  autonomous routing or another Skill reaching the job is part of its contract, recommend an
+  explicit `policy.allow_implicit_invocation: true` and treat omission as a difference. A resolved
+  user-only choice requires `policy.allow_implicit_invocation: false`.
 
-Maintain the Skill's `agents/openai.yaml` in the same Candidate Revision. Create it when absent,
+Maintain the Skill's `agents/openai.yaml` in the same Candidate Version. Create it when absent,
 preserve supported interface metadata when updating it, and change invocation policy only through
 the resolved choice above.
 
@@ -71,10 +70,11 @@ the resolved choice above.
 
 ## Review and accept Skill semantics
 
-Semantic Review reconstructs the complete job, selected Skill Shape, Judgment Frame, and applicable
-Execution Paths from the candidate and evidence. Fail an implicit field, unsupported prescribed
-process, invented action, command, dependency, owner, recovery, result, missing prioritized exit,
-unreachable exit, or premature completion.
+Correctness Review reconstructs the complete job, selected Skill Shape, Judgment Frame, and
+applicable Execution Paths from the candidate and governing evidence. Fail an implicit field,
+unsupported prescribed process, invented action, command, dependency, owner, recovery, result,
+unsupported ambient dependency, missing prioritized exit, unreachable exit, or premature
+completion.
 
 Select only the highest-risk relevant cases:
 
@@ -82,4 +82,5 @@ Select only the highest-risk relevant cases:
 - the non-completion paths affected by the candidate, such as a missing precondition, stop,
   failure, recovery, handoff, or coincident condition.
 
-Apply the common Acceptance Runner protocol to the triggered job and task.
+When Executable Acceptance is required, run the triggered job against the frozen representative
+case and observable pass conditions.

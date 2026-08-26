@@ -1,12 +1,16 @@
 # ADR 0008: Use Probe-Qualified Soft Isolation for Rule and Skill Authoring
 
-Status: Accepted
+Status: Superseded by [ADR 0009](0009-separate-authoring-protocol-from-role-launch.md)
+
+Soft isolation remains current only as the private shared-authoring Adapter defined by ADR 0009.
+The universal role policy, tool-free roles, packet-only project evidence, replacement-content
+Author, and per-version Reviewer below are historical.
 
 Date: 2026-08-23
 
 ## Context
 
-The original `write-rules-and-skills` workflow owned ordinary Rule and Skill authoring, setup
+The original `write-rules-and-skills` workflow owned Rule and Skill authoring, setup
 generation contracts, and shared portability qualification. Role freshness prevented an Agent from
 judging its own work but did not establish what project or plugin context a fresh Agent received.
 An independent nested Git clean room could create a stronger filesystem boundary, but its launcher,
@@ -21,70 +25,24 @@ semantic context explicitly.
 
 ## Decision
 
-SmartKit separates three entry points while preserving one Acceptance Standard:
+This ADR introduced prompt-qualified soft isolation as a behavioral boundary rather than a nested
+Git workspace or security sandbox. ADR 0009 narrows that decision to the project-private shared
+authoring Adapter.
 
-- public `write-rules-and-skills` authors and qualifies an Ordinary Rule or Skill;
-- project-private `write-setup-authoring-contracts` owns Setup Authoring Contracts under
-  `setup-assets/blueprints/`; and
-- project-private `write-shared-rules-and-skills` owns source-context exclusion, explicit shared
-  dependencies, and portability qualification for shared SmartKit Rules and Skills.
+The retained boundary uses a fresh no-inherited-turn launcher, explicit role prompts, exact
+allowlists, declared semantic context, persistent identities, and a Controller audit of observable
+operations after every callback. Adapter qualification must establish those properties for the
+current run. Shared roles receive no source-project facts outside the declared dependency closure,
+and they use no network or delegation. Missing semantic context or candidate-owned access is
+requested explicitly without replacing a persistent role.
 
-Before the first Soft-isolated Agent in each top-level authoring workflow, the controller runs one
-tool-free Soft-Isolation Probe through the same fresh, no-inherited-turn launch mechanism. The Probe
-must observe its prompt control while failing to observe parent-turn content, project Rule bodies,
-SmartKit Rule bodies, Harness Rule bodies, or complete Skill bodies. Project entry-file content and
-its Rule or Skill pointers, plus Skill catalog metadata, may remain visible, but the Probe must not
-follow those pointers. An unavailable launcher, an invalid control, forbidden Ambient Context, tool
-use, file reading, or delegation fails the Probe, stops the workflow, and permits no fallback. The
-same protocol runs in every Harness, so an unsupported Harness fails naturally rather than entering
-a Harness-specific degradation branch.
-
-Every Soft-isolated Agent receives all semantic input through one explicit Context Packet. Required
-project or SmartKit context is selected and included by the controller; the Agent never discovers it
-from the workspace. Missing context returns `CONTEXT_REQUIRED` to the controller, which either stops
-or constructs a complete new packet for a new fresh Agent.
-
-All semantic Authors, Behavior Controls, Pruners, Reviewers, and Acceptance Runners are
-Soft-isolated. Ordinary Rule or Skill and Setup Authoring Contract workflows remain project-aware
-only in the sense that their controllers select necessary project evidence and place it in the
-Context Packet. Shared packets instead exclude source-project context except for the complete
-original candidate and its owned resources. The Pruner stays with its correction loop, each
-Candidate Revision receives a new Reviewer, and each Acceptance case receives a new Runner.
-
-Authors, Pruners, and Reviewers receive no tools. A shared Author receives the complete original
-candidate and owned resources in its Context Packet and returns complete replacement content or an
-explicit file map. The controller writes that result unchanged to the canonical paths and verifies
-the resulting content before deterministic machine checks. An Acceptance Runner also receives no
-tools unless the artifact's observable contract requires them; a tool-enabled case first passes a
-Probe using the same effective tool policy. Soft isolation remains a verified behavioral boundary,
-not a filesystem or security boundary.
-
-Candidate Revisions live in their canonical work area. Context Packets, Probe results, semantic
-ledgers, Review Packets, and Acceptance results remain in Agent context rather than persistent
-files. Acceptance observes the Runner's returned result; writing a temporary file adds evidence only
-when filesystem behavior is itself part of the candidate's contract, in which case the candidate's
-own test environment supplies the disposable workspace. The authoring workflow owns no mandatory
-`.tmp` directory.
-
-Actual fresh-Agent Probe and Acceptance runs are the primary behavior evidence. SmartKit keeps no
-dedicated authoring fixture corpus or prose-structure test suite. Repository tests retain only the
-public/private distribution assertion needed to protect installation boundaries; generic repository
-checks continue to cover their existing contracts.
-
-When a candidate changes the public authoring Skill, Reviewer contract, or Acceptance Standard, an
-independent Soft-isolated Reviewer first qualifies a content-frozen Proposed Standard Change. The
-candidate is then judged against the Previous Accepted Standard plus that Accepted Standard Change;
-the candidate cannot weaken its own grader.
+The shared Author edits canonical allowlisted candidate files directly. Reviewers remain read-only,
+and every executable Acceptance attempt uses a fresh case-scoped Runner in disposable isolation.
+Prompt compliance is portability evidence, not a claim that the host provides a hard sandbox or a
+special enforcement hook.
 
 ## Consequences
 
-The design keeps independent semantic judgment and explicit portability evidence while removing the
-nested Git launcher, SmartKit snapshot, Cleanroom Profile, Context Manifest, candidate copyback, and
-mandatory temporary workspace. The Probe establishes only launch-time context behavior; tool access
-would weaken that evidence, so semantic roles are tool-free by default and exceptional tool-enabled
-Acceptance is qualified separately.
-
-This ADR partially supersedes ADR 0002's single shared workflow and ADR 0006's statement that one
-Hybrid Skill owns every authoring lifecycle. Their owner gate, semantic models, pruning, machine
-validation, review, Acceptance, and correction principles remain in force where this ADR does not
-replace their routing or context assumptions.
+Shared authoring retains explicit independence and portability evidence without a copied candidate
+tree or mandatory temporary workspace. The Default Fresh Role Adapter and the complete current
+authoring workflow are defined by ADR 0009.

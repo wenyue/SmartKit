@@ -26,10 +26,10 @@ cannot change the policy.
 
 ## Review and accept Rule semantics
 
-Semantic Review reconstructs every applicable field and condition-to-outcome mapping from the
-candidate and evidence. Fail an implicit field, unsupported inapplicability, invented predicate,
-duplicated owner, unstated override, or case where the same facts produce two outcomes or no
-outcome.
+Correctness Review reconstructs every applicable field and condition-to-outcome mapping from the
+candidate and governing evidence. Fail an implicit field, unsupported inapplicability, invented
+predicate, duplicated owner, unstated override, unsupported ambient dependency, or case where the
+same facts produce two outcomes or no outcome.
 
 Select only the highest-risk relevant cases:
 
@@ -37,5 +37,5 @@ Select only the highest-risk relevant cases:
 - an affected threshold, range, overlap, exception, or owner boundary; and
 - a precedence or conflict combination when another Rule can change the result.
 
-Apply the common Acceptance Runner protocol at the real policy seam and require an observable
-decision or action; explaining what the Rule says is not application.
+When Executable Acceptance is required, apply the Rule at the real policy seam and require an
+observable decision or action; explaining what the Rule says is not application.

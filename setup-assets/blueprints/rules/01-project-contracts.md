@@ -6,75 +6,58 @@ Scope: Setup Authoring Contract for the persistent conditions that make a target
 valid across capability ownership, installation, documentation, evaluation, contract evolution,
 distribution, and hard dependency or exposure boundaries.
 
-## Setup Contract Frame
+## Target meaning
 
-Produce target-owned `.agents/rules/01-project-contracts.md` titled `Project Contracts` as a
-project-local Ordinary Mandatory Rule answering: what persistent conditions must remain true for a
-project change to be valid?
+The future target is one target-owned `.agents/rules/01-project-contracts.md` titled `Project
+Contracts`, a Mandatory Rule used directly by its repository. It states the persistent conditions
+that make a project change valid. The future Author's exclusive write boundary is that target Rule;
+repository evidence remains read-only input.
 
-Derive the target's scope and applicability, observable predicate-to-outcome mappings, exceptions,
-precedence, and ownership boundaries from current repository evidence. Include only supported
-policy clusters and choose one activation cohort that covers the included validity conditions.
-Organize the target around its own evidence rather than copying this contract's headings or order.
+Its scope, applicability, predicate-to-outcome mappings, exceptions, precedence, and ownership
+boundaries come from authoritative current repository evidence. Only supported policy clusters
+belong in the Rule, under one activation cohort that covers them. Supported existing obligations
+remain unless accepted intent and authoritative evidence select their change or retirement.
+Materially different supported activation, applicability, outcome, exception, precedence, or
+preservation policies are ambiguity stops. A behavior-changing obligation that lacks authoritative
+support or depends on an unsupported fact is also a stop, not an evidence-backed omission.
 
-Preserve every supported semantic obligation in an existing target unless accepted intent and
-authoritative current evidence select its change or retirement. Stop before target writes when the
-activation cohort, applicability, required outcome, exception, precedence, or preservation boundary
-still permits materially different policies.
+## Evidence and conditional policy
 
-## Conditional Evidence and Selection
+Supported evidence includes the existing Rule and its discovery entry, narrower Rules, accepted
+specifications, observable implementation and ownership relationships, and behavioral tests. An
+existing statement is preservation evidence rather than an outline. Each included cluster has
+activating facts, an observable outcome, exact exceptions, precedence, and a decision owner. The
+narrowest current authority governs conflicts; absent, conflicting, historical, or machine-local
+facts do not establish repository policy.
 
-Read the existing target Rule, its discovery entry, narrower project Rules, accepted specifications,
-and tests that exercise the claimed contract. Treat an existing statement as evidence to preserve
-or challenge, not as an outline. For each supported cluster, state the activating facts, observable
-outcome, exact exceptions, precedence, and decision owner. Resolve conflicts in favor of the
-narrowest authoritative current owner, reference narrower policy when needed, and preserve its
-precedence instead of duplicating or silently overriding it. Absent, conflicting, historical, or
-machine-local evidence does not establish project policy.
+Evidence may support these policy clusters:
 
-- Trace public APIs, routes, schemas, events, serialization, domain models, persistence and
-  migration behavior, state owners, lifecycle transitions, cancellation, concurrency, and cleanup.
-  Include a condition only when this evidence shows that a consumer, state, compatibility, or
-  cleanup boundary determines whether the change remains valid.
-- Trace each capability from its canonical registry or source through synchronizers, renderers,
-  adapters, manifests, catalogs, and delivery surfaces. When evidence selects one authoritative
-  source and constrains edits or delivery, distinguish source authority from transformation,
-  adapter, and transport responsibility in the required outcome.
-- Inspect target setup state, ownership manifests, deterministic digests, structured-field
-  composition, adoption and conflict handling, and removal planning. When setup claims or mutates
-  target content, define its claim, preservation, conflict, replacement, and retirement outcomes
-  from that ownership evidence.
-- Compare public documentation boundaries, canonical-language sources, translations, runtime
-  loading, and delivery configuration. Include policy only when evidence distinguishes public from
-  contributor-facing material, canonical from derived languages, or documentation from runtime or
-  delivery inputs, and state the required boundary or derivation outcome.
-- Inspect evaluators, fixtures, schemas, behavioral tests, accepted Standards, task specifications,
-  and verdict invalidation behavior. Include evaluation policy when structure and natural-language
-  semantics require different proof or governing evidence determines which prior verdicts remain
-  valid; state the proof boundary and invalidation outcome.
-- Trace retirement across implementation, documentation, tests, validation, persisted state, and
-  callers. Include current-contract policy when removal must remain coherent across those owners,
-  and identify any compatibility or recovery behavior that evidence retains as current correctness.
-- Inspect imports, call paths, loaders, package and plugin manifests, visibility controls, and
-  generated distribution paths. Include one-way distribution and hard dependency or exposure
-  policy when violating a verified direction, visibility boundary, or public/private surface makes
-  the change invalid, and state the required direction or exposure outcome.
+- consumer, state, compatibility, lifecycle, concurrency, cancellation, migration, persistence, or
+  cleanup boundaries observable through APIs, schemas, events, domain models, and implementation;
+- canonical-source authority and the distinct transformation, adapter, transport, and delivery
+  responsibilities observable through registries, synchronizers, renderers, manifests, and catalogs;
+- setup claim, preservation, conflict, replacement, and retirement outcomes observable through
+  ownership manifests, digests, structured fields, and managed state;
+- public versus contributor documentation, canonical versus derived language, and documentation
+  versus runtime or delivery boundaries;
+- distinct structural, executable, and natural-language proof boundaries, plus invalidation of prior
+  verdicts when governing requirements or dependent content change;
+- coherent retirement across implementation, documentation, tests, validation, persisted state,
+  and callers, including compatibility or recovery behavior retained as current correctness; and
+- one-way distribution, hard dependency, visibility, and public/private exposure constraints
+  observable through imports, loaders, call paths, packages, and plugin manifests.
 
-## Boundaries
+## Ownership boundaries
 
-- Keep command discovery, setup mechanics, synchronization, mutation, testing, and verification
-  procedure in their owning tools and Skills. This Rule may constrain their valid outcomes but does
-  not prescribe their execution workflow.
-- Leave file, directory, command, configuration, schema, registry, and inventory facts with the
-  environment when an agent can reliably discover them. Record the persistent relationship or
-  decision boundary instead of caching those facts.
-- Keep advisory placement, responsibility maps, and architectural heuristics in `Project
-  Structure`; put hard dependency, distribution, and exposure conditions in this Rule.
+Command discovery, setup mechanics, synchronization, mutation, testing, and verification procedure
+remain with their owning tools and Skills. Discoverable inventories remain environment-owned. The
+Rule owns only persistent relationships and validity boundaries. Advisory placement and
+architectural heuristics remain with their target-local policy owner; hard dependency, distribution,
+and exposure conditions belong here when supported.
 
-## Validation and Handoff
+## Qualified authoring input
 
-Validate every included mapping against its authoritative evidence, including the nearest included
-and excluded cases, ownership boundaries, Rule conflicts, packaging, discovery, and affected
-project-owned machine surfaces. Hand off the target through the current Ordinary Rule route with a
-report of preserved obligations, approved changes, evidence-backed omissions, and unresolved
-surfaces.
+The qualified input for the target authoring owner maps every policy to authoritative evidence and
+covers the nearest included and excluded cases, owner boundaries, Rule conflicts, packaging,
+discovery, and affected structured or executable surfaces. It contains preserved obligations,
+accepted changes, evidence-backed omissions, unresolved surfaces, and the validation plan.

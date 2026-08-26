@@ -65,11 +65,12 @@ surface.
 - Keep shared generation inputs under `setup-assets/` and the setup control plane under
   `skills/setup-project-agents/`. In production, only the recommended-tool Hook and maintenance
   pipeline consumes its private runtime and policies; the setup control plane consumes setup assets.
-- Keep `write-setup-authoring-contracts` and `write-shared-rules-and-skills` project-private under
-  `.agents/skills/`. The first exclusively authors setup blueprint contracts; the second exclusively
-  owns source-context exclusion and portability qualification for shared SmartKit Rule and Skill
-  candidates. Neither enters plugin Skill registries, root plugin manifests, setup catalogs, or
-  target installation.
+- Keep `write-setup-authoring-contracts`, `write-shared-rules-and-skills`, and
+  `translate-agent-artifacts` project-private under `.agents/skills/`. The first exclusively authors
+  setup blueprint contracts; the second exclusively owns source-context exclusion and portability
+  qualification for shared SmartKit Rule and Skill candidates; the third exclusively updates
+  required Simplified-Chinese documentation mirrors from final English sources. None enters plugin
+  Skill registries, root plugin manifests, setup catalogs, or target installation.
 
 ## Documentation Contracts
 
@@ -77,44 +78,43 @@ surface.
   troubleshooting. Contributor workflows, release and generation mechanics, maintenance,
   architecture, validation internals, and implementation details remain with their project or code
   owners.
-- Treat English first-party Rules and Skills as canonical. Complete canonical authoring, semantic
-  review, and representative Acceptance before changing the corresponding Simplified-Chinese
-  document under `docs/zh-CN/`.
+- Treat English first-party Rules and Skills as the sole canonical semantic sources. The project
+  documentation owner selects which of them require mirrors. Each selected source at `<path>` maps
+  to `docs/zh-CN/<path>`. After `write-rules-and-skills` completes for all affected sources, the
+  hosting Agent invokes `translate-agent-artifacts` once to update the complete affected mirror set.
 - Treat `docs/zh-CN/` as documentation only, never as a runtime source, plugin entry point, setup
   input, or target-installation asset.
-- Keep each Chinese translation in block-level one-to-one correspondence with its English source:
-  preserve corresponding block order and Markdown structure, commands, identifiers, code, code
-  blocks, literal syntax, and every behavioral condition, relationship, exception, emphasis, and
-  outcome without translation-only additions or omissions. Prefer plain, idiomatic,
-  easy-to-understand Simplified Chinese over literal translation. Within a corresponding paragraph
-  or list item, sentence order and punctuation may change only while meaning and logical
-  relationships remain unchanged. In Chinese prose, use each canonical term's Simplified-Chinese
-  name; in non-Chinese prose, use its English canonical name. Style canonical-term references as
-  normal prose without adding Markdown emphasis merely to identify them. If the English source
-  independently emphasizes a reference for contrast or stress, preserve that emphasis level
-  without stacking. Keep bilingual canonical-term definition entries bold.
-  Review semantic fidelity and
-  Chinese readability independently; failure of either blocks adoption but does not invalidate
-  unchanged canonical evidence.
+- Translation preserves the English source's block and Markdown structure, literals, complete
+  meaning, and emphasis while using plain, idiomatic Simplified Chinese. Translation content and
+  readability checks remain normal documentation validation; they do not enter the English
+  authoring workflow or executable Acceptance.
 - Treat `.agents/rules/` as this repository's development-policy source. Keep this repository's
-  `.agents/` content limited to local plugin configuration, Rules, and the two declared
-  project-private authoring Skills; it is not a generated target-project snapshot.
+  `.agents/` content limited to local plugin configuration, Rules, and the three declared
+  project-private Skills; it is not a generated target-project snapshot.
+- Treat `CONTEXT.md` and `CONTEXT-MAP.md` as unstable, non-normative conversational glossaries.
+  They may help interpret or explain language in direct user communication. The sole artifact
+  exception is `translate-agent-artifacts`, which may consult `CONTEXT.md` as a nonnormative wording
+  aid while treating final English as the only semantic source. Rules, Skills, Setup Authoring
+  Contracts, code, tests, schemas, and configuration must not use context documents as evidence,
+  terminology authority, validation or Acceptance input, or runtime dependency. Translation may
+  not use them to add, change, disambiguate, or resolve English meaning. Every durable term requires
+  an independent accepted source.
 
 ## Evidence and Acceptance
 
 - Use machine checks for structured configuration, schemas, identifiers, registration and resource
   relationships, generated outputs, filesystem effects, state transitions, and process exits.
-  Natural-language meaning and wording quality require whole-artifact semantic review and
-  representative Acceptance. Prose snapshots, keyword checks, physical line wrapping, complete
-  heading inventories, or similarity to an external exemplar are not semantic evidence.
-- When the SmartKit Rule and Skill Acceptance Standard changes, first qualify and content-freeze the
-  Proposed Standard Change through a probe-qualified Soft-isolated Review. Then qualify the
-  candidate against the Previous Accepted Standard plus that Accepted Standard Change.
-  Campaign-only canaries, scheduling, evidence, and adoption scope remain in the accepted task
-  source; ADRs remain decision records rather than runtime policy.
-- A material change to either governing source invalidates every prior Semantic Review or
-  Representative Acceptance verdict that depended on the changed requirement. Retain structured
-  proof only when the change cannot affect what it proves.
+  Natural-language meaning and wording quality require whole-artifact Quality and Correctness
+  Review and any required executable Acceptance. Prose snapshots, keyword checks, physical line
+  wrapping, complete heading inventories, or similarity to an external exemplar are not semantic
+  evidence.
+- Give Correctness Reviewers the complete accepted user-decision context and every preserved
+  obligation, including when the candidate changes an authoring or review standard. Use that same
+  evidence basis in that case, and do not let a candidate redefine, narrow, or semantically weaken
+  the requirements used to judge it. ADRs remain decision records rather than runtime policy.
+- A material requirement or candidate change invalidates every earlier Quality, machine,
+  Correctness, or Acceptance result that could depend on it. Return to the earliest invalidated
+  passed stage; retain evidence only when the change cannot affect what it proves.
 
 ## Current Contract
 

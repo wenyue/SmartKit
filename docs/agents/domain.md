@@ -1,51 +1,26 @@
-# Domain Docs
+# Context Documents
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+This page is nonnormative explanatory guidance. The applicable project Rule owns context-document
+use, evidence, and exceptions; accepted ADRs own their recorded decisions.
 
-## Before exploring, read these
+## Conversational role
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+Context documents are unstable, nonnormative conversational glossaries. Their policy-governed role
+is helping an Agent interpret or explain language while communicating directly with a user. A root
+`CONTEXT.md`, entries linked from `CONTEXT-MAP.md`, and files under `contexts/` are examples of this
+material. Their absence simply means that no conversational glossary is available.
 
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
+## Evidence boundary
 
-## File structure
+Under the governing project Rule, context documents are not normative evidence, terminology
+authority, validation or Acceptance input, or a dependency for Rules, Skills, Setup Authoring
+Contracts, code, tests, schemas, or configuration. Durable meaning instead comes from an independent
+accepted source such as a user decision, Issue, Spec, ADR, governing contract, or observable
+implementation evidence.
 
-Single-context repo (most repos):
+## Maintenance and ADR relationship
 
-```
-/
-├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── src/
-```
-
-Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
-
-```
-/
-├── CONTEXT-MAP.md
-├── docs/adr/                          ← system-wide decisions
-└── src/
-    ├── ordering/
-    │   ├── CONTEXT.md
-    │   └── docs/adr/                  ← context-specific decisions
-    └── billing/
-        ├── CONTEXT.md
-        └── docs/adr/
-```
-
-## Use the glossary's vocabulary
-
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
-
-If the concept you need isn't in the glossary yet, that's a signal — either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
-
-## Flag ADR conflicts
-
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
-
-> _Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_
+Maintenance can keep a context document internally coherent without promoting it into a normative
+source. Accepted ADR authority comes from the repository's decision-record contract rather than a
+context-document link. Any conflict is therefore evaluated under the governing project Rule and
+the accepted ADR, not this guide.

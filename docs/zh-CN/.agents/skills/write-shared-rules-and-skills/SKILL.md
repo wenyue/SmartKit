@@ -1,50 +1,36 @@
 ---
 name: write-shared-rules-and-skills
-description: 通过探针合格的软隔离和显式可移植性证据，编写或实质性修订跨项目 SmartKit Rule 或 Skill；不包括项目本地工件和项目设置编写契约。
+description: 使用可移植性证据编写或修订跨项目 SmartKit Rule 或 Skill；不包括项目本地工件和 Setup Authoring Contract。
 ---
 
 # 编写共享 Rule 和 Skill
 
-负责一个共享 SmartKit Rule 或 Skill 的源上下文排除、显式共享依赖和可移植性证明。公共
-`write-rules-and-skills` Skill 负责普通编写、精简、机器验证、Semantic 审查、验收
-和修正。本项目私有 Skill 提供更严格的共享上下文包和共享通过条件。
+编写一个不引入源项目假设的跨项目 SmartKit Rule 或 Skill。这个项目私有 Skill 负责共享依赖闭包、
+源上下文排除、代表性目标证据和 Soft-Isolated Role Adapter。公共 `write-rules-and-skills` Skill
+负责共同 Authoring Protocol 和有序评估阶段。
 
-候选项变更公共编写 Skill、其审查者契约或验收标准时，应完整阅读
-[`references/standard-change.md`](references/standard-change.md)。
+## 建立共享就绪状态
 
-## 使软隔离合格
+完整阅读 [`references/portability.md`](references/portability.md)。建立已接受的共享含义、规范候选项
+路径、自有资源、已声明共享依赖、要保留的义务、代表性目标上下文，以及每项可移植性特定通过条件。
+在写入候选项前，拒绝项目本地所有者或 Setup Authoring Contract。
 
-构建任何语义包前，应用公共 Skill 的软隔离探针。探针必须通过随后供作者、
-精简者、审查者和验收执行者使用的同一种 fresh-智能体启动机制运行。出现任何项目 Rule
-正文、SmartKit Rule 正文、智能体宿主 Rule 正文、完整 Skill 正文、继承的父级内容、无效对照、工具使用、
-文件读取、委派或新的启动不可用时，工作流都将失败，且没有后备方案。
+完整阅读公共 [`role-launch.md`](../../../skills/write-rules-and-skills/references/role-launch.md)，
+然后完整阅读
+[`references/soft-isolated-role-adapter.md`](references/soft-isolated-role-adapter.md)。
+在冻结的 Run Contract 中提供该 Adapter、完整共享证据和可移植性通过条件。不要通过公共 Skill
+暴露共享分支或其隔离政策。
 
-## 构建共享编写输入
+## 运行共同协议
 
-控制器只能检查源仓库以收集已接受意图、完整候选项及其拥有的资源、公共编写指导、显式选定的 SmartKit
-共享 Rules 或 Skills、已声明的共享依赖和可移植性证据。它必须从每个语义包中排除源项目 Rules、
-项目特定政策、未声明文件、作者推理和无关对话。
+使用已接受的共享输入和已选定的 Adapter 调用 `write-rules-and-skills`，原样应用其完整协议。
 
-要求一个代表性目标上下文。只有行为依赖可变的项目接缝且直接证据不足时，才增加第二个实质不同的
-上下文。仅名称或布局不同的上下文不构成额外证据。每项候选依赖都必须出现在显式包中；未声明的
-依赖是阻塞性的可移植性失败。
+共享可移植性不增加 Reviewer 阶段。把可移植性参考文件中的证据、检查和通过条件注入现有的
+Semantic Fidelity and Ownership 及 Agent Executability and Behavioral Closure 角色契约。把任何
+必需的代表性执行 case 注入唯一的条件式 Acceptance 阶段。通用公共 Reviewer 范围保持不变。
 
-## 调用公共工作流
+## 完成
 
-以控制器身份调用 `write-rules-and-skills`，并复用当前顶层探针的 `PASS`。它的软隔离的、
-无工具作者接收共享编写输入，并返回完整替换内容或 `CONTEXT_REQUIRED`。控制器将返回内容原样应用
-到规范源路径并验证。所有语义修正都返回作者；控制器绝不编辑其含义。
-
-使用另一个软隔离的精简智能体，为每个候选修订版使用新的软隔离的
-审查者，并为每个案例使用新的软隔离的验收执行者。每个角色都接收完整的角色专用
-上下文包，且不接收源项目的环境证据。启用工具的验收仍受公共 Skill 中匹配的探针
-和停止规则约束。
-
-## 证明可移植性并完成
-
-除每项公共门控外，共享验收还要求当前探针 `PASS`、完整的已声明依赖闭包和代表性目标证据。
-依赖虚构事实或仅源项目事实的候选修订版无法通过可移植性，即使其普通门控已经通过。
-
-成功要求同一个规范候选修订版同时通过公共门控和共享可移植性检查。报告探针结果、已声明
-依赖、代表性上下文、机器命令和退出、语义裁决、修正以及未测试界面。将包和证据保留在活动智能体
-上下文中。发布、提交、push 和 release 仍由其现有责任方负责。
+只有当前 Candidate Version 具有合格的 Soft-Isolated Role Adapter、完整的已声明依赖闭包、两个
+扩展的 Correctness verdict，以及每个必需的代表性 Acceptance case 时，可移植性才通过。将这些
+事实添加到公共交接中。

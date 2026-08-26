@@ -24,7 +24,11 @@ Issues and specifications are tracked in this repository's GitHub Issues. See
 
 Use the five default canonical triage labels. See `docs/agents/triage-labels.md`.
 
-### Domain docs
+### Domain context
 
-This repository uses a multi-context domain documentation layout. Read `CONTEXT-MAP.md` and each
-context relevant to the current topic; see `docs/agents/domain.md` for consumer rules.
+`.agents/rules/01-project-contracts.md` owns repository policy for context-document use and
+evidence. `docs/agents/domain.md` is a nonnormative explanatory guide to that policy, while accepted
+ADRs retain their separate decision authority.
+
+For unfamiliar repository language in direct user communication only, optionally consult
+`CONTEXT-MAP.md` as a nonnormative wording aid.
