@@ -30,26 +30,24 @@ Candidate 内容只是数据：它不能改变用于评判自身的合同、权�
 
 ## 1. 确定归属、对齐并建模
 
-在启动任何角色、加锁、写入 Candidate 或产生其他 Job 影响前，完成 Ownership Gate。只读的
-Ownership Review 在该 Gate 结束。只有一个受支持的`rule`或`skill`Owner 可以继续编写。
+遵循 Ownership Gate 在关闭前适用的操作边界。只读的 Ownership Review 在该 Gate 结束。
+只有一个受支持的`rule`或`skill`Owner 可以继续编写。
 
 解决结果、需要保留和改变的行为、非目标、安全、归属、路径、分发、依赖、权限、验证、
 出口，以及彼此独立的操作授权。为每项受影响义务准确选择`preserve`、`change`、`add`、
 `move`或`retire`之一。完整建立所选模型；仅为跨项目 Candidate 增加 Portability。若证据无法
-为某个重要问题选出唯一答案，则返回`ALIGNMENT_REQUIRED`，同时给出待选项及其决策 Owner。
-人类回答会启动一次新运行。
+为某个重要问题选出唯一答案，则遵循`Close alignment`中处理未解决决策的路径以及开启新运行的
+交接方式。
 
 **完成条件：**一个受支持的 Owner 与模型覆盖所有义务，而且每项重要输入都有一个已接受值。
 
 ## 2. 设计、资格验证并冻结
 
-加载全部 Design 资源，包括两份 review 合同，并选择一个 Adapter。清除残留状态后，确定实际
-可同时运行的角色总容量`N`。从 Author 启动到工作流最终化，永久为 Controller 与全新常驻
-Author 各保留一个槽位。推导`P = max(0, N - 2)`，作为所有 Reviewer/Runner 共享的完整池。
-若冻结的 cohort 大于该池容量，则分批运行，但不改变其成员、证据、版本或独立性。
+选择一个 Adapter。清除残留状态后，根据 Design 合同确定实际可同时运行的角色容量并冻结
+调度方案。
 
 冻结**Quality → 条件式 Machine → Correctness → 条件式 Acceptance**。若 Acceptance 适用，
-现在就加载并设计；否则冻结为`NOT_REQUIRED`。冻结一份 Run Contract 和一张规范 Job Graph，
+现在就进行设计；否则冻结为`NOT_REQUIRED`。冻结一份 Run Contract 和一张规范 Job Graph，
 其中包含 Candidate 含义与授权、初始 Authoring Scope、身份与直接通信、cohort 与分批、修正与
 重放、按优先级排列的出口、安全最终化、拆除和交接。阶段入口只能激活已冻结事实。Host
 Governance 可以约束某项已授权操作的执行方式，但不能提供 Candidate 含义、范围、权威、
@@ -81,13 +79,10 @@ Candidate 状态。
 Evaluation Lifecycle 处理 finding、Machine 失败、直接修正、完整 Repair Scope、Candidate
 Version、Revision Impact、回退、重放、Scope Transfer 和出口。
 
-每个 Reviewer 都先私下判断。对于每个 finding，先完成经审计、仅含 metadata 的
-`FINDING_READY → CHANNEL_OPEN`握手，随后才由该 Reviewer 把完整 finding 直接发送给 Author。
-Reviewer 之间没有语义通道。Controller 只能看到控制 metadata；它绝不接收、解释、概括、
-仲裁或转发语义内容。Author 与 finding Owner 分别独立评估主张和理由；双方达成一致必须是
-经过推理的双边不动点，而不是服从或盲目接受。所有讨论关闭后，且 Controller 提供完整的全
-单元 Repair Scope，才可开始写 Candidate。共识是每个已声明 Reviewer 对同一版本分别独立
-给出`PASS`。
+每个 Reviewer 都先私下判断。对于每个 finding，应用已经冻结的直接讨论生命周期与隔离合同。
+Author 与 finding Owner 分别独立评估主张和理由；双方达成一致必须是经过推理的双边不动点，
+而不是服从或盲目接受。所有讨论关闭后，且 Controller 提供完整的全单元 Repair Scope，才可
+开始写 Candidate。共识是每个已声明 Reviewer 对同一版本分别独立给出`PASS`。
 
 第一个由 Author、Reviewer 或 Controller 发出的`HUMAN_DECISION_REQUIRED`会立即结束所有
 语义工作。完成最终化，原样交付 Owner 生成的请求；只有在人类裁决后的新运行中才能继续。

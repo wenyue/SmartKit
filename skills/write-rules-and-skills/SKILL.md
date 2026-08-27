@@ -31,31 +31,27 @@ Markdown, and Skill invocation mechanics.
 
 ## 1. Own, align, and model
 
-Complete the Ownership Gate before any role, lock, Candidate write, or other job effect. A
-read-only Ownership Review ends at the gate. Authoring continues only for one supported `rule` or
-`skill` owner.
+Apply the Ownership Gate's pre-close operation boundary. A read-only Ownership Review ends at the
+gate. Authoring continues only for one supported `rule` or `skill` owner.
 
 Resolve the outcome, preserved and changed behavior, non-goals, safety, ownership, paths,
 distribution, dependencies, permissions, validation, exits, and separate operation grants. Give
 every affected obligation exactly one `preserve`, `change`, `add`, `move`, or `retire` disposition.
 Complete exactly the selected model; add Portability only for a cross-project Candidate. When
-evidence cannot select one material answer, return `ALIGNMENT_REQUIRED` with the choice and its
-decision owner. A human answer starts a new run.
+evidence cannot select one material answer, follow `Close alignment`'s unresolved-decision route
+and new-run handoff.
 
 **Complete when:** one supported owner and model hold every obligation, and every material input
 has one accepted value.
 
 ## 2. Design, qualify, and freeze
 
-Load every Design resource, including both review contracts, and select one Adapter. After residual
-cleanup, establish the actual total concurrent role capacity `N`. Permanently reserve one slot for
-the Controller and one for the fresh resident Author from Author launch through workflow
-finalization. Derive `P = max(0, N - 2)` as the entire live Reviewer/Runner pool. A larger frozen
-cohort runs in batches without changing its membership, evidence, version, or independence.
+Select one Adapter. After residual cleanup, establish the actual concurrent role capacity and
+freeze the schedule under the Design contracts.
 
-Freeze **Quality → conditional Machine → Correctness → conditional Acceptance**. Load and
-design Acceptance now when it applies; otherwise freeze `NOT_REQUIRED`. Freeze one Run Contract
-and canonical Job Graph containing Candidate meaning and grants, the initial Authoring Scope,
+Freeze **Quality → conditional Machine → Correctness → conditional Acceptance**. Design
+Acceptance now when it applies; otherwise freeze `NOT_REQUIRED`. Freeze one Run Contract and
+canonical Job Graph containing Candidate meaning and grants, the initial Authoring Scope,
 identities and direct communication, cohorts and batching, correction and replay, prioritized
 exits, safety finalization, teardown, and handoff. Stage entry may activate only frozen facts.
 Host Governance may constrain execution of an authorized operation; it supplies no Candidate
@@ -90,14 +86,11 @@ Activate the frozen stages in order. Advance only on a current-version `PASS` or
 complete Repair Scopes, Candidate Versions, Revision Impact, rewinds, replay, Scope Transfers, and
 exits.
 
-Every Reviewer first judges privately. For each finding, use the audited metadata-only
-`FINDING_READY → CHANNEL_OPEN` handshake before that Reviewer sends the complete finding directly
-to the Author. Reviewers have no semantic channel with one another. The Controller observes only
-control metadata and never receives, interprets, summarizes, arbitrates, or relays semantic
-content. Author and finding owner independently assess the claim and reasons; agreement is their
-reasoned bilateral fixed point, never deference or blind acceptance. Candidate writes begin only
-after every discussion closes and the Controller supplies one complete full-unit Repair Scope.
-Consensus is independent same-version `PASS` from every declared Reviewer.
+Every Reviewer first judges privately. For each finding, apply the frozen direct-discussion
+lifecycle and isolation contract. Author and finding owner independently assess the claim and
+reasons; agreement is their reasoned bilateral fixed point, never deference or blind acceptance.
+Candidate writes begin only after every discussion closes and the Controller supplies one complete
+full-unit Repair Scope. Consensus is independent same-version `PASS` from every declared Reviewer.
 
 The first Author, Reviewer, or Controller `HUMAN_DECISION_REQUIRED` immediately ends all semantic
 work. Finalize, deliver the owner-produced request unchanged, and continue only in a new run after

@@ -1,6 +1,9 @@
 # Ownership, Alignment, and Candidate Models
 
-Complete this gate before any orchestration effect, role, lock, or Candidate change.
+While this gate is open, permit only `Close alignment`'s conditional `grilling` invocation and the
+read-only Agent fact discovery it requires, including fact-finding dispatch, as alignment-owned
+operations. Begin no Candidate mutation, lock, Probe, validation stage, Author/Reviewer/Runner
+role, or other downstream authoring or proof effect until alignment and modeling close.
 
 ## Route one owner
 
@@ -39,10 +42,19 @@ Establish one accepted value for:
   contexts, and final handoff; and
 - separate `read`, `write`, `create`, and `delete` authority.
 
-An accepted Issue or Spec may supply these values. A uniquely supported local repair may close
-them. Otherwise return `ALIGNMENT_REQUIRED` with each unresolved choice, its evidence, decision
-owner, and material consequences. Begin no job effect. Every operative term and meaning requires
-independent accepted support; an ambient or nonnormative glossary is never authority.
+Align evidence-complete requirements directly. An accepted Issue or Spec may supply these values;
+a uniquely supported local repair may close them. Resolve discoverable facts as Agent work, then
+establish the complete set of material answers still open and each answer's decision owner. An empty
+set closes alignment without `grilling` or `ALIGNMENT_REQUIRED`. If a nonempty set contains any
+non-user-owned decision, return `ALIGNMENT_REQUIRED` with each unresolved choice, its evidence,
+decision owner, and material consequences, without invoking `grilling`. If every decision in the
+nonempty set is user-owned, require exactly one model-invoked `grilling` session over the complete
+unresolved design tree. If the Skill is unavailable or the session cannot close every remaining
+material branch and obtain explicit user confirmation, return `ALIGNMENT_REQUIRED` with the same
+payload. On explicit confirmation of the complete shared understanding, end the current run with
+exactly one handoff: that understanding becomes accepted human-decision context for a new authoring
+run. Every operative term and meaning requires independent accepted support; an ambient or
+nonnormative glossary is never authority.
 
 Select exactly one Candidate model below. Add the Portability branch only for a cross-project
 Candidate.
