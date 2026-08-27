@@ -7,7 +7,7 @@ Acceptance capability, identity, or schedule gates the run.
 
 ## Qualify execution and identities
 
-Extend Adapter qualification with disposable isolation, exact case grants, evidence capture,
+Extend concrete Role Launch readiness with disposable isolation, exact case grants, evidence capture,
 fresh Runner launch, termination and quiescence for every return mode, cleanup, and bounded
 recovery. Prove that the frozen worker schedule can run a fresh Runner while the current case
 Reviewer remains retained, and can retain that Reviewer while complete fresh earlier-stage cohorts
@@ -21,7 +21,7 @@ supply the correctly derived capability or frozen schedule. A Controller dispatc
 control-plane `ROLE_BOUNDARY_VIOLATION`.
 
 Use full-job execution unless the Skill model proves **Finite Execution Projection** eligibility
-and the Adapter owns a preauthorized harness. The smallest eligible projection must execute every
+and Design owns a preauthorized harness. The smallest eligible projection must execute every
 materially affected runtime seam:
 
 - the Runner applies Candidate behavior to frozen seam inputs and emits observable output;
@@ -37,10 +37,9 @@ Network or external effects require accepted case authority and proven host capa
 ## Freeze immutable cases
 
 During Design, freeze the smallest risk-ordered portfolio covering material runtime risk: normally
-a success path and every materially distinct affected error, recovery, and exit, including required
-representative contexts. Define observable pass conditions without imposing an arbitrary case
-count. At stage entry, bind those unchanged case units and execute them sequentially from highest
-risk.
+a success path and every materially distinct affected error, recovery, exit, and operating
+condition. Define observable pass conditions without imposing an arbitrary case count. At stage
+entry, bind those unchanged case units and execute them sequentially from highest risk.
 
 Case definitions and pass conditions never change. Bind each case unit before its first attempt.
 Preserve passed-case evidence across Candidate Versions only when Revision Impact proves the change
@@ -75,7 +74,8 @@ control roles, or delegate.
 After success, failure, abnormal behavior, non-return, or audit stop, always:
 
 1. Preserve every obtainable observation and report; record every capture failure.
-2. End the Runner through the Adapter and establish quiescence with termination evidence.
+2. End the Runner through the frozen Role Launch mechanics and establish quiescence with
+   termination evidence.
 3. Complete its Role Boundary Audit and repeat the Candidate fingerprint audit, even when no
    report exists or quiescence cannot be established.
 4. Only after quiescence, clean exact authorized case-owned targets. On failure, attempt at most one

@@ -34,11 +34,10 @@ accepted human-decision context for a new authoring run. Otherwise preserve the 
 Controller-owned entry exit is distinct from bounded update requests and semantic-role
 `HUMAN_DECISION_REQUIRED`.
 
-Read the public [`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md)
-completely and explicitly select its **Default Fresh Role Adapter**. Apply its Role Launch
-access, authority, Controller bounded-update, Role Boundary Audit, direct-channel,
-abnormal-execution, and workflow-finalization mechanics. Record the Adapter Probe as `NOT_REQUIRED`
-before any role starts.
+Read the public [`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md) and
+[`Project-Aware Role Launch`](../../../skills/write-rules-and-skills/references/project-aware-role-launch.md)
+completely. Apply their concrete access, authority, Controller bounded-update, Role Boundary Audit,
+direct-channel, abnormal-execution, and workflow-finalization mechanics.
 
 Qualify exactly these identities: the Controller, one fresh resident Author retained through every
 Candidate Version, and one fresh Static Reviewer retained through its correction cycle. The local
@@ -59,7 +58,7 @@ may have left lock state, proceed to **Finish**. After acquisition and before an
 Controller fingerprints the complete Allowlist and binds that baseline to the initial Candidate
 Version. Retain the lock through workflow finalization.
 
-This step is complete when the evidence basis, judgment-only target, identities, schedule, Probe,
+This step is complete when the evidence basis, judgment-only target, identities, schedule,
 allowlist, update envelope, expected operations, lock interface, and pre-write fingerprint are
 frozen without material ambiguity.
 

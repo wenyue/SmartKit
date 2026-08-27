@@ -1,30 +1,57 @@
 # 可移植 Shared Input
 
-原样组合公共[`Cross-Project Portability`](../../../../skills/write-rules-and-skills/references/portability.md)
-模型。本调用方只负责 SmartKit 路由判别器，以及提供给该模型的 Shared Input 包。
+这个私有模型负责一份 SmartKit Rule 或 Skill 的所有跨项目和共享特有语义要求。除公共 Rule 或
+Skill 模型外，还要应用本模型；打包和源仓库成功都不会产生可移植权威。
 
-## 选择共享 SmartKit 分支
+## 选择共享 SmartKit Owner
 
-只有已接受证据选中一个跨项目 SmartKit Rule 或 Skill Owner 时才继续。项目本地制品或 Setup
-Authoring Contract 不属于本调用方。不得重新解释公共可移植性模型的权威、源上下文排除、
-依赖、代表性上下文、Correctness、Acceptance 和通过条件。
+只有已接受证据选中一个跨项目 SmartKit Rule 或 Skill Owner 时才继续。将项目本地制品或 Setup
+Authoring Contract 路由给受支持的 Owner。在角色启动前，确定共享 Owner、适用性、公开发现、
+自有资源、硬依赖和受支持的代表性目标。
+
+若 Owner、含义、依赖、权限、目标事实或通过条件尚未解决，则返回公共 `ALIGNMENT_REQUIRED`
+结果，并给出缺失选择、证据、决策 Owner 和实质后果。不要启动角色、锁、Probe 或 Candidate 写入。
+
+## 排除源项目含义
+
+可移植含义只能来自已接受决定、specification、管辖合同、可观察的共享实现，以及权威已获独立
+确认的代表性证据。源项目政策、本地名称、偶然布局、上下文文档和只在源项目中取得的成功都不能提供
+可移植含义，除非已接受的 Shared Input 通过相应受支持 Owner 独立确立了同一事实。
+
+声明每个必需 Rule、Skill、工具、schema、环境能力和宿主行为，以及它的共享或目标自有路径。
+只在真实接缝处对平台机制附加条件。缺失事实、依赖路径或可移植权威时，对齐尚未完成。
 
 ## 打包完整 Shared Input
 
 冻结一个证据包，其中包含：
 
-- 已接受的可移植结果、义务处置、Owner、准确 Candidate 资源，以及公开加载与分发路径；
-- 一份依赖 manifest，把公共模型中的每项依赖映射到其 Owner、适用性、受支持路径和代表性
-  可用性证据；以及
-- 一份代表性目标 manifest，把每个所选接缝映射到已接受目标事实、依赖、权限、关键路径与
-  出口、预期观察、证据来源，以及其公共静态、Machine 或 Acceptance 证明路径。
+- 已接受的可移植结果、每项义务的 `preserve`、`change`、`add`、`move` 或 `retire` 处置、
+  Owner、准确 Candidate 资源，以及公开加载与分发路径；
+- 一份依赖 manifest，把每项依赖映射到其 Owner、适用性、受支持路径和代表性可用性证据；以及
+- 一份代表性目标 manifest，把每个有证据表明会产生实质差异的接缝映射到已接受目标事实、依赖、
+  权限、关键路径与出口、预期观察、证据来源，以及其静态、Machine 或 Acceptance 证明路径。
 
-把每个公共可移植性通过条件附到能够证明它的证据项。该证据包不增加语义权威：Candidate
-文本、源仓库成功与包结构都不能补充公共模型中缺失的事实。
+冻结能覆盖每个已有证据接缝的最小目标组合；这些接缝必须可能实质改变适用性、依赖可用性、权限、
+执行或出口。仅名称和布局差异不能区分目标。至少需要一个受支持的代表性目标。
 
-## 完成就绪状态
+把每个可移植性通过条件附到能够证明它的证据项。Candidate 文本、源仓库成功、包结构和软隔离
+prompt 都不能增加语义权威或补充缺失事实。
 
-只有证据包满足全部公共可移植性条件、包含至少一个受支持的代表性目标，并且没有重要事实或
-路径尚未解决，共享就绪状态才算完成。否则通过本调用方返回公共`ALIGNMENT_REQUIRED`结果。
-把该证据包原样提供给公共的可移植性扩展 Correctness scope 和任何公共代表性 Acceptance
-用例；不要增加证明阶段或 Reviewer。
+## 扩展 Correctness 与 Acceptance
+
+扩展公共 Spec Fidelity and Semantic Integrity，使其覆盖共享归属、适用性、依赖闭包和源上下文
+排除。扩展公共 Critical Behavioral Integrity，使其覆盖代表性路径与出口。两个公共 Correctness
+Reviewer 保持各自现有 scope，并独立判断这些新增内容；不要创建第五个 Reviewer。
+
+只有静态和 Machine 证据无法高置信地确认某个代表性目标的运行时可行性时，才把该目标路由到公共
+Acceptance。把其不可变用例和通过条件加入唯一的公共 Acceptance 组合。不要创建另一阶段、Runner
+生命周期或修正周期。
+
+## 完成就绪状态与可移植性验证
+
+只有证据包完整、包含至少一个受支持的代表性目标，并且没有重要事实或路径尚未解决，共享就绪
+状态才算完成。把该证据包原样提供给扩展后的公共 Correctness scope 和任何代表性 Acceptance 用例。
+
+只有同一个 Candidate Version 具有完整依赖闭包、不包含实际生效的源项目假设、覆盖每个所选目标
+接缝、两份扩展后的 Correctness 裁决均通过，且每个必需的代表性 Acceptance 用例都通过，可移植性
+才算通过。

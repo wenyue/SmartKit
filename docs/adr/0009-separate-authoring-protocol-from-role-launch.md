@@ -1,6 +1,6 @@
 # Separate the Authoring Protocol from Role Launch
 
-Status: Accepted
+Status: Superseded by [ADR 0010](0010-concrete-public-authoring-and-private-shared-overrides.md)
 
 Date: 2026-08-24
 

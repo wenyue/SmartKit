@@ -120,22 +120,20 @@ Role Boundary Audit 首先决定调用和回调是否可接纳。不可接纳的
 执行控制平面与污染控制；它绝不决定 Candidate 含义、finding 是否成立或语义不动点。能够证明
 污染边界时，只使最小受影响单元失效，同时保留其分类以及边界外所有已建立状态。无法证明隔离
 时，事故分类提升为整轮终止，并最终化工作流。不可接纳调用或回调属于
-`ROLE_BOUNDARY_VIOLATION`；绑定到 manifest 的 Probe 控制不匹配遵循此路径，而审计可接纳但
-未满足 Probe 标准时可以返回`PROBE_FAILED`。
+`ROLE_BOUNDARY_VIOLATION`。
 
 对于可接纳状态，选择第一个匹配结果：
 
 1. 第一个`HUMAN_DECISION_REQUIRED`：结束语义工作，为新运行保留请求；
-2. `PROBE_FAILED`：在启动语义角色或改变 Candidate 前停止；
-3. `LOCK_UNAVAILABLE`或`CANDIDATE_CHANGED`：在 Author 改变 Candidate 前停止并保留锁/基线证据；
-4. 已开始的条件式执行：完成安全最终化；其终止结果优先，成功最终化则返回阶段生命周期；
-5. 整轮`SEMANTIC_ROLE_UNAVAILABLE`：语义角色触发已冻结异常执行条件，没有边界违规证据，且
+2. `LOCK_UNAVAILABLE`或`CANDIDATE_CHANGED`：在 Author 改变 Candidate 前停止并保留锁/基线证据；
+3. 已开始的条件式执行：完成安全最终化；其终止结果优先，成功最终化则返回阶段生命周期；
+4. 整轮`SEMANTIC_ROLE_UNAVAILABLE`：语义角色触发已冻结异常执行条件，没有边界违规证据，且
    无法证明隔离；保留身份、通道、终止和残留证据；
-6. `HOST_UNAVAILABLE`：宿主无法建立或提供经正确推导并冻结的容量、身份、认证通道、调度或证据；
-7. 无法提供符合条件的`CONTEXT_REQUIRED`或`ACCESS_REQUIRED`；超出 envelope 的请求在新运行中
+5. `HOST_UNAVAILABLE`：宿主无法建立或提供经正确推导并冻结的容量、身份、认证通道、调度或证据；
+6. 无法提供符合条件的`CONTEXT_REQUIRED`或`ACCESS_REQUIRED`；超出 envelope 的请求在新运行中
    变为`ALIGNMENT_REQUIRED`；
-8. 阶段终止结果，例如`AMBIGUITY_UNRESOLVED`、`NO_PROGRESS`或`EXECUTION_UNAVAILABLE`；
-9. 同版本阶段`PASS`或有效`NOT_REQUIRED`：前进；只有图关闭并完成工作流最终化才允许成功。
+7. 阶段终止结果，例如`AMBIGUITY_UNRESOLVED`、`NO_PROGRESS`或`EXECUTION_UNAVAILABLE`；
+8. 同版本阶段`PASS`或有效`NOT_REQUIRED`：前进；只有图关闭并完成工作流最终化才允许成功。
 
 Controller 超额调度遵循不可接纳边界路径，绝不是`HOST_UNAVAILABLE`。低优先级结果不能抹去
 高优先级证据或必需的安全最终化。`TEARDOWN_FAILED`保留下层结果并阻止干净成功。

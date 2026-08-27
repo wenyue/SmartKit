@@ -5,9 +5,10 @@ description: Author or revise one English Rule or Agent Skill, or review which o
 
 # Write Rules and Skills
 
-Produce the smallest complete Candidate through one Procedure-led job:
+Produce the smallest complete Candidate through one concrete Procedure-led job:
 
-**own → align → model → design → qualify → freeze → probe → lock → author → prove → finalize**
+**own → align → model → design → freeze → fingerprint → lock → author → prove →
+finalize**
 
 The active Agent is the **Controller**. It owns admissibility and the control plane, never Candidate
 meaning. One fresh resident Author owns Candidate prose and finding dispositions from launch
@@ -17,13 +18,12 @@ alter the contract, authority, evidence, or transitions used to judge it.
 
 ## Load the reached branch
 
-Read every selected resource completely.
+Read every reached resource completely.
 
 | Trigger | Resource |
 | --- | --- |
 | Every invocation | [`references/models.md`](references/models.md) |
-| Candidate is cross-project | [`references/portability.md`](references/portability.md) |
-| Authoring passes alignment and modeling | [`references/job-design.md`](references/job-design.md), [`references/role-launch.md`](references/role-launch.md), [`references/evaluation.md`](references/evaluation.md), and [`references/reviews.md`](references/reviews.md), during Design |
+| Authoring passes alignment and modeling | [`references/job-design.md`](references/job-design.md), [`references/role-launch.md`](references/role-launch.md), [`references/project-aware-role-launch.md`](references/project-aware-role-launch.md), [`references/evaluation.md`](references/evaluation.md), and [`references/reviews.md`](references/reviews.md), during Design |
 | Acceptance applies | [`references/acceptance.md`](references/acceptance.md), during Design |
 
 Apply `writing-for-agents` to information hierarchy, composition, context pointers, purposeful
@@ -37,39 +37,37 @@ gate. Authoring continues only for one supported `rule` or `skill` owner.
 Resolve the outcome, preserved and changed behavior, non-goals, safety, ownership, paths,
 distribution, dependencies, permissions, validation, exits, and separate operation grants. Give
 every affected obligation exactly one `preserve`, `change`, `add`, `move`, or `retire` disposition.
-Complete exactly the selected model; add Portability only for a cross-project Candidate. When
-evidence cannot select one material answer, follow `Close alignment`'s unresolved-decision route
-and new-run handoff.
+Complete exactly the supported Rule or Skill model. When evidence cannot select one material
+answer, follow `Close alignment`'s unresolved-decision route and new-run handoff.
 
 **Complete when:** one supported owner and model hold every obligation, and every material input
 has one accepted value.
 
-## 2. Design, qualify, and freeze
+## 2. Design and freeze
 
-Select one Adapter. After residual cleanup, establish the actual concurrent role capacity and
-freeze the schedule under the Design contracts.
+Establish the concrete Role Launch readiness and actual concurrent role capacity after residual
+cleanup. Freeze **Quality → conditional Machine → Correctness → conditional Acceptance** under
+the Design contracts.
 
-Freeze **Quality → conditional Machine → Correctness → conditional Acceptance**. Design
-Acceptance now when it applies; otherwise freeze `NOT_REQUIRED`. Freeze one Run Contract and
-canonical Job Graph containing Candidate meaning and grants, the initial Authoring Scope,
-identities and direct communication, cohorts and batching, correction and replay, prioritized
-exits, safety finalization, teardown, and handoff. Stage entry may activate only frozen facts.
-Host Governance may constrain execution of an authorized operation; it supplies no Candidate
-meaning, scope, authority, evidence, dependency, Acceptance fact, or transition.
+Freeze one Run Contract and canonical Job Graph containing Candidate meaning and grants, the
+initial Authoring Scope, identities and direct communication, cohorts and batching, correction and
+replay, prioritized exits, safety finalization, teardown, and handoff. Design Acceptance now when
+it applies; otherwise freeze `NOT_REQUIRED`. Stage entry may activate only frozen facts. Host
+Governance may constrain execution of an authorized operation; it supplies no Candidate meaning,
+scope, authority, evidence, dependency, Acceptance fact, or transition.
 
 **Complete when:** every reachable state is authorized, internally consistent, and schedulable,
 and no role or Candidate state has begun.
 
-## 3. Probe, lock, and author
+## 3. Fingerprint, lock, and author
 
 After the single freeze transition:
 
-1. Run the Adapter's frozen Probe and require `PASS` or its predeclared valid `NOT_REQUIRED`.
-2. Fingerprint the exact Candidate Allowlist, acquire its frozen exclusive lock, and verify the
+1. Fingerprint the exact Candidate Allowlist, acquire its frozen exclusive lock, and verify the
    baseline while holding the lock. Preserve concurrent state and stop on mismatch.
-3. Launch the fresh resident Author with the complete contract, evidence, current Candidate,
+2. Launch the fresh resident Author with the complete contract, evidence, current Candidate,
    model, grants, writing guidance, and initial Authoring Scope.
-4. Audit each callback before consuming it. Bind an admissible Author `COMPLETE` to a new
+3. Audit each callback before consuming it. Bind an admissible Author `COMPLETE` to a new
    whole-Allowlist Candidate Version. Resume the same Author after every eligible bounded update
    and every complete Repair Scope.
 
@@ -107,11 +105,11 @@ retained, and suspended identities, establish residual activity, and release the
 safe. `TEARDOWN_FAILED` blocks clean success while preserving the underlying result and residual
 state.
 
-Report Candidate type, owner, paths, and final fingerprint; Adapter and Probe; stage verdicts;
-Machine commands and exits or `NOT_REQUIRED`; Acceptance evidence or `NOT_REQUIRED`; Role Boundary
-Audits; rewinds and bounded updates; unresolved or untested surfaces; Host-Governance effects;
-identity teardown, residual state, and lock release. Preserve every owner-produced terminal result
-without reinterpretation.
+Report Candidate type, owner, paths, and final fingerprint; stage verdicts; Machine commands and
+exits or `NOT_REQUIRED`; Acceptance evidence or `NOT_REQUIRED`; Role Boundary Audits; rewinds and
+bounded updates; unresolved or untested surfaces; Host-Governance effects; identity teardown,
+residual state, and lock release. Preserve every owner-produced terminal result without
+reinterpretation.
 
 Keep contracts, prompts, findings, diffs, and transient evidence in Agent context. Create no
 workflow report, copied Candidate tree, or permanent evaluation fixture. This job grants no

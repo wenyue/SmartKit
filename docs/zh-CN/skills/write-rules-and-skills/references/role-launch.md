@@ -1,23 +1,20 @@
 # 角色启动
 
-这是公共角色组合表面，负责 Host Governance、身份生命周期、调度、语义通道、规范化报告、
-Default Adapter、Role Boundary Audit、语义角色失败、条件式角色组合和工作流最终化。
+这个固定运行时负责 Host Governance、身份生命周期、调度、语义通道、规范化报告、Role Boundary
+Audit、语义角色失败、条件式角色组合和工作流最终化。
 
-下列准确的三报告回调 schema 具有规范效力。调用方泛称的**Operation Summary**指 Operation
-Report、Peer Report 和 Host-Governance Report 组成的完整 bundle；绝不省略或替换 Peer
-Report。调用方泛称的**bootstrap report**就是 Host-Governance Report。
-[`acceptance.md`](acceptance.md)负责 Acceptance 用例设计、尝试、判断、修正与重放；本表面
-负责 Acceptance 所组合的共享角色启动、审计、身份和最终化机制。这些映射不增加第二套 schema
-或 Owner。
+下列准确的三报告回调 schema 具有规范效力。**Operation Summary**指 Operation Report、Peer
+Report 和 Host-Governance Report 组成的完整 bundle；绝不省略或替换 Peer Report。
+**bootstrap report**就是 Host-Governance Report。[`acceptance.md`](acceptance.md)负责
+Acceptance 用例设计、尝试、判断、修正与重放；本运行时负责这些尝试所使用的共享启动、审计、
+身份和最终化机制。这些映射不增加第二套 schema 或 Owner。
 
-调用方 Adapter 中的**每个全新 Runner**，指活跃 Acceptance 组件可以到达的每个 Runner 身份。
-Acceptance `NOT_REQUIRED`证明不存在这些冻结身份，不产生 Runner 专用 launcher 资格验证。
-Acceptance 适用时，Design 必须在冻结和启动任何角色前，证明每种已声明正常、失败、异常和不
-返回模式之后都能终止并确认静止。必需 Probe 自身的终止与残留安全资格验证始终是无条件的。
+Acceptance 适用时，Design 必须在冻结和启动任何角色前，证明每种已声明的 Runner 正常、失败、
+异常和不返回模式之后都能终止并确认静止。
 
 ## 保持 Host Governance 只负责执行
 
-公共 bootstrap 只允许一个 user-role envelope，并准确包含以下有序类别：
+每次角色调用都包含一个由宿主提供的 user-role envelope，其中准确包含以下有序类别：
 
 1. recommended-plugin catalog metadata；
 2. repository `AGENTS` instructions；
@@ -25,19 +22,21 @@ Acceptance 适用时，Design 必须在冻结和启动任何角色前，证明�
 
 catalog 与环境 metadata 只读、单独报告且保持惰性。强制宿主或项目指令只约束已获授权操作的
 执行方式。它们均不能提供或改变 Candidate 语义、文本、证据、scope、权威、权限、依赖、
-Acceptance 事实、角色工作或冻结转换；也不能授权操作或访问。更早轮次、无关任务和未声明内容
-类别不属于 envelope。调用方 Adapter 可以收窄这些类别，但不能增加类别或扩大任一类别。
+Acceptance 事实、角色工作或冻结转换；也不能授权操作或访问。独立归属的 Rule、Spec 或实现
+仍可通过其已确立的来源与冻结合同提供证据。更早轮次、无关任务和未声明内容类别不属于角色的
+语义输入。
 
-在资格验证期间，Adapter 负责规范的封闭 bootstrap 表示，并生成一个不可变**Envelope ID**。
-把它冻结进每份 expected-operation manifest，并向角色与 Controller 提供相同值。角色只引用
-该 ID，不序列化或散列 envelope。下列报告证明观察到的一致性与使用方式，而不是语义权威。
+冻结前，把规范的封闭 bootstrap 表示绑定到每份 expected-operation manifest 中一个不可变的
+**Envelope ID**，并向角色与 Controller 提供相同值。角色只引用该 ID，不序列化或散列 envelope。
+下列报告证明观察到的一致性与只负责执行的使用方式，而不是语义权威。
 
 ## 保留身份与容量
 
-冻结模板包含：从启动到最终化保持不变的一个全新常驻 Author；每个 review unit 的一个完整
-全新持久 Reviewer cohort；以及各条件式权威声明的所有身份。Controller 与常驻 Author 在此
-期间持续占用各自保留槽位。首次动作前绑定完整 cohort。单元开放期间成员不变，每个身份贯穿该
-单元的修正循环。失效的已关闭单元重新打开时，需要全新的完整 cohort。
+每个语义身份都以全新状态启动，不继承父任务轮次。冻结模板包含：从启动到最终化保持不变的一个
+常驻 Author；每个 review unit 的一个完整全新持久 Reviewer cohort；以及各条件式权威声明的
+所有身份。Controller 与常驻 Author 在此期间持续占用各自保留槽位。首次动作前绑定完整 cohort。
+单元开放期间成员不变，每个身份贯穿该单元的修正循环。失效的已关闭单元重新打开时，需要全新的
+完整 cohort。
 
 为每个批次与轮次绑定单元、完整 cohort、活跃子集、Candidate Version、证据、阶段、独立就绪
 事件、允许的 Author↔Reviewer 配对与方向，以及讨论状态。暂停会保留身份与状态，但不占用活跃
@@ -70,20 +69,19 @@ Author 准确返回一种状态：
 - `HUMAN_DECISION_REQUIRED`：准确决策、证据或权威为何无法解决、决策 Owner，以及每个当前
   选择的后果。
 
-Reviewer 独立判断完整已授权输入，并负责 finding、分类和裁决。Runner 只执行冻结用例，不拥有
-判断、修复、设置修正、清理、角色控制或委派权威。只有 Controller 能启动、恢复、暂停、保留或
-结束身份；授权访问；或提供有界更新。
+Reviewer 独立判断完整已授权输入，并负责 finding、分类和裁决。Author 与 Reviewer 均不使用
+网络或委派。Runner 只执行冻结用例，绝不委派，也不拥有判断、修复、设置修正、清理、角色控制
+或角色启动权威。只有 Controller 能启动、恢复、暂停、保留或结束身份；授权访问；或提供有界更新。
 
 ## 关闭语义角色异常执行
 
-对于每次 Author 或 Reviewer 调用与继续，冻结 Adapter 都要声明一个可观察的不返回、身份丢失
-或继续失败触发条件及其证据。它可以使用受支持的宿主终止状态或预先声明的有界检测器；本合同
-不提供任意 timeout。
+对于每次 Author 或 Reviewer 调用与继续，冻结一个可观察的不返回、身份丢失或继续失败触发条件
+及其证据。它可以使用受支持的宿主终止状态或预先声明的有界检测器；本合同不提供任意 timeout。
 
 触发后，Controller 保留所有可获得报告、通道记录、宿主事实和 Candidate 指纹；通过不含语义的
-控制 metadata 中止每个开放讨论；尝试由 Adapter 负责的终止；并审计所有可获得证据。缺失回调
-不提供 payload，应记录而非虚构。在作出污染控制决定前，不得启动替代身份、Candidate 写入、
-新讨论或后续阶段。
+控制 metadata 中止每个开放讨论；尝试已冻结的终止操作；并审计所有可获得证据。缺失回调不提供
+payload，应记录而非虚构。在作出污染控制决定前，不得启动替代身份、Candidate 写入、新讨论或
+后续阶段。
 
 存在边界违规证据时把事故分类为`ROLE_BOUNDARY_VIOLATION`；否则分类为
 `SEMANTIC_ROLE_UNAVAILABLE`。把分类送入全局出口的污染控制决策。无法结束身份或证明其不活跃
@@ -140,18 +138,8 @@ Candidate 证据或权威。对外报告`HUMAN_DECISION_REQUIRED`，并把
 除上述可归因终止控制处理外，下列任何情况都会使调用或回调不可接纳：禁止操作、超额派发、
 调度或授权违规、无法归因的 Candidate 变化、缺失或不一致的必需报告、禁止的同级边、Envelope
 ID 不匹配、绑定 manifest 的预期控制不匹配、bootstrap 或 governance 违规，以及无法调和的
-证据。Probe 控制响应属于其 manifest：缺失或不同的响应因此是边界违规，不是可接纳的 Probe
-标准失败。除非已经开始的条件式权威拥有更高安全终止结果，否则向全局出口的污染控制决策返回
+证据。除非已经开始的条件式权威拥有更高安全终止结果，否则向全局出口的污染控制决策返回
 `ROLE_BOUNDARY_VIOLATION`。保留 Candidate、状态和证据，不得回退、修复或掩盖。
-
-## Default Fresh Role Adapter
-
-Default 启动角色时不继承父任务轮次，只提供封闭 bootstrap envelope 与冻结 Envelope ID。
-Author 与 Reviewer 接收冻结只读权限；只有 Author 获得 Candidate 操作授权。二者均不使用网络
-或委派。条件式执行角色不委派。Adapter 提供经审计的全新/持久身份生命周期、暂停与保留、直接
-通道、语义角色异常执行检测与终止、实际容量与调度的宿主证据，以及资格验证时选择的一个宿主
-支持有界锁。其 Probe 为`NOT_REQUIRED`。适用的条件分支组合其已声明机制；不活跃分支不增加
-任何内容。
 
 ## 最终化工作流
 

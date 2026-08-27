@@ -2,14 +2,13 @@
 
 在此 Gate 关闭前，只有两类操作属于对齐且可以执行：按`Close alignment`的条件调用`grilling`；
 以及开展该调用所需的只读 Agent 事实发现，包括分派事实调查。在对齐与建模关闭前，不得改变
-Candidate、加锁、执行 Probe、启动验证阶段、启动 Author/Reviewer/Runner 角色，也不得产生
-任何其他下游编写或证明影响。
+Candidate、加锁、启动验证阶段、启动 Author/Reviewer/Runner 角色，也不得产生任何其他下游
+编写或证明影响。
 
 ## 路由到唯一 Owner
 
 根据关注点、能力、制品和管辖证据发现 Owner。打包位置不产生语义归属。若适用更具体的编写
-Owner，应把请求路由给它，除非已经取得它完成的交接。由调用方完成资格验证的续接必须明确
-选择一个完整 Adapter。
+Owner，应把请求路由给它，除非已经取得它完成的交接。
 
 对每项已接受义务进行分类：
 
@@ -22,7 +21,7 @@ Owner，应把请求路由给它，除非已经取得它完成的交接。由调
 | `ambiguous` | 证据支持互不兼容的 Owner，或与请求的制品冲突；返回`ALIGNMENT_REQUIRED`。 |
 
 若存在归属冲突，报告管辖证据、加载与行为影响、受支持的保留/移动/拆分结果、当前选择和决策
-Owner。人类偏好不能把策略变成受触发 Job，也不能免除所选模型与证明合同。
+Owner。人类偏好不能把策略变成受触发 Job，也不能免除受支持的模型与证明合同。
 
 明确要求只读的 Ownership Review 应报告每个制品当前与受支持的 Owner、义务分类、证据、
 影响、建议和缺失决策。对齐时返回`PASS`；否则返回`ALIGNMENT_REQUIRED`。确认没有文件变化，
@@ -35,7 +34,7 @@ Owner。人类偏好不能把策略变成受触发 Job，也不能免除所选�
 - 结果、当前与保留行为、变更、非目标、安全，以及按优先级排列的出口；
 - Owner、准确 Candidate 资源、加载路径、分发边界，以及每项义务的`preserve`、`change`、
   `add`、`move`或`retire`处置；
-- 依赖、权限、外部影响、验证职责、可移植性、代表性上下文和最终交接；以及
+- 依赖、权限、外部影响、验证职责、适用的运行环境和最终交接；以及
 - 彼此独立的`read`、`write`、`create`和`delete`权威。
 
 证据完备的要求应直接对齐。已接受的 Issue 或 Spec 可以提供这些值；具有唯一证据支持的本地
@@ -49,7 +48,7 @@ Owner。人类偏好不能把策略变成受触发 Job，也不能免除所选�
 把这份共同理解作为已接受的人类决策上下文，交给一次新的编写运行。每个实际生效的术语与含义
 都需要独立、已接受的支持；环境中的词汇表或非规范词汇表绝不是权威。
 
-准确选择下列一个 Candidate 模型。仅为跨项目 Candidate 增加 Portability 分支。
+准确选择下列一个 Candidate 模型。
 
 ## Rule 模型
 
@@ -97,4 +96,4 @@ Correctness 会重建完整 Policy Frame。隐式或冲突字段、虚构谓词�
 
 Correctness 会重建完整 Job、形态、边界、分支和出口。完整 Job 执行是正常的 Skill Acceptance。
 只有当完整执行会重新进入当前 Acceptance 图，或需要 Runner 被禁止的身份控制时，才有资格使用
-**Finite Execution Projection**；Design 必须记录资格，并预授权由 Adapter 所有的 harness。
+**Finite Execution Projection**；Design 必须记录资格，并预授权 harness。

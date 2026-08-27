@@ -27,12 +27,12 @@ Contract；生成的目标和共享 SmartKit 工件仍由各自的编写者负�
 已接受人工决策上下文。否则保持同一停止结果。这个由 Controller 所有的入口退出不同于有界更新请求和
 语义角色的 `HUMAN_DECISION_REQUIRED`。
 
-完整阅读公共 [`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md)，并显式选择其
-**Default Fresh Role Adapter**。应用其中有关访问、权威、Controller 有界更新、Role Boundary Audit、
-直接通道、异常执行和工作流最终处置的 Role Launch 机制。在启动任何角色前，将 Adapter Probe 记录为
-`NOT_REQUIRED`。
+完整阅读公共 [`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md) 和
+[`Project-Aware Role Launch`](../../../skills/write-rules-and-skills/references/project-aware-role-launch.md)。
+应用其中具体的访问、权威、Controller 有界更新、Role Boundary Audit、直接通道、异常执行和工作流
+最终化机制。
 
-恰好鉴定以下身份：Controller、一个在每个 Candidate Version 中保留的全新常驻 Author，以及一个在其
+仅确认以下身份满足条件：Controller、一个在每个 Candidate Version 中保留的全新常驻 Author，以及一个在其
 修正循环中保留的全新 Static Reviewer。本地序列为 Author → 适用的 Machine Validation → Static
 Reviewer。当前版本取得 Machine PASS 或有依据的 `NOT_REQUIRED` 前只启动 Author，取得该结果后才
 启动 Reviewer。公共 Quality Review、Correctness Review 和可执行 Acceptance 不进入此工作流。如果
@@ -44,9 +44,9 @@ Supplement 填充的每个语义证据或依赖槽位，以及之后可扩展的
 只有 Author 获得其写入权限。取得一个独占候选项写入锁。如果冻结接口能够明确证明没有取得锁，也不可能
 遗留锁状态，则在启动 Author 前返回 `LOCK_UNAVAILABLE`；如果某次尝试可能遗留锁状态，则转到
 **完成**。取得锁后且 Author 进行任何写入前，Controller 对完整 Allowlist 计算指纹，并将该基线绑定到
-初始 Candidate Version。在整个工作流最终处置期间保留该锁。
+初始 Candidate Version。在整个工作流最终化期间保留该锁。
 
-只有当证据基础、仅用于判断的目标、身份、排期、Probe、allowlist、更新范围、预期操作、锁接口和写入前
+只有当证据基础、仅用于判断的目标、身份、排期、allowlist、更新范围、预期操作、锁接口和写入前
 指纹均已冻结，且不存在实质歧义时，本步骤才完成。
 
 ## 2. 编写一个完整 allowlist 的 Candidate Version

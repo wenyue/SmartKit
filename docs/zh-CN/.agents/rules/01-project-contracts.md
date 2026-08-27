@@ -52,20 +52,21 @@
   和政策；setup 控制平面使用 setup 资产。
 - 将 `write-setup-authoring-contracts`、`write-shared-rules-and-skills` 和
   `translate-agent-artifacts` 作为项目私有 Skill 保存在 `.agents/skills/` 下。
-  `write-setup-authoring-contracts` 独占 setup blueprint 契约的编写。对于本仓库治理的任何 Rule
-  或 Skill，包括共享 SmartKit 候选项，都应直接调用本仓库拥有的
-  `skills/write-rules-and-skills/`。不得通过项目私有的
-  `.agents/skills/write-shared-rules-and-skills/` 调用或路由编写工作。
-  `translate-agent-artifacts` 独占根据最终英文源文件更新必需的简体中文文档镜像。这三个项目私有
-  Skill 都不得进入插件 Skill 注册表、根插件 manifest、setup catalog 或目标安装。
+  `write-setup-authoring-contracts` 独占 setup blueprint 契约的编写。对于已接受证据未归类为
+  跨项目 SmartKit 候选项、且受本仓库治理的 Rule 或 Skill，应直接调用本仓库拥有的
+  `skills/write-rules-and-skills/`。对于已接受的跨项目 SmartKit Rule 或 Skill，应直接调用项目
+  私有的 `.agents/skills/write-shared-rules-and-skills/`；它独占共享可移植性、源上下文排除、
+  代表性目标资格验证和软隔离角色启动。`translate-agent-artifacts` 独占根据最终英文源文件更新
+  必需的简体中文文档镜像。这三个项目私有 Skill 都不得进入插件 Skill 注册表、根插件 manifest、
+  setup catalog 或目标安装。
 
 ## 文档契约
 
 - `README.md` 和 `README.zh-CN.md` 仅限公开安装、配置、使用和故障排除。贡献者工作流、发布与
   生成机制、维护、架构、验证内部细节和实现细节应留给相应的项目或代码所有者。
 - 将英文第一方 Rule 和 Skill 视为唯一规范语义来源。项目文档所有者选择哪些文件需要镜像。每个
-  位于 `<path>` 的选定源文件映射到 `docs/zh-CN/<path>`。`write-rules-and-skills` 完成所有受影响
-  源文件后，宿主 Agent 调用一次 `translate-agent-artifacts`，更新完整的受影响镜像集。
+  位于 `<path>` 的选定源文件映射到 `docs/zh-CN/<path>`。每个受影响的源文件经其适用的英文编写
+  Owner 完成后，宿主 Agent 调用一次 `translate-agent-artifacts`，更新完整的受影响镜像集。
 - 将 `docs/zh-CN/` 仅视为文档，绝不能将其作为运行时源、插件入口点、setup 输入或目标安装资产。
 - 翻译应保留英文源文件的内容块和 Markdown 结构、字面量、完整含义及强调，同时使用平实自然的
   简体中文。翻译内容和可读性检查仍是普通文档验证；它们不进入英文编写工作流或可执行 Acceptance。

@@ -144,26 +144,24 @@ Candidate meaning, finding merit, or a semantic fixed point. When the contaminat
 proven, invalidate only the smallest affected unit while preserving its classification and every
 established state outside it. When isolation cannot be proven, the incident classification becomes
 a whole-run terminal and the workflow finalizes. An inadmissible invocation or callback is
-`ROLE_BOUNDARY_VIOLATION`; a manifest-bound Probe control mismatch takes this path, while an
-otherwise audit-admissible Probe criterion failure may return `PROBE_FAILED`.
+`ROLE_BOUNDARY_VIOLATION`.
 
 For admissible state, choose the first matching result:
 
 1. first `HUMAN_DECISION_REQUIRED`: end semantic work and preserve its request for a new run;
-2. `PROBE_FAILED`: stop before semantic role or Candidate change;
-3. `LOCK_UNAVAILABLE` or `CANDIDATE_CHANGED`: stop before Author change and preserve lock/baseline
+2. `LOCK_UNAVAILABLE` or `CANDIDATE_CHANGED`: stop before Author change and preserve lock/baseline
    evidence;
-4. started conditional execution: complete its safety finalization; its terminal governs, while
+3. started conditional execution: complete its safety finalization; its terminal governs, while
    successful finalization returns to the stage lifecycle;
-5. whole-run `SEMANTIC_ROLE_UNAVAILABLE`: a semantic role meets its frozen abnormal-execution
+4. whole-run `SEMANTIC_ROLE_UNAVAILABLE`: a semantic role meets its frozen abnormal-execution
    trigger without evidence of a boundary breach and isolation cannot be proven; preserve identity,
    channel, termination, and residual evidence;
-6. `HOST_UNAVAILABLE`: the host cannot establish or supply the correctly derived and frozen
+5. `HOST_UNAVAILABLE`: the host cannot establish or supply the correctly derived and frozen
    capacity, identity, authenticated channel, schedule, or evidence;
-7. unavailable eligible `CONTEXT_REQUIRED` or `ACCESS_REQUIRED`; an out-of-envelope request becomes
+6. unavailable eligible `CONTEXT_REQUIRED` or `ACCESS_REQUIRED`; an out-of-envelope request becomes
    `ALIGNMENT_REQUIRED` for a new run;
-8. stage terminal such as `AMBIGUITY_UNRESOLVED`, `NO_PROGRESS`, or `EXECUTION_UNAVAILABLE`;
-9. same-version stage `PASS` or valid `NOT_REQUIRED`: advance; graph closure permits success only
+7. stage terminal such as `AMBIGUITY_UNRESOLVED`, `NO_PROGRESS`, or `EXECUTION_UNAVAILABLE`;
+8. same-version stage `PASS` or valid `NOT_REQUIRED`: advance; graph closure permits success only
    after workflow finalization.
 
 Controller oversubscription takes the inadmissible boundary path, never `HOST_UNAVAILABLE`. A lower

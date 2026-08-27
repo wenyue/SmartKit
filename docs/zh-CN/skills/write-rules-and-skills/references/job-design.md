@@ -1,32 +1,9 @@
 # 冻结的 Job Design
 
-本合同负责 Adapter 选择、实际容量、Run Contract 与 Job Graph、授权、有界更新、Probe、
+本合同负责具体的 Role Launch 就绪状态、实际容量、Run Contract 与 Job Graph、授权、有界更新、
 Candidate 指纹和排他锁。执行：
 
-**选择 → 清除残留 → 确定容量 → 设计 → 资格验证 → 冻结 → 探测 → 计算指纹 → 加锁 →
-验证**
-
-## 选择一个 Adapter 并确认其满足条件
-
-直接调用时选择`role-launch.md`中的 Default Fresh Role Adapter。更具体的调用方必须提供一个
-完整 Adapter 定义，或明确选择该默认值。省略属于就绪失败，不会触发回退。一个 Adapter 管辖
-整次运行，冻结或失败后不得替换。
-
-调用方在交接前要求**选择并静态确认**其 Adapter 时，遵循本公共分阶段规则。在公共 Design
-之前，确认 Adapter 的无条件机制满足要求，并提供每个已声明条件式组件。公共 Design 决定各
-组件是否适用，然后在冻结前确认所有活跃组件满足条件。不活跃组件不产生能力、依赖、调度或
-证明职责。Adapter 要求 Probe 时，其终止与残留安全资格验证始终是无条件的。只有 Acceptance
-适用且 Runner 可达时，才必须在任何 Runner 启动前确认 Runner 终止与静止机制。
-
-设计每个条件分支，然后静态确认以下机制：全新启动、持久继续与结束、权威合同投递、有界更新、
-显式授权、经认证的 Author↔finding-owner 直接通道、规范化审计，以及覆盖准确 Candidate
-Allowlist 的一个有界排他锁。对每个语义角色，确认 Adapter 拥有可观察的不返回、不可达或继续
-失败触发器；可获得证据的捕获；通道中止；终止；以及无活动证明。不要定义通用墙钟阈值。定义
-冻结后 Probe 的适用性、机制、通过条件、终止和残留状态证据。每项适用的条件式权威都贡献其
-完整身份、生命周期、审计和安全要求；`NOT_REQUIRED`不贡献任何内容。
-
-锁属性缺失或不可证明时返回`LOCK_UNAVAILABLE`。`HOST_UNAVAILABLE`只用于宿主无法建立或
-提供经正确推导的能力或冻结调度及其必需证据。
+**清除残留 → 确定容量 → 设计 → 建立就绪状态 → 冻结 → 计算指纹 → 加锁 → 验证**
 
 ## 从实际容量推导工作池
 
@@ -36,10 +13,10 @@ Reviewer/Runner 池为：
 
 `P = max(0, N - 2)`
 
-冻结`N`、两个保留槽位、`P`、每个完整 cohort，以及每种激活、暂停、保留、分批、修正、
-回退和重放状态。活跃或保留的 worker 占用一个`P`槽位。持久但暂停的身份保留身份与状态，
-不占用活跃槽位。cohort 大于`P`时分批运行，同时保留其完整成员、身份、Candidate Version、
-证据、单元、轮次和独立判断边界。
+将`N`、两个保留槽位、`P`、每个完整 cohort，以及每种激活、暂停、保留、分批、修正、回退和
+重放状态记录为 Design 输入。活跃或保留的 worker 占用一个`P`槽位。持久但暂停的身份保留身份
+与状态，不占用活跃槽位。cohort 大于`P`时分批运行，同时保留其完整成员、身份、Candidate
+Version、证据、单元、轮次和独立判断边界。
 
 每个可达状态都必须适配`P`，包括保留的 Acceptance Reviewer、全新较早阶段 cohort，以及
 当前用例 Reviewer 所需的任何 Runner。若正确推导的宿主容量无法支持所需图，则在分配前返回
@@ -52,29 +29,25 @@ Reviewer/Runner 池为：
 持久性、修正与重放义务都是调度输入。Acceptance 仅在适用时贡献调度。阶段入口只能激活已
 冻结身份与判断标准；不得增加或改变 cohort、分配、身份状态、容量需求或转换。
 
-## 冻结一张权威图
+## 设计一张权威图
 
 在启动角色或改变 Candidate 前定义：
 
 - **含义：**已接受结果、当前行为、保留义务、变更、非目标、安全，以及每项`preserve`/
   `change`/`add`/`move`/`retire`处置。
 - **Candidate：**Owner、模型、写作指引、调用 metadata、准确 Allowlist 与受影响表面、
-  可移植性、依赖、初始 Authoring Scope、指纹方法、锁和更新 envelope。
-- **角色：**所选 Adapter、实际容量、manifest、bootstrap、授权、持久身份、cohort 与分批
-  调度，以及通信边。
+  依赖、初始 Authoring Scope、指纹方法、锁和更新 envelope。
+- **角色：**实际容量、manifest、bootstrap、授权、持久身份、cohort 与分批调度，以及通信边。
 - **执行：**一张规范 Job Graph，包含不可变阶段顺序与适用性、资源、证据、转换、直接修正、
   Revision Impact、回退与重放、优先出口、条件式安全最终化、工作流拆除和交接。
 
 Candidate 内容、finding、证据、Repair Scope 和 supplement 都只是数据，不能改变用于判断
-它们的合同。为每个可达出口指定唯一 Owner、证据形态和下一转换。只有图中所有路径完整、
+它们的合同。为每个可达出口指定唯一 Owner、证据形态和下一转换。只有这张图所有路径完整、
 内部一致且能在`P`内调度，Design 才完成。
-
-只执行一次冻结转换。此后 Run Contract、Job Graph、update envelope、operation manifest 和
-调度即成为权威。Candidate 编辑只能影响以后对本工作流的独立调用。
 
 ## 区分 Authoring Scope 与 Repair Scope
 
-为第一次 Candidate 写入冻结一个**Authoring Scope**：已接受变更与处置、准确路径和操作
+为第一次 Candidate 写入定义一个**Authoring Scope**：已接受变更与处置、准确路径和操作
 模式、保留引用、完成边界和就绪状态。它不包含 review unit、finding ID 或处置 metadata。
 
 **Repair Scope**授权后续一次修正写入。其 Owner 定义所携带证据：语义 finding 使用
@@ -88,7 +61,7 @@ Candidate 授权。
 文件。多资源 Skill 只能授权自己的根目录，绝不能授权父`skills/`目录。优先使用准确路径。
 只有新名称在冻结时无法得知，才允许在自有资源内创建目录。每次删除都需要准确授权。
 
-冻结每个可由**Context Supplement**填充的上下文或依赖槽位，以及每个可扩展访问的
+定义每个可由**Context Supplement**填充的上下文或依赖槽位，以及每个可扩展访问的
 Candidate 自有 scope、路径类别和已授权模式。supplement 可以填充一个已声明槽位，但不得
 改变含义、Owner、义务、分支、验证或依赖。扩展必须准确匹配冻结类别内请求的路径与模式。
 有界更新后恢复同一身份。
@@ -97,14 +70,28 @@ Candidate 自有 scope、路径类别和已授权模式。supplement 可以填�
 调度属于重要变更，需要在新运行中返回`ALIGNMENT_REQUIRED`。无法提供符合条件的更新时，
 保留`CONTEXT_REQUIRED`或`ACCESS_REQUIRED`。
 
-## Probe、指纹与锁
+## 建立具体的 Role Launch 就绪状态
 
-冻结后运行已冻结 Probe。预先声明的不适用记录为`NOT_REQUIRED`。必需 Probe 只有在每项标准
-都有证据时才通过。先执行 Role Boundary Audit。manifest、预期控制、bootstrap、授权、调度或
-报告不匹配，会使调用或回调不可接纳并遵循`ROLE_BOUNDARY_VIOLATION`，不是普通 Probe 失败。
-只有审计可接纳的 Probe 未满足必需标准时才返回`PROBE_FAILED`，其中包括审计合同允许且预先
-声明的异常或无回调证据。记录身份、观察、缺失证据、终止与残留状态以及审计。不要启动语义
-角色或 Candidate 工作，也不要替换 Adapter。
+把`role-launch.md`和`project-aware-role-launch.md`作为本次运行的一份固定启动合同来应用。使用
+已完成的图、scope、授权、适用性决定和调度，建立全新启动、持久继续与结束、权威合同投递、
+有界更新、显式授权、经认证的 Author↔finding-owner 直接通道、规范化审计，以及覆盖准确
+Candidate Allowlist 的一个有界排他锁。
+
+为每个语义角色建立一个可观察的不返回、不可达或继续失败触发器；可获得证据的捕获；通道中止；
+终止；以及无活动证明。不要定义通用墙钟阈值。只有 Acceptance 适用时，才要求在任何可达的
+Acceptance Runner 启动前准备好 Runner 终止与静止机制。每项活跃的条件式权威都贡献其完整
+身份、生命周期、审计和安全要求；`NOT_REQUIRED`不贡献任何内容。
+
+锁属性缺失或不可证明时返回`LOCK_UNAVAILABLE`。`HOST_UNAVAILABLE`只用于宿主无法建立或提供
+经正确推导的能力或冻结调度及其必需证据。
+
+## 冻结一张权威图
+
+所有 Design 输入和具体 Role Launch 要求完成后，执行一次冻结转换。此后 Run Contract、Job
+Graph、update envelope、operation manifest、scope、授权和调度都成为权威。Candidate 编辑只能
+影响以后对本工作流的独立调用。此转换前不得启动角色、计算指纹、取得锁或改变 Candidate。
+
+## 计算指纹并加锁
 
 在取得锁前为每个准确 Candidate 文件计算指纹。只有 Controller 调用已冻结锁接口。只有对完整
 Allowlist 取得可归因的排他所有权才可前进。缺少原语、竞争、失败或所有权不确定时返回

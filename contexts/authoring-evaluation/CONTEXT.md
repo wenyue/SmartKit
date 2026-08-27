@@ -14,9 +14,9 @@ A project-owned input under `setup-assets/blueprints/` that guides `setup-projec
 the public authoring Skill to create one complete future project-local Rule or Skill. The contract
 is generic across target projects but legitimately depends on this repository's setup catalog,
 blueprint owner, and representative target evidence, so its simpler Author, machine-validation, and
-static-review correction flow explicitly selects the Default Fresh Role Adapter rather than using
-risk-matched Executable Acceptance. The real target is later reviewed independently as a Rule or
-Skill candidate.
+static-review correction flow uses the concrete project-aware Role Launch rather than risk-matched
+Executable Acceptance. The real target is later reviewed independently as a Rule or Skill
+candidate.
 _Avoid_: Generated target, generator fixture
 
 **Acceptance Standard（验收标准）**:
@@ -301,14 +301,12 @@ corrections. It remains the same identity throughout the workflow but does not o
 Review, or Acceptance verdicts.
 _Avoid_: Controller editor, per-revision Author, author-verifier
 
-**Role Launch Interface（角色启动接口）**:
-The seam through which the Authoring Protocol qualifies and manages role Agents. One Adapter is
-explicitly selected before the Run Contract freezes and preserves the required identity,
-independence, access, audit, and finalization properties for the run. A direct invocation selects
-the Default Fresh Role Adapter. A more-specific caller explicitly selects that public Default when
-no mechanics override is needed or supplies one complete caller-owned Adapter; omission fails
-without fallback.
-_Avoid_: Isolation mode, prompt override, subagent helper
+**Role Launch Runtime（角色启动运行时）**:
+The fixed authoring machinery that preserves role identity, independence, capacity, channels,
+authority, reports, audits, abnormal-execution containment, and finalization. Public authoring
+combines it with Project-aware Role Launch as one concrete behavior. Shared authoring keeps this
+runtime and applies its private Soft-isolated Role Launch.
+_Avoid_: Public role selector, isolation option, subagent helper
 
 **Role Capacity Gate（角色容量关口）**:
 The pre-authoring qualification that the host can preserve the identities, concurrency, access,
@@ -317,30 +315,36 @@ capacity stops before the Author starts.
 _Avoid_: Codex product limit, best-effort parallelism, total-identity and active-turn conflation
 
 **Role Boundary Audit（角色边界审计）**:
-The Controller's reconciliation of a role's reported and observed operations against its Adapter,
-access, and role contract after every callback and available terminal report. Runner termination
+The Controller's reconciliation of a role's reported and observed operations against its frozen
+manifest, access, and role contract after every callback and available terminal report. Runner termination
 also requires a Candidate Fingerprint comparison even when no report is available. It is behavioral
 evidence rather than proof of a hard security boundary; a supported violation prevents use of the
 result.
 _Avoid_: Final-workflow audit, hard-sandbox proof, ignored evidence conflict
 
 **Operation Summary（操作摘要）**:
-The role's report of `read`, `write`, `create`, `delete`, `network`, `delegation`, and `machine
-checks` from its latest callback or available terminal report, using `none` for an empty category.
-It is used with host-observed evidence in the Role Boundary Audit.
-_Avoid_: Audit proof, workflow report, semantic change summary
+The complete callback bundle of Operation Report, Peer Report, and Host-Governance Report. The
+private Tool Boundary Record accompanies this unchanged bundle rather than entering it. The Role
+Boundary Audit compares the bundle and any required companion record with host-observed evidence.
+_Avoid_: Operation Report alone, Tool Boundary Record, semantic change summary
 
-**Default Fresh Role Adapter（默认独立角色适配器）**:
-The public Adapter for fresh, project-aware role Agents. Direct public invocation selects it. A
-more-specific caller may explicitly select it when no mechanics override is needed; omission never
-selects it as an implicit fallback.
-_Avoid_: Project-local mode, Soft Isolation, Project Explorer
+**Operation Report（操作报告）**:
+The Operation Summary member that reports `read`, `write`, `create`, `delete`, `network`,
+`delegation`, and `machine checks` from the latest callback or available terminal report, using
+`none` for an empty category.
+_Avoid_: Complete Operation Summary, audit proof, workflow report
 
-**Soft-Isolated Role Adapter（软隔离角色适配器）**:
-The project-private Adapter for shared portability evaluation. It supplies declared semantic input
-and uses a prompt-enforced behavioral access boundary that excludes source-project context without
-claiming technical filesystem isolation.
-_Avoid_: Shared mode, public isolation option, prompt override
+**Project-aware Role Launch（项目感知角色启动）**:
+The concrete public evidence policy for fresh roles. Authors and Reviewers directly inspect
+authorized repository evidence and Candidate resources without an intermediary. Evidence gains
+authority from its owner and provenance rather than repository or host-envelope presence.
+_Avoid_: Default Adapter, selectable project mode, Project Explorer
+
+**Soft-isolated Role Launch（软隔离角色启动）**:
+The project-private evidence and access policy for shared portability evaluation. It supplies
+declared semantic input and prompt-enforced allowlists that exclude undeclared source-project
+meaning without removing mandatory Host Governance or claiming technical filesystem isolation.
+_Avoid_: Shared public mode, hard sandbox, prompt override
 
 **Role File Allowlist（角色文件白名单）**:
 The Controller-approved behavioral access contract for a role's candidate files and owned
@@ -354,24 +358,25 @@ judgment but does not prove source-project context isolation.
 _Avoid_: New prompt in the same conversation, soft-isolated Agent
 
 **Soft-isolated Agent（软隔离智能体）**:
-A fresh Agent supplied only declared semantic input and behavioral access under the Soft-Isolated
-Role Adapter. Soft isolation is a verified behavioral boundary, not an adversarial security boundary.
+A fresh Agent supplied only declared semantic input and behavioral access under the private
+Soft-isolated Role Launch. Soft isolation is a verified behavioral boundary, not an adversarial
+security boundary.
 _Avoid_: Context-clean Agent, ordinary source-project subagent, role-fresh Agent
 
 **Role Launch Probe（角色启动探针）**:
-The selected Adapter's one post-freeze qualification gate, resolved before any semantic role starts:
-run its disposable Probe once when required, otherwise record `NOT_REQUIRED`. The Probe checks the
-Adapter-specific launch and access properties declared in the frozen contract. An eligible Role File
-Allowlist expansion preserves that result and does not rerun the Probe; a material or out-of-envelope
-change requires a new run. An observed violation or contradictory evidence stops without Adapter
-substitution or fallback.
+The private shared workflow's mandatory post-freeze qualification gate, run once before Candidate
+fingerprinting, lock acquisition, semantic roles, or Candidate writes. Its disposable Probe checks
+the frozen soft-isolated launch and access properties. Candidate edits and eligible Role File
+Allowlist expansion preserve its result; a material launch or evidence-policy change requires a new
+run. Public project-aware authoring has no Probe stage.
 _Avoid_: Acceptance canary, per-role probe, allowlist-expansion reprobe
 
 **Portability Qualification（可迁移性验证）**:
 The shared workflow's composite result rather than a separate Reviewer or correction cycle. PASS
-requires the selected Adapter's post-freeze Role Launch Probe result, declared dependency closure,
-both Correctness Reviewers' shared-scope checks across representative target contexts, and
-Acceptance when Executable Acceptance requires it, all for the same Candidate Version.
+requires portable meaning, declared dependency closure, both Correctness Reviewers' shared-scope
+checks across representative target contexts, and applicable Acceptance evidence to converge on
+one Candidate Version. Soft-isolation qualification and Role Launch Probe PASS belong to the same
+frozen run; Candidate edits neither version-bind nor replay them.
 _Avoid_: Fifth Reviewer, portability review stage, source-project simulation
 
 **Context Packet（上下文包）**:
@@ -390,40 +395,40 @@ _Avoid_: Complete replacement packet, unsourced hint, implicit correction
 
 **CONTEXT_REQUIRED（需要上下文）**:
 A non-verdict role response that identifies each missing material fact and why the role cannot
-continue without it. An Agent using the Default Fresh Role Adapter first performs its own permitted
-project discovery; an Agent using the Soft-Isolated Role Adapter requests the missing declared input
-without reading the source project. The Controller normally supplies a Context Supplement and
-continues the same Agent. Correction or withdrawal of prior context, a material task, owner, or
-Acceptance Standard change, Soft Isolation contamination, or irreconcilable context requires a
-fresh role instead.
+continue without it. A project-aware role first performs its own permitted project discovery; a
+soft-isolated shared role requests missing declared input without reading unrelated source-project
+content. The Controller normally supplies a Context Supplement and continues the same Agent.
+Correction or withdrawal of prior context, a material task, owner, or Acceptance Standard change,
+Soft Isolation contamination, or irreconcilable context requires a fresh role instead.
 _Avoid_: Project Explorer request, automatic role restart, speculative completion
 
 **ACCESS_REQUIRED（需要访问权限）**:
 A non-verdict role response that names each additional exact file or narrowly owned directory,
 requested `read`, `write`, `create`, or `delete` mode, and why the role cannot continue without it.
-The Controller grants only authorized candidate or owned-resource access that preserves the selected
-Adapter's boundary, then continues the same Agent without rerunning the completed Role Launch Probe.
-A request for undeclared source-project context is answered through an eligible Context Supplement
-or stops; it is not added to a shared Role File Allowlist. If the host cannot expand access while
-preserving the persistent Agent, the Role Capacity Gate fails.
+The Controller grants only authorized candidate or owned-resource access that preserves the frozen
+evidence and access policy, then continues the same Agent. A shared Role Launch Probe is not rerun
+for an eligible expansion. A request for undeclared source-project context is answered through an
+eligible Context Supplement or stops; it is not added to a shared Role File Allowlist. If the host
+cannot expand access while preserving the persistent Agent, the Role Capacity Gate fails.
 _Avoid_: Repository access, implicit permission expansion, context request
 
 **Ambient Context（宿主附带上下文）**:
 Context a Harness exposes outside the Context Packet. Project entry-file content and its Rule or
-Skill pointers, plus Skill catalog metadata, may be observable, but the Agent must not follow those
-pointers; any undeclared Rule or complete Skill body outside the Role File Allowlist invalidates
-soft-isolation qualification.
+Skill pointers, plus Skill catalog metadata, may be physically observable without invalidating soft
+isolation. Qualification fails when a role accesses or uses undeclared content as semantic evidence,
+follows a pointer outside its authority, or contradicts the frozen envelope/profile evidence. The
+distinction is behavioral and makes no claim that undeclared content is physically unavailable.
 _Avoid_: Context Packet, accepted dependency
 
 **Fresh Reviewer（独立审查者）**:
-A Role-fresh Agent started through the selected Role Launch Adapter that did not author the
-Candidate Version it evaluates. A Setup Authoring Contract and a real target created later receive
-separate Reviewers and do not inherit verdicts.
+A Role-fresh Agent started through the frozen Role Launch contract that did not author the Candidate
+Version it evaluates. A Setup Authoring Contract and a real target created later receive separate
+Reviewers and do not inherit verdicts.
 _Avoid_: Author self-review, inherited reviewer
 
 **Acceptance Runner（验收执行者）**:
-A Role-fresh Agent started through the selected Role Launch Adapter that applies one candidate to
-one representative task. It receives tools only when the artifact's observable behavior requires
+A Role-fresh Agent started through the frozen Role Launch contract that applies one candidate to one
+representative task. It receives tools only when the artifact's observable behavior requires
 them and receives the frozen observable pass criteria needed for that case, but no Reviewer verdict
 or intended interpretation beyond those criteria. It does not receive the semantic ledger, diff,
 author reasoning, review findings, or prior case output. Each attempt uses a fresh Runner. It

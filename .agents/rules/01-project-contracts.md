@@ -67,13 +67,15 @@ surface.
   pipeline consumes its private runtime and policies; the setup control plane consumes setup assets.
 - Keep `write-setup-authoring-contracts`, `write-shared-rules-and-skills`, and
   `translate-agent-artifacts` project-private under `.agents/skills/`. `write-setup-authoring-contracts`
-  exclusively authors setup blueprint contracts. For any Rule or Skill governed by this repository,
-  including a shared SmartKit candidate, invoke repository-owned `skills/write-rules-and-skills/`
-  directly. Do not invoke or route authoring through project-private
-  `.agents/skills/write-shared-rules-and-skills/`. `translate-agent-artifacts` exclusively updates
-  required Simplified-Chinese documentation mirrors from final English sources. None of the three
-  project-private Skills enters plugin Skill registries, root plugin manifests, setup catalogs, or
-  target installation.
+  exclusively authors setup blueprint contracts. Invoke repository-owned
+  `skills/write-rules-and-skills/` directly for a governed Rule or Skill that accepted evidence does
+  not classify as a cross-project SmartKit candidate. Invoke project-private
+  `.agents/skills/write-shared-rules-and-skills/` directly for an accepted cross-project SmartKit
+  Rule or Skill; it exclusively owns shared portability, source-context exclusion,
+  representative-target qualification, and soft-isolated role launch. `translate-agent-artifacts`
+  exclusively updates required Simplified-Chinese documentation mirrors from final English
+  sources. None of the three project-private Skills enters plugin Skill registries, root plugin
+  manifests, setup catalogs, or target installation.
 
 ## Documentation Contracts
 
@@ -83,8 +85,9 @@ surface.
   owners.
 - Treat English first-party Rules and Skills as the sole canonical semantic sources. The project
   documentation owner selects which of them require mirrors. Each selected source at `<path>` maps
-  to `docs/zh-CN/<path>`. After `write-rules-and-skills` completes for all affected sources, the
-  hosting Agent invokes `translate-agent-artifacts` once to update the complete affected mirror set.
+  to `docs/zh-CN/<path>`. After every affected source completes through its applicable English
+  authoring owner, the hosting Agent invokes `translate-agent-artifacts` once to update the complete
+  affected mirror set.
 - Treat `docs/zh-CN/` as documentation only, never as a runtime source, plugin entry point, setup
   input, or target-installation asset.
 - Translation preserves the English source's block and Markdown structure, literals, complete

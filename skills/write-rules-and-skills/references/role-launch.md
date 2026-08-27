@@ -1,26 +1,23 @@
 # Role Launch
 
-This is the public role-composition surface. It owns Host Governance, identity lifecycle,
-scheduling, semantic channels, normalized reports, the Default Adapter, Role Boundary Audits,
-semantic-role failure, conditional-role composition, and workflow finalization.
+This fixed runtime owns Host Governance, identity lifecycle, scheduling, semantic channels,
+normalized reports, Role Boundary Audits, semantic-role failure, conditional-role composition, and
+workflow finalization.
 
-The exact three-report callback schema below is normative. A caller's generic **Operation
-Summary** means the complete bundle of Operation Report, Peer Report, and Host-Governance Report;
-it never omits or replaces the Peer Report. A caller's generic **bootstrap report** is the
-Host-Governance Report. [`acceptance.md`](acceptance.md) owns Acceptance case design, attempts,
-judgment, correction, and replay; this surface owns the shared role launch, audit, identity, and
-finalization mechanics that Acceptance composes. These mappings add no second schema or owner.
+The exact three-report callback schema below is normative. An **Operation Summary** means the
+complete bundle of Operation Report, Peer Report, and Host-Governance Report; it never omits or
+replaces the Peer Report. A **bootstrap report** means the Host-Governance Report.
+[`acceptance.md`](acceptance.md) owns Acceptance case design, attempts, judgment, correction, and
+replay; this runtime owns the shared launch, audit, identity, and finalization mechanics that those
+attempts use. These mappings add no second schema or owner.
 
-In a caller Adapter, **every fresh Runner** means every Runner identity reachable through an active
-Acceptance component. Acceptance `NOT_REQUIRED` proves the frozen absence of such identities and
-contributes no Runner-specific launcher qualification. When Acceptance applies, Design must prove
-termination and quiescence after every declared normal, failed, abnormal, and non-return mode
-before freeze and before any role launches. A required Probe's own termination and residual-safety
-qualification remains unconditional.
+When Acceptance applies, Design must prove termination and quiescence after every declared normal,
+failed, abnormal, and non-return Runner mode before freeze and before any role launches.
 
 ## Keep Host Governance execution-only
 
-The public bootstrap admits one user-role envelope with exactly these ordered classes:
+Every role invocation includes one host-provided user-role envelope with exactly these ordered
+classes:
 
 1. recommended-plugin catalog metadata;
 2. repository `AGENTS` instructions;
@@ -29,23 +26,25 @@ The public bootstrap admits one user-role envelope with exactly these ordered cl
 Catalog and environment metadata are read-only, separately reported, and inert. Mandatory host or
 project instructions govern only how an already-authorized operation executes. None supplies or
 changes Candidate semantics, prose, evidence, scope, authority, permissions, dependencies,
-Acceptance facts, role work, or frozen transitions; none grants an operation or access. Earlier
-turns, unrelated tasks, and undeclared content classes remain outside the envelope. A caller
-Adapter may narrow these classes but cannot add to or enlarge one.
+Acceptance facts, role work, or frozen transitions; none grants an operation or access. An
+independently owned Rule, Spec, or implementation may still supply evidence through its established
+provenance and the frozen contract. Earlier turns, unrelated tasks, and undeclared content classes
+remain outside the role's semantic input.
 
-During qualification, the Adapter owns the canonical closed-bootstrap representation and produces
-one immutable **Envelope ID**. Freeze it in each expected-operation manifest and supply the same
-value to the role and Controller. A role references that ID; it never serializes or hashes the
-envelope. The reports below establish observed conformance and use, not semantic authority.
+Before freeze, bind the canonical closed-bootstrap representation to one immutable **Envelope ID**
+in each expected-operation manifest and supply the same value to the role and Controller. A role
+references that ID; it never serializes or hashes the envelope. The reports below establish
+observed conformance and execution-only use, not semantic authority.
 
 ## Preserve identities and capacity
 
-The frozen templates contain one fresh resident Author from launch through finalization, one
-complete fresh persistent Reviewer cohort for each review unit, and every conditional authority's
-declared identities. The Controller and resident Author retain their reserved slots throughout
-that interval. Bind a whole cohort before its first action. Membership stays immutable while the
-unit is open, and each identity persists through that unit's correction loop. Reopening an
-invalidated closed unit requires a wholly fresh complete cohort.
+Every semantic identity starts fresh without inherited parent-task turns. The frozen templates
+contain one resident Author from launch through finalization, one complete fresh persistent
+Reviewer cohort for each review unit, and every conditional authority's declared identities. The
+Controller and resident Author retain their reserved slots throughout that interval. Bind a whole
+cohort before its first action. Membership stays immutable while the unit is open, and each
+identity persists through that unit's correction loop. Reopening an invalidated closed unit
+requires a wholly fresh complete cohort.
 
 For every batch and round, bind the unit, complete cohort, active subset, Candidate Version,
 evidence, phase, independent-readiness event, permitted Author↔Reviewer pairs and directions, and
@@ -84,20 +83,21 @@ The Author returns exactly one status:
   owner, and consequences of every live choice.
 
 Reviewers independently judge complete authorized inputs and own findings, classifications, and
-verdicts. Runners perform only frozen case execution and own no judgment, repair, setup correction,
-cleanup, role control, or delegation. Only the Controller starts, resumes, suspends, retains, or
-finishes an identity; grants access; or supplies a bounded update.
+verdicts. Authors and Reviewers use no network or delegation. Runners perform only frozen case
+execution, never delegate, and own no judgment, repair, setup correction, cleanup, role control, or
+role launch. Only the Controller starts, resumes, suspends, retains, or finishes an identity;
+grants access; or supplies a bounded update.
 
 ## Close semantic-role abnormal execution
 
-For every Author or Reviewer invocation and continuation, the frozen Adapter declares an observable
-non-return, lost-identity, or failed-continuation trigger and its evidence. It may use a supported
-host terminal or a predeclared bounded detector; this contract supplies no arbitrary timeout.
+For every Author or Reviewer invocation and continuation, freeze an observable non-return,
+lost-identity, or failed-continuation trigger and its evidence. It may use a supported host terminal
+or a predeclared bounded detector; this contract supplies no arbitrary timeout.
 
 When the trigger fires, the Controller preserves every obtainable report, channel record, host
 fact, and Candidate fingerprint; aborts each open discussion through nonsemantic control metadata;
-attempts Adapter-owned termination; and audits all obtainable evidence. An absent callback supplies
-no payload and is recorded rather than invented. Before the containment decision, start no
+attempts the frozen termination operation; and audits all obtainable evidence. An absent callback
+supplies no payload and is recorded rather than invented. Before the containment decision, start no
 replacement identity, Candidate write, new discussion, or later stage.
 
 Evidence of a boundary breach classifies the incident as `ROLE_BOUNDARY_VIOLATION`; otherwise
@@ -168,22 +168,9 @@ Except for the attributable terminal-control handling above, a forbidden operati
 dispatch, schedule or grant breach, unattributable Candidate change, missing or inconsistent
 required report, forbidden peer edge, Envelope-ID mismatch, manifest-bound expected-control
 mismatch, bootstrap or governance breach, or irreconcilable evidence makes the invocation or
-callback inadmissible. A Probe control response is part of its manifest: a missing or different
-response is therefore a boundary violation, not an admissible Probe criterion failure. Return
-`ROLE_BOUNDARY_VIOLATION` to the global exit's containment decision unless a started conditional
-authority owns a higher safety terminal. Preserve Candidate, state, and evidence without reverting,
-repairing, or concealing them.
-
-## Default Fresh Role Adapter
-
-The Default launches roles without inherited parent-task turns and supplies only the closed
-bootstrap envelope and its frozen Envelope ID. Authors and Reviewers receive frozen reads; only the
-Author receives Candidate operation grants. They use neither network nor delegation. Conditional
-execution roles do not delegate. The Adapter supplies audited fresh/persistent identity lifecycle,
-suspension and retention, direct channels, semantic-role abnormal-execution detection and
-termination, host evidence for actual capacity and schedule, and one host-supported bounded lock
-selected during qualification. Its Probe is `NOT_REQUIRED`. An applicable conditional branch
-composes its declared mechanics; an inactive branch adds nothing.
+callback inadmissible. Return `ROLE_BOUNDARY_VIOLATION` to the global exit's containment decision
+unless a started conditional authority owns a higher safety terminal. Preserve Candidate, state,
+and evidence without reverting, repairing, or concealing them.
 
 ## Finalize the workflow
 

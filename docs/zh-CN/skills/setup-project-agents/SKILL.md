@@ -56,9 +56,8 @@ Matt 仓库上下文是独立的项目自有前置条件。本工作流既不生
 
 5. 在 `GENERATED/<target>` 下完成每个 `generation_requests` 条目，并保留完整目标路径。从
    `source_root` 解析每项项目设置编写契约，然后在目标仓库上下文中为契约的 Rule 或
-   Skill 目标调用 `$write-rules-and-skills`。为每次调用显式选择公共 Default Fresh Role Adapter；
-   setup 本身不提供 Adapter 或隔离机制。把每份已解析契约视为不可变 setup 输入；setup 不会创建或
-   修改它。
+   Skill 目标调用 `$write-rules-and-skills`。应用其具体的项目感知工作流。把每份已解析契约视为
+   不可变 setup 输入；setup 不会创建或修改它。
 
    Matt 上下文永远不会成为 generation 请求。
 

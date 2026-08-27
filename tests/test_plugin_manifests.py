@@ -265,13 +265,13 @@ class PluginManifestTest(unittest.TestCase):
                 'evaluation.md',
                 'job-design.md',
                 'models.md',
-                'portability.md',
+                'project-aware-role-launch.md',
                 'reviews.md',
                 'role-launch.md',
             },
             'write-shared-rules-and-skills': {
                 'portability.md',
-                'soft-isolated-role-adapter.md',
+                'soft-isolated-role-launch.md',
             },
             'write-setup-authoring-contracts': {
                 'setup-authoring-contract.md',

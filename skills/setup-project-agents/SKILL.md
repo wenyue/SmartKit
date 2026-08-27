@@ -66,8 +66,7 @@ nor owns `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`,
 5. Fulfil every `generation_requests` entry under `GENERATED/<target>`, preserving the complete
    target path. Resolve each request's Setup Authoring Contract from `source_root`, then invoke
    `$write-rules-and-skills` in the target-repository context for the contract's Rule or Skill
-   target. Explicitly select the public Default Fresh Role Adapter for every invocation; setup
-   supplies no Adapter or isolation mechanics of its own. Treat each resolved contract as immutable
+   target. Apply its concrete project-aware workflow. Treat each resolved contract as immutable
    setup input; setup does not create or change it.
 
    Matt context is never a generation request.

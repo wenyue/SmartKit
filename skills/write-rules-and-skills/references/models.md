@@ -2,15 +2,14 @@
 
 While this gate is open, permit only `Close alignment`'s conditional `grilling` invocation and the
 read-only Agent fact discovery it requires, including fact-finding dispatch, as alignment-owned
-operations. Begin no Candidate mutation, lock, Probe, validation stage, Author/Reviewer/Runner
-role, or other downstream authoring or proof effect until alignment and modeling close.
+operations. Begin no Candidate mutation, lock, validation stage, Author/Reviewer/Runner role, or
+other downstream authoring or proof effect until alignment and modeling close.
 
 ## Route one owner
 
 Discover ownership from the concern, capability, artifact, and governing evidence. Packaging does
 not confer semantic ownership. When a more-specific authoring owner applies, route the request
-there unless its completed handoff is present. A caller-qualified continuation must explicitly
-select one complete Adapter.
+there unless its completed handoff is present.
 
 Classify every accepted obligation:
 
@@ -24,7 +23,7 @@ Classify every accepted obligation:
 
 For an ownership conflict, report the governing evidence, loading and behavioral effects,
 supported retain/move/split outcomes, live choice, and decision owner. A human preference cannot
-turn policy into a triggered job or waive the selected model and proof contract.
+turn policy into a triggered job or waive the supported model and proof contract.
 
 An explicitly read-only Ownership Review reports each artifact's current and supported owner,
 obligation classifications, evidence, effects, recommendation, and missing decision. Return `PASS`
@@ -38,8 +37,8 @@ Establish one accepted value for:
 - outcome, current and preserved behavior, changes, non-goals, safety, and prioritized exits;
 - owner, exact Candidate resources, loading route, distribution boundary, and every obligation's
   `preserve`, `change`, `add`, `move`, or `retire` disposition;
-- dependencies, permissions, external effects, validation duties, portability, representative
-  contexts, and final handoff; and
+- dependencies, permissions, external effects, validation duties, applicable operating contexts,
+  and final handoff; and
 - separate `read`, `write`, `create`, and `delete` authority.
 
 Align evidence-complete requirements directly. An accepted Issue or Spec may supply these values;
@@ -56,8 +55,7 @@ exactly one handoff: that understanding becomes accepted human-decision context 
 run. Every operative term and meaning requires independent accepted support; an ambient or
 nonnormative glossary is never authority.
 
-Select exactly one Candidate model below. Add the Portability branch only for a cross-project
-Candidate.
+Select exactly one Candidate model below.
 
 ## Rule model
 
@@ -115,4 +113,4 @@ interface metadata and create `agents/openai.yaml` when absent.
 Correctness reconstructs the complete job, shape, boundaries, branches, and exits. Full-job
 execution is normal Skill Acceptance. A **Finite Execution Projection** is eligible only when full
 execution would re-enter this Acceptance graph or require identity control forbidden to a Runner;
-Design must record eligibility and preauthorize the Adapter-owned harness.
+Design must record eligibility and preauthorize the harness.
