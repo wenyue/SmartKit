@@ -1,5 +1,3 @@
 interface:
   display_name: "Write Rules and Skills"
-  short_description: "Author Rules and Skills or review ownership"
-policy:
-  allow_implicit_invocation: true
+  short_description: "Design, author, and prove one Rule or Skill"

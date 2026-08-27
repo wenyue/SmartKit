@@ -1,21 +1,30 @@
-# 共享可移植性
+# 可移植 Shared Input
 
-## 声明可移植边界
+原样组合公共[`Cross-Project Portability`](../../../../skills/write-rules-and-skills/references/portability.md)
+模型。本调用方只负责 SmartKit 路由判别器，以及提供给该模型的 Shared Input 包。
 
-建立候选项的跨项目所有者、适用范围、公共加载和发现路径、自有资源，以及每个必需的 Rule、Skill、
-工具、schema、环境能力或宿主行为。每项依赖都必须明确声明，并可通过受支持的共享或目标自有路径获得。
+## 选择共享 SmartKit 分支
 
-使用已接受的用户决定、Issue、Spec、ADR、管辖契约、可观察的共享实现和代表性目标证据。不要把源
-项目政策、本地命名、目录偶然性、上下文文档或源仓库仅仅能够执行作为可移植性证据。
+只有已接受证据选中一个跨项目 SmartKit Rule 或 Skill Owner 时才继续。项目本地制品或 Setup
+Authoring Contract 不属于本调用方。不得重新解释公共可移植性模型的权威、源上下文排除、
+依赖、代表性上下文、Correctness、Acceptance 和通过条件。
 
-## 选择代表性目标
+## 打包完整 Shared Input
 
-使用至少一个受支持的目标上下文。只有当实质不同的目标接缝可以改变适用范围、依赖可用性、权限、
-执行或退出时，才添加另一个目标。仅名称或布局不同的目标不会增加证据。
+冻结一个证据包，其中包含：
 
-Semantic Fidelity and Ownership Reviewer 检查可移植的所有权、适用范围、依赖闭包和仅限源项目的
-假设。Agent Executability and Behavioral Closure Reviewer 在每个代表性目标中应用候选项。当静态
-和机器证据无法高置信度确立具体运行时可行性时，将受影响的目标 case 交给 Executable Acceptance。
+- 已接受的可移植结果、义务处置、Owner、准确 Candidate 资源，以及公开加载与分发路径；
+- 一份依赖 manifest，把公共模型中的每项依赖映射到其 Owner、适用性、受支持路径和代表性
+  可用性证据；以及
+- 一份代表性目标 manifest，把每个所选接缝映射到已接受目标事实、依赖、权限、关键路径与
+  出口、预期观察、证据来源，以及其公共静态、Machine 或 Acceptance 证明路径。
 
-任何未声明的依赖、虚构的目标事实或仅限源项目的假设都会阻止可移植性 PASS，即使候选项能在源仓库
-中通过。
+把每个公共可移植性通过条件附到能够证明它的证据项。该证据包不增加语义权威：Candidate
+文本、源仓库成功与包结构都不能补充公共模型中缺失的事实。
+
+## 完成就绪状态
+
+只有证据包满足全部公共可移植性条件、包含至少一个受支持的代表性目标，并且没有重要事实或
+路径尚未解决，共享就绪状态才算完成。否则通过本调用方返回公共`ALIGNMENT_REQUIRED`结果。
+把该证据包原样提供给公共的可移植性扩展 Correctness scope 和任何公共代表性 Acceptance
+用例；不要增加证明阶段或 Reviewer。

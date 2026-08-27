@@ -73,12 +73,28 @@ class RecommendedToolPolicyTest(unittest.TestCase):
                     [item['id'] for item in policy.get('required_values', [])],
                     ['multi_agent'] if harness == 'codex' else [],
                 )
+                self.assertEqual(
+                    [item['id'] for item in policy.get('config_requirements', [])],
+                    ['parallel_agent_capacity'] if harness == 'codex' else [],
+                )
+                self.assertEqual(
+                    [item['id'] for item in policy.get('manual_session_actions', [])],
+                    ['fleet_mode'] if harness == 'copilot' else [],
+                )
 
     def test_default_policy_path_resolves_plugin_root_policy(self):
         self.assertEqual(
             self.checker.default_policy_path('codex'),
             POLICY_ROOT / 'codex.json',
         )
+
+    def test_codex_readiness_hook_timeout_remains_thirty_seconds(self):
+        manifest = json.loads(
+            (REPO_ROOT / 'hooks' / 'hooks.json').read_text(encoding='utf-8')
+        )
+        readiness_hook = manifest['hooks']['SessionStart'][0]['hooks'][0]
+
+        self.assertEqual(readiness_hook['timeout'], 30)
 
     def test_hook_mode_does_not_call_maintenance_runner(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -149,6 +165,48 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             ['multi_agent'],
         )
         self.assertEqual(codex_policy['required_values'][0]['expected'], 'true')
+        requirement = codex_policy['config_requirements'][0]
+        self.assertEqual(requirement['minimum_total_threads'], 6)
+        self.assertEqual(requirement['primary_threads'], 1)
+        self.assertEqual(
+            requirement['maintenance']['write_key_path'],
+            'agents.max_concurrent_threads_per_session',
+        )
+        self.assertEqual(requirement['maintenance']['write_value'], 5)
+        self.assertEqual(
+            codex_policy['required_values'][0]['maintenance'],
+            {
+                'kind': 'config-write',
+                'write_key_path': 'features.multi_agent',
+                'write_value': True,
+            },
+        )
+
+    def test_cursor_version_gate_owns_default_subagent_availability(self):
+        policy = json.loads(
+            (POLICY_ROOT / 'cursor.json').read_text(encoding='utf-8')
+        )
+        cursor = next(tool for tool in policy['tools'] if tool['id'] == 'cursor-agent')
+
+        self.assertIn('default parallel subagent support', cursor['install'])
+        self.assertIn('default parallel subagent capability', cursor['upgrade'])
+        self.assertNotIn('config_requirements', policy)
+
+    def test_copilot_fleet_support_produces_an_approved_manual_session_action(self):
+        checker = self.checker
+        policy = json.loads(
+            (POLICY_ROOT / 'copilot.json').read_text(encoding='utf-8')
+        )
+        policy['tools'] = []
+
+        with mock.patch.object(checker, 'run_detector', return_value='/fleet'):
+            findings = checker.check_policy(policy)
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].code, 'manual-session-action')
+        self.assertEqual(findings[0].target_id, 'fleet_mode')
+        self.assertEqual(findings[0].action, 'configure')
+        self.assertIn('parallel subagents', findings[0].message)
 
     def test_policy_guidance_describes_actions_without_exposing_commands(self):
         forbidden = (
@@ -368,6 +426,130 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             mismatching[0].message,
             'is false; it must be true for this project',
         )
+
+    def test_config_requirement_prompts_for_low_or_unset_total_capacity(self):
+        checker = self.checker
+        policy = json.loads(
+            (POLICY_ROOT / 'codex.json').read_text(encoding='utf-8')
+        )
+        cases = (
+            {'agents': {'max_concurrent_threads_per_session': 3}},
+            {'agents': {'max_threads': 4}},
+            {'agents': None},
+        )
+        for initial_config in cases:
+            with self.subTest(initial_config=initial_config):
+                calls = []
+
+                def rpc(method, params):
+                    calls.append((method, params))
+                    return {'config': initial_config}
+
+                findings = checker.check_config_requirements(
+                    policy,
+                    Path('/project'),
+                    rpc=rpc,
+                )
+
+                self.assertEqual(len(findings), 1)
+                self.assertEqual(findings[0].code, 'required-value-mismatch')
+                self.assertEqual(findings[0].target_id, 'parallel_agent_capacity')
+                self.assertEqual(findings[0].action, 'configure')
+                self.assertIn('at least 6 concurrent agents', findings[0].message)
+                self.assertEqual(
+                    [method for method, _params in calls],
+                    ['config/read'],
+                )
+
+    def test_config_requirement_preserves_sufficient_capacity(self):
+        checker = self.checker
+        policy = json.loads(
+            (POLICY_ROOT / 'codex.json').read_text(encoding='utf-8')
+        )
+        calls = []
+
+        def rpc(method, params):
+            calls.append((method, params))
+            return {
+                'config': {
+                    'agents': {'max_concurrent_threads_per_session': 5}
+                }
+            }
+
+        findings = checker.check_config_requirements(
+            policy,
+            Path('/project'),
+            rpc=rpc,
+        )
+
+        self.assertEqual(findings, [])
+        self.assertEqual([method for method, _params in calls], ['config/read'])
+
+    def test_config_requirement_is_checked_when_multi_agent_is_unavailable(self):
+        checker = self.checker
+        policy = json.loads(
+            (POLICY_ROOT / 'codex.json').read_text(encoding='utf-8')
+        )
+        rpc = mock.Mock(return_value={
+            'config': {'agents': {'max_concurrent_threads_per_session': 3}},
+        })
+        findings = checker.check_config_requirements(
+            policy,
+            Path('/project'),
+            rpc=rpc,
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].target_id, 'parallel_agent_capacity')
+        rpc.assert_called_once()
+
+    def test_config_requirement_reports_nonblocking_failure(self):
+        checker = self.checker
+        policy = json.loads(
+            (POLICY_ROOT / 'codex.json').read_text(encoding='utf-8')
+        )
+
+        findings = checker.check_config_requirements(
+            policy,
+            Path('/project'),
+            rpc=mock.Mock(side_effect=checker.DetectorError('private detail')),
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].code, 'detector-error')
+        self.assertNotIn('private detail', checker.render_findings(findings))
+
+    def test_codex_config_rpc_client_initializes_and_reuses_one_process(self):
+        checker = self.checker
+        process = mock.Mock()
+        process.stdin = io.BytesIO()
+        process.stdout = io.BytesIO(
+            b'{"id":0,"result":{"userAgent":"codex"}}\n'
+            b'{"method":"remoteControl/status/changed","params":{}}\n'
+            b'{"id":1,"result":{"config":{"agents":null}}}\n'
+            b'{"id":2,"result":{}}\n'
+        )
+        process.wait.return_value = 0
+
+        with mock.patch.object(shutil, 'which', return_value='/bin/codex'), \
+                mock.patch.object(
+                    checker.subprocess, 'Popen', return_value=process
+                ) as popen:
+            with checker._CodexConfigRpcClient(Path('/project')) as client:
+                read = client.request('config/read', {'includeLayers': False})
+                written = client.request(
+                    'config/value/write',
+                    {
+                        'keyPath': 'agents.max_concurrent_threads_per_session',
+                        'value': 5,
+                        'mergeStrategy': 'upsert',
+                    },
+                )
+
+        self.assertEqual(read, {'config': {'agents': None}})
+        self.assertEqual(written, {})
+        popen.assert_called_once()
+        self.assertEqual(popen.call_args.args[0], ['/bin/codex', 'app-server'])
 
     def test_detector_timeout_is_retryable_and_equal_differs_from_lower(self):
         checker = self.checker
@@ -932,6 +1114,72 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             '',
         )
 
+    def test_config_findings_request_one_consent_and_map_to_separate_actions(self):
+        checker = self.checker
+        result = checker.HookResult(
+            True,
+            (
+                checker.Finding(
+                    'required-value-mismatch',
+                    'Codex multi-agent',
+                    'is false; it must be true',
+                    'Enable it and start a new session.',
+                    'setting',
+                    'multi_agent',
+                    'configure',
+                ),
+                checker.Finding(
+                    'required-value-mismatch',
+                    'Codex parallel-agent capacity',
+                    'allows 4 concurrent agents; it must allow at least 6',
+                    'Raise the setting and start a new session.',
+                    'setting',
+                    'parallel_agent_capacity',
+                    'configure',
+                ),
+            ),
+        )
+
+        rendered = json.loads(checker.render_hook_result(result, 'codex'))
+
+        self.assertEqual(
+            set(rendered),
+            {'continue', 'systemMessage', 'hookSpecificOutput'},
+        )
+        self.assertIs(rendered['continue'], True)
+        self.assertIn('at least 6', rendered['systemMessage'])
+        self.assertIn('require approval', rendered['systemMessage'])
+        context = rendered['hookSpecificOutput']['additionalContext']
+        self.assertIn('--setting multi_agent', context)
+        self.assertIn('configure --harness codex', context)
+        self.assertIn('--setting parallel_agent_capacity', context)
+        self.assertIn('--approved', context)
+
+    def test_copilot_fleet_action_waits_for_consent_before_exposing_slash_command(self):
+        checker = self.checker
+        result = checker.HookResult(
+            True,
+            (
+                checker.Finding(
+                    'manual-session-action',
+                    'GitHub Copilot fleet mode',
+                    'requires explicit activation for parallel subagents in this session',
+                    'Enable fleet mode in the current session after approval.',
+                    'setting',
+                    'fleet_mode',
+                    'configure',
+                ),
+            ),
+        )
+
+        context = json.loads(
+            checker.render_hook_result(result, 'copilot')
+        )['additionalContext']
+
+        self.assertIn('configure --harness copilot --setting fleet_mode', context)
+        self.assertNotIn('Run /fleet', context)
+        self.assertIn('manual action required', context)
+
     def test_cursor_context_delivery_instructs_headless_agent(self):
         checker = self.checker
         result = checker.HookResult(
@@ -942,6 +1190,9 @@ class RecommendedToolCheckerTest(unittest.TestCase):
                     'Example Tool',
                     'is missing',
                     'Install it.',
+                    'tool',
+                    'example',
+                    'install',
                 ),
             ),
         )
@@ -970,6 +1221,9 @@ class RecommendedToolCheckerTest(unittest.TestCase):
                     'Example Tool',
                     'is missing',
                     'Install it.',
+                    'tool',
+                    'example',
+                    'install',
                 ),
             ),
         )
@@ -981,7 +1235,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
 
         for message in messages:
             self.assertIn('Example Tool', message)
-            self.assertIn('Reply with the tool names', message)
+            self.assertIn('Reply with the names', message)
             self.assertNotIn('maintain_recommended_tools.py', message)
             self.assertNotIn('--approved', message)
 
@@ -995,6 +1249,9 @@ class RecommendedToolCheckerTest(unittest.TestCase):
                     'Example Tool',
                     'is missing',
                     'Install it.',
+                    'tool',
+                    'example',
+                    'install',
                 ),
             ),
         )
@@ -1010,17 +1267,18 @@ class RecommendedToolCheckerTest(unittest.TestCase):
 
         for message in messages:
             self.assertIn(
-                'Tell the user which tools need installation or upgrade and ask whether they consent',
+                'Tell the user which tools or settings need a change and ask whether',
                 message,
             )
             self.assertIn(
-                'If the user explicitly declines all listed tool actions',
+                'If the user explicitly declines all listed readiness actions',
                 message,
             )
             self.assertIn('continue the original task', message)
             self.assertIn('End this turn after requesting consent', message)
             self.assertIn('Do not show the underlying maintenance commands', message)
             self.assertIn('maintain_recommended_tools.py', message)
+            self.assertIn('--tool example --action install --approved', message)
             self.assertIn('plugin Hook support, not an exposed Skill', message)
         self.assertIn(
             'the named tool is a Codex plugin',
@@ -1127,6 +1385,133 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
             )
 
         executor.assert_not_called()
+
+    def test_configuration_requires_consent_before_write(self):
+        rpc = mock.Mock(side_effect=AssertionError('configuration must remain unchanged'))
+
+        with self.assertRaises(self.maintainer.ApprovalRequired):
+            self.maintainer.configure_setting(
+                'codex',
+                'parallel_agent_capacity',
+                approved=False,
+                rpc=rpc,
+            )
+
+        rpc.assert_not_called()
+
+    def test_approved_copilot_fleet_action_returns_current_session_instruction(self):
+        rpc = mock.Mock(side_effect=AssertionError('manual action must not write config'))
+        with mock.patch.object(
+            self.maintainer.checker,
+            '_manual_session_action_available',
+            return_value=True,
+        ):
+            result = self.maintainer.configure_setting(
+                'copilot',
+                'fleet_mode',
+                approved=True,
+                rpc=rpc,
+            )
+
+        self.assertEqual(result.status, 'manual-action-required')
+        self.assertIn('Run /fleet', result.detail)
+        self.assertIn('current Copilot CLI session', result.detail)
+        rpc.assert_not_called()
+
+    def test_approved_capacity_configuration_writes_five_and_verifies_six_total(self):
+        effective = [{'agents': {'max_threads': 3}}]
+        calls = []
+
+        def rpc(method, params):
+            calls.append((method, params))
+            if method == 'config/value/write':
+                effective[0] = {
+                    'agents': {
+                        'max_concurrent_threads_per_session': params['value'],
+                    }
+                }
+                return {}
+            return {'config': effective[0]}
+
+        result = self.maintainer.configure_setting(
+            'codex',
+            'parallel_agent_capacity',
+            approved=True,
+            project_root=REPO_ROOT,
+            rpc=rpc,
+        )
+
+        self.assertEqual(result.status, 'completed')
+        self.assertEqual(
+            calls[1],
+            (
+                'config/value/write',
+                {
+                    'keyPath': 'agents.max_concurrent_threads_per_session',
+                    'value': 5,
+                    'mergeStrategy': 'upsert',
+                },
+            ),
+        )
+        self.assertEqual(
+            [method for method, _params in calls],
+            ['config/read', 'config/value/write', 'config/read'],
+        )
+
+    def test_approved_multi_agent_configuration_uses_policy_write(self):
+        rpc = mock.Mock(return_value={})
+        with mock.patch.object(
+            self.maintainer,
+            '_configuration_required',
+            side_effect=(True, False),
+        ):
+            result = self.maintainer.configure_setting(
+                'codex',
+                'multi_agent',
+                approved=True,
+                project_root=REPO_ROOT,
+                rpc=rpc,
+            )
+
+        self.assertEqual(result.status, 'completed')
+        rpc.assert_called_once_with(
+            'config/value/write',
+            {
+                'keyPath': 'features.multi_agent',
+                'value': True,
+                'mergeStrategy': 'upsert',
+            },
+        )
+
+    def test_configure_cli_dispatches_only_with_approved_marker(self):
+        completed = self.maintainer.MaintenanceResult(
+            'codex',
+            'parallel_agent_capacity',
+            'Codex parallel-agent capacity',
+            'configure',
+            'completed',
+        )
+        with mock.patch.object(
+            self.maintainer,
+            'configure_setting',
+            return_value=completed,
+        ) as configure, mock.patch('builtins.print'):
+            exit_code = self.maintainer.main([
+                'configure',
+                '--harness',
+                'codex',
+                '--setting',
+                'parallel_agent_capacity',
+                '--approved',
+            ])
+
+        self.assertEqual(exit_code, 0)
+        configure.assert_called_once_with(
+            'codex',
+            'parallel_agent_capacity',
+            approved=True,
+            policy_path=None,
+        )
 
     def test_approved_maintenance_executes_allowlisted_recipe_and_hides_command(self):
         executor = mock.Mock(return_value=mock.Mock(returncode=0))

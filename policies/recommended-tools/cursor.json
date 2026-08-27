@@ -13,8 +13,8 @@
           "pattern": "([0-9]+(?:\\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)"
         }
       ],
-      "install": "Install a Cursor Agent CLI release with default subagent support from the official Cursor distribution.",
-      "upgrade": "Upgrade Cursor Agent CLI with the official Cursor updater so the required default subagent capability is available."
+      "install": "Install a Cursor Agent CLI release with default parallel subagent support from the official Cursor distribution.",
+      "upgrade": "Upgrade Cursor Agent CLI with the official Cursor updater so the required default parallel subagent capability is available."
     },
     {
       "id": "codegraph",

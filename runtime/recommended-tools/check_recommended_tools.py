@@ -8,6 +8,7 @@ import glob
 import hashlib
 import json
 import os
+import queue
 import re
 import shutil
 import subprocess
@@ -23,6 +24,7 @@ from typing import Any, Callable
 
 _DEFAULT_VERSION_PATTERN = r'(\d+(?:\.\d+)+(?:[-+][0-9A-Za-z.-]+)?)'
 _MAX_COMMAND_OUTPUT = 16_384
+_MAX_CONFIG_RPC_OUTPUT = 1_048_576
 _LOCK_STALE_SECONDS = 300
 _RUNTIME_PROBES = {
     'node': (('node', '--version'), _DEFAULT_VERSION_PATTERN),
@@ -53,6 +55,9 @@ class Finding:
     tool: str
     message: str
     guidance: str
+    target_kind: str | None = None
+    target_id: str | None = None
+    action: str | None = None
 
 
 @dataclass(frozen=True)
@@ -303,6 +308,11 @@ def _validate_required_value(requirement: Any) -> dict[str, Any]:
     detectors = requirement.get('detectors')
     if not isinstance(detectors, list) or not detectors:
         raise PolicyError('required value detectors must be a non-empty array')
+    maintenance = requirement.get('maintenance')
+    if maintenance is not None:
+        validated_maintenance = _validate_maintenance(maintenance)
+        if validated_maintenance['kind'] != 'config-write':
+            raise PolicyError('required value maintenance kind is invalid')
     return requirement
 
 
@@ -328,6 +338,8 @@ def _check_required_values(policy: dict[str, Any]) -> list[Finding]:
                     requirement['name'],
                     'effective value detection failed',
                     requirement['guidance'],
+                    'setting' if requirement.get('maintenance') else None,
+                    requirement['id'] if requirement.get('maintenance') else None,
                 )
             )
             continue
@@ -338,8 +350,376 @@ def _check_required_values(policy: dict[str, Any]) -> list[Finding]:
                     requirement['name'],
                     f'is {actual}; it must be {requirement["expected"]} for this project',
                     requirement['guidance'],
+                    'setting' if requirement.get('maintenance') else None,
+                    requirement['id'] if requirement.get('maintenance') else None,
+                    'configure' if requirement.get('maintenance') else None,
                 )
             )
+    return findings
+
+
+def _validate_maintenance(maintenance: Any) -> dict[str, Any]:
+    if not isinstance(maintenance, dict):
+        raise PolicyError('setting maintenance is invalid')
+    kind = maintenance.get('kind')
+    if kind == 'config-write':
+        if set(maintenance) != {'kind', 'write_key_path', 'write_value'}:
+            raise PolicyError('configuration maintenance is invalid')
+        if (
+            not isinstance(maintenance['write_key_path'], str)
+            or not maintenance['write_key_path']
+            or maintenance['write_value'] is None
+        ):
+            raise PolicyError('configuration maintenance is invalid')
+        return maintenance
+    if kind == 'manual-session':
+        if set(maintenance) != {'kind', 'instruction'} or not isinstance(
+            maintenance.get('instruction'), str
+        ) or not maintenance['instruction']:
+            raise PolicyError('manual session maintenance is invalid')
+        return maintenance
+    raise PolicyError('setting maintenance kind is invalid')
+
+
+def _validate_manual_session_action(action: Any) -> dict[str, Any]:
+    if not isinstance(action, dict) or set(action) != {
+        'id',
+        'name',
+        'detectors',
+        'maintenance',
+        'guidance',
+    }:
+        raise PolicyError('manual session action is invalid')
+    for field in ('id', 'name', 'guidance'):
+        if not isinstance(action.get(field), str) or not action[field]:
+            raise PolicyError(
+                f'manual session action field {field} must be a non-empty string'
+            )
+    detectors = action.get('detectors')
+    if not isinstance(detectors, list) or not detectors:
+        raise PolicyError('manual session action detectors must be a non-empty array')
+    maintenance = _validate_maintenance(action.get('maintenance'))
+    if maintenance['kind'] != 'manual-session':
+        raise PolicyError('manual session action maintenance kind is invalid')
+    return action
+
+
+def _manual_session_action_available(action: dict[str, Any]) -> bool:
+    for detector in action['detectors']:
+        try:
+            if run_detector(detector) is not None:
+                return True
+        except (PolicyError, re.error):
+            continue
+    return False
+
+
+def _check_manual_session_actions(policy: dict[str, Any]) -> list[Finding]:
+    raw_actions = policy.get('manual_session_actions', [])
+    if not isinstance(raw_actions, list):
+        raise PolicyError('policy manual_session_actions must be an array')
+    findings: list[Finding] = []
+    for raw_action in raw_actions:
+        action = _validate_manual_session_action(raw_action)
+        if not _manual_session_action_available(action):
+            findings.append(Finding(
+                'detector-error',
+                action['name'],
+                'session action availability detection failed',
+                action['guidance'],
+            ))
+            continue
+        findings.append(Finding(
+            'manual-session-action',
+            action['name'],
+            'requires explicit activation for parallel subagents in this session',
+            action['guidance'],
+            'setting',
+            action['id'],
+            'configure',
+        ))
+    return findings
+
+
+def _validate_config_requirement(requirement: Any) -> dict[str, Any]:
+    if not isinstance(requirement, dict):
+        raise PolicyError('each configuration requirement must be an object')
+    expected_fields = {
+        'id',
+        'name',
+        'minimum_total_threads',
+        'primary_threads',
+        'read_key_paths',
+        'maintenance',
+        'guidance',
+    }
+    if set(requirement) != expected_fields:
+        raise PolicyError('configuration requirement fields are invalid')
+    for field in (
+        'id',
+        'name',
+        'guidance',
+    ):
+        if not isinstance(requirement[field], str) or not requirement[field]:
+            raise PolicyError(
+                f'configuration requirement field {field} must be a non-empty string'
+            )
+    minimum = requirement['minimum_total_threads']
+    primary = requirement['primary_threads']
+    if (
+        type(minimum) is not int
+        or type(primary) is not int
+        or minimum <= primary
+        or primary < 1
+    ):
+        raise PolicyError('configuration requirement thread counts are invalid')
+    key_paths = requirement['read_key_paths']
+    maintenance = _validate_maintenance(requirement['maintenance'])
+    if (
+        not isinstance(key_paths, list)
+        or not key_paths
+        or not all(isinstance(path, str) and path for path in key_paths)
+        or len(key_paths) != len(set(key_paths))
+        or maintenance['kind'] != 'config-write'
+        or maintenance['write_key_path'] not in key_paths
+        or type(maintenance['write_value']) is not int
+        or maintenance['write_value'] != minimum - primary
+    ):
+        raise PolicyError('configuration requirement key paths are invalid')
+    return requirement
+
+
+class _CodexConfigRpcClient:
+    def __init__(self, cwd: Path, timeout: float = 4) -> None:
+        executable = shutil.which('codex')
+        if executable is None:
+            raise DetectorError('Codex configuration RPC is unavailable')
+        try:
+            self._process = subprocess.Popen(
+                [executable, 'app-server'],
+                cwd=cwd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+            )
+        except (FileNotFoundError, PermissionError, OSError) as error:
+            raise DetectorError('Codex configuration RPC failed to start') from error
+        if self._process.stdin is None or self._process.stdout is None:
+            self.close()
+            raise DetectorError('Codex configuration RPC pipes are unavailable')
+        self._timeout = timeout
+        self._next_id = 1
+        self._output_size = 0
+        self._overflow = threading.Event()
+        self._lines: queue.Queue[bytes | None] = queue.Queue()
+        self._reader = threading.Thread(target=self._read_output, daemon=True)
+        self._reader.start()
+        try:
+            self._send({
+                'method': 'initialize',
+                'id': 0,
+                'params': {
+                    'clientInfo': {
+                        'name': 'smartkit_hook',
+                        'title': 'SmartKit Hook',
+                        'version': '1',
+                    }
+                },
+            })
+            self._wait_for_response(0)
+            self._send({'method': 'initialized', 'params': {}})
+        except Exception:
+            self.close()
+            raise
+
+    def _read_output(self) -> None:
+        process = self._process
+        output = process.stdout
+        if output is None:
+            self._lines.put(None)
+            return
+        try:
+            while True:
+                line = output.readline()
+                if not line:
+                    return
+                self._output_size += len(line)
+                if self._output_size > _MAX_CONFIG_RPC_OUTPUT:
+                    self._overflow.set()
+                    process.kill()
+                    return
+                self._lines.put(line)
+        finally:
+            self._lines.put(None)
+
+    def _send(self, message: dict[str, Any]) -> None:
+        if self._process.stdin is None:
+            raise DetectorError('Codex configuration RPC input is unavailable')
+        payload = (json.dumps(message, separators=(',', ':')) + '\n').encode('utf-8')
+        try:
+            self._process.stdin.write(payload)
+            self._process.stdin.flush()
+        except (BrokenPipeError, OSError) as error:
+            raise DetectorError('Codex configuration RPC input failed') from error
+
+    def _wait_for_response(self, request_id: int) -> dict[str, Any]:
+        deadline = time.monotonic() + self._timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise DetectorError('Codex configuration RPC timed out')
+            try:
+                line = self._lines.get(timeout=remaining)
+            except queue.Empty as error:
+                raise DetectorError('Codex configuration RPC timed out') from error
+            if line is None:
+                if self._overflow.is_set():
+                    raise DetectorError(
+                        'Codex configuration RPC output exceeded the limit'
+                    )
+                raise DetectorError('Codex configuration RPC ended unexpectedly')
+            try:
+                message = json.loads(line)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                continue
+            if not isinstance(message, dict) or message.get('id') != request_id:
+                continue
+            if 'error' in message:
+                raise DetectorError('Codex configuration RPC returned an error')
+            result = message.get('result')
+            if not isinstance(result, dict):
+                raise DetectorError(
+                    'Codex configuration RPC returned an invalid result'
+                )
+            return result
+
+    def request(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
+        request_id = self._next_id
+        self._next_id += 1
+        self._send({'method': method, 'id': request_id, 'params': params})
+        return self._wait_for_response(request_id)
+
+    def close(self) -> None:
+        process = getattr(self, '_process', None)
+        if process is None:
+            return
+        if process.stdin is not None:
+            try:
+                process.stdin.close()
+            except OSError:
+                pass
+        try:
+            process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            try:
+                process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        if process.stdout is not None:
+            process.stdout.close()
+        reader = getattr(self, '_reader', None)
+        if reader is not None:
+            reader.join(timeout=1)
+        self._process = None
+
+    def __enter__(self) -> '_CodexConfigRpcClient':
+        return self
+
+    def __exit__(self, *_error: object) -> None:
+        self.close()
+
+
+def _effective_spawned_threads(
+    response: dict[str, Any],
+    key_paths: list[str],
+) -> int | None:
+    config = response.get('config')
+    if not isinstance(config, dict):
+        raise DetectorError('Codex effective configuration is unavailable')
+    for key_path in key_paths:
+        value = _json_path(config, key_path)
+        if value is None:
+            continue
+        if type(value) is not int or value < 1:
+            raise DetectorError('Codex parallel-agent configuration is invalid')
+        return value
+    return None
+
+
+def check_config_requirements(
+    policy: dict[str, Any],
+    project_root: Path,
+    *,
+    rpc: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None,
+) -> list[Finding]:
+    raw_requirements = policy.get('config_requirements', [])
+    if not isinstance(raw_requirements, list):
+        raise PolicyError('policy config_requirements must be an array')
+    findings: list[Finding] = []
+
+    def check_with_rpc(
+        requirement: dict[str, Any],
+        request: Callable[[str, dict[str, Any]], dict[str, Any]],
+    ) -> None:
+        read_params = {'includeLayers': False, 'cwd': str(project_root)}
+        response = request('config/read', read_params)
+        spawned = _effective_spawned_threads(response, requirement['read_key_paths'])
+        minimum_total = requirement['minimum_total_threads']
+        primary = requirement['primary_threads']
+        target_spawned = minimum_total - primary
+        if spawned is not None and spawned >= target_spawned:
+            return
+        actual = (
+            'is unset'
+            if spawned is None
+            else f'allows {spawned + primary} concurrent agents including the primary'
+        )
+        findings.append(Finding(
+            'required-value-mismatch',
+            requirement['name'],
+            f'{actual}; it must allow at least {minimum_total} concurrent agents '
+            'including the primary for this project',
+            requirement['guidance'],
+            'setting',
+            requirement['id'],
+            'configure',
+        ))
+
+    validated = [
+        _validate_config_requirement(raw_requirement)
+        for raw_requirement in raw_requirements
+    ]
+    if not validated:
+        return findings
+
+    def inspect(request: Callable[[str, dict[str, Any]], dict[str, Any]]) -> None:
+        for requirement in validated:
+            try:
+                check_with_rpc(requirement, request)
+            except (PolicyError, DetectorError, OSError):
+                findings.append(Finding(
+                    'detector-error',
+                    requirement['name'],
+                    'could not verify the effective parallel-agent limit',
+                    requirement['guidance'],
+                ))
+
+    if rpc is not None:
+        inspect(rpc)
+    else:
+        try:
+            with _CodexConfigRpcClient(project_root) as client:
+                inspect(client.request)
+        except (PolicyError, DetectorError, OSError):
+            requirement = validated[0]
+            findings.append(Finding(
+                'detector-error',
+                requirement['name'],
+                'could not verify the effective parallel-agent limit',
+                requirement['guidance'],
+            ))
     return findings
 
 
@@ -347,6 +727,19 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
     tools = policy.get('tools')
     if not isinstance(policy.get('harness'), str) or not isinstance(tools, list):
         raise PolicyError('policy requires harness and tools')
+    config_requirements = policy.get('config_requirements', [])
+    manual_session_actions = policy.get('manual_session_actions', [])
+    required_values = policy.get('required_values', [])
+    if (
+        not isinstance(config_requirements, list)
+        or not isinstance(manual_session_actions, list)
+        or not isinstance(required_values, list)
+    ):
+        raise PolicyError('policy value requirements are invalid')
+    for raw_requirement in config_requirements:
+        _validate_config_requirement(raw_requirement)
+    for raw_action in manual_session_actions:
+        _validate_manual_session_action(raw_action)
     findings: list[Finding] = []
     for raw_tool in tools:
         tool = _validate_tool(raw_tool)
@@ -372,6 +765,9 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
                         tool['name'],
                         'has an unreadable installed version',
                         tool['upgrade'],
+                        'tool',
+                        tool['id'],
+                        'upgrade',
                     )
                 )
             else:
@@ -381,7 +777,15 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
                     if detector_failed
                     else 'is not installed for this harness'
                 )
-                findings.append(Finding(code, tool['name'], message, tool['install']))
+                findings.append(Finding(
+                    code,
+                    tool['name'],
+                    message,
+                    tool['install'],
+                    'tool' if code == 'tool-missing' else None,
+                    tool['id'] if code == 'tool-missing' else None,
+                    'install' if code == 'tool-missing' else None,
+                ))
             continue
         try:
             greater = is_strictly_greater(installed, tool['target_version'])
@@ -392,6 +796,9 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
                     tool['name'],
                     'has an unreadable installed version',
                     tool['upgrade'],
+                    'tool',
+                    tool['id'],
+                    'upgrade',
                 )
             )
             continue
@@ -412,9 +819,13 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
                     tool['name'],
                     f'{relation}; it must be newer than {tool["target_version"]}',
                     tool['upgrade'],
+                    'tool',
+                    tool['id'],
+                    'upgrade',
                 )
             )
     findings.extend(_check_required_values(policy))
+    findings.extend(_check_manual_session_actions(policy))
     return findings
 
 
@@ -1002,14 +1413,18 @@ def run_hook(
                 except OSError:
                     return HookResult(False, internal_error=True)
             policy = load_policy(policy_path, harness)
-            findings_list = (
-                evaluator(policy)
-                if evaluator is not None
-                else [
-                    *check_policy(policy),
+            if evaluator is not None:
+                findings_list = evaluator(policy)
+            else:
+                policy_findings = check_policy(policy)
+                findings_list = [
+                    *policy_findings,
+                    *check_config_requirements(
+                        policy,
+                        project_root,
+                    ),
                     *check_mcp_readiness(harness, project_root, mcp_registry_path),
                 ]
-            )
             findings = tuple(findings_list)
             if not findings:
                 try:
@@ -1053,13 +1468,17 @@ def render_findings(findings: list[Finding] | tuple[Finding, ...]) -> str:
 def _user_consent_request(findings: str) -> str:
     return (
         f'{findings}\n'
-        '[smartkit] Recommended tools require installation or upgrade. Reply with the '
-        'tool names whose requested actions you approve, or decline those actions, before '
+        '[smartkit] Recommended readiness changes require approval. Reply with the '
+        'names whose requested actions you approve, or decline those actions, before '
         'continuing.'
     )
 
 
-def _agent_consent_request(findings: str, harness: str) -> str:
+def _agent_consent_request(
+    findings: str,
+    actionable_findings: tuple[Finding, ...],
+    harness: str,
+) -> str:
     maintenance_runner = Path(__file__).resolve().with_name(
         'maintain_recommended_tools.py'
     )
@@ -1071,19 +1490,40 @@ def _agent_consent_request(findings: str, harness: str) -> str:
         if harness == 'codex'
         else ''
     )
+    approved_actions = []
+    for finding in actionable_findings:
+        if finding.target_kind == 'tool':
+            approved_actions.append(
+                f'apply --harness {harness} --tool {finding.target_id} '
+                f'--action {finding.action} --approved'
+            )
+        elif finding.target_kind == 'setting':
+            approved_actions.append(
+                f'configure --harness {harness} --setting {finding.target_id} '
+                '--approved'
+            )
+    action_text = '; '.join(approved_actions)
+    runner_instruction = (
+        'After a subsequent user message grants consent, invoke the bundled internal '
+        f'maintenance runner at {maintenance_runner}. Treat each semicolon-separated '
+        'entry as a separate action and invoke only the entries the user approved: '
+        f'{action_text}. '
+        if action_text
+        else ''
+    )
     return (
         f'{findings}\n'
-        '[smartkit] If the user explicitly declines all listed tool actions, do not ask '
+        '[smartkit] If the user explicitly declines all listed readiness actions, do not ask '
         'again or run maintenance; continue the original task. Otherwise, stop the current '
-        'task now. Tell the user which tools need '
-        'installation or upgrade and ask whether they consent to those tool actions. Do '
+        'task now. Tell the user which tools or settings need a change and ask whether '
+        'they consent to those actions. Do '
         'not show the underlying maintenance commands. Do not mutate tools or '
         'configuration before the user consents. End this turn after requesting consent '
-        'and wait for the next user message. After a subsequent user message grants '
-        'consent, invoke the bundled internal maintenance runner at '
-        f'{maintenance_runner} with apply, --harness {harness}, --tool TOOL_ID, '
-        '--action install|upgrade, and --approved for only the named tool actions. This '
-        f'runner is plugin Hook support, not an exposed Skill.{plugin_fallback}'
+        'and wait for the next user message. If the runner reports manual action required, '
+        'relay its guidance, ask the user to complete that action in the current session, '
+        'and wait for confirmation without claiming completion. '
+        f'{runner_instruction}This runner is plugin '
+        f'Hook support, not an exposed Skill.{plugin_fallback}'
     )
 
 
@@ -1094,16 +1534,17 @@ def render_hook_result(
     delivery: str = 'native',
 ) -> str:
     findings = render_findings(result.findings)
+    rendered = findings
     if result.requires_user_prompt:
         if harness == 'codex':
             return json.dumps(
                 {
                     'continue': True,
-                    'systemMessage': _user_consent_request(findings),
+                    'systemMessage': _user_consent_request(rendered),
                     'hookSpecificOutput': {
                         'hookEventName': 'SessionStart',
                         'additionalContext': _agent_consent_request(
-                            findings, harness
+                            rendered, result.findings, harness
                         ),
                     },
                 }
@@ -1113,23 +1554,27 @@ def render_hook_result(
                 return json.dumps(
                     {
                         'additional_context': _agent_consent_request(
-                            findings, harness
+                            rendered, result.findings, harness
                         )
                     }
                 )
             return json.dumps(
                 {
                     'continue': False,
-                    'user_message': _user_consent_request(findings),
+                    'user_message': _user_consent_request(rendered),
                 }
             )
         return json.dumps(
-            {'additionalContext': _agent_consent_request(findings, harness)}
+            {
+                'additionalContext': _agent_consent_request(
+                    rendered, result.findings, harness
+                )
+            }
         )
     if result.internal_error:
         message = '[smartkit] Recommended-tool check could not complete; continuing.'
     else:
-        message = findings
+        message = rendered
     if not message:
         return ''
     if harness == 'codex':

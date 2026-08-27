@@ -37,13 +37,6 @@ MATT_PROMOTED = {
     'writing-for-agents': 'skills/productivity/writing-for-agents',
 }
 
-EXPLICIT_MODEL_INVOKED_CUSTOM_SKILLS = {
-    'implement-tickets',
-    'setup-project-agents',
-    'write-rules-and-skills',
-}
-
-
 def load_json(relative_path: str) -> dict:
     value = json.loads((REPO_ROOT / relative_path).read_text(encoding='utf-8'))
     if not isinstance(value, dict):
@@ -269,15 +262,12 @@ class PluginManifestTest(unittest.TestCase):
         expected_references = {
             'write-rules-and-skills': {
                 'acceptance.md',
-                'author.md',
-                'correction-cycle.md',
-                'correctness-review.md',
-                'machine-validation.md',
-                'owner-gate.md',
-                'quality-review.md',
+                'evaluation.md',
+                'job-design.md',
+                'models.md',
+                'portability.md',
+                'reviews.md',
                 'role-launch.md',
-                'rule-semantics.md',
-                'skill-semantics.md',
             },
             'write-shared-rules-and-skills': {
                 'portability.md',
@@ -318,8 +308,6 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertRegex(metadata, r'(?m)^\s+short_description:\s+.+$')
                 self.assertRegex(metadata, r'(?m)^\s+default_prompt:\s+.+$')
                 self.assertIn(f'${name}', metadata)
-                self.assertRegex(metadata, r'(?m)^policy:\s*$')
-                self.assertIn('allow_implicit_invocation: true', metadata)
 
     def test_custom_skills_keep_invocation_metadata_aligned(self):
         custom = load_json('skills/registry.json')['custom']
@@ -336,9 +324,6 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertRegex(metadata, r'(?m)^\s+display_name:\s+.+$')
                 self.assertRegex(metadata, r'(?m)^\s+short_description:\s+.+$')
                 self.assertNotIn('disable-model-invocation: false', frontmatter)
-
-                if item['path'] in EXPLICIT_MODEL_INVOKED_CUSTOM_SKILLS:
-                    self.assertIn('allow_implicit_invocation: true', metadata)
 
                 model_invocation_disabled = (
                     'disable-model-invocation: true' in frontmatter

@@ -51,10 +51,13 @@
   `skills/setup-project-agents/` 下。在生产环境中，只有推荐工具 Hook 和维护流水线使用其私有运行时
   和政策；setup 控制平面使用 setup 资产。
 - 将 `write-setup-authoring-contracts`、`write-shared-rules-and-skills` 和
-  `translate-agent-artifacts` 作为项目私有 Skill 保存在 `.agents/skills/` 下。第一个独占 setup
-  blueprint 契约的编写；第二个独占共享 SmartKit Rule 和 Skill 候选项的源上下文排除与可移植性
-  资格认定；第三个独占根据最终英文源文件更新必需的简体中文文档镜像。三者都不得进入插件 Skill
-  注册表、根插件 manifest、setup catalog 或目标安装。
+  `translate-agent-artifacts` 作为项目私有 Skill 保存在 `.agents/skills/` 下。
+  `write-setup-authoring-contracts` 独占 setup blueprint 契约的编写。对于本仓库治理的任何 Rule
+  或 Skill，包括共享 SmartKit 候选项，都应直接调用本仓库拥有的
+  `skills/write-rules-and-skills/`。不得通过项目私有的
+  `.agents/skills/write-shared-rules-and-skills/` 调用或路由编写工作。
+  `translate-agent-artifacts` 独占根据最终英文源文件更新必需的简体中文文档镜像。这三个项目私有
+  Skill 都不得进入插件 Skill 注册表、根插件 manifest、setup catalog 或目标安装。
 
 ## 文档契约
 

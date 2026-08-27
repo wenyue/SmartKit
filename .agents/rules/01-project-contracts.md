@@ -66,11 +66,14 @@ surface.
   `skills/setup-project-agents/`. In production, only the recommended-tool Hook and maintenance
   pipeline consumes its private runtime and policies; the setup control plane consumes setup assets.
 - Keep `write-setup-authoring-contracts`, `write-shared-rules-and-skills`, and
-  `translate-agent-artifacts` project-private under `.agents/skills/`. The first exclusively authors
-  setup blueprint contracts; the second exclusively owns source-context exclusion and portability
-  qualification for shared SmartKit Rule and Skill candidates; the third exclusively updates
-  required Simplified-Chinese documentation mirrors from final English sources. None enters plugin
-  Skill registries, root plugin manifests, setup catalogs, or target installation.
+  `translate-agent-artifacts` project-private under `.agents/skills/`. `write-setup-authoring-contracts`
+  exclusively authors setup blueprint contracts. For any Rule or Skill governed by this repository,
+  including a shared SmartKit candidate, invoke repository-owned `skills/write-rules-and-skills/`
+  directly. Do not invoke or route authoring through project-private
+  `.agents/skills/write-shared-rules-and-skills/`. `translate-agent-artifacts` exclusively updates
+  required Simplified-Chinese documentation mirrors from final English sources. None of the three
+  project-private Skills enters plugin Skill registries, root plugin manifests, setup catalogs, or
+  target installation.
 
 ## Documentation Contracts
 

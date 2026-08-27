@@ -1,132 +1,168 @@
 # Executable Acceptance
 
-## Decide whether Acceptance is required
+This conditional authority owns Acceptance design, case identity and portfolio, attempts,
+judgment, Candidate and setup correction, replay, safety finalization, and terminal precedence.
+Load it during Design only when Acceptance applies. When Design freezes `NOT_REQUIRED`, no
+Acceptance capability, identity, or schedule gates the run.
 
-Run Acceptance only when the candidate governs concrete or sufficiently complex runtime behavior
-whose feasibility is not already established with high confidence by static review, machine checks,
-or an accepted mechanism. Relevant signals include a fixed multi-step sequence, meaningful branch,
-retry, recovery, exit, concrete tool call, file mutation, permission boundary, external side effect,
-or a Rule that mandates such behavior.
+## Qualify execution and identities
 
-Broad judgment guidance, a simple non-tool procedure, or behavior already supported with high
-confidence does not require Acceptance. Record `NOT_REQUIRED` and skip the stage entirely. Do not
-replace it with a static walkthrough called Acceptance.
+Extend Adapter qualification with disposable isolation, exact case grants, evidence capture,
+fresh Runner launch, termination and quiescence for every return mode, cleanup, and bounded
+recovery. Prove that the frozen worker schedule can run a fresh Runner while the current case
+Reviewer remains retained, and can retain that Reviewer while complete fresh earlier-stage cohorts
+run in batches through the remaining `P` slots.
 
-## Freeze the portfolio
+Define one fresh persistent Reviewer per case. Bind its identity and schedule before the first
+attempt, but start it only after that attempt finalizes safely. Keep at most the current case
+Reviewer live or retained. Every Runner and retained Reviewer consumes one `P` slot; batch all
+other work without changing cohort, version, or evidence. `HOST_UNAVAILABLE` means the host cannot
+supply the correctly derived capability or frozen schedule. A Controller dispatch beyond `P` is
+control-plane `ROLE_BOUNDARY_VIOLATION`.
 
-Before execution, freeze the representative cases and observable pass conditions. Use the smallest
-portfolio that covers the material runtime risk: normally a success path and each materially
-distinct error, recovery, or exit affected by the candidate. Do not impose a fixed case count.
-Execute cases sequentially from highest risk to lowest.
+Use full-job execution unless the Skill model proves **Finite Execution Projection** eligibility
+and the Adapter owns a preauthorized harness. The smallest eligible projection must execute every
+materially affected runtime seam:
 
-## Execute and judge
+- the Runner applies Candidate behavior to frozen seam inputs and emits observable output;
+- the harness performs only preauthorized identity and control mechanics and captures host
+  evidence; the Runner never requests or controls identities; and
+- one recursive-edge case reaches the exact observable re-entry condition: Candidate state plus
+  the next invocation that would dispatch this same Acceptance graph. The harness terminates
+  before dispatch; precursor state is insufficient.
 
-For each attempt, the Controller prepares the disposable Execution Isolation, fixture, exact
-case-scoped `read`, `write`, `create`, `delete`, and tool grants, observable-evidence capture, and
-cleanup required by the selected Adapter. Keep the Candidate immutable. If any required permission,
-safe isolation, or existing authority is unavailable, stop as `EXECUTION_UNAVAILABLE`, report the
-untested surface, and do not issue `PASS` or `NOT_REQUIRED`. Network access or an external effect is
-eligible only when the accepted task already grants explicit authority for that case and the
-selected Adapter supports it.
+A missing harness or runtime seam returns `EXECUTION_UNAVAILABLE`; a walkthrough cannot substitute.
+Network or external effects require accepted case authority and proven host capability.
 
-For every attempt, start a fresh Runner in that Execution Isolation with
-only the read-only Candidate, frozen case, fixture, exact case grants and permitted tools, and
-observable pass conditions needed for that case. The Runner executes; it does not judge or repair
-the Candidate, fixture, or environment.
+## Freeze immutable cases
 
-### Finalize every started attempt
+During Design, freeze the smallest risk-ordered portfolio covering material runtime risk: normally
+a success path and every materially distinct affected error, recovery, and exit, including required
+representative contexts. Define observable pass conditions without imposing an arbitrary case
+count. At stage entry, bind those unchanged case units and execute them sequentially from highest
+risk.
 
-Once a Runner starts, the Controller enters finalization for that attempt whether the Runner
-succeeds, fails, or cannot return normally, and whether evidence capture or the Role Boundary Audit
-succeeds or fails. Preserve all obtainable observable evidence first, including any available
-terminal Runner report, and record any capture failure. Then use the selected Adapter to finish,
-stop, or otherwise end the Runner and establish quiescence, including after abnormal or non-returning
-execution. Preserve any additional termination evidence. Only after quiescence is established may
-the Controller attempt cleanup using the exact safe case-owned targets and grants already authorized
-for the disposable isolation; never broaden authority or use an unsafe or broad deletion. If cleanup
-fails, make at most one supported bounded recovery attempt, and only when it is safe and already
-authorized. This is the attempt's single cleanup-recovery allowance.
+Case definitions and pass conditions never change. Bind each case unit before its first attempt.
+Preserve passed-case evidence across Candidate Versions only when Revision Impact proves the change
+cannot affect what it establishes.
 
-A Role Boundary Audit violation has terminal precedence, but it does not prohibit safe cleanup when
-the Runner is quiescent. If quiescence cannot be established, retain all obtainable evidence and
-skip cleanup. After the termination attempt, fingerprint audit, and any cleanup permitted by
-quiescence, select the attempt result in this priority:
+## Prepare one fresh attempt
 
-1. Any Role Boundary Audit violation or evidence-capture failure yields `ATTEMPT_INVALID`,
-   regardless of quiescence or cleanup.
-2. Otherwise, failure to establish quiescence yields `RUNNER_NOT_QUIESCENT`.
-3. Otherwise, failed cleanup after its one safe authorized bounded recovery, or absence of such a
-   recovery, yields `CLEANUP_FAILED`.
-4. Otherwise, finalization succeeds.
+Freeze an **Attempt Contract** for every attempt containing:
 
-For any terminal result, report all obtainable evidence, any violation or capture failure,
-quiescence and residual state, cleanup result, and the one bounded cleanup recovery attempted or why
-none was available. Stop without creating or resuming a Reviewer or starting another attempt. No
-terminal result is Candidate PASS, `NOT_REQUIRED`, or a fixture/environment defect.
+- disposable Execution Isolation, fixture, safe cleanup, and at most one preauthorized bounded
+  cleanup recovery;
+- exact case-scoped operations, tools, network, and external-effect grants;
+- read-only Candidate Version, immutable case and pass conditions, and complete evidence capture;
+  and
+- fresh Runner inputs plus termination and quiescence mechanics.
 
-If a case's first attempt reaches a terminal result, stop without starting an Acceptance Reviewer.
-Finalization succeeds only when evidence capture, audit, Runner quiescence, and required cleanup all
-complete successfully. Successful finalization does not make the case PASS. After the first attempt
-finalizes successfully, start one fresh Acceptance Reviewer with the complete Candidate Version,
-accepted behavior and governing evidence, frozen case and observable pass criteria, fixture and
-permission boundary, and captured execution and finalization evidence. For every later successfully
-finalized attempt in that case, resume the same Reviewer with the new captured evidence. Keep that
-Reviewer through classifications, Candidate correction, fixture or environment recovery, ambiguity
-observation, and case PASS. Retain only the current case's Reviewer; close it after case PASS. Apply
-the common Correction Cycle packet on recheck.
+Candidate, case, fixture definition, and pass conditions are immutable **setup inputs**. Only exact
+case-owned execution targets and effects are mutable. Fixture or environment correction is a
+separate Controller action between attempts.
 
-When the observation satisfies the frozen pass conditions and supports no Candidate finding, the
-Reviewer returns normal `PASS`. A Candidate defect returns one or more findings under the complete
-common finding schema; the Controller sends them as one Repair Scope to the persistent Author and
-continues the same Reviewer's Correction Cycle. When no Candidate defect is supported and the
-observation fails or cannot conclusively satisfy the frozen pass conditions, the Reviewer returns
-exactly one of two Acceptance-only classifications:
+Missing permission, safe isolation, or required capability returns `EXECUTION_UNAVAILABLE` with
+the untested surface, never `PASS` or `NOT_REQUIRED`. Define one **Capture Record** for every
+obtainable observation, capture failure, Runner report, termination and quiescence fact, Candidate
+fingerprint and audit, residual state, cleanup, and recovery or unavailability. Invent no evidence.
 
-- `fixture/environment defect`: the payload names the evidenced defect and either the exact
-  already-authorized bounded fixture or environment correction or states that none is available.
-  The Controller performs only that supplied correction, launches a fresh Runner under the normal
-  attempt contract, finalizes that attempt, and resumes the same Reviewer; when none is available,
-  it uses the applicable prioritized exit below without inventing recovery; or
-- `ambiguous`: the Controller launches the payload's exact targeted observation as a normal
-  fresh-Runner attempt. The payload names the unresolved alternatives and the bounded setup and
-  evidence-capture delta needed to distinguish them. The attempt remains inside existing authority
-  and uses its required setup, audit, evidence capture, cleanup, and finalization; the Controller
-  then resumes the same Reviewer and stops if the classification remains ambiguous.
+## Execute, then always finalize
 
-Keep the frozen case and pass criteria through fixture/environment recovery. Each supported
-correction attempt changes only the bounded fixture or environment. Stop as `NO_PROGRESS` when the
-same defect recurs after two consecutive correction attempts or when no new safe bounded recovery remains; use
-`EXECUTION_UNAVAILABLE` instead when a required environment capability is unavailable. Report the
-attempts and terminal evidence. The single targeted fresh observation above remains the only retry
-for an ambiguous classification.
+Launch one fresh Runner. It performs only frozen case effects against exact case-owned targets. It
+does not alter setup inputs or Candidate, expand grants, judge, repair, correct setup, clean up,
+control roles, or delegate.
 
-## Rewind and replay cases
+After success, failure, abnormal behavior, non-return, or audit stop, always:
 
-Stage-local PASS means the current Acceptance Reviewer finds nothing worth fixing for its case on
-the current Candidate Version after successful finalization. It ends that Reviewer's correction
-cycle when replay scheduling requires it, but it is not Acceptance PASS.
+1. Preserve every obtainable observation and report; record every capture failure.
+2. End the Runner through the Adapter and establish quiescence with termination evidence.
+3. Complete its Role Boundary Audit and repeat the Candidate fingerprint audit, even when no
+   report exists or quiescence cannot be established.
+4. Only after quiescence, clean exact authorized case-owned targets. On failure, attempt at most one
+   safe, supported, preauthorized recovery. Failed quiescence forbids cleanup; a boundary violation
+   does not forbid safe cleanup after quiescence.
+5. Select the attempt result in order: boundary or audit violation, or capture failure →
+   `ATTEMPT_INVALID`; unestablished quiescence → `RUNNER_NOT_QUIESCENT`; cleanup failure after
+   recovery or without an available recovery → `CLEANUP_FAILED`; otherwise attempt finalization
+   succeeds.
 
-After an Author correction, keep the same Reviewer, run a fresh attempt, and obtain Stage-local PASS
-for the current case before the Controller performs the Revision Impact Decision. Only after that
-PASS:
+An abnormal Runner may omit normalized reports only when the frozen contract permits it. Record
+the absence and audit host and capture evidence. A terminal attempt result stops Acceptance:
+report all obtainable evidence, residual state, and recovery; start no retry or Reviewer; make no
+defect classification; issue neither case `PASS` nor `NOT_REQUIRED`. A prebound Reviewer remains
+subject only to workflow finalization. Successful attempt finalization is evidence, not PASS.
 
-- If an earlier non-Acceptance stage is invalidated, retain the current case's Reviewer as the one
-  paused fifth identity while restoring the earliest invalidated and intervening stages with fresh
-  Reviewers for closed review units. Then run the case again, resume that same Acceptance Reviewer
-  with the successfully finalized evidence, obtain Stage-local PASS, and make the next Revision
-  Impact Decision.
-- If an already-passed earlier Acceptance case is invalidated, do not start its fresh Reviewer
-  while retaining the current Reviewer. On the same Candidate Version, record the current case PASS
-  at Stage-local PASS and close its Reviewer before restarting sequential evaluation at the earliest
-  invalidated Acceptance case in the frozen highest-risk-to-lowest order. Preserve that current
-  case evidence unless a later Author change can affect it; normal Revision Impact then invalidates
-  and reruns every affected case. For each invalidated case when reached, run and successfully
-  finalize its first fresh-Runner attempt before starting its fresh Reviewer; preserve and skip
-  other unaffected case evidence.
-- If no earlier stage or case is invalidated, record case PASS and close the current Reviewer.
+## Judge finalized evidence
 
-Keep only one Acceptance Reviewer current or retained during replay. A replay correction repeats
-the Stage-local-PASS-first rule, never retains one case Reviewer while starting another, and never
-requires more than the qualified single paused fifth identity. Acceptance passes only when every
-frozen case has Reviewer-owned case PASS supported by successful finalization and unaffected
-evidence for the current Candidate Version.
+After the first attempt finalizes successfully, start the case's prebound Reviewer and retain that
+same identity through later attempts, classification, Candidate correction, fixture/environment
+correction, one ambiguity observation, and case PASS.
+
+Give the Reviewer the complete Candidate Version, accepted behavior and evidence, immutable case
+and pass conditions, fixture and permission boundaries, and every captured execution and
+finalization fact. It independently judges attribution, pass conditions, permission, execution,
+termination, quiescence, cleanup, residual state, and exit selection. It returns exactly one:
+
+- common `PASS` when every condition holds and no Candidate finding is supported;
+- common `FINDING_READY` for a **Candidate defect**, followed by the runtime's direct finding
+  handshake and common-schema finding body;
+- common `CONTEXT_REQUIRED`, `ACCESS_REQUIRED`, or `HUMAN_DECISION_REQUIRED`;
+- **fixture/environment defect**, only when there is no Candidate defect: defect plus its exact
+  preauthorized bounded setup correction, or confirmation that none exists;
+- **ambiguous**, only when there is no Candidate defect: named live alternatives plus one targeted
+  observation, bounded setup, and capture delta within current authority; or
+- `AMBIGUITY_UNRESOLVED` after that observation, with initial and final alternatives, their change,
+  both evidence sets, observation and capture delta, remaining ambiguity, and untested surface.
+
+The Reviewer returns its classification directly and unchanged. Candidate findings alone use the
+metadata-only runtime bootstrap before their semantic body reaches the resident Author. Author and
+Reviewer then judge the claim and reasons independently through the common bilateral lifecycle.
+The Controller performs only the selected lifecycle transition; it never receives, relays,
+summarizes, or reinterprets finding or discussion content.
+
+## Correct and reassess
+
+- Candidate findings use the direct Author↔Reviewer lifecycle. After the complete full-unit Repair
+  Scope authorizes a selected repair, a fresh Runner and the same Reviewer must regain current-case
+  Stage-local PASS before Revision Impact.
+- For a fixture/environment defect, the Controller applies only the Reviewer-selected
+  preauthorized setup correction, starts a fresh attempt, and resumes the same Reviewer. Missing
+  capability returns `EXECUTION_UNAVAILABLE`; no safe bounded recovery returns `NO_PROGRESS`.
+- For `ambiguous`, add only the supplied setup and capture delta, run exactly one fresh targeted
+  observation, and resume the same Reviewer. Any remaining material ambiguity returns
+  `AMBIGUITY_UNRESOLVED`, even when alternatives narrow, change, or appear.
+
+One **Acceptance correction attempt** comprises one Candidate repair or selected
+fixture/environment correction, its fresh Runner attempt, and Reviewer reassessment. Count it only
+while the same defect persists. A materially different defect or approach resets the consecutive
+count. The ambiguity observation is not a correction attempt. Stop `NO_PROGRESS` when the same
+defect survives two consecutive attempts or safe recovery is exhausted. A human request triggers
+the immediate global semantic stop, while every started Runner still receives complete safety
+finalization.
+
+## Rewind and replay
+
+**Stage-local PASS** is the current Reviewer passing the current case and Candidate Version on
+successfully finalized evidence. It closes the active correction cycle but is neither case PASS nor
+Acceptance PASS.
+
+After a Candidate correction:
+
+1. Run the current case with a fresh Runner and the same Reviewer until Stage-local PASS or stop.
+2. Apply Revision Impact. When earlier non-Acceptance proof is invalidated, retain this Reviewer,
+   bind complete fresh cohorts for every invalidated closed unit, and batch them through the
+   remaining `P` slots. Restore each intervening stage, rerun this case, and regain Stage-local PASS
+   before another Revision Impact decision.
+3. At convergence, record current-case PASS, end its Reviewer, and inspect every previously passed
+   case for invalidation regardless of position.
+4. Restart the earliest invalidated case in frozen risk order: obtain one successfully finalized
+   fresh attempt, then start that case's fresh Reviewer. Skip only demonstrably unaffected evidence.
+5. When no prior case is invalid, advance to the next frozen case.
+
+Never start another case Reviewer while retaining the current one. Replay uses the complete safety
+lifecycle. A case passes only with Reviewer-owned PASS backed by unaffected, successfully finalized
+evidence on the current Candidate Version.
+
+Acceptance passes only when every frozen case records PASS, no evidence is invalidated, every
+Runner is quiescent, all required cleanup and audits succeed, and no terminal remains. Return that
+result through the Evaluation Lifecycle, then run workflow finalization.

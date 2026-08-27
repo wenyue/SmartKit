@@ -8,7 +8,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
@@ -118,6 +118,55 @@ def _tool_policy(harness: str, tool_id: str, policy_path: Path | None) -> dict:
     raise MaintenanceError('recommended tool is not present in the selected policy')
 
 
+def _configuration_policy(
+    harness: str,
+    setting_id: str,
+    policy_path: Path | None,
+) -> tuple[str, dict[str, Any]]:
+    path = policy_path or checker.default_policy_path(harness)
+    policy = checker.load_policy(path, harness)
+    for raw_requirement in policy.get('required_values', []):
+        requirement = checker._validate_required_value(raw_requirement)
+        if requirement['id'] == setting_id and requirement.get('maintenance'):
+            return 'required-value', requirement
+    for raw_requirement in policy.get('config_requirements', []):
+        requirement = checker._validate_config_requirement(raw_requirement)
+        if requirement['id'] == setting_id:
+            return 'minimum-threads', requirement
+    for raw_action in policy.get('manual_session_actions', []):
+        action = checker._validate_manual_session_action(raw_action)
+        if action['id'] == setting_id:
+            return 'manual-session', action
+    raise MaintenanceError('configuration setting is not present in the selected policy')
+
+
+def _configuration_required(
+    kind: str,
+    requirement: dict[str, Any],
+    project_root: Path,
+    request: Callable[[str, dict[str, Any]], dict[str, Any]],
+) -> bool:
+    if kind == 'required-value':
+        findings = checker._check_required_values({
+            'required_values': [requirement],
+        })
+        if not findings:
+            return False
+        if findings[0].code == 'detector-error':
+            raise MaintenanceError('configuration state could not be determined safely')
+        return True
+    response = request(
+        'config/read',
+        {'includeLayers': False, 'cwd': str(project_root)},
+    )
+    spawned = checker._effective_spawned_threads(
+        response,
+        requirement['read_key_paths'],
+    )
+    target = requirement['minimum_total_threads'] - requirement['primary_threads']
+    return spawned is None or spawned < target
+
+
 def required_action(
     harness: str,
     tool_id: str,
@@ -203,8 +252,82 @@ def apply_maintenance(
     )
 
 
+def configure_setting(
+    harness: str,
+    setting_id: str,
+    *,
+    approved: bool,
+    policy_path: Path | None = None,
+    project_root: Path | None = None,
+    rpc: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None,
+) -> MaintenanceResult:
+    if not approved:
+        raise ApprovalRequired('user consent is required before maintenance')
+    kind, requirement = _configuration_policy(harness, setting_id, policy_path)
+    maintenance = requirement['maintenance']
+    if kind == 'manual-session':
+        if not checker._manual_session_action_available(requirement):
+            raise MaintenanceError('manual session action is unavailable')
+        return MaintenanceResult(
+            harness,
+            setting_id,
+            requirement['name'],
+            'configure',
+            'manual-action-required',
+            maintenance['instruction'],
+        )
+    if harness != 'codex':
+        raise MaintenanceError('configuration maintenance is unsupported for this harness')
+    project_root = checker.resolve_project_root(project_root)
+
+    def apply(request: Callable[[str, dict[str, Any]], dict[str, Any]]) -> MaintenanceResult:
+        if not _configuration_required(kind, requirement, project_root, request):
+            return MaintenanceResult(
+                harness,
+                setting_id,
+                requirement['name'],
+                'configure',
+                'already-satisfied',
+            )
+        request(
+            'config/value/write',
+            {
+                'keyPath': maintenance['write_key_path'],
+                'value': maintenance['write_value'],
+                'mergeStrategy': 'upsert',
+            },
+        )
+        if _configuration_required(kind, requirement, project_root, request):
+            return MaintenanceResult(
+                harness,
+                setting_id,
+                requirement['name'],
+                'configure',
+                'verification-failed',
+            )
+        return MaintenanceResult(
+            harness,
+            setting_id,
+            requirement['name'],
+            'configure',
+            'completed',
+        )
+
+    try:
+        if rpc is not None:
+            return apply(rpc)
+        with checker._CodexConfigRpcClient(project_root) as client:
+            return apply(client.request)
+    except (checker.PolicyError, checker.DetectorError, OSError) as error:
+        raise MaintenanceError('configuration maintenance failed') from error
+
+
 def render_result(result: MaintenanceResult) -> str:
-    action_name = 'installation' if result.action == 'install' else 'upgrade'
+    action_name = {
+        'install': 'installation',
+        'upgrade': 'upgrade',
+        'configure': 'configuration',
+    }[result.action]
     prefix = f'[smartkit] {result.tool_name}'
     if result.status == 'completed':
         return f'{prefix}: {action_name} completed.'
@@ -226,19 +349,36 @@ def build_parser() -> argparse.ArgumentParser:
     apply.add_argument('--action', required=True, choices=('install', 'upgrade'))
     apply.add_argument('--approved', action='store_true')
     apply.add_argument('--policy', type=Path)
+    configure = subparsers.add_parser('configure')
+    configure.add_argument(
+        '--harness',
+        required=True,
+        choices=('codex', 'copilot'),
+    )
+    configure.add_argument('--setting', required=True)
+    configure.add_argument('--approved', action='store_true')
+    configure.add_argument('--policy', type=Path)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        result = apply_maintenance(
-            args.harness,
-            args.tool,
-            args.action,
-            approved=args.approved,
-            policy_path=args.policy,
-        )
+        if args.command == 'apply':
+            result = apply_maintenance(
+                args.harness,
+                args.tool,
+                args.action,
+                approved=args.approved,
+                policy_path=args.policy,
+            )
+        else:
+            result = configure_setting(
+                args.harness,
+                args.setting,
+                approved=args.approved,
+                policy_path=args.policy,
+            )
     except ApprovalRequired:
         print('[smartkit] User consent is required before maintenance.', file=sys.stderr)
         return 2

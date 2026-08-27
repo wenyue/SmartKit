@@ -2,5 +2,3 @@ interface:
   display_name: "Translate Agent Artifacts"
   short_description: "Translate final English agent artifacts"
   default_prompt: "Use $translate-agent-artifacts to update the complete required Simplified-Chinese mirror set from final English sources."
-policy:
-  allow_implicit_invocation: true

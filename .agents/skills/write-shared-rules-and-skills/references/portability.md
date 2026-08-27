@@ -1,28 +1,37 @@
-# Shared Portability
+# Portable Shared Input
 
-## Declare the portable boundary
+Compose the public
+[`Cross-Project Portability`](../../../../skills/write-rules-and-skills/references/portability.md)
+model unchanged. This caller owns only the SmartKit routing discriminator and the Shared Input
+package supplied to that model.
 
-Establish the candidate's cross-project owner, applicability, public loading and discovery route,
-owned resources, and every required Rule, Skill, tool, schema, environment capability, or host
-behavior. Each dependency must be explicitly declared and available through a supported shared or
-target-owned route.
+## Select the shared SmartKit branch
 
-Use accepted user decisions, Issues, Specs, ADRs, governing contracts, observable shared
-implementation, and representative target evidence. Do not use source-project policy, local naming,
-directory accidents, context documents, or the source repository's mere ability to execute as
-portable evidence.
+Continue only when accepted evidence selects one cross-project SmartKit Rule or Skill owner. A
+project-local artifact or Setup Authoring Contract is outside this caller. Apply the public
+portability model's authority, source-context exclusion, dependency, representative-context,
+Correctness, Acceptance, and pass conditions without reinterpretation.
 
-## Select representative targets
+## Package complete Shared Input
 
-Use at least one supported target context. Add another only when a materially different target seam
-can change applicability, dependency availability, permissions, execution, or exits. A target that
-differs only in names or layout adds no evidence.
+Freeze one evidence package containing:
 
-The Semantic Fidelity and Ownership Reviewer checks portable ownership, applicability, dependency
-closure, and source-project-only assumptions. The Agent Executability and Behavioral Closure
-Reviewer applies the candidate to each representative target. When static and machine evidence
-cannot establish concrete runtime feasibility with high confidence, route the affected target case
-to Executable Acceptance.
+- the accepted portable outcome, obligation dispositions, owner, exact Candidate resources, and
+  public loading and distribution route;
+- a dependency manifest mapping each public-model dependency to its owner, applicability,
+  supported route, and representative availability evidence; and
+- a representative-target manifest mapping each selected seam to accepted target facts,
+  dependencies, permissions, critical paths and exits, expected observations, evidence sources,
+  and its public static, Machine, or Acceptance proof route.
 
-Any undeclared dependency, invented target fact, or source-project-only assumption blocks
-portability PASS even when the candidate passes in its source repository.
+Attach every public portability pass condition to the evidence item that can prove it. This package
+adds no semantic authority: Candidate text, source-repository success, and package structure cannot
+supply a missing public-model fact.
+
+## Close readiness
+
+Shared readiness closes only when the package is complete under every public portability
+condition, contains at least one supported representative target, and leaves no material fact or
+route unresolved. Otherwise return the public `ALIGNMENT_REQUIRED` outcome through the caller.
+Supply the unchanged package to the public portability-extended Correctness scopes and any public
+representative Acceptance cases; create no additional proof stage or Reviewer.

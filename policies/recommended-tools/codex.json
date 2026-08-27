@@ -12,7 +12,30 @@
           "pattern": "(?m)^multi_agent\\s+.+\\s+(true|false)\\s*$"
         }
       ],
+      "maintenance": {
+        "kind": "config-write",
+        "write_key_path": "features.multi_agent",
+        "write_value": true
+      },
       "guidance": "Enable multi-agent in the applicable Codex configuration, or ask your administrator if managed requirements disable it, then start a new session."
+    }
+  ],
+  "config_requirements": [
+    {
+      "id": "parallel_agent_capacity",
+      "name": "Codex parallel-agent capacity",
+      "minimum_total_threads": 6,
+      "primary_threads": 1,
+      "read_key_paths": [
+        "agents.max_concurrent_threads_per_session",
+        "agents.max_threads"
+      ],
+      "maintenance": {
+        "kind": "config-write",
+        "write_key_path": "agents.max_concurrent_threads_per_session",
+        "write_value": 5
+      },
+      "guidance": "Set agents.max_concurrent_threads_per_session to at least 5 in the applicable Codex configuration, then start a new session."
     }
   ],
   "tools": [

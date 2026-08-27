@@ -1,69 +1,79 @@
 # Soft-Isolated Role Adapter
 
-Soft isolation is a prompt-enforced behavioral access contract for shared authoring. It is not a
-hard filesystem or security boundary.
+Soft isolation is a prompt-enforced behavioral access contract, not a filesystem, process, or
+security boundary. Compose the public
+[`Role Launch Interface`](../../../../skills/write-rules-and-skills/references/role-launch.md),
+[`Frozen Job Design`](../../../../skills/write-rules-and-skills/references/job-design.md),
+[`Evaluation Lifecycle`](../../../../skills/write-rules-and-skills/references/evaluation.md), and
+conditional
+[`Executable Acceptance`](../../../../skills/write-rules-and-skills/references/acceptance.md)
+unchanged. Those references solely own bootstrap, capacity and scheduling, common manifests and
+reports, callback audits, communication, containment, exits, and finalization. This Adapter owns
+only the narrowings below.
 
-## Probe mechanics
+## Qualify the behavioral boundary
 
-This Adapter requires an executable launch and access Probe.
+Statically qualify every public Adapter capability plus enforcement of the prompts, allowlists,
+grants, and invocation evidence below. The public closed Envelope remains unchanged and Host
+Governance remains execution-only by composition. Qualify the required Probe's termination and
+residual-state evidence unconditionally; apply public Runner qualification only when Acceptance is
+reachable.
 
-Use the same fresh, no-inherited-turn launcher selected for shared roles for one disposable launch
-and access Probe. Prompt it to
-follow a unique control, report supplied context and available tools, and avoid file and network
-access and delegation.
+## Bind precise role prompts and allowlists
 
-Before every Probe, Author, Reviewer, or Runner invocation—initial launch or later resume—freeze a
-versioned expected-operation manifest for that exact invocation. It contains the complete
-Controller-supplied prompt and context for the invocation, including any Repair Scope, Context
-Supplement, access update, or Runner evidence, plus every prompt-authorized tool, file, and access
-grant. Bind the manifest version to the invocation and its output. Require the invocation's
-self-report to separately identify physically available tools and acknowledge the authorized subset
-and boundaries. A physically available superset is not by itself a mismatch.
+Freeze each role's complete public prompt plus the following Shared Input and access boundary:
 
-Before consuming any Probe, Author, Reviewer, or Runner output, compare the self-report and any
-available launcher or host evidence against the manifest version bound to that exact invocation and
-make a per-invocation behavioral audit decision. PASS only when Controller authority, supplied
-prompt and context, and prompt-authorized grants agree with that manifest and the evidence
-sufficiently supports the boundary. Available abnormal or no-report launcher or host evidence may
-substitute for the self-report only when sufficient. An unexplained mismatch, missing manifest
-binding, or insufficient evidence terminally invalidates the Adapter, and the output is not
-consumed. Retain the comparison as transient Role Boundary Audit evidence. Host evidence is optional
-corroboration; no host hook is required. This is behavioral evidence, not proof of physical
-visibility or isolation.
+| Role | Prompt and allowlist narrowing |
+| --- | --- |
+| Controller | The frozen Shared Input, Run Contract, Job Graph, manifests, Candidate fingerprints, lifecycle state, and host audit evidence needed to operate the control plane. Candidate and evidence access is read-only except for exact public control operations; Candidate meaning and finding merit remain outside Controller authority. |
+| Probe | Its manifest, mandatory reports, closed Envelope ID, and unique control only. It receives no task evidence, repository or tool access, network authority, peer channel, or delegation. |
+| Author | The complete public Author payload, accepted Shared Input, Candidate and owned-resource allowlist, and exact per-path `read`, `write`, `create`, and `delete` grants for the current Authoring or Repair Scope. No unrelated source-project content, Machine work, Acceptance work, network, or delegation. |
+| Quality Reviewer | The public Quality payload, complete read-only Candidate resource tree, accepted Shared Input, loading and distribution metadata, selected model, and writing guidance. No Author reasoning, another Reviewer's work, unrelated source content, network, or delegation. |
+| Correctness Reviewer | The public Correctness payload, complete read-only Candidate resource tree, declared dependencies, accepted Shared Input, governing evidence, and representative-target portfolio. No Author reasoning, another Reviewer's work, unrelated source content, network, or delegation. |
+| Runner | The public read-only Candidate payload, declared inputs and dependencies needed by its immutable representative case, exact fixture, capture contract, and case-owned effects. No unrelated source content, judgment, repair, role control, network, or delegation; a case requiring network or an external effect returns public `EXECUTION_UNAVAILABLE`. |
 
-Before any role launches, qualification must also establish that the selected launcher can end
-every fresh Runner and establish quiescence after normal, failed, abnormal, or non-returning
-execution. Fail when this capability is not proven, parent-turn content is reported, the control is
-not followed, the instruction-authoritative Controller channel or bounded updates cannot be
-preserved, Candidate or evidence payload can override that channel, or the Probe contradicts any
-statically established persistence, access, or capacity capability. Qualification reaches a
-bounded pre-launch outcome: it passes only when all conditions hold; otherwise it fails without
-launching roles. The Controller runs it after static PASS; qualification and later Acceptance
-evidence remain transient and are not written into the Candidate.
+These allowlists add no communication edge or authority to the public role contracts. A public
+bounded update is eligible only while it remains inside the applicable allowlist and preserves the
+accepted source-context exclusion and declared dependency closure.
 
-## Build role contracts
+## Bind every invocation
 
-Apply the loaded public Role Launch Interface and role contracts. Limit each shared role to its
-complete prompt, required declared semantic context, and minimum prompt-authorized repository use:
-candidate and owned resources for the Author, candidate and declared dependencies for Reviewers,
-and those declared shared inputs plus the frozen case and fixture for a Runner.
+Bind every Probe, Author, Reviewer, and Runner invocation or continuation to the complete public
+expected-operation manifest for that exact action. Bind one Adapter-owned **Tool Boundary Record**
+in that manifest with exactly these fields: `physically available tools`, `prompt-authorized
+subset`, and `boundary`.
 
-Beyond each role's allowlist, that role does not read source-project Rules, Skills, context
-documents, unrelated files, or parent conversation. It does not use the network or delegate.
+Carry the Tool Boundary Record alongside, never inside, the unchanged public three-report
+Operation Summary. Before consuming the callback, apply the public Role Boundary Audit to the
+manifest, Operation Summary, and companion record together. A physical superset is not itself a
+mismatch; behavior outside the prompt-authorized subset is a boundary violation. Host evidence may
+corroborate behavior, but this Adapter requires no host hook and makes no host-isolation claim.
 
-This Adapter never grants network access or authority for external effects. A required Acceptance
-case that needs either stops as `EXECUTION_UNAVAILABLE` under the public Acceptance contract.
+## Run the required Probe
 
-For Acceptance, apply the loaded public attempt lifecycle unchanged with the case's exact file,
-tool, and machine-check grants prompt-authorized.
+After public freeze and static qualification, but before a semantic role, lock, or Candidate write,
+use the selected launcher for one disposable Probe. Supply no task context. Through the
+authoritative Controller task channel, give one invocation-unique instruction distinct from the
+bootstrap envelope and reports, define its exact observable response, and bind both in the Probe
+manifest. The Probe performs no file, tool, network, peer, or delegation operation.
 
-Apply the public preauthorized update envelope. An otherwise eligible Context Supplement or access
-expansion must also preserve shared source-context exclusion and declared dependency closure.
-Refuse one that reveals source-project private content, an unrelated path, or an undeclared
-dependency.
+Use the host-provided expected envelope fingerprint when available. Otherwise mark the invocation
+`PROBE_BASELINE`; require the Probe to report an ordered fingerprint of message roles and content
+classes without their contents; it must equal the closed profile and becomes the comparison
+baseline for later invocations.
 
-## Adapter invalidation
+Probe `PASS` requires the exact unique-control response and reports, an inert and separately
+identifiable envelope, no inherited or undeclared content, preservation of Controller-channel
+authority and bounded updates, established termination and residual state, and no observed
+capability contradicting static qualification. Audit the callback first: a manifest or expected-
+control mismatch follows the public boundary path, while an audit-admissible failure of a Probe
+criterion follows public `PROBE_FAILED`. Launch no semantic role after either result.
 
-Any observed out-of-contract read, write, create, delete, tool call, network action, or delegation
-invalidates the Adapter and is a terminal audit violation. Prompt compliance is evidence for
-authoring independence, not a security claim.
+## Return to public containment
+
+After adding the Adapter evidence, return every invocation and callback to the public Role Boundary
+Audit and the Evaluation Lifecycle's global-exit decision. All public role independence,
+communication, capacity, human-stop, terminal precedence, and finalization semantics remain
+unchanged. In particular, apply the public contamination-boundary rule: invalidate only its
+smallest proven affected unit, and make the incident whole-run only when isolation cannot be
+proven. This Adapter adds no classification, incident taxonomy, or recovery procedure.

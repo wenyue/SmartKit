@@ -1,107 +1,139 @@
 # 可执行 Acceptance
 
-## 判断是否需要 Acceptance
+本条件式权威负责 Acceptance 设计、用例身份与组合、尝试、判断、Candidate 与设置修正、重放、
+安全最终化和终止优先级。仅在 Acceptance 适用时于 Design 期间加载。Design 冻结为
+`NOT_REQUIRED`时，不会有任何 Acceptance 能力、身份或调度约束本次运行。
 
-只有当候选项管辖具体或足够复杂的运行时行为，而且静态审查、机器检查或已接受机制尚不能高置信度
-确立其可行性时，才运行 Acceptance。相关信号包括固定的多步骤顺序、有意义的分支、重试、恢复、
-退出、具体工具调用、文件修改、权限边界、外部影响，或强制此类行为的 Rule。
+## 确认执行与身份满足条件
 
-笼统的判断指导、简单的非工具过程，或已有高置信度支持的行为不需要 Acceptance。记录
-`NOT_REQUIRED` 并完全跳过该阶段。不要用名为 Acceptance 的静态 walkthrough 代替它。
+扩展 Adapter 资格验证，使其包含一次性隔离、准确用例授权、证据捕获、全新 Runner 启动、每种
+返回模式下的终止与静止、清理，以及有界恢复。证明冻结 worker 调度能在保留当前用例 Reviewer
+时运行一个全新 Runner，也能在保留该 Reviewer 时，通过剩余`P`槽位分批运行完整、全新的较早
+阶段 cohort。
 
-## 冻结案例组合
+每个用例定义一个全新持久 Reviewer。首次尝试前绑定其身份与调度，但只有该尝试安全最终化后
+才启动。最多只有当前用例 Reviewer 处于活跃或保留状态。每个 Runner 和保留的 Reviewer 占用
+一个`P`槽位；所有其他工作分批运行，但不改变 cohort、版本或证据。`HOST_UNAVAILABLE`表示
+宿主无法提供正确推导的能力或冻结调度。Controller 超出`P`派发属于控制平面
+`ROLE_BOUNDARY_VIOLATION`。
 
-执行前，冻结代表性 case 和可观察的通过条件。使用覆盖实质运行时风险的最小案例组合：通常包括成功
-路径，以及候选项影响的每种实质不同的错误、恢复或退出。不要规定固定 case 数量。按风险从高到低
-顺序执行 case。
+默认执行完整 Job；只有 Skill 模型证明符合**Finite Execution Projection**资格且 Adapter
+拥有预授权 harness 时例外。最小合格 projection 必须执行每个受到实质影响的运行时接缝：
 
-## 执行和判断
+- Runner 把 Candidate 行为应用于冻结接缝输入，并产生可观察输出；
+- harness 只执行预授权的身份与控制机制并捕获宿主证据；Runner 从不请求或控制身份；以及
+- 一个递归边缘用例到达准确可观察的重新进入条件：Candidate 状态，加上将派发同一 Acceptance
+  图的下一次调用。harness 在派发前终止；前置状态不足以满足条件。
 
-每次尝试都由 Controller 按所选 Adapter 的要求准备一次性 Execution Isolation、fixture、准确限定
-到 case 的 `read`、`write`、`create`、`delete` 和工具授权、可观察证据捕获及清理。保持 Candidate
-不可变。如果任何必需权限、安全隔离或既有授权不可用，则以 `EXECUTION_UNAVAILABLE` 停止，报告
-未经测试的表面，并且不得给出 `PASS` 或 `NOT_REQUIRED`。只有已接受任务已为该 case 授予明确权限，
-并且所选 Adapter 支持时，才可以使用网络访问或产生外部影响。
+缺失 harness 或运行时接缝时返回`EXECUTION_UNAVAILABLE`；演练不能替代。网络或外部影响需要
+已接受用例权威与经证明的宿主能力。
 
-每次尝试都在该 Execution Isolation 中启动一个全新 Runner，只向其提供只读 Candidate、冻结 case、
-fixture、准确的 case 授权和允许的工具，以及该 case 所需的可观察通过条件。Runner 负责执行；它不
-判断或修复 Candidate、fixture 或环境。
+## 冻结不可变用例
 
-### 最终处置每次已启动的尝试
+在 Design 期间冻结覆盖重要运行时风险且按风险排序的最小组合：通常包括成功路径，以及每个
+实质不同的受影响错误、恢复和出口，包括必需代表性上下文。定义可观察通过条件，不强制任意
+用例数量。在阶段入口绑定这些不变用例单元，并从最高风险起顺序执行。
 
-Runner 一旦启动，无论它成功、失败还是无法正常返回，也无论证据捕获或 Role Boundary Audit 成功
-还是失败，Controller 都进入该次尝试的最终处置。首先保留所有可取得的可观察证据，包括任何可用的
-Runner 终止报告，并记录任何捕获失败。然后使用所选 Adapter 完成、停止或以其他方式结束 Runner，
-并确认其静止，包括异常执行或不返回的执行。保留任何额外的终止证据。只有确认静止后，Controller
-才能使用已经为一次性隔离授权、准确、安全且由 case 拥有的目标和授权尝试清理；绝不扩大权限，也不
-使用不安全或宽泛的删除。如果清理失败，最多进行一次有依据的有界恢复尝试，而且仅在该尝试安全且已
-获授权时进行。这是该次尝试唯一的清理恢复额度。
+用例定义和通过条件绝不改变。首次尝试前绑定每个用例单元。只有 Revision Impact 证明变化
+不会影响某项证据所证明的内容，才可跨 Candidate Version 保留已通过用例证据。
 
-Role Boundary Audit 违规具有终止优先级，但 Runner 静止时并不禁止安全清理。如果无法确认静止，
-保留所有可取得的证据并跳过清理。完成终止尝试、指纹审计，以及静止状态所允许的任何清理后，按以下
-优先级选择尝试结果：
+## 准备一次全新尝试
 
-1. 任何 Role Boundary Audit 违规或证据捕获失败都会产生 `ATTEMPT_INVALID`，无论静止或清理结果
-   如何。
-2. 否则，无法确认静止会产生 `RUNNER_NOT_QUIESCENT`。
-3. 否则，经过一次安全、已授权且有界的恢复后清理仍失败，或没有这种恢复方式，会产生
-   `CLEANUP_FAILED`。
-4. 否则，最终处置成功。
+为每次尝试冻结一份**Attempt Contract**，其中包含：
 
-对于任何终止结果，报告所有可取得的证据、任何违规或捕获失败、静止状态和残留状态、清理结果，以及
-已尝试的那一次有界清理恢复，或没有可用恢复方式的原因。停止，不创建或恢复 Reviewer，也不启动另
-一次尝试。任何终止结果都不是 Candidate PASS、`NOT_REQUIRED` 或 fixture/environment defect。
+- 一次性 Execution Isolation、fixture、安全清理，以及至多一次预授权有界清理恢复；
+- 准确的用例级操作、工具、网络与外部影响授权；
+- 只读 Candidate Version、不可变用例与通过条件，以及完整证据捕获；以及
+- 全新 Runner 输入、终止与静止机制。
 
-如果一个 case 的第一次尝试得到终止结果，则停止且不启动 Acceptance Reviewer。只有证据捕获、审计、
-Runner 静止和必需清理全部成功完成，最终处置才成功。最终处置成功本身不会使 case PASS。第一次尝试
-成功完成最终处置后，启动一个全新的 Acceptance Reviewer，并向其提供完整 Candidate Version、已接受
-行为和管辖证据、冻结 case 和可观察通过标准、fixture 和权限边界，以及捕获的执行和最终处置证据。
-该 case 后续每次尝试成功完成最终处置后，用新捕获的证据恢复同一个 Reviewer。在分类、Candidate
-修正、fixture 或环境恢复、歧义观察和 case PASS 的整个过程中保留该 Reviewer。只保留当前 case 的
-Reviewer；case PASS 后将其结束。复查时应用共同 Correction Cycle packet。
+Candidate、用例、fixture 定义和通过条件是不可变的**设置输入**。只有准确归用例所有的执行
+目标与影响可变。fixture 或环境修正是尝试之间由 Controller 单独执行的动作。
 
-当观察满足冻结的通过条件且不支持任何 Candidate finding 时，Reviewer 返回正常的 `PASS`。
-Candidate 缺陷会按完整的共同 finding schema 返回一个或多个 findings；Controller 将其作为一个
-Repair Scope 发送给持续 Author，并继续同一个 Reviewer 的 Correction Cycle。当没有证据支持
-Candidate 缺陷，但观察失败或无法确凿满足冻结的通过条件时，Reviewer 只返回以下两种 Acceptance
-专属分类之一：
+缺失权限、安全隔离或必需能力时返回`EXECUTION_UNAVAILABLE`并指出未测试表面，绝不能返回
+`PASS`或`NOT_REQUIRED`。为每项可获得观察、捕获失败、Runner 报告、终止与静止事实、Candidate
+指纹与审计、残留状态、清理，以及恢复或不可用状态，定义一份**Capture Record**。不要虚构证据。
 
-- `fixture/environment defect`：载荷指出有证据的缺陷，并给出准确、已授权且有界的 fixture 或环境
-  修正，或者说明没有可用修正。Controller 只执行所提供的修正，依据正常尝试契约启动全新 Runner，
-  完成该次尝试的最终处置并恢复同一个 Reviewer；没有可用修正时，使用下述适用的优先退出，而不凭空
-  发明恢复方式；或
-- `ambiguous`：Controller 将载荷中准确、有针对性的观察作为一次普通的全新 Runner 尝试启动。载荷
-  指出未解决的备选解释，以及区分它们所需的有界设置和证据捕获差异。该尝试保持在现有权限内，并使用
-  必需的设置、审计、证据捕获、清理和最终处置；随后 Controller 恢复同一个 Reviewer，如果分类仍然
-  模糊则停止。
+## 执行，然后始终最终化
 
-在 fixture/environment 恢复期间保持冻结 case 和通过标准。每次有依据的修正尝试只变更有界的
-fixture 或环境。如果同一缺陷在连续两次修正尝试后再次出现，或没有新的安全有界恢复方式，则以
-`NO_PROGRESS` 停止；如果必需的环境能力不可用，则改用 `EXECUTION_UNAVAILABLE`。报告这些尝试和
-终止证据。上述单次有针对性的全新观察仍是模糊分类唯一允许的重试。
+启动一个全新 Runner。它只能针对准确归用例所有的目标执行已冻结用例影响。它不改变设置输入
+或 Candidate，不扩展授权，不判断、修复或修正设置，不清理，不控制角色，也不委派。
 
-## 回退并重放 case
+无论成功、失败、异常、不返回或审计停止，之后都必须：
 
-Stage-local PASS 表示当前 Acceptance Reviewer 在成功最终处置后，认为当前 Candidate Version 的
-该 case 没有值得修复的问题。重放调度要求时，它会结束该 Reviewer 的修正循环，但它不是 Acceptance
-PASS。
+1. 保留每项可获得的观察与报告；记录所有捕获失败。
+2. 通过 Adapter 结束 Runner，并用终止证据确认静止。
+3. 完成 Role Boundary Audit，并再次执行 Candidate 指纹审计，即使没有报告或无法确认静止。
+4. 只有确认静止后，才清理准确且已授权、归用例所有的目标。失败时最多执行一次安全、受支持、
+   预授权的恢复。无法确认静止时禁止清理；边界违规不妨碍静止后的安全清理。
+5. 按顺序选择尝试结果：边界或审计违规，或捕获失败 → `ATTEMPT_INVALID`；无法确认静止 →
+   `RUNNER_NOT_QUIESCENT`；恢复后清理仍失败或没有可用恢复 → `CLEANUP_FAILED`；否则尝试最终化成功。
 
-Author 修正后，应用共同的持续复查，并在 Controller 执行 Revision Impact Decision 前为当前 case
-保留同一个 Reviewer、运行一次全新尝试并取得 Stage-local PASS。只有取得该 PASS 后：
+只有冻结合同允许时，异常 Runner 才可省略规范化报告。记录缺失，并审计宿主与捕获证据。终止
+尝试结果会停止 Acceptance：报告所有可获得证据、残留状态和恢复；不得重试或启动 Reviewer；
+不得进行缺陷分类；不得发布用例`PASS`或`NOT_REQUIRED`。预绑定 Reviewer 此时只受工作流最终化
+约束。尝试最终化成功只是证据，不是 PASS。
 
-- 如果早先的非 Acceptance 阶段失效，则把当前 case 的 Reviewer 作为唯一暂停的第五个身份保留，
-  同时为已结束的审查单元使用全新 Reviewer，恢复最早失效阶段和中间阶段。然后恢复同一个 Acceptance
-  Reviewer 前，先再次运行该 case 并成功完成最终处置；再用成功完成最终处置的证据恢复同一个
-  Acceptance Reviewer，取得 Stage-local PASS，然后执行下一次 Revision Impact Decision。
-- 如果早先已通过的 Acceptance case 失效，不要在保留当前 case Reviewer 的同时启动它的全新
-  Reviewer。在同一个 Candidate Version 上，于 Stage-local PASS 时记录当前 case PASS 并结束其
-  Reviewer，然后按照冻结的从高风险到低风险顺序，从最早失效的 Acceptance case 重新开始顺序评估。
-  除非之后的 Author 变更可能影响当前 case 的证据，否则保留该证据；正常 Revision Impact 会使每个
-  受影响 case 失效并重新运行。依次到达每个失效 case 时，先运行第一次全新 Runner 尝试并成功完成
-  最终处置，再启动其全新 Reviewer；保留并跳过其他未受影响 case 的证据。
-- 如果没有更早的阶段或 case 失效，则记录 case PASS 并结束当前 Reviewer。
+## 判断已最终化证据
 
-重放期间，只让一个 Acceptance Reviewer 处于当前或保留状态。重放修正会重复 Stage-local-PASS-first
-规则，绝不会在保留一个 case Reviewer 的同时启动另一个，也绝不会需要超过已鉴定的唯一暂停第五
-身份。只有当前 Candidate Version 的每个冻结 case 都具有 Reviewer 所有的 case PASS，并由成功
-最终处置和未受影响的证据支持时，Acceptance 才通过。
+第一次尝试成功最终化后，启动该用例的预绑定 Reviewer，并在后续尝试、分类、Candidate 修正、
+fixture/环境修正、一次歧义观察和用例 PASS 全程保留同一身份。
+
+向 Reviewer 提供完整 Candidate Version、已接受行为与证据、不可变用例与通过条件、fixture
+和权限边界，以及所有捕获的执行与最终化事实。它独立判断归因、通过条件、权限、执行、终止、
+静止、清理、残留状态和出口选择，并准确返回以下一种结果：
+
+- 所有条件满足且不支持 Candidate finding 时，返回通用`PASS`；
+- 存在**Candidate defect**时，返回通用`FINDING_READY`，随后用运行时直接 finding 握手与
+  通用 schema 正文；
+- 通用`CONTEXT_REQUIRED`、`ACCESS_REQUIRED`或`HUMAN_DECISION_REQUIRED`；
+- 仅在不存在 Candidate defect 时返回**fixture/environment defect**：缺陷及其准确、预授权、
+  有界的设置修正，或确认没有修正；
+- 仅在不存在 Candidate defect 时返回**ambiguous**：命名当前备选解释，以及一项定向观察、
+  有界设置和当前权威内的捕获增量；或
+- 该观察后仍有歧义时返回`AMBIGUITY_UNRESOLVED`，包含初始与最终备选解释、变化、两组证据、
+  观察与捕获增量、剩余歧义和未测试表面。
+
+Reviewer 直接、原样返回分类。只有 Candidate finding 使用仅含 metadata 的运行时 bootstrap，
+随后才把语义正文发给常驻 Author。Author 与 Reviewer 通过通用双边生命周期，分别独立判断
+主张和理由。Controller 只执行所选生命周期转换；它绝不接收、转发、概括或重新解释 finding
+或讨论内容。
+
+## 修正并重新评估
+
+- Candidate finding 使用直接 Author↔Reviewer 生命周期。完整全单元 Repair Scope 授权所选
+  修复后，必须由全新 Runner 和同一 Reviewer 重新取得当前用例 Stage-local PASS，之后才执行
+  Revision Impact。
+- 对于 fixture/environment defect，Controller 只应用 Reviewer 选中的预授权设置修正，启动
+  全新尝试并恢复同一 Reviewer。缺少能力返回`EXECUTION_UNAVAILABLE`；没有安全有界恢复返回
+  `NO_PROGRESS`。
+- 对于`ambiguous`，只增加给定设置与捕获增量，运行准确一次全新定向观察并恢复同一 Reviewer。
+  任何剩余重要歧义都返回`AMBIGUITY_UNRESOLVED`，即使备选解释减少、改变或变得明显。
+
+一次**Acceptance correction attempt**包含一次 Candidate 修复或选定的 fixture/环境修正、其
+全新 Runner 尝试和 Reviewer 重新评估。仅在同一缺陷持续时计数。缺陷或方案发生实质变化时，
+连续计数重置。歧义观察不算修正尝试。同一缺陷连续两次修正后仍存在，或安全恢复已耗尽时，
+停止并返回`NO_PROGRESS`。人类请求会触发全局语义立即停止，但每个已启动 Runner 仍要完整安全
+最终化。
+
+## 回退并重放
+
+**Stage-local PASS**表示当前 Reviewer 根据成功最终化证据，在当前用例与 Candidate Version 上
+通过。它关闭活跃修正循环，但既不是用例 PASS，也不是 Acceptance PASS。
+
+Candidate 修正后：
+
+1. 使用全新 Runner 与同一 Reviewer 运行当前用例，直到 Stage-local PASS 或停止。
+2. 应用 Revision Impact。较早的非 Acceptance 证明失效时，保留该 Reviewer，为每个失效已关闭
+   单元绑定完整全新 cohort，并通过剩余`P`槽位分批运行。恢复每个中间阶段，重跑当前用例并
+   重新取得 Stage-local PASS，之后才可再次判断 Revision Impact。
+3. 收敛时记录当前用例 PASS，结束其 Reviewer，并检查此前每个已通过用例是否失效，无论位置。
+4. 按冻结风险顺序重新开始最早失效用例：先取得一次成功最终化的全新尝试，再启动该用例的
+   全新 Reviewer。只有可证明不受影响的证据才可跳过。
+5. 没有此前用例失效时，前进到下一个冻结用例。
+
+保留当前 Reviewer 时不得启动其他用例 Reviewer。重放使用完整安全生命周期。只有 Reviewer
+根据当前 Candidate Version 上未失效且成功最终化的证据返回 PASS，用例才通过。
+
+只有每个冻结用例均记录 PASS、没有证据失效、每个 Runner 都已静止、所有必需清理与审计成功，
+并且不存在终止结果，Acceptance 才通过。通过 Evaluation Lifecycle 返回该结果，随后执行工作流
+最终化。

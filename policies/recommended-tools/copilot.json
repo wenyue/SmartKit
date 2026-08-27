@@ -1,5 +1,23 @@
 {
   "harness": "copilot",
+  "manual_session_actions": [
+    {
+      "id": "fleet_mode",
+      "name": "GitHub Copilot fleet mode",
+      "detectors": [
+        {
+          "kind": "command-regex",
+          "command": ["copilot", "help", "commands"],
+          "pattern": "(?m)^\\s*(/fleet)\\s+Enable fleet mode for parallel subagent execution\\s*$"
+        }
+      ],
+      "maintenance": {
+        "kind": "manual-session",
+        "instruction": "Run /fleet in the current Copilot CLI session, then continue the original task."
+      },
+      "guidance": "Enable fleet mode for parallel subagent execution in the current Copilot CLI session after approval."
+    }
+  ],
   "tools": [
     {
       "id": "copilot",

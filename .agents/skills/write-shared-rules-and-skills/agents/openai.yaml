@@ -1,6 +1,4 @@
 interface:
   display_name: "Write Shared Rules and Skills"
-  short_description: "Author portable SmartKit Rules and Skills"
-  default_prompt: "Use $write-shared-rules-and-skills to author and qualify a cross-project Rule or Skill."
-policy:
-  allow_implicit_invocation: true
+  short_description: "Author portable shared Rules and Skills"
+  default_prompt: "Use $write-shared-rules-and-skills to qualify and author one portable cross-project Rule or Skill through the public protocol."
