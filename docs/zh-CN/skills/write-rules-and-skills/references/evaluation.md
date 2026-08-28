@@ -11,14 +11,14 @@ Revision Impact、回退、重放、Scope Transfer 和全局出口。在启动�
 | 1 | Quality | 始终适用。激活已冻结的完整全新 cohort；成员分别独立通过同一个 Candidate Version。 |
 | 2 | Machine | 当变更涉及 schema 或 metadata、引用/资源、脚本、固定流程，或者足够具体/复杂的工具、权限、文件系统状态、流程或外部影响，并存在确定性证据时适用。广泛判断与高置信简单步骤可以是`NOT_REQUIRED`。 |
 | 3 | Correctness | 始终在 Machine `PASS`或有效`NOT_REQUIRED`后适用。激活已冻结的完整全新 cohort；成员分别独立通过同一个 Candidate Version。 |
-| 4 | Acceptance | 当运行时行为具体或足够复杂，而且缺乏高置信可行性证据时适用。在 Design 期间加载`acceptance.md`，或冻结为`NOT_REQUIRED`。 |
+| 4 | Acceptance | 当运行时行为具体或足够复杂，而且缺乏高置信可行性证据时适用。Design 会将该阶段冻结为适用，并纳入其合同贡献的全部内容；否则冻结为`NOT_REQUIRED`。 |
 
 Acceptance 信号包括固定多步顺序、有意义的分支、重试、恢复或出口、具体工具调用、变更、权限
 边界、外部影响，或要求此类行为的 Rule。静态演练不是 Acceptance。只有每项适用性、资源、
 身份调度、依赖、转换和出口都已冻结，Design 才关闭。
 
-在 Design 期间完整加载本资源和`reviews.md`。其中 cohort 数量、分配、修正职责与重放状态是
-不可变调度输入。阶段入口激活这些冻结事实，不得增加身份、分配、容量或转换。
+把本生命周期的修正与重放状态，以及 review 合同规定的 cohort 数量、分配和修正职责，冻结为
+不可变的调度输入。阶段入口激活这些已冻结事实，不得增加身份、分配、容量或转换。
 
 ## 把 finding 视为由 Owner 负责的主张
 
@@ -120,7 +120,7 @@ Role Boundary Audit 首先决定调用和回调是否可接纳。不可接纳的
 对于其他所有不可接纳调用或回调，以及每个语义角色事故，先按安全合同完成已经开始的条件式
 执行；若存在更高安全终止结果，以其为准。否则废弃不可接纳 payload，保留 Candidate、审计与
 残留状态。Controller 逐案判断 Author 或 Reviewer 行为是否处于冻结边界内，并可适度介入以
-执行控制平面与污染控制；它绝不决定 Candidate 含义、finding 是否成立或语义不动点。能够证明
+执行控制平面；它绝不决定 Candidate 含义、finding 是否成立或语义不动点。能够证明
 污染边界时，只使最小受影响单元失效，同时保留其分类以及边界外所有已建立状态。已经成立的
 `SEMANTIC_ROLE_UNAVAILABLE`是整轮终止结果，因为其所需身份不可替换。无法证明隔离时，
 其他每种事故分类都会成为整轮终止结果，并最终化工作流。不可接纳调用或回调属于

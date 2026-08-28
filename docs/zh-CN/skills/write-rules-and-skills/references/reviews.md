@@ -1,7 +1,7 @@
 # Quality 与 Correctness Review
 
-在 Design 期间加载两份合同。冻结每个完整全新 cohort、职责分配和分批调度，之后才可启动角色
-或改变 Candidate。阶段入口在`P`内激活已冻结身份；它不增加调度事实。
+在启动任何角色或改变 Candidate 前，Design 会冻结每份合同的完整全新 cohort、职责分配和
+分批调度。阶段入口在`P`内激活已冻结身份；它不增加调度事实。
 
 每个 Reviewer 在其单元的修正循环中保持身份，并接收同一份完整 Candidate Version、已提供的
 证据，以及已冻结的证据选择政策与授权。任何 Reviewer 都不会收到 Author 的推理、预期修复、

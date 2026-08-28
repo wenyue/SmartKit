@@ -1,5 +1,10 @@
 # Ownership, Alignment, and Candidate Models
 
+Every authoring invocation begins with an Ownership Review inside this gate. It must confirm one
+supported `rule` or `skill` owner before alignment and modeling may continue. Every other verdict
+follows its route below or returns its corresponding alignment result; the review is not an
+independent invocation, `PASS`, or deliverable.
+
 While this gate is open, permit only `Close alignment`'s conditional `grilling` invocation and the
 read-only Agent fact discovery it requires, including fact-finding dispatch, as alignment-owned
 operations. Begin no Candidate mutation, lock, validation stage, Author/Reviewer/Runner role, or
@@ -24,11 +29,6 @@ Classify every accepted obligation:
 For an ownership conflict, report the governing evidence, loading and behavioral effects,
 supported retain/move/split outcomes, live choice, and decision owner. A human preference cannot
 turn policy into a triggered job or waive the supported model and proof contract.
-
-An explicitly read-only Ownership Review reports each artifact's current and supported owner,
-obligation classifications, evidence, effects, recommendation, and missing decision. Return `PASS`
-when aligned; otherwise return `ALIGNMENT_REQUIRED`. Confirm that no file changed and stop before
-loading or completing a Candidate model.
 
 ## Close alignment
 

@@ -28,13 +28,13 @@ derived host capacity cannot support the required graph, return `HOST_UNAVAILABL
 allocation. Once frozen, a Controller dispatch or retention state exceeding `P` is control-plane
 `ROLE_BOUNDARY_VIOLATION`, never `HOST_UNAVAILABLE`.
 
-## Load schedule facts before freeze
+## Freeze schedule facts
 
-Load `evaluation.md` and `reviews.md` completely during Design. Their exact cohort cardinalities,
-responsibility assignments, persistence, correction, and replay obligations are schedule inputs.
-Acceptance contributes its schedule only when applicable. Stage entry may activate frozen
-identities and judgment criteria; it cannot add or change a cohort, assignment, identity state,
-capacity demand, or transition.
+Before freeze, incorporate the exact cohort cardinalities, responsibility assignments,
+persistence, correction, and replay obligations owned by the Evaluation Lifecycle and review
+contracts as schedule inputs. Acceptance contributes its schedule only when applicable. Stage
+entry may activate frozen identities and judgment criteria; it cannot add or change a cohort,
+assignment, identity state, capacity demand, or transition.
 
 ## Design one authoritative graph
 

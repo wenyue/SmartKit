@@ -1,8 +1,8 @@
 # Quality and Correctness Reviews
 
-Load both contracts during Design. Freeze each complete fresh cohort, responsibility assignments,
-and batching schedule before any role or Candidate change. Stage entry activates frozen identities
-within `P`; it adds no schedule fact.
+Design freezes each contract's complete fresh cohort, responsibility assignments, and batching
+schedule before any role or Candidate change. Stage entry activates frozen identities within `P`;
+it adds no schedule fact.
 
 Every Reviewer is persistent through its unit's correction loop and receives the same complete
 Candidate Version, supplied evidence, and frozen evidence-selection policy and grants. No Reviewer

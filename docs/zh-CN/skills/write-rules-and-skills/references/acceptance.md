@@ -1,8 +1,9 @@
 # 可执行 Acceptance
 
 本条件式权威负责 Acceptance 设计、用例身份与组合、尝试、判断、Candidate 与设置修正、重放、
-安全最终化和终止优先级。仅在 Acceptance 适用时于 Design 期间加载。Design 冻结为
-`NOT_REQUIRED`时，不会有任何 Acceptance 能力、身份或调度约束本次运行。
+安全最终化和终止优先级。只有 Design 把 Acceptance 冻结为适用时，它才贡献自己的阶段、
+能力、身份、调度、用例、转换和激活。Design 冻结为`NOT_REQUIRED`时，它不贡献其中任何内容，
+也不会对任何运行设置准入条件。
 
 ## 确认执行与身份满足条件
 
