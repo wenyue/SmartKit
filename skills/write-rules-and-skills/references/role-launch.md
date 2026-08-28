@@ -1,8 +1,10 @@
 # Role Launch
 
-This fixed runtime owns Host Governance, identity lifecycle, scheduling, semantic channels,
-normalized reports, Role Boundary Audits, semantic-role failure, conditional-role composition, and
-workflow finalization.
+This single fixed runtime is used unchanged by public, project-local, and shared writers. It owns
+Host Governance, identity lifecycle, scheduling, common need-based evidence selection, semantic
+channels, normalized reports, Role Boundary Audits, semantic-role failure, conditional-role
+composition, and workflow finalization. Caller-owned evidence qualification may narrow Candidate
+evidence but cannot adapt this runtime.
 
 The exact three-report callback schema below is normative. An **Operation Summary** means the
 complete bundle of Operation Report, Peer Report, and Host-Governance Report; it never omits or
@@ -27,9 +29,9 @@ Catalog and environment metadata are read-only, separately reported, and inert. 
 project instructions govern only how an already-authorized operation executes. None supplies or
 changes Candidate semantics, prose, evidence, scope, authority, permissions, dependencies,
 Acceptance facts, role work, or frozen transitions; none grants an operation or access. An
-independently owned Rule, Spec, or implementation may still supply evidence through its established
-provenance and the frozen contract. Earlier turns, unrelated tasks, and undeclared content classes
-remain outside the role's semantic input.
+independently owned Rule, Spec, implementation, or external source may still supply evidence
+through its established provenance and the frozen discovery grants. Earlier turns, unrelated
+tasks, and undeclared content classes remain outside the role's semantic input.
 
 Before freeze, bind the canonical closed-bootstrap representation to one immutable **Envelope ID**
 in each expected-operation manifest and supply the same value to the role and Controller. A role
@@ -47,17 +49,50 @@ identity persists through that unit's correction loop. Reopening an invalidated 
 requires a wholly fresh complete cohort.
 
 For every batch and round, bind the unit, complete cohort, active subset, Candidate Version,
-evidence, phase, independent-readiness event, permitted Author↔Reviewer pairs and directions, and
-discussion state. Suspension preserves identity and state without consuming a live worker slot.
+supplied evidence, discovery grants, phase, independent-readiness event, permitted Author↔Reviewer
+pairs and directions, and discussion state. Suspension preserves identity and state without
+consuming a live worker slot.
 Retention keeps an identity live and consumes one `P` slot. Batching changes none of cohort,
-identity, version, evidence, unit, round, or independent judgment. A Reviewer receives no other
-Reviewer's work.
+identity, version, supplied evidence, discovery grants, unit, round, or independent judgment. A
+Reviewer receives no other Reviewer's work.
 
 Only the Controller operates lifecycle mechanics and bounded updates. Every dispatch and retention
 state must fit the frozen `P`. If the host cannot supply the correctly derived capacity, identity,
 authenticated channel, schedule, or evidence, return `HOST_UNAVAILABLE`. If the Controller binds,
 launches, or retains a state beyond the frozen schedule or `P`, return control-plane
 `ROLE_BOUNDARY_VIOLATION`. Never replace the resident Author or a member of an open cohort.
+
+## Select evidence by need
+
+Authors and Reviewers start from the supplied task, Candidate, and evidence. When an applicable
+instruction or concrete need in the current role requires it, each may independently inspect
+task-relevant Candidate resources, governing Rules, accepted Issues or Specs, owned implementation,
+tests, configuration, repository conventions, or external sources through the frozen read and
+network grants and applicable host capability. They do not proactively inspect unrelated
+repository content, follow ambient references, or use available tools without that need.
+
+Reviewers independently seek counterevidence without receiving the Author's reasoning or another
+Reviewer's work; source choices and discoveries need not match across roles. A discovered source
+may support Candidate judgment and may be cited in a finding or direct discussion. Evidence
+acquires authority only from its established owner and provenance, never from repository or
+context visibility, host-envelope presence, discovery, or peer transmission. Nonnormative context
+documents remain outside the evidence basis unless a governing contract permits their narrow use.
+A caller-owned portability or other evidence policy may further qualify Candidate evidence. For
+shared writing, private portability qualification alone governs discovered source-project
+evidence. The Controller does not interpret or relay project evidence.
+
+Use the exact read and network grants or narrowly owned source and capability classes frozen under
+[`job-design.md`](job-design.md). Source selection inside those grants is ordinary independent
+discovery, not a bounded update or per-file research route. Use `CONTEXT_REQUIRED` only for a
+necessary fact that cannot be discovered from current authorized sources and capabilities. Use
+`ACCESS_REQUIRED` for missing access. Context Supplements and access expansion remain exceptional
+bounded fallbacks under the frozen Job Design envelope; an out-of-envelope request requires a new
+aligned run.
+
+Authors receive Candidate operations only through the exact current Authoring or Repair Scope.
+Reviewers remain read-only. Machine commands and Acceptance effects remain with their public stage
+owners and do not enter Author or Reviewer grants. Every operation is reported and audited through
+this runtime.
 
 ## Preserve role authority
 
@@ -68,25 +103,34 @@ and evidence. The Controller prompt requires case-by-case judgment of Author and
 and permits proportionate intervention only to enforce the frozen control plane and containment;
 it leaves Candidate meaning, findings, and reasoned fixed points to their semantic owners.
 
-Give the Author the complete Run Contract, Candidate model, writing guidance, accepted evidence,
+Give the Author the complete Run Contract, Candidate model, writing guidance, supplied evidence,
 current Candidate, grants, and exactly one current Authoring Scope or Repair Scope. The Author works
-only within them and performs no Machine Validation, Acceptance, network use, or delegation. Only
-the Author owns Candidate meaning, finding dispositions, and Candidate edits.
+only within them and performs no Machine Validation, Acceptance, or delegation. Only the Author
+owns Candidate meaning, finding dispositions, and Candidate edits.
+
+Every Author and Reviewer prompt incorporates and obeys the frozen common evidence-selection
+policy in [**Select evidence by need**](#select-evidence-by-need). When that policy requires
+`CONTEXT_REQUIRED` or `ACCESS_REQUIRED`, the role returns the matching status through this runtime.
+
+An `ACCESS_REQUIRED` payload identifies exactly one missing access target: exact path and mode for
+local access, or exact source, capability, and network mode for external access. Both forms include
+the reason.
 
 The Author returns exactly one status:
 
 - `COMPLETE`: semantic Change Summary, exact changed/created/deleted paths, and uncertainty outside
   the current discriminated scope;
 - `CONTEXT_REQUIRED`: missing fact and its authoring use;
-- `ACCESS_REQUIRED`: exact path, mode, and reason; or
+- `ACCESS_REQUIRED`: the common missing-access payload above; or
 - `HUMAN_DECISION_REQUIRED`: exact decision, why evidence or authority cannot resolve it, decision
   owner, and consequences of every live choice.
 
 Reviewers independently judge complete authorized inputs and own findings, classifications, and
-verdicts. Authors and Reviewers use no network or delegation. Runners perform only frozen case
-execution, never delegate, and own no judgment, repair, setup correction, cleanup, role control, or
-role launch. Only the Controller starts, resumes, suspends, retains, or finishes an identity;
-grants access; or supplies a bounded update.
+verdicts. They receive neither the Author's reasoning nor another Reviewer's work. Authors and
+Reviewers never delegate; network use requires their frozen network grant and applicable host
+capability. Runners perform only frozen case execution, never delegate, and own no judgment,
+repair, setup correction, cleanup, role control, or role launch. Only the Controller starts,
+resumes, suspends, retains, or finishes an identity; grants access; or supplies a bounded update.
 
 ## Close semantic-role abnormal execution
 
@@ -117,14 +161,16 @@ Freeze no Reviewer↔Reviewer edge. Use this two-step bootstrap for every findin
    `CHANNEL_OPEN` metadata to that Author↔owner pair. Only then does the Reviewer send the complete
    finding directly to the Author.
 
-The Author and owner exchange semantic claims, dispositions, evidence-based reasons, questions,
-objections, and rebuttals directly. Each judges the feedback and reasons independently. Agreement
-is a reasoned bilateral fixed point, never blind acceptance. The Controller sees only control
-metadata; it never receives, interprets, summarizes, arbitrates, or relays finding bodies,
+The Author and owner exchange semantic claims, dispositions, evidence-based reasons, citations to
+newly discovered supported evidence, questions, objections, and rebuttals directly. Each judges
+the feedback, reasons, support, and provenance independently. Agreement is a reasoned bilateral
+fixed point, never blind acceptance. The Controller sees only control metadata; it never receives,
+interprets, summarizes, arbitrates, or relays finding bodies,
 dispositions, or discussion content. The pair closes with audited `DISCUSSION_CLOSED` metadata
 containing unit, round, Candidate Version, identities, finding ID, disposition class, delivery
-state, and fixed-point state, but no semantic body. Peer traffic cannot operate roles, change
-grants, or introduce evidence.
+state, and fixed-point state, but no semantic body. Peer traffic cannot operate roles or change the
+frozen contract, authority, or grants. Transmission makes evidence available to the receiving peer
+but grants it no authority.
 
 A Quality or Correctness Reviewer exposes exactly one Controller-facing judgment result at a time:
 `PASS`, `FINDING_READY`, `CONTEXT_REQUIRED`, `ACCESS_REQUIRED`, or

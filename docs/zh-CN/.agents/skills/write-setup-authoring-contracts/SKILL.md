@@ -27,10 +27,12 @@ Contract；生成的目标和共享 SmartKit 工件仍由各自的编写者负�
 已接受人工决策上下文。否则保持同一停止结果。这个由 Controller 所有的入口退出不同于有界更新请求和
 语义角色的 `HUMAN_DECISION_REQUIRED`。
 
-完整阅读公共 [`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md) 和
-[`Project-Aware Role Launch`](../../../skills/write-rules-and-skills/references/project-aware-role-launch.md)。
-应用其中具体的访问、权威、Controller 有界更新、Role Boundary Audit、直接通道、异常执行和工作流
-最终化机制。
+完整阅读公共
+[`Frozen Job Design`](../../../skills/write-rules-and-skills/references/job-design.md)和
+[`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md)。应用 Frozen Job
+Design 的授权、来源/能力类别和有界更新合同。原样应用 Role Launch，将其作为唯一固定运行时和
+通用证据选择政策，包括其中的角色权威、Role Boundary Audit、直接通道、异常执行和工作流最终化
+机制。
 
 仅确认以下身份满足条件：Controller、一个在每个 Candidate Version 中保留的全新常驻 Author，以及一个在其
 修正循环中保留的全新 Static Reviewer。本地序列为 Author → 适用的 Machine Validation → Static
@@ -38,16 +40,18 @@ Reviewer。当前版本取得 Machine PASS 或有依据的 `NOT_REQUIRED` 前只
 启动 Reviewer。公共 Quality Review、Correctness Review 和可执行 Acceptance 不进入此工作流。如果
 宿主无法保留这些身份、已加载的权威和访问契约或排期，则按 Role Launch 停止；绝不替换常驻 Author。
 
-在取得锁或启动 Author 前，冻结完整的已接受输入和一个 Setup 专属有界更新范围。列举之后可由 Context
-Supplement 填充的每个语义证据或依赖槽位，以及之后可扩展的每个 Candidate 自有准确范围、路径类别和
-操作模式。冻结一个准确的 Candidate Allowlist，其中只包含 `setup-assets/blueprints/` 下预期的契约；
-只有 Author 获得其写入权限。取得一个独占候选项写入锁。如果冻结接口能够明确证明没有取得锁，也不可能
-遗留锁状态，则在启动 Author 前返回 `LOCK_UNAVAILABLE`；如果某次尝试可能遗留锁状态，则转到
-**完成**。取得锁后且 Author 进行任何写入前，Controller 对完整 Allowlist 计算指纹，并将该基线绑定到
-初始 Candidate Version。在整个工作流最终化期间保留该锁。
+在取得锁或启动 Author 前，根据 Frozen Job Design 冻结完整的已接受输入，并实例化 Setup 专属的
+授权与有界更新 envelope，同时保留 Author 的`network: none`边界。列举每个符合 Context
+Supplement 条件的必要事实槽位，以及每个符合访问扩展条件的已授权本地路径类别、外部来源与能力
+类别和已授权模式。冻结一个准确的 Candidate Allowlist，其中只包含`setup-assets/blueprints/`下
+预期的契约；只有 Author 获得其写入权限。
+取得一个排他的 Candidate writer 锁。如果冻结接口能够明确证明没有取得锁，也不可能遗留锁状态，
+则在启动 Author 前返回`LOCK_UNAVAILABLE`；如果某次尝试可能遗留锁状态，则转到**完成**。取得锁后
+且 Author 进行任何写入前，Controller 对完整 Allowlist 计算指纹，并将该基线绑定到初始 Candidate
+Version。在整个工作流最终化期间保留该锁。
 
-只有当证据基础、仅用于判断的目标、身份、排期、allowlist、更新范围、预期操作、锁接口和写入前
-指纹均已冻结，且不存在实质歧义时，本步骤才完成。
+只有当证据基础、仅用于判断的目标、身份、排期、allowlist、授权、发现类别、更新 envelope、预期
+操作、锁接口和写入前指纹均已冻结，且不存在实质歧义时，本步骤才完成。
 
 ## 2. 编写一个完整 allowlist 的 Candidate Version
 

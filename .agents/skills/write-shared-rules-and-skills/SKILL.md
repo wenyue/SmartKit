@@ -5,11 +5,11 @@ description: Author or revise a portable cross-project SmartKit Rule or Skill; e
 
 # Write Shared Rules and Skills
 
-Author one portable shared Candidate through a complete private workflow. This Skill owns shared
-readiness, portability, the soft-isolated evidence environment, and the exact private differences
-from the public `write-rules-and-skills` workflow. The public workflow remains canonical for the
-common Rule and Skill models, Job Graph, authoring, proof, correction, exits, and finalization named
-below.
+Author one portable shared Candidate through the public `write-rules-and-skills` workflow. This
+Skill owns shared readiness, portability qualification, source-project evidence boundaries, and
+representative-target obligations. The public workflow remains canonical for the common Rule and
+Skill models, Job Graph, Role Launch runtime, evidence-selection policy, authoring, proof,
+correction, exits, and finalization.
 
 ## Close shared readiness
 
@@ -34,24 +34,20 @@ representative target covers every evidenced materially distinct seam.
 ## Apply the exhaustive private delta
 
 Read the public [`SKILL.md`](../../../skills/write-rules-and-skills/SKILL.md) and every resource it
-reaches for this run that is not already loaded, except the project-aware launch resource replaced
-below. Read
-[`references/soft-isolated-role-launch.md`](references/soft-isolated-role-launch.md) completely.
-Apply exactly this map:
+reaches for this run that is not already loaded. Apply exactly this map:
 
 | Public location | Disposition | Private behavior |
 | --- | --- | --- |
 | `references/models.md` Rule or Skill model | `extend` | Add the portable model and Shared Input from private `references/portability.md`. |
-| Entire `references/project-aware-role-launch.md` | `replace` | Apply private `references/soft-isolated-role-launch.md` while keeping public `references/role-launch.md` unchanged. |
-| `references/job-design.md`, after freeze and before `Fingerprint and lock` | `insert` | Run the mandatory private Probe and require its audited result. |
-| `references/reviews.md`, both Correctness scopes | `extend` | Add shared ownership, dependency closure, source-context exclusion, representative-target paths, and exits. |
-| `references/acceptance.md`, `Freeze immutable cases` and `Prepare one fresh attempt` | `extend` | Add representative target seams whose runtime feasibility lacks high-confidence static and Machine evidence, under the private Runner restrictions. |
-| `references/evaluation.md`, `Select the global exit` | `extend` | Apply the private Probe outcomes and precedence from `soft-isolated-role-launch.md`. |
-| Public `SKILL.md`, `5. Finalize and hand off` | `extend` | Require current-version portability and representative-target proof plus same-run soft-isolation qualification and Probe evidence. |
+| `references/role-launch.md` | `preserve` | Use the unified public runtime and its evidence-selection policy unchanged; qualify discovered evidence through private `references/portability.md`. |
+| `references/reviews.md`, both Correctness scopes | `extend` | Add shared ownership, dependency closure, source-project evidence qualification, exclusion of unqualified source-project meaning, representative-target paths, and exits. |
+| `references/acceptance.md`, `Freeze immutable cases` | `extend` | Add representative-target seams whose runtime feasibility lacks high-confidence static and Machine evidence. |
+| Public `SKILL.md`, `5. Finalize and hand off` | `extend` | Require current-version portability and representative-target proof. |
 
-Every unlisted public phase, identity, cohort, report, audit, correction rule, exit, and
-finalization requirement applies unchanged. This Skill adds no stage, Reviewer, semantic channel,
-finding lifecycle, audit taxonomy, or recovery path.
+Every unlisted public phase, fresh identity, private-judgment requirement, precise grant, report,
+Role Boundary Audit, Machine and Acceptance owner, correction rule, exit, and finalization
+requirement applies unchanged. This Skill adds no stage, role, semantic channel, finding lifecycle,
+audit taxonomy, discovery interface, or recovery path.
 
 **Complete when:** the fixed public workflow plus every mapped private disposition forms one
 path-complete, qualified, and schedulable Run Contract.
@@ -60,7 +56,10 @@ path-complete, qualified, and schedulable Run Contract.
 
 Supply the accepted Shared Input, complete portability evidence and pass conditions, and exact
 operation grants to the combined contract. Complete the public workflow with the mapped private
-dispositions.
+dispositions. Authors and Reviewers use the public evidence-selection policy; private portability
+qualification alone determines whether material selected under it can support portable meaning.
+The public `CONTEXT_REQUIRED` and `ACCESS_REQUIRED` outcomes remain exceptional bounded fallbacks,
+not a shared readiness gate.
 
 Extend both public Correctness scopes as directed by `references/portability.md`. Route each
 required representative target through the public conditional Executable Acceptance stage only
@@ -78,8 +77,6 @@ current-version evidence for:
 - both portability-extended Correctness verdicts; and
 - every required representative Acceptance case.
 
-The same frozen run must also hold soft-isolated launch static qualification and the one-time Probe
-`PASS`. Candidate edits neither version-bind nor replay that launcher-policy evidence. Add all
-success facts, representative-target evidence, and the public operation and audit records to the
-public handoff. Grant no publication, installation, commit, translation, or other downstream
-effect.
+Add all success facts, representative-target evidence, and the public operation and audit records
+to the public handoff. Grant no publication, installation, commit, translation, or other
+downstream effect.

@@ -24,10 +24,10 @@ activates those frozen facts and may add no identity, assignment, capacity, or t
 
 ## Treat findings as owned claims
 
-A finding records stable ID, problem and accepted evidence, concrete counterexample, Candidate
-location, severity, estimated Repair Scope, affected obligation or surface, preservation
-constraints, and bounded repair direction rather than replacement prose. Use `N/A` with a reason
-only where a field cannot apply.
+A finding records stable ID, problem and supported evidence with its owner and provenance,
+concrete counterexample, Candidate location, severity, estimated Repair Scope, affected obligation
+or surface, preservation constraints, and bounded repair direction rather than replacement prose.
+Use `N/A` with a reason only where a field cannot apply.
 
 - `critical`: semantic, authority, safety, ownership, executability, or exit failure.
 - `material`: supported defect materially reducing information quality, reliability, or
@@ -41,17 +41,20 @@ through the runtime `FINDING_READY → CHANNEL_OPEN` handshake.
 
 ## Run one independent correction unit
 
-1. **Judge privately.** Give every cohort member the same complete Candidate Version, authorized
-   evidence, unit, round, and independent-judgment boundary. Batching preserves those inputs. An
-   eligible bounded update restarts that identity's private judgment.
+1. **Judge privately.** Give every cohort member the same complete Candidate Version, supplied
+   evidence, frozen evidence-selection policy and grants, unit, round, and independent-judgment
+   boundary. Each judges without receiving the Author's reasoning or another Reviewer's work.
+   Batching preserves the common inputs. An eligible bounded update restarts that identity's
+   private judgment.
 2. **Open owning pairs.** For each recorded finding, emit the audited nonsemantic `FINDING_READY`
    result. After the Controller returns `CHANNEL_OPEN` for that prebound pair, send the complete
    finding directly to the Author. No Reviewer receives another's work.
 3. **Choose privately.** The Author independently selects `repair`, `partial repair`, or `decline`,
    with an evidence-based reason. A partial repair identifies the retained claim and why.
-4. **Deliberate directly.** Only the Author and finding owner exchange semantic content. Each
-   assesses claims and reasons independently; agreement requires a reasoned bilateral fixed point.
-   Candidate writes remain barred while any discussion is open.
+4. **Deliberate directly.** Only the Author and finding owner exchange semantic content, including
+   newly discovered supported evidence. Each assesses claims, reasons, support, and provenance
+   independently; transmission grants no authority, and agreement requires a reasoned bilateral
+   fixed point. Candidate writes remain barred while any discussion is open.
 5. **Close the round.** The Author freezes a disposition and the owner freezes the claim state,
    then both emit the runtime's nonsemantic `DISCUSSION_CLOSED` metadata. An owner may return
    current-version `PASS` only when no Candidate change is needed; otherwise the retained or revised
@@ -66,9 +69,10 @@ through the runtime `FINDING_READY → CHANNEL_OPEN` handshake.
    independently rechecks the whole Candidate. Without a write, unaffected same-version `PASS`
    remains valid while finding owners reassess.
 
-Consensus is independent `PASS` from the complete declared cohort on one Candidate Version and
-evidence set. An open unit persists through local PASS. Reopening an invalidated closed unit
-requires a wholly fresh cohort; prior identities and verdicts never return.
+Consensus is independent `PASS` from the complete declared cohort on one Candidate Version with
+the same supplied evidence, evidence-selection policy, and grants. An open unit persists through
+local PASS. Reopening an invalidated closed unit requires a wholly fresh cohort; prior identities
+and verdicts never return.
 
 ### Human stop and no progress
 
@@ -105,8 +109,8 @@ A Reviewer may attach one **Scope Transfer Note** containing only Candidate loca
 owner, and responsibility to inspect. It is not a finding and carries no observation, argument,
 evidence, disposition, rationale, or verdict. Route it once to another current-cohort Reviewer, a
 later stage before that stage starts, or an earlier passed stage after current local PASS. The
-recipient independently inspects the complete Candidate and evidence. A note that may affect
-passed proof invalidates that proof; the note acquires no semantic owner.
+recipient independently inspects the complete Candidate and its authorized evidence sources. A
+note that may affect passed proof invalidates that proof; the note acquires no semantic owner.
 
 ## Revise, rewind, and replay
 
@@ -120,7 +124,7 @@ operation records, and a targeted diff only when necessary. After every write:
    complete fresh cohort for each invalidated closed Quality or Correctness unit.
 4. Apply each conditional authority's frozen retention and replay schedule. Retained live workers
    continue consuming `P`; batch fresh cohorts in the remaining pool without changing cohort,
-   version, or evidence.
+   version, supplied evidence, or discovery grants.
 
 Repeat after every write. No verdict survives a change that may affect its proof.
 
@@ -142,9 +146,10 @@ state. The Controller judges case by case whether Author or Reviewer behavior st
 frozen boundaries and may intervene proportionately to enforce the control plane, never to decide
 Candidate meaning, finding merit, or a semantic fixed point. When the contamination boundary is
 proven, invalidate only the smallest affected unit while preserving its classification and every
-established state outside it. When isolation cannot be proven, the incident classification becomes
-a whole-run terminal and the workflow finalizes. An inadmissible invocation or callback is
-`ROLE_BOUNDARY_VIOLATION`.
+established state outside it. An established `SEMANTIC_ROLE_UNAVAILABLE` is a whole-run terminal
+because its required identity cannot be replaced. When isolation cannot be proven, every other
+incident classification becomes a whole-run terminal and the workflow finalizes. An inadmissible
+invocation or callback is `ROLE_BOUNDARY_VIOLATION`.
 
 For admissible state, choose the first matching result:
 
@@ -154,8 +159,8 @@ For admissible state, choose the first matching result:
 3. started conditional execution: complete its safety finalization; its terminal governs, while
    successful finalization returns to the stage lifecycle;
 4. whole-run `SEMANTIC_ROLE_UNAVAILABLE`: a semantic role meets its frozen abnormal-execution
-   trigger without evidence of a boundary breach and isolation cannot be proven; preserve identity,
-   channel, termination, and residual evidence;
+   trigger without evidence of a boundary breach; preserve identity, channel, termination, and
+   residual evidence;
 5. `HOST_UNAVAILABLE`: the host cannot establish or supply the correctly derived and frozen
    capacity, identity, authenticated channel, schedule, or evidence;
 6. unavailable eligible `CONTEXT_REQUIRED` or `ACCESS_REQUIRED`; an out-of-envelope request becomes

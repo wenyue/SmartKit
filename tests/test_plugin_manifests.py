@@ -119,9 +119,7 @@ class PluginManifestTest(unittest.TestCase):
                 for path in (REPO_ROOT / '.agents/rules').glob('*.md')
             },
             {
-                '00-project-tools.md',
-                '01-project-contracts.md',
-                '02-project-structure.md',
+                '00-project-policy.md',
             },
         )
 
@@ -265,13 +263,11 @@ class PluginManifestTest(unittest.TestCase):
                 'evaluation.md',
                 'job-design.md',
                 'models.md',
-                'project-aware-role-launch.md',
                 'reviews.md',
                 'role-launch.md',
             },
             'write-shared-rules-and-skills': {
                 'portability.md',
-                'soft-isolated-role-launch.md',
             },
             'write-setup-authoring-contracts': {
                 'setup-authoring-contract.md',

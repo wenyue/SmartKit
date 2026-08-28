@@ -22,9 +22,9 @@ Acceptance 信号包括固定多步顺序、有意义的分支、重试、恢复
 
 ## 把 finding 视为由 Owner 负责的主张
 
-finding 应记录稳定 ID、问题与已接受证据、具体反例、Candidate 位置、严重级别、估计 Repair
-Scope、受影响义务或表面、保留约束，以及有界修复方向，而不是替换文字。仅当字段确实不适用
-时使用`N/A`并说明原因。
+finding 应记录稳定 ID、问题与有支持的证据及其 Owner 和来源、具体反例、Candidate 位置、
+严重级别、估计 Repair Scope、受影响义务或表面、保留约束，以及有界修复方向，而不是替换文字。
+仅当字段确实不适用时使用`N/A`并说明原因。
 
 - `critical`：语义、权威、安全、归属、可执行性或出口失败。
 - `material`：有支持的缺陷，实质降低信息质量、可靠性或可维护性。
@@ -36,15 +36,17 @@ Reviewer 通过运行时`FINDING_READY → CHANNEL_OPEN`握手暴露它。
 
 ## 运行一个独立修正单元
 
-1. **私下判断。**向每个 cohort 成员提供相同的完整 Candidate Version、已授权证据、单元、
-   轮次和独立判断边界。分批不会改变这些输入。符合条件的有界更新会重新开始该身份的私下判断。
+1. **私下判断。**向每个 cohort 成员提供相同的完整 Candidate Version、已提供的证据、已冻结的
+   证据选择政策与授权、单元、轮次和独立判断边界。每个成员在不接收 Author 推理或其他 Reviewer
+   工作的情况下判断。分批保留这些共同输入。符合条件的有界更新会重新开始该身份的私下判断。
 2. **打开 Owner 配对。**对每个已记录 finding 发出经审计、不含语义的`FINDING_READY`结果。
    Controller 为预绑定配对返回`CHANNEL_OPEN`后，Reviewer 才把完整 finding 直接发给 Author。
    任何 Reviewer 都不接收其他 Reviewer 的工作。
 3. **私下选择。**Author 独立选择`repair`、`partial repair`或`decline`，并提供基于证据的理由。
    partial repair 还需指出保留的主张及原因。
-4. **直接讨论。**只有 Author 与 finding Owner 交换语义内容。双方分别独立评估主张和理由；
-   一致意见必须是经过推理的双边不动点。任一讨论仍开放时禁止写 Candidate。
+4. **直接讨论。**只有 Author 与 finding Owner 交换语义内容，包括新发现且有支持的证据。双方
+   分别独立评估主张、理由、支持依据和来源；传输不会赋予权威，一致意见必须是经过推理的双边
+   不动点。任一讨论仍开放时禁止写 Candidate。
 5. **关闭轮次。**Author 冻结处置，Owner 冻结主张状态，随后双方发出运行时不含语义的
    `DISCUSSION_CLOSED`metadata。只有无需改变 Candidate 时，Owner 才可在当前版本返回`PASS`；
    否则保留或修订后的 finding 在写入前一直待处理。信任、投票、其他 Reviewer 和 Controller
@@ -56,8 +58,9 @@ Reviewer 通过运行时`FINDING_READY → CHANNEL_OPEN`握手暴露它。
 7. **共同复查。**写入产生新的 Candidate Version；每个持久 cohort 成员分别独立复查完整
    Candidate。若无写入，不受影响的同版本`PASS`仍有效，而 finding Owner 重新判断。
 
-共识是完整已声明 cohort 对同一 Candidate Version 和证据集分别独立给出`PASS`。开放单元在
-local PASS 后仍保持身份。重新打开失效的已关闭单元需要全新完整 cohort；旧身份与裁决绝不返回。
+共识是完整已声明 cohort 在相同的已提供证据、证据选择政策和授权下，对同一 Candidate Version
+分别独立给出`PASS`。开放单元在 local PASS 后仍保持开放状态。重新打开失效的已关闭单元需要全新
+完整 cohort；旧身份与裁决绝不返回。
 
 ### 人类停止与无进展
 
@@ -88,8 +91,8 @@ Machine 适用时，只运行受影响 Owner 支持且不会自动修复的检�
 Reviewer 可以附加一条**Scope Transfer Note**，其中只包含 Candidate 位置、预期 Owner 和需要
 检查的职责。它不是 finding，不包含观察、论证、证据、处置、理由或裁决。只可将其路由一次：
 发给当前 cohort 中另一 Reviewer、尚未开始的后续阶段，或在当前 local PASS 后发给此前已通过
-阶段。接收方独立检查完整 Candidate 和证据。可能影响已通过证明的 note 会使该证明失效；note
-本身不获得语义 Owner。
+阶段。接收方独立检查完整 Candidate 及其已授权的证据来源。可能影响已通过证明的 note 会使该
+证明失效；note 本身不获得语义 Owner。
 
 ## 修订、回退并重放
 
@@ -101,7 +104,7 @@ Revision Impact 使用 Author Change Summary、变更路径、全 Allowlist 指�
 3. 按冻结顺序重新打开该最早失效阶段和所有中间依赖。为每个失效且已关闭的 Quality 或
    Correctness 单元绑定完整全新 cohort。
 4. 应用每项条件式权威已冻结的保留与重放调度。保留且活跃的 worker 继续占用`P`；在剩余池中
-   分批运行全新 cohort，不改变 cohort、版本或证据。
+   分批运行全新 cohort，不改变 cohort、版本、已提供的证据或发现授权。
 
 每次写入后重复。任何可能受到变化影响的裁决都不得继续有效。
 
@@ -118,8 +121,9 @@ Role Boundary Audit 首先决定调用和回调是否可接纳。不可接纳的
 执行；若存在更高安全终止结果，以其为准。否则废弃不可接纳 payload，保留 Candidate、审计与
 残留状态。Controller 逐案判断 Author 或 Reviewer 行为是否处于冻结边界内，并可适度介入以
 执行控制平面与污染控制；它绝不决定 Candidate 含义、finding 是否成立或语义不动点。能够证明
-污染边界时，只使最小受影响单元失效，同时保留其分类以及边界外所有已建立状态。无法证明隔离
-时，事故分类提升为整轮终止，并最终化工作流。不可接纳调用或回调属于
+污染边界时，只使最小受影响单元失效，同时保留其分类以及边界外所有已建立状态。已经成立的
+`SEMANTIC_ROLE_UNAVAILABLE`是整轮终止结果，因为其所需身份不可替换。无法证明隔离时，
+其他每种事故分类都会成为整轮终止结果，并最终化工作流。不可接纳调用或回调属于
 `ROLE_BOUNDARY_VIOLATION`。
 
 对于可接纳状态，选择第一个匹配结果：
@@ -127,8 +131,8 @@ Role Boundary Audit 首先决定调用和回调是否可接纳。不可接纳的
 1. 第一个`HUMAN_DECISION_REQUIRED`：结束语义工作，为新运行保留请求；
 2. `LOCK_UNAVAILABLE`或`CANDIDATE_CHANGED`：在 Author 改变 Candidate 前停止并保留锁/基线证据；
 3. 已开始的条件式执行：完成安全最终化；其终止结果优先，成功最终化则返回阶段生命周期；
-4. 整轮`SEMANTIC_ROLE_UNAVAILABLE`：语义角色触发已冻结异常执行条件，没有边界违规证据，且
-   无法证明隔离；保留身份、通道、终止和残留证据；
+4. 整轮`SEMANTIC_ROLE_UNAVAILABLE`：语义角色触发已冻结异常执行条件，且没有边界违规证据；
+   保留身份、通道、终止和残留证据；
 5. `HOST_UNAVAILABLE`：宿主无法建立或提供经正确推导并冻结的容量、身份、认证通道、调度或证据；
 6. 无法提供符合条件的`CONTEXT_REQUIRED`或`ACCESS_REQUIRED`；超出 envelope 的请求在新运行中
    变为`ALIGNMENT_REQUIRED`；

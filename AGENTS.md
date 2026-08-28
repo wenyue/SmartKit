@@ -6,9 +6,7 @@ Read every project Rule whose `Read when` condition matches the current task.
 
 | Read when | Rule | Strength |
 | --- | --- | --- |
-| Running project tooling or synchronization, or completing a change set | `.agents/rules/00-project-tools.md` | `Mandatory` |
-| Changing APIs, capability ownership, installation, documentation, evaluation, contract evolution, distribution, hard dependencies, or exposure | `.agents/rules/01-project-contracts.md` | `Mandatory` |
-| Placing repository assets or making architectural-boundary decisions | `.agents/rules/02-project-structure.md` | `Advisory` |
+| Changing project-owned generated, delivered, or installed surfaces, setup-managed state, current contracts, delivery or exposure, or completing such a change | `.agents/rules/00-project-policy.md` | `Mandatory` |
 
 Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the
 files listed above.
@@ -26,9 +24,8 @@ Use the five default canonical triage labels. See `docs/agents/triage-labels.md`
 
 ### Domain context
 
-`.agents/rules/01-project-contracts.md` owns repository policy for context-document use and
-evidence. `docs/agents/domain.md` is a nonnormative explanatory guide to that policy, while accepted
-ADRs retain their separate decision authority.
+`docs/agents/domain.md` is a nonnormative explanatory guide to repository domain context, while
+accepted ADRs retain their separate decision authority.
 
 For unfamiliar repository language in direct user communication only, optionally consult
 `CONTEXT-MAP.md` as a nonnormative wording aid.

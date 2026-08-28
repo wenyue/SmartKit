@@ -34,10 +34,13 @@ accepted human-decision context for a new authoring run. Otherwise preserve the 
 Controller-owned entry exit is distinct from bounded update requests and semantic-role
 `HUMAN_DECISION_REQUIRED`.
 
-Read the public [`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md) and
-[`Project-Aware Role Launch`](../../../skills/write-rules-and-skills/references/project-aware-role-launch.md)
-completely. Apply their concrete access, authority, Controller bounded-update, Role Boundary Audit,
-direct-channel, abnormal-execution, and workflow-finalization mechanics.
+Read the public
+[`Frozen Job Design`](../../../skills/write-rules-and-skills/references/job-design.md) and
+[`Role Launch`](../../../skills/write-rules-and-skills/references/role-launch.md) completely. Apply
+Frozen Job Design's grant, source/capability-class, and bounded-update contract. Apply Role Launch
+as the single fixed runtime and common evidence-selection policy unchanged, including its
+role-authority, Role Boundary Audit, direct-channel, abnormal-execution, and workflow-finalization
+mechanics.
 
 Qualify exactly these identities: the Controller, one fresh resident Author retained through every
 Candidate Version, and one fresh Static Reviewer retained through its correction cycle. The local
@@ -47,11 +50,13 @@ that outcome. Public Quality Review, Correctness Review, and executable Acceptan
 workflow. If the host cannot preserve the identities, loaded authority and access contracts, or
 schedule, stop under Role Launch; never replace the resident Author.
 
-Before acquiring the lock or starting the Author, freeze the complete accepted input and one
-Setup-specific bounded update envelope. Enumerate every semantic evidence or dependency slot
-eligible for a Context Supplement and every candidate-owned exact scope, path class, and operation
-mode eligible for access expansion. Freeze one exact Candidate Allowlist containing only the
-intended contracts under `setup-assets/blueprints/`; only the Author receives write access to it.
+Before acquiring the lock or starting the Author, freeze the complete accepted input and
+instantiate the Setup-specific grants and bounded-update envelope under Frozen Job Design,
+preserving the Author's `network: none` boundary. Enumerate every necessary-fact slot eligible for
+a Context Supplement and every authorized local path class, external source and capability class,
+and already-authorized mode eligible for access expansion. Freeze one exact Candidate Allowlist
+containing only the intended contracts under `setup-assets/blueprints/`; only the Author receives
+write access to it.
 Acquire one exclusive candidate-writer lock. If the frozen interface establishes cleanly that no
 lock was acquired and no lock state may remain, return pre-Author `LOCK_UNAVAILABLE`; if an attempt
 may have left lock state, proceed to **Finish**. After acquisition and before any Author write, the
@@ -59,8 +64,8 @@ Controller fingerprints the complete Allowlist and binds that baseline to the in
 Version. Retain the lock through workflow finalization.
 
 This step is complete when the evidence basis, judgment-only target, identities, schedule,
-allowlist, update envelope, expected operations, lock interface, and pre-write fingerprint are
-frozen without material ambiguity.
+allowlist, grants, discovery classes, update envelope, expected operations, lock interface, and
+pre-write fingerprint are frozen without material ambiguity.
 
 ## 2. Author one whole-allowlist Candidate Version
 

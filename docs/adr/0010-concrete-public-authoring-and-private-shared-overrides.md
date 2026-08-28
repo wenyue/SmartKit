@@ -1,6 +1,6 @@
 # Keep Public Authoring Concrete and Shared Authoring Private
 
-Status: Accepted
+Status: Superseded by [ADR 0011](0011-unified-authoring-discovery-runtime.md)
 
 Date: 2026-08-27
 

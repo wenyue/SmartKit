@@ -3,16 +3,17 @@
 在 Design 期间加载两份合同。冻结每个完整全新 cohort、职责分配和分批调度，之后才可启动角色
 或改变 Candidate。阶段入口在`P`内激活已冻结身份；它不增加调度事实。
 
-每个 Reviewer 在其单元的修正循环中保持身份，并接收同一份完整 Candidate Version 与已授权
-证据。任何 Reviewer 都不会收到 Author 推理、预期修复、diff 或其他 Reviewer 的工作。
-Reviewer 先私下判断，随后仅通过通用直接修正生命周期，与常驻 Author 讨论自己负责的 finding。
-Author 与 Reviewer 独立评估主张和理由，直到形成双边不动点。服从、投票、Controller 解释或
-其他 Reviewer 都不能决定结果。
+每个 Reviewer 在其单元的修正循环中保持身份，并接收同一份完整 Candidate Version、已提供的
+证据，以及已冻结的证据选择政策与授权。任何 Reviewer 都不会收到 Author 的推理、预期修复、
+diff、私有研究笔记或其他 Reviewer 的工作。Reviewer 先私下判断，随后仅通过通用直接修正生命
+周期，与常驻 Author 讨论自己负责的 finding。Author 与 Reviewer 独立评估主张、理由、支持依据
+和来源，直到形成双边不动点。服从、投票、Controller 解释或其他 Reviewer 都不能决定结果。
 
 ## Quality
 
 Quality 是第一个证明阶段。冻结一个四人 cohort。向每个成员提供完整 Candidate 资源树、加载
-与分发路径、已接受要求、保留义务、所选模型和写作指引。
+与分发路径、已接受要求、保留义务、所选模型、写作指引、已提供的证据，以及相同的已冻结读取
+与网络授权。
 
 为下列每项职责绑定一个 Reviewer 作为主要 Owner。每项职责至少绑定一个次要 Reviewer，其余
 成员作为支持者。每个 Reviewer 仍覆盖全部四项职责：
@@ -62,8 +63,9 @@ note 均已解决，Quality Reviewer 才通过。后续阶段的 note 不阻塞 
 ## Correctness
 
 Correctness 仅在 Machine `PASS`或有效`NOT_REQUIRED`后开始。冻结一个两人 cohort，并为每个
-Reviewer 绑定一个 scope。向两者提供已接受的人类决策上下文、保留义务、管辖证据、所选模型和
-当前阶段证据。每个 Reviewer 独立检查所有相关表面，执行受支持场景，并尝试证伪 Candidate。
+Reviewer 绑定一个 scope。向两者提供已接受的人类决策上下文、保留义务、已提供的管辖证据、
+所选模型、当前阶段证据，以及相同的已冻结读取与网络授权。每个 Reviewer 独立检查所有相关表面，
+执行受支持场景，并尝试证伪 Candidate。
 
 ### Spec Fidelity and Semantic Integrity
 
@@ -81,11 +83,11 @@ Reviewer 绑定一个 scope。向两者提供已接受的人类决策上下文�
 - 必需关键路径上的触发条件、依赖、权限、动作、验证、恢复或停止失效；
 - Agent 可以擅自取得权威、绕过决策 Owner、超过已接受影响或违反安全；
 - 成功、受阻、失败、恢复或终止状态缺少关键出口或证据；或
-- 同时出现的条件发生冲突、逃避优先级，或允许工作未完成时宣告完成。
+- 同时出现的条件发生冲突、绕开优先级，或允许工作未完成时宣告完成。
 
-Correctness 只产生`critical`finding。每个 finding 都应提供一个不可容忍场景、已接受证据、
-具体反例、实质影响、修复机制与有界方向、受影响 scope 和保留约束。修复规模不决定影响，
-所有替换文本均由 Author 负责。
+Correctness 只产生`critical`finding。每个 finding 都应提供一个不可容忍场景、有支持的证据及其
+Owner 和来源、具体反例、实质影响、修复机制与有界方向、受影响 scope 和保留约束。修复规模不
+决定影响，所有替换文本均由 Author 负责。
 
 非阻塞改进可以成为不含语义的 Scope Transfer Note，并路由到 Quality，而不改变原阶段裁决。
 只有当前 Candidate Version 上不再有阻塞主张，各 Correctness Reviewer 才通过。只有两者对同一

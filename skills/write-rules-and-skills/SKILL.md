@@ -23,7 +23,7 @@ Read every reached resource completely.
 | Trigger | Resource |
 | --- | --- |
 | Every invocation | [`references/models.md`](references/models.md) |
-| Authoring passes alignment and modeling | [`references/job-design.md`](references/job-design.md), [`references/role-launch.md`](references/role-launch.md), [`references/project-aware-role-launch.md`](references/project-aware-role-launch.md), [`references/evaluation.md`](references/evaluation.md), and [`references/reviews.md`](references/reviews.md), during Design |
+| Authoring passes alignment and modeling | [`references/job-design.md`](references/job-design.md), the common runtime and evidence-selection policy in [`references/role-launch.md`](references/role-launch.md), [`references/evaluation.md`](references/evaluation.md), and [`references/reviews.md`](references/reviews.md), during Design |
 | Acceptance applies | [`references/acceptance.md`](references/acceptance.md), during Design |
 
 Apply `writing-for-agents` to information hierarchy, composition, context pointers, purposeful
@@ -56,6 +56,9 @@ it applies; otherwise freeze `NOT_REQUIRED`. Stage entry may activate only froze
 Governance may constrain execution of an authorized operation; it supplies no Candidate meaning,
 scope, authority, evidence, dependency, Acceptance fact, or transition.
 
+Freeze the read and network grants under Frozen Job Design, and apply the common
+evidence-selection policy in [`role-launch.md`](references/role-launch.md) to Authors and Reviewers.
+
 **Complete when:** every reachable state is authorized, internally consistent, and schedulable,
 and no role or Candidate state has begun.
 
@@ -65,8 +68,9 @@ After the single freeze transition:
 
 1. Fingerprint the exact Candidate Allowlist, acquire its frozen exclusive lock, and verify the
    baseline while holding the lock. Preserve concurrent state and stop on mismatch.
-2. Launch the fresh resident Author with the complete contract, evidence, current Candidate,
-   model, grants, writing guidance, and initial Authoring Scope.
+2. Launch the fresh resident Author with the complete contract, supplied evidence, current
+   Candidate, model, grants, writing guidance, frozen evidence-selection policy, and initial
+   Authoring Scope.
 3. Audit each callback before consuming it. Bind an admissible Author `COMPLETE` to a new
    whole-Allowlist Candidate Version. Resume the same Author after every eligible bounded update
    and every complete Repair Scope.
@@ -84,9 +88,11 @@ Activate the frozen stages in order. Advance only on a current-version `PASS` or
 complete Repair Scopes, Candidate Versions, Revision Impact, rewinds, replay, Scope Transfers, and
 exits.
 
-Every Reviewer first judges privately. For each finding, apply the frozen direct-discussion
-lifecycle and isolation contract. Author and finding owner independently assess the claim and
-reasons; agreement is their reasoned bilateral fixed point, never deference or blind acceptance.
+Every Reviewer first judges privately under the frozen evidence-selection policy without receiving
+the Author's reasoning or another Reviewer's work. For each finding, apply the frozen
+direct-discussion lifecycle and isolation contract. Author and finding owner independently assess
+the claim, reasons, and provenance; agreement is their reasoned bilateral fixed point, never
+deference or blind acceptance.
 Candidate writes begin only after every discussion closes and the Controller supplies one complete
 full-unit Repair Scope. Consensus is independent same-version `PASS` from every declared Reviewer.
 

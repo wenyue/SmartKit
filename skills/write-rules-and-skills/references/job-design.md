@@ -19,8 +19,8 @@ Record `N`, both reservations, `P`, every complete cohort, and every activation,
 retention, batching, correction, rewind, and replay state as Design inputs. A live or retained
 worker consumes one `P` slot. A persistent suspended identity preserves identity and state but
 consumes no live slot. When a cohort is larger than `P`, batch its members while preserving its
-complete membership, identity, Candidate Version, evidence, unit, round, and
-independent-judgment boundary.
+complete membership, identity, Candidate Version, supplied evidence, discovery grants, unit,
+round, and independent-judgment boundary.
 
 Every reachable state must fit `P`, including any retained Acceptance Reviewer plus fresh
 earlier-stage cohorts and any Runner required with a current case Reviewer. If the correctly
@@ -41,9 +41,11 @@ capacity demand, or transition.
 Before a role or Candidate change, define:
 
 - **Meaning:** accepted outcome, current behavior, preserved obligations, changes, non-goals,
-  safety, and every `preserve`/`change`/`add`/`move`/`retire` disposition.
+  safety, supplied evidence, authorized discovery sources and capabilities, provenance boundaries,
+  and every `preserve`/`change`/`add`/`move`/`retire` disposition.
 - **Candidate:** owner, model, writing guidance, invocation metadata, exact Allowlist and affected
-  surfaces, dependencies, initial Authoring Scope, fingerprint method, lock, and update envelope.
+  surfaces, dependencies, initial Authoring Scope, read and network grants, fingerprint method,
+  lock, and update envelope.
 - **Roles:** actual capacity, manifests, bootstrap, grants, persistent identities, cohort and
   batching schedule, and communication edges.
 - **Execution:** one canonical Job Graph containing immutable stage order and applicability,
@@ -68,16 +70,24 @@ discriminated scope. Neither scope expands the Run Contract or Candidate grants.
 
 ## Bound grants and updates
 
-Record `read`, `write`, `create`, and `delete` separately; one mode grants no other. A Rule normally
-grants its exact file. A multi-resource Skill may grant only its owned root, never the parent
-`skills/` directory. Prefer exact paths. Permit directory creation only inside an owned resource
-whose new name cannot be known at freeze. Every deletion requires an exact grant.
+Record `read`, `write`, `create`, `delete`, and `network` separately; one mode grants no other. A
+Rule normally grants its exact file. A multi-resource Skill may grant only its owned root, never
+the parent `skills/` directory. Prefer exact paths for Candidate operations; read and network
+discovery may use narrowly owned source or capability classes. Permit directory creation only
+inside an owned resource whose new name cannot be known at freeze. Every deletion requires an
+exact grant.
 
-Define each context or dependency slot eligible for a **Context Supplement**, and each
-Candidate-owned scope, path class, and already-authorized mode eligible for access expansion. A
-supplement may fill one declared slot without changing meaning, owner, obligation, branch,
-validation, or dependency. An expansion must exactly match the requested path and mode inside its
-frozen class. Resume the same identity after either bounded update.
+Apply `role-launch.md`'s common evidence-selection policy to Authors and Reviewers under those
+grants. Source selection permitted by that policy is ordinary discovery, not a bounded update or
+per-file research route.
+
+Define each necessary-fact slot eligible for a **Context Supplement**, and each authorized local
+path class, external source and capability class, and already-authorized mode eligible for access
+expansion. A supplement may fill one declared slot only when the fact cannot be discovered from
+current authorized sources and capabilities, without changing meaning, owner, obligation, branch,
+validation, or dependency. An expansion is exceptional missing access and must exactly match the
+requested local path and mode or external source, capability, and network mode inside its frozen
+class. Resume the same identity after either bounded update.
 
 A new dependency, owner, requirement, Candidate root or scope, path class, permission mode, side
 effect, validation duty, or capacity schedule is material and requires `ALIGNMENT_REQUIRED` in a
@@ -86,7 +96,8 @@ new run. When an eligible update cannot be supplied, preserve `CONTEXT_REQUIRED`
 
 ## Establish concrete Role Launch readiness
 
-Apply `role-launch.md` and `project-aware-role-launch.md` as one fixed launch contract for the run.
+Apply `role-launch.md` as the single fixed runtime and common evidence-selection policy for the run,
+unchanged by public, project-local, or shared writers.
 Using the completed graph, scopes, grants, applicability decisions, and schedule, establish fresh
 launch, persistent continuation and finish, authoritative contract delivery, bounded updates,
 explicit grants, direct authenticated Author↔finding-owner channels, normalized audits, and one

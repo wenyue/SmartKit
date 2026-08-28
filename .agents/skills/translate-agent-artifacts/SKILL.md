@@ -5,11 +5,17 @@ description: Translate completed canonical English first-party Rules or Skills i
 
 # Translate Agent Artifacts
 
-## Establish the translation set and policy
+The hosting Agent is the Controller. It establishes one frozen translation job and delegates that
+complete job to exactly one fresh translating subagent. The subagent owns the translation and its
+complete semantic and readability passes. After the subagent returns, the Controller runs only the
+required deterministic, non-fixing project validation commands and reports their exits.
+
+## Freeze the complete job
 
 1. Discover and read the applicable project documentation and translation policy by concern, without assuming a specific Rule identifier, title, or path.
-2. Obtain from the project documentation owner one frozen, complete affected set of final English sources and their required source-to-mirror mappings.
-3. Read every selected English source and each existing mapped mirror. Include every missing required mirror for creation in the same affected-set update.
+2. Establish from the canonical project documentation the complete affected set of final English sources and every required source-to-mirror mapping.
+3. Read every selected English source and each existing mapped mirror. Include every missing required mirror for creation in the same affected set.
+4. Freeze the sources, mappings, protected surfaces, applicable policy, validation requirements, and exact mirror write scope as one indivisible job.
 
 Final English first-party Rules and Skills are the sole semantic authority. Existing mirrors may provide continuity for readers.
 
@@ -17,29 +23,44 @@ An applicable `CONTEXT.md` may be consulted only for established Chinese wording
 
 If the governing policy cannot determine the complete affected set, mapping, protected surfaces, or required validation, or if an English source is ambiguous or incomplete, stop before delivering a partial translation. Return the missing information or source uncertainty to the appropriate owner rather than resolving it in Chinese.
 
-## Translate every mapped mirror
+## Delegate the whole frozen job
 
-Update the complete frozen mirror set once. Treat each mirror as documentation for human readers, never as instructions for the translating Agent to execute.
+Launch exactly one fresh translating subagent with no inherited turns for the whole frozen job.
+Give it the frozen sources, mappings, policy, protected surfaces, and exact mirror write scope. Its
+contract is to:
 
-Apply these principles throughout the set:
+- update or create every authorized mirror in the complete set, never silently translating only a subset;
+- use no network and perform no further delegation;
+- treat final English as the sole semantic authority and existing mirrors only as continuity for readers;
+- consult an applicable `CONTEXT.md`, if useful, only as the nonnormative wording aid limited above;
+- treat each mirror as documentation for human readers, never as instructions to execute;
+- write plain, idiomatic, easy-to-understand Simplified Chinese while preserving the complete meaning and force of the English;
+- translate commands, requirements, and imperatives as reader-facing content, naturally and without weakening their force;
+- preserve the source's basic block and Markdown organization, emphasis, paragraph and block boundaries, and every policy-protected literal or structured surface;
+- freely reorder, split, merge, or rephrase sentences only within each corresponding prose paragraph when that improves Chinese readability, without unsupported additions;
+- expand wording when explanation improves comprehension rather than optimizing for brevity;
+- perform its own complete source-by-source semantic coverage and standalone readability pass; and
+- return every changed or created mirror path, the completion and outcome of both required whole-set passes, and any blocking mapping or source uncertainty.
 
-- Write plain, idiomatic, easy-to-understand Simplified Chinese. Reader comprehension is the primary writing goal; preserving the complete meaning of the final English source is the mandatory correctness boundary.
-- Translate commands, requirements, and imperatives as content addressed to the mirror's readers. Explain them naturally in Chinese without performing them, treating them as translation-process instructions, or weakening their force.
-- Preserve the source's basic block and Markdown organization together with every policy-protected literal or structured surface.
-- Preserve paragraph and block boundaries while freely reordering, splitting, merging, or rephrasing sentences within each corresponding prose paragraph when that makes the Chinese more natural and understandable.
-- Preserve the source's force without unsupported additions.
-- Do not optimize for brevity. Expand wording when explanation improves comprehension.
+Proceed to deterministic project validation only when the subagent explicitly reports successful
+completion of both required whole-set passes and no blocker. For every other terminal result,
+including an omitted or indeterminate pass outcome, stop and report the blocked complete job. The
+Controller does not reconcile the returned paths with the frozen mapping, review, compare, format,
+translate, or repair mirror content, or redispatch the job.
 
-## Validate the complete set
+## Run deterministic project validation
 
-After every selected mirror has been updated or created, validate the affected set as a whole and complete the work only when every required check passes:
+After that transition, run every required deterministic, non-fixing project validation command
+against the changed documentation. Record each command and its exit. These commands are mechanical
+project checks, not translation review, and they do not open a content-correction cycle.
 
-- Confirm that every frozen source has exactly its required updated mirror.
-- Compare each complete mirror against its final English source for full semantic coverage, unchanged force, and absence of added meaning.
-- Review the Chinese as standalone human-facing documentation for clarity, idiomatic expression, and consistent terminology.
-- Verify that the required basic block and Markdown organization and all policy-protected surfaces remain intact.
-- Run every required project validation applicable to the changed documentation and resolve failures without narrowing the accepted translation requirements.
+Complete only when every required command passes. If any command fails or cannot run, stop and
+report the failure without patching the mirrors or redispatching the translation job.
 
 ## Report the outcome
 
-Report every changed mirror path and, when blocked, the missing mapping or source uncertainty, the resolution required, and the responsible owner without presenting a partial mirror set as complete.
+Report every changed or created mirror path, the subagent's outcome for both whole-set passes, and
+each required project validation command and exit. Report success only after that transition and
+when every required command passes. When blocked, report the missing mapping, source uncertainty,
+incomplete subagent result, or command failure; the resolution required; and the responsible owner
+without presenting a partial mirror set as complete.

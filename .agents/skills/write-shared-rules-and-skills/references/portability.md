@@ -13,7 +13,7 @@ representative targets before role launch.
 
 For an unresolved owner, meaning, dependency, permission, target fact, or pass condition, return
 the public `ALIGNMENT_REQUIRED` result with the missing choice, evidence, decision owner, and
-material consequences. Begin no role, lock, Probe, or Candidate write.
+material consequences. Begin no role, lock, or Candidate write.
 
 ## Exclude source-project meaning
 
@@ -22,6 +22,16 @@ observable shared implementation, and representative evidence whose authority is
 established. Source-project policy, local names, incidental layout, context documents, and
 source-only success contribute no portable meaning unless the accepted Shared Input independently
 establishes the same fact through its supported owner.
+
+Apply the public evidence-selection policy unchanged. For shared runs, its task-relevant source
+classes include source-project material, MCP and tool descriptions, hooks, and host-injected
+content within frozen grants.
+
+Qualify every source selected under that policy for portable use: visibility, availability,
+discovery, or peer transmission does not make material authoritative. Host and project
+instructions govern execution as defined by the public runtime; their presence and observance
+supply no portable meaning. Source-project content becomes portable normative evidence only
+through an independently established owner and provenance.
 
 Declare every required Rule, Skill, tool, schema, environment capability, and host behavior with
 its shared or target-owned route. Condition platform mechanics at the true seam. Missing facts,
@@ -43,17 +53,19 @@ Freeze one evidence package containing:
 Freeze the smallest target portfolio covering every evidenced seam that can materially change
 applicability, dependency availability, permission, execution, or exit. Names and layout alone do
 not distinguish targets. At least one supported representative target is required.
+Representative-target resources remain evidence or Acceptance inputs, never Candidate write
+targets.
 
 Attach every portability pass condition to the evidence item that can prove it. Candidate text,
-source-repository success, package structure, and the soft-isolation prompt add no semantic
-authority or missing fact.
+source-repository success, and package structure add no semantic authority or missing fact.
 
 ## Extend Correctness and Acceptance
 
 Extend public Spec Fidelity and Semantic Integrity with shared ownership, applicability,
-dependency closure, and source-context exclusion. Extend public Critical Behavioral Integrity with
-representative paths and exits. Both public Correctness Reviewers retain their existing scopes and
-independently judge these additions; create no fifth Reviewer.
+dependency closure, source-project evidence qualification, and exclusion of unqualified
+source-project meaning. Extend public Critical Behavioral Integrity with representative paths and
+exits. Both public Correctness Reviewers retain their existing scopes and independently judge these
+additions; create no fifth Reviewer.
 
 Route a representative target to public Acceptance only when static and Machine evidence cannot
 establish its runtime feasibility confidently. Add its immutable case and pass conditions to the

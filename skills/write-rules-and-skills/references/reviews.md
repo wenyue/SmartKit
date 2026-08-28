@@ -5,17 +5,19 @@ and batching schedule before any role or Candidate change. Stage entry activates
 within `P`; it adds no schedule fact.
 
 Every Reviewer is persistent through its unit's correction loop and receives the same complete
-Candidate Version and authorized evidence. No Reviewer receives the Author's reasoning, intended
-repair, diff, or another Reviewer's work. Reviewers first judge privately, then discuss each owned
-finding only with the resident Author through the common direct correction lifecycle. Author and
-Reviewer independently assess claims and reasons until their bilateral fixed point. Neither
+Candidate Version, supplied evidence, and frozen evidence-selection policy and grants. No Reviewer
+receives the Author's reasoning, intended repair, diff, or private research notes, or another
+Reviewer's work. Reviewers first judge privately, then discuss each owned finding only with the
+resident Author through the common direct correction lifecycle. Author and Reviewer independently
+assess claims, reasons, support, and provenance until their bilateral fixed point. Neither
 deference, voting, Controller interpretation, nor another Reviewer decides the outcome.
 
 ## Quality
 
 Quality is the first proof stage. Freeze one cohort of four. Give every member the complete
 Candidate resource tree, loading and distribution routes, accepted requirements, preserved
-obligations, selected model, and writing guidance.
+obligations, selected model, writing guidance, supplied evidence, and the same frozen read and
+network grants.
 
 Bind one Reviewer as primary owner of each responsibility below. For every responsibility, bind at
 least one secondary Reviewer and make the remaining members supporting. Every Reviewer still
@@ -76,8 +78,9 @@ change invalidates the closed stage, bind a wholly fresh four-member cohort.
 
 Correctness begins only after Machine `PASS` or valid `NOT_REQUIRED`. Freeze one cohort of two and
 bind one scope to each Reviewer. Give both the accepted human-decision context, preserved
-obligations, governing evidence, selected model, and current stage evidence. Each independently
-inspects every relevant surface, exercises supported scenarios, and tries to falsify the Candidate.
+obligations, supplied governing evidence, selected model, current stage evidence, and the same
+frozen read and network grants. Each independently inspects every relevant surface, exercises
+supported scenarios, and tries to falsify the Candidate.
 
 ### Spec Fidelity and Semantic Integrity
 
@@ -102,9 +105,9 @@ Find an intolerable supported case where:
 - coincident conditions conflict, evade priority, or allow completion while work remains.
 
 Correctness emits only `critical` findings. Each finding supplies one intolerable scenario,
-accepted evidence, concrete counterexample, material impact, repair mechanism and bounded
-direction, affected scope, and preservation constraints. Repair size does not determine impact,
-and the Author owns all replacement prose.
+supported evidence with its owner and provenance, concrete counterexample, material impact, repair
+mechanism and bounded direction, affected scope, and preservation constraints. Repair size does
+not determine impact, and the Author owns all replacement prose.
 
 A nonblocking improvement may become a nonsemantic Scope Transfer Note to Quality and does not
 alter its originating verdict. Each Correctness Reviewer passes only when no blocking claim remains
