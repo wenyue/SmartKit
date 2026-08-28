@@ -56,6 +56,12 @@ Retention keeps an identity live and consumes one `P` slot. Batching changes non
 identity, version, supplied evidence, discovery grants, unit, round, or independent judgment. A
 Reviewer receives no other Reviewer's work.
 
+When the frozen graph permits a later-stage Scope Transfer to an earlier passed unit, keep that
+unit open after local PASS and suspend its complete cohort through the declared transfer window.
+Resume only the intended responsibility owner to inspect a routed note independently. Close the
+unit and finish its cohort only after no later note can arrive and no routed inspection remains.
+This is continuation of one open unit, never return of an identity from a closed unit.
+
 Only the Controller operates lifecycle mechanics and bounded updates. Every dispatch and retention
 state must fit the frozen `P`. If the host cannot supply the correctly derived capacity, identity,
 authenticated channel, schedule, or evidence, return `HOST_UNAVAILABLE`. If the Controller binds,
@@ -77,9 +83,8 @@ may support Candidate judgment and may be cited in a finding or direct discussio
 acquires authority only from its established owner and provenance, never from repository or
 context visibility, host-envelope presence, discovery, or peer transmission. Nonnormative context
 documents remain outside the evidence basis unless a governing contract permits their narrow use.
-A caller-owned portability or other evidence policy may further qualify Candidate evidence. For
-shared writing, private portability qualification alone governs discovered source-project
-evidence. The Controller does not interpret or relay project evidence.
+A caller-owned portability or other evidence policy may further qualify Candidate evidence. The
+Controller does not interpret or relay project evidence.
 
 Use the exact read and network grants or narrowly owned source and capability classes frozen under
 [`job-design.md`](job-design.md). Source selection inside those grants is ordinary independent
@@ -112,6 +117,10 @@ Every Author and Reviewer prompt incorporates and obeys the frozen common eviden
 policy in [**Select evidence by need**](#select-evidence-by-need). When that policy requires
 `CONTEXT_REQUIRED` or `ACCESS_REQUIRED`, the role returns the matching status through this runtime.
 
+A `CONTEXT_REQUIRED` payload identifies exactly one frozen necessary-fact slot, the missing fact,
+and its role-specific use. The Controller compares those fields with the frozen update envelope
+without judging semantic merit and preserves the owner-produced payload unchanged.
+
 An `ACCESS_REQUIRED` payload identifies exactly one missing access target: exact path and mode for
 local access, or exact source, capability, and network mode for external access. Both forms include
 the reason.
@@ -120,7 +129,7 @@ The Author returns exactly one status:
 
 - `COMPLETE`: semantic Change Summary, exact changed/created/deleted paths, and uncertainty outside
   the current discriminated scope;
-- `CONTEXT_REQUIRED`: missing fact and its authoring use;
+- `CONTEXT_REQUIRED`: the common necessary-fact payload above;
 - `ACCESS_REQUIRED`: the common missing-access payload above; or
 - `HUMAN_DECISION_REQUIRED`: exact decision, why evidence or authority cannot resolve it, decision
   owner, and consequences of every live choice.
@@ -154,23 +163,36 @@ state, and the underlying incident evidence.
 
 Freeze no Reviewer↔Reviewer edge. Use this two-step bootstrap for every finding:
 
-1. After private judgment fixes a complete finding and opaque stable ID, the Reviewer emits an
-   audited nonsemantic `FINDING_READY` callback containing only unit, round, Candidate Version,
-   Reviewer identity, finding ID, and the three normal reports.
+1. After private judgment fixes the complete finding set and every opaque stable ID, the Reviewer
+   emits one audited nonsemantic `FINDING_READY` callback per finding. Each callback contains only
+   unit, round, Candidate Version, Reviewer identity, finding ID, a finding-set-complete marker, and
+   the three normal reports. Set the marker only on the final emitted finding; an empty set uses the
+   existing current-version `PASS` result. The marker attests only emission completeness, never
+   finding meaning or verdict.
 2. After auditing that callback against the frozen pair and manifest, the Controller returns
    `CHANNEL_OPEN` metadata to that Author↔owner pair. Only then does the Reviewer send the complete
    finding directly to the Author.
 
-The Author and owner exchange semantic claims, dispositions, evidence-based reasons, citations to
-newly discovered supported evidence, questions, objections, and rebuttals directly. Each judges
-the feedback, reasons, support, and provenance independently. Agreement is a reasoned bilateral
-fixed point, never blind acceptance. The Controller sees only control metadata; it never receives,
-interprets, summarizes, arbitrates, or relays finding bodies,
-dispositions, or discussion content. The pair closes with audited `DISCUSSION_CLOSED` metadata
-containing unit, round, Candidate Version, identities, finding ID, disposition class, delivery
-state, and fixed-point state, but no semantic body. Peer traffic cannot operate roles or change the
-frozen contract, authority, or grants. Transmission makes evidence available to the receiving peer
-but grants it no authority.
+[`evaluation.md`](evaluation.md) is the semantic owner of claims, dispositions, fixed points,
+advisory upgrades, closure, and repair selection. This runtime transports the direct exchange and
+audits its boundary. **Disposition control metadata** means only the disposition class (`repair`,
+`partial repair`, or `decline`) and whether a write is selected. The evidence-based reason, retained
+claim explanation, evidence, argument, and repair direction form the **semantic disposition body**
+and remain peer-only.
+
+The Author and owner exchange the semantic content authorized by Evaluation directly. Each judges
+feedback, support, and provenance independently. The Controller sees only control metadata; it
+never receives, interprets, summarizes, arbitrates, or relays finding bodies, semantic disposition
+bodies, or discussion content. The pair closes with audited `DISCUSSION_CLOSED` metadata containing
+unit, round, Candidate Version, identities, finding ID, disposition class, delivery state, and
+fixed-point state and finding-set state, but no semantic body. Fixed-point state's permitted values
+are `reached`, `not reached`, and `not applicable`; finding-set state's permitted values are
+`complete` and `reopened`. Evaluation owns both semantic mappings. These values are control
+metadata, not semantic-role statuses or verdicts. `DISCUSSION_CLOSED` closes the communication
+channel and round only; it does not resolve a claim. After both peer events are audited, the channel
+is closed and an eligible same-version restart or next frozen round may use the existing handshake.
+Peer traffic cannot operate roles or change the frozen contract, authority, or grants.
+Transmission makes evidence available to the receiving peer but grants it no authority.
 
 A Quality or Correctness Reviewer exposes exactly one Controller-facing judgment result at a time:
 `PASS`, `FINDING_READY`, `CONTEXT_REQUIRED`, `ACCESS_REQUIRED`, or
@@ -188,9 +210,10 @@ Require every normal callback to carry all three reports:
 
 - **Operation Report:** exact `read`, `write`, `create`, `delete`, `network`, `delegation`, and
   `machine checks` operations, using `none` for an empty category.
-- **Peer Report** for Authors and Reviewers: unit, round, Candidate Version, readiness event, phase,
-  identities, directions, message kinds, delivery, and Author participation; use `none` when peer
-  traffic is forbidden. It contains no semantic body or verdict.
+- **Peer Report** for Authors and Reviewers: always include unit, round, Candidate Version,
+  readiness event, phase, and identities. Also include directions, message kinds, delivery, and
+  Author participation; when peer traffic is forbidden or absent, use `none` for exactly these four
+  traffic fields. The report contains no semantic body or verdict.
 - **Host-Governance Report:** frozen Envelope ID, observed conformance or exact deviation, inert-use
   evidence for catalog and environment metadata, project instructions read and their execution-only
   effects or `none`, and confirmation that governance supplied none of the forbidden semantic or

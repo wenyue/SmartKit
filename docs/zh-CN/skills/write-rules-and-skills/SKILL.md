@@ -74,20 +74,23 @@ Candidate 状态。
 
 ## 4. 证明、修正并重放
 
-按顺序激活已冻结阶段。只有当前版本获得`PASS`或有效的`NOT_REQUIRED`才可前进。使用
-Evaluation Lifecycle 处理 finding、Machine 失败、直接修正、完整 Repair Scope、Candidate
-Version、Revision Impact、回退、重放、Scope Transfer 和出口。
+按顺序激活已冻结阶段。只有当前版本获得`PASS`或有效的`NOT_REQUIRED`才可前进。Evaluation
+Lifecycle 是 finding、处置、讨论关闭、修正、共识与重放的语义 Owner。把它应用于 Machine 失败、
+完整 Repair Scope、Candidate Version、Revision Impact、回退、Scope Transfer 和出口。
 
 每个 Reviewer 都在已冻结的证据选择政策下先私下判断，且不接收 Author 的推理或其他 Reviewer
-的工作。对于每个 finding，应用已经冻结的直接讨论生命周期与隔离合同。Author 与 finding Owner
-分别独立评估主张、理由和来源；双方达成一致必须是经过推理的双边不动点，而不是服从或盲目接受。
-所有讨论关闭后，且 Controller 提供完整的全单元 Repair Scope，才可开始写 Candidate。共识是
-每个已声明 Reviewer 对同一版本分别独立给出`PASS`。
+的工作。Reviewer 使用自适应的挑战问题穷尽所分配的 scope；问题用于调查，而 finding 必须是有
+支持的陈述性主张。对每项 finding 应用已冻结的直接讨论生命周期与隔离合同。作为 Evaluation
+的一种阶段路由投影，阻塞 finding 在双边生命周期内保持其单元开放；advisory finding 则在
+Author 冻结处置后关闭。只有所有通道都根据 Evaluation 关闭，且 Controller 提供一份完整的
+全单元 Repair Scope，才可开始写 Candidate。只有 Evaluation 确认同一版本的 cohort 独立达成
+共识后，流程才能前进。
 
 第一个由 Author、Reviewer 或 Controller 发出的`HUMAN_DECISION_REQUIRED`会立即结束所有
 语义工作。完成最终化，原样交付 Owner 生成的请求；只有在人类裁决后的新运行中才能继续。
 
-**完成条件：**所有适用证明均为当前版本且彼此兼容，并且不存在尚未解决且值得修复的 finding。
+**完成条件：**所有适用证明均为当前版本且彼此兼容，不存在尚未解决的阻塞 finding，并且每项
+advisory 都已有冻结处置。
 
 ## 5. 最终化并交接
 

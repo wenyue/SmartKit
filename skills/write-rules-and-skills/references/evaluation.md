@@ -1,8 +1,10 @@
 # Evaluation Lifecycle
 
-This Design-time contract owns stage order and applicability, finding correction, Machine
-Validation, Candidate Versions, Revision Impact, rewinds, replay, Scope Transfer, and global exits.
-Freeze it into the Job Graph before any role or Candidate change.
+This Design-time contract is the sole semantic owner of finding classification, disposition,
+fixed-point, closure, correction, and consensus. It also owns stage order and applicability,
+Machine Validation, Candidate Versions, Revision Impact, rewinds, replay, Scope Transfer, and
+global exits. [`role-launch.md`](role-launch.md) owns authenticated transport and its nonsemantic
+control metadata. Freeze both into the Job Graph before any role or Candidate change.
 
 ## Freeze the proof path
 
@@ -25,18 +27,25 @@ activates those frozen facts and may add no identity, assignment, capacity, or t
 ## Treat findings as owned claims
 
 A finding records stable ID, problem and supported evidence with its owner and provenance,
-concrete counterexample, Candidate location, severity, estimated Repair Scope, affected obligation
-or surface, preservation constraints, and bounded repair direction rather than replacement prose.
-Use `N/A` with a reason only where a field cannot apply.
+the observed answer or supported counterexample, Candidate location, severity, unchanged impact,
+estimated Repair Scope, affected obligation or surface, preservation constraints, and bounded
+repair direction rather than replacement prose. Use `N/A` with a reason only where a field cannot
+apply. A review question is only an investigation mechanism; a finding is the resulting supported
+declarative claim. Never fabricate a counterexample to complete the record.
 
 - `critical`: semantic, authority, safety, ownership, executability, or exit failure.
 - `material`: supported defect materially reducing information quality, reliability, or
   maintainability.
-- `advisory`: smaller improvement or choice among valid solutions.
+- `advisory`: supported smaller improvement or valid-choice opportunity whose complete repair and
+  replay scope is bounded enough to merit presentation.
 
-Critical and material claims normally merit repair; presume a small supported meaning-preserving
-repair worth doing. The Author alone owns disposition. The finding owner alone decides whether the
-claim remains and blocks its verdict. The full finding remains peer-only; the Reviewer exposes it
+Critical and material findings are blocking and require the bilateral lifecycle below. Advisory
+findings are nonblocking; the Author alone selects repair, partial repair, or decline and supplies
+an evidence-based reason. The finding owner alone owns claim validity and severity and may upgrade
+an advisory only with new supported evidence. Severity describes impact if the Candidate remains
+unchanged. Estimated Repair Scope describes cost and risk and never reduces severity; a contract
+violation remains critical regardless of repair size. Pure taste, symmetry, file length, or
+cheapness alone establishes no defect. The full finding remains peer-only; the Reviewer exposes it
 through the runtime `FINDING_READY → CHANNEL_OPEN` handshake.
 
 ## Run one independent correction unit
@@ -44,35 +53,65 @@ through the runtime `FINDING_READY → CHANNEL_OPEN` handshake.
 1. **Judge privately.** Give every cohort member the same complete Candidate Version, supplied
    evidence, frozen evidence-selection policy and grants, unit, round, and independent-judgment
    boundary. Each judges without receiving the Author's reasoning or another Reviewer's work.
-   Batching preserves the common inputs. An eligible bounded update restarts that identity's
-   private judgment.
-2. **Open owning pairs.** For each recorded finding, emit the audited nonsemantic `FINDING_READY`
-   result. After the Controller returns `CHANNEL_OPEN` for that prebound pair, send the complete
-   finding directly to the Author. No Reviewer receives another's work.
-3. **Choose privately.** The Author independently selects `repair`, `partial repair`, or `decline`,
-   with an evidence-based reason. A partial repair identifies the retained claim and why.
-4. **Deliberate directly.** Only the Author and finding owner exchange semantic content, including
-   newly discovered supported evidence. Each assesses claims, reasons, support, and provenance
-   independently; transmission grants no authority, and agreement requires a reasoned bilateral
-   fixed point. Candidate writes remain barred while any discussion is open.
-5. **Close the round.** The Author freezes a disposition and the owner freezes the claim state,
-   then both emit the runtime's nonsemantic `DISCUSSION_CLOSED` metadata. An owner may return
-   current-version `PASS` only when no Candidate change is needed; otherwise the retained or revised
-   finding remains pending through the write. Trust, voting, another Reviewer, and Controller
-   interpretation decide nothing.
-6. **Authorize one write.** After every cohort member finishes private judgment and every owning
-   pair closes, the Controller issues one complete full-unit Repair Scope containing the unit,
-   version, selected-for-write finding IDs and disposition metadata, authorized paths and modes,
-   references to frozen preservation boundaries, and readiness state. It relays no semantic body.
-   Only then may the same Author apply selected repairs.
+   Each fixes its complete finding set before emitting any finding. Batching preserves the common
+   inputs. An eligible bounded update restarts that identity's private judgment.
+2. **Open owning pairs.** For each recorded finding, emit Role Launch's audited nonsemantic
+   `FINDING_READY` result and finding-set-completion evidence. After the Controller returns
+   `CHANNEL_OPEN` for that prebound pair, send the complete finding directly to the Author. No
+   Reviewer receives another's work.
+3. **Choose privately.** The Author independently selects `repair`, `partial repair`, or `decline`
+   for every finding, with an evidence-based reason. A partial repair identifies the retained claim
+   and why.
+4. **Assess the owned outcome.** For a critical or material finding, only the Author and finding
+   owner deliberate directly over semantic content, including newly discovered supported evidence.
+   Each assesses claims, reasons, support, and provenance independently; transmission grants no
+   authority. For a blocking finding, a reasoned bilateral fixed point exists only when the owner
+   no longer upholds a blocking claim without a write, or both independently agree that a selected
+   repair or partial repair addresses every upheld blocking part pending write and recheck. When
+   the owner still upholds a blocker and the Author declines, retains a blocking part, or proposes
+   a path the owner finds non-resolving, fixed point is not reached and no write is selected from
+   that unresolved path. For an advisory, the owner may answer or clarify the claim, but the Author
+   alone freezes its disposition and reason; bilateral fixed point does not apply. Candidate writes
+   remain barred while any channel is open. Evidence that changes only the current claim stays in
+   that claim's lifecycle. Apply the finding-set reopening transition below only when newly
+   available supported evidence independently supports a distinct unreported finding.
+5. **Close the communication round.** After the Author freezes each disposition and the owner
+   freezes each claim state, both emit the runtime's nonsemantic `DISCUSSION_CLOSED` metadata
+   whether or not a blocking fixed point was reached. This event closes only the channel and round;
+   it never establishes claim resolution. Its fixed-point control value is `reached` only for a
+   resolving blocking outcome defined above, `not reached` whenever an upheld blocker lacks an
+   agreed resolving path, and `not applicable` for an advisory. An unresolved blocking disagreement
+   remains blocking, selects no write, and may enter the next frozen round through the existing
+   `FINDING_READY → CHANNEL_OPEN` handshake after the current round closes.
+
+   Before closing, an owner that has independently established a distinct unreported finding from
+   newly available supported evidence fixes that finding and opaque ID and sets finding-set state
+   to `reopened`; otherwise the state remains `complete`. Reopening invalidates prior completion
+   evidence, is eligible only for newly available evidence, and must add at least one distinct ID.
+   After every currently open channel closes, the same persistent Reviewer restarts private
+   judgment on the unchanged Candidate Version with accumulated authorized evidence, emits each
+   newly fixed finding through Role Launch, and restores completion on its final emission. An
+   advisory owner may upgrade only upon new supported evidence; the upgraded claim then follows the
+   blocking lifecycle. A Reviewer may return current-version `PASS` only when no unresolved
+   blocking finding remains, every owned advisory has a frozen disposition, the latest finding-set
+   state is complete, and no selected repair awaits its write. Trust, voting, another Reviewer, and
+   Controller interpretation decide nothing.
+6. **Authorize one write.** After every cohort member has supplied Role Launch's audited
+   finding-set-completion evidence, every latest finding-set state is complete, and every emitted
+   owning pair closes, batch all accepted blocking and advisory repairs in one complete full-unit
+   Repair Scope containing the unit, version, selected-for-write finding IDs, disposition control
+   metadata (class and selected-for-write state), authorized paths and modes, references to frozen
+   preservation boundaries, and readiness state. It relays no semantic disposition body. Only then
+   may the same Author apply the selected repairs.
 7. **Recheck together.** A write creates a Candidate Version; every persistent cohort member
    independently rechecks the whole Candidate. Without a write, unaffected same-version `PASS`
-   remains valid while finding owners reassess.
+   remains valid while blocking finding owners reassess; a declined advisory remains closed.
 
-Consensus is independent `PASS` from the complete declared cohort on one Candidate Version with
-the same supplied evidence, evidence-selection policy, and grants. An open unit persists through
-local PASS. Reopening an invalidated closed unit requires a wholly fresh cohort; prior identities
-and verdicts never return.
+Consensus is independent `PASS` from the complete declared cohort on one Candidate Version with no
+unresolved blocking finding and a frozen Author disposition for every advisory, using the same
+supplied evidence, evidence-selection policy, and grants. An open unit persists through local
+PASS. Reopening an invalidated closed unit requires a wholly fresh cohort; prior identities and
+verdicts never return.
 
 ### Human stop and no progress
 
@@ -83,9 +122,11 @@ owner, and consequences of every live choice. Provisional findings, dispositions
 become non-operative. Audit and finalize, then deliver the request unchanged. The human answer
 starts a new run.
 
-A disagreement round completes when the Author freezes a disposition and the finding owner
-reassesses without resolution. Initial judgment is not a round. Stop `NO_PROGRESS` after the same
-disagreement completes two consecutive rounds without new evidence or a supported approach.
+A blocking disagreement round counts when both peers close it with fixed-point control value
+`not reached` and the claim remains unresolved. Initial private judgment is not a round. Stop
+`NO_PROGRESS` after the same blocking disagreement completes two consecutive counted rounds
+without new evidence or a supported approach. Advisory repair, partial repair, or decline closes
+on the Author's frozen disposition and never enters disagreement or `NO_PROGRESS`.
 
 ## Validate deterministic facts
 
@@ -109,8 +150,17 @@ A Reviewer may attach one **Scope Transfer Note** containing only Candidate loca
 owner, and responsibility to inspect. It is not a finding and carries no observation, argument,
 evidence, disposition, rationale, or verdict. Route it once to another current-cohort Reviewer, a
 later stage before that stage starts, or an earlier passed stage after current local PASS. The
-recipient independently inspects the complete Candidate and its authorized evidence sources. A
-note that may affect passed proof invalidates that proof; the note acquires no semantic owner.
+recipient independently inspects the complete Candidate and its authorized evidence sources.
+
+When the frozen graph permits a later-stage note to an earlier passed unit, local PASS leaves that
+earlier unit open and its complete cohort suspended through the declared transfer window. Resume
+only the intended responsibility owner for inspection; no identity from a closed unit returns.
+Close the earlier unit only after no later note can arrive and no routed inspection remains. A note
+with no supported finding leaves passed proof valid. The note alone does not alter a verdict or
+invalidate proof and acquires no semantic owner. A recipient-supported blocking finding invalidates
+affected passed proof through the ordinary finding, rewind, and replay lifecycle. A
+recipient-supported advisory remains nonblocking: decline leaves passed proof valid, while an
+accepted write uses ordinary Revision Impact.
 
 ## Revise, rewind, and replay
 
@@ -131,13 +181,13 @@ Repeat after every write. No verdict survives a change that may affect its proof
 ## Select the global exit
 
 A Role Boundary Audit first decides invocation and callback admissibility. An inadmissible callback
-normally contributes no payload result. The sole terminal-control exception is an authenticated,
-attributable Author or Reviewer `HUMAN_DECISION_REQUIRED` whose exact request is obtainable. Stop
-semantic work immediately, preserve and deliver that request unchanged, and require human
-adjudication before a new run. Consume no other callback content or Candidate evidence. Finish any
-started conditional execution under its safety contract and finalize the workflow; report the
-external result as `HUMAN_DECISION_REQUIRED` while retaining `ROLE_BOUNDARY_VIOLATION` as underlying
-audit evidence. If attribution or the exact request is unproven, this exception does not apply.
+normally contributes no payload result. When that audit establishes Role Launch's attributable
+terminal-control exception, stop semantic work immediately, preserve and deliver the exact human
+request unchanged, and require adjudication before a new run. Consume no other callback content or
+Candidate evidence. Finish any started conditional execution under its safety contract and
+finalize the workflow; report the external result as `HUMAN_DECISION_REQUIRED` while retaining
+`ROLE_BOUNDARY_VIOLATION` as underlying audit evidence. Every other audited inadmissible state
+follows the ordinary path below.
 
 For every other inadmissible invocation or callback and every semantic-role incident, finish any
 started conditional execution under its safety contract; its higher safety terminal governs when

@@ -45,6 +45,11 @@ Acceptance 事实、角色工作或冻结转换；也不能授权操作或访问
 但不占用活跃 worker 槽位。保留使身份保持活跃并占用一个`P`槽位。分批不会改变 cohort、身份、
 版本、已提供的证据、发现授权、单元、轮次或独立判断。Reviewer 不接收其他 Reviewer 的工作。
 
+当冻结图允许后续阶段把 Scope Transfer 路由给此前已通过的单元时，该单元在 local PASS 后仍
+保持开放，并在已声明的转移窗口内暂停其完整 cohort。只恢复预期职责 Owner，由它独立检查已
+路由的 note。只有不会再有后续 note 到达且没有待处理的路由检查时，才关闭该单元并结束其 cohort。
+这是同一个开放单元的延续，绝不是已关闭单元中的身份再次返回。
+
 只有 Controller 操作生命周期机制与有界更新。每个派发和保留状态都必须符合已冻结`P`。宿主
 无法提供经正确推导的容量、身份、认证通道、调度或证据时，返回`HOST_UNAVAILABLE`。Controller
 绑定、启动或保留超出冻结调度或`P`的状态时，返回控制平面`ROLE_BOUNDARY_VIOLATION`。绝不
@@ -61,8 +66,8 @@ Reviewer 在不接收 Author 推理或其他 Reviewer 工作的情况下独立�
 发现不必相同。发现的来源可以支持 Candidate 判断，也可以在 finding 或直接讨论中引用。证据只能
 从其已确立的 Owner 和来源获得权威，绝不能因为它在仓库或上下文中可见、存在于宿主 envelope、
 被发现或经同级传输而获得权威。除非管辖合同允许其用于狭窄用途，否则非规范上下文文档仍不属于
-证据基础。调用方自有的可移植性政策或其他证据政策可以进一步限定 Candidate 证据。对于共享编写，
-仅由私有可移植性资格政策管辖所发现的源项目证据。Controller 不解释或转述项目证据。
+证据基础。调用方自有的可移植性政策或其他证据政策可以进一步限定 Candidate 证据。Controller
+不解释或转述项目证据。
 
 使用[`job-design.md`](job-design.md)中冻结的准确读取与网络授权，或范围狭窄的自有来源与能力
 类别。在这些授权内选择来源属于普通的独立发现，而不是有界更新或逐文件研究路径。仅在当前已
@@ -91,13 +96,17 @@ Candidate 编辑。
 [**按需选择证据**](#select-evidence-by-need)中的已冻结通用证据选择政策。当该政策要求
 `CONTEXT_REQUIRED`或`ACCESS_REQUIRED`时，角色通过本运行时返回对应状态。
 
+`CONTEXT_REQUIRED` payload 准确标识一个已冻结的必要事实槽位、缺失事实，以及它在特定角色
+中的用途。Controller 把这些字段与已冻结的更新 envelope 比较，不判断语义是否成立，并原样
+保留由 Owner 生成的 payload。
+
 `ACCESS_REQUIRED` payload 准确标识一个缺失的访问目标：本地访问使用准确路径和模式，外部
 访问使用准确来源、能力和网络模式。两种形式都包含理由。
 
 Author 准确返回一种状态：
 
 - `COMPLETE`：语义 Change Summary、准确的变更/创建/删除路径，以及当前判别 scope 外的不确定性；
-- `CONTEXT_REQUIRED`：缺失事实及其编写用途；
+- `CONTEXT_REQUIRED`：上述通用必要事实 payload；
 - `ACCESS_REQUIRED`：上述通用缺失访问 payload；或
 - `HUMAN_DECISION_REQUIRED`：准确决策、证据或权威为何无法解决、决策 Owner，以及每个当前
   选择的后果。
@@ -127,19 +136,29 @@ Candidate 状态和底层事故证据。
 
 不冻结 Reviewer↔Reviewer 边。每个 finding 使用以下两步 bootstrap：
 
-1. 私下判断固定完整 finding 和不透明稳定 ID 后，Reviewer 发出经审计、不含语义的
-   `FINDING_READY`回调，只包含单元、轮次、Candidate Version、Reviewer 身份、finding ID 和
-   三份正常报告。
+1. 私下判断固定完整 finding 集合和每个不透明稳定 ID 后，Reviewer 为每项 finding 发出一次经
+   审计、不含语义的`FINDING_READY`回调。每次回调只包含单元、轮次、Candidate Version、
+   Reviewer 身份、finding ID、finding 集合完成标记，以及三份正常报告。仅在最后发出的一项
+   finding 上设置该标记；空集合使用既有的当前版本`PASS`结果。该标记只证明发出已完成，绝不
+   证明 finding 含义或裁决。
 2. Controller 根据冻结配对与 manifest 审计回调后，向该 Author↔Owner 配对返回`CHANNEL_OPEN`
    metadata。只有此时 Reviewer 才把完整 finding 直接发送给 Author。
 
-Author 与 Owner 直接交换语义主张、处置、基于证据的理由、对新发现且有支持的证据所作的引用、问题、
-异议和反驳。双方分别独立判断反馈、理由、支持依据和来源。一致意见是经过推理的双边不动点，
-绝不是盲目接受。Controller 只看到控制 metadata；它绝不接收、解释、概括、仲裁或转发 finding
-正文、处置或讨论内容。配对通过经审计的`DISCUSSION_CLOSED`metadata 关闭，其中包含单元、
-轮次、Candidate Version、身份、finding ID、处置类别、投递状态和不动点状态，但没有语义正文。
-同级通信不能操作角色，也不能改变已冻结的合同、权威或授权。传输会让接收方可以使用证据，
-但不会赋予证据权威。
+[`evaluation.md`](evaluation.md)是主张、处置、不动点、advisory 升级、关闭与修复选择的语义
+Owner。本运行时负责传输直接交换并审计其边界。**处置控制 metadata**只包括处置分类（`repair`、
+`partial repair`或`decline`）以及是否选中写入。基于证据的理由、保留主张说明、证据、论证和
+修复方向共同组成**语义处置正文**，并且只在同级间流动。
+
+Author 与 Owner 直接交换 Evaluation 授权的语义内容。双方分别独立判断反馈、支持依据和来源。
+Controller 只看到控制 metadata；它绝不接收、解释、概括、仲裁或转发 finding 正文、语义处置
+正文或讨论内容。配对通过经审计的`DISCUSSION_CLOSED`metadata 关闭，其中包含单元、轮次、
+Candidate Version、身份、finding ID、处置分类、投递状态、不动点状态和 finding 集合状态，但
+没有语义正文。不动点状态允许的值为`reached`、`not reached`和`not applicable`；finding 集合
+状态允许的值为`complete`和`reopened`。两种语义映射都由 Evaluation 负责。这些值是控制
+metadata，不是语义角色状态或裁决。`DISCUSSION_CLOSED`只关闭通信通道和轮次；它不会解决主张。
+两个同级事件均通过审计后，通道才关闭，符合条件的同版本重启或下一冻结轮次可以使用既有握手。
+同级通信不能操作角色，也不能改变已冻结的合同、权威或授权。传输会让接收方可以使用证据，但
+不会赋予证据权威。
 
 Quality 或 Correctness Reviewer 每次只向 Controller 暴露一个判断结果：`PASS`、
 `FINDING_READY`、`CONTEXT_REQUIRED`、`ACCESS_REQUIRED`或`HUMAN_DECISION_REQUIRED`。
@@ -155,8 +174,9 @@ payload，不是 finding 或讨论正文。Controller 只能检查应用冻结�
 
 - **Operation Report：**准确列出`read`、`write`、`create`、`delete`、`network`、`delegation`
   和`machine checks`操作；空类别使用`none`。
-- Author 与 Reviewer 的**Peer Report：**单元、轮次、Candidate Version、就绪事件、阶段、身份、
-  方向、消息类型、投递和 Author 参与情况；禁止同级通信时使用`none`。不得包含语义正文或裁决。
+- Author 与 Reviewer 的**Peer Report：**始终包含单元、轮次、Candidate Version、就绪事件、阶段
+  和身份；另须包含方向、消息类型、投递和 Author 参与情况。禁止或没有同级通信时，准确为后面
+  这四个通信字段使用`none`。报告不得包含语义正文或裁决。
 - **Host-Governance Report：**冻结 Envelope ID、观察到的一致性或准确偏差、catalog 与环境
   metadata 保持惰性的证据、所读项目指令及其只负责执行的影响或`none`，并确认 governance
   未提供任何禁止的语义或权威输入。

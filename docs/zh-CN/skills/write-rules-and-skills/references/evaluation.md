@@ -1,8 +1,9 @@
 # 评估生命周期
 
-本 Design-time 合同负责阶段顺序与适用性、finding 修正、Machine Validation、Candidate Version、
-Revision Impact、回退、重放、Scope Transfer 和全局出口。在启动任何角色或改变 Candidate 前，
-将其冻结进 Job Graph。
+本 Design-time 合同是 finding 分类、处置、不动点、关闭、修正与共识的唯一语义 Owner。它还
+负责阶段顺序与适用性、Machine Validation、Candidate Version、Revision Impact、回退、重放、
+Scope Transfer 和全局出口。[`role-launch.md`](role-launch.md)负责经认证的传输及其不含语义的
+控制 metadata。在启动任何角色或改变 Candidate 前，把两者都冻结进 Job Graph。
 
 ## 冻结证明路径
 
@@ -22,45 +23,75 @@ Acceptance 信号包括固定多步顺序、有意义的分支、重试、恢复
 
 ## 把 finding 视为由 Owner 负责的主张
 
-finding 应记录稳定 ID、问题与有支持的证据及其 Owner 和来源、具体反例、Candidate 位置、
-严重级别、估计 Repair Scope、受影响义务或表面、保留约束，以及有界修复方向，而不是替换文字。
-仅当字段确实不适用时使用`N/A`并说明原因。
+finding 应记录稳定 ID、问题与有支持的证据及其 Owner 和来源、观察到的答案或有支持的反例、
+Candidate 位置、严重级别、Candidate 不变时的影响、估计 Repair Scope、受影响义务或表面、
+保留约束，以及有界修复方向，而不是替换文字。仅当字段确实不适用时使用`N/A`并说明原因。
+Review 问题只是调查机制；finding 才是由此得到且有支持的陈述性主张。绝不能为了完成记录而
+捏造反例。
 
 - `critical`：语义、权威、安全、归属、可执行性或出口失败。
 - `material`：有支持的缺陷，实质降低信息质量、可靠性或可维护性。
-- `advisory`：较小改进，或多个有效方案之间的选择。
+- `advisory`：有支持的较小改进或有效选择机会，而且其完整修复与重放 scope 足够有界，值得
+  呈现。
 
-critical 与 material 主张通常值得修复；默认认为保持含义且有支持的小修复值得做。只有 Author
-负责处置。只有 finding Owner 决定主张是否仍成立并阻塞其裁决。完整 finding 只在同级间流动；
-Reviewer 通过运行时`FINDING_READY → CHANNEL_OPEN`握手暴露它。
+critical 与 material finding 会阻塞，并且必须遵循下文的双边生命周期。advisory finding 不
+阻塞；只有 Author 可以选择修复、部分修复或拒绝，并提供基于证据的理由。只有 finding Owner
+负责主张的有效性与严重级别，而且只有出现新的有支持证据时，才可升级 advisory。严重级别说明
+Candidate 保持不变时的影响。估计 Repair Scope 说明成本与风险，绝不会降低严重级别；合同违规
+无论修复规模多小都仍然是 critical。仅凭品味、对称性、文件长度或修复便宜，不能证明存在缺陷。
+完整 finding 只在同级间流动；Reviewer 通过运行时`FINDING_READY → CHANNEL_OPEN`握手暴露它。
 
 ## 运行一个独立修正单元
 
 1. **私下判断。**向每个 cohort 成员提供相同的完整 Candidate Version、已提供的证据、已冻结的
    证据选择政策与授权、单元、轮次和独立判断边界。每个成员在不接收 Author 推理或其他 Reviewer
-   工作的情况下判断。分批保留这些共同输入。符合条件的有界更新会重新开始该身份的私下判断。
-2. **打开 Owner 配对。**对每个已记录 finding 发出经审计、不含语义的`FINDING_READY`结果。
-   Controller 为预绑定配对返回`CHANNEL_OPEN`后，Reviewer 才把完整 finding 直接发给 Author。
-   任何 Reviewer 都不接收其他 Reviewer 的工作。
-3. **私下选择。**Author 独立选择`repair`、`partial repair`或`decline`，并提供基于证据的理由。
-   partial repair 还需指出保留的主张及原因。
-4. **直接讨论。**只有 Author 与 finding Owner 交换语义内容，包括新发现且有支持的证据。双方
-   分别独立评估主张、理由、支持依据和来源；传输不会赋予权威，一致意见必须是经过推理的双边
-   不动点。任一讨论仍开放时禁止写 Candidate。
-5. **关闭轮次。**Author 冻结处置，Owner 冻结主张状态，随后双方发出运行时不含语义的
-   `DISCUSSION_CLOSED`metadata。只有无需改变 Candidate 时，Owner 才可在当前版本返回`PASS`；
-   否则保留或修订后的 finding 在写入前一直待处理。信任、投票、其他 Reviewer 和 Controller
-   解释都不能作出决定。
-6. **授权一次写入。**每个 cohort 成员完成私下判断、每个 Owner 配对关闭后，Controller 发出
-   一份完整的全单元 Repair Scope，包含单元、版本、选中写入的 finding ID 与处置 metadata、
-   已授权路径和模式、冻结保留边界引用及就绪状态。它不转发语义正文。只有此时，同一个 Author
-   才能应用所选修复。
+   工作的情况下判断，并在发出任何 finding 前固定自己的完整 finding 集合。分批保留这些共同
+   输入。符合条件的有界更新会重新开始该身份的私下判断。
+2. **打开 Owner 配对。**对每个已记录 finding，发出 Role Launch 中经审计、不含语义的
+   `FINDING_READY`结果以及 finding 集合完成证据。Controller 为该预绑定配对返回
+   `CHANNEL_OPEN`后，Reviewer 才把完整 finding 直接发给 Author。任何 Reviewer 都不接收其他
+   Reviewer 的工作。
+3. **私下选择。**Author 为每项 finding 独立选择`repair`、`partial repair`或`decline`，并提供
+   基于证据的理由。partial repair 还要指出保留的主张及原因。
+4. **评估自有结果。**对于 critical 或 material finding，只有 Author 与 finding Owner 可以
+   直接斟酌语义内容，包括新发现且有支持的证据。双方分别独立评估主张、理由、支持依据和来源；
+   传输不会赋予权威。对于阻塞 finding，只有在 Owner 不再坚持任何不写入就仍成立的阻塞主张，
+   或双方分别独立同意所选修复或部分修复能够处理每个仍被坚持的阻塞部分、只待写入和复查时，
+   才形成经过推理的双边不动点。如果 Owner 仍坚持 blocker，而 Author 拒绝、保留一个阻塞部分，
+   或提出的路径被 Owner 判断为不能解决问题，则没有达到不动点，也不会从这条未解决路径中选择
+   任何写入。对于 advisory，Owner 可以回答或澄清主张，但只有 Author 冻结其处置和理由；双边
+   不动点不适用。任何通道仍开放时，禁止写 Candidate。只改变当前主张的证据留在该主张的生命
+   周期中。只有新获得的有支持证据独立支持另一项尚未报告的 finding 时，才应用下文重新打开
+   finding 集合的转换。
+5. **关闭通信轮次。**Author 冻结每项处置且 Owner 冻结每项主张状态后，无论是否达到阻塞不动点，
+   双方都发出运行时不含语义的`DISCUSSION_CLOSED`metadata。该事件只关闭通道与轮次，绝不表示
+   主张已解决。只有结果符合上文定义并能解决 blocker 时，其不动点控制值才是`reached`；仍被
+   坚持的 blocker 没有商定解决路径时为`not reached`；advisory 为`not applicable`。尚未解决的
+   阻塞分歧继续阻塞，不选择任何写入；当前轮次关闭后，可以在下一冻结轮次中通过既有的
+   `FINDING_READY → CHANNEL_OPEN`握手继续。
+
+   关闭前，如果 Owner 根据新获得的有支持证据独立确定了另一项尚未报告的 finding，应固定该
+   finding 及其不透明 ID，并把 finding 集合状态设为`reopened`；否则状态保持`complete`。重新
+   打开会使先前的完成证据失效，只能由新获得的证据触发，而且必须增加至少一个不同 ID。当前
+   所有开放通道关闭后，同一持久 Reviewer 使用累积的已授权证据，在未改变的 Candidate Version
+   上重新开始私下判断；通过 Role Launch 发出每项新固定的 finding，并在最后一次发出时恢复
+   完成状态。advisory Owner 只有获得新的有支持证据时才可升级；升级后的主张转入阻塞生命周期。
+   只有不存在尚未解决的阻塞 finding、自己负责的每项 advisory 均有冻结处置、最新 finding
+   集合状态为 complete，而且没有已选修复等待写入时，Reviewer 才可在当前版本返回`PASS`。
+   信任、投票、其他 Reviewer 和 Controller 解释都不能作出决定。
+6. **授权一次写入。**每个 cohort 成员都提供 Role Launch 中经审计的 finding 集合完成证据、
+   每个最新 finding 集合状态均为 complete，且所有已发出的 Owner 配对均已关闭后，把所有已接受
+   的阻塞与 advisory 修复汇总进一份完整的全单元 Repair Scope。它包含单元、版本、选中写入的
+   finding ID、处置控制 metadata（分类与是否选中写入）、已授权路径和模式、冻结保留边界引用，
+   以及就绪状态；不转发任何语义处置正文。只有此时，同一个 Author 才能应用所选修复。
 7. **共同复查。**写入产生新的 Candidate Version；每个持久 cohort 成员分别独立复查完整
-   Candidate。若无写入，不受影响的同版本`PASS`仍有效，而 finding Owner 重新判断。
+   Candidate。若无写入，不受影响的同版本`PASS`仍有效，而阻塞 finding Owner 重新评估；已被
+   拒绝的 advisory 保持关闭。
 
 共识是完整已声明 cohort 在相同的已提供证据、证据选择政策和授权下，对同一 Candidate Version
-分别独立给出`PASS`。开放单元在 local PASS 后仍保持开放状态。重新打开失效的已关闭单元需要全新
-完整 cohort；旧身份与裁决绝不返回。
+分别独立给出`PASS`，同时不存在尚未解决的阻塞 finding，并且每项 advisory 均有冻结的 Author
+处置。开放单元在 local PASS 后仍保持开放状态。重新打开失效的已关闭单元需要全新完整 cohort；
+旧身份与裁决绝不返回。
 
 ### 人类停止与无进展
 
@@ -69,8 +100,10 @@ Reviewer 通过运行时`FINDING_READY → CHANNEL_OPEN`握手暴露它。
 权威为何无法解决、决策 Owner，以及每个当前选择的后果。临时 finding、处置和裁决全部失效。
 完成审计与最终化，然后原样交付请求。人类回答会启动新运行。
 
-Author 冻结处置且 finding Owner 重新判断后仍未解决，构成一轮分歧。初次判断不算一轮。同一
-分歧连续两轮没有新证据或受支持方案时，停止并返回`NO_PROGRESS`。
+当两个同级都关闭轮次、不动点控制值为`not reached`且主张仍未解决时，才计为一轮阻塞分歧。
+初次私下判断不算一轮。同一阻塞分歧连续完成两个计数轮次，而且没有新证据或受支持方案时，停止
+并返回`NO_PROGRESS`。advisory 的修复、部分修复或拒绝在 Author 冻结处置后关闭，绝不会进入
+分歧或`NO_PROGRESS`。
 
 ## 验证确定性事实
 
@@ -91,8 +124,15 @@ Machine 适用时，只运行受影响 Owner 支持且不会自动修复的检�
 Reviewer 可以附加一条**Scope Transfer Note**，其中只包含 Candidate 位置、预期 Owner 和需要
 检查的职责。它不是 finding，不包含观察、论证、证据、处置、理由或裁决。只可将其路由一次：
 发给当前 cohort 中另一 Reviewer、尚未开始的后续阶段，或在当前 local PASS 后发给此前已通过
-阶段。接收方独立检查完整 Candidate 及其已授权的证据来源。可能影响已通过证明的 note 会使该
-证明失效；note 本身不获得语义 Owner。
+阶段。接收方独立检查完整 Candidate 及其已授权的证据来源。
+
+当冻结图允许后续阶段向此前已通过的单元发送 note 时，local PASS 后该单元仍保持开放，并在已
+声明的转移窗口内暂停其完整 cohort。只恢复预期职责 Owner，由它独立检查已路由的 note；已关闭
+单元中的身份绝不返回。只有不会再有后续 note 到达且没有待处理的路由检查时，才关闭此前单元。
+没有产生有支持 finding 的 note 会使已通过证明继续有效。note 本身不会改变裁决或使证明失效，
+也不获得语义 Owner。由接收方支持的阻塞 finding 通过普通 finding、回退与重放生命周期使受影响
+的既有证明失效。由接收方支持的 advisory 仍不阻塞：拒绝时保留既有证明，接受写入时则使用普通
+Revision Impact。
 
 ## 修订、回退并重放
 
@@ -111,11 +151,11 @@ Revision Impact 使用 Author Change Summary、变更路径、全 Allowlist 指�
 ## 选择全局出口
 
 Role Boundary Audit 首先决定调用和回调是否可接纳。不可接纳的回调通常不能贡献 payload 结果。
-唯一的终止控制例外是：已认证、可归因且能取得准确请求的 Author 或 Reviewer
-`HUMAN_DECISION_REQUIRED`。立即停止语义工作，保留并原样交付该请求，要求人类裁决后再新开
-运行。不得消费其他回调内容或 Candidate 证据。按安全合同完成所有已开始的条件式执行并最终化
-工作流；对外报告`HUMAN_DECISION_REQUIRED`，同时保留`ROLE_BOUNDARY_VIOLATION`作为底层
-审计证据。若归因或准确请求无法证明，则不成立由 Owner 生成的人类请求，本例外不适用。
+当该审计确定 Role Launch 中可归因的终止控制例外成立时，立即停止语义工作，保留并原样交付
+准确的人类请求，并要求裁决后再新开运行。不得消费其他回调内容或 Candidate 证据。按安全合同
+完成所有已开始的条件式执行并最终化工作流；对外报告`HUMAN_DECISION_REQUIRED`，同时保留
+`ROLE_BOUNDARY_VIOLATION`作为底层审计证据。其他所有经审计的不可接纳状态均遵循下文的普通
+路径。
 
 对于其他所有不可接纳调用或回调，以及每个语义角色事故，先按安全合同完成已经开始的条件式
 执行；若存在更高安全终止结果，以其为准。否则废弃不可接纳 payload，保留 Candidate、审计与

@@ -84,24 +84,25 @@ highest-priority reachable stop is selected.
 ## 4. Prove, correct, and replay
 
 Activate the frozen stages in order. Advance only on a current-version `PASS` or valid
-`NOT_REQUIRED`. Apply the Evaluation Lifecycle to findings, Machine failures, direct correction,
-complete Repair Scopes, Candidate Versions, Revision Impact, rewinds, replay, Scope Transfers, and
-exits.
+`NOT_REQUIRED`. The Evaluation Lifecycle is the semantic owner of findings, dispositions,
+discussion closure, correction, consensus, and replay. Apply it to Machine failures, complete
+Repair Scopes, Candidate Versions, Revision Impact, rewinds, Scope Transfers, and exits.
 
 Every Reviewer first judges privately under the frozen evidence-selection policy without receiving
-the Author's reasoning or another Reviewer's work. For each finding, apply the frozen
-direct-discussion lifecycle and isolation contract. Author and finding owner independently assess
-the claim, reasons, and provenance; agreement is their reasoned bilateral fixed point, never
-deference or blind acceptance.
-Candidate writes begin only after every discussion closes and the Controller supplies one complete
-full-unit Repair Scope. Consensus is independent same-version `PASS` from every declared Reviewer.
+the Author's reasoning or another Reviewer's work. Reviewers use adaptive challenge questions to
+exhaust their assigned scope; questions investigate, while findings remain supported declarative
+claims. Apply the frozen direct-discussion lifecycle and isolation contract to each finding.
+As a stage-routing projection of Evaluation, blocking findings keep their unit open through the
+bilateral lifecycle, while advisory findings close on the Author's frozen disposition. Candidate
+writes begin only after every channel closes under Evaluation and the Controller supplies one
+complete full-unit Repair Scope. Advance on Evaluation's independent same-version cohort consensus.
 
 The first Author, Reviewer, or Controller `HUMAN_DECISION_REQUIRED` immediately ends all semantic
 work. Finalize, deliver the owner-produced request unchanged, and continue only in a new run after
 human adjudication.
 
-**Complete when:** all applicable proof is current and compatible, and no unresolved worth-fixing
-finding remains.
+**Complete when:** all applicable proof is current and compatible, no unresolved blocking finding
+remains, and every advisory has a frozen disposition.
 
 ## 5. Finalize and hand off
 
