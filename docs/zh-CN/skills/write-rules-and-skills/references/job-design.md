@@ -23,11 +23,11 @@ Version、已提供的证据、发现授权、单元、轮次和独立判断边�
 `HOST_UNAVAILABLE`。一旦冻结，Controller 派发或保留超出`P`的状态属于控制平面
 `ROLE_BOUNDARY_VIOLATION`，绝不是`HOST_UNAVAILABLE`。
 
-## 在冻结前加载调度事实
+## 冻结调度事实
 
-在 Design 期间完整加载`evaluation.md`和`reviews.md`。其中准确的 cohort 数量、职责分配、
-持久性、修正与重放义务都是调度输入。Acceptance 仅在适用时贡献调度。阶段入口只能激活已
-冻结身份与判断标准；不得增加或改变 cohort、分配、身份状态、容量需求或转换。
+冻结前，把 Evaluation Lifecycle 与 review 合同所负责的准确 cohort 数量、职责分配、
+持久性、修正和重放义务纳入调度输入。Acceptance 仅在适用时贡献其调度。阶段入口可以激活
+已冻结身份与判断标准；不得增加或改变 cohort、分配、身份状态、容量需求或转换。
 
 ## 设计一张权威图
 

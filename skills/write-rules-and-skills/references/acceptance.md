@@ -2,8 +2,9 @@
 
 This conditional authority owns Acceptance design, case identity and portfolio, attempts,
 judgment, Candidate and setup correction, replay, safety finalization, and terminal precedence.
-Load it during Design only when Acceptance applies. When Design freezes `NOT_REQUIRED`, no
-Acceptance capability, identity, or schedule gates the run.
+It contributes its stage, capabilities, identities, schedule, cases, transitions, and activation
+only when Design freezes Acceptance as applicable. When Design freezes `NOT_REQUIRED`, it
+contributes none of them and gates no run.
 
 ## Qualify execution and identities
 

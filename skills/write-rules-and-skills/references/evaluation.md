@@ -13,15 +13,15 @@ control metadata. Freeze both into the Job Graph before any role or Candidate ch
 | 1 | Quality | Always. Activate its frozen complete fresh cohort; it independently passes one Candidate Version. |
 | 2 | Machine | Conditional on deterministic evidence for changed schema or metadata, references/resources, scripts, fixed flows, or sufficiently concrete/complex tools, permissions, filesystem state, procedure, or external effects. Broad judgment and high-confidence simple steps may be `NOT_REQUIRED`. |
 | 3 | Correctness | Always after Machine `PASS` or valid `NOT_REQUIRED`. Activate its frozen complete fresh cohort; it independently passes one Candidate Version. |
-| 4 | Acceptance | Conditional on concrete or sufficiently complex runtime behavior whose feasibility lacks high-confidence evidence. Load `acceptance.md` during Design or freeze `NOT_REQUIRED`. |
+| 4 | Acceptance | Conditional on concrete or sufficiently complex runtime behavior whose feasibility lacks high-confidence evidence. Design freezes the stage as applicable with its complete contract contributions, or `NOT_REQUIRED`. |
 
 Acceptance signals include fixed multistep order, meaningful branching, retry, recovery or exit,
 concrete tool calls, mutation, permission boundaries, external effects, or a Rule requiring such
 behavior. A static walkthrough is not Acceptance. Design closes only when every applicability,
 resource, identity schedule, dependency, transition, and exit is frozen.
 
-Load this resource plus `reviews.md` completely during Design. Its cohort cardinalities,
-assignments, correction duties, and replay states are immutable schedule inputs. Stage entry
+Freeze this lifecycle's correction and replay states and the review contracts' cohort
+cardinalities, assignments, and correction duties as immutable schedule inputs. Stage entry
 activates those frozen facts and may add no identity, assignment, capacity, or transition.
 
 ## Treat findings as owned claims

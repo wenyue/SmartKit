@@ -1,8 +1,9 @@
 # 可执行 Acceptance
 
 本条件式权威负责 Acceptance 设计、用例身份与组合、尝试、判断、Candidate 与设置修正、重放、
-安全最终化和终止优先级。仅在 Acceptance 适用时于 Design 期间加载。Design 冻结为
-`NOT_REQUIRED`时，不会有任何 Acceptance 能力、身份或调度约束本次运行。
+安全最终化和终止优先级。只有 Design 把 Acceptance 冻结为适用时，它才贡献自己的阶段、
+能力、身份、调度、用例、转换和激活。Design 冻结为`NOT_REQUIRED`时，它不贡献其中任何内容，
+也不会对任何运行设置准入条件。
 
 ## 确认执行与身份满足条件
 
@@ -22,7 +23,7 @@
 
 - Runner 把 Candidate 行为应用于冻结接缝输入，并产生可观察输出；
 - harness 只执行预授权的身份与控制机制并捕获宿主证据；Runner 从不请求或控制身份；以及
-- 一个递归边缘用例到达准确可观察的重新进入条件：Candidate 状态，加上将派发同一 Acceptance
+- 一个递归边用例到达准确可观察的重新进入条件：Candidate 状态，加上将派发同一 Acceptance
   图的下一次调用。harness 在派发前终止；前置状态不足以满足条件。
 
 缺失 harness 或运行时接缝时返回`EXECUTION_UNAVAILABLE`；演练不能替代。网络或外部影响需要
@@ -88,7 +89,7 @@ fixture/环境修正、一次歧义观察和用例 PASS 全程保留同一身份
 - 通用`CONTEXT_REQUIRED`、`ACCESS_REQUIRED`或`HUMAN_DECISION_REQUIRED`；
 - 仅在不存在 Candidate defect 时返回**fixture/environment defect**：缺陷及其准确、预授权、
   有界的设置修正，或确认没有修正；
-- 仅在不存在 Candidate defect 时返回**ambiguous**：命名当前备选解释，以及一项定向观察、
+- 仅在不存在 Candidate defect 时返回**ambiguous**：列出当前备选解释，以及一项定向观察、
   有界设置和当前权威内的捕获增量；或
 - 该观察后仍有歧义时返回`AMBIGUITY_UNRESOLVED`，包含初始与最终备选解释、变化、两组证据、
   观察与捕获增量、剩余歧义和未测试表面。
@@ -110,10 +111,10 @@ Reviewer 直接、原样返回分类。只有 Candidate finding 使用仅含 met
   任何剩余重要歧义都返回`AMBIGUITY_UNRESOLVED`，即使备选解释减少、改变或变得明显。
 
 一次**Acceptance correction attempt**包含一次 Candidate 修复或选定的 fixture/环境修正、其
-全新 Runner 尝试和 Reviewer 重新评估。仅在同一缺陷持续时计数。缺陷或方案发生实质变化时，
-连续计数重置。歧义观察不算修正尝试。同一缺陷连续两次修正后仍存在，或安全恢复已耗尽时，
-停止并返回`NO_PROGRESS`。人类请求会触发全局语义立即停止，但每个已启动 Runner 仍要完整安全
-最终化。
+全新 Runner 尝试和 Reviewer 重新评估。仅当同一缺陷持续存在时才计数。出现实质不同的缺陷或
+方案时，连续计数重置。歧义观察不属于修正尝试。同一缺陷连续两次修正尝试后仍存在，或安全
+恢复已耗尽时，停止并返回`NO_PROGRESS`。人类请求会触发全局语义立即停止，但每个已启动
+Runner 仍要完成安全最终化。
 
 ## 回退并重放
 
