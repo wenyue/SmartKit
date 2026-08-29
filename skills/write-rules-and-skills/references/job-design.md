@@ -1,40 +1,57 @@
 # Frozen Job Design
 
-This contract owns concrete Role Launch readiness, actual capacity, the Run Contract and Job Graph,
-grants, bounded updates, Candidate fingerprints, and the exclusive lock. Execute:
+This contract owns readiness, capacity, the Run Contract and Job Graph, grants and bounded updates,
+Candidate observation, baseline, fingerprints and deltas, mismatch attribution, and proof state:
 
-**clean residuals → establish capacity → design → establish readiness → freeze → fingerprint →
-lock → verify**
+**clean residuals → establish capacity → design → establish readiness → fingerprint → freeze →
+baseline → verify**
 
 ## Derive the worker pool from actual capacity
 
-First finish predeclared residual cleanup and establish, from host evidence, the total concurrent
-role slots actually available to this run as `N`. From Author launch through workflow finalization,
-permanently reserve exactly one slot for the Controller and one for the fresh resident Author. The
-entire Reviewer/Runner pool is:
+Before cleanup, observe every live or retained identity and activity visible through the accepted
+pre-freeze host capability. Classify a residual as run-owned only when immutable identity and
+provenance bind it to the interrupted workflow named by accepted cleanup authority. End only those exact run-owned
+identities, only with that authority, and prove inactivity. Preserve unrelated activity; it reduces
+host-evidenced capacity but is never a cleanup target. Indeterminate ownership, missing authority,
+failed termination, or unproved inactivity returns `HOST_UNAVAILABLE` before allocation with the
+residual evidence. The later runtime applies this entry contract; post-launch finalization remains
+separate.
+
+After cleanup, establish host-evidenced total role slots `N`. Reserve one each for the Controller
+and resident Author through finalization. The Reviewer/Runner pool is:
 
 `P = max(0, N - 2)`
 
-Record `N`, both reservations, `P`, every complete cohort, and every activation, suspension,
-retention, batching, correction, rewind, and replay state as Design inputs. A live or retained
-worker consumes one `P` slot. A persistent suspended identity preserves identity and state but
-consumes no live slot. When a cohort is larger than `P`, batch its members while preserving its
-complete membership, identity, Candidate Version, supplied evidence, discovery grants, unit,
-round, and independent-judgment boundary.
+Freeze `N`, reservations, `P`, complete cohorts, all conditional-authority identities, and every
+activation, suspension, retention, batching, correction, rewind, and replay state. Live or retained
+workers consume `P`; suspended identities preserve state without a slot. Batch an oversized cohort
+without changing membership, identity, fingerprint, evidence, grants, unit, round, or independent
+judgment.
 
-Every reachable state must fit `P`, including any retained Acceptance Reviewer plus fresh
-earlier-stage cohorts and any Runner required with a current case Reviewer. If the correctly
-derived host capacity cannot support the required graph, return `HOST_UNAVAILABLE` before
-allocation. Once frozen, a Controller dispatch or retention state exceeding `P` is control-plane
-`ROLE_BOUNDARY_VIOLATION`, never `HOST_UNAVAILABLE`.
+Every state must fit `P`. Acceptance separately schedules its retained/current case Reviewer with
+either a fresh Runner for an attempt or a batched earlier-stage cohort during Evaluation
+restoration, never both. Insufficient correctly derived capacity returns `HOST_UNAVAILABLE` before
+allocation; post-freeze oversubscription is `ROLE_BOUNDARY_VIOLATION`.
 
 ## Freeze schedule facts
 
-Before freeze, incorporate the exact cohort cardinalities, responsibility assignments,
-persistence, correction, and replay obligations owned by the Evaluation Lifecycle and review
-contracts as schedule inputs. Acceptance contributes its schedule only when applicable. Stage
-entry may activate frozen identities and judgment criteria; it cannot add or change a cohort,
-assignment, identity state, capacity demand, or transition.
+Before freeze, incorporate every later contract's cardinalities, assignments, identities,
+persistence, correction, and replay inputs. An inactive conditional authority contributes none;
+stage entry changes no schedule fact.
+
+Freeze Quality's mechanical input schemas and derivations:
+
+- the **mandatory-load manifest** schema and deterministic derivation, covering every exact
+  Allowlist resource with its route or condition, Candidate-prescribed load point or `none`, any
+  external prescribed-load dependency, and Candidate anchor; and
+- the exact Allowlist resource set plus the deterministic canonical-delta-item and
+  format-appropriate economy-unit schemas and derivations used by coverage records.
+
+After every promoted Candidate fingerprint, mechanically derive and bind the exact current
+mandatory-load manifest, delta-item set, and economy-unit set from that fingerprint's Candidate
+bytes and immutable delta as expected-proof-state evidence. The Economy Coverage Record consumes
+that current fingerprint-bound manifest. These bindings apply frozen derivations; they do not
+amend the Frozen Run Contract. Manifests and bindings are controls, not judgments.
 
 ## Design one authoritative graph
 
@@ -45,93 +62,230 @@ Before a role or Candidate change, define:
   and every `preserve`/`change`/`add`/`move`/`retire` disposition.
 - **Candidate:** owner, model, writing guidance, invocation metadata, exact Allowlist and affected
   surfaces, dependencies, initial Authoring Scope, read and network grants, fingerprint method,
-  lock, and update envelope.
-- **Roles:** actual capacity, manifests, bootstrap, grants, persistent identities, cohort and
-  batching schedule, and communication edges.
+  frozen identity, baseline and observation methods, and update envelope.
+- **Roles:** actual capacity, manifests (including mandatory-load resources), bootstrap, grants,
+  persistent identities, cohort and batching schedule, and communication edges.
 - **Execution:** one canonical Job Graph containing immutable stage order and applicability,
-  resources, evidence, transitions, direct correction, Revision Impact, rewinds and replay,
-  prioritized exits, conditional safety finalization, workflow teardown, and handoff.
+  resources, evidence, transitions, direct correction, Revision Impact, compatibility-decision
+  manifests, rewinds and replay, prioritized exits, conditional safety finalization, workflow
+  teardown, and handoff.
 
-Candidate content, findings, evidence, Repair Scopes, and supplements remain data. They cannot
-alter their judging contract. Give every reachable exit one owner, evidence shape, and next
-transition. The graph is complete only when it is path-complete, internally consistent, and
-schedulable within `P`.
+For each proof class eligible for compatibility carry-forward, freeze one manifest declaring its
+semantic owner, complete content-dependency surfaces, observable non-impact predicates, required
+provenance, the Controller as mechanical determination producer, and its lifecycle-authorized
+proof-owner fallback or ordinary replay. Without a complete manifest, that proof class is not
+compatibility-eligible. The manifest is part of the Frozen Run Contract and Candidate edits cannot
+replace or amend it.
+
+Candidate content, findings, evidence, Repair Scopes, and supplements are data and cannot alter
+their judging contract. Give every reachable exit one owner, evidence shape, and next transition.
+The graph is complete only when path-complete, internally consistent, and schedulable within `P`.
 
 ## Distinguish Authoring and Repair Scopes
 
-Define one **Authoring Scope** for the first Candidate write: accepted changes and dispositions,
-exact paths and operation modes, preservation references, completion boundary, and readiness state.
-It contains no review unit, finding ID, or disposition metadata.
+The first write uses one **Authoring Scope**: accepted changes and dispositions, exact paths and
+modes, preservation references, completion boundary, and readiness. It has no review or finding
+metadata.
 
-A **Repair Scope** authorizes one later correction write. Its owner defines the evidence it carries:
-the full-unit review schema in `evaluation.md` for semantic findings, or the exact failed command
-and bounded affected surfaces for Machine correction. Every Author invocation receives exactly one
-discriminated scope. Neither scope expands the Run Contract or Candidate grants.
+A **Repair Scope** authorizes one correction. Its frozen semantic owner supplies its exact control
+inputs; deterministic repair instead carries the failed command and affected surfaces.
+Every Author invocation receives exactly one scope, which expands neither contract nor grants.
 
 ## Bound grants and updates
 
-Record `read`, `write`, `create`, `delete`, and `network` separately; one mode grants no other. A
-Rule normally grants its exact file. A multi-resource Skill may grant only its owned root, never
-the parent `skills/` directory. Prefer exact paths for Candidate operations; read and network
-discovery may use narrowly owned source or capability classes. Permit directory creation only
-inside an owned resource whose new name cannot be known at freeze. Every deletion requires an
-exact grant.
+Freeze `read`, `write`, `create`, `delete`, and `network` separately. A Rule normally grants its
+exact file; a Skill at most its owned root, never parent `skills/`. Prefer exact operation paths;
+read and network discovery may use narrow source or capability classes. Directory creation needs
+an owned resource with a name unknowable at freeze; deletion needs an exact grant. A move needs its
+accepted disposition plus exact source-delete and destination-create grants.
 
-Apply `role-launch.md`'s common evidence-selection policy to Authors and Reviewers under those
-grants. Source selection permitted by that policy is ordinary discovery, not a bounded update or
-per-file research route.
+Grants bound the later runtime's evidence selection. Ordinary in-grant source discovery is not an
+update or per-file research route.
 
-Define each necessary-fact slot eligible for a **Context Supplement**, and each authorized local
-path class, external source and capability class, and already-authorized mode eligible for access
-expansion. A supplement may fill one declared slot only when the fact cannot be discovered from
-current authorized sources and capabilities, without changing meaning, owner, obligation, branch,
-validation, or dependency. An expansion is exceptional missing access and must exactly match the
-requested local path and mode or external source, capability, and network mode inside its frozen
-class. Resume the same identity after either bounded update.
+Freeze every Context Supplement fact slot and access-expansion path, source, capability, and mode
+class. A supplement fills one undiscoverable fact without changing meaning, owner, obligation,
+branch, validation, or dependency. An expansion exactly matches the admitted request within its
+class. Only then may the Controller update and resume the same identity from applicable proof state.
 
 A new dependency, owner, requirement, Candidate root or scope, path class, permission mode, side
 effect, validation duty, or capacity schedule is material and requires `ALIGNMENT_REQUIRED` in a
 new run. When an eligible update cannot be supplied, preserve `CONTEXT_REQUIRED` or
 `ACCESS_REQUIRED`.
 
-## Establish concrete Role Launch readiness
+## Establish runtime readiness
 
-Apply `role-launch.md` as the single fixed runtime and common evidence-selection policy for the run,
-unchanged by public, project-local, or shared writers.
-Using the completed graph, scopes, grants, applicability decisions, and schedule, establish fresh
-launch, persistent continuation and finish, authoritative contract delivery, bounded updates,
-explicit grants, direct authenticated Author↔finding-owner channels, normalized audits, and one
-bounded exclusive lock over the exact Candidate Allowlist.
+Require the later runtime to establish fresh launch, persistent continuation and finish, contract
+delivery, bounded updates, explicit grants, authenticated Author↔owner channels, audits, and
+optimistic observation over the exact Allowlist.
 
-For every semantic role, establish an observable non-return, unreachability, or
-failed-continuation trigger; obtainable evidence capture; channel abort; termination; and inactivity
-proof. Define no universal wall-clock threshold. Runner termination and quiescence readiness is
-required before any reachable Acceptance Runner can launch, and only when Acceptance applies.
-Every active conditional authority contributes its complete identity, lifecycle, audit, and safety
-requirements; `NOT_REQUIRED` contributes nothing.
+For every semantic role establish an observable non-return or failed-continuation trigger, evidence
+capture, channel abort, termination, and inactivity proof without a universal timeout. Applicable
+Conditional execution also requires Runner termination and quiescence readiness. Each active
+authority contributes its complete lifecycle and safety contract; `NOT_REQUIRED` contributes none.
 
-Return `LOCK_UNAVAILABLE` for an absent or unprovable lock property. Reserve `HOST_UNAVAILABLE` for
-a host that cannot establish or supply a correctly derived capability or frozen schedule with its
-required evidence.
+Return `HOST_UNAVAILABLE` when the host cannot establish or supply a correctly derived capability
+or frozen schedule with its required evidence.
+
+## Freeze boundary-based optimistic observation
+
+Before freeze, declare whole-Allowlist comparisons around every role invocation or continuation,
+Machine command, and conditional execution; after conditional safety; and after worker teardown
+before clean handoff. Preserve each observed mismatch. Retain the pre-Author-invocation fingerprint;
+on return or completed termination, independently capture full content and complete the
+invocation-final transition before callback composition. Only admitted `COMPLETE` promotes an
+attributable Author state.
+
+This workflow does not serialize uncoordinated concurrent writers or guarantee detection of a
+transient intermediate state that disappears before a declared comparison. Those are explicit
+concurrency non-goals, not failure branches. Stronger host mutation coordination is neither
+required nor assumed.
+
+## Bind the Design-close Candidate identity
+
+After every Design input and runtime-readiness requirement is complete, compute the exact
+whole-Allowlist fingerprint over the ordered resources' paths, presence states, and full bytes.
+This fingerprint is the sole Candidate content identity. Bind it as the final Candidate-identity
+input to the Run Contract and Job Graph. This read-only observation starts no role or Candidate
+state.
 
 ## Freeze one authoritative graph
 
-After every Design input and concrete Role Launch requirement is complete, perform one freeze
-transition. The Run Contract, Job Graph, update envelope, operation manifests, scopes, grants, and
-schedule then become authoritative. Candidate edits can influence only a later independent
-invocation of this workflow. Begin no role, fingerprint, lock acquisition, or Candidate change
-before this transition.
+After the Design-close Candidate identity is bound, materialize the complete Run Contract and Job
+Graph, including every incorporated reference and operative instruction, as one immutable snapshot
+independent of the Candidate files, then perform one freeze transition. That materialized **Frozen
+Run Contract**, including the update envelope, operation manifests, scopes, grants, schedule, and
+exact whole-Allowlist fingerprint, is the sole behavioral authority for the complete run and for
+every role launched later. Baseline capture, role launch, and Candidate change begin only after
+freeze.
 
-## Fingerprint and lock
+Self-hosting edits change Candidate data only. They never replace or reload the Frozen Run Contract,
+cause a re-freeze, restart or reset the run, or make any role adopt edited Candidate content as
+governing instructions. A Candidate fingerprint change may invalidate only content-dependent
+evidence under Revision Impact; it cannot invalidate the frozen execution contract or unrelated
+control-plane state.
 
-Fingerprint every exact Candidate file before lock acquisition. Only the Controller invokes the
-frozen lock interface. Advance only with attributable exclusive ownership over the whole Allowlist.
-Missing primitive, contention, failure, or indeterminate ownership returns `LOCK_UNAVAILABLE`, with
-proof that no lock remains or the exact residual state and release handle. Candidate files,
-fingerprints, conventions, and sentinel files are not locks.
+## Establish the fingerprint and baseline
 
-Recompute the baseline after acquisition. A mismatch returns `CANDIDATE_CHANGED`, preserves
-concurrent state, and enters finalization. Every Author write creates one whole-Allowlist Candidate
-Version and fingerprint. Compare fingerprints immediately before and after every non-Author
-invocation and whenever a conditional authority requires it. Use a targeted diff only when
-fingerprints, paths, reports, and host evidence cannot attribute a change.
+Immediately after freeze and before Author launch, the Controller captures the exact Candidate
+Allowlist's full content and derives its fingerprint from every resource's path, presence state,
+and content. Compare that capture with the frozen Design-close Candidate identity. On mismatch,
+repeat the full-content capture and comparison once before any other action. A matching capture is
+retained as the immutable **pre-Author baseline**. A persistent mismatch returns
+`CANDIDATE_CHANGED`, preserves Candidate, every capture, the frozen and observed fingerprints, and
+audit evidence, and stops before role launch. This binding keeps later movement, replacement,
+creation, and deletion attributable.
+
+Exactly one **expected proof state** applies. Before the first promotion, it is the frozen
+Design-close fingerprint plus the matching immutable pre-Author baseline and the empty canonical
+baseline-to-current delta bound to that baseline-identical fingerprint. After promotion, it
+contains those initial bindings plus the promoted current fingerprint and its canonical delta.
+Expected proof state advances only through an admissible Author `COMPLETE`; an inadmissible callback
+never advances it.
+
+The **invocation-final transition** compares the Controller's complete invocation-final capture
+with that invocation's pre-invocation fingerprint. When the state differs, mechanically record and
+preserve the invocation-final whole-Allowlist fingerprint, the raw operation and attribution
+evidence, and one complete canonical **baseline-to-current delta** bound to that exact fingerprint.
+Perform this transition after the Author returns or terminates regardless of callback presence,
+status, admissibility, incident classification, or workflow result. The fingerprint and delta are
+forensic facts; they become proof state only through promotion.
+
+The Author Operation Report's raw operations, affected paths, and post-write observations support
+the invocation-final capture and audit; they are never Candidate fingerprints or canonical deltas.
+No intermediate observation creates a Candidate identity: identity is always the exact
+whole-Allowlist fingerprint, and only frozen invocation-final boundaries bind forensic state for
+callback composition. Multiple operations do not add intermediate boundaries.
+
+Apply the runtime's callback-admissibility result before any expected-proof-state transition:
+
+- **Admissible-`COMPLETE` transition:** promote the Controller-bound invocation-final fingerprint.
+  If the invocation-final capture matches its pre-invocation input, this admissible no-op creates
+  no new content identity: promote the unchanged fingerprint and reuse its existing
+  baseline-to-current delta. Only baseline-identical content has an empty canonical delta. The
+  Author neither creates nor reports the fingerprint or delta.
+- **Admissible-need transition:** a compliant Author `CONTEXT_REQUIRED` or `ACCESS_REQUIRED` is
+  write-free, promotes nothing, preserves expected proof state, and resumes from it only after an
+  eligible update.
+- **Human-stop transition:** an authenticated Author `HUMAN_DECISION_REQUIRED` immediately stops
+  semantic work and promotes nothing. Preserve every observed fingerprint and delta as unpromoted
+  forensic evidence and retain any mismatch attribution as underlying audit evidence.
+- **Abnormal-or-no-callback transition:** preserve the invocation-final fingerprint and delta, if any,
+  as unpromoted forensic evidence and leave expected proof state unchanged, then use the runtime's
+  incident classification and finalization output.
+
+For each invocation-final fingerprint, the Controller mechanically derives and binds one complete
+canonical baseline-to-current delta from the immutable pre-Author baseline and the exact current
+Allowlist. Every delta keeps that immutable pre-Author-baseline-to-current span and is bound to its
+exact current fingerprint. A no-op reuses the delta already established for its unchanged
+fingerprint; it never creates a new identity or replaces that delta with an invocation-relative or
+empty one. Only baseline-identical content binds an empty canonical delta. Once bound to a
+fingerprint, the delta is immutable. Freeze deterministic
+derivation, reuse, provenance, and the resource-identity rule before Author launch.
+The artifact accounts for every created, deleted, renamed, moved, and modified resource and all
+content changes. Its resource-identity rule classifies a path change as a rename or move only when
+an accepted `move` disposition frozen before Author launch binds the baseline and current paths;
+path or content similarity alone cannot establish continuity. Without that binding, record the
+old-path deletion and new-path creation and assert no relationship. The delta never depends on the
+Author's Change Summary, self-report, notes, or comparison artifact. It is invocation-final fingerprint
+evidence, not Candidate authority or a substitute for inspecting the complete current Candidate.
+
+Bind the canonical delta after every invocation-final fingerprint under the derivation and
+no-op reuse rules above. Run the frozen whole-Allowlist comparisons against the applicable
+expected proof state at every declared observation boundary. An exact final match preserves
+expected proof state and enables clean-success handoff. An invocation-final or final comparison
+mismatch uses the standalone boundary composition below; callback composition applies only at a
+boundary carrying a normal callback.
+
+Frozen Job Design owns one ordered, exhaustive attribution classification for every observed
+mismatch:
+
+1. When the complete change is proven attributable to a write within the current authorized Author
+   scope, classify it as an attributable Author change.
+2. Otherwise, when evidence proves that any change is attributable to a forbidden role or command
+   operation, classify it as a forbidden-operation change.
+3. Classify every remaining mismatch, including external change and indeterminate attribution, as
+   a concurrent-or-indeterminate change.
+
+The first matching class governs, so no mismatch has more than one attribution classification.
+Classification uses only observable change attribution and the frozen scope; it neither decides
+invocation or callback admissibility nor promotes an invocation-final fingerprint. Role
+Runtime independently audits an invocation or normal callback and, only for a normal callback
+boundary, composes one callback outcome from that audit and this classification. Apply the
+corresponding Frozen Job Design transition:
+
+- An **attributable-Author-change transition** invokes the applicable callback-status transition
+  selected by runtime composition.
+- A **boundary-violation transition**, also used for a forbidden-operation outcome, promotes
+  nothing and preserves Candidate, pre-Author baseline, prior expected proof
+  state, every observed fingerprint and delta, and audit evidence. When an inadmissible Author callback
+  follows an invocation that changed Candidate, this transition supplies a whole-run boundary
+  result to the semantic lifecycle; it authorizes no continuation or local repair.
+- A **concurrent-or-indeterminate transition** has the same no-promotion and preservation effects.
+
+## Compose a standalone boundary outcome
+
+At every invocation-final or final comparison, and every other required comparison where no normal
+callback exists, the Controller applies this callback-independent composition after the ordered
+mismatch classification:
+
+1. A proven forbidden role or command operation returns `ROLE_BOUNDARY_VIOLATION` and invokes the
+   boundary-violation transition.
+2. A concurrent-or-indeterminate mismatch returns `CANDIDATE_CHANGED` and invokes the
+   concurrent-or-indeterminate transition.
+3. An exact match supplies no boundary result and leaves expected proof state unchanged.
+
+This composition is the Job Design-owned boundary result for every invocation-final, final,
+pre-invocation, and post-safety comparison. It also applies after an abnormal or missing callback
+when either listed mismatch class is established. An attributable Author change supplies no
+standalone result: a normal callback remains under Role Runtime's independent composition, while an
+invocation-final change without one remains forensic evidence for the runtime's semantic-role
+incident path. Standalone boundary composition never promotes; callback admissibility and
+composition remain separate runtime decisions.
+
+Audit every use of expected-proof-state evidence against its applicable bindings: the frozen
+Design-close Candidate identity, immutable baseline identity, and matching whole-Allowlist
+fingerprint in the pre-Author state, or those initial bindings plus the promoted current
+fingerprint and frozen delta derivation provenance in the promoted state. Only when fingerprints,
+paths, reports, canonical deltas, and host evidence cannot attribute the mismatch, use a targeted
+Candidate comparison as fallback. Then apply the ordered classification above; unresolved
+attribution enters its third class.

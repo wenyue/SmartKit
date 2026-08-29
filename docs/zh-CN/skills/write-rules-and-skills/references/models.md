@@ -1,18 +1,17 @@
 # 归属、对齐与 Candidate 模型
 
-每次编写调用都从本 Gate 内部的一次 Ownership Review 开始。只有它确认了一个受支持的`rule`
-或`skill`Owner，才可继续对齐与建模。其他任何裁决都应遵循下文对应路径，或返回相应的对齐
-结果；这项审查不是独立调用、`PASS`或交付物。
+每次调用都从本 Gate 内部的一次 Ownership Review 开始。只有它确认了一个受支持的`rule`或
+`skill`Owner，才可继续。其他任何裁决都应遵循下文对应路径，或返回其对齐结果；这项审查不是
+独立调用、`PASS`或交付物。
 
-在此 Gate 关闭前，只有两类操作属于对齐且可以执行：按`Close alignment`的条件调用`grilling`；
-以及开展该调用所需的只读 Agent 事实发现，包括分派事实调查。在对齐与建模关闭前，不得改变
-Candidate、加锁、启动验证阶段、启动 Author/Reviewer/Runner 角色，也不得产生任何其他下游
-编写或证明影响。
+在此 Gate 开放期间，只允许由对齐负责的只读 Agent 事实发现（包括分派事实调查），以及按
+`Close alignment`的条件调用`grilling`。在对齐与建模关闭前，不得改变 Candidate、启动
+验证阶段或 Author/Reviewer/Runner 角色，也不得产生下游编写或证明影响。
 
 ## 路由到唯一 Owner
 
-根据关注点、能力、制品和管辖证据发现 Owner。打包位置不产生语义归属。若适用更具体的编写
-Owner，应把请求路由给它，除非已经取得它完成的交接。
+根据关注点、能力、制品和管辖证据发现 Owner；打包位置不会赋予归属。除非已经取得更具体编写
+Owner 的完整交接，否则应路由给该 Owner。
 
 对每项已接受义务进行分类：
 
@@ -20,7 +19,7 @@ Owner，应把请求路由给它，除非已经取得它完成的交接。
 | --- | --- |
 | `rule` | 持久策略，在触发的 Job 之间约束决策；继续交给一个受支持的 Rule Owner。 |
 | `skill` | 受触发、产出一个有界结果的工作；继续交给一个受支持的 Skill Owner。 |
-| `split` | 策略与 Job 义务各有独立 Owner；返回彼此分离的 Rule 与 Skill 请求。一个 Candidate Version 不得横跨二者。 |
+| `split` | 策略与 Job 义务各有独立 Owner；返回彼此分离的 Rule 与 Skill 请求。一个 Candidate 不得横跨二者。 |
 | `environment-owned` | 可靠事实属于代码、配置、schema、工具输出或另一活跃 Owner；指出该 Owner，不返回 Candidate。 |
 | `ambiguous` | 证据支持互不兼容的 Owner，或与请求的制品冲突；返回`ALIGNMENT_REQUIRED`。 |
 
@@ -37,16 +36,15 @@ Owner。人类偏好不能把策略变成受触发 Job，也不能免除受支�
 - 依赖、权限、外部影响、验证职责、适用的运行环境和最终交接；以及
 - 彼此独立的`read`、`write`、`create`和`delete`权威。
 
-证据完备的要求应直接对齐。已接受的 Issue 或 Spec 可以提供这些值；具有唯一证据支持的本地
-修复也可以补齐它们。先由 Agent 查明可发现的事实，再列出仍未解决的全部重要问题，并确定每个
-问题的决策 Owner。若没有未解决问题，直接关闭对齐，无需调用`grilling`，也无需返回
-`ALIGNMENT_REQUIRED`。若未解决问题中有任一项不由用户决策，则不得调用`grilling`；应返回
-`ALIGNMENT_REQUIRED`，并为每个未解决选择给出证据、决策 Owner 和实质后果。只有全部未解决
-问题都由用户决策时，才必须由模型发起一次且仅一次的`grilling`会话，覆盖完整的未决设计树。
-若该 Skill 不可用，或会话未能关闭所有剩余的重要分支并取得用户明确确认，则返回带有相同信息
-的`ALIGNMENT_REQUIRED`。用户明确确认已经形成完整的共同理解后，结束当前运行，只做一次交接：
-把这份共同理解作为已接受的人类决策上下文，交给一次新的编写运行。每个实际生效的术语与含义
-都需要独立、已接受的支持；环境中的词汇表或非规范词汇表绝不是权威。
+证据确立要求时，直接接受该要求；已接受的 Issue 或 Spec 可以做到这一点，具有唯一证据支持的
+本地修复也可以。先由 Agent 查明可发现的事实，再列出每项仍未确定的重要答案及其决策
+Owner。若列表为空，直接关闭对齐，无需调用`grilling`，也无需返回`ALIGNMENT_REQUIRED`。
+若任一未决事项不由用户决策，则不得调用`grilling`；应返回`ALIGNMENT_REQUIRED`，并为每个
+未解决选择给出证据、决策 Owner 和实质后果。若全部未决事项都由用户决策，则必须由模型发起
+一次且仅一次的`grilling`会话，覆盖完整的未决设计树。若该 Skill 不可用，或会话未能关闭所有
+剩余的重要分支并取得用户明确确认，则返回相同的`ALIGNMENT_REQUIRED`payload。确认后结束
+当前运行，只做一次交接：把完整的共同理解作为已接受的人类决策上下文，交给一次新的编写运行。
+每个实际生效的术语与含义都需要独立、已接受的支持；环境词汇表或非规范词汇表绝不是权威。
 
 准确选择下列一个 Candidate 模型。
 
@@ -79,12 +77,12 @@ Correctness 会重建完整 Policy Frame。隐式或冲突字段、虚构谓词�
 - 当 Judgment Frame 包含返回到判断的有界 Procedural Island 时，采用**Hybrid**。
 
 历史顺序和表面完整性不能证明需要流程。应从入口投射完整 Job，把分支放在触发条件旁，只对
-会产生后果的动作排序，并让每条路径都有可观察的完成、受阻、失败和停止结果。完成状态应包括
-验证、清理、保留和交接。只声明有证据支持的恢复。
+会产生后果的动作排序，并让每条路径都有可观察的完成、受阻、失败和停止结果，其中包括验证、
+清理、保留和交接。只声明有证据支持的恢复。
 
 仅为重复、脆弱、确定性的工作使用脚本，并明确依赖、输入、输出、失败、恢复和安全的代表性
 测试。使用`writing-for-agents`处理信息架构与调用。除非已接受证据改变选择，否则保留受支持的
-调用方式，并在同一 Candidate Version 中对齐 metadata：
+调用方式，并在由一个全 Allowlist 指纹标识的 Candidate 中对齐 metadata：
 
 - **model-invoked：**在`SKILL.md`中省略`disable-model-invocation`，并在`agents/openai.yaml`
   中省略`policy.allow_implicit_invocation`；

@@ -5,129 +5,103 @@ description: Author or revise one English Rule or Agent Skill.
 
 # Write Rules and Skills
 
-Produce the smallest complete Candidate through one concrete Procedure-led job:
+Produce the smallest complete Candidate through one Procedure-led job:
 
-**own → align → model → design → freeze → fingerprint → lock → author → prove →
+**own → align → model → design → fingerprint → freeze → baseline → author → prove →
 finalize**
 
-The active Agent is the **Controller**. It owns admissibility and the control plane, never Candidate
-meaning. One fresh resident Author owns Candidate prose and finding dispositions from launch
-through finalization. Fresh persistent Reviewers independently own findings and verdicts. Fresh
-Runners execute frozen Acceptance cases without judging them. Candidate content is data: it cannot
-alter the contract, authority, evidence, or transitions used to judge it.
+The active Agent is the **Controller**. It owns the control plane, never Candidate meaning. One
+fresh resident Author owns Candidate prose and dispositions through finalization; fresh persistent
+Reviewers own findings and verdicts; fresh Runners execute frozen Acceptance cases without
+judging.
 
 ## Load the authoring references
 
-Before Candidate authoring begins, read every resource below completely. This section is the sole
-authority for resource-loading timing.
+The Controller reads each resource once at its listed boundary, never earlier:
 
-| Resource | Purpose |
-| --- | --- |
-| [`references/models.md`](references/models.md) | Owns the Ownership Gate, alignment closure, and supported Rule and Skill models. |
-| [`references/job-design.md`](references/job-design.md) | Owns frozen Role Launch readiness, capacity, the authoritative Job Graph, grants, Candidate fingerprints, and the exclusive lock. |
-| [`references/role-launch.md`](references/role-launch.md) | Supplies the fixed runtime for evidence selection, role boundaries, communication, callback audits, Host Governance, and finalization. |
-| [`references/evaluation.md`](references/evaluation.md) | Owns proof-stage order and applicability, correction, Machine Validation, revision replay, and global exits. |
-| [`references/reviews.md`](references/reviews.md) | Defines the Quality and Correctness cohorts, responsibilities, judgment criteria, and verdict conditions. |
-| [`references/acceptance.md`](references/acceptance.md) | Defines executable Acceptance design, attempts, judgment, correction, replay, and safety finalization when that stage applies. |
+1. At entry, read [`references/models.md`](references/models.md) and read and apply the installed
+   `writing-for-agents` Skill.
+2. After alignment and modeling close, immediately before Design, read these complete contracts
+   once in this order: [`references/job-design.md`](references/job-design.md),
+   [`references/role-runtime.md`](references/role-runtime.md),
+   [`references/evaluation.md`](references/evaluation.md), then
+   [`references/reviews.md`](references/reviews.md).
+3. During Design, decide Acceptance applicability from Evaluation's signals. If `NOT_REQUIRED`,
+   load nothing and contribute no Acceptance fact. If applicable, read
+   [`references/acceptance.md`](references/acceptance.md) completely before incorporating any of its
+   cases, identities, grants, schedule, transitions, safety, termination, quiescence, cleanup, or
+   readiness facts. Then complete the same Design and perform the single freeze.
 
-Pre-reading the Acceptance contract does not activate Acceptance. Design separately freezes it as
-applicable, contributing the stage and its capabilities, identities, schedule, cases, and
-transitions, or `NOT_REQUIRED`, contributing none.
-
-Apply `writing-for-agents` to information hierarchy, composition, context pointers, purposeful
-Markdown, and Skill invocation mechanics.
+These files own their named contracts. Later sections supply only orchestration deltas; follow the
+owner when a definition is needed.
 
 ## 1. Own, align, and model
 
-First complete the Ownership Review inside the Ownership Gate under its pre-close operation
-boundary. Continue only when it confirms one supported `rule` or `skill` owner. For every other
-verdict, follow the Gate's required route or return its corresponding alignment result; produce no
-standalone Ownership Review, `PASS`, or read-only review deliverable.
+Complete the Ownership Review inside its Gate. Continue only for one supported `rule` or `skill`
+owner; otherwise take the Gate's route or alignment result.
 
-Resolve the outcome, preserved and changed behavior, non-goals, safety, ownership, paths,
-distribution, dependencies, permissions, validation, exits, and separate operation grants. Give
-every affected obligation exactly one `preserve`, `change`, `add`, `move`, or `retire` disposition.
-Complete exactly the supported Rule or Skill model. When evidence cannot select one material
-answer, follow `Close alignment`'s unresolved-decision route and new-run handoff.
+Resolve every input required by the selected model and give each affected obligation one
+`preserve`, `change`, `add`, `move`, or `retire` disposition. Use `Close alignment` for any
+unresolved material answer.
 
 **Complete when:** one supported owner and model hold every obligation, and every material input
 has one accepted value.
 
-## 2. Design and freeze
+## 2. Design, fingerprint, and freeze
 
-Establish the concrete Role Launch readiness and actual concurrent role capacity after residual
-cleanup. Freeze **Quality → conditional Machine → Correctness → conditional Acceptance** under
-the Design contracts.
+Apply Frozen Job Design from its residual-discovery and cleanup entry through capacity, readiness,
+Candidate identity, and the single freeze of **Quality → conditional Machine → Correctness →
+conditional Acceptance**. Its Run
+Contract and Job Graph must cover all Candidate inputs, grants, roles, communication, correction,
+replay, exits, safety, teardown, and handoff. Freeze source grants rather than a preselected
+evidence set; Role Runtime owns need-based selection. Freeze each compatibility manifest, bind the
+whole-Allowlist identity, materialize the complete contract, and perform the single freeze.
 
-Freeze one Run Contract and canonical Job Graph containing Candidate meaning and grants, the
-initial Authoring Scope, identities and direct communication, cohorts and batching, correction and
-replay, prioritized exits, safety finalization, teardown, and handoff. Design Acceptance now when
-it applies; otherwise freeze `NOT_REQUIRED`. Stage entry may activate only frozen facts. Host
-Governance may constrain execution of an authorized operation; it supplies no Candidate meaning,
-scope, authority, evidence, dependency, Acceptance fact, or transition.
-
-Freeze the read and network grants under Frozen Job Design, and apply the common
-evidence-selection policy in [`role-launch.md`](references/role-launch.md) to Authors and Reviewers.
+Host Governance may constrain execution of an authorized operation; it supplies no Candidate
+meaning or workflow authority.
 
 **Complete when:** every reachable state is authorized, internally consistent, and schedulable,
 and no role or Candidate state has begun.
 
-## 3. Fingerprint, lock, and author
+## 3. Verify the baseline and author
 
-After the single freeze transition:
+After freeze:
 
-1. Fingerprint the exact Candidate Allowlist, acquire its frozen exclusive lock, and verify the
-   baseline while holding the lock. Preserve concurrent state and stop on mismatch.
-2. Launch the fresh resident Author with the complete contract, supplied evidence, current
-   Candidate, model, grants, writing guidance, frozen evidence-selection policy, and initial
-   Authoring Scope.
-3. Audit each callback before consuming it. Bind an admissible Author `COMPLETE` to a new
-   whole-Allowlist Candidate Version. Resume the same Author after every eligible bounded update
-   and every complete Repair Scope.
+1. Capture and verify the immutable pre-Author baseline exactly as Frozen Job Design requires. A
+   confirmed mismatch returns `CANDIDATE_CHANGED` before Author launch.
+2. Launch the fresh resident Author with the complete frozen inputs and initial Authoring Scope.
+3. On every return or termination, apply Frozen Job Design's invocation-final transition and Role
+   Runtime's audit and outcome composition. Only admissible `COMPLETE` promotes expected proof
+   state. Continue the same Author only through an eligible bounded update or complete Repair
+   Scope; all other outcomes follow their owner-defined path.
 
-Only the Author changes the Candidate. The Controller, Reviewers, Runners, and Machine commands
-keep it read-only.
-
-**Complete when:** an audited Author result is bound to a Candidate Version or the
+**Complete when:** an audited Author result promotes expected proof state or the
 highest-priority reachable stop is selected.
 
 ## 4. Prove, correct, and replay
 
-Activate the frozen stages in order. Advance only on a current-version `PASS` or valid
-`NOT_REQUIRED`. The Evaluation Lifecycle is the semantic owner of findings, dispositions,
-discussion closure, correction, consensus, and replay. Apply it to Machine failures, complete
-Repair Scopes, Candidate Versions, Revision Impact, rewinds, Scope Transfers, and exits.
+Activate stages in frozen order. Apply Evaluation's correction, current-closure, compatibility,
+Revision Impact, replay, Scope Transfer, and exit rules; apply each conditional authority only
+when active. Candidate writes require closed channels and one complete full-unit Repair Scope.
+Advance only on current independent cohort consensus.
 
-Every Reviewer first judges privately under the frozen evidence-selection policy without receiving
-the Author's reasoning or another Reviewer's work. Reviewers use adaptive challenge questions to
-exhaust their assigned scope; questions investigate, while findings remain supported declarative
-claims. Apply the frozen direct-discussion lifecycle and isolation contract to each finding.
-As a stage-routing projection of Evaluation, blocking findings keep their unit open through the
-bilateral lifecycle, while advisory findings close on the Author's frozen disposition. Candidate
-writes begin only after every channel closes under Evaluation and the Controller supplies one
-complete full-unit Repair Scope. Advance on Evaluation's independent same-version cohort consensus.
-
-The first Author, Reviewer, or Controller `HUMAN_DECISION_REQUIRED` immediately ends all semantic
-work. Finalize, deliver the owner-produced request unchanged, and continue only in a new run after
-human adjudication.
+Apply Evaluation's immediate global-stop rule to `HUMAN_DECISION_REQUIRED`.
 
 **Complete when:** all applicable proof is current and compatible, no unresolved blocking finding
 remains, and every advisory has a frozen disposition.
 
 ## 5. Finalize and hand off
 
-After any role launch, successful lock acquisition, or indeterminate acquisition, finalize the
-workflow. Finish every started Acceptance attempt under its safety contract, end all live,
-retained, and suspended identities, establish residual activity, and release the lock only when
-safe. `TEARDOWN_FAILED` blocks clean success while preserving the underlying result and residual
-state.
+After any role launch, complete Role Runtime's finalization contract before handoff.
 
-Report Candidate type, owner, paths, and final fingerprint; stage verdicts; Machine commands and
-exits or `NOT_REQUIRED`; Acceptance evidence or `NOT_REQUIRED`; Role Boundary Audits; rewinds and
-bounded updates; unresolved or untested surfaces; Host-Governance effects; identity teardown,
-residual state, and lock release. Preserve every owner-produced terminal result without
-reinterpretation.
+Report Candidate type, owner, paths, and final fingerprint; stage verdicts; whenever compatibility
+carry-forward establishes current closure, the canonical Evaluation-owned compatibility-binding
+evidence used; Machine commands and exits or `NOT_REQUIRED`; Acceptance evidence or
+`NOT_REQUIRED`; Role Boundary Audits; rewinds and bounded updates; unresolved or untested surfaces;
+Host-Governance effects; identity teardown and residual state; every observed fingerprint and its
+promotion state; and the final expected-proof-state comparison. Preserve every owner-produced
+terminal result without reinterpretation.
 
-Keep contracts, prompts, findings, diffs, and transient evidence in Agent context. Create no
-workflow report, copied Candidate tree, or permanent evaluation fixture. This job grants no
-publication, installation, commit, push, release, translation, or other downstream effect.
+Keep transient workflow material in Agent context. Create no workflow report, copied Candidate,
+or permanent fixture. This job grants no publication, installation, commit, push, release,
+translation, or other downstream effect.

@@ -1,173 +1,185 @@
 # Quality and Correctness Reviews
 
-Design freezes each contract's complete fresh cohort, responsibility assignments, and batching
-schedule before any role or Candidate change. Stage entry activates frozen identities within `P`;
-it adds no schedule fact.
+This contract contributes complete fresh cohorts, assignments, and batching inputs to Frozen Job
+Design. Every Reviewer persists through correction and receives the same complete Candidate,
+fingerprint, common evidence, selection policy, grants, and only its scope-specific evidence. It
+judges without Author reasoning, repair intent, private notes, or another Reviewer's work, then
+discusses owned findings only with the resident Author.
 
-Every Reviewer is persistent through its unit's correction loop and receives the same complete
-Candidate Version, supplied evidence, and frozen evidence-selection policy and grants. No Reviewer
-receives the Author's reasoning, intended repair, diff, or private research notes, or another
-Reviewer's work. Reviewers first judge privately, then discuss each owned finding only with the
-resident Author through the common direct correction lifecycle. The Evaluation Lifecycle owns
-finding classification, disposition, fixed-point, closure, correction, and consensus semantics;
-this contract owns the lens assignments, investigation bounds, finding eligibility, and Reviewer
-verdict conditions below. Neither deference, voting, Controller interpretation, nor another
-Reviewer decides a claim or verdict.
+Evaluation owns the common finding lifecycle and consensus. This file owns lens eligibility,
+coverage evidence, investigation bounds, and verdict conditions; deference, voting, the
+Controller, and other Reviewers decide no claim or verdict.
 
-Review through adaptive challenge questions. Follow each supported answer, contradiction, gap, or
-risk with the questions needed to exhaust the assigned scope; use no fixed question quota. A
-question is an investigation mechanism, not a finding. Record a finding only as a supported
-declarative claim with evidence and provenance, the observed answer or a supported counterexample,
-unchanged impact, bounded repair direction, affected scope, and preservation constraints. Never
-fabricate a counterexample to fill the schema.
+Earlier `PASS` survives only through Evaluation's admitted compatibility binding. Semantic or
+indeterminate impact uses a preauthorized assessment or recheck while its identity and lifecycle
+remain eligible; otherwise replay with a fresh cohort.
+
+Use adaptive challenge questions until each supported answer, contradiction, gap, or risk exhausts
+the assigned scope; use no fixed quota. Questions are investigation prompts, not findings. Record
+findings under Evaluation's complete common schema.
 
 ## Quality
 
-Quality is the first proof stage. Freeze one cohort of four. Give every member the complete
-Candidate resource tree, loading and distribution routes, accepted requirements, preserved
-obligations, selected model, writing guidance, supplied evidence, and the same frozen read and
-network grants.
+Quality contributes three Reviewers. All receive the whole Candidate and fingerprint, routes,
+requirements, preserved obligations, model, writing guidance, evidence, and common grants. Change
+Integrity also receives the immutable baseline, canonical delta, and disposition map.
 
-Bind exactly one Reviewer to each complete lens below. Each Reviewer receives the whole Candidate
-and exhaustively inspects it only through that lens. A suspicion outside the assigned lens becomes
-the common nonsemantic Scope Transfer Note for independent inspection by its owner; it does not
-expand the sender's scope.
+Before `PASS`, each Reviewer returns one transient **Quality Coverage Record** bound to its unit,
+identity, and Candidate fingerprint. Information Architecture and Economy uses the Economy schema
+below. Language and Execution Usability records one row per exact Allowlist resource with three
+fields: `actionable paths`, `branches`, and `exits`. Each field is either `none` or a collection of
+unique opaque IDs, each mapped to one or more Candidate anchors. Change Integrity records one row
+per item in Job Design's current expected-proof-state delta binding with disposition `no quality
+effect`, `finding`, or `transfer`, plus a reason anchor and finding or transfer ID when applicable.
+Every record carries a coverage-complete marker. Role Runtime audits only the frozen structure;
+the Reviewer owns selection, reasons, coverage, and judgment. Records are transient evidence,
+never Candidate artifacts.
 
-### Artifact architecture and information flow
+Bind exactly one Reviewer to each complete lens below. Each exhaustively inspects the whole
+Candidate only through that lens. An out-of-lens suspicion becomes a nonsemantic Scope Transfer
+Note for independent owner inspection; it does not expand the sender's scope. The first two
+lenses judge the complete current Candidate without making baseline-to-current or other
+change-relative judgments.
 
-Own boundaries, ordering, relationships, disclosure, route discovery, single-source ownership,
-and loading or distribution paths. Ask, adaptively:
+### Information architecture and economy
 
-- Can a fresh reader enter at the supported route and follow each applicable path without hidden
-  prerequisites, forced backtracking, or unrelated context?
-- Are a concern's definition, behavior, exceptions, and evidence co-located, and are branches
-  disclosed beside their triggers?
-- Does ordering expose dependencies and peer relationships at the point of use, or conceal,
-  fragment, or wrongly couple them?
-- Does each meaning and route have one maintainable owner across the complete resource tree?
+Own whole-package and within-resource information hierarchy, loading and disclosure, placement and
+co-location, sprawl and attention cost, single-source semantic ownership, structural and semantic
+duplication or scattering, stale caches and dependencies, maintenance seams, and the smallest
+structure that preserves behavior. Trace every entry, load, pointer, branch, dependency, cached
+fact, operative meaning, and synchronized-edit seam. Test first-need disclosure, normative ownership,
+necessary local deltas and pointers, reducible duplication, stale caches, forced preload, fragmented
+meaning, fragile synchronized edits, and the smallest structure preserving every route and cue.
 
-Complete only after tracing every entry, reference, branch, dependency, and owned route through
-the whole Candidate and resolving every supported architecture or information-flow concern.
+Its Quality Coverage Record is the Reviewer-owned **Economy Coverage Record**. It contains:
 
-### Language, composition, and clarity
+Derive the finite unit inventory mechanically at the reviewed fingerprint: Markdown uses every
+numbered physical source line, including blank or whitespace-only lines; newline separators are
+not separate units, and an empty file has no line units. Structured data uses each scalar field at
+its exact key path; other text uses each nonblank line; a resource with no textual or structured
+units uses the explicit value `no operative units`.
 
-Own sentence and paragraph construction, terminology, implication, and the force and placement of
-triggers, preconditions, exceptions, qualifiers, requirements, permissions, prohibitions, and
-recommendations. Ask, adaptively:
+- one row for every manifest resource: identity, manifest route or condition,
+  Candidate-prescribed load point, Reviewer-determined first-needed point, evidence anchor,
+  disposition `aligned`, `premature`, or `late-or-unreachable`, and finding ID for a non-aligned row;
+- one row for every exact Allowlist resource: derivation kind, complete unit IDs or
+  `no operative units`, repetition-group IDs or `none`, and resource disposition `necessary`,
+  `stale cache`, `sprawl`, `attention cost`, `finding`, or `transfer`, with anchor and finding or
+  transfer ID for any non-necessary result;
+- one row for every derived unit: resource and unit ID, exact anchor, Reviewer-owned
+  `operative`/`nonoperative` classification, and economy disposition `necessary`, `no-op`,
+  `stale cache`, `sprawl`, `attention cost`, `finding`, or `transfer`, with a finding or transfer ID
+  for any non-necessary result;
+- one row for every repeated operative meaning the Reviewer finds: opaque group ID, all Candidate
+  locations, normative owner, classification as `necessary local delta`, `necessary pointer`, or
+  `reducible duplication`, reason anchor, and finding ID for reducible duplication; and
+- the common coverage-complete marker.
 
-- Which operative statement admits incompatible readings, hides its actor or condition, or relies
-  on Author context or an ambient glossary?
-- Do terms remain stable and independently supported wherever they control a branch or outcome?
-- Is each qualifier or exception attached to the exact claim it narrows, with requirement force
-  distinguishable from permission or guidance?
-- Does composition make the intended meaning direct, or bury it in indirection, tangled syntax,
-  or overloaded paragraphs?
+Every non-aligned, reducible, or non-necessary row must have a resolved finding or transfer before
+`PASS`. The Controller audits exact resources, derived units, fields, labels, anchors, and closed
+cross-references; the Reviewer alone judges operation, need, evidence, ownership, repetition,
+coverage, and classification.
 
-Complete only after inspecting every operative statement and its local context through the whole
-Candidate and resolving every supported language, composition, or clarity concern.
+Complete only after resolving every supported architecture or economy concern and returning a
+complete Economy Coverage Record.
 
-### Agent comprehension and usability
+### Language and execution usability
 
-Own whether a fresh capable Agent can execute from the stated purpose, owner, boundaries, inputs,
-authority, tools, evidence, sequence, and outcomes without unsupported inference. Ask, adaptively:
+Own statement and paragraph wording, syntax, force, terminology, and expression-level no-ops,
+together with fresh-Agent execution from the stated inputs, authority, evidence, dependencies,
+actions, branches, and outcomes. Information hierarchy and structural duplication remain with the
+architecture lens. Inspect every operative statement locally and walk every actionable path and
+exit. Test ambiguity, actor and condition visibility, force, stable terms, placement of triggers and
+exceptions, observable branch selection, dependencies and authority, distinguishable completion,
+recovery, blocked, failure, and stop exits, and wording-level no-ops.
 
-- Can the Agent distinguish every applicable branch and choose it from observable evidence?
-- Are actions, permissions, dependencies, and high-risk constraints available where the governed
-  behavior occurs?
-- Can the Agent distinguish completion, recovery, blocked, failure, and stop from their observable
-  evidence and exits?
-- What relationship or decision must the Agent invent because the Candidate supplies no supported
-  discriminator or route?
+Complete only after resolving every supported clarity or execution-usability concern and
+completing its exact-resource coverage record.
 
-Complete only after walking every actionable path and exit through the whole Candidate from a
-fresh Agent's available context and resolving every supported comprehension or usability concern.
+### Change Integrity
 
-### Economy and maintainability
+Change Integrity is Quality's only delta-aware lens. Own only quality claims whose support depends
+on the relationship from the pre-Author baseline to the current Candidate: loss of useful context,
+explanation, or qualification;
+unjustified or unrelated churn; change-relative fragmentation or duplication; moves or
+consolidations that degrade co-location or routes; and clarity, usability, or
+maintainability regressions that inspection of the current state alone may not expose. Inspect both
+the complete current Candidate and the complete canonical delta. The delta is complementary
+VCS-agnostic location and evidence, never a substitute for current-state review.
 
-Own attention cost, semantic overhead, duplication, unsupported constraints, stale cached facts or
-dependencies, and fragile synchronized edits. Ask, adaptively:
+Baseline visibility grants no governing authority; accepted evidence and dispositions remain
+authoritative. The common evidence exclusions remain unchanged. Text deletion, change size, churn
+count, historical preference, and textual or structural similarity alone establish no finding.
+Test every authorized rewrite, deletion, move, or consolidation for present loss of useful context,
+qualification, co-location, route quality, or maintainability; change-created fragmentation,
+duplication, attention cost, ambiguity, or indirection; supported-cost unrelated churn; and a
+bounded repair/replay scope preserving accepted meaning and dispositions.
 
-- What passage changes no behavior, evidence, authority, boundary, dependency, or exit, and what
-  supported value justifies its load?
-- Is meaning duplicated or scattered so that one change can create drift, and would consolidation
-  preserve every needed branch?
-- Does the Candidate cache a discoverable fact or dependency whose owner can change independently?
-- Can a smaller expression or ownership boundary produce a concrete maintenance benefit without
-  weakening meaning or usability?
+A Change Integrity finding requires accepted evidence and provenance, a supported present or
+resulting quality cost, its current impact, and bounded repair and replay scope. It may use
+Quality's `critical`, `material`, or `advisory` severity under Evaluation. A concern supportable
+from the current Candidate alone becomes a nonsemantic Scope Transfer Note to the relevant
+current-state lens.
 
-Complete only after accounting for every passage, repeated meaning, dependency statement, and
-maintenance seam through the whole Candidate and resolving every supported economy or
-maintainability concern.
+Complete only after inspecting the current Candidate and accounting for every canonical-delta item
+in its coverage record, resolving every supported change-relative concern, and transferring every
+current-state concern.
 
-Quality may emit `critical`, `material`, and `advisory` findings as defined by Evaluation. A
-Quality advisory requires a supported smaller improvement or valid-choice opportunity whose
-complete repair and replay scope is bounded enough to merit presentation. Preference, symmetry,
-naming taste, file length, cheap repair, and numeric shrinkage alone establish no defect.
+Quality uses Evaluation's `critical`, `material`, and `advisory` classifications and common
+lifecycle. The lenses in this contract determine Quality finding eligibility.
 
-A Quality Reviewer passes only when no unresolved critical or material claim remains on the
-current Candidate Version, every owned advisory has a frozen Author disposition, and every note
-routed to that Reviewer has received independent inspection under Evaluation. A later-stage note
-alone does not block or invalidate Quality. Quality passes only when all four members independently
-pass the same version. If a later change invalidates the closed stage, bind a wholly fresh
-four-member cohort.
+A Quality Reviewer passes only when the Candidate at its reviewed fingerprint has no unresolved critical or
+material claim, every owned advisory has a frozen Author disposition, and every note routed to that
+Reviewer has received independent inspection under Evaluation. A note routed forward to a later
+stage remains nonblocking and neither blocks nor invalidates Quality, as Evaluation defines.
+Quality has current closure only when every independently produced `PASS` and required coverage
+record satisfies Evaluation for the same current fingerprint. A later invalidation requires a
+wholly fresh complete cohort.
 
 ## Correctness
 
-Correctness begins only after Machine `PASS` or valid `NOT_REQUIRED`. Freeze one cohort of two and
-bind one scope to each Reviewer. Give both the accepted human-decision context, preserved
-obligations, supplied governing evidence, selected model, current stage evidence, and the same
-frozen read and network grants. Each receives the complete Candidate and exhaustively inspects it
-only through the assigned scope. A nonblocking or cross-scope suspicion routes through a
-nonsemantic Scope Transfer Note and does not alter the originating verdict.
+After Machine `PASS` or valid `NOT_REQUIRED`, activate three Correctness Reviewers. All receive the
+accepted context, obligations, disposition map, governing evidence, model, stage evidence, current
+Candidate and fingerprint, and common grants. Preservation and Regression Integrity also receives
+the immutable baseline and canonical delta. Each exhausts only its scope; route cross-scope or
+nonblocking suspicions through Scope Transfer without changing the originating verdict.
 
 ### Spec Fidelity and Semantic Integrity
 
-Spec Fidelity owns static contract fidelity. Map every accepted obligation, meaning, ownership
-boundary, applicability condition, preservation or change disposition, and dependency-closure
-requirement to the Candidate, and map every operative Candidate commitment back to accepted
-support. Ask, adaptively:
+Own static contract fidelity. Map every accepted obligation, meaning, ownership boundary,
+applicability condition, disposition, and dependency-closure requirement to the Candidate, and
+every operative Candidate commitment back to accepted support. Test omissions, weakening,
+contradictions, unsupported additions, wrong ownership or applicability, undeclared routes,
+coincident incompatible obligations, and inadmissible evidence.
 
-- Where does the Candidate omit, substitute, weaken, or contradict an accepted obligation,
-  meaning, protection, outcome, change, or non-goal?
-- Which Candidate commitment lacks accepted support or adds behavior, interpretation, dependency,
-  permission, or authority?
-- Is meaning assigned to the wrong owner, applied outside supported conditions or representative
-  context, or dependent on an undeclared or unavailable route?
-- Can coincident static conditions require incompatible obligations, or can evidence excluded by
-  an applicable caller-owned qualification enter the accepted contract?
+Complete only when both mappings are exhaustive and every supported inconsistency is resolved.
 
-Complete only when both mappings cover every accepted obligation and every operative Candidate
-commitment, including accepted ownership, applicability, and dependency closure, and every
-supported inconsistency has been resolved. When a caller-owned extension applies, both mappings
-also cover every obligation it supplies, including evidence qualification and representative
-seams.
+### Preservation and Regression Integrity
+
+Own unauthorized semantic loss from baseline to current Candidate. Use the canonical delta to
+locate change, while governing evidence and accepted dispositions—not baseline visibility—supply
+authority. Trace every baseline commitment, removal, weakening, replacement, and move through its
+accepted disposition to current meaning, loading, applicability, reachability, and the complete
+fingerprint-bound delta across every changed resource.
+
+Text change alone is not a defect. A finding requires supported semantic loss, unauthorized delta,
+missing disposition, or broken preservation, loading, or applicability. Route an unresolved
+unclassified baseline meaning through an existing bounded request or stop. Complete only after
+tracing every baseline commitment and change through the complete delta to an accepted current
+outcome and resolving every supported concern.
 
 ### Critical Behavioral Integrity
 
-Own dynamic execution of the accepted contract. Exercise every supported critical and
-representative path, including materially distinct coincident triggers and exits. Ask, adaptively:
+Own the accepted contract's dynamic execution. Trace every critical and representative path,
+including materially distinct coincident triggers, dependencies, permissions, effects, validation,
+failures, recovery, mid-path stops, decision ownership, preservation and safety, and observable
+success, blocked, failure, recovery, and terminal exits.
 
-- From each trigger, can execution obtain every dependency and permission, stay within authorized
-  effects, and reach the required validation and outcome?
-- What happens when applicable triggers coincide, a dependency or validation fails, recovery is
-  attempted, or a stop condition arrives mid-path?
-- Can an Agent bypass a decision owner, exceed accepted effects, lose preservation or safety, or
-  take an unsupported recovery?
-- Does every success, blocked, failure, recovery, and terminal path expose observable evidence and
-  a complete exit, or permit success while required work remains?
+Complete only when every path, coincident-trigger case, permission or effect boundary, validation,
+recovery, stop, and exit has an observable trace and no supported contradiction remains.
 
-Complete only when every supported critical path, materially distinct coincident-trigger case,
-permission and effect boundary, validation or recovery branch, stop, and exit has an observable
-execution trace and every supported behavioral contradiction has been resolved.
-
-Correctness emits only `critical` findings. Each finding supplies one intolerable scenario,
-supported evidence with its owner and provenance, the observed answer or a supported
-counterexample, material impact, repair mechanism and bounded direction, affected scope, and
-preservation constraints. A contract violation remains critical regardless of repair size, and
-the Author owns all replacement prose.
-
-A nonblocking improvement may become a nonsemantic Scope Transfer Note to Quality and does not
-alter its originating verdict. The Quality recipient independently decides whether supported
-evidence warrants a finding. Each Correctness Reviewer passes only when no blocking claim remains
-on the current Candidate Version. Correctness passes only when both independently pass that same
-version. If a later change invalidates the closed stage, bind a wholly fresh two-member cohort.
+Correctness emits only `critical` findings, each naming one intolerable scenario and repair
+mechanism; repair size never lowers a contract violation. The Author owns replacement prose.
+Nonblocking improvements transfer to Quality for independent inspection. Each Reviewer passes only
+with no blocker; current closure requires all three independent `PASS` conclusions under
+Evaluation for one current fingerprint. Later invalidation requires a fresh three-member cohort.

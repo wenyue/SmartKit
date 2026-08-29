@@ -1,139 +1,150 @@
 # Quality 与 Correctness Review
 
-在启动任何角色或改变 Candidate 前，Design 会冻结每份合同的完整全新 cohort、职责分配和
-分批调度。阶段入口在`P`内激活已冻结身份；它不增加调度事实。
+本合同向 Frozen Job Design 贡献完整全新 cohort、分配与分批输入。每个 Reviewer 在修正期间保持
+身份，并接收同一份完整 Candidate、指纹、共同证据、选择政策与授权，此外只接收自己的 scope
+专属证据。它不接收 Author 推理、修复意图、私有笔记或其他 Reviewer 的工作，先作判断，再只与
+常驻 Author 讨论自己负责的 finding。
 
-每个 Reviewer 在其单元的修正循环中保持身份，并接收同一份完整 Candidate Version、已提供的
-证据，以及已冻结的证据选择政策与授权。任何 Reviewer 都不会收到 Author 的推理、预期修复、
-diff、私有研究笔记或其他 Reviewer 的工作。Reviewer 先私下判断，随后仅通过通用直接修正生命
-周期，与常驻 Author 讨论自己负责的 finding。Evaluation Lifecycle 负责 finding 的分类、处置、
-不动点、关闭、修正与共识语义；本合同负责下文的视角分配、调查边界、finding 资格和 Reviewer
-裁决条件。服从、投票、Controller 解释或其他 Reviewer 都不能决定主张或裁决。
+Evaluation 负责共同 finding 生命周期与共识。本文件负责视角资格、coverage 证据、调查边界与
+裁决条件；服从、投票、Controller 或其他 Reviewer 都不能决定主张或裁决。
 
-通过自适应的挑战问题进行 Review。针对每个有支持的答案、矛盾、缺口或风险，继续提出为穷尽所
-分配 scope 而需要的问题；不设固定问题数量。问题是调查机制，不是 finding。只有当一项陈述性
-主张包含有支持的证据及来源、观察到的答案或有支持的反例、Candidate 不变时的影响、有界修复
-方向、受影响 scope 和保留约束时，才将其记录为 finding。绝不能为了填满 schema 而捏造反例。
+较早的`PASS`只有通过 Evaluation 接纳的兼容性绑定才能继续有效。语义影响或不确定影响在身份与
+生命周期仍符合条件时采用预授权的评估或复查；否则使用全新 cohort 重放。
+
+使用自适应挑战问题，直到每个有支持的答案、矛盾、缺口或风险都穷尽所分配的 scope；不设固定
+数量。问题是调查提示，不是 finding。按照 Evaluation 的完整通用 schema 记录 finding。
 
 ## Quality
 
-Quality 是第一个证明阶段。冻结一个四人 cohort。向每个成员提供完整 Candidate 资源树、加载
-与分发路径、已接受要求、保留义务、所选模型、写作指引、已提供的证据，以及相同的已冻结读取
-与网络授权。
+Quality 贡献三名 Reviewer。所有成员均接收完整 Candidate 与指纹、路径、要求、保留义务、模型、
+写作指引、证据与共同授权。Change Integrity 还接收不可变 baseline、规范 delta 与处置图。
 
-把下列每个完整视角准确绑定给一名 Reviewer。每名 Reviewer 都接收完整 Candidate，并且只通过
-所分配的视角对其进行穷尽检查。如果发现分配视角之外的疑点，应生成通用、不含语义的 Scope
-Transfer Note，由相应 Owner 独立检查；这不会扩大发送者的 scope。
+在`PASS`前，每名 Reviewer 都返回一份绑定到其单元、身份与 Candidate 指纹的临时**Quality
+Coverage Record**。Information Architecture and Economy 使用下述 Economy schema。Language
+and Execution Usability 为每项准确 Allowlist 资源记录一行，包含三个字段：`actionable paths`、
+`branches`和`exits`。每个字段要么是`none`，要么是一组唯一不透明 ID，并且每个 ID 映射到一个
+或多个 Candidate 锚点。Change Integrity 为 Job Design 当前 expected-proof-state delta 绑定中的
+每个 item 记录一行，其处置为`no quality effect`、`finding`或`transfer`；适用时还包含理由锚点
+以及 finding 或 transfer ID。每份记录都带有 coverage-complete 标记。Role Runtime 只审计冻结
+结构；Reviewer 负责选择、理由、coverage 与判断。记录是临时证据，绝不是 Candidate 制品。
 
-### 制品架构与信息流
+把下列每个完整视角准确绑定给一名 Reviewer。每名 Reviewer 都只通过该视角对完整 Candidate
+进行穷尽检查。视角之外的疑点应成为不含语义的 Scope Transfer Note，由相应 Owner 独立检查；
+这不会扩大发送者的 scope。前两个视角只判断完整的当前 Candidate，不作 baseline-to-current 或
+其他相对于变更的判断。
 
-负责边界、顺序、关系、信息披露、路由发现、单一来源归属，以及加载或分发路径。自适应地询问：
+### 信息架构与经济性
 
-- 全新读者能否从受支持的路由进入，并在没有隐藏前置条件、被迫来回查找或无关上下文的情况下，
-  沿着每条适用路径前进？
-- 一个关注点的定义、行为、例外与证据是否放在一起，而且分支是否在其触发条件旁披露？
-- 顺序是否在使用点展现依赖与同级关系，还是会掩盖、拆散或错误耦合这些关系？
-- 在完整资源树中，每项含义和每条路由是否都有一个可维护的 Owner？
+负责整个 package 与资源内部的信息层级、加载与披露、放置与共同定位、内容蔓延与注意力成本、
+单一来源语义归属、结构或语义重复与散落、陈旧缓存与依赖、维护接缝，以及保留行为的最小结构。
+追踪每个入口、加载、指针、分支、依赖、缓存事实、操作性含义与同步编辑接缝。检查首次需要时
+披露、规范归属、必要的局部增量与指针、可减少的重复、陈旧缓存、强制预加载、碎片化含义、脆弱
+同步编辑，以及保留每条路径与提示的最小结构。
 
-只有在完整 Candidate 中追踪每个入口、引用、分支、依赖和自有路由，并解决所有有支持的架构或
-信息流问题后，才算完成。
+该 Reviewer 负责的 Quality Coverage Record 是**Economy Coverage Record**，内容如下：
 
-### 语言、组合与清晰度
+在所审指纹下机械派生有限单元清单：Markdown 使用源文件中的每一条有编号物理行，包括空行或
+仅含空白的行；换行分隔符不另算单元，空文件没有行单元。结构化数据使用准确 key path 下的每个
+scalar field；其他文本使用每个非空行；不包含文本或结构化单元的资源使用显式值
+`no operative units`。
 
-负责句子与段落构造、术语、隐含意义，以及触发条件、前置条件、例外、限定词、要求、权限、禁止和
-建议的力度与位置。自适应地询问：
+- 每项 manifest 资源一行：身份、manifest 路径或条件、Candidate 规定的加载点、Reviewer 判定的
+  首次需要点、证据锚点、处置`aligned`、`premature`或`late-or-unreachable`；非 aligned 行还需
+  finding ID；
+- 每项准确 Allowlist 资源一行：派生类别、完整 unit ID 或`no operative units`、repetition-group
+  ID 或`none`，以及资源处置`necessary`、`stale cache`、`sprawl`、`attention cost`、`finding`
+  或`transfer`；任何非 necessary 结果还需锚点以及 finding 或 transfer ID；
+- 每个派生单元一行：资源与 unit ID、准确锚点、由 Reviewer 负责的`operative`/`nonoperative`
+  分类，以及 economy 处置`necessary`、`no-op`、`stale cache`、`sprawl`、`attention cost`、
+  `finding`或`transfer`；任何非 necessary 结果还需 finding 或 transfer ID；
+- Reviewer 发现的每项重复操作性含义一行：不透明 group ID、所有 Candidate 位置、规范 Owner、
+  分类`necessary local delta`、`necessary pointer`或`reducible duplication`、理由锚点，以及可减少
+  重复的 finding ID；以及
+- 通用 coverage-complete 标记。
 
-- 哪项操作性陈述允许不兼容的理解、隐藏执行者或条件，或者依赖 Author 上下文或环境词汇表？
-- 术语在控制分支或结果的每个位置是否保持稳定，并且都得到独立支持？
-- 每项限定或例外是否准确附着于它所收窄的主张，而且要求的力度能否与权限或指引区分？
-- 文本组合是否直接表达预期含义，还是把含义埋在间接表达、纠结句法或负载过重的段落中？
+每个非 aligned、可减少或非 necessary 行都必须在`PASS`前有已解决的 finding 或 transfer。
+Controller 审计准确资源、派生单元、字段、标签、锚点与闭合交叉引用；只有 Reviewer 判断操作性、
+必要性、证据、归属、重复、coverage 与分类。
 
-只有在完整 Candidate 中检查每项操作性陈述及其局部上下文，并解决所有有支持的语言、组合或
-清晰度问题后，才算完成。
+只有解决每个有支持的架构或经济性问题，并返回完整 Economy Coverage Record 后，才算完成。
 
-### Agent 理解与可用性
+### 语言与执行可用性
 
-负责确认一个全新、有能力的 Agent 能否根据已陈述的目的、Owner、边界、输入、权威、工具、
-证据、顺序和结果执行工作，而无需作出无依据推断。自适应地询问：
+负责陈述与段落的措辞、句法、力度、术语与表达层 no-op，以及全新 Agent 根据已陈述的输入、权威、
+证据、依赖、动作、分支和结果执行工作的能力。信息层级与结构重复仍由架构视角负责。局部检查每项
+操作性陈述，并遍历每条可执行路径与出口。检查歧义、执行者与条件是否可见、力度、术语稳定性、
+触发条件与例外的位置、可观察的分支选择、依赖与权威、可区分的完成、恢复、受阻、失败和停止
+出口，以及措辞层 no-op。
 
-- Agent 能否区分每条适用分支，并根据可观察证据作出选择？
-- 动作、权限、依赖和高风险约束是否出现在其所管辖行为发生的位置？
-- Agent 能否根据可观察证据与出口区分完成、恢复、受阻、失败和停止？
-- Candidate 没有提供受支持的判别信息或路由，因而迫使 Agent 自行编造了什么关系或决策？
+只有解决每个有支持的清晰度或执行可用性问题，并完成准确资源 coverage record 后，才算完成。
 
-只有从全新 Agent 可用的上下文出发，遍历完整 Candidate 中每条可执行路径和出口，并解决所有
-有支持的理解或可用性问题后，才算完成。
+### Change Integrity
 
-### 经济性与可维护性
+Change Integrity 是 Quality 中唯一感知 delta 的视角。它只负责必须依据 pre-Author baseline 与
+当前 Candidate 的关系才能成立的质量主张：有用上下文、解释或限定的缺失；不合理或
+无关的 churn；相对于变更产生的碎片化或重复；使共同定位或路由退化的移动或合并；以及只检查
+当前状态可能无法暴露的清晰度、可用性或可维护性回归。它同时检查完整当前
+Candidate 与完整规范 delta。delta 只提供不依赖 VCS 的辅助定位与证据，绝不能替代当前状态 review。
 
-负责注意力成本、语义开销、重复、不受支持的约束、陈旧缓存事实或依赖，以及脆弱的同步编辑。
-自适应地询问：
+看到基线不会赋予管辖权威；已接受证据和处置仍是权威。通用证据排除项保持不变。仅凭文本删除、
+变更规模、churn 数量、历史偏好或文本/结构相似性，不能形成 finding。检查每项已授权的改写、
+删除、移动或合并是否造成有用上下文、限定、共同定位、路由质量或可维护性的当前损失；是否产生
+由变更导致的碎片化、重复、注意力成本、歧义或间接表达；是否存在带受支持成本的无关 churn；
+以及是否有能保留已接受含义与处置的有界修复/重放 scope。
 
-- 哪段文字没有改变任何行为、证据、权威、边界、依赖或出口；什么受支持的价值足以证明其阅读
-  负担合理？
-- 含义是否重复或分散，以致一次变更可能造成漂移；合并后能否保留所有必要分支？
-- Candidate 是否缓存了一个可发现的事实或依赖，而其 Owner 可以独立改变它？
-- 更小的表达或归属边界能否在不削弱含义或可用性的前提下，带来具体维护收益？
+Change Integrity finding 必须具有已接受证据及其来源、有支持的当前或由变更造成的质量成本、当前影响，
+以及有界修复与重放 scope。它可以使用 Evaluation 下 Quality 的`critical`、`material`或
+`advisory`严重级别。若某个问题仅凭当前 Candidate 就能得到支持，则应生成不含语义的 Scope
+Transfer Note，交给相应的当前状态视角。
 
-只有在完整 Candidate 中核查每段文字、每项重复含义、每条依赖陈述和每个维护接缝，并解决所有
-有支持的经济性或可维护性问题后，才算完成。
+只有在检查当前 Candidate，并在 coverage record 中核算每项规范 delta item、解决每个有支持的
+变更相对问题、转移每个当前状态问题后，才算完成。
 
-Quality 可以产生 Evaluation 所定义的`critical`、`material`和`advisory`finding。Quality
-advisory 必须提出有支持的较小改进或有效选择机会，而且其完整修复与重放 scope 足够有界，值得
-呈现。仅凭偏好、对称性、命名品味、文件长度、修复便宜或数字缩减，不能证明存在缺陷。
+Quality 使用 Evaluation 的`critical`、`material`和`advisory`分类及共同生命周期。本合同中的
+各个视角决定 Quality finding 资格。
 
-只有当前 Candidate Version 上不存在尚未解决的 critical 或 material 主张、自己负责的每项
-advisory 均有冻结的 Author 处置，而且路由给该 Reviewer 的每条 note 都已根据 Evaluation 得到
-独立检查，Quality Reviewer 才通过。仅有后续阶段的 note 不会阻塞或使 Quality 失效。只有四名
-成员对同一版本分别独立通过，Quality 才通过。后续变更使已关闭阶段失效时，应绑定全新的完整
-四人 cohort。
+只有所审 Candidate 指纹上不存在尚未解决的 critical 或 material 主张、自己负责的每项
+advisory 均有冻结的 Author 处置，而且每条已路由 note 都已根据 Evaluation 得到独立检查，
+Quality Reviewer 才通过。路由给后续阶段的 note 仍不阻塞，而且按照 Evaluation 的定义既不阻塞
+Quality，也不会使其失效。只有每项独立生成的`PASS`与所需 coverage record 都为同一个当前指纹
+满足 Evaluation，Quality 才达到当前闭合。后续失效需要成员完全不同的全新完整 cohort。
 
 ## Correctness
 
-Correctness 仅在 Machine `PASS`或有效`NOT_REQUIRED`后开始。冻结一个两人 cohort，并为每个
-Reviewer 绑定一个 scope。向两者提供已接受的人类决策上下文、保留义务、已提供的管辖证据、
-所选模型、当前阶段证据，以及相同的已冻结读取与网络授权。每个 Reviewer 都接收完整 Candidate，
-并且只通过所分配的 scope 对其进行穷尽检查。非阻塞或跨 scope 疑点通过不含语义的 Scope
-Transfer Note 路由，不改变发送者的裁决。
+Machine `PASS`或有效`NOT_REQUIRED`后，激活三名 Correctness Reviewer。所有成员均接收已接受
+上下文、义务、处置图、管辖证据、模型、阶段证据、当前 Candidate 与指纹，以及共同授权。
+Preservation and Regression Integrity 还接收不可变 baseline 与规范 delta。每名 Reviewer 仅
+穷尽自己的 scope；跨 scope 或非阻塞疑点通过 Scope Transfer 路由，且不改变原裁决。
 
 ### Spec Fidelity and Semantic Integrity
 
-Spec Fidelity 负责静态合同保真度。把每项已接受的义务、含义、归属边界、适用条件、保留或改变
-处置，以及依赖闭包要求映射到 Candidate；再把 Candidate 的每项操作性承诺反向映射到已接受的
-支持。自适应地询问：
+负责静态合同保真度。把每项已接受的义务、含义、归属边界、适用条件、处置和依赖闭包要求映射
+到 Candidate；再把 Candidate 的每项操作性承诺反向映射到已接受支持。检查遗漏、弱化、矛盾、
+无支持的新增、错误归属或适用性、未声明路由、同时成立但不兼容的义务，以及不符合条件的证据。
 
-- Candidate 在哪里遗漏、替换、弱化或违背了已接受的义务、含义、保护、结果、变更或非目标？
-- 哪项 Candidate 承诺缺少已接受的支持，或增加了行为、解释、依赖、权限或权威？
-- 含义是否被分配给错误的 Owner、应用在不受支持的条件或代表性上下文之外，或依赖未声明或
-  不可用的路由？
-- 同时成立的静态条件是否可能要求不兼容的义务，或者被适用的调用方自有限定排除的证据是否
-  可能进入已接受合同？
+只有两组映射都穷尽完整，并解决每个有支持的不一致，才算完成。
 
-只有两组映射覆盖每项已接受义务与 Candidate 的每项操作性承诺，包括已接受的归属、适用性和
-依赖闭包，而且每个有支持的不一致都已解决，才算完成。当调用方自有扩展适用时，两组映射还要
-覆盖它提供的每项义务，包括证据限定与代表性接缝。
+### Preservation and Regression Integrity
+
+负责 baseline 到当前 Candidate 之间未经授权的语义损失。使用规范 delta 定位变更，但管辖证据
+与已接受处置——而不是看到基线这一事实——才提供权威。通过每项已接受处置，把每项 baseline
+承诺、删除、弱化、替换与移动追踪到当前含义、加载、适用性、可达性，以及涵盖每项变更资源且
+绑定到指纹的完整 delta。
+
+文本变更本身不是缺陷。finding 必须有受支持的语义损失、未经授权的 delta、缺失处置，或保留、
+加载或适用性破坏。未解决的未分类 baseline 含义应通过现有有界请求或停止路径路由。只有把每项
+baseline 承诺与变更通过完整 delta 追踪到已接受的当前结果，并解决每个有支持的问题后，才算完成。
 
 ### Critical Behavioral Integrity
 
-负责已接受合同的动态执行。演练每条受支持的关键和代表性路径，包括在实质上不同的触发条件
-同时出现的情况及其出口。自适应地询问：
+负责已接受合同的动态执行。追踪每条关键与代表性路径，包括实质不同的同时触发条件、依赖、权限、
+影响、验证、失败、恢复、路径中途停止、决策归属、保留与安全，以及可观察的成功、受阻、失败、
+恢复和终止出口。
 
-- 从每个触发条件出发，执行是否能取得每项依赖与权限、保持在已授权影响范围内，并达到所需
-  验证和结果？
-- 当适用触发条件同时出现、依赖或验证失败、尝试恢复，或者停止条件在路径中途到达时，会发生
-  什么？
-- Agent 能否绕过决策 Owner、超过已接受影响、丧失保留要求或安全，或采用不受支持的恢复方式？
-- 每条成功、受阻、失败、恢复和终止路径是否都提供可观察证据和完整出口，还是会在必需工作
-  尚未完成时允许成功？
+只有每条路径、同时触发情况、权限或影响边界、验证、恢复、停止与出口都有可观察轨迹，并且没有
+有支持的矛盾，才算完成。
 
-只有每条受支持的关键路径、实质不同的同时触发情况、权限与影响边界、验证或恢复分支、停止与
-出口都有可观察的执行轨迹，而且每个有支持的行为矛盾都已解决，才算完成。
-
-Correctness 只产生`critical`finding。每项 finding 都要提供一个不可容忍场景、有支持的证据及
-其 Owner 和来源、观察到的答案或有支持的反例、实质影响、修复机制与有界方向、受影响 scope 和
-保留约束。合同违规无论修复规模多小都仍然是 critical，而且所有替换文本均由 Author 负责。
-
-非阻塞改进可以成为不含语义的 Scope Transfer Note，并路由给 Quality，而不改变原阶段裁决。
-Quality 接收方独立判断有支持的证据是否足以形成 finding。只有当前 Candidate Version 上不再有
-阻塞主张，Correctness Reviewer 才通过。只有两者对同一版本分别独立通过，Correctness 才通过。
-后续变更使已关闭阶段失效时，应绑定全新的完整两人 cohort。
+Correctness 只产生`critical`finding，每项都指出一个不可容忍场景与修复机制；修复规模绝不会
+降低合同违规的严重级别。替换文本由 Author 负责。非阻塞改进转移给 Quality 独立检查。只有不再
+有 blocker，Reviewer 才通过；只有三项独立`PASS`结论都在同一个当前指纹上满足 Evaluation，
+Correctness 才达到当前闭合。后续失效需要全新三人 cohort。

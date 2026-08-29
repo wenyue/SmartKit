@@ -264,7 +264,7 @@ class PluginManifestTest(unittest.TestCase):
                 'job-design.md',
                 'models.md',
                 'reviews.md',
-                'role-launch.md',
+                'role-runtime.md',
             },
             'write-shared-rules-and-skills': {
                 'portability.md',

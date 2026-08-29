@@ -13,7 +13,7 @@ representative targets before role launch.
 
 For an unresolved owner, meaning, dependency, permission, target fact, or pass condition, return
 the public `ALIGNMENT_REQUIRED` result with the missing choice, evidence, decision owner, and
-material consequences. Begin no role, lock, or Candidate write.
+material consequences. Begin no role or Candidate write.
 
 ## Exclude source-project meaning
 
@@ -64,8 +64,8 @@ source-repository success, and package structure add no semantic authority or mi
 Extend public Spec Fidelity and Semantic Integrity with shared ownership, applicability,
 dependency closure, source-project evidence qualification, and exclusion of unqualified
 source-project meaning. Extend public Critical Behavioral Integrity with representative paths and
-exits. Both public Correctness Reviewers retain their existing scopes and independently judge these
-additions; create no fifth Reviewer.
+exits. The two portability-extended public Correctness scopes retain their existing assignments
+and independently judge these additions; create no additional Reviewer.
 
 Route a representative target to public Acceptance only when static and Machine evidence cannot
 establish its runtime feasibility confidently. Add its immutable case and pass conditions to the
@@ -78,6 +78,7 @@ Shared readiness closes only when the package is complete, contains at least one
 representative target, and leaves no material fact or route unresolved. Supply the unchanged
 package to the extended public Correctness scopes and any representative Acceptance cases.
 
-Portability passes only when one Candidate Version holds complete dependency closure, no operative
-source-project assumption, coverage of every selected target seam, both extended Correctness
-verdicts, and every required representative Acceptance case.
+Portability passes only when the Candidate identified by one exact fingerprint has complete
+dependency closure, no operative
+source-project assumption, coverage of every selected target seam, the two portability-extended
+public Correctness verdicts, and every required representative Acceptance case.
