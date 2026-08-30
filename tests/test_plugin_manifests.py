@@ -260,6 +260,7 @@ class PluginManifestTest(unittest.TestCase):
         expected_references = {
             'write-rules-and-skills': {
                 'acceptance.md',
+                'author.md',
                 'evaluation.md',
                 'job-design.md',
                 'models.md',
@@ -269,9 +270,7 @@ class PluginManifestTest(unittest.TestCase):
             'write-shared-rules-and-skills': {
                 'portability.md',
             },
-            'write-setup-authoring-contracts': {
-                'setup-authoring-contract.md',
-            },
+            'write-setup-authoring-contracts': set(),
             'translate-agent-artifacts': set(),
         }
         for skill_root in authoring_roots:

@@ -10,10 +10,9 @@ Produce the smallest complete Candidate through one Procedure-led job:
 **own → align → model → design → fingerprint → freeze → baseline → author → prove →
 finalize**
 
-The active Agent is the **Controller**. It owns the control plane, never Candidate meaning. One
-fresh resident Author owns Candidate prose and dispositions through finalization; fresh persistent
-Reviewers own findings and verdicts; fresh Runners execute frozen Acceptance cases without
-judging.
+The active Agent is the **Controller**. It owns the control plane, never Candidate meaning. The
+fresh resident Author follows the Author contract; fresh persistent Reviewers own findings and
+verdicts; fresh Runners execute frozen Acceptance cases without judging.
 
 ## Load the authoring references
 
@@ -22,7 +21,8 @@ The Controller reads each resource once at its listed boundary, never earlier:
 1. At entry, read [`references/models.md`](references/models.md) and read and apply the installed
    `writing-for-agents` Skill.
 2. After alignment and modeling close, immediately before Design, read these complete contracts
-   once in this order: [`references/job-design.md`](references/job-design.md),
+   once in this order: [`references/author.md`](references/author.md),
+   [`references/job-design.md`](references/job-design.md),
    [`references/role-runtime.md`](references/role-runtime.md),
    [`references/evaluation.md`](references/evaluation.md), then
    [`references/reviews.md`](references/reviews.md).
@@ -32,25 +32,29 @@ The Controller reads each resource once at its listed boundary, never earlier:
    cases, identities, grants, schedule, transitions, safety, termination, quiescence, cleanup, or
    readiness facts. Then complete the same Design and perform the single freeze.
 
-These files own their named contracts. Later sections supply only orchestration deltas; follow the
-owner when a definition is needed.
+These files own their named contracts. Author owns Candidate authoring and repair judgment;
+Reviews owns Quality and Correctness judgment and verdicts; Acceptance owns executable behavior
+validation when applicable. Evaluation orders and composes their results, while Role Runtime
+transports and audits them. Later sections supply only orchestration deltas; follow the owner when
+a definition is needed.
 
 ## 1. Own, align, and model
 
 Complete the Ownership Review inside its Gate. Continue only for one supported `rule` or `skill`
 owner; otherwise take the Gate's route or alignment result.
 
-Resolve every input required by the selected model and give each affected obligation one
-`preserve`, `change`, `add`, `move`, or `retire` disposition. Use `Close alignment` for any
-unresolved material answer.
+Resolve every input required by the selected model and close Models' baseline and semantic-input
+alignment. Leave the initial obligation dispositions to the resident Author. Use `Close alignment`
+for any unresolved material answer.
 
-**Complete when:** one supported owner and model hold every obligation, and every material input
-has one accepted value.
+**Complete when:** one supported owner and model hold every obligation, and the governing evidence,
+semantic criteria, preservation constraints, and operational boundaries needed for Author judgment
+have accepted values.
 
 ## 2. Design, fingerprint, and freeze
 
 Apply Frozen Job Design from its residual-discovery and cleanup entry through capacity, readiness,
-Candidate identity, and the single freeze of **Quality → conditional Machine → Correctness →
+Candidate identity, and the single freeze of **conditional Machine → Quality → Correctness →
 conditional Acceptance**. Its Run
 Contract and Job Graph must cover all Candidate inputs, grants, roles, communication, correction,
 replay, exits, safety, teardown, and handoff. Freeze source grants rather than a preselected
@@ -69,10 +73,12 @@ After freeze:
 
 1. Capture and verify the immutable pre-Author baseline exactly as Frozen Job Design requires. A
    confirmed mismatch returns `CANDIDATE_CHANGED` before Author launch.
-2. Launch the fresh resident Author with the complete frozen inputs and initial Authoring Scope.
+2. Launch the fresh resident Author under the Author contract with the complete frozen inputs and
+   initial Authoring Scope.
 3. On every return or termination, apply Frozen Job Design's invocation-final transition and Role
    Runtime's audit and outcome composition. Only admissible `COMPLETE` promotes expected proof
-   state. Continue the same Author only through an eligible bounded update or complete Repair
+   state and exposes the Author-owned obligation-disposition record as fingerprint-bound proof-stage
+   evidence. Continue the same Author only through an eligible bounded update or complete Repair
    Scope; all other outcomes follow their owner-defined path.
 
 **Complete when:** an audited Author result promotes expected proof state or the

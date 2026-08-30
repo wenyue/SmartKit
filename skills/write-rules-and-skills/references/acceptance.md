@@ -1,10 +1,14 @@
 # Executable Acceptance
 
-When applicable, this authority owns Acceptance design, cases, attempts, judgment, Candidate and
-setup correction, local replay, safety, and terminal precedence. `NOT_REQUIRED` contributes and
-gates nothing.
+When applicable, this contract is the semantic and execution owner for Acceptance work. It owns
+Acceptance-visible inputs, case design, attempts, captured evidence, Candidate and setup
+classification, finding and fixed-point judgment, verdicts, local correction and replay, safety,
+terminal precedence, and completion. Frozen Job Design retains scope, grants, identities,
+fingerprints, and schedule; Role Runtime retains transport, reports, audits, and callbacks;
+Evaluation retains proof order, cross-owner correction, result composition, and cross-stage replay.
+`NOT_REQUIRED` contributes and gates nothing.
 
-## Qualify execution and identities
+## Receive and qualify execution
 
 Readiness requires disposable isolation, case grants, capture, fresh Runner launch, termination and
 quiescence for every mode, cleanup, and bounded recovery. The schedule must separately fit either a
@@ -105,7 +109,7 @@ Reviewer has started; its prebound identity is subject only to workflow finaliza
 attempt, the already started current case Reviewer is likewise subject only to workflow
 finalization. Successful attempt finalization is evidence, not PASS.
 
-## Judge finalized evidence
+## Judge and return Acceptance results
 
 After the first attempt finalizes successfully, start the prebound fresh Reviewer and retain that
 identity through later attempts, classification, Candidate correction, fixture/environment
@@ -133,11 +137,11 @@ termination, quiescence, cleanup, residual state, and exit selection. It returns
 A declined advisory satisfies the frozen-disposition gate and blocks neither `PASS` nor another
 classification.
 
-The Reviewer returns its classification directly and unchanged. Only Candidate findings use the
-metadata-only runtime bootstrap before their semantic body reaches the resident Author. Author and
-Reviewer independently judge the claim and reasons through the bilateral lifecycle. The Controller
-performs only the selected transition; it never receives, relays, summarizes, or reinterprets
-finding or discussion content.
+The Reviewer returns its classification directly and unchanged. For a Candidate finding, this
+contract owns the claim, severity, fixed-point assessment, and verdict; the Author contract owns
+the disposition, reason, and replacement prose. Role Runtime performs only the metadata bootstrap,
+and Evaluation composes the owner-produced results through the bilateral lifecycle. The Controller
+never receives, relays, summarizes, or reinterprets finding or discussion content.
 
 ## Correct and reassess
 
@@ -168,7 +172,7 @@ After a Candidate correction:
 
 1. Run the current case with a fresh Runner and the same Reviewer until Stage-local PASS or stop.
 2. Return the current promoted Candidate and the current case's Stage-local PASS evidence to
-   Evaluation for cross-stage Revision Impact. Evaluation determines whether Quality, Machine, or
+   Evaluation for cross-stage Revision Impact. Evaluation determines whether Machine, Quality, or
    Correctness is invalidated. If none is invalidated, continue at step 4. Otherwise, Evaluation
    restores every invalidated non-Acceptance stage and returns control to Acceptance; Acceptance
    retains this Reviewer under the frozen schedule, launches no earlier-stage identity, and
@@ -189,6 +193,8 @@ Never start another case Reviewer while retaining the current one. Replay uses t
 lifecycle. A case has current closure only with Reviewer-owned `PASS` backed by unaffected,
 successfully finalized evidence and either bound to the current Candidate fingerprint or carried
 unchanged by its exact Revision Impact compatibility binding to that fingerprint.
+
+## Complete Acceptance
 
 Acceptance passes only when every frozen case has current closure, no evidence is invalidated, every
 Runner is quiescent, all required cleanup and audits succeed, and no terminal remains. Return the

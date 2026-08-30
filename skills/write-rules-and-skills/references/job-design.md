@@ -57,15 +57,19 @@ amend the Frozen Run Contract. Manifests and bindings are controls, not judgment
 
 Before a role or Candidate change, define:
 
-- **Meaning:** accepted outcome, current behavior, preserved obligations, changes, non-goals,
-  safety, supplied evidence, authorized discovery sources and capabilities, provenance boundaries,
-  and every `preserve`/`change`/`add`/`move`/`retire` disposition.
+- **Meaning:** accepted outcome, current behavior, requested outcomes, non-goals, safety, supplied
+  evidence, authorized discovery sources and capabilities, provenance boundaries, every accepted
+  obligation, and its governing evidence, semantic criteria, and preservation constraints. These
+  inputs constrain Candidate outcomes but assign no disposition; the resident Author selects the
+  initial semantic dispositions.
 - **Candidate:** owner, model, writing guidance, invocation metadata, exact Allowlist and affected
   surfaces, dependencies, initial Authoring Scope, read and network grants, fingerprint method,
-  frozen identity, baseline and observation methods, and update envelope.
+  frozen identity, baseline and observation methods, update envelope, and, whenever the Candidate
+  owns or changes a script, an exact script-to-unit-test-resource-to-Machine-command mapping.
 - **Roles:** actual capacity, manifests (including mandatory-load resources), bootstrap, grants,
   persistent identities, cohort and batching schedule, and communication edges.
-- **Execution:** one canonical Job Graph containing immutable stage order and applicability,
+- **Execution:** one canonical Job Graph containing immutable **conditional Machine → Quality →
+  Correctness → conditional Acceptance** stage order and applicability,
   resources, evidence, transitions, direct correction, Revision Impact, compatibility-decision
   manifests, rewinds and replay, prioritized exits, conditional safety finalization, workflow
   teardown, and handoff.
@@ -83,9 +87,10 @@ The graph is complete only when path-complete, internally consistent, and schedu
 
 ## Distinguish Authoring and Repair Scopes
 
-The first write uses one **Authoring Scope**: accepted changes and dispositions, exact paths and
-modes, preservation references, completion boundary, and readiness. It has no review or finding
-metadata.
+The first write uses one **Authoring Scope**: accepted outcome and semantic criteria, exact paths
+and modes, preservation references and constraints, completion boundary, readiness, and every
+required mapped script and unit-test addition or update. It freezes the authorized operation
+envelope without selecting an Author disposition. It has no review or finding metadata.
 
 A **Repair Scope** authorizes one correction. Its frozen semantic owner supplies its exact control
 inputs; deterministic repair instead carries the failed command and affected surfaces.
@@ -96,8 +101,14 @@ Every Author invocation receives exactly one scope, which expands neither contra
 Freeze `read`, `write`, `create`, `delete`, and `network` separately. A Rule normally grants its
 exact file; a Skill at most its owned root, never parent `skills/`. Prefer exact operation paths;
 read and network discovery may use narrow source or capability classes. Directory creation needs
-an owned resource with a name unknowable at freeze; deletion needs an exact grant. A move needs its
-accepted disposition plus exact source-delete and destination-create grants.
+an owned resource with a name unknowable at freeze; deletion needs an exact grant. A move available
+inside the Authoring Scope needs exact source-delete and destination-create grants. Those grants
+authorize the operation without selecting its semantic disposition.
+
+For every Candidate-owned or changed script, include each mapped unit-test resource in the exact
+Allowlist and whole-Allowlist Candidate identity. Freeze its required Author operation modes and
+Machine read and execution grants together with the exact owner-supported test command. A missing
+resource, mapping, command, or grant makes Design incomplete.
 
 Grants bound the later runtime's evidence selection. Ordinary in-grant source discovery is not an
 update or per-file research route.
@@ -182,6 +193,11 @@ contains those initial bindings plus the promoted current fingerprint and its ca
 Expected proof state advances only through an admissible Author `COMPLETE`; an inadmissible callback
 never advances it.
 
+After an admissible `COMPLETE` promotion, bind the Author-owned Obligation Disposition Record in the
+semantic Change Summary to the promoted fingerprint as read-only proof-stage evidence. The record
+changes no Frozen Run Contract, grant, scope, Candidate identity, baseline, canonical delta,
+expected-proof-state transition, or operation authority.
+
 The **invocation-final transition** compares the Controller's complete invocation-final capture
 with that invocation's pre-invocation fingerprint. When the state differs, mechanically record and
 preserve the invocation-final whole-Allowlist fingerprint, the raw operation and attribution
@@ -223,11 +239,14 @@ fingerprint, the delta is immutable. Freeze deterministic
 derivation, reuse, provenance, and the resource-identity rule before Author launch.
 The artifact accounts for every created, deleted, renamed, moved, and modified resource and all
 content changes. Its resource-identity rule classifies a path change as a rename or move only when
-an accepted `move` disposition frozen before Author launch binds the baseline and current paths;
-path or content similarity alone cannot establish continuity. Without that binding, record the
-old-path deletion and new-path creation and assert no relationship. The delta never depends on the
-Author's Change Summary, self-report, notes, or comparison artifact. It is invocation-final fingerprint
-evidence, not Candidate authority or a substitute for inspecting the complete current Candidate.
+an exact resource-continuity mapping frozen before Author launch binds the baseline path and an
+authorized destination as the same owned resource. This control mapping selects no semantic
+disposition; path or content similarity alone cannot establish continuity. Without that mapping,
+record the old-path deletion and new-path creation and assert no relationship. The Author's later
+Obligation Disposition Record may explain the semantic outcome but cannot alter delta identity or
+classification. The delta never depends on the Author's Change Summary, self-report, notes, or
+comparison artifact. It is invocation-final fingerprint evidence, not Candidate authority or a
+substitute for inspecting the complete current Candidate.
 
 Bind the canonical delta after every invocation-final fingerprint under the derivation and
 no-op reuse rules above. Run the frozen whole-Allowlist comparisons against the applicable

@@ -32,9 +32,9 @@ turn policy into a triggered job or waive the supported model and proof contract
 
 Establish one accepted value for:
 
-- outcome, current and preserved behavior, changes, non-goals, safety, and prioritized exits;
-- owner, exact Candidate resources, loading route, distribution boundary, and every obligation's
-  `preserve`, `change`, `add`, `move`, or `retire` disposition;
+- outcome, current behavior, requested outcomes, non-goals, safety, and prioritized exits;
+- owner, exact Candidate resources, loading route, distribution boundary, and the governing
+  evidence, semantic criteria, and preservation constraints for every Candidate obligation;
 - dependencies, permissions, external effects, validation duties, applicable operating contexts,
   and final handoff; and
 - separate `read`, `write`, `create`, and `delete` authority.
@@ -51,6 +51,12 @@ same `ALIGNMENT_REQUIRED` payload. On confirmation, end the run with exactly one
 complete shared understanding becomes accepted human-decision context for a new authoring run.
 Every operative term and meaning requires independent accepted support; ambient or nonnormative
 glossaries are never authority.
+
+The prior Candidate is completeness and regression evidence, never design authority. Alignment
+establishes the evidence, criteria, and constraints against which every inherited and accepted new
+obligation must be reconsidered; it selects no semantic disposition. The resident Author owns the
+initial `preserve`, `change`, `add`, `move`, or `retire` judgment for each obligation and preserves
+nothing merely because it exists.
 
 Select exactly one Candidate model below.
 
@@ -93,7 +99,7 @@ path observable completion, blocked, failure, and stop outcomes, including valid
 preservation, and handoff. Claim only supported recovery.
 
 Use a script only for repeated, fragile, deterministic work with explicit dependencies, inputs,
-outputs, failures, recovery, and safe representative tests. Apply `writing-for-agents` to
+outputs, failures, recovery, and owner-supported unit tests. Apply `writing-for-agents` to
 information architecture and invocation. Preserve the supported invocation choice unless accepted
 evidence changes it, and align metadata in the Candidate identified by one whole-Allowlist fingerprint:
 

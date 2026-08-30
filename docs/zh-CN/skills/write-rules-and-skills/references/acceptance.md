@@ -1,9 +1,12 @@
 # 可执行 Acceptance
 
-本权威在适用时负责 Acceptance 设计、用例、尝试、判断、Candidate 与设置修正、本地重放、
-安全和终止优先级。`NOT_REQUIRED`既不贡献任何内容，也不设置任何准入条件。
+本合同在适用时是 Acceptance 工作的语义与执行 Owner。它负责 Acceptance 可见输入、用例设计、
+尝试、捕获证据、Candidate 与设置分类、finding 与不动点判断、裁决、本地修正与重放、安全、
+终止优先级和完成。Frozen Job Design 继续负责 scope、授权、身份、指纹与调度；Role Runtime
+继续负责传输、报告、审计与回调；Evaluation 继续负责证明顺序、跨 Owner 修正、结果组合与
+跨阶段重放。`NOT_REQUIRED`既不贡献任何内容，也不设置任何准入条件。
 
-## 确认执行与身份满足条件
+## 接收输入并确认执行满足条件
 
 就绪状态要求一次性隔离、用例授权、捕获、全新 Runner 启动、每种模式下的终止与静止、清理和
 有界恢复。调度必须分别容纳以下任一种情形：尝试期间同时运行全新 Runner 与当前用例 Reviewer；
@@ -83,7 +86,7 @@ Candidate、用例、fixture 定义和通过条件是不可变的**设置输入*
 其预绑定身份只受工作流最终化约束。后续尝试时，已经启动的当前用例 Reviewer 同样只受工作流
 最终化约束。尝试最终化成功只是证据，不是 PASS。
 
-## 判断已最终化证据
+## 判断并返回 Acceptance 结果
 
 第一次尝试成功最终化后，启动预绑定的全新 Reviewer，并在后续尝试、分类、Candidate 修正、
 fixture/环境修正、一次歧义观察和用例 PASS 全程保留同一身份。
@@ -106,9 +109,10 @@ fixture/环境修正、一次歧义观察和用例 PASS 全程保留同一身份
 
 拒绝一项 advisory 即满足冻结处置准入条件，既不阻止`PASS`，也不阻止其他分类。
 
-Reviewer 直接、原样返回分类。只有 Candidate finding 使用仅含 metadata 的运行时 bootstrap，
-随后才把语义正文发给常驻 Author。Author 与 Reviewer 通过双边生命周期分别独立判断主张和
-理由。Controller 只执行所选转换；它绝不接收、转发、概括或重新解释 finding 或讨论内容。
+Reviewer 直接、原样返回分类。对于 Candidate finding，本合同负责主张、严重级别、不动点评估
+与裁决；Author 合同负责处置、理由与替换文本。Role Runtime 只执行 metadata bootstrap，
+Evaluation 通过双边生命周期组合由 Owner 产生的结果。Controller 绝不接收、转发、概括或重新
+解释 finding 或讨论内容。
 
 ## 修正并重新评估
 
@@ -136,7 +140,7 @@ Candidate 修正后：
 
 1. 使用全新 Runner 与同一 Reviewer 运行当前用例，直到 Stage-local PASS 或停止。
 2. 将当前已提升 Candidate 与当前用例的 Stage-local PASS 证据交给 Evaluation，供其进行跨阶段
-   Revision Impact。Evaluation 判断 Quality、Machine 或 Correctness 是否失效。若均未失效，
+   Revision Impact。Evaluation 判断 Machine、Quality 或 Correctness 是否失效。若均未失效，
    继续第 4 步。否则，Evaluation 恢复每个失效的非 Acceptance 阶段，再将控制权交回 Acceptance；
    Acceptance 按已冻结调度保留该 Reviewer，不启动任何较早阶段身份，也不执行任何较早阶段重放。
 3. Evaluation 恢复失效的非 Acceptance 证明并交回控制权后，使用全新 Runner 与同一个保留的
@@ -152,6 +156,8 @@ Candidate 修正后：
 保留当前 Reviewer 时不得启动其他用例 Reviewer。重放使用完整安全生命周期。只有 Reviewer
 针对不受影响且成功最终化的证据生成`PASS`，并且该结论绑定到当前 Candidate 指纹，或通过准确的
 Revision Impact 兼容性绑定原样向前沿用到该指纹，用例才达到当前闭合。
+
+## 完成 Acceptance
 
 只有每个冻结用例均达到当前闭合、没有证据失效、每个 Runner 都已静止、所有必需清理与审计成功，
 并且不存在终止结果，Acceptance 才通过。通过 Evaluation 返回该结果，随后最终化工作流。

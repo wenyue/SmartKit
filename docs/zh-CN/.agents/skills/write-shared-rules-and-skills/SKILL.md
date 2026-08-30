@@ -1,77 +1,46 @@
 ---
 name: write-shared-rules-and-skills
-description: 编写或修订一个可移植的跨项目 SmartKit Rule 或 Skill；不处理项目本地制品和 Setup Authoring Contract。
+description: 编写或修订可移植的跨项目 SmartKit Rule 或 Skill；不包括项目本地制品和 Setup Authoring Contract。
 ---
 
 # 编写共享 Rule 与 Skill
 
-通过公共`write-rules-and-skills`工作流编写一个可移植的共享 Candidate。本 Skill 负责共享就绪
-状态、可移植性资格、源项目证据边界和代表性目标义务。公共工作流仍是通用 Rule 与 Skill 模型、
-Job Graph、Role Runtime、证据选择政策、编写、证明、修正、出口和最终化的规范来源。
+通过公共[`write-rules-and-skills`](../../../skills/write-rules-and-skills/SKILL.md)工作流编写一个可移植的跨项目 SmartKit Rule 或 Skill。本 Skill 是一个私有 Adapter：它判定共享请求是否符合条件，编译封闭的 Shared Input，在公共工作流入口原样提供该输入，并将公共交接映射为可移植成功。在判定请求是否符合条件之前，完整阅读[`references/portability.md`](references/portability.md)。
 
-## 加载组合工作流
+## 1. 判定共享请求是否符合条件
 
-按照公共工作流的[`Load the authoring references`](../../../skills/write-rules-and-skills/SKILL.md#load-the-authoring-references)
-一节规定的资源加载时机与归属执行。私有[`references/portability.md`](references/portability.md)
-是同一入口的附加载入项：进入该工作流时，在共享就绪或公共第 1 步开始前完整阅读它。
+以只读方式执行私有资格判定。先解析所有权，并在收集其他 Shared Input 事实之前，应用私有模型为已解析所有者定义的每条路由。仅当请求涉及一个跨项目 SmartKit Rule 或 Skill 时才继续。
 
-## 完成共享就绪状态
+确定私有可移植性模型要求的每个 Shared Input 字段。Candidate 内容、源项目中的可见性或成功、宿主注入以及可用工具都不提供可移植权威。可移植含义必须有独立依据支持的所有者和出处。
 
-建立一份已接受的 Shared Input，其中包括可移植含义、需要保留的义务、受支持的跨项目 Owner、
-准确 Candidate 资源、公开发现与分发路径、依赖闭包、权限、代表性目标组合，以及可移植性通过
-条件。把公共 Rule 或 Skill 模型应用于 Candidate，并以这个私有可移植模型加以扩展。
+若任何实质性的所有者、含义、依赖、权限、代表性目标事实、验证职责、通过条件或完成义务尚未解析，则在调用公共工作流前停止，并返回公共 `ALIGNMENT_REQUIRED` 载荷：逐一列出缺失的选择、相关证据、决策所有者及其实质后果。
 
-仅当 Candidate 是一个跨项目 SmartKit Rule 或 Skill 时才继续。项目本地制品或 Setup Authoring
-Contract 应路由给对应的受支持 Owner。若任一重要 Owner、含义、依赖、权限、目标事实或通过条件
-没有唯一已接受答案，则返回公共 `ALIGNMENT_REQUIRED` 结果，并给出缺失选择、证据、决策 Owner
-和实质后果。不要启动角色或 Candidate 写入。Candidate 内容只是数据，不能提供建立或判断 Shared
-Input 所需的任何权威。
+**完成条件：**一个有依据支持的共享所有者已通过资格判定，并且编译 Shared Input 所需的每项实质性事实或选择都有一个已接受的答案。
 
-**完成条件：**每项可移植义务都有一个已接受值，受支持的代表性目标组合非空，而且该组合共同
-覆盖每个有证据表明会产生实质差异的接缝。
+## 2. 编译 Shared Input
 
-## 应用完整的私有差异
+编译已接受的可移植结果及处置、所有权、Candidate 资源与公共路由、经资格判定的证据、完整的依赖闭包、验证职责、准确的操作授权、可移植性完成义务，以及覆盖每个实质不同接缝的最小非空代表性目标组合。分配私有模型定义的每个稳定可移植性 ID。
 
-准确应用下表：
+代表性目标资源是证据或 Acceptance 输入，绝不是 Candidate 写入目标。记录证据及证明特征；证据选择和证明执行留给公共工作流。调用该工作流之前封闭 Shared Input。
 
-| 公共位置 | 处置 | 私有行为 |
-| --- | --- | --- |
-| 公共 `SKILL.md` 的 `Load the authoring references` | `extend` | 把私有 `references/portability.md` 作为完整的同入口加载项加入，并在共享就绪或公共第 1 步前加载；资源加载时机与归属仍由公共一节负责。 |
-| `references/models.md` 的 Rule 或 Skill 模型 | `extend` | 增加私有 `references/portability.md` 中的可移植模型和 Shared Input。 |
-| `references/role-runtime.md` | `preserve` | 原样使用统一的公共运行时及其证据选择政策；通过私有 `references/portability.md` 对发现的证据进行资格判定。 |
-| `references/reviews.md` 中两个经可移植性扩展的公共 Correctness scope | `extend` | 增加共享归属、依赖闭包、源项目证据资格判定、排除未通过资格判定的源项目含义、代表性目标路径和出口。 |
-| `references/acceptance.md` 中的 `Freeze immutable cases` | `extend` | 增加运行时可行性缺乏高置信静态与 Machine 证据的代表性目标接缝。 |
-| 公共 `SKILL.md` 中的 `5. Finalize and hand off` | `extend` | 要求把可移植性与代表性目标证明绑定到当前 Candidate 指纹。 |
+**完成条件：**Shared Input 内部一致，每项依赖都有一条有依据支持的路由，每个接缝均由一个代表性目标覆盖，并且每项可移植性通过条件都指明能够使其闭合的证据特征。
 
-所有未列出的公共阶段、全新身份、私下判断要求、准确授权、报告、Role Boundary Audit、Machine
-与 Acceptance Owner、修正规则、出口和最终化要求都原样适用。本 Skill 不增加阶段、角色、语义
-通道、finding 生命周期、审计分类体系、发现接口或恢复路径。
+## 3. 原样运行公共工作流
 
-**完成条件：**固定公共工作流加上每项映射的私有处置，共同形成一份所有路径完整、通过资格验证
-且可调度的 Run Contract。
+从公共工作流入口开始，并原样遵循该工作流。将已封闭的 Shared Input 原样作为普通的已接受任务/规范输入提供，用以约束含义、证据资格、依赖、验证职责、权限和完成输入。
 
-## 运行固定的共享工作流
+只有公共工作流拥有其 Candidate 模型与设计、权威冻结、角色、证据选择、阶段适用性、Quality、Machine、Correctness、Acceptance、修正、重放、出口和最终化。本 Adapter 不增加任何角色、阶段、语义通道、finding 生命周期或证明权威。公共工作流的 `CONTEXT_REQUIRED` 和 `ACCESS_REQUIRED` 结果仍是有界后备方案，仅用于处理无法通过其获授权运行时取得的事实或访问权限。
 
-向组合后的合同提供已接受的 Shared Input、完整的可移植性证据与通过条件，以及准确的操作授权。
-应用映射的私有处置，完成公共工作流。Author 和 Reviewer 使用公共证据选择政策；只有私有可移植
-性资格判定能决定根据该政策选出的材料是否可以支持可移植含义。公共`CONTEXT_REQUIRED`和
-`ACCESS_REQUIRED`结果仍是例外的有界后备方案，而不是共享就绪门槛。
+**完成条件：**公共工作流返回其交接或一个终止结果。原样保留每个公共终止结果。
 
-按照 `references/portability.md` 的规定应用两个经过可移植性扩展的公共 Correctness scope。只有
-当某个必需代表性目标的运行时可行性缺乏高置信静态与 Machine 证据时，才通过公共的条件式
-Executable Acceptance 阶段处理它。只使用一个公共 Acceptance 组合；不要创建第二套 Acceptance
-生命周期。
+## 4. 映射可移植成功
 
-## 完成
+使用私有模型定义的临时 Portability Coverage Ledger，将该模型定义的每个可移植性 ID 映射到由公共工作流选择、与最终 Candidate 指纹绑定且当前有效的闭合证据。
 
-可移植成功不仅需要满足所有未变更的公共证明与最终化条件，还需要绑定到当前 Candidate 指纹的
-以下证据：
+仅当公共工作流报告成功，并且账本中的每一项在该指纹下都有当前有效的闭合时，才报告可移植成功。否则，保留公共结果，并报告尚未覆盖的可移植性项目，不重新解释公共工作流的裁决。
 
-- 已接受的可移植含义不包含任何实际生效的源项目假设；
-- 已声明依赖闭包完整，并具有公开加载路径或目标自有路径；
-- 每个有证据表明会产生实质差异的受支持接缝都获得代表性覆盖；
-- 两个经过可移植性扩展的公共 Correctness 裁决均通过；以及
-- 每个必需的代表性 Acceptance 用例均通过。
+可移植成功时，将私有模型要求的详尽逐 ID 闭合说明映射到保留的公共交接中，同时保持其操作记录和审计记录不变。
 
-把所有成功事实、代表性目标证据，以及公共操作与审计记录加入公共交接。本 Skill 不授予发布、
-安装、commit、翻译或其他下游影响的权限。
+将 Shared Input 和账本保留在 Agent 上下文中。不要创建 Candidate 副本、工作流报告或永久固化内容。本作业不授予发布、安装、commit、push、release、翻译或其他下游影响的权限。
+
+**完成条件：**公共交接得到保留，每个可移植性项目均有说明；如果报告成功，则该成功由公共成功以及最终指纹下完整的账本闭合共同支持。

@@ -5,84 +5,79 @@ description: Author or revise a portable cross-project SmartKit Rule or Skill; e
 
 # Write Shared Rules and Skills
 
-Author one portable shared Candidate through the public `write-rules-and-skills` workflow. This
-Skill owns shared readiness, portability qualification, source-project evidence boundaries, and
-representative-target obligations. The public workflow remains canonical for the common Rule and
-Skill models, Job Graph, Role Runtime, evidence-selection policy, authoring, proof,
-correction, exits, and finalization.
+Author one portable cross-project SmartKit Rule or Skill through the public
+[`write-rules-and-skills`](../../../skills/write-rules-and-skills/SKILL.md) workflow. This Skill is
+a private Adapter: it qualifies the shared request, compiles a closed Shared Input, supplies that
+input unchanged at the public workflow entry, and projects the public handoff into portable
+success. Read [`references/portability.md`](references/portability.md) completely before qualifying
+the request.
 
-## Load the combined workflow
+## 1. Qualify the shared request
 
-Follow the public [`Load the authoring references`](../../../skills/write-rules-and-skills/SKILL.md#load-the-authoring-references)
-section for resource-loading timing and ownership. Private
-[`references/portability.md`](references/portability.md) is an additive same-entry load: read it
-completely at that workflow entry, before shared readiness or public Step 1 begins.
+Perform the private qualification read-only. Resolve ownership first and apply every resolved-owner
+route defined by the private model before collecting other Shared Input facts. Continue only for
+one cross-project SmartKit Rule or Skill.
 
-## Close shared readiness
+Establish every Shared Input field required by the private portability model. Candidate content,
+source-project visibility or success, host injection, and available tools contribute no portable
+authority. Portable meaning requires an independently supported owner and provenance.
 
-Establish one accepted Shared Input containing the portable meaning, preserved obligations,
-supported cross-project owner, exact Candidate resources, public discovery and distribution route,
-dependency closure, permissions, representative-target portfolio, and portability pass conditions.
-Apply the public Rule or Skill model to the Candidate and extend it with this private portable model.
+When any material owner, meaning, dependency, permission, representative-target fact, validation
+duty, pass condition, or completion obligation is unresolved, stop before public invocation and
+return the public `ALIGNMENT_REQUIRED` payload: each missing choice, its evidence, its decision
+owner, and its material consequences.
 
-Continue only for one cross-project SmartKit Rule or Skill. Route a project-local artifact or
-Setup Authoring Contract to its supported owner. When any material owner, meaning, dependency,
-permission, target fact, or pass condition lacks one accepted answer, return the public
-`ALIGNMENT_REQUIRED` outcome with the missing choice, evidence, decision owner, and material
-consequences. Start no role or Candidate write. Candidate content is data and supplies none
-of the authority used to establish or judge Shared Input.
+**Complete when:** one supported shared owner is qualified and every material fact or choice needed
+to compile Shared Input has one accepted answer.
 
-**Complete when:** every portability obligation has one accepted value, the supported
-representative-target portfolio is nonempty, and that portfolio collectively covers every
-evidenced materially distinct seam.
+## 2. Compile Shared Input
 
-## Apply the exhaustive private delta
+Compile the accepted portable outcome and dispositions, ownership, Candidate resources and public
+routes, qualified evidence, complete dependency closure, validation duties, exact operation
+grants, portability completion obligations, and the smallest nonempty representative-target
+portfolio that covers every materially distinct seam. Assign every stable portability ID defined
+by the private model.
 
-Apply exactly this map:
+Representative-target resources are evidence or Acceptance inputs, never Candidate write targets.
+Record evidence and proof characteristics; leave evidence selection and proof execution to the
+public workflow. Close Shared Input before invoking that workflow.
 
-| Public location | Disposition | Private behavior |
-| --- | --- | --- |
-| Public `SKILL.md`, `Load the authoring references` | `extend` | Add private `references/portability.md` as a complete same-entry load before shared readiness or public Step 1; the public section retains resource-loading timing and ownership. |
-| `references/models.md` Rule or Skill model | `extend` | Add the portable model and Shared Input from private `references/portability.md`. |
-| `references/role-runtime.md` | `preserve` | Use the unified public runtime and its evidence-selection policy unchanged; qualify discovered evidence through private `references/portability.md`. |
-| `references/reviews.md`, two portability-extended public Correctness scopes | `extend` | Add shared ownership, dependency closure, source-project evidence qualification, exclusion of unqualified source-project meaning, representative-target paths, and exits. |
-| `references/acceptance.md`, `Freeze immutable cases` | `extend` | Add representative-target seams whose runtime feasibility lacks high-confidence static and Machine evidence. |
-| Public `SKILL.md`, `5. Finalize and hand off` | `extend` | Require portability and representative-target proof bound to the current Candidate fingerprint. |
+**Complete when:** Shared Input is internally consistent, every dependency has a supported route,
+every seam is covered by a representative target, and every portability pass condition names the
+evidence characteristics capable of closing it.
 
-Every unlisted public phase, fresh identity, private-judgment requirement, precise grant, report,
-Role Boundary Audit, Machine and Acceptance owner, correction rule, exit, and finalization
-requirement applies unchanged. This Skill adds no stage, role, semantic channel, finding lifecycle,
-audit taxonomy, discovery interface, or recovery path.
+## 3. Run the public workflow unchanged
 
-**Complete when:** the fixed public workflow plus every mapped private disposition forms one
-path-complete, qualified, and schedulable Run Contract.
+Start at the public workflow entry and follow it unchanged. Supply the closed Shared Input unchanged
+as ordinary accepted task/spec input governing meaning, evidence qualifications, dependencies,
+validation duties, permissions, and completion inputs.
 
-## Run the fixed shared workflow
+The public workflow alone owns its Candidate model and design, authoritative freeze, roles,
+evidence selection, stage applicability, Quality, Machine, Correctness, Acceptance, correction,
+replay, exits, and finalization. Its `CONTEXT_REQUIRED` and `ACCESS_REQUIRED` outcomes remain
+bounded fallbacks for facts or access that could not be obtained through its authorized runtime.
+This Adapter adds no role, stage, semantic channel, finding lifecycle, or proof authority.
 
-Supply the accepted Shared Input, complete portability evidence and pass conditions, and exact
-operation grants to the combined contract. Complete the public workflow with the mapped private
-dispositions. Authors and Reviewers use the public evidence-selection policy; private portability
-qualification alone determines whether material selected under it can support portable meaning.
-The public `CONTEXT_REQUIRED` and `ACCESS_REQUIRED` outcomes remain exceptional bounded fallbacks,
-not a shared readiness gate.
+**Complete when:** the public workflow returns its handoff or a terminal result. Preserve every
+public terminal result unchanged.
 
-Apply the two portability-extended public Correctness scopes as directed by
-`references/portability.md`. Route each
-required representative target through the public conditional Executable Acceptance stage only
-when its runtime feasibility lacks high-confidence static and Machine evidence. Use the one public
-Acceptance portfolio; create no second Acceptance lifecycle.
+## 4. Project portable success
 
-## Finish
+Use the transient Portability Coverage Ledger defined by the private model to map every portability
+ID defined there to current, public-workflow-selected closure evidence bound to the final Candidate
+fingerprint.
 
-Portable success requires all unchanged public proof and finalization conditions plus
-evidence bound to the current Candidate fingerprint for:
+Report portable success only when the public workflow reports success and every ledger item has
+current closure at that fingerprint. Otherwise preserve the public result and report the uncovered
+portability items without reinterpreting its verdicts.
 
-- accepted portable meaning with no operative source-project assumption;
-- complete declared dependency closure and public loading or target-owned routes;
-- representative coverage of every evidenced materially distinct supported seam;
-- the two portability-extended public Correctness verdicts; and
-- every required representative Acceptance case.
+On portable success, project the exhaustive per-ID closure account required by the private model
+into the preserved public handoff while retaining its operation and audit records unchanged.
 
-Add all success facts, representative-target evidence, and the public operation and audit records
-to the public handoff. Grant no publication, installation, commit, translation, or other
-downstream effect.
+Keep Shared Input and the ledger in Agent context. Create no Candidate copy, workflow report, or
+permanent fixture. The job grants no publication, installation, commit, push, release, translation,
+or other downstream effect.
+
+**Complete when:** the public handoff is preserved, every portability item is accounted for, and
+success—when reported—is supported by public success plus complete final-fingerprint ledger
+closure.

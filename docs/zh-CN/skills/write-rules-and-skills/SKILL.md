@@ -10,9 +10,9 @@ description: 编写或修订一份英文 Rule 或 Agent Skill。
 **确定归属 → 对齐 → 建模 → 设计 → 计算指纹 → 冻结 → 建立基线 → 编写 → 证明 →
 最终化**
 
-当前 Agent 是**Controller**。它负责控制平面，但绝不负责 Candidate 含义。一个全新、常驻的
-Author 直至最终化都负责 Candidate 文本与处置；全新、持久的 Reviewer 负责 finding 与裁决；
-全新 Runner 执行已冻结的 Acceptance 用例，但不作判断。
+当前 Agent 是**Controller**。它负责控制平面，但绝不负责 Candidate 含义。全新常驻 Author
+遵循 Author 合同；全新、持久的 Reviewer 负责 finding 与裁决；全新 Runner 执行已冻结的
+Acceptance 用例，但不作判断。
 
 ## 加载编写参考资料
 
@@ -21,6 +21,7 @@ Controller 在下列边界分别读取每份资源一次，绝不提前读取：
 1. 进入时读取[`references/models.md`](references/models.md)，并读取和应用已安装的
    `writing-for-agents` Skill。
 2. 对齐与建模关闭后、Design 开始前，按以下顺序各完整读取一次：
+   [`references/author.md`](references/author.md)、
    [`references/job-design.md`](references/job-design.md)、
    [`references/role-runtime.md`](references/role-runtime.md)、
    [`references/evaluation.md`](references/evaluation.md)，然后是
@@ -30,22 +31,26 @@ Controller 在下列边界分别读取每份资源一次，绝不提前读取：
    调度、转换、安全、终止、静止、清理或就绪事实之前，完整读取
    [`references/acceptance.md`](references/acceptance.md)。之后完成同一次 Design 并执行唯一一次冻结。
 
-这些文件分别负责与其名称对应的合同。后续章节只提供编排增量；需要定义时遵循相应 Owner。
+这些文件分别负责与其名称对应的合同。Author 负责 Candidate 编写与修复判断；Reviews 负责
+Quality 和 Correctness 判断与裁决；Acceptance 在适用时负责可执行行为验证。Evaluation 对这些
+结果进行排序与组合，Role Runtime 则负责传输与审计。后续章节只提供编排增量；需要定义时遵循
+相应 Owner。
 
 ## 1. 确定归属、对齐并建模
 
 在相应 Gate 内完成 Ownership Review。只有存在一个受支持的`rule`或`skill`Owner 时才可继续；
 否则采用 Gate 的路径或对齐结果。
 
-解决选定模型要求的每项输入，并为每项受影响义务指定`preserve`、`change`、`add`、`move`或
-`retire`之一。任何重要答案尚未解决时，使用`Close alignment`。
+解决选定模型要求的每项输入，并关闭 Models 所规定的基线与语义输入对齐。初始义务处置留给
+常驻 Author 判断。任何重要答案尚未解决时，使用`Close alignment`。
 
-**完成条件：**一个受支持的 Owner 与模型覆盖所有义务，而且每项重要输入都有一个已接受值。
+**完成条件：**一个受支持的 Owner 与模型覆盖所有义务，而且 Author 作出判断所需的管辖证据、
+语义标准、保留约束与操作边界都有已接受值。
 
 ## 2. 设计、计算指纹并冻结
 
 应用 Frozen Job Design，从其残留发现与清理入口开始，依次完成容量、就绪状态、Candidate 身份，
-并对**Quality → 条件式 Machine → Correctness → 条件式 Acceptance**执行唯一一次冻结。其 Run
+并对**条件式 Machine → Quality → Correctness → 条件式 Acceptance**执行唯一一次冻结。其 Run
 Contract 与 Job Graph 必须覆盖全部 Candidate 输入、授权、角色、通信、修正、重放、出口、安全、
 拆除和交接。冻结来源授权而非预选证据集；Role Runtime 负责按需选择。冻结每份兼容性 manifest，
 绑定全 Allowlist 身份，实体化完整合同，并执行唯一一次冻结。
@@ -61,10 +66,11 @@ Candidate 状态。
 
 1. 严格按 Frozen Job Design 的要求捕获并验证不可变的 pre-Author baseline。确认不匹配时，在
    Author 启动前返回`CANDIDATE_CHANGED`。
-2. 向全新常驻 Author 提供完整已冻结输入与初始 Authoring Scope，然后启动它。
+2. 按 Author 合同向全新常驻 Author 提供完整已冻结输入与初始 Authoring Scope，然后启动它。
 3. 每次返回或终止时，应用 Frozen Job Design 的调用最终转换，以及 Role Runtime 的审计与结果
-   组合。只有可接纳的`COMPLETE`才会提升 expected proof state。只有经过符合条件的有界更新或
-   完整 Repair Scope，才能继续使用同一个 Author；其他所有结果都遵循其 Owner 定义的路径。
+   组合。只有可接纳的`COMPLETE`才会提升 expected proof state，并把由 Author 负责的义务处置
+   记录公开为绑定到指纹的证明阶段证据。只有经过符合条件的有界更新或完整 Repair Scope，才能
+   继续使用同一个 Author；其他所有结果都遵循其 Owner 定义的路径。
 
 **完成条件：**经审计的 Author 结果已提升 expected proof state，或者已选择可达的最高
 优先级停止结果。

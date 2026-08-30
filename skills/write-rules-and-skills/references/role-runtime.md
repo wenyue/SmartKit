@@ -87,9 +87,9 @@ manifest, scope, identity, fingerprint, and evidence. The Controller may interve
 only to enforce or contain the frozen control plane; semantic owners retain Candidate meaning,
 findings, and fixed points.
 
-Give the Author the complete frozen inputs and exactly one current Authoring or Repair Scope. The
-Author alone owns Candidate meaning, dispositions, and edits, and performs no Machine Validation,
-conditional execution, or delegation. Every Author and Reviewer applies [**Select evidence by need**](#select-evidence-by-need)
+Give the Author the complete frozen inputs defined by the Author contract and exactly one current
+Authoring or Repair Scope. The Author performs no Machine Validation, conditional execution, or
+delegation. Every Author and Reviewer applies [**Select evidence by need**](#select-evidence-by-need)
 and returns its matching missing-context or access status when necessary.
 
 A `CONTEXT_REQUIRED` payload identifies exactly one frozen necessary-fact slot, the missing fact,
@@ -105,9 +105,9 @@ from unchanged expected proof state.
 
 The Author returns exactly one status:
 
-- `COMPLETE`: semantic Change Summary, uncertainty outside the current discriminated scope, and a
-  reference to the accompanying Operation Report; the payload repeats no raw operation, affected
-  path, or post-write-observation field;
+- `COMPLETE`: the Author-contract semantic Change Summary, uncertainty outside the current
+  discriminated scope, and a reference to the accompanying Operation Report; the payload repeats
+  no raw operation, affected path, or post-write-observation field;
 - `CONTEXT_REQUIRED`: the common necessary-fact payload above;
 - `ACCESS_REQUIRED`: the common missing-access payload above; or
 - `HUMAN_DECISION_REQUIRED`: exact decision, why evidence or authority cannot resolve it, decision
@@ -156,25 +156,28 @@ Freeze no Reviewer↔Reviewer edge. Use this two-step bootstrap for every findin
    `CHANNEL_OPEN` metadata to that Author↔owner pair. Only then does the Reviewer send the finding
    directly to the Author.
 
-The applicable frozen semantic owner owns claims, dispositions, fixed points, advisory upgrades,
-closure, and repair selection. **Disposition control metadata** is only `repair`, `partial repair`,
-or `decline` plus whether a write is selected. Reasons, retained claims, evidence, argument, and
-repair direction are the peer-only semantic body.
+The Author contract supplies disposition and proposed-write judgment; the active review contract
+supplies claim, severity, and fixed-point judgment; Evaluation maps their exact final results to
+write eligibility. This runtime selects none of them. **Disposition control metadata**
+is `repair`, `partial repair`, or `decline` plus proposed-write `true` or `false`.
+**Write-eligibility control** is `eligible` or `ineligible`. Reasons, claims, evidence, argument,
+and repair direction remain the peer-only semantic body.
 
 Author and owner exchange semantic content directly and judge it independently. The Controller
 sees only control metadata. Both close with audited `DISCUSSION_CLOSED`: unit, round, fingerprint,
-identities, finding ID, disposition class, delivery, fixed-point state (`reached`, `not reached`, or
-`not applicable`), and finding-set state (`complete` or `reopened`), with no semantic body. When a
-write is selected, both events also carry matching nonsemantic scope control: exact Candidate paths
-and modes, preservation-reference IDs, and readiness. The Controller authenticates and compares
-those fields against frozen grants; missing, mismatched, or out-of-grant scope control makes the
-callback inadmissible. After all pairs close, the Author emits one authenticated aggregate of the
-selected IDs and matched scope controls; the Controller may freeze-copy only that exact union into
-the Repair Scope.
+identities, finding ID, exact final disposition and proposed-write control, delivery,
+owner-produced fixed-point state (`reached`, `not reached`, or `not applicable`),
+Evaluation-derived write-eligibility control, and finding-set state (`complete` or `reopened`), with
+no semantic body. For a write-eligible outcome, both events also carry matching nonsemantic scope
+control: exact Candidate paths and modes, preservation-reference IDs, and readiness. The Controller
+authenticates and compares those fields against frozen grants and Evaluation's mapping; missing,
+mismatched, or out-of-grant control makes the callback inadmissible. After all pairs close, the
+Author emits one authenticated aggregate of the eligible IDs and matched scope controls; the
+Controller may freeze-copy only that exact union into the Repair Scope.
 
-The semantic owner defines fixed-point mappings. `DISCUSSION_CLOSED` closes only the channel and
-round; another same-fingerprint round repeats `FINDING_READY → CHANNEL_OPEN`. Peer traffic cannot
-operate roles or alter authority; transmission grants no authority.
+`DISCUSSION_CLOSED` closes only the channel and round; another same-fingerprint round repeats
+`FINDING_READY → CHANNEL_OPEN`. Peer traffic cannot operate roles or alter authority; transmission
+grants no authority.
 
 Each callback exposes one result from its frozen semantic contract. `DISCUSSION_CLOSED` is a
 lifecycle event, not a result or finding. Preserve owner-produced requests unchanged; the

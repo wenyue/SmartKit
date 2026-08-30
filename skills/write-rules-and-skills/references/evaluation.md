@@ -1,18 +1,20 @@
 # Evaluation Lifecycle
 
-This contract owns public Quality and Correctness finding semantics and consensus, proof order and
-applicability, Machine Validation, Revision Impact and replay, Scope Transfer, and global exits.
-Later lens contracts own eligibility and verdict conditions. Job Design owns fingerprints, deltas,
-and proof-state promotion;
-Role Runtime owns transport and control metadata. Freeze all before any role or Candidate change.
+This contract owns proof order and applicability, the common finding schema and cross-owner
+correction lifecycle, consensus and result composition, Machine Validation, Revision Impact and
+replay, Scope Transfer, and global exits. Author owns Candidate and disposition judgment; Reviews
+owns Quality and Correctness findings and verdicts; Acceptance owns executable validation results.
+This contract composes those owner-produced results but selects none of them. Job Design owns
+fingerprints, deltas, and proof-state promotion; Role Runtime owns transport and control metadata.
+Freeze all before any role or Candidate change.
 
 ## Freeze the proof path
 
 | Order | Stage | Applicability and closure |
 | --- | --- | --- |
-| 1 | Quality | Always. Activate its complete frozen cohort. Current closure requires every independent PASS and required coverage record on one Candidate fingerprint. |
-| 2 | Machine | Conditional on deterministic evidence for changed schema or metadata, references/resources, scripts, fixed flows, or sufficiently concrete/complex tools, permissions, filesystem state, procedure, or external effects. Broad judgment and high-confidence simple steps may be `NOT_REQUIRED`. |
-| 3 | Correctness | Always after Machine `PASS` or valid `NOT_REQUIRED`. Activate its frozen complete fresh cohort; it independently returns PASS bound to one exact Candidate fingerprint. |
+| 1 | Machine | Conditional on deterministic evidence for changed schema or metadata, references/resources, fixed flows, or sufficiently concrete/complex tools, permissions, filesystem state, procedure, or external effects. It is required whenever the Candidate owns or changes a script. Broad judgment and high-confidence simple steps may otherwise be `NOT_REQUIRED`. |
+| 2 | Quality | Always after Machine `PASS` or valid `NOT_REQUIRED`. Activate its complete frozen cohort. Current closure requires every independent PASS and required coverage record on one Candidate fingerprint. |
+| 3 | Correctness | Always after Quality current closure. Activate its frozen complete fresh cohort; it independently returns PASS bound to one exact Candidate fingerprint. |
 | 4 | Acceptance | Conditional on concrete or sufficiently complex runtime behavior whose feasibility lacks high-confidence evidence. Design freezes the stage as applicable with its complete contract contributions, or `NOT_REQUIRED`. |
 
 Acceptance signals are fixed multistep order, meaningful branches, retry, recovery or exit,
@@ -37,12 +39,13 @@ question investigates; a finding is its supported declarative claim.
   replay scope is bounded enough to merit presentation.
 
 Critical and material findings are blocking and use the bilateral lifecycle below. Advisories are
-nonblocking; the Author alone selects repair, partial repair, or decline with an evidence-based
-reason. The finding owner alone owns claim validity and severity and may upgrade an advisory only
-with new supported evidence. Severity is unchanged-Candidate impact; estimated Repair Scope is
-cost and risk and never reduces severity. A contract violation remains critical regardless of
-repair size. Taste, symmetry, file length, or cheapness alone establishes no defect. The full
-finding remains peer-only and enters through `FINDING_READY → CHANNEL_OPEN`.
+nonblocking. The Author contract owns disposition, reason, and whether a write is proposed. The
+active review contract owns claim validity, severity, fixed-point assessment, and advisory upgrade.
+This lifecycle only maps their exact final results to write eligibility. Severity is
+unchanged-Candidate impact; estimated Repair Scope is cost and risk and never reduces severity. A
+contract violation remains critical regardless of repair size. Taste, symmetry, file length, or
+cheapness alone establishes no defect. The full finding remains peer-only and enters through
+`FINDING_READY → CHANNEL_OPEN`.
 
 ## Run one independent correction unit
 
@@ -51,31 +54,27 @@ finding remains peer-only and enters through `FINDING_READY → CHANNEL_OPEN`.
    Reviewer's work. Batching preserves inputs; a bounded update restarts that identity's judgment.
 2. **Open owning pairs.** Emit audited `FINDING_READY` and completion evidence for each finding.
    After `CHANNEL_OPEN`, send it directly to the Author; no Reviewer receives another's work.
-3. **Choose privately.** The Author selects `repair`, `partial repair`, or `decline` with an
-   evidence-based reason; partial repair identifies and explains the retained claim.
-4. **Assess the owned outcome.** For a critical or material finding, only the Author and finding
-   owner deliberate directly over semantic content, including newly discovered supported evidence.
-   Each assesses claims, reasons, support, and provenance independently; transmission grants no
-   authority. A blocking finding reaches reasoned bilateral fixed point only when the owner
-   no longer upholds a blocking claim without a write, or both independently agree that a selected
-   repair or partial repair addresses every upheld blocking part pending write and recheck. When
-   the owner still upholds a blocker and the Author declines, retains a blocking part, or proposes
-   a path the owner finds non-resolving, fixed point is not reached and no write is selected from
-   that unresolved path. For an advisory, the owner may answer or clarify the claim, but the Author
-   alone freezes its disposition and reason; bilateral fixed point does not apply. Candidate writes
-   remain barred while any channel is open. Evidence changing only the current claim stays in its
-   lifecycle. Reopen the finding set only when newly available supported evidence independently
-   supports a distinct unreported finding.
-5. **Close the communication round.** After the Author freezes each disposition and the owner
-   freezes each claim's validity and severity, both emit the runtime's nonsemantic
-   `DISCUSSION_CLOSED` metadata
-   whether or not a blocking fixed point was reached. This event closes only the channel and round;
-   it never establishes claim resolution. Its fixed-point control value is `reached` only for a
-   resolving blocking outcome defined above, `not reached` whenever an upheld blocker lacks an
-   agreed resolving path, and `not applicable` for an advisory. An unresolved blocking disagreement
-   remains blocking and selects no write. It may enter the next frozen round only after the current
-   round closes and the pair repeats `FINDING_READY → CHANNEL_OPEN` with current round and Candidate
-   fingerprint metadata.
+3. **Receive the Author disposition.** The finding owner receives the Author contract's current
+   disposition and reason for direct discussion; Evaluation neither selects nor redefines it.
+4. **Assess the owner result.** The finding owner assesses its claim against the Author disposition
+   and any newly supported evidence under the active review contract. A blocking finding reaches
+   reasoned bilateral fixed point only when the owner no longer upholds a blocking claim without a
+   write, or both independently agree that a selected repair or partial repair addresses every
+   upheld blocking part pending write and recheck. When the owner still upholds a blocker and the
+   Author declines, retains a blocking part, or proposes a path the owner finds non-resolving,
+   fixed point is `not reached`. An advisory has fixed point `not applicable`; its owner may clarify
+   the claim but does not select the Author disposition. Candidate writes remain barred while any
+   channel is open. Evidence changing only the current claim stays in its lifecycle. Reopen the
+   finding set only when newly available supported evidence independently supports a distinct
+   unreported finding.
+5. **Close the communication round.** The Author directly delivers its proposed final disposition
+   and reason; the finding owner assesses that exact result. If discussion changes either result,
+   repeat delivery and assessment. The Author then freezes the exact final disposition under the
+   Author contract, while the owner freezes claim validity, severity, and fixed-point state under
+   the active review contract. Both emit Role Runtime's nonsemantic `DISCUSSION_CLOSED` metadata.
+   The event closes only the channel and round; it never establishes claim resolution. An
+   unresolved blocker remains blocking and enters another frozen round only through
+   `FINDING_READY → CHANNEL_OPEN`.
 
    Before closing, an owner that has independently established a distinct unreported finding from
    newly available supported evidence fixes that finding and opaque ID and sets finding-set state
@@ -89,13 +88,22 @@ finding remains peer-only and enters through `FINDING_READY → CHANNEL_OPEN`.
    blocking finding remains, every owned advisory has a frozen disposition, the latest finding-set
    state is complete, and no selected repair awaits its write. Trust, voting, another Reviewer, and
    Controller interpretation decide nothing.
-6. **Select the write branch.** After all completion evidence is audited, latest finding sets are
-   complete, and all pairs close, inspect only Role Runtime's authenticated scope-control aggregate.
-   With zero selected writes, create no Repair Scope and invoke no Author; same-fingerprint
-   Reviewers either `PASS` when eligible or a blocking owner enters the next authorized round. With
-   one or more selected writes, freeze-copy the exact aggregate into one full-unit Repair Scope:
-   unit, fingerprint, selected IDs and disposition control, paths and modes, preservation-reference
-   IDs, and readiness—never a semantic body. Missing or mismatched scope control follows Role
+6. **Derive write eligibility and select the branch.** After all completion evidence is audited,
+   latest finding sets are complete, and all pairs close, the Controller mechanically applies this
+   exhaustive mapping to each exact final Author disposition and owner-produced fixed-point state:
+
+   - blocking `repair` or `partial repair` with `reached` is write-eligible;
+   - blocking `repair` or `partial repair` with `not reached` is write-ineligible;
+   - advisory `repair` or `partial repair` with `not applicable` is write-eligible; and
+   - every `decline` is write-ineligible.
+
+   No other combination is admissible. With zero eligible outcomes, create no Repair Scope and
+   invoke no Author; same-fingerprint Reviewers either `PASS` when eligible or a blocking owner
+   enters the next authorized round. With one or more eligible outcomes, inspect Role Runtime's
+   authenticated aggregate of eligible IDs and matching scope controls, then freeze-copy that
+   exact aggregate into one full-unit Repair Scope: unit, fingerprint, eligible IDs and final
+   disposition and write-eligibility controls, paths and modes, preservation-reference IDs, and
+   readiness—never a semantic body. Missing or mismatched aggregate or scope control follows Role
    Runtime's inadmissible-callback path. Only then may the same Author write.
 7. **Recheck together.** After an authorized write and admissible `COMPLETE` promote the
    invocation-final fingerprint,
@@ -128,8 +136,16 @@ disagreement or `NO_PROGRESS`.
 ## Validate deterministic facts
 
 When Machine applies, run only affected-owner-supported non-fixing checks: frontmatter or schema,
-registration/metadata consistency, reference existence, owned scripts, generated adapters,
-formatting, and repository tests. Invent no check to avoid `NOT_REQUIRED`.
+registration/metadata consistency, reference existence, generated adapters, formatting, and
+repository tests. For every Candidate-owned or changed script, execute every command in Design's
+frozen script-to-unit-test-resource-to-command mapping so all applicable owner-supported unit tests
+run. A missing mapping, test resource, command, or applicable unit test, or any failed unit test,
+prevents `PASS` and cannot become `NOT_REQUIRED`. Machine checks these resources but never adds or
+updates them.
+
+Machine unit tests need not invoke the real entry point or execute the full job directly. Final
+conditional full-job or Finite Execution Projection behavior validation remains Acceptance-owned.
+Invent no check merely to avoid `NOT_REQUIRED` outside the script requirement.
 
 Fingerprint around every command and apply Job Design's standalone mismatch composition; Machine
 contains no authorized Author write. On mismatch preserve class evidence and stop. Always record

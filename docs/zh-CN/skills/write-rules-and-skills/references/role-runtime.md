@@ -71,10 +71,9 @@ Reviewer 授权。每项操作都通过本运行时报告并接受审计。
 scope、身份、指纹与证据。Controller 只能适度介入，以强制落实或遏制已冻结控制平面；语义 Owner
 继续负责 Candidate 含义、finding 与不动点。
 
-向 Author 提供完整冻结输入，以及准确一份当前 Authoring Scope 或 Repair Scope。只有 Author
-负责 Candidate 含义、处置与编辑，且不执行 Machine Validation、条件式执行或委派。每名 Author
-与 Reviewer 都应用[**按需选择证据**](#select-evidence-by-need)，并在必要时返回对应的缺失上下文
-或访问状态。
+向 Author 提供 Author 合同定义的完整冻结输入，以及准确一份当前 Authoring Scope 或 Repair
+Scope。Author 不执行 Machine Validation、条件式执行或委派。每名 Author 与 Reviewer 都应用
+[**按需选择证据**](#select-evidence-by-need)，并在必要时返回对应的缺失上下文或访问状态。
 
 `CONTEXT_REQUIRED` payload 准确标识一个已冻结的必要事实槽位、缺失事实，以及它在特定角色
 中的用途。Controller 把这些字段与已冻结的更新 envelope 比较，不判断语义是否成立，并原样
@@ -88,8 +87,8 @@ proof state 恢复。
 
 Author 准确返回一种状态：
 
-- `COMPLETE`：语义 Change Summary、当前判别 scope 外的不确定性，以及随附 Operation Report 的
-  引用；payload 不重复任何原始操作、受影响路径或写后观察字段；
+- `COMPLETE`：Author 合同规定的语义 Change Summary、当前判别 scope 外的不确定性，以及随附
+  Operation Report 的引用；payload 不重复任何原始操作、受影响路径或写后观察字段；
 - `CONTEXT_REQUIRED`：上述通用必要事实 payload；
 - `ACCESS_REQUIRED`：上述通用缺失访问 payload；或
 - `HUMAN_DECISION_REQUIRED`：准确决策、证据或权威为何无法解决、决策 Owner，以及每个当前
@@ -129,20 +128,23 @@ Candidate 状态和事故证据。
 2. Controller 根据冻结配对与 manifest 审计回调后，向该 Author↔Owner 配对返回`CHANNEL_OPEN`
    metadata。只有此时 Reviewer 才把完整 finding 直接发送给 Author。
 
-适用的冻结语义 Owner 负责主张、处置、不动点、advisory 升级、关闭与修复选择。**处置控制
-metadata**只包含`repair`、`partial repair`或`decline`，以及是否选中写入。理由、保留的主张、
-证据、论证与修复方向属于只在同级间流动的语义正文。
+Author 合同提供处置与 proposed-write 判断；当前 review 合同提供主张、严重级别与不动点判断；
+Evaluation 把双方的准确最终结果映射为写入资格。本运行时不选择任何结果。**处置控制 metadata**
+为`repair`、`partial repair`或`decline`，并带 proposed-write `true`或`false`。
+**写入资格控制**为`eligible`或`ineligible`。理由、主张、证据、论证与修复方向仍是只在同级间
+流动的语义正文。
 
 Author 与 Owner 直接交换语义内容，并分别独立判断。Controller 只看到控制 metadata。双方用经
-审计的`DISCUSSION_CLOSED`关闭配对，其中包含单元、轮次、指纹、身份、finding ID、处置分类、
-投递状态、不动点状态（`reached`、`not reached`或`not applicable`）和 finding 集合状态
-（`complete`或`reopened`），但不含语义正文。选中写入时，两个事件还携带匹配且不含语义的
+审计的`DISCUSSION_CLOSED`关闭配对，其中包含单元、轮次、指纹、身份、finding ID、准确最终
+处置与 proposed-write 控制、投递状态、由 Owner 产生的不动点状态（`reached`、`not reached`或
+`not applicable`）、由 Evaluation 派生的写入资格控制，以及 finding 集合状态（`complete`或
+`reopened`），但不含语义正文。对于具备写入资格的结果，两个 event 还携带匹配且不含语义的
 scope control：准确 Candidate 路径与模式、preservation-reference ID 和就绪状态。Controller
-依据冻结授权认证并比较这些字段；缺失、不匹配或超出授权的 scope control 会使回调不可接纳。
-所有配对关闭后，Author 发出一份经认证的 selected ID 与匹配 scope control aggregate；Controller
-只能把该准确并集冻结复制进 Repair Scope。
+根据冻结授权与 Evaluation 映射认证并比较这些字段；缺失、不匹配或超出授权的控制会使回调不可
+接纳。所有配对关闭后，Author 发出一份由 eligible ID 与匹配 scope control 组成的经认证
+aggregate；Controller 只能把该准确并集冻结复制进 Repair Scope。
 
-语义 Owner 定义不动点映射。`DISCUSSION_CLOSED`只关闭通道与轮次；同指纹的另一轮必须再次执行
+`DISCUSSION_CLOSED`只关闭通道与轮次；同指纹的另一轮必须再次执行
 `FINDING_READY → CHANNEL_OPEN`。同级通信不能操作角色或改变权威；传输不会赋予权威。
 
 每个回调从其冻结语义合同中暴露一个结果。`DISCUSSION_CLOSED`是生命周期事件，不是结果或

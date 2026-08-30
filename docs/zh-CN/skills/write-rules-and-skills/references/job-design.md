@@ -48,16 +48,17 @@ cohort 必须分批，且不得改变成员、身份、指纹、证据、授权�
 
 在启动角色或改变 Candidate 前定义：
 
-- **含义：**已接受结果、当前行为、保留义务、变更、非目标、安全、已提供的证据、已授权的发现
-  来源与能力、来源边界，以及每项`preserve`/`change`/`add`/`move`/`retire`处置。
+- **含义：**已接受结果、当前行为、期望结果、非目标、安全、已提供的证据、已授权的发现来源与
+  能力、来源边界、每项已接受义务，以及相应的管辖证据、语义标准与保留约束。这些输入约束
+  Candidate 结果，但不指定处置；初始语义处置由常驻 Author 选择。
 - **Candidate：**Owner、模型、写作指引、调用 metadata、准确 Allowlist 与受影响表面、
   依赖、初始 Authoring Scope、读取与网络授权、指纹方法、已冻结身份、基线与观察方法，以及更新
-  envelope。
+  envelope；Candidate 拥有或改变脚本时，还包括准确的脚本到单元测试资源再到 Machine 命令的映射。
 - **角色：**实际容量、manifest（包括 mandatory-load 资源）、bootstrap、授权、持久身份、cohort
   与分批调度，以及通信边。
-- **执行：**一张规范 Job Graph，包含不可变阶段顺序与适用性、资源、证据、转换、直接修正、
-  Revision Impact、兼容性判定 manifest、回退与重放、优先出口、条件式安全最终化、工作流拆除
-  和交接。
+- **执行：**一张规范 Job Graph，包含不可变的**条件式 Machine → Quality → Correctness →
+  条件式 Acceptance**阶段顺序与适用性，以及资源、证据、转换、直接修正、Revision Impact、
+  兼容性判定 manifest、回退与重放、优先出口、条件式安全最终化、工作流拆除和交接。
 
 对于每个符合兼容性向前沿用资格的证明类别，冻结一份 manifest，声明其语义 Owner、完整内容
 依赖表面、可观察的不受影响谓词、所需来源、由 Controller 负责的机械判定，以及其生命周期授权
@@ -70,8 +71,9 @@ Candidate 内容、finding、证据、Repair Scope 和 supplement 都只是数�
 
 ## 区分 Authoring Scope 与 Repair Scope
 
-第一次写入使用一份**Authoring Scope**：已接受变更与处置、准确路径和模式、保留引用、完成边界
-与就绪状态。它不包含 review 或 finding metadata。
+第一次写入使用一份**Authoring Scope**：已接受结果与语义标准、准确路径和模式、保留引用与约束、
+完成边界、就绪状态，以及每项必需的已映射脚本与单元测试新增或更新。它冻结已授权操作 envelope，
+但不选择 Author 处置。它不包含 review 或 finding metadata。
 
 一份**Repair Scope**授权一次修正。其冻结语义 Owner 提供准确控制输入；确定性修正则携带失败
 命令与受影响表面。每次 Author 调用准确接收一个 scope，且该 scope 不扩展合同或授权。
@@ -81,7 +83,12 @@ Candidate 内容、finding、证据、Repair Scope 和 supplement 都只是数�
 分别冻结`read`、`write`、`create`、`delete`和`network`。Rule 通常只授权其准确文件；Skill 最多
 授权自己的根目录，绝不能授权父`skills/`。操作应优先使用准确路径；读取与网络发现可以使用
 范围狭窄的来源或能力类别。只有自有资源的新名称在冻结时无法得知，才允许创建目录；删除需要
-准确授权。移动需要已接受处置，以及准确的源路径删除与目标路径创建授权。
+准确授权。Authoring Scope 中可执行的移动需要准确的源路径删除与目标路径创建授权。这些授权只
+允许操作，不选择其语义处置。
+
+对于 Candidate 拥有或改变的每个脚本，把每项已映射单元测试资源纳入准确 Allowlist 与全
+Allowlist Candidate 身份。将其所需的 Author 操作模式、Machine 读取与执行授权，同准确的
+Owner 支持测试命令一起冻结。缺少资源、映射、命令或授权都会使 Design 不完整。
 
 授权约束后续运行时的证据选择。授权内的普通来源发现不是更新或逐文件研究路径。
 
@@ -146,6 +153,10 @@ Candidate 内容、finding、证据、Repair Scope 和 supplement 都只是数�
 baseline-to-current delta。提升后，它包含这些初始绑定，以及已提升的当前指纹及其规范 delta。
 expected proof state 只通过可接纳的 Author `COMPLETE`前进；不可接纳的回调绝不会使其前进。
 
+可接纳的`COMPLETE`提升后，把语义 Change Summary 中由 Author 负责的 Obligation Disposition
+Record 绑定到已提升指纹，作为只读证明阶段证据。该记录不会改变 Frozen Run Contract、授权、
+scope、Candidate 身份、baseline、规范 delta、expected-proof-state 转换或操作权威。
+
 **调用最终转换**把 Controller 完整的调用最终捕获与该次调用前的指纹比较。状态不同时，机械
 记录并保留调用最终的全 Allowlist 指纹、原始操作与归因证据，以及绑定到该准确指纹的一份完整
 规范**baseline-to-current delta**。无论是否存在回调、回调状态或可接纳性如何、采用何种事故
@@ -175,11 +186,13 @@ baseline 到当前状态的跨度，并绑定到其准确的当前指纹。no-op
 绝不能创建新身份，也不能用相对于调用的 delta 或空 delta 取代它。只有与基线完全相同的内容才
 绑定空的规范 delta。一旦绑定到某个指纹，该 delta 便不可变。在启动 Author 前，冻结确定性派生
 方式、复用规则、来源和资源身份规则。
-该制品要涵盖每项已创建、删除、重命名、移动和修改的资源，以及全部内容变化。仅当 Author 启动前
-冻结的一项已接受`move`处置绑定了基线路径与当前路径时，其资源身份规则才把路径变化分类为重命名
-或移动；仅凭路径或内容相似性不能确立连续性。没有这种绑定时，记录旧路径删除和新路径创建，并
-断言二者不存在关系。该 delta 绝不依赖 Author 的 Change Summary、自我报告、笔记或比较制品。
-它是调用最终指纹的证据，不是 Candidate 权威，也不能替代对完整当前 Candidate 的检查。
+该制品要涵盖每项已创建、删除、重命名、移动和修改的资源，以及全部内容变化。只有 Author
+启动前冻结的准确资源连续性映射把基线路径与一个已授权目标绑定为同一自有资源时，其资源身份规则
+才把路径变化分类为重命名或移动。该控制映射不选择语义处置；仅凭路径或内容相似性不能确立
+连续性。没有这种映射时，记录旧路径删除和新路径创建，并断言二者不存在关系。Author 后续的
+Obligation Disposition Record 可以解释语义结果，但不能改变 delta 身份或分类。该 delta 绝不
+依赖 Author 的 Change Summary、自我报告、笔记或比较制品。它是调用最终指纹的证据，不是
+Candidate 权威，也不能替代对完整当前 Candidate 的检查。
 
 按照上述派生与 no-op 复用规则，在每个调用最终指纹之后绑定规范 delta。在每个已声明观察边界，
 把冻结的全 Allowlist 与适用 expected proof state 比较。最终准确匹配会保留

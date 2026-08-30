@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -14,6 +15,7 @@ from typing import Any, Callable
 
 
 TOKSCALE_TIMEOUT_SECONDS = 30
+SUPPORTED_CLIENTS = ('codex', 'cursor', 'copilot')
 TOKEN_FIELDS = ('input', 'output', 'reasoning', 'cache_read', 'cache_write')
 USAGE_ACTIVITY_FIELDS = ('message_count', 'model_activity_ms')
 COORDINATION_TOOLS = (
@@ -25,10 +27,36 @@ COORDINATION_TOOLS = (
     'interrupt_agent',
 )
 TERMINAL_AGENT_STATES = ('completed', 'failed', 'cancelled', 'canceled', 'errored')
+BEHAVIOR_CAPABILITY_NAMES = (
+    'tool calls',
+    'incomplete calls',
+    'subagent lifecycle and coordination',
+    'waits',
+)
+PROFILE_LABELS = {
+    'codex': 'Codex',
+    'cursor': 'Cursor',
+    'copilot': 'GitHub Copilot CLI',
+}
+WINDOWS_LITERAL_PATH_CHARS = r'\w._:/\\ ()\-'
+WINDOWS_UNQUOTED_PATH_CHARS = r'A-Za-z0-9._:/\\\-'
+LINUX_LITERAL_PATH_CHARS = r'\w._/ ()\-'
+LINUX_UNQUOTED_PATH_CHARS = r'A-Za-z0-9._/\-'
+SESSION_ID_LITERAL = r'[A-Za-z0-9._:\-]+'
+WINDOWS_ABSOLUTE_PREFIX = r'(?:[A-Za-z]:[\\/]|\\\\)'
 
 
 class UsageError(RuntimeError):
     pass
+
+
+def validate_client(client: str) -> str:
+    if client not in SUPPORTED_CLIENTS:
+        supported = ', '.join(SUPPORTED_CLIENTS)
+        raise UsageError(
+            f'Unsupported client {client!r}; supported clients are: {supported}.'
+        )
+    return client
 
 
 def _timestamp(now: datetime | None = None) -> datetime:
@@ -56,17 +84,73 @@ def _duration_milliseconds(start: datetime, end: datetime) -> int:
     return int(delta.total_seconds() * 1000)
 
 
-def session_id_matches(candidate: str, requested: str) -> bool:
-    return candidate == requested or candidate.endswith(f'-{requested}')
+def session_id_matches(client: str, candidate: str, requested: str) -> bool:
+    client = validate_client(client)
+    if candidate == requested:
+        return True
+    return client == 'codex' and candidate == f'rollout-{requested}'
 
 
-def _integer(value: Any, field: str) -> int:
+def _matching_tokscale_rows(
+    client: str,
+    requested: str,
+    rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    matching = []
+    aliases = set()
+    groups = set()
+    for row in rows:
+        if row.get('client') != client:
+            continue
+        candidate = row.get('sessionId', row.get('session_id'))
+        if not isinstance(candidate, str) or not session_id_matches(
+            client, candidate, requested
+        ):
+            continue
+        normalized = normalize_usage_row(row)
+        group = (
+            normalized['session_id'],
+            normalized['model'],
+        )
+        if group in groups:
+            raise UsageError(
+                'Tokscale returned duplicate rows for the requested '
+                'client/session/model attribution.'
+            )
+        groups.add(group)
+        aliases.add(normalized['session_id'])
+        matching.append(row)
+    if len(aliases) > 1:
+        raise UsageError(
+            'Tokscale returned both exact and normalized Codex session aliases; '
+            'attribution is ambiguous.'
+        )
+    return matching
+
+
+def _integer(
+    value: Any,
+    field: str,
+    *,
+    allow_none: bool = True,
+    require_json_number: bool = False,
+) -> int:
     if value is None:
+        if not allow_none:
+            raise UsageError(f'Tokscale field {field} must not be null.')
         return 0
     if isinstance(value, bool):
         raise UsageError(f'Tokscale field {field} must be numeric.')
+    if require_json_number and not isinstance(value, (int, float)):
+        raise UsageError(f'Tokscale field {field} must be numeric.')
+    if isinstance(value, float) and not math.isfinite(value):
+        raise UsageError(f'Tokscale field {field} must be finite.')
+    if isinstance(value, float) and not value.is_integer():
+        raise UsageError(f'Tokscale field {field} must be an integer.')
     try:
         result = int(value)
+    except OverflowError as error:
+        raise UsageError(f'Tokscale field {field} must be finite.') from error
     except (TypeError, ValueError) as error:
         raise UsageError(f'Tokscale field {field} must be numeric.') from error
     if result < 0:
@@ -74,45 +158,87 @@ def _integer(value: Any, field: str) -> int:
     return result
 
 
-def _number(value: Any, field: str) -> float:
+def _number(
+    value: Any,
+    field: str,
+    *,
+    allow_none: bool = True,
+    require_json_number: bool = False,
+) -> float:
     if value is None:
+        if not allow_none:
+            raise UsageError(f'Tokscale field {field} must not be null.')
         return 0.0
     if isinstance(value, bool):
+        raise UsageError(f'Tokscale field {field} must be numeric.')
+    if require_json_number and not isinstance(value, (int, float)):
         raise UsageError(f'Tokscale field {field} must be numeric.')
     try:
         result = float(value)
     except (TypeError, ValueError) as error:
         raise UsageError(f'Tokscale field {field} must be numeric.') from error
+    if not math.isfinite(result):
+        raise UsageError(f'Tokscale field {field} must be finite.')
     if result < 0:
         raise UsageError(f'Tokscale field {field} must not be negative.')
     return result
+
+
+def _required_text(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise UsageError(f'Tokscale field {field} must be a nonempty string.')
+    return value
 
 
 def normalize_usage_row(row: dict[str, Any]) -> dict[str, Any]:
     performance = row.get('performance') or {}
     if not isinstance(performance, dict):
         raise UsageError('Tokscale performance data must be an object.')
+    session_id = row['sessionId'] if 'sessionId' in row else row.get('session_id')
+    provider = row.get('provider')
     return {
-        'client': str(row.get('client', '')),
-        'session_id': str(row.get('sessionId', row.get('session_id', ''))),
-        'provider': str(row.get('provider', '')),
-        'model': str(row.get('model', 'unknown')),
-        'input': _integer(row.get('input'), 'input'),
-        'output': _integer(row.get('output'), 'output'),
-        'reasoning': _integer(row.get('reasoning'), 'reasoning'),
+        'client': _required_text(row.get('client'), 'client'),
+        'session_id': _required_text(session_id, 'sessionId'),
+        'provider': '' if provider is None else str(provider),
+        'model': _required_text(row.get('model'), 'model'),
+        'input': _integer(
+            row.get('input'), 'input', allow_none=False, require_json_number=True
+        ),
+        'output': _integer(
+            row.get('output'), 'output', allow_none=False, require_json_number=True
+        ),
+        'reasoning': _integer(
+            row.get('reasoning'),
+            'reasoning',
+            allow_none=False,
+            require_json_number=True,
+        ),
         'cache_read': _integer(
-            row.get('cacheRead', row.get('cache_read')), 'cacheRead'
+            row.get('cacheRead', row.get('cache_read')),
+            'cacheRead',
+            allow_none=False,
+            require_json_number=True,
         ),
         'cache_write': _integer(
-            row.get('cacheWrite', row.get('cache_write')), 'cacheWrite'
+            row.get('cacheWrite', row.get('cache_write')),
+            'cacheWrite',
+            allow_none=False,
+            require_json_number=True,
         ),
-        'cost': _number(row.get('cost'), 'cost'),
+        'cost': _number(
+            row.get('cost'), 'cost', allow_none=False, require_json_number=True
+        ),
         'message_count': _integer(
-            row.get('messageCount', row.get('message_count')), 'messageCount'
+            row.get('messageCount', row.get('message_count')),
+            'messageCount',
+            allow_none=False,
+            require_json_number=True,
         ),
         'model_activity_ms': _integer(
             performance.get('totalDurationMs', row.get('model_activity_ms')),
             'performance.totalDurationMs',
+            allow_none=False,
+            require_json_number=True,
         ),
     }
 
@@ -169,7 +295,10 @@ def capture_tokscale_snapshot(
     started_at: datetime | None,
     ended_at: datetime | None,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    *,
+    session_id: str | None = None,
 ) -> list[dict[str, Any]]:
+    client = validate_client(client)
     command = [
         tokscale_executable(),
         '--json',
@@ -209,7 +338,63 @@ def capture_tokscale_snapshot(
         raise UsageError(f'Tokscale returned invalid JSON for client {client}.') from error
     if not isinstance(payload, dict) or not isinstance(payload.get('entries'), list):
         raise UsageError(f'Tokscale JSON for client {client} has no entries array.')
-    return payload['entries']
+    entries = payload['entries']
+    selected_entries = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise UsageError(
+                f'Tokscale JSON for client {client} contains a non-object entry.'
+            )
+        entry_client = _required_text(entry.get('client'), 'client')
+        if entry_client != client:
+            raise UsageError(
+                f'Tokscale JSON for client {client} contains a row for '
+                f'client {entry_client}.'
+            )
+        entry_session = _required_text(
+            entry['sessionId'] if 'sessionId' in entry else entry.get('session_id'),
+            'sessionId',
+        )
+        if session_id is not None and not session_id_matches(
+            client, entry_session, session_id
+        ):
+            continue
+        required = (
+            ('client',),
+            ('sessionId', 'session_id'),
+            ('model',),
+            ('input',),
+            ('output',),
+            ('reasoning',),
+            ('cacheRead', 'cache_read'),
+            ('cacheWrite', 'cache_write'),
+            ('cost',),
+            ('messageCount', 'message_count'),
+            ('performance', 'model_activity_ms'),
+        )
+        missing = [
+            '/'.join(names) for names in required if not any(name in entry for name in names)
+        ]
+        if missing:
+            raise UsageError(
+                'Tokscale JSON is incompatible with session diagnostics; '
+                f"missing normalized field(s): {', '.join(missing)}."
+            )
+        performance = entry.get('performance')
+        if (
+            'model_activity_ms' not in entry
+            and (
+                not isinstance(performance, dict)
+                or 'totalDurationMs' not in performance
+            )
+        ):
+            raise UsageError(
+                'Tokscale JSON is incompatible with session diagnostics; '
+                'missing normalized field: performance.totalDurationMs.'
+            )
+        normalize_usage_row(entry)
+        selected_entries.append(entry)
+    return selected_entries
 
 
 def detect_current_session(
@@ -218,7 +403,7 @@ def detect_current_session(
     if client or session_id:
         if not client or not session_id:
             raise UsageError('Client and session ID must be provided together.')
-        return client, session_id
+        return validate_client(client), session_id
     codex_session = os.environ.get('CODEX_THREAD_ID')
     if codex_session:
         return 'codex', codex_session
@@ -226,59 +411,216 @@ def detect_current_session(
 
 
 def _codex_log_paths(codex_home: Path, session_id: str) -> list[Path]:
+    timestamped_name = re.compile(
+        r'^rollout-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-'
+        + re.escape(session_id)
+        + r'$'
+    )
+
+    def matches(path: Path) -> bool:
+        return path.stem in (session_id, f'rollout-{session_id}') or bool(
+            timestamped_name.fullmatch(path.stem)
+        )
+
     paths = []
     for root in (codex_home / 'sessions', codex_home / 'archived_sessions'):
         if root.is_dir():
             paths.extend(
                 path
-                for path in root.rglob(f'*{session_id}.jsonl')
-                if path.stem == session_id or path.stem.endswith(f'-{session_id}')
+                for path in root.rglob('*.jsonl')
+                if matches(path)
             )
     return sorted(set(paths))
 
 
-def _codex_events(
-    session_id: str, codex_home: Path | None = None
-) -> tuple[list[dict[str, Any]], list[str]]:
-    root = codex_home or Path(os.environ.get('CODEX_HOME', Path.home() / '.codex'))
+def _validate_codex_tool_event(event: dict[str, Any]) -> None:
+    if event.get('type') != 'response_item':
+        return
+    payload = event.get('payload') or {}
+    payload_type = payload.get('type')
+    if payload_type in ('custom_tool_call', 'function_call'):
+        if not isinstance(payload.get('call_id'), str) or not payload['call_id']:
+            raise UsageError('Codex tool call_id must be a nonempty string.')
+        if not isinstance(payload.get('name'), str) or not payload['name']:
+            raise UsageError('Codex tool name must be a nonempty string.')
+        arguments_field = 'input' if payload_type == 'custom_tool_call' else 'arguments'
+        if arguments_field not in payload:
+            raise UsageError(
+                f'Codex {payload_type} must contain {arguments_field}.'
+            )
+    elif payload_type in ('custom_tool_call_output', 'function_call_output'):
+        if not isinstance(payload.get('call_id'), str) or not payload['call_id']:
+            raise UsageError('Codex tool call_id must be a nonempty string.')
+        if 'output' not in payload:
+            raise UsageError(f'Codex {payload_type} must contain output.')
+
+
+def _coherent_codex_tool_events(
+    events: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], int]:
+    open_calls = {}
+    completed_calls = set()
+    coherent = []
+    invalid = 0
+    for event in events:
+        if event.get('type') != 'response_item':
+            coherent.append(event)
+            continue
+        payload = event.get('payload') or {}
+        payload_type = payload.get('type')
+        call_id = payload.get('call_id')
+        if payload_type in ('custom_tool_call', 'function_call'):
+            if call_id in open_calls or call_id in completed_calls:
+                invalid += 1
+                continue
+            open_calls[call_id] = f'{payload_type}_output'
+        elif payload_type in ('custom_tool_call_output', 'function_call_output'):
+            if open_calls.get(call_id) != payload_type:
+                invalid += 1
+                continue
+            del open_calls[call_id]
+            completed_calls.add(call_id)
+        coherent.append(event)
+    return coherent, invalid
+
+
+def _load_codex_log_snapshot(
+    session_id: str,
+    codex_home: Path | None = None,
+    captured_at: datetime | None = None,
+    *,
+    capture_cutoff_after_read: bool = False,
+) -> dict[str, Any]:
+    configured_home = os.environ.get('CODEX_HOME')
+    root = (
+        codex_home
+        if codex_home is not None
+        else Path(configured_home) if configured_home else Path.home() / '.codex'
+    )
     events = []
     warnings = []
+    causes = []
     invalid_json = 0
-    for path in _codex_log_paths(root, session_id):
-        try:
-            lines = path.read_text(encoding='utf-8').splitlines()
-        except OSError as error:
-            warnings.append(f'Codex log could not be read: {error}')
-            continue
+    paths = _codex_log_paths(root, session_id)
+    source_lines = []
+    if len(paths) > 1:
+        message = (
+            f'Multiple exact Codex log candidates were found for session '
+            f'{session_id}; local attribution is ambiguous.'
+        )
+        warnings.append(message)
+        causes.append({'kind': 'ambiguous-multiple-logs', 'message': message})
+    else:
+        for path in paths:
+            try:
+                lines = path.read_text(encoding='utf-8').splitlines()
+            except OSError as error:
+                message = f'Codex log could not be read: {error}'
+                warnings.append(message)
+                causes.append({'kind': 'unreadable', 'message': message})
+                continue
+            source_lines.append(lines)
+    cutoff = (
+        _timestamp(captured_at)
+        if captured_at is not None
+        else _timestamp() if capture_cutoff_after_read else None
+    )
+    for lines in source_lines:
         for line in lines:
             try:
                 event = json.loads(line)
+                if not isinstance(event, dict):
+                    raise UsageError('Codex log event must be an object.')
                 event['_parsed_timestamp'] = _parse_timestamp(str(event['timestamp']))
+                if cutoff is not None and event['_parsed_timestamp'] > cutoff:
+                    continue
+                payload = event.get('payload')
+                if payload is not None and not isinstance(payload, dict):
+                    raise UsageError('Codex log event payload must be an object.')
+                if isinstance(payload, dict) and payload.get('type') == 'token_count':
+                    info = payload.get('info')
+                    if info is not None and not isinstance(info, dict):
+                        raise UsageError('Codex token info must be an object.')
+                    if (
+                        isinstance(info, dict)
+                        and 'total_token_usage' in info
+                        and not isinstance(info['total_token_usage'], dict)
+                    ):
+                        raise UsageError(
+                            'Codex total token usage must be an object.'
+                        )
+                _validate_codex_tool_event(event)
             except (KeyError, TypeError, ValueError, json.JSONDecodeError, UsageError):
                 invalid_json += 1
                 continue
             events.append(event)
-    if invalid_json:
-        warnings.append(f'{invalid_json} Codex log line(s) were invalid.')
     events.sort(key=lambda event: event['_parsed_timestamp'])
-    return events, warnings
+    events, incoherent_tools = _coherent_codex_tool_events(events)
+    invalid_json += incoherent_tools
+    if invalid_json:
+        message = f'{invalid_json} Codex log line(s) were invalid.'
+        warnings.append(message)
+        causes.append({'kind': 'malformed', 'message': message})
+    if causes:
+        outcome = 'failed'
+    elif not paths:
+        outcome = 'unavailable'
+        causes.append(
+            {'kind': 'no-matching-log', 'message': 'Codex log was not found.'}
+        )
+    elif not events:
+        outcome = 'unavailable'
+        causes.append(
+            {
+                'kind': 'no-events',
+                'message': 'Codex log contained no readable diagnostic events.',
+            }
+        )
+    else:
+        outcome = 'available'
+    return {
+        'events': events,
+        'warnings': warnings,
+        'acquisition': {'outcome': outcome, 'causes': causes},
+        'captured_at': _serialize_timestamp(cutoff) if cutoff is not None else None,
+    }
+
+
+def _codex_events(
+    session_id: str,
+    codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    evidence = snapshot or _load_codex_log_snapshot(session_id, codex_home)
+    return list(evidence['events']), list(evidence['warnings'])
+
+
+def _codex_acquisition_messages(snapshot: dict[str, Any]) -> list[str]:
+    return [
+        str(cause['message'])
+        for cause in snapshot['acquisition'].get('causes', [])
+    ]
 
 
 def codex_session_bounds(
-    session_id: str, codex_home: Path | None = None
+    session_id: str,
+    codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
 ) -> tuple[datetime, datetime] | None:
-    events, _ = _codex_events(session_id, codex_home)
+    events, _ = _codex_events(session_id, codex_home, snapshot)
     if not events:
         return None
     return events[0]['_parsed_timestamp'], events[-1]['_parsed_timestamp']
 
 
-def codex_current_turn_bounds(
-    session_id: str, codex_home: Path | None = None
-) -> tuple[datetime, datetime] | None:
-    events, _ = _codex_events(session_id, codex_home)
+def _codex_current_turn_discovery(
+    session_id: str,
+    codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
+) -> tuple[tuple[datetime, datetime] | None, list[str]]:
+    events, warnings = _codex_events(session_id, codex_home, snapshot)
     if not events:
-        return None
+        return None, warnings
     user_boundaries = []
     for event in events:
         payload = event.get('payload') or {}
@@ -292,8 +634,17 @@ def codex_current_turn_bounds(
         ):
             user_boundaries.append(event['_parsed_timestamp'])
     if not user_boundaries:
-        return None
-    return max(user_boundaries), events[-1]['_parsed_timestamp']
+        return None, warnings
+    return (max(user_boundaries), events[-1]['_parsed_timestamp']), warnings
+
+
+def codex_current_turn_bounds(
+    session_id: str,
+    codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
+) -> tuple[datetime, datetime] | None:
+    bounds, _ = _codex_current_turn_discovery(session_id, codex_home, snapshot)
+    return bounds
 
 
 def _normalize_tool_name(name: str) -> str:
@@ -310,39 +661,70 @@ def _jsonish(value: Any) -> Any:
     return value
 
 
-def _text_fragments(value: Any) -> list[str]:
+def _structured_result_failure(value: Any) -> bool | None:
     value = _jsonish(value)
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, dict):
-        return [fragment for item in value.values() for fragment in _text_fragments(item)]
-    if isinstance(value, list):
-        return [fragment for item in value for fragment in _text_fragments(item)]
+    if not isinstance(value, dict):
+        return None
+    if value.get('isError') is True or value.get('is_error') is True:
+        return True
+    status = str(value.get('status', '')).lower()
+    if status in ('error', 'failed'):
+        return True
+    observed_success = (
+        value.get('isError') is False
+        or value.get('is_error') is False
+        or status in ('ok', 'success', 'succeeded', 'completed')
+    )
+    for field in ('exit_code', 'exitCode', 'returncode', 'return_code'):
+        if field not in value:
+            continue
+        exit_code = value[field]
+        if isinstance(exit_code, bool):
+            continue
+        if isinstance(exit_code, (int, float)) and math.isfinite(exit_code):
+            return exit_code != 0
+        if isinstance(exit_code, str) and re.fullmatch(
+            r'[+-]?\d+', exit_code.strip()
+        ):
+            return int(exit_code) != 0
+    return False if observed_success else None
+
+
+def _failure_envelope_texts(value: Any) -> list[str]:
+    parsed = _jsonish(value)
+    if isinstance(parsed, str):
+        return [parsed]
+    if isinstance(parsed, list):
+        return [
+            item['text']
+            for item in parsed
+            if isinstance(item, dict)
+            and item.get('type') == 'text'
+            and isinstance(item.get('text'), str)
+        ]
+    if isinstance(parsed, dict):
+        return [
+            parsed[field]
+            for field in ('error', 'message')
+            if isinstance(parsed.get(field), str)
+        ]
     return []
 
 
-def _structured_error(value: Any) -> bool:
-    value = _jsonish(value)
-    if isinstance(value, dict):
-        if value.get('isError') is True or value.get('is_error') is True:
-            return True
-        if str(value.get('status', '')).lower() in ('error', 'failed'):
-            return True
-        return any(_structured_error(item) for item in value.values())
-    if isinstance(value, list):
-        return any(_structured_error(item) for item in value)
-    return False
-
-
-def _tool_failed(tool_name: str, output: Any) -> bool:
-    if _structured_error(output):
-        return True
+def _tool_failed(output: Any) -> bool:
+    structured = _structured_result_failure(output)
+    if structured is not None:
+        return structured
     return any(
         re.search(
             r'^(?:execution error:|script (?:failed\b|error:)|tool error:|collab .* failed:)',
             text.strip().lower(),
         )
-        for text in _text_fragments(output)
+        or re.fullmatch(
+            r'process exited with code (?:-[0-9]+|\+?[1-9][0-9]*)[.!]?',
+            text.strip().lower(),
+        )
+        for text in _failure_envelope_texts(output)
     )
 
 
@@ -358,57 +740,182 @@ def _shell_command(payload: dict[str, Any]) -> str | None:
     ):
         return None
     arguments = payload.get('input', payload.get('arguments', ''))
-    parsed = _jsonish(arguments)
-    if isinstance(parsed, dict) and isinstance(parsed.get('command'), str):
-        return parsed['command'].strip()
+
+    def command_from_object(
+        value: Any, *, require_cmd: bool = False
+    ) -> str | None:
+        if not isinstance(value, dict):
+            return None
+        fields = [field for field in ('command', 'cmd') if field in value]
+        if len(fields) != 1 or not isinstance(value[fields[0]], str):
+            return None
+        if require_cmd and fields[0] != 'cmd':
+            return None
+        transport = set(value) - {fields[0]}
+        if not transport.issubset(
+            {
+                'justification',
+                'login',
+                'max_output_tokens',
+                'prefix_rule',
+                'sandbox_permissions',
+                'shell',
+                'tty',
+                'workdir',
+                'yield_time_ms',
+            }
+        ):
+            return None
+        if any(
+            field in value and not isinstance(value[field], bool)
+            for field in ('login', 'tty')
+        ):
+            return None
+        if any(
+            field in value
+            and (
+                isinstance(value[field], bool)
+                or not isinstance(value[field], int)
+                or value[field] < 0
+            )
+            for field in ('max_output_tokens', 'yield_time_ms')
+        ):
+            return None
+        if any(
+            field in value
+            and (not isinstance(value[field], str) or not value[field])
+            for field in ('justification', 'shell', 'workdir')
+        ):
+            return None
+        if 'sandbox_permissions' in value and value['sandbox_permissions'] not in (
+            'use_default',
+            'require_escalated',
+        ):
+            return None
+        if 'prefix_rule' in value and (
+            not isinstance(value['prefix_rule'], list)
+            or not value['prefix_rule']
+            or any(not isinstance(item, str) or not item for item in value['prefix_rule'])
+        ):
+            return None
+        return value[fields[0]].strip()
+
+    if isinstance(arguments, dict):
+        return command_from_object(arguments)
     if not isinstance(arguments, str):
         return None
-
-    double_quoted = re.search(
-        r'(?:(?:"command"|\'command\'|command))\s*:\s*'
-        r'("(?:\\.|[^"\\])*")',
-        arguments,
-        re.DOTALL,
-    )
-    if double_quoted:
-        try:
-            return str(json.loads(double_quoted.group(1))).strip()
-        except json.JSONDecodeError:
-            return None
-    single_quoted = re.search(
-        r"(?:\"command\"|'command'|command)\s*:\s*'((?:\\.|[^'\\])*)'",
-        arguments,
-        re.DOTALL,
-    )
-    if single_quoted:
-        return re.sub(r"\\(['\\])", r'\1', single_quoted.group(1)).strip()
 
     stripped = arguments.strip()
     if re.match(r'^(?:&\s*)?(?:powershell|pwsh)(?:\.exe)?\b', stripped, re.I):
         return stripped
     if re.match(r'^(?:sh|bash)\s+', stripped, re.I):
         return stripped
-    return None
+
+    def unique_object_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f'Duplicate JSON field: {key}')
+            result[key] = value
+        return result
+
+    decoder = json.JSONDecoder(object_pairs_hook=unique_object_pairs)
+    if stripped.startswith('{'):
+        try:
+            parsed, end = decoder.raw_decode(stripped)
+        except (json.JSONDecodeError, ValueError):
+            return None
+        if stripped[end:].strip():
+            return None
+        return command_from_object(parsed)
+
+    envelope = re.match(
+        r'^const[ \t]+([A-Za-z_$][A-Za-z0-9_$]*)[ \t]*=[ \t]*'
+        r'await[ \t]+tools\.exec_command[ \t]*\([ \t\r\n]*',
+        stripped,
+    )
+    if not envelope:
+        return None
+    try:
+        parsed, end = decoder.raw_decode(stripped, envelope.end())
+    except (json.JSONDecodeError, ValueError):
+        return None
+    variable = re.escape(envelope.group(1))
+    if re.fullmatch(
+        rf'[ \t\r\n]*\)[ \t]*;[ \t\r\n]*text[ \t]*\('
+        rf'[ \t]*{variable}\.output[ \t]*\)[ \t]*;[ \t\r\n]*',
+        stripped[end:],
+    ) is None:
+        return None
+    return command_from_object(parsed, require_cmd=True)
 
 
 def _is_diagnostic_call(payload: dict[str, Any]) -> bool:
     command = _shell_command(payload)
     if not command:
         return False
-    return bool(
-        re.search(
-            r'^\s*(?:&\s*)?(?:powershell|pwsh)(?:\.exe)?\b.*?'
-            r'-file\s+"?\S*diagnose-agent-session[\\/]scripts[\\/]'
-            r'task-metrics\.ps1"?\s+diagnose(?:\s|$)',
+    flags = re.IGNORECASE | re.DOTALL
+    windows_wrapper_path = (
+        rf'(?:"{WINDOWS_ABSOLUTE_PREFIX}'
+        rf'(?:[{WINDOWS_LITERAL_PATH_CHARS}]*[\\/])?diagnose-agent-session'
+        rf'[\\/]scripts[\\/]task-metrics\.ps1"'
+        rf"|'{WINDOWS_ABSOLUTE_PREFIX}"
+        rf"(?:[{WINDOWS_LITERAL_PATH_CHARS}]*[\\/])?diagnose-agent-session"
+        rf"[\\/]scripts[\\/]task-metrics\.ps1'"
+        rf'|{WINDOWS_ABSOLUTE_PREFIX}'
+        rf'(?:[{WINDOWS_UNQUOTED_PATH_CHARS}]*[\\/])?diagnose-agent-session'
+        rf'[\\/]scripts[\\/]task-metrics\.ps1)'
+    )
+    linux_wrapper_path = (
+        rf'(?:"/(?:[{LINUX_LITERAL_PATH_CHARS}]*/)?diagnose-agent-session/'
+        rf'scripts/task-metrics\.sh"'
+        rf"|'/(?:[{LINUX_LITERAL_PATH_CHARS}]*/)?diagnose-agent-session/"
+        rf"scripts/task-metrics\.sh'"
+        rf'|/(?:[{LINUX_UNQUOTED_PATH_CHARS}]*/)?diagnose-agent-session/'
+        rf'scripts/task-metrics\.sh)'
+    )
+    invocation_patterns = (
+        (
+            r'^[ \t]*(?:&[ \t]*)?(?:powershell|pwsh)(?:\.exe)?'
+            r'(?:[ \t]+-ExecutionPolicy[ \t]+Bypass)?[ \t]+-File[ \t]+'
+            + windows_wrapper_path
+        ),
+        (
+            r'^[ \t]*(?:sh|bash)[ \t]+' + linux_wrapper_path
+        ),
+        (
+            r"^[ \t]*\$skillRoot[ \t]*=[ \t]*(['\"])"
+            rf"{WINDOWS_ABSOLUTE_PREFIX}"
+            rf"(?:[{WINDOWS_LITERAL_PATH_CHARS}]*[\\/])?"
+            r"diagnose-agent-session[\\/]?\1[ \t]*(?:;[ \t]*|\r?\n[ \t]*)"
+            r"\$wrapper[ \t]*=[ \t]*Join-Path[ \t]+\$skillRoot[ \t]+(['\"])"
+            r"scripts\\task-metrics\.ps1\2[ \t]*"
+            r"(?:;[ \t]*|\r?\n[ \t]*)"
+            r"(?:&[ \t]*)?(?:powershell|pwsh)(?:\.exe)?"
+            r"(?:[ \t]+-ExecutionPolicy[ \t]+Bypass)?"
+            r"[ \t]+-File[ \t]+\$wrapper"
+        ),
+        (
+            rf"^[ \t]*skill_root=(['\"])/"
+            rf"(?:[{LINUX_LITERAL_PATH_CHARS}]*/)?"
+            r"diagnose-agent-session/?\1[ \t]*(?:;[ \t]*|\r?\n[ \t]*)"
+            r"(?:sh|bash)[ \t]+(['\"])\$skill_root/scripts/"
+            r"task-metrics\.sh\2"
+        ),
+    )
+    allowed_arguments = (
+        r'(?:[ \t]+--scope[ \t]+(?:turn|session|both)'
+        r'|[ \t]+--client[ \t]+(?:codex|cursor|copilot)'
+        rf'|[ \t]+--session-id[ \t]+{SESSION_ID_LITERAL})*[ \t]*'
+    )
+    return any(
+        re.fullmatch(
+            rf'{invocation}[ \t]+diagnose{allowed_arguments}',
             command,
-            re.IGNORECASE,
+            flags,
         )
-        or re.search(
-            r'^\s*(?:sh|bash)\s+"?\S*diagnose-agent-session/scripts/'
-            r'task-metrics\.sh"?\s+diagnose(?:\s|$)',
-            command,
-            re.IGNORECASE,
-        )
+        is not None
+        for invocation in invocation_patterns
     )
 
 
@@ -491,23 +998,22 @@ def analyze_codex_tool_activity(
     codex_home: Path | None = None,
     started_at: datetime | None = None,
     ended_at: datetime | None = None,
+    snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    events, warnings = _codex_events(session_id, codex_home)
+    evidence = snapshot or _load_codex_log_snapshot(session_id, codex_home)
+    events, warnings = _codex_events(session_id, codex_home, evidence)
+    acquisition = evidence['acquisition']
     if not events:
-        return {
-            'status': 'unavailable',
-            'started_calls': 0,
-            'completed_calls': 0,
-            'failed_calls': 0,
-            'incomplete_calls': 0,
-            'repeated_identical_calls': 0,
-            'observed_duration_ms': 0,
-            'longest_call_ms': 0,
-            'tools': [],
-            'coordination': {},
-            'findings': [],
-            'warnings': warnings or ['Codex log was not found.'],
-        }
+        activity = _unavailable_tool_activity(
+            warnings or _codex_acquisition_messages(evidence),
+            status=(
+                'failed'
+                if acquisition['outcome'] == 'failed'
+                else 'unavailable'
+            ),
+        )
+        activity['acquisition'] = acquisition
+        return activity
 
     scope_start = _timestamp(started_at or events[0]['_parsed_timestamp'])
     scope_end = _timestamp(ended_at or events[-1]['_parsed_timestamp'])
@@ -571,7 +1077,7 @@ def analyze_codex_tool_activity(
         ):
             call_start, tool_name, _, call_in_scope = pending.pop(call_id)
             output = payload.get('output')
-            failed = _tool_failed(tool_name, output)
+            failed = _tool_failed(output)
 
             if tool_name == 'spawn_agent' and not failed:
                 agent_id, aliases = _spawned_agent_aliases(output)
@@ -674,7 +1180,11 @@ def analyze_codex_tool_activity(
         }
     )
     return {
-        'status': 'partial' if warnings else 'available',
+        'status': (
+            'failed'
+            if acquisition['outcome'] == 'failed'
+            else 'partial' if warnings else 'available'
+        ),
         'started_calls': started_calls,
         'completed_calls': completed_calls,
         'failed_calls': failed_calls,
@@ -688,43 +1198,44 @@ def analyze_codex_tool_activity(
         'coordination': coordination,
         'findings': findings,
         'warnings': warnings,
+        'acquisition': acquisition,
     }
 
 
-def read_codex_token_totals(
-    session_id: str, codex_home: Path | None = None
-) -> dict[str, int] | None:
-    root = codex_home or Path(os.environ.get('CODEX_HOME', Path.home() / '.codex'))
+def _read_codex_token_totals_evidence(
+    session_id: str,
+    codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
+) -> tuple[dict[str, int] | None, list[str]]:
     latest: tuple[datetime, dict[str, Any]] | None = None
-    for path in _codex_log_paths(root, session_id):
-        try:
-            lines = path.read_text(encoding='utf-8').splitlines()
-        except OSError:
+    events, problems = _codex_events(session_id, codex_home, snapshot)
+    for event in events:
+        payload = event.get('payload') or {}
+        info = payload.get('info') or {}
+        totals = info.get('total_token_usage')
+        if (
+            event.get('type') != 'event_msg'
+            or payload.get('type') != 'token_count'
+            or not isinstance(totals, dict)
+        ):
             continue
-        for line in lines:
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            payload = event.get('payload') or {}
-            info = payload.get('info') or {}
-            totals = info.get('total_token_usage')
-            if (
-                event.get('type') != 'event_msg'
-                or payload.get('type') != 'token_count'
-                or not isinstance(totals, dict)
-                or not event.get('timestamp')
-            ):
-                continue
-            try:
-                event_time = _parse_timestamp(str(event['timestamp']))
-            except (UsageError, ValueError):
-                continue
-            if latest is None or event_time > latest[0]:
-                latest = event_time, totals
+        event_time = event['_parsed_timestamp']
+        if latest is None or event_time > latest[0]:
+            latest = event_time, totals
     if latest is None:
-        return None
-    return _normalize_codex_token_totals(latest[1])
+        return None, problems
+    return _normalize_codex_token_totals(latest[1]), problems
+
+
+def read_codex_token_totals(
+    session_id: str,
+    codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
+) -> dict[str, int] | None:
+    totals, _ = _read_codex_token_totals_evidence(
+        session_id, codex_home, snapshot
+    )
+    return totals
 
 
 def _normalize_codex_token_totals(raw: dict[str, Any]) -> dict[str, int]:
@@ -754,8 +1265,9 @@ def read_codex_token_delta(
     started_at: datetime,
     ended_at: datetime,
     codex_home: Path | None = None,
+    snapshot: dict[str, Any] | None = None,
 ) -> dict[str, int] | None:
-    events, _ = _codex_events(session_id, codex_home)
+    events, _ = _codex_events(session_id, codex_home, snapshot)
     before = None
     after = None
     for event in events:
@@ -794,16 +1306,23 @@ def build_session_usage(
     tokscale_rows: list[dict[str, Any]],
     snapshot_error: str | None = None,
     codex_home: Path | None = None,
+    codex_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    matching_rows = [
-        row
-        for row in tokscale_rows
-        if row.get('client') == client
-        and session_id_matches(
-            str(row.get('sessionId', row.get('session_id', ''))), session_id
-        )
-    ]
+    client = validate_client(client)
+    try:
+        matching_rows = _matching_tokscale_rows(client, session_id, tokscale_rows)
+    except UsageError as error:
+        matching_rows = []
+        snapshot_error = str(error)
     warnings = [snapshot_error] if snapshot_error else []
+    collection = {
+        'outcome': 'failed' if snapshot_error else 'succeeded',
+        'cause': snapshot_error,
+    }
+    fallback = {'outcome': 'not-attempted', 'cause': None}
+    local_log_acquisition = (
+        codex_snapshot.get('acquisition') if codex_snapshot is not None else None
+    )
     if matching_rows:
         rows, totals = _aggregate_usage(matching_rows)
         return {
@@ -816,10 +1335,32 @@ def build_session_usage(
             'rows': rows,
             'totals': totals,
             'warnings': warnings,
+            'collection': collection,
+            'fallback': fallback,
+            'local_log_acquisition': local_log_acquisition,
         }
     if client == 'codex':
-        log_totals = read_codex_token_totals(session_id, codex_home)
+        codex_evidence = codex_snapshot or _load_codex_log_snapshot(
+            session_id, codex_home
+        )
+        local_log_acquisition = codex_evidence['acquisition']
+        try:
+            log_totals, fallback_problems = _read_codex_token_totals_evidence(
+                session_id, codex_home, codex_evidence
+            )
+        except UsageError as error:
+            fallback = {'outcome': 'failed', 'cause': str(error)}
+            warnings.append(str(error))
+            log_totals = None
+        else:
+            if local_log_acquisition['outcome'] == 'failed':
+                fallback_messages = _codex_acquisition_messages(codex_evidence)
+                fallback_cause = '; '.join(fallback_messages)
+                fallback = {'outcome': 'failed', 'cause': fallback_cause}
+                warnings.extend(fallback_problems or fallback_messages)
         if log_totals is not None:
+            if fallback['outcome'] != 'failed':
+                fallback = {'outcome': 'succeeded', 'cause': None}
             totals = _empty_usage_totals()
             totals.update(log_totals)
             if not snapshot_error:
@@ -834,23 +1375,39 @@ def build_session_usage(
                 'rows': [],
                 'totals': totals,
                 'warnings': warnings,
+                'collection': collection,
+                'fallback': fallback,
+                'local_log_acquisition': local_log_acquisition,
             }
-    if not snapshot_error:
-        warnings.append(
-            'No matching Tokscale row or Codex token event was found.'
-            if client == 'codex'
-            else 'No matching Tokscale session row was found.'
-        )
+        if fallback['outcome'] != 'failed':
+            fallback = {'outcome': 'no-evidence', 'cause': None}
+    if not snapshot_error and fallback['outcome'] != 'failed':
+        if client == 'codex':
+            warnings.append('No matching Tokscale row or Codex token event was found.')
+        elif client == 'cursor':
+            warnings.append(
+                'No matching Cursor Tokscale session row was found; an existing valid '
+                'Tokscale login and completed sync are recoverable prerequisites.'
+            )
+        else:
+            warnings.append(
+                'No matching GitHub Copilot CLI Tokscale session row was found; '
+                'pre-session OTEL file export was required and cannot be recovered '
+                'for activity before this snapshot cutoff.'
+            )
     return {
         'client': client,
         'session_id': session_id,
         'captured_at': _serialize_timestamp(captured_at),
-        'status': 'unavailable',
+        'status': 'failed' if fallback['outcome'] == 'failed' else 'unavailable',
         'source': 'none',
         'cost_status': 'unavailable',
         'rows': [],
         'totals': _empty_usage_totals(),
         'warnings': warnings,
+        'collection': collection,
+        'fallback': fallback,
+        'local_log_acquisition': local_log_acquisition,
     }
 
 
@@ -859,12 +1416,13 @@ def build_codex_turn_usage(
     captured_at: datetime,
     bounds: tuple[datetime, datetime] | None,
     codex_home: Path | None = None,
+    codex_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     delta = (
         None
         if bounds is None
         else read_codex_token_delta(
-            session_id, bounds[0], bounds[1], codex_home
+            session_id, bounds[0], bounds[1], codex_home, codex_snapshot
         )
     )
     totals = _empty_usage_totals()
@@ -886,12 +1444,266 @@ def build_codex_turn_usage(
     }
 
 
+def _build_codex_turn_usage_evidence(
+    session_id: str,
+    captured_at: datetime,
+    bounds: tuple[datetime, datetime] | None,
+    codex_home: Path | None = None,
+    codex_snapshot: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    try:
+        return build_codex_turn_usage(
+            session_id, captured_at, bounds, codex_home, codex_snapshot
+        )
+    except UsageError as error:
+        return {
+            'client': 'codex',
+            'session_id': session_id,
+            'captured_at': _serialize_timestamp(captured_at),
+            'status': 'failed',
+            'source': 'none',
+            'cost_status': 'unavailable',
+            'rows': [],
+            'totals': _empty_usage_totals(),
+            'warnings': [str(error)],
+        }
+
+
 def _format_tokens(value: int | float) -> str:
     return f'{int(value):,}'
 
 
 def _unique_problems(messages: list[str]) -> list[str]:
     return list(dict.fromkeys(message.strip() for message in messages if message.strip()))
+
+
+def _collection_failed(session_usage: dict[str, Any]) -> bool:
+    return session_usage.get('collection', {}).get('outcome') == 'failed'
+
+
+def _fallback_failed(session_usage: dict[str, Any]) -> bool:
+    return session_usage.get('fallback', {}).get('outcome') == 'failed'
+
+
+def _capability(
+    name: str,
+    status: str,
+    *,
+    relevant: bool = True,
+    evidence: str | None = None,
+    reason: str | None = None,
+) -> dict[str, Any]:
+    if status not in ('available', 'unavailable', 'failed'):
+        raise UsageError(f'Invalid capability status for {name}: {status}')
+    return {
+        'name': name,
+        'status': status,
+        'relevant': relevant,
+        'evidence': evidence,
+        'reason': reason,
+    }
+
+
+def _activity_capability_status(activity: dict[str, Any]) -> str:
+    if activity.get('status') == 'failed':
+        return 'failed'
+    if activity.get('status') != 'unavailable':
+        return 'available'
+    return 'unavailable'
+
+
+def _report_codex_acquisition(
+    session_usage: dict[str, Any],
+    session_activity: dict[str, Any],
+    explicit: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    return (
+        explicit
+        or session_activity.get('acquisition')
+        or session_usage.get('local_log_acquisition')
+    )
+
+
+def _profile_behavior_reason(client: str) -> str:
+    return (
+        f'This diagnostic profile has no {PROFILE_LABELS[client]} local behavior '
+        'evidence integration; this does not claim that the harness can never expose it.'
+    )
+
+
+def build_capability_coverage(
+    session_usage: dict[str, Any],
+    session_activity: dict[str, Any],
+    *,
+    turn_usage: dict[str, Any] | None,
+    turn_activity: dict[str, Any] | None,
+    turn_bounds: tuple[datetime, datetime] | None,
+    turn_discovery_problems: list[str] | None,
+    selected_scope: str,
+    codex_acquisition: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    client = validate_client(str(session_usage['client']))
+    local_acquisition = _report_codex_acquisition(
+        session_usage, session_activity, codex_acquisition
+    )
+    usage_warnings = list(session_usage.get('warnings', []))
+    if session_usage['status'] == 'failed':
+        usage_status = 'failed'
+    elif session_usage['status'] != 'unavailable':
+        usage_status = 'available'
+    else:
+        usage_status = (
+            'failed' if _collection_failed(session_usage) else 'unavailable'
+        )
+    coverage = [
+        _capability(
+            'session usage',
+            usage_status,
+            evidence=(
+                f"{session_usage['source']} whole-session usage"
+                if usage_status == 'available'
+                else None
+            ),
+            reason='; '.join(usage_warnings) if usage_status != 'available' else None,
+        )
+    ]
+
+    model_status = 'available' if session_usage['source'] == 'tokscale' else (
+        'failed' if _collection_failed(session_usage) else 'unavailable'
+    )
+    if model_status == 'failed':
+        model_reason = '; '.join(usage_warnings)
+    elif model_status == 'unavailable' and client == 'codex':
+        model_reason = 'No matching Tokscale session/model activity row was available.'
+    elif model_status == 'unavailable':
+        model_reason = (
+            '; '.join(usage_warnings)
+            or 'Tokscale model-activity evidence was not available.'
+        )
+    else:
+        model_reason = None
+    coverage.append(
+        _capability(
+            'model activity',
+            model_status,
+            evidence='Tokscale client/session/model grouping and duration fields'
+            if model_status == 'available'
+            else None,
+            reason=model_reason,
+        )
+    )
+
+    turn_relevant = selected_scope in ('turn', 'both')
+    discovery_problems = turn_discovery_problems or []
+    if (
+        client == 'codex'
+        and local_acquisition is not None
+        and local_acquisition['outcome'] == 'failed'
+    ):
+        turn_status = 'failed'
+        turn_reason = '; '.join(
+            str(cause['message'])
+            for cause in local_acquisition.get('causes', [])
+        )
+        turn_evidence = None
+    elif client == 'codex' and discovery_problems and local_acquisition is None:
+        turn_status = 'failed'
+        turn_reason = '; '.join(discovery_problems)
+        turn_evidence = None
+    elif client == 'codex' and turn_usage is not None and turn_bounds is not None:
+        if turn_usage['status'] == 'failed':
+            turn_status = 'failed'
+        elif turn_usage['status'] == 'unavailable':
+            turn_status = 'unavailable'
+        else:
+            turn_status = 'available'
+        turn_reason = (
+            None
+            if turn_status == 'available'
+            else '; '.join(turn_usage.get('warnings', []))
+        )
+        turn_evidence = (
+            'Codex local-log current-turn boundary and cumulative token delta'
+            if turn_status == 'available'
+            else None
+        )
+    elif client == 'codex':
+        turn_status = 'unavailable'
+        turn_reason = (
+            '; '.join(
+                str(cause['message'])
+                for cause in local_acquisition.get('causes', [])
+            )
+            if local_acquisition is not None
+            and local_acquisition['outcome'] == 'unavailable'
+            else 'Current-turn boundary was not found in the Codex local log.'
+        )
+        turn_evidence = None
+    else:
+        turn_status = 'unavailable'
+        turn_reason = _profile_behavior_reason(client)
+        turn_evidence = None
+    coverage.append(
+        _capability(
+            'current turn',
+            turn_status,
+            relevant=turn_relevant,
+            evidence=turn_evidence,
+            reason=turn_reason,
+        )
+    )
+
+    activities = [session_activity]
+    if selected_scope == 'turn':
+        activities = [turn_activity] if turn_activity is not None else []
+    elif selected_scope == 'both':
+        if turn_activity is not None:
+            activities.append(turn_activity)
+    if client == 'codex' and activities:
+        activity_statuses = [_activity_capability_status(activity) for activity in activities]
+        if 'failed' in activity_statuses:
+            behavior_status = 'failed'
+        elif 'unavailable' in activity_statuses or (
+            selected_scope == 'both' and len(activities) != 2
+        ):
+            behavior_status = 'unavailable'
+        else:
+            behavior_status = 'available'
+        behavior_reasons = _unique_problems(
+            [
+                warning
+                for activity in activities
+                for warning in activity.get('warnings', [])
+            ]
+        )
+        behavior_reason = '; '.join(behavior_reasons) or (
+            'Requested Codex local-log behavior evidence was unavailable.'
+            if behavior_status != 'available'
+            else None
+        )
+        behavior_evidence = (
+            'Codex local-log call and coordination records'
+            if behavior_status == 'available'
+            else None
+        )
+    elif client != 'codex':
+        behavior_status = 'unavailable'
+        behavior_reason = _profile_behavior_reason(client)
+        behavior_evidence = None
+    else:
+        behavior_status = 'unavailable'
+        behavior_reason = 'Requested Codex local-log behavior evidence was unavailable.'
+        behavior_evidence = None
+    for name in BEHAVIOR_CAPABILITY_NAMES:
+        coverage.append(
+            _capability(
+                name,
+                behavior_status,
+                evidence=behavior_evidence,
+                reason=behavior_reason,
+            )
+        )
+    return coverage
 
 
 def _build_scope_report(
@@ -926,6 +1738,17 @@ def _build_scope_report(
             if usage['source'] == 'tokscale'
             else None
         ),
+        'models': [
+            {
+                'provider': row['provider'],
+                'model': row['model'],
+                'total_tokens': sum(int(row[field]) for field in TOKEN_FIELDS),
+                'message_count': int(row['message_count']),
+                'model_activity_ms': int(row['model_activity_ms']),
+                'estimated_api_equivalent_cost': float(row['cost']),
+            }
+            for row in usage.get('rows', [])
+        ],
         'tool_activity': tool_activity,
         'findings': list(tool_activity.get('findings', [])),
         'problems': _unique_problems(
@@ -943,8 +1766,16 @@ def build_diagnostic_report(
     turn_usage: dict[str, Any] | None = None,
     turn_activity: dict[str, Any] | None = None,
     turn_bounds: tuple[datetime, datetime] | None = None,
+    turn_discovery_problems: list[str] | None = None,
     selected_scope: str = 'both',
+    codex_acquisition: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if selected_scope not in ('turn', 'session', 'both'):
+        raise UsageError(f'Unsupported diagnostic scope: {selected_scope}')
+    client = validate_client(str(session_usage['client']))
+    local_acquisition = _report_codex_acquisition(
+        session_usage, session_activity, codex_acquisition
+    )
     scopes = []
     if selected_scope in ('turn', 'both') and turn_usage is not None and turn_activity is not None:
         scopes.append(_build_scope_report('current turn', turn_usage, turn_activity, turn_bounds))
@@ -956,26 +1787,108 @@ def build_diagnostic_report(
         )
     problems = [problem for scope in scopes for problem in scope['problems']]
     if selected_scope in ('turn', 'both') and turn_usage is None:
-        problems.append('Current-turn diagnostics are unavailable for this client.')
+        problems.append(
+            f'Current-turn diagnostics are unavailable for the '
+            f'{PROFILE_LABELS[client]} profile.'
+        )
     findings = [
         f"{scope['name']}: {finding}"
         for scope in scopes
         for finding in scope['findings']
     ]
+    capabilities = build_capability_coverage(
+        session_usage,
+        session_activity,
+        turn_usage=turn_usage,
+        turn_activity=turn_activity,
+        turn_bounds=turn_bounds,
+        turn_discovery_problems=turn_discovery_problems,
+        selected_scope=selected_scope,
+        codex_acquisition=local_acquisition,
+    )
+    unavailable_surfaces = [
+        f"{capability['name']}: {capability['reason']}"
+        for capability in capabilities
+        if capability['relevant'] and capability['status'] in ('unavailable', 'failed')
+    ]
+    recovery_prerequisites = []
+    if _collection_failed(session_usage):
+        recovery_prerequisites.append(
+            'Resolve the reported Tokscale collection failure for the same '
+            'client/session pair; install or restore a compatible build when the '
+                'reported cause identifies missing or incompatible Tokscale.'
+        )
+    if _fallback_failed(session_usage):
+        recovery_prerequisites.append(
+            'Repair or restore the exact Codex local session log token totals; '
+            'the reported local fallback cause must be resolved before usage can '
+            'be recovered.'
+        )
+    if (
+        not _collection_failed(session_usage)
+        and not _fallback_failed(session_usage)
+        and session_usage['status'] == 'unavailable'
+    ):
+        if client == 'cursor':
+            recovery_prerequisites.append(
+                'Use an existing valid Tokscale login and complete Cursor sync, then rerun '
+                'the same client/session pair; the diagnostic performs neither action.'
+            )
+        elif client == 'copilot':
+            recovery_prerequisites.append(
+                'Activity before this snapshot cutoff cannot regain missing usage and '
+                'model-activity telemetry. For future activity, configure OTEL file '
+                'export before the session starts.'
+            )
+    if (
+        client == 'codex'
+        and local_acquisition is not None
+        and local_acquisition['outcome'] in ('failed', 'unavailable')
+    ):
+        recovery_prerequisites.append(
+            'Provide the exact Codex local log for the requested thread and make it '
+            'readable and well-formed; Tokscale usage does not replace local '
+            'behavior evidence.'
+        )
     return {
-        'client': session_usage['client'],
+        'client': client,
         'session_id': session_usage['session_id'],
+        'captured_at': session_usage['captured_at'],
         'selected_scope': selected_scope,
+        'profile': PROFILE_LABELS[client],
+        'capabilities': capabilities,
+        'session_usage': _build_scope_report(
+            'whole session', session_usage, session_activity, session_bounds
+        ),
         'scopes': scopes,
         'findings': _unique_problems(findings),
-        'problems': _unique_problems(problems),
+        'problems': _unique_problems(problems + unavailable_surfaces),
+        'limitations': [
+            'Summed model and tool durations can overlap the elapsed span.',
+            'Subagent lifecycle counts are observed lower bounds.',
+            'Child-session tokens require a stable child mapping for attribution.',
+            'Session usage coverage does not establish behavior health.',
+        ],
+        'recovery_prerequisites': recovery_prerequisites,
     }
 
 
-def _render_scope(lines: list[str], scope: dict[str, Any]) -> None:
+def _markdown_text(value: Any) -> str:
+    single_line = re.sub(r'[\x00-\x1f\x7f]+', ' ', str(value)).strip()
+    escaped = re.sub(r'([\\`*{}\[\]<>#|&])', r'\\\1', single_line)
+    return re.sub(r'(?<![A-Za-z0-9])_|_(?![A-Za-z0-9])', r'\\_', escaped)
+
+
+def _render_scope(
+    lines: list[str],
+    scope: dict[str, Any],
+    *,
+    include_usage: bool = True,
+    include_behavior: bool = True,
+) -> None:
     tokens = scope['tokens']
-    if tokens['status'] == 'unavailable':
-        token_summary = 'unavailable'
+    if tokens['status'] in ('unavailable', 'failed'):
+        token_summary = tokens['status']
     else:
         qualifier = '' if tokens['status'] == 'available' else f" ({tokens['status']})"
         token_summary = (
@@ -986,28 +1899,55 @@ def _render_scope(lines: list[str], scope: dict[str, Any]) -> None:
             f"output {_format_tokens(tokens['output'])}, "
             f"reasoning {_format_tokens(tokens['reasoning'])})"
         )
-    lines.extend(
-        [
-        f"#### {scope['name'].title()}",
-        f"- Span: {scope['span_ms']} ms"
-        if scope['span_ms'] is not None
-        else '- Span: unavailable',
-        f'- Tokens: {token_summary}',
-        f"- Estimated API-equivalent cost: {scope['cost']}",
-        (
-            f"- Model activity: {scope['model_activity_ms']} ms across "
-            f"{scope['message_count']} message(s)"
-            if scope['model_activity_ms'] is not None
-            else '- Model activity: unavailable'
-        ),
-        ]
-    )
+    lines.append(f"#### {_markdown_text(scope['name'].title())}")
+    if include_usage:
+        lines.extend(
+            [
+                f"- Span: {scope['span_ms']} ms"
+                if scope['span_ms'] is not None
+                else '- Span: unavailable',
+                f'- Tokens: {token_summary}',
+                f"- Estimated API-equivalent cost: {scope['cost']}",
+                (
+                    f"- Model activity: {scope['model_activity_ms']} ms across "
+                    f"{scope['message_count']} message(s)"
+                    if scope['model_activity_ms'] is not None
+                    else '- Model activity: unavailable'
+                ),
+            ]
+        )
+        model_summary = ', '.join(
+            f"{_markdown_text(model['provider'] or 'unknown-provider')}/"
+            f"{_markdown_text(model['model'])}: "
+            f"{_format_tokens(model['total_tokens'])} tokens, "
+            f"{model['message_count']} message(s), "
+            f"{model['model_activity_ms']} ms, "
+            f"{chr(36)}{model['estimated_api_equivalent_cost']:.6f} USD "
+            'estimated API-equivalent cost'
+            for model in scope['models']
+        ) or 'unavailable'
+        lines.append(f'- Models: {model_summary}')
+    if not include_behavior:
+        return
     activity = scope['tool_activity']
     if activity['status'] == 'unavailable':
         lines.extend(['- Tool calls: unavailable', '- Agent coordination: unavailable'])
     else:
+        if activity['status'] == 'failed':
+            reason = _markdown_text(
+                '; '.join(activity.get('warnings', [])) or 'collection failed'
+            )
+            lines.extend(
+                [
+                    f'- Tool calls: failed — {reason}',
+                    f'- Agent coordination: failed — {reason}',
+                ]
+            )
+        tool_label = (
+            'Observed tool calls' if activity['status'] == 'failed' else 'Tool calls'
+        )
         lines.append(
-            f"- Tool calls: {activity['started_calls']} started, "
+            f"- {tool_label}: {activity['started_calls']} started, "
             f"{activity['completed_calls']} completed, {activity['failed_calls']} failed, "
             f"{activity['incomplete_calls']} incomplete"
         )
@@ -1017,15 +1957,18 @@ def _render_scope(lines: list[str], scope: dict[str, Any]) -> None:
             f"{activity['repeated_identical_calls']} consecutive identical repeat(s)"
         )
         tool_summary = ', '.join(
-            f"{tool['name']}={tool['started']} started/{tool['failed']} failed "
+            f"{_markdown_text(tool['name'])}={tool['started']} started/"
+            f"{tool['failed']} failed "
             f"({tool['duration_ms']} ms)"
             for tool in activity['tools']
         ) or 'none'
         lines.append(f'- Tools: {tool_summary}')
         coordination = activity['coordination']
         calls = ', '.join(
-            f'{name}={coordination.get(name, 0)}' for name in COORDINATION_TOOLS
-        )
+            f'{name}={coordination.get(name, 0)}'
+            for name in COORDINATION_TOOLS
+            if coordination.get(name, 0)
+        ) or 'none observed'
         lines.append(f'- Agent coordination calls: {calls}')
         lines.append(
             '- Agent lifecycle: '
@@ -1048,20 +1991,70 @@ def _render_scope(lines: list[str], scope: dict[str, Any]) -> None:
 def render_diagnostic_markdown(report: dict[str, Any]) -> str:
     lines = [
         '### Agent Session Diagnostics',
-        f"- Session: {report['client']}/{report['session_id']}",
-        f"- Requested scope: {report['selected_scope']}",
+        '',
+        '#### Identity and Scope',
+        f"- Session: {_markdown_text(report['client'])}/"
+        f"{_markdown_text(report['session_id'])}",
+        f"- Requested scope: {_markdown_text(report['selected_scope'])}",
+        f"- Harness profile: {_markdown_text(report['profile'])}",
+        f"- Snapshot cutoff (UTC): {_markdown_text(report['captured_at'])}",
+        '',
+        '#### Capability Coverage',
     ]
+    for capability in report['capabilities']:
+        detail = capability['evidence'] or capability['reason'] or 'no detail'
+        relevance = 'relevant' if capability['relevant'] else 'not requested'
+        lines.append(
+            f"- {_markdown_text(capability['name'])}: "
+            f"{_markdown_text(capability['status'])} "
+            f"({_markdown_text(relevance)}) — {_markdown_text(detail)}"
+        )
+    lines.extend(['', '#### Session Usage and API-Equivalent Cost'])
+    _render_scope(
+        lines,
+        report['session_usage'],
+        include_behavior=False,
+    )
+    lines.extend(['', '#### Turn, Tool, and Coordination Evidence'])
     for scope in report['scopes']:
         lines.append('')
-        _render_scope(lines, scope)
-    lines.append('')
+        _render_scope(
+            lines,
+            scope,
+            include_usage=scope['name'] == 'current turn',
+        )
+    if not report['scopes']:
+        lines.append('- No requested behavior scope had available evidence.')
+    lines.extend(['', '#### Problems and Unavailable Surfaces'])
     lines.append(
-        f"- Findings: {'; '.join(report['findings'])}"
+        f"- Findings: {_markdown_text('; '.join(report['findings']))}"
         if report['findings']
         else '- Findings: none from available evidence'
     )
     if report['problems']:
-        lines.append(f"- Problems: {'; '.join(report['problems'])}")
+        lines.extend(f'- {_markdown_text(problem)}' for problem in report['problems'])
+    else:
+        lines.append('- Problems: none from available evidence')
+    lines.extend(
+        [
+            '',
+            '#### Overall Conclusion',
+            '- Agent-authored after contextual judgment; the wrapper does not infer task health.',
+            '',
+            '#### Limitations',
+        ]
+    )
+    lines.extend(
+        f'- {_markdown_text(limitation)}' for limitation in report['limitations']
+    )
+    lines.extend(['', '#### Recovery Prerequisites'])
+    if report['recovery_prerequisites']:
+        lines.extend(
+            f'- {_markdown_text(prerequisite)}'
+            for prerequisite in report['recovery_prerequisites']
+        )
+    else:
+        lines.append('- None identified by factual evidence collection.')
     return '\n'.join(lines)
 
 
@@ -1077,9 +2070,11 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def unavailable_tool_activity(problem: str) -> dict[str, Any]:
+def _unavailable_tool_activity(
+    warnings: list[str], *, status: str = 'unavailable'
+) -> dict[str, Any]:
     return {
-        'status': 'unavailable',
+        'status': status,
         'started_calls': 0,
         'completed_calls': 0,
         'failed_calls': 0,
@@ -1090,8 +2085,12 @@ def unavailable_tool_activity(problem: str) -> dict[str, Any]:
         'tools': [],
         'coordination': {},
         'findings': [],
-        'warnings': [problem],
+        'warnings': warnings,
     }
+
+
+def unavailable_tool_activity(problem: str) -> dict[str, Any]:
+    return _unavailable_tool_activity([problem])
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1100,53 +2099,107 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     args = build_parser().parse_args(sys.argv[1:] if argv is None else argv)
     try:
-        captured = _timestamp()
         client, session_id = detect_current_session(args.client, args.session_id)
         if not client or not session_id:
             raise UsageError(
                 'No supported current session was detected; pass --client and --session-id.'
             )
-        session_bounds = codex_session_bounds(session_id) if client == 'codex' else None
-        started_at, ended_at = session_bounds or (None, None)
         rows = []
         error = None
         try:
-            rows = capture_tokscale_snapshot(client, started_at, ended_at)
+            rows = capture_tokscale_snapshot(
+                client, None, None, session_id=session_id
+            )
         except UsageError as usage_error:
             error = str(usage_error)
+        if client == 'codex':
+            codex_snapshot = _load_codex_log_snapshot(
+                session_id, capture_cutoff_after_read=True
+            )
+            captured = _parse_timestamp(codex_snapshot['captured_at'])
+        else:
+            codex_snapshot = None
+            captured = _timestamp()
+        session_bounds = (
+            codex_session_bounds(session_id, snapshot=codex_snapshot)
+            if client == 'codex'
+            else None
+        )
+        started_at, ended_at = session_bounds or (None, None)
         usage_report = build_session_usage(
             client,
             session_id,
             captured,
             tokscale_rows=rows,
             snapshot_error=error,
+            codex_snapshot=codex_snapshot,
         )
         if client == 'codex':
-            session_activity = analyze_codex_tool_activity(
-                session_id,
-                started_at=session_bounds[0] if session_bounds else None,
-                ended_at=session_bounds[1] if session_bounds else None,
-            )
-            turn_bounds = codex_current_turn_bounds(session_id)
-            turn_usage = build_codex_turn_usage(
-                session_id, captured, turn_bounds
-            )
-            turn_activity = (
-                analyze_codex_tool_activity(
+            snapshot_warnings = list(codex_snapshot['warnings'])
+            acquisition = codex_snapshot['acquisition']
+            acquisition_messages = _codex_acquisition_messages(codex_snapshot)
+            if args.scope in ('session', 'both'):
+                session_activity = analyze_codex_tool_activity(
                     session_id,
-                    started_at=turn_bounds[0],
-                    ended_at=turn_bounds[1],
+                    started_at=session_bounds[0] if session_bounds else None,
+                    ended_at=session_bounds[1] if session_bounds else None,
+                    snapshot=codex_snapshot,
                 )
-                if turn_bounds
-                else unavailable_tool_activity(
-                    'Current-turn boundary was not found in the Codex log.'
+            else:
+                session_activity = _unavailable_tool_activity(
+                    snapshot_warnings
+                    or acquisition_messages
+                    or ['Whole-session behavior was not requested.'],
+                    status=(
+                        'failed'
+                        if acquisition['outcome'] == 'failed'
+                        else 'unavailable'
+                    ),
                 )
-            )
+                session_activity['acquisition'] = acquisition
+            if args.scope in ('turn', 'both'):
+                turn_bounds, turn_discovery_problems = (
+                    _codex_current_turn_discovery(
+                        session_id, snapshot=codex_snapshot
+                    )
+                )
+                turn_usage = _build_codex_turn_usage_evidence(
+                    session_id,
+                    captured,
+                    turn_bounds,
+                    codex_snapshot=codex_snapshot,
+                )
+                turn_activity = (
+                    analyze_codex_tool_activity(
+                        session_id,
+                        started_at=turn_bounds[0],
+                        ended_at=turn_bounds[1],
+                        snapshot=codex_snapshot,
+                    )
+                    if turn_bounds
+                    else _unavailable_tool_activity(
+                        turn_discovery_problems
+                        or acquisition_messages
+                        or ['Current-turn boundary was not found in the Codex log.'],
+                        status=(
+                            'failed'
+                            if acquisition['outcome'] == 'failed'
+                            else 'unavailable'
+                        ),
+                    )
+                )
+                turn_activity['acquisition'] = acquisition
+            else:
+                turn_bounds = None
+                turn_discovery_problems = []
+                turn_usage = None
+                turn_activity = None
         else:
             session_activity = unavailable_tool_activity(
-                f'Local tool diagnostics are unavailable for client {client}.'
+                _profile_behavior_reason(client)
             )
             turn_bounds = None
+            turn_discovery_problems = []
             turn_usage = None
             turn_activity = None
         report = build_diagnostic_report(
@@ -1156,7 +2209,11 @@ def main(argv: list[str] | None = None) -> int:
             turn_usage=turn_usage,
             turn_activity=turn_activity,
             turn_bounds=turn_bounds,
+            turn_discovery_problems=turn_discovery_problems,
             selected_scope=args.scope,
+            codex_acquisition=(
+                codex_snapshot['acquisition'] if codex_snapshot is not None else None
+            ),
         )
         print(render_diagnostic_markdown(report))
     except (OSError, ValueError, json.JSONDecodeError, UsageError) as error:
