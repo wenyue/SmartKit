@@ -1,11 +1,16 @@
 # Keep for Later
 
-Preserve the completed delivery head without integrating, publishing, or cleaning it up. When the
-scope is **Already Delivered**, recheck the proven target, preserve the source branch and worktree
-exactly as recorded, report the proof and preserved state, and stop.
+Retain the finalized result without further local or remote mutation. This is a successful
+non-integrating handoff, not delivery.
 
-1. Make no branch, checkout, index, worktree, filesystem, or remote mutation.
-2. Reconfirm the source branch points to the recorded delivery head and the worktree remains clean.
-3. Report the target branch and commit, source branch and delivery head, history policy, worktree
-   path, creation owner, verification result, publication state, and the remaining integration or
-   cleanup owner.
+Recheck that the source branch still points to the delivery head, its tree is the reviewed tree,
+the worktree is clean, publication matches the contract, and every recovery ref remains at its
+recorded object. For **Already Delivered**, recheck the target proof and leave both source and
+target exactly as found.
+
+Freeze a proven `outcome_result` classified `non-integrating handoff` and a `cleanup_result` that
+records each item as intentionally retained. Return status `complete`, the target boundary, source
+identity, history policy, review and verification binding, publication, retained recovery,
+lifecycle owners, and one exact later integration or cleanup action. If **Already Delivered** is
+reproven on the authoritative target, classify the outcome as authoritative delivery instead.
+Retention is the selected result, not failed cleanup.

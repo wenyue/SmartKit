@@ -1,69 +1,57 @@
 # Process One Ticket
 
-Enter with the selected dependency-ready ticket, the exact current Batch Worktree, and the
-controller's current ticket graph. This path has one `completed-in-batch` exit; every other result
-enters **Stop and Recovery** in the main Skill.
+Enter with one frozen dependency-ready ticket, the Batch Worktree exclusively controlled for this
+unit, and either no worker attempt or its durable handoff. The only success result is
+`completed-in-batch`.
 
-## Claim and Hand Off
+## Qualify, claim, and define the unit
 
-1. Re-read the ticket and its blockers immediately before claiming. Stop on a material status,
-   requirement, or edge change.
-2. Use the configured tracker's documented compare-and-set Ticket Batch claim with Ticket Commit
-   proof. Record the prior state and claim; stop when no safe claim operation is documented.
-3. Record the Batch Worktree path, branch, exact `HEAD`, tree, immutable base, clean or owned recovery
-   state, and the selected ticket as its only current scope. Stop if another worker still owns the
-   worktree or an earlier ticket has unresolved state.
+Read [`tracker.md`](tracker.md) if its frozen contract is not already loaded. Re-observe the ticket,
+claim, full contract, acceptance sources, and blockers.
 
-## Dispatch One Worker
+Before the claim effect, read [`worker-transaction.md`](worker-transaction.md) and have it pass its
+read-only qualification gate for this ticket: the frozen runtime identity and route, fresh-attempt
+capacity, authorities, and any required quiescence and retained handoff must be proven. This gate
+allocates or dispatches no worker and persists no attempt. Only after it passes may the tracker
+owner execute or accept the claim delta through its operation contract. Keep that claim until
+authoritative delivery and tracker closure.
 
-Start one fresh write-capable worker Agent and give it one complete handoff:
+Freeze `ticket_base` as the current `HEAD` and tree for a new ticket. On recovery,
+reconstruct the original base and account for every later commit and staged, unstaged, and
+untracked item as this ticket's state; mixed or ambiguous ownership stops.
 
-- `ticket`: canonical identifier, complete contract, acceptance sources, and blocker proof;
-- `batch`: worktree, branch, exact `head` and `tree`, immutable base, and controller identity;
-- `history`: existing ticket boundaries, current ticket base, the exact
-  `SmartKit-Ticket: <canonical-id>` completion trailer, and worker commit authority;
-- `verification`: focused and repository-required commands;
-- `tracker_boundary`: no worker claim, release, completion, or other tracker transition.
+Give the transaction one **Ticket Unit** containing the canonical ticket and complete sources,
+blocker proof, Batch/worktree identity, immutable base, `ticket_base`, earlier Ticket Commits,
+owned recovery state, scoped write and commit authority, and project-required validation. Its
+success predicate is:
 
-The worker performs this complete lifecycle in its existing Agent context:
+- only this ticket is implemented and every owned item is accounted for;
+- focused and complete required validation pass and the whole unit is self-reviewed against all
+  ticket sources;
+- the worktree is clean; and
+- the first-parent unit range ends in exactly one Ticket Commit with exactly the canonical trailer,
+  while every preceding Checkpoint has no ticket trailer. If Checkpoints already contain the net
+  change, the Ticket Commit may be empty.
 
-1. Recheck the supplied Batch Worktree, ticket base, prior ticket boundaries, ownership, and local
-   state. Work only in that Batch Worktree and only on this ticket.
-2. Establish the current mechanism and seams, implement only the ticket, use `tdd` when behavior has
-   a testable seam, and create any useful recoverable Checkpoint Commits through the normal commit
-   workflow.
-3. Run focused verification during implementation and every repository-required check at the end.
-4. Self-review the complete ticket diff against its acceptance criteria and correct every observed
-   mismatch. The worker does not invoke formal `code-review`.
-5. End with a clean worktree and one final hook-validated Ticket Commit containing exactly the
-   supplied completion trailer. The ticket may have preceding Checkpoint Commits. When no content
-   remains to commit, create a hook-validated empty Ticket Commit rather than rewriting another
-   ticket's history.
-6. Return the exact Ticket Commit, ticket and worker identities, current Batch Worktree head and
-   tree, verification, and self-review evidence.
+**Complete when:** the claim, unit boundary, success predicate, owned recovery state, and worker
+authority are exact.
 
-At any phase before the Ticket Commit is proven, a non-complete result or missing decision returns one
-structured Worker Recovery Handoff containing:
+## Obtain and prove the result
 
-- `status` (`stopped` or `failed`), ticket and worker identities, `completed_phase`, and
-  `failed_phase`;
-- Batch Worktree path, branch, immutable base, ticket base, `HEAD`, tree, and owned local-state facts;
-- the exact current-ticket Checkpoint Commit range, trees, publication facts, and uncommitted state;
-- each verification command, result, and associated `HEAD` and tree, plus self-review evidence and
-  unresolved findings;
-- every retained branch, commit, recovery ref, and other useful recovery state;
-- the exact blocker, mismatch, error, or missing decision; and
-- `next_owner` and the exact next action.
+Let `worker-transaction.md` exclusively decide whether an existing attempt is complete,
+incomplete, ambiguous, or dispatchable. Use one fresh worker for every authorized attempt. A
+reconstructed or returned complete result proceeds directly to independent proof; only a proven
+quiescent incomplete result may receive a fresh replacement. Every other result stops at the
+transaction's handoff.
 
-Preserve all reported Git and recovery state. The controller neither replaces the worker nor
-touches another ticket before entering **Stop and Recovery**.
+Independently rederive and prove the complete Ticket Unit result: worker identity and quiescence,
+first-parent ancestry from `ticket_base`, ownership of every commit and local item, validation and
+self-review, clean final `HEAD` and tree, unchanged authoritative target, and the exact sole Ticket
+Commit/trailer boundary. Re-observe the ticket and blockers before acceptance.
 
-## Verify the Ticket Boundary
+Any mismatch, residual, changed source, or unproved requirement returns the exact worker or unit
+handoff through `stop.md`. Otherwise transition the Batch Handoff through the Persistence Contract
+to record the Ticket Commit as this ticket's durable dependency boundary, then return
+`completed-in-batch`. This is neither tracker completion nor Batch Delivery.
 
-1. Require a complete worker result and independently verify the worker and ticket mapping, exact
-   trailer, commit ancestry, evidence, clean Batch Worktree, and that every commit after the supplied
-   ticket base belongs to this ticket. Any mismatch enters **Stop and Recovery**.
-2. Keep the ticket claimed. The proven Ticket Commit may unlock dependants inside this run but is
-   neither Batch Delivery nor Ticket Completion.
-3. Re-read the selected contracts. A material contract change enters **Stop and Recovery**;
-   otherwise return the `completed-in-batch` exit to the main Skill.
+**Complete when:** one independently proven Ticket Commit boundary is recorded for the ticket.

@@ -105,8 +105,9 @@ def consolidate(
 
         run_git(repository, "commit", "--file", str(message_file))
         delivery_commit = git_output(repository, "rev-parse", "HEAD^{commit}")
-        candidate_ref = f"{recovery_ref}-candidate"
-        run_git(repository, "update-ref", candidate_ref, delivery_commit, ZERO_OID)
+        new_candidate_ref = f"{recovery_ref}-candidate"
+        run_git(repository, "update-ref", new_candidate_ref, delivery_commit, ZERO_OID)
+        candidate_ref = new_candidate_ref
         delivery_tree = git_output(repository, "rev-parse", f"{delivery_commit}^{{tree}}")
         parents = git_output(repository, "show", "-s", "--format=%P", delivery_commit).split()
         if parents != [target_head]:

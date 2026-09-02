@@ -1,144 +1,182 @@
 ---
 name: change-set-verification
-description: Use when creating or revising a target repository's skill for normalizing and verifying a coherent completed change set before handoff.
+description: Use when creating or revising a target repository's Skill for verifying a coherent completed change set before handoff.
 ---
 
 # Change-Set Verification
 
-Author a complete target-owned skill that normalizes and verifies one coherent completed change set
-before handoff. This Setup Authoring Contract defines the verifier; it does not verify the current
-change set or implement semantic repairs.
+## Target meaning
 
-## Evidence
+When `setup-project-agents` requests
+`GENERATED/.agents/skills/change-set-verification/SKILL.md`, author that one target-owned,
+model-invoked Skill. Its actor is an Agent verifying a coherent completed change set, including the
+target repository's `change-set-verifier`; its trigger is a completed implementation checkpoint
+before handoff. It owns mechanical normalization, selection of sufficient verification, and an
+evidence-backed verdict. Active implementation or debugging remains with its current owner until a
+new completed checkpoint exists.
 
-Inspect the target repository's applicable rules governing tool use, mutation, verification,
-generated sources, and dependency boundaries; then inspect the effective callable tool surface,
-tool configuration, manifests, test layout, CI workflows, and repository-owned verification
-selectors. Establish:
+The target frontmatter uses `name: change-set-verification`, omits
+`disable-model-invocation`, and gives `description` the completed-checkpoint trigger and verification
+outcome. Keep the complete runtime contract in the one `SKILL.md`; live repository owners retain
+deterministic commands and mappings.
 
-- formatter, fixer, analyzer, linter, test, build, runtime, and diff-integrity surfaces actually
-  supported by the repository;
-- the working directory, prerequisites, scope selectors, mutation behavior, output, relative cost,
-  and overlap of every candidate command;
-- whether a native or MCP tool preserves the required selector and evidence, whether independent
-  calls can be submitted together, and which owning timeout applies to long-running calls;
-- direct test ownership, generated-source owners, dependency boundaries, and evidence-backed
-  change-to-check mappings;
-- risks and tool limitations that require broader verification, plus any trustworthy way to
-  distinguish a selected failure from the target baseline; and
-- files and diagnostics the verifier may repair mechanically versus semantic work that must return
-  to the implementation owner.
+Use accepted project intent and evidence qualified by its target-repository owner and provenance.
+Relevant evidence includes project Rules and Skills; the accepted task and comparison point;
+version-control state; manifests, lock files, toolchain declarations, repository scripts and current
+help; test layout and CI configuration; and generated-source, dependency, and direct-test owners.
+The existing target Skill is preservation and regression evidence, not design authority. Preserve
+its supported behavior unless accepted intent changes or retires it; visibility, executability,
+write access, or Future Author authority grants no runtime permission to the Candidate.
 
-Require evidence for every command, ownership mapping, and supported scope.
+## Required runtime contract
 
-## Setup Contract Frame
+### Selection, effects, and safety
 
-The generated artifact is a Hybrid Skill. Its Judgment Frame selects the coherent change set,
-minimum sufficient checks, broadening conditions, and effective tools from current repository
-evidence. Its bounded verification procedure owns only the order that affects mutation safety and
-the trustworthiness of later evidence.
+Require the Skill to:
 
-Keep these decisions in `SKILL.md`. Add `references/verification-matrix.md` only when multiple
-packages, languages, or risk mappings would otherwise obscure the usable mapping. Add a script only
-when repeated deterministic selection cannot be expressed reliably through repository-owned tools;
-follow the target skill's project-local script runtime policy.
+- establish the intended change set and comparison point from accepted task context and current
+  repository state, accounting for its production code, tests, configuration, supporting files,
+  generated effects, and tracked, staged, unstaged, and untracked state;
+- preserve `HEAD`, the index, unrelated work, and user-owned files, while limiting normalization to
+  selected project-owned sources and changing generated output only through its declared owner;
+- map the change set to the minimum sufficient formatter, static, test, build, runtime, and
+  diff-integrity surfaces supported by current owners, broadening only when dependencies, shared
+  contracts, generated interfaces, tool limitations, fixer mutations, missing test ownership, or
+  unresolved scope would make narrower evidence unreliable, never merely to discover or repair
+  pre-existing issues; and
+- select effective repository, native, or MCP tools by scope fidelity, mutation boundary,
+  diagnostic quality, and trustworthy final evidence. Point to live owners rather than caching
+  command inventories or values recoverable from current configuration or help.
 
-Choose the generated skill's organization from the target evidence. Do not copy this contract's
-headings or evidence order as its outline.
+The Candidate's runtime effect grant is exhaustive: it may run owner-supported evidence-producing
+checks whose declared outputs stay within owner-declared project paths, and may normalize only
+selected project-owned sources with an owner-supported formatter or an automatic fixer authorized
+for a known mechanical diagnostic or accepted mechanical migration. It may update generated output
+only through its declared owner. Every mutation and disposable check output must be scoped and
+reported. Preserve `HEAD`, the index, unrelated work, user-owned files, and every effect outside
+this grant. An unavailable required effect yields `inconclusive` before the effect. An attempted or
+observed effect outside the grant is a safety breach: stop further effects, preserve its evidence,
+and return `failed` before diagnostic routing.
 
-## Target Obligations
+### Procedure island
 
-### Judgment Frame
+Require only the order that protects state and evidence:
 
-- Run only at a completed implementation checkpoint before handoff; active editing, debugging, and
-  incomplete fix cycles continue until the next completed checkpoint.
-- Identify the coherent intended change set from task context and repository state. Preserve the
-  existing `HEAD`, index, unrelated staged or unstaged work, and untracked files.
-- Resolve production code, tests, configuration, generated-source owners, and supporting files that
-  belong to that change set.
-- Start with the minimum sufficient scope. Broaden only when dependencies, shared contracts,
-  generated interfaces, fixer mutations, tool limitations, or unknown ownership make the narrower
-  result unreliable.
-- Treat missing test ownership as a gap to resolve or a reason to broaden.
-- Restrict mutation to selected project-owned source files; change generated output through its
-  owner and leave third-party or out-of-scope files unchanged.
-- Choose repository commands or effective native or MCP tools according to selected-scope fidelity,
-  diagnostic quality, mutation boundaries, and configured timeout. Keep repository formatter and
-  fixer commands when a callable tool would broaden mutation or discard a required selector.
-- Group independent checks when the Harness supports it. Keep mutation-sensitive checks and checks
-  that consume generated output sequential.
+1. Establish the checkpoint, selected scope, ownership, prerequisites, and required surfaces before
+   mutation.
+2. Run an owner-supported formatter on selected project-owned sources when applicable. Run an
+   authorized automatic fixer only for a known mechanical diagnostic or accepted mechanical
+   migration, once per checkpoint on its minimum supported scope. Reformat when required and add
+   every tool-modified file to the selected change set.
+3. From the resulting state, run the minimum supported non-mutating static checks, then directly
+   owned tests, then only the broader surfaces selected by evidenced risk or ownership. Run each
+   unique surface once unless a later mutation invalidates its evidence.
+4. Return remaining semantic diagnostics with exact evidence to the implementation owner. Any
+   implementation-owner change creates a new checkpoint and restarts verification from current
+   repository state.
 
-### Verification Procedure
+Independent non-mutating checks may run concurrently when the active Harness preserves their
+selectors and evidence. Mutation-sensitive checks and consumers of generated output remain ordered.
+When a selected failure may predate the change, classify only that failing surface against a
+trustworthy baseline and do no broader baseline work than classification requires.
 
-1. When the project supports it, format the selected project-owned source scope.
-2. Run an approved automatic fixer only for a known fixable analyzer or lint diagnostic, a
-   framework or API migration, or user-requested mechanical cleanup. Run it at most once on its
-   minimum supported selected scope. Accept mechanical repairs within that selected scope, but do
-   not broaden solely to discover or repair older issues.
-3. Add every formatter- or fixer-modified file to the selected change set.
-4. Reformat fixer-modified source when required, then run the minimum supported non-mutating static
-   checks.
-5. Return remaining semantic diagnostics to the implementation owner with exact locations and
-   messages; semantic fixes remain with that owner.
-6. If the implementation owner changes files, treat the result as a new completed checkpoint and
-   restart the workflow from current repository state.
-7. Run directly owned tests after static checks pass, including components added by formatter,
-   fixer, or implementation-owner changes.
-8. Run broader tests, builds, runtime checks, or integration surfaces only when evidence-defined
-   risk or ownership requires them. Run each unique surface once per completed checkpoint unless a
-   mutation requires a documented repeat.
+### Optional deterministic selector
 
-### Results
+A Candidate may contain one helper script only when qualified evidence proves owner tools cannot
+express a required repeated deterministic selection or aggregation and accepted input from an
+authorized source supplies its exact Candidate-relative path and target owner. The Future Author may
+verify and consume, but not choose, either value. Missing, ambiguous, or owner-mismatched authority
+stops before any Candidate write with `HUMAN_DECISION_REQUIRED`; a glob, directory-wide grant, or
+runtime-selected path is insufficient. The Candidate specifies exact input and output schemas,
+permitted filesystem and process effects, failure behavior, owner-supported runtime, representative
+and boundary validation, and removal when an owner tool supersedes it. The script implements the
+established mapping; it cannot choose policy, scope, ownership, permissions, broadening, or verdicts.
+A script failure reports its exact invocation and error and stops; correction requires a new
+reviewed Candidate.
 
-- Classify every selected surface as `passed`, `failed`, `inconclusive`, or `not applicable`.
-  Report the command, scope, selection reason, result, and remaining gap.
-- Report every modified file, formatter and fixer invocation, repeated check, remaining diagnostic,
-  and verification gap.
-- Return one overall result: `passed`, `semantic_fix_required`, `failed`, or `inconclusive`.
-- Return `passed` only when every required surface passed; `semantic_fix_required` only when
-  trustworthy completed checks leave a semantic diagnostic and no safety or evidence-trust stop
-  applies; `failed` for a trustworthy required-check failure or confirmed forbidden mutation; and
-  `inconclusive` when prerequisites, ownership, repository state, or required evidence cannot be
-  established reliably.
-- A mutation-safety or evidence-trust stop governs over diagnostic routing when conditions
-  coincide.
-- When an out-of-scope failure may predate the change, compare only that failing surface with a
-  trustworthy baseline, using no broader baseline work than classification requires.
+### Observable results and exits
 
-### Stop and Failure Behavior
+For every selected surface, report its owner-backed invocation, scope, selection reason, result as
+`passed`, `failed`, `inconclusive`, or `not applicable`, and any remaining gap. Also report every
+normalization invocation and mutation, repeat and its cause, semantic diagnostic, and untested
+surface.
 
-- Stop when prerequisites are missing, selected ownership cannot be resolved safely, an automatic
-  tool changes forbidden scope, repository state cannot be accounted for, or a required result is
-  not trustworthy. Preserve the evidence and apply the observable result conditions above.
-- For executable-script failures, report the exact failed command and error, analyze the cause, and
-  propose a complete candidate script change before modifying or retrying it.
-- Exclude business implementation, semantic repair, worktree creation or integration, dependency
-  installation, agent synchronization, and destructive cleanup unless the target repository
-  explicitly makes one of them part of a selected verification surface.
+After the safety-breach guard above, return exactly one overall result under this precedence; the
+first true discriminator governs:
 
-## Review Gate
+1. `semantic_fix_required` when trustworthy completed evidence diagnoses a semantic change that
+   the implementation owner must make to the checkpoint. Report concurrent mechanism failures or
+   evidence gaps, but they cannot replace this result.
+2. `failed` when no semantic fix is established and trustworthy evidence shows a required mechanism,
+   tool, or runtime failure.
+3. `inconclusive` when neither prior result is established and required evidence, ownership,
+   prerequisites, comparison point, repository state, or baseline classification is insufficient.
+4. `passed` only when every required surface passed, every selected mutation is owned and included
+   in the verified change set, and no required evidence gap remains.
 
-Review the complete generated directory before executing it. Confirm every command, scope mapping,
-mutation, deduplication rule, broadening condition, result state, baseline rule, and handoff against
-target evidence. Verify that repository rules remain the policy source, optional resources are
-necessary and reachable, and the verifier owns neither semantic implementation nor worktree
-lifecycle. Any unsupported or ambiguous mapping fails review.
+An exit preserves the observed state and evidence. The Skill does not own business implementation,
+semantic repair, worktree creation or integration, dependency installation, Agent synchronization,
+Git-history mutation, delivery, or destructive cleanup. It may perform only the selected
+project-owned normalization and evidence-producing checks above; any other mutation or external
+effect requires separate accepted authority and otherwise yields `inconclusive` before that effect.
 
-## Acceptance Gate
+## Future Author grant
 
-After review passes, exercise the complete generated skill on a representative coherent change set
-in the target repository. Invoke the actual candidate through normal completion and verify selected
-scope, normalization behavior, directly owned checks, broadening when applicable, per-surface
-classification, overall result, and preservation of unrelated repository state.
+The future Author may inspect qualified target evidence, run owner-supported read-only or
+non-fixing checks, and create or replace only
+`GENERATED/.agents/skills/change-set-verification/SKILL.md`, plus the single optional script at the
+exact path and owner granted by accepted input above. The Author has no delete or move authority and
+no authority to write the live target or mutate unrelated target state. Outside the Acceptance grant
+below, the Author has no external-effect authority. Creating the Candidate does not transfer the
+Author's permissions into its runtime grant.
 
-Also exercise a safe relevant stop or failure path, such as a remaining semantic diagnostic,
-missing prerequisite, forbidden mutation, or inconclusive ownership. Record exact commands,
-candidate-caused file changes, initial and final repository state, diagnostics, classifications,
-and anything not run. If acceptance cannot safely exercise the candidate or cannot account for its
-mutations, it fails.
+## Authoring proof and Acceptance grant
 
-## Handoff
+Proof is an evidence dependency graph, not an implementation sequence:
 
-Only after both gates pass, give `setup-project-agents` the complete accepted directory, supporting
-repository evidence, review decision, acceptance evidence, and unresolved or not-run surfaces. If
-either gate fails, stop and report the blocker instead of handing off the candidate as accepted.
+- **Machine evidence:** validate the complete Candidate's structure, frontmatter, references, paths,
+  and any script with owner-supported deterministic non-fixing checks.
+- **Quality and Correctness Review:** review invocation, scope, effect grant, check mapping,
+  ordering, broadening, baseline classification, result precedence, script exception, exits, and
+  handoff against qualified evidence. **Review PASS** requires every unsupported or ambiguous
+  mapping to be resolved.
+- **Acceptance barrier:** Acceptance requires Machine evidence and Quality and Correctness Review
+  PASS over the same Candidate. At PASS, freeze its fingerprint, protected target state
+  (`HEAD`, index, unrelated and user-owned state), and the exact mutable paths and expected effects
+  granted to Acceptance. Any other Review result stops before Acceptance.
+- **Acceptance evidence:** exercise the actual Candidate on a representative coherent completed
+  change set and one safe applicable failure or stop path. Prove normalization scope, required
+  checks, verdict precedence, reporting, and preservation of unrelated repository state.
+- **Final boundary:** after Acceptance, recheck the Candidate and protected target state against the
+  Review PASS fingerprints, and reconcile every authorized mutable-path change with the frozen
+  Acceptance effect plan. Expected granted changes are recorded rather than treated as drift; any
+  other change invalidates Review and Acceptance. Record exact invocations, mutations, diagnostics,
+  initial and final state, and untested surfaces.
+
+This contract grants Acceptance only the Candidate runtime effects stated above, limited to the
+identified representative change set in the target repository and only when qualified target
+owners permit those effects. Record the exact target, selected files, invocations, expected effects,
+and observed effects before and after execution. This grant excludes dependency installation,
+history mutation, delivery, destructive cleanup, and every unrelated repository or external effect.
+If the necessary Acceptance effect is outside this grant or target-owner authority is absent, stop
+before execution with `HUMAN_DECISION_REQUIRED`; Future Author write authority cannot authorize it.
+
+Return exactly one authoring result; the first matching discriminator has precedence:
+
+1. `ACCESS_REQUIRED` when necessary evidence or validation is inaccessible within the grant.
+2. `CONTEXT_REQUIRED` when access exists but a necessary fact cannot be discovered from qualified
+   evidence.
+3. `HUMAN_DECISION_REQUIRED` when qualified evidence permits materially different semantics or the
+   required ownership, comparison point, permission, effect, exception, or retirement lacks
+   accepted authority.
+4. `VALIDATION_FAILED` when validation remains failed or any required runtime input lacks one
+   supported observable result.
+5. `READY` only when the final boundary proves that the reviewed and accepted Candidate is
+   unchanged, contains every required obligation, maps each supported runtime input to exactly one
+   result, and all applicable checks passed or are recorded `NOT_REQUIRED`.
+
+Every stop reports the blocker, owner, consequence, and condition for a fresh attempt. `READY`
+reports the exact Candidate paths, evidence owners, preserved, changed, added, retired, and non-goal
+dispositions, checks, Review and Acceptance evidence, and untested surfaces. It is ready input only
+for `setup-project-agents` and grants no downstream generation, installation, publication, commit,
+or push.

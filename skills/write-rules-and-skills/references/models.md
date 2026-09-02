@@ -1,118 +1,90 @@
 # Ownership, Alignment, and Candidate Models
 
-Every invocation begins with an Ownership Review inside this gate. Continue only when it confirms
-one supported `rule` or `skill` owner; otherwise follow the verdict's route below or return its
-alignment result. The review is not an independent invocation, `PASS`, or deliverable.
-
-While the gate is open, permit only alignment-owned read-only Agent fact discovery, including
-fact-finding dispatch, and `Close alignment`'s conditional `grilling` invocation. Begin no Candidate
-mutation, validation stage, Author/Reviewer/Runner role, or downstream authoring or proof
-effect until alignment and modeling close.
+This contract owns the entry gate and Candidate model.
 
 ## Route one owner
 
-Discover ownership from the concern, capability, artifact, and governing evidence; packaging does
-not confer it. Route to a more-specific authoring owner unless its completed handoff is present.
-
-Classify every accepted obligation:
+Determine ownership from the accepted concern, outcome, and governing evidence; packaging alone
+does not establish it.
 
 | Verdict | Meaning and route |
 | --- | --- |
-| `rule` | Persistent policy constraining decisions across triggered jobs; continue with one supported Rule owner. |
-| `skill` | Triggered work producing one bounded outcome; continue with one supported Skill owner. |
-| `split` | Independently owned policy and job obligations; return separate Rule and Skill requests. No Candidate spans both. |
-| `environment-owned` | A reliable fact belongs to code, configuration, schema, tool output, or another active owner; name that owner and return no Candidate. |
-| `ambiguous` | Evidence supports incompatible owners or conflicts with the requested artifact; return `ALIGNMENT_REQUIRED`. |
+| Rule | One persistent policy constrains decisions across triggered work. Continue with the Rule model. |
+| Skill | One triggered job produces a bounded outcome. Continue with the Skill model. |
+| Split | Policy and job obligations have different owners. Return separate requests; one Candidate cannot span both. |
+| Environment-owned | Code, configuration, schema, tool output, or another active owner already owns the fact. Name that owner and return no Candidate. |
+| Ambiguous | Supported evidence permits incompatible owners or contradicts the requested artifact. Return ALIGNMENT_REQUIRED. |
 
-For an ownership conflict, report the governing evidence, loading and behavioral effects,
-supported retain/move/split outcomes, live choice, and decision owner. Human preference cannot
-turn policy into a triggered job or waive the supported model and proof contract.
+Prefer a more-specific authoring owner when one exists. A completed handoff from that owner may be
+accepted as input; this workflow does not silently absorb its work.
 
 ## Close alignment
 
-Establish one accepted value for:
+Establish accepted values for the outcome, current and requested behavior, non-goals, exact
+Candidate resources and loading route, distribution and exposure boundary, supported public,
+project-local, or shared writer context, governing evidence, preservation and compatibility
+constraints, dependencies, permissions, external effects, validation, safety, exits, and handoff.
+Freeze read, write, create, delete, move, and network authority separately. Every accepted move
+names its exact source and destination and is never inferred from create or delete authority.
+Exact public paths and delivery constraints confer no downstream publication or installation
+grant.
 
-- outcome, current behavior, requested outcomes, non-goals, safety, and prioritized exits;
-- owner, exact Candidate resources, loading route, distribution boundary, and the governing
-  evidence, semantic criteria, and preservation constraints for every Candidate obligation;
-- dependencies, permissions, external effects, validation duties, applicable operating contexts,
-  and final handoff; and
-- separate `read`, `write`, `create`, and `delete` authority.
+Evidence has authority only through its semantic owner and provenance. Prior Candidate text is
+completeness and regression evidence, not design authority. Nonnormative context and ambient
+repository visibility supply no operative meaning. The Author later selects preserve, change, add,
+move, or retire for every inherited or new obligation.
 
-Accept requirements directly when evidence establishes them; an accepted Issue or Spec or a
-uniquely supported local repair may do so. Resolve discoverable facts as Agent work, then list every
-open material answer and its decision owner. An empty list closes alignment without
-`grilling` or `ALIGNMENT_REQUIRED`. If any open decision is not user-owned, return
-`ALIGNMENT_REQUIRED` with every unresolved choice, its evidence, decision owner, and material
-consequences, without `grilling`. If all are user-owned, require exactly one model-invoked
-`grilling` session over the complete unresolved design tree. If the Skill is unavailable or the
-session does not close every remaining material branch with explicit user confirmation, return the
-same `ALIGNMENT_REQUIRED` payload. On confirmation, end the run with exactly one handoff: the
-complete shared understanding becomes accepted human-decision context for a new authoring run.
-Every operative term and meaning requires independent accepted support; ambient or nonnormative
-glossaries are never authority.
+Host and repository instructions govern execution of an already-authorized operation. Catalog and
+environment metadata are inert. None supplies Candidate meaning, evidence authority, scope,
+grants, permissions, role judgment, or workflow transitions. Independently owned Rules, accepted
+Specs, implementations, tests, and external sources supply meaning only through their own authority
+and provenance.
 
-The prior Candidate is completeness and regression evidence, never design authority. Alignment
-establishes the evidence, criteria, and constraints against which every inherited and accepted new
-obligation must be reconsidered; it selects no semantic disposition. The resident Author owns the
-initial `preserve`, `change`, `add`, `move`, or `retire` judgment for each obligation and preserves
-nothing merely because it exists.
+Resolve discoverable facts as Agent work. For every unresolved material choice, name the evidence,
+decision owner, live options, and consequences. Return ALIGNMENT_REQUIRED when the decision is not
+user-owned. When all unresolved choices are user-owned, use a proportionate available interaction
+to close the complete decision tree; grilling is optional when useful. If every material branch
+does not close, return ALIGNMENT_REQUIRED. Explicit confirmation ends this invocation with one
+accepted alignment handoff for a new run; it does not authorize same-run authoring and is not an
+immediate HUMAN_DECISION_REQUIRED shortcut.
 
-Select exactly one Candidate model below.
+Continue only when one exact Candidate surface can satisfy every accepted obligation within the
+available authority.
 
 ## Rule model
 
-A Rule owns one persistent policy. Resolve its **Policy Frame**: class, owner, strength, scope and
-applicability, observable predicate-to-outcome mappings, exceptions, precedence, and boundaries.
-Give every applicable field one supported value; omit only fields proven unable to affect policy.
+A Rule owns one policy. Its Policy Frame contains only the fields that can change application:
+owner, strength, scope, observable predicates and outcomes, exceptions, precedence, and boundaries.
 
-- Lead with the governing policy and co-locate each predicate, outcome, and exception.
-- Keep each requirement in its narrowest owner and state supported overrides explicitly.
-- Use observable predicates and outcomes. For every threshold, overlap, exception, and exclusion,
-  reject the nearest false positive and false negative.
-- Route ordered execution to a Skill. Leave discoverable facts in their environment owner and
-  history in documentation unless it changes application.
-- Use headings for stable policy regions or real branches, lists for peers, and tables for exact
-  repeated mappings.
+Lead with the governing policy. Co-locate each predicate with its outcome and exception. State
+supported overrides and reject the nearest material false positive and false negative. Route
+ordered execution to a Skill and leave discoverable environment facts with their owner.
 
-Correctness reconstructs the complete Policy Frame. It fails implicit or conflicting fields,
-invented predicates, unsupported inapplicability, duplicate ownership, unstated overrides, ambient
-dependencies, and missing outcomes. When Acceptance applies, it exercises the real policy seam and
-observes a decision or action.
+Correctness must be able to reconstruct the complete Policy Frame and trace every operative
+commitment to accepted evidence. Acceptance is conditional: use it only when scenario or real
+execution uncertainty is material.
 
 ## Skill model
 
-A Skill owns one complete triggered job. Resolve objective, actor, trigger, evidence, inputs,
-preconditions, outcome, owner, boundaries, completion, blocked, failure, validation, and handoff.
-Resolve order, recovery, resources, and commands only when they alter execution. Choose one
-evidenced shape:
+A Skill owns one triggered job. Its Job Frame states objective, actor, trigger, accepted evidence,
+inputs, preconditions, outcome, ownership, boundaries, validation, exits, and handoff. State order,
+resources, commands, recovery, or detailed branches only when their omission could change outcome
+under the Frontier-Agent Principle.
 
-- **Judgment-led** by default: a Judgment Frame supplies evidence, principles, invariants,
-  decision boundaries, and prioritized exits while leaving method to capable judgment.
-- **Procedure-led** when order changes correctness, safety, protocol compliance, coordination,
-  recovery, or outcome: one canonical Job Graph owns every path.
-- **Hybrid** when a Judgment Frame contains bounded Procedural Islands that return to judgment.
+Judgment-led is the default. Use a Procedural Island only where order or protocol changes
+correctness, safety, ownership, coordination, recovery, external effects, executability, or
+handoff. The resulting Skill is Hybrid when one or more such islands sit inside the Judgment Frame.
 
-Historical sequence and apparent completeness do not justify procedure. Project the whole job
-from entry, place branches beside their triggers, order only consequential actions, and give every
-path observable completion, blocked, failure, and stop outcomes, including validation, cleanup,
-preservation, and handoff. Claim only supported recovery.
+Apply writing-for-agents to loading and information hierarchy. Preserve the supported invocation
+choice and interface metadata unless accepted evidence changes them:
 
-Use a script only for repeated, fragile, deterministic work with explicit dependencies, inputs,
-outputs, failures, recovery, and owner-supported unit tests. Apply `writing-for-agents` to
-information architecture and invocation. Preserve the supported invocation choice unless accepted
-evidence changes it, and align metadata in the Candidate identified by one whole-Allowlist fingerprint:
+- model-invoked: keep a model-facing description, omit disable-model-invocation, and omit
+  policy.allow_implicit_invocation unless explicit autonomous routing is itself contractual;
+- user-only: set disable-model-invocation to true and policy.allow_implicit_invocation to false.
 
-- **model-invoked:** omit `disable-model-invocation` from `SKILL.md` and omit
-  `policy.allow_implicit_invocation` from `agents/openai.yaml`;
-- **user-only:** set `disable-model-invocation: true` and
-  `policy.allow_implicit_invocation: false`.
+Metadata outside the granted Candidate is a required preservation constraint, not an implied write
+grant.
 
-When autonomous routing is itself contractual, preserve an accepted explicit
-`policy.allow_implicit_invocation: true`; it is not equivalent to omission. Preserve supported
-interface metadata and create `agents/openai.yaml` when absent.
-
-Correctness reconstructs the complete job, shape, boundaries, branches, and exits. Full-job
-execution is normal Skill Acceptance. A **Finite Execution Projection** is eligible only when full
-execution would re-enter this Acceptance graph or require identity control forbidden to a Runner;
-Design must record eligibility and preauthorize the harness.
+Correctness must be able to reconstruct the complete job, material branches, boundaries, and exits.
+Acceptance is NOT_REQUIRED when semantics are high-confidence and no material scenario or runtime
+uncertainty remains. It is never automatic merely because the Candidate is a Skill.

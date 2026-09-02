@@ -5,187 +5,249 @@ description: Use when state-changing repository work requires an isolated linked
 
 # Create Worktree
 
-Use this Procedure-led Skill when state-changing repository work needs an isolated linked Git
-worktree. It selects or creates the worktree, verifies its identity and preservation boundaries,
-prepares its environment, establishes baseline readiness, and returns a mechanical handoff.
+Return one evidence-bound `ready` or `non-ready` handoff for an authorized isolated linked Git
+worktree. Select the caller's fixed Create or Reuse mode, preserve the canonical checkout and all
+unrelated state, establish the target, run only authorized target-owned preparation, and report the
+terminal boundary.
 
-The caller or owning workflow supplies the accepted scope and decision authority. The Controller—the
-Agent running this Skill—performs the procedure. The host creates the worktree when it has a native
-capability; Git is the fallback creator. `scope_owner` owns the implementation scope,
-`creation_owner` identifies the concrete creator and lifecycle owner, `integration_owner` owns later
-integration, and `cleanup_owner` owns later cleanup. This Skill does not take over business
-implementation, commits, completed-change verification, integration, tracker state, or cleanup.
+The caller or owning workflow fixes the implementation scope, immutable base, mode-specific target
+identity, lifecycle owners, and mutation grants. The Controller validates and executes that request
+and owns the readiness judgment. Keep these owners distinct:
 
-## Stage 1: Fix the Inputs and Preservation Boundary
+- `scope_owner`: owns the accepted implementation scope;
+- `creation_owner`: the accountable actor authorized to invoke creation and own first-attempt
+  recovery;
+- `integration_owner`: owns later integration; and
+- `cleanup_owner`: owns later cleanup.
 
-1. Obtain the accepted implementation scope and record:
-   - caller-supplied `scope_owner`;
-   - for reuse, the exact path and identity of the Controller's current linked worktree, or, for
-     creation, a lowercase hyphenated slug;
-   - named worktree branch;
-   - exact base commit;
-   - `integration_owner` and `cleanup_owner`;
-   - whether the host already created the intended worktree; and
-   - for reuse, the concrete `creation_owner`, proved by caller-supplied evidence or an existing
-     handoff, regardless of whether the host or Git created the worktree.
-2. Resolve exactly one named base branch and its checkout against the supplied base commit. Inspect
-   the current branch and `HEAD`, the Git common directory, and `git worktree list --porcelain`.
-   Stop if the intended base is detached or ambiguous, or if the resolved commit differs from the
-   supplied commit. The current branch tip never replaces the supplied commit.
-3. Before any mutation, snapshot the base checkout's branch, `HEAD`, commit tree, index tree,
-   staged, unstaged, and untracked state. Also snapshot every registered worktree and local branch.
-4. For reuse, also snapshot the Controller's current linked worktree: exact path, named branch,
-   `HEAD`, commit tree, index tree, and staged, unstaged, and untracked state. Record the owner of
-   every local-state item and the allowed local-state scope. Stop when any item has ambiguous
-   ownership or falls outside the accepted implementation scope.
+Observing or recording an owner grants no mutation authority. This Skill owns no implementation,
+commit, completed-change verification, integration, tracking, cleanup, publication, or other
+downstream effect.
 
-Continue only with one exact base checkout, named base branch, supplied base commit, and complete
-pre-mutation snapshot. For reuse, also require a complete current-worktree snapshot, ownership map,
-and allowed local-state scope. These snapshots are the preservation boundary and accepted base for
-readiness.
+## Fix the request and preservation boundary
 
-## Stage 2: Select Reuse or Creation
+Before selection, require the owning workflow's authoritative:
 
-Choose one path:
+- accepted scope and `scope_owner`;
+- exact canonical base checkout, named base branch, and `immutable_base` commit OID and tree;
+- Create or Reuse choice and its selecting owner;
+- immutable requested worktree branch;
+- for Create, a lowercase-hyphenated slug;
+- for Reuse, the exact selected worktree and every caller-fixed value consumed by **Reuse
+  identity** below;
+- `creation_owner`, `integration_owner`, and `cleanup_owner`; and
+- exact grants for every possible mutation.
 
-- **Reuse:** Reuse only the Controller's current linked worktree, and only when the owning workflow
-  selected that exact worktree for this exact scope. Stop if its exact path and identity were not
-  supplied or the Controller is not currently in that worktree. Require one proven, unambiguous
-  `creation_owner`, and require its path, named branch, `HEAD`, commit tree, index tree, staged,
-  unstaged, and untracked state and per-item ownership to match the Stage 1 snapshot and allowed
-  local-state scope. Stop when `creation_owner` is missing or ambiguous, or on any identity, state,
-  scope, or ownership mismatch.
-- **Create:** Require the supplied lowercase hyphenated slug, then select
-  `<base-root>/.worktrees/<slug>`; stop when the slug is absent or invalid. Use a verified repository
-  branch convention; when none is verified, use `worktree/<slug>`. Validate the branch name, then
-  prove that the path is absent from both the filesystem and registered worktrees, and that the
-  branch is absent from both registered worktrees and local branches. Stop on any conflict.
+Prove that the canonical checkout is attached to the named base branch at `immutable_base`. Resolve
+and freeze `canonical_root` as that checkout's lexical and effective physical root and
+`git_common_root` as its resolved Git common directory. After selecting the target, freeze
+`selected_root` as distinct lexical-path and effective-physical-destination fields. For an absent
+Create target, project the effective destination from the resolved nearest existing ancestor and
+reprove it after creation. A current tip, convention, or discovered worktree never replaces a
+requested value. The Controller may derive the Create branch once from a verified repository
+convention, falling back to `worktree/<slug>`, only when the caller delegated that derivation;
+freeze it before selection.
 
-At this stage's exit, record the selected path and branch, whether the worktree will be reused or
-created, and the local-state scope allowed for this implementation.
+Use these named predicates throughout the run:
 
-## Stage 3: Establish the `.worktrees/` Guard
+- **Create identity:** `selected_root`, registration, requested and observed named branch/ref
+  relationship, `HEAD`, and current commit tree exactly match the request; the ref and `HEAD`
+  resolve to `immutable_base`, and the tree equals its tree.
+- **Reuse identity:** `selected_root`, registration, requested and observed named branch/ref
+  relationship, `HEAD`, and current commit tree exactly match the caller-frozen
+  `expected_current_head` and `expected_current_tree`; complete local state matches its per-item
+  ownership and allowed scope; `creation_owner` lifecycle evidence and the required
+  `immutable_base` lineage or range are proved.
+- **Preservation census:** the target or partial artifact and its lexical/effective destination;
+  the canonical checkout's branch, `HEAD`, commit tree, index, staged, unstaged, untracked,
+  ignored, file-type, mode, and symlink state; the complete registered-worktree and local-branch
+  sets; durable refs, configuration, hooks, and worktree administration under `git_common_root`;
+  every declared effect target and observable actual filesystem, external, or persistent effect;
+  and a mapping of every delta to one owner and exact grant.
+- **Readiness snapshot:** the terminal mode-specific identity proof plus the complete target local
+  state, bound to the terminal preservation census and its observation boundary.
 
-For every selected path under `<base-root>/.worktrees/`:
+Capture the initial preservation census before mutation. For Reuse, prove and snapshot its identity
+before any target-owned command. Every pre-existing deviation must have one owner and belong to the
+accepted scope; ambiguity is `non-ready`. Later censuses admit only separately authorized,
+identified effects: the exact Create resources, an authorized guard repair, and declared setup or
+baseline effects. Evidence records authority; it does not create it.
 
-1. Require the root `.gitignore` to contain an effective repository-relative `.worktrees/` entry.
-2. If that entry is absent or ineffective, append `.worktrees/` as the smallest effective repair
-   only when `.gitignore` is project-owned and the edit can preserve and distinguish all existing
-   content and local state. Record the addition as an intentional project-owned change. Stop when
-   the file is generated, read-only, ambiguously owned, or overlaps indistinguishable local work.
-3. Run `git check-ignore -v` on the selected repository-relative path. Continue only when its output
-   proves that the root `.gitignore` entry is effective; a global exclude or `.git/info/exclude`
-   does not satisfy this gate.
-4. For creation, obtain any required permission for the exact selected directory and worktree. The
-   permission covers only that directory and worktree and authorizes no unrelated Git or filesystem
-   change.
+**Complete when:** every fixed value and owner is proved, every possible mutation has an exact
+grant, and the initial census can distinguish allowed effects from user or unrelated state.
 
-## Stage 4: Create and Verify the Worktree
+## Select and establish exactly one target
 
-For reuse, proceed directly to the verification gate below. For creation:
+### Reuse
 
-1. Immediately recheck the base branch, `HEAD`, commit tree, selected path, and selected branch
-   against the recorded inputs and snapshot. Recheck the complete base index tree, staged,
-   unstaged, and untracked state as well, allowing only the recorded, distinguishable `.gitignore`
-   repair. If any other value moved or appeared, stop before creation and report the complete
-   recorded and current state.
-2. Prefer the host's native worktree capability when it is available, and record its concrete
-   lifecycle owner as `creation_owner`. Only when no native capability exists, run exactly:
+Reuse only the exact current linked worktree selected by the owning workflow for this scope. Prove
+its identity; do not substitute, adopt, reset, clean, or repair another worktree.
 
-   ```text
-   git -C <base-root> worktree add -b <branch> <worktree-path> <base-commit>
-   ```
+If `selected_root` is inside `canonical_root`, freeze the exact overlapping subtree and its
+pre-state so later comparisons can distinguish target-owned effects from surrounding canonical-
+checkout state. Otherwise prove external Reuse explicitly.
 
-   Record the concrete Agent that ran the fallback as `creation_owner`.
-3. If creation fails, inspect the selected path and Git's worktree metadata. Remove an incomplete
-   artifact only when evidence proves this attempt created it and it contains no user work. If that
-   proof is unavailable, retain the artifact and evidence, identify the exact recovery owner and
-   action, and stop. After a safe removal, repeat the complete pre-creation check in step 1,
-   including the full base snapshot, and retry once. On a second failure, retain all remaining
-   evidence and stop.
+After the applicable guard gate, reprove the Reuse identity and preservation census. Reuse permits
+no new registration or branch. For contained Reuse, also reprove the frozen overlap and
+canonical-root guard; for external Reuse, reprove no overlap and guard inapplicability. Any
+mismatch, unexpected delta, or incomplete observation is `non-ready`.
 
-Verification gate:
+**Reuse is established when:** its identity, preservation census, and applicable guard all pass.
+Otherwise terminalize `non-ready`. An established Reuse proceeds directly to target preparation.
 
-1. Use `git worktree list --porcelain` to prove that the selected path, named branch, and `HEAD`
-   equal the recorded values.
-2. Prove that the base checkout's `HEAD`, commit tree, index tree, and pre-existing staged,
-   unstaged, and untracked state still match the snapshot. The only permitted difference is the
-   recorded `.worktrees/` addition to `.gitignore`.
+### Create
 
-Continue only with the selected worktree identity proven and the base preservation boundary intact.
+Map the slug to `<canonical_root>/.worktrees/<slug>` and freeze that lexical path as
+`selected_root.lexical`. Resolve its nearest existing ancestor and prove that
+`selected_root.effective` stays within the effective `canonical_root` without ambiguous traversal,
+symlink, junction, or reparse escape. Require the path to be absent from the filesystem and
+registered worktrees; prove the frozen requested branch syntactically valid and absent from local
+branches and registered worktrees. Discover the host's current physical-path and filesystem/reparse
+behavior at use; unavailable, ambiguous, or failed resolution is `non-ready` before mutation.
 
-## Stage 5: Prepare and Decide Readiness
+Before creation, require one exact grant naming the lexical and effective path, branch creation,
+worktree registration, and corresponding administrative changes under `git_common_root`, bound to
+the nominated `creation_owner`.
 
-1. Work inside the selected worktree. If the target repository provides its own
-   `worktree-environment-setup`, run it before baseline verification and record its commands and
-   results. Continue to baseline verification only when that setup returns a successful, ready
-   result. If the setup is unavailable, stops, fails, or returns a non-ready result, end readiness
-   immediately, retain the worktree, and record the failed step, result, exact next owner, and
-   exact next action for the handoff.
-2. Run the repository-declared baseline after environment setup. Record the exact commands and
-   results. A failing baseline stops readiness unless the user explicitly accepts the failure. The
-   absence of a declared baseline stops readiness unless the owning workflow or user explicitly
-   accepts the absence. Record the accepted failure or absence; do not invent a command or
-   substitute completed-change verification.
-3. Mark the result ready only when all of these are true:
-   - the worktree has one named branch;
-   - its `HEAD` and commit tree equal the accepted base;
-   - target-owned `worktree-environment-setup` is absent, or it completed successfully with a ready
-     result;
-   - the baseline passed, its failure was explicitly accepted by the user, or its declared absence
-     was explicitly accepted by the owning workflow or user; and
-   - every local path belongs exclusively to the accepted implementation scope.
+### Local guard
 
-Retain every failed worktree for diagnostic evidence. Preserve any other non-ready worktree unless
-its owning workflow supplies separate disposition authority; this Skill grants no deletion
-authority for it. End this stage with an observable readiness result and reason, identifying any
-stop or failure precisely.
+Require `canonical_root`'s effective, repository-relative `.worktrees/` ignore rule for Create and
+for Reuse beneath that directory. Verify the selected path with
+`git -C <canonical_root> check-ignore -v <selected-root-relative-path>`. A global or Git-info
+exclude is insufficient. Repair only `<canonical_root>/.gitignore`, and only with separate
+project-owned authority for the smallest distinguishable edit that preserves existing local state.
+External Reuse records the guard as inapplicable and receives no repair authority.
 
-## Stage 6: Return the Mechanical Handoff
+### Create attempt
 
-Every terminal exit returns one handoff. Set `status` to `ready` only when the complete Stage 5 ready
-predicate passes; set it to `non-ready` for every earlier stop or failure. `failed_phase`, the
-observable reason, and the exact next action distinguish non-ready outcomes.
+Creation is observation-gated, not serialized. Use no portable or global lock, lease, atomic guard,
+or other coordination dependency. The host-native capability or Git fallback
+`creation_mechanism` must reject creation-time path, branch, and registration conflicts. A race may
+produce a failed attempt or a successful-looking creation whose later census is `non-ready`; it
+must never produce `ready` on relevant drift.
 
-Populate every handoff field according to the completed boundary. Preserve every observed value and
-its exact failure reason; use a literal marker instead of inferring anything not established,
-verified, or run:
+Discover the native capability and Git fallback at use, recording unavailable or failed paths. For
+each attempt, use the native capability when available, otherwise the Git fallback. Immediately
+before invocation, re-observe and pass the fixed request and owners, immutable base, canonical-
+checkout preservation, destination containment and path absence, branch validity and absence,
+registration absence, exact grants, `creation_owner` authority, frozen mechanism availability, and
+guard proof. Stop before invocation on drift or incomplete evidence. The fallback uses:
 
-- Before Stage 2 selects a worktree, set selected worktree, branch, `head`, and `tree` to
-  `not-selected`.
-- After the Create branch selects its path and branch but before it creates a worktree, report the
-  exact selected path and branch and set `head` and `tree` to `not-created`.
-- After a creation attempt, or after Reuse selection but before the verification gate passes,
-  report the selected path and branch plus observed `head` and `tree` when available, and mark the
-  identity unverified. Report an unavailable observed value as `unavailable`; never infer it.
-- After the verification gate passes, including during setup or baseline, report the exact verified
-  selected path, named branch, `head`, and `tree`.
-- For accepted scope, base checkout, base branch, base commit and tree, each owner, reuse path or
-  creation slug, and allowed local-state scope, use `unavailable` until established. Preserve an
-  observed value and label it `unverified` until its applicable gate passes; afterward report the
-  exact verified value.
-- For the `.gitignore` gate, report `not-run` before Stage 3. Preserve any observed rule or repair
-  result and label it `unverified` until `git check-ignore -v` proves the required root rule;
-  afterward report the exact verified result.
-- For environment setup and baseline, report their commands, results, and acceptance fields as
-  `not-run` until the applicable step runs. Once run, preserve the exact command and result and
-  label any still-unverified outcome `unverified`. If target evidence proves a step absent, report
-  that exact absence and its required acceptance instead of `not-run`.
-- For readiness, report `non-ready` with the exact failed phase and reason until every Stage 5
-  predicate passes. A `ready` handoff contains no boundary marker: every mandatory field is exact
-  and verified, and every applicable setup and baseline step has an exact result.
+```text
+git -C <canonical_root> worktree add -b <requested-branch> <selected_root.lexical> <immutable_base_oid>
+```
 
-The handoff contains:
+The nominated `creation_owner` is accountable for each invocation and stays within its exact grant;
+the mechanism is not an owner. One invocation is one attempt. Immediately after every attempt,
+including failure or interruption, capture the complete preservation census and observe every
+Create identity field. Classify an unsuccessful invocation against the narrow recovery gate below
+before requiring complete Create identity; only its unchanged-state or exact attempt-owned partial-
+effect cases are exempt from terminal identity failure. Any relevant drift; creation-time path,
+branch, or registration conflict; unexpected or out-of-scope effect; incomplete evidence; or any
+identity or invariant failure outside that exception ends Create and the whole handoff `non-ready`.
+None permits retry or later readiness, even if the condition later disappears.
 
-- `status` and the accepted implementation scope;
-- worktree identity populated under the completed-boundary rules above;
-- base checkout, named base branch, exact commit and tree, and preserved local state;
-- `scope_owner`, `creation_owner`, `integration_owner`, and `cleanup_owner`;
-- exact reuse path or creation slug, `.gitignore` result, and allowed local-state scope;
-- environment-setup and baseline commands, results, and explicitly accepted failures or absence;
-  and
-- readiness result and reason.
+Only when none of those terminal conditions occurred may the first unsuccessful invocation be
+retry-eligible. Its census must prove either unchanged state after a clean creator failure or
+solely an exact attempt-owned partial effect containing no user work. Remove such a partial effect
+only under a separate exact cleanup grant bound to `creation_owner`. Re-observe cleanup or proved
+absence, repeat every Create gate, and retry at most once. Otherwise retain the artifact and stop.
+Retain every second-failure artifact. Any ambiguous, user-owned, unexplained, or incompletely
+observed effect is retained and ends Create.
 
-For any non-ready result, also return the retained state, failed phase, failed setup step and result
-when applicable, next owner, and exact next action. The caller must recheck the handoff before
-implementation or finalization. Its recorded values grant no broader authority.
+For a successful-looking attempt, reprove the Create identity and preservation census. Create
+permits only its exact granted delta.
+
+**Create is established when:** its identity, immediate and post-attempt preservation censuses,
+and every creation or guard effect pass. Otherwise terminalize `non-ready`.
+
+## Prepare the target within declared effect envelopes
+
+Target-owned `worktree-environment-setup` and the repository-declared baseline are dependencies;
+their declarations own commands and meaning, while the caller or owning workflow owns permission
+for their effects.
+
+Before executing either dependency, inspect its current declaration and freeze its command and
+effect envelope, including every filesystem target, durable Git common-state change, and external
+or persistent effect. Freeze its invocation binding as either a working directory of exactly
+`selected_root.effective` or an explicit repository-target argument resolving there. Immediately
+before every invocation, verify that binding. An unavailable, ambiguous, or mismatched binding,
+including `canonical_root` or another root, is `non-ready` before execution. Prove the dependency
+non-mutating or require explicit authority for every declared class and exact target. Bind the
+granting owner and allowed local-state addition to this selected worktree. Missing, ambiguous,
+unowned, or unauthorized envelopes are `non-ready` before execution. Re-read environment-owned
+declarations at use; do not cache them here.
+
+Run setup first when present. Proven absence is ready-compatible. A failed, stopped, interrupted,
+unexpected, or non-ready setup ends preparation before the baseline.
+
+Run the declared baseline only after setup is ready or absent. Record its exact commands and
+result. A pass is ready-compatible. A failure is ready-compatible only when the user explicitly
+accepts that exact observed failure; proven absence requires explicit acceptance from the user or
+owning workflow. Acceptance grants no mutation authority. Do not invent a baseline or substitute
+completed-change verification.
+
+After every setup or baseline disposition—including success, failure, interruption, or a
+conclusively absent, unavailable, missing, moved, or unreadable target—capture the preservation
+census and compare it with the dependency's immediately preceding mode-specific identity and
+preservation census and its frozen envelope. Preserve partial evidence. Any unavailable,
+unauthorized, unexplained, out-of-envelope, or incompletely observed state is `non-ready`.
+
+**Complete when:** setup and baseline have exact terminal dispositions and the census proves every
+declared or actual effect completely observed, envelope-matched, owned, and authorized.
+
+## Terminalize and hand off
+
+Before every exit, capture the preservation census and report incomplete observations rather than
+inferring state. For Create, allow only the verified selected subtree and exact granted resource
+deltas. For contained Reuse, hold the frozen overlapping-subtree boundary constant. Use the
+preservation census to compare its contents and deltas with the frozen pre-state, ownership, exact
+grants, and explicit envelopes; admit only matching effects and preserve everything outside it.
+External Reuse has no overlap exception. An early exit still closes every observable comparison.
+
+Return `ready` only when all of these are proved:
+
+- the fixed request and lifecycle owners match exactly;
+- every initial, immediate pre-attempt, post-attempt, preparation, and terminal preservation census
+  passes; no terminal race occurred; and any first-attempt recovery passed its narrow gate and was
+  re-observed;
+- the applicable ignore guard passes or external Reuse is proved inapplicable;
+- the mode-specific identity passes after all preparation, with authorized preparation state only
+  inside the preservation and effect envelopes;
+- setup is absent or returned ready;
+- the baseline passed or its exact failure or absence has the required explicit acceptance; and
+- every final deviation is within the accepted scope and an authorized allowed-state envelope.
+
+Every other exit is `non-ready`. Except for the single authorized first-attempt recovery, retain the
+worktree and residual state.
+
+Return a compact mechanical handoff containing:
+
+- status and exact reason; accepted scope and `scope_owner`;
+- mode, the three roots, `immutable_base`, and the complete readiness snapshot;
+- the initial and final preservation censuses and every boundary comparison; for every Create
+  attempt, its immediate gates, owner, mechanism, result, census, authorized deltas, cleanup
+  evidence, and retry disposition;
+- all lifecycle owners; the selecting owner for mode; the derivation source and delegating owner
+  for branch derivation, if any; and the source and granting owner for Create effects and guard
+  repair;
+- guard applicability, proof, repair, and actual effect;
+- setup and baseline declarations, commands, bindings, envelopes, authorities, results,
+  acceptance, actual effects, and effect-comparison verdicts;
+- every terminal census, its completeness, retained evidence, ownership map, and envelope
+  comparison; and
+- for `non-ready`, the exact failed boundary and observation, retained or residual state, next
+  owner, and one exact next action.
+
+Use exact observations. Use `not-selected`, `not-created`, or `not-run` only before that boundary;
+`unavailable` only for genuinely unobservable values; and `unverified` only while an attempted gate
+remains incomplete. A conclusively inapplicable or absent step records its exact reason and effects.
+A `ready` handoff has no marker in a mandatory field.
+
+A consumer may admit the target only by rechecking the exact mode-specific readiness snapshot
+immediately before its first consume or mutation; any mismatch or `non-ready` blocks consumption.
+Later authorized target commits or local changes invalidate that snapshot without retroactively
+changing this run's result. Continuation or recovery requires a fresh Reuse handoff against a
+caller-frozen current snapshot. Any downstream finalizer independently applies its owner contract
+to the then-current target identity, required review and verification, and immutable-base lineage.
+No handoff content grants new authority.

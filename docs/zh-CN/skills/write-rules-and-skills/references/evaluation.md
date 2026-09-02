@@ -1,212 +1,67 @@
-# 评估生命周期
+# 证明与修正生命周期
 
-本合同负责证明顺序与适用性、通用 finding schema 与跨 Owner 修正生命周期、共识与结果组合、
-Machine Validation、Revision Impact 与重放、Scope Transfer 以及全局出口。Author 负责
-Candidate 与处置判断；Reviews 负责 Quality 和 Correctness finding 与裁决；Acceptance 负责
-可执行验证结果。本合同只组合这些由 Owner 产生的结果，不选择任何结果。Job Design 负责指纹、
-delta 与证明状态提升；Role Runtime 负责传输与控制 metadata。在启动任何角色或改变 Candidate
-前冻结全部内容。
+本合同负责证明适用性与顺序、finding 严重级别、修正、重放和全局出口。默认依靠判断；下述有序证明与修正步骤属于流程，因为改变其顺序可能使证据失效或授权不安全的写入。
 
-## 冻结证明路径
+## 选择并运行证明
+
+在 Author 工作前冻结适用性，并在同一个当前指纹上按以下顺序运行阶段：
 
 | 顺序 | 阶段 | 适用性与关闭条件 |
 | --- | --- | --- |
-| 1 | Machine | 当变更涉及 schema 或 metadata、引用/资源、固定流程，或者足够具体/复杂的工具、权限、文件系统状态、流程或外部影响，并存在确定性证据时适用。Candidate 拥有或改变脚本时必须执行 Machine。其他情况下，广泛判断与高置信简单步骤可以是`NOT_REQUIRED`。 |
-| 2 | Quality | 始终在 Machine `PASS`或有效`NOT_REQUIRED`后适用。激活已冻结的完整 cohort。当前闭合要求每项独立 PASS 与所需 coverage record 都绑定到同一 Candidate 指纹。 |
-| 3 | Correctness | 始终在 Quality 达到当前闭合后适用。激活已冻结的完整全新 cohort；成员分别独立返回绑定到同一准确 Candidate 指纹的 PASS。 |
-| 4 | Acceptance | 当运行时行为具体或足够复杂，而且缺乏高置信可行性证据时适用。Design 会将该阶段冻结为适用，并纳入其合同贡献的全部内容；否则冻结为`NOT_REQUIRED`。 |
+| 1 | Machine | 条件式。只有 Machine 不适用时才为 NOT_REQUIRED。适用时，只有每项已选非修复命令均成功退出才为 PASS；一项或多项已选命令失败时返回 FAIL，并进入下述 Machine 修正。 |
+| 2 | Quality | 始终执行。Reviews 冻结的 Quality 拓扑在同一指纹上独立通过完整 Candidate。 |
+| 3 | Correctness | 始终执行。Reviews 冻结的 Correctness 拓扑在该指纹上通过完整已接受合同。 |
+| 4 | Acceptance | 按 Acceptance 合同选择 Static Scenario、Executable 或 NOT_REQUIRED。 |
 
-Acceptance 信号包括固定多步顺序、有意义的分支、重试、恢复或出口、具体工具、变更、权限、
-外部影响，或要求此类行为的 Rule。演练不符合条件。冻结每项适用性、资源、身份、依赖、转换和出口。
+Machine 可报告的阶段裁决为 PASS、FAIL 或 NOT_REQUIRED。
 
-把本生命周期的修正与重放状态，以及后续视角合同的调度输入，贡献给 Job Design 的通用调度 manifest。
+Machine 可以检查 schema、metadata、引用、固定流程、脚本和 Owner 支持的测试。它绝不为了避免 NOT_REQUIRED 而虚构检查，也绝不修复 Candidate。记录准确命令、退出状态与相关输出。Machine 期间发生 Candidate 变化属于边界停止，不是测试结果。
 
-## 把 finding 视为由 Owner 负责的主张
+当判断或分支行为、工具或环境可行性、权限、文件系统状态、外部影响、恢复或运行时出口仍存在重要不确定性时，选择 Acceptance。高置信语义且没有重要运行时不确定性时为 NOT_REQUIRED。无论 Rule 还是 Skill，Acceptance 都是条件式的。
 
-finding 应记录其稳定 ID；问题及其支持证据、Owner 和来源；观察到的答案或有支持的反例；Candidate
-位置；严重级别；Candidate 不变时的影响；估计 Repair Scope；受影响义务或表面；保留约束；以及
-有界修复方向，而不是替换文字。仅在字段无法适用时使用带理由的`N/A`。Review 问题用于调查；
-finding 是有支持的陈述性主张。
+## Finding 与严重级别
 
-- `critical`：语义、权威、安全、归属、可执行性或出口失败。
-- `material`：有支持的缺陷，实质降低信息质量、可靠性或可维护性。
-- `advisory`：有支持的较小改进或有效选择机会，而且其完整修复与重放 scope 足够有界，值得
-  呈现。
+有支持的 finding 要写明问题、治理证据与来源、Candidate 位置、不变时的影响、严重级别、受影响义务或路径、保留约束和有界修复方向。它不提出替换文本。
 
-critical 与 material finding 会阻塞，并使用下文的双边生命周期。advisory 不阻塞。Author 合同
-负责处置、理由以及是否提出写入。当前 review 合同负责主张有效性、严重级别、不动点评估与
-advisory 升级。本生命周期只把双方的准确最终结果映射为写入资格。严重级别是 Candidate 不变时
-的影响；估计 Repair Scope 是成本与风险，绝不会降低严重级别。合同违规无论修复规模多小都仍然
-是 critical。仅凭品味、对称性、文件长度或修复便宜，不能证明存在缺陷。完整 finding 只在同级
-间流动，并通过`FINDING_READY → CHANNEL_OPEN`进入。
+Quality 可以返回：
 
-## 运行一个独立修正单元
+- critical：正确性、权威、安全、归属、可执行性或终止结果失败；
+- material：实质降低信息质量、执行可用性或可维护性的有支持缺陷；
+- advisory：有界的非阻塞改进或有效选择机会。
 
-1. **私下判断。**向每个成员提供共同的完整输入，此外只提供已冻结的 scope 专属证据。成员不接收
-   Author 推理或其他 Reviewer 的工作，并固定自己的完整 finding 集合。分批时保留输入；有界
-   更新会重新开始该身份的判断。
-2. **打开 Owner 配对。**为每项 finding 发出经审计的`FINDING_READY`与完成证据。在收到
-   `CHANNEL_OPEN`后，将 finding 直接发给 Author；任何 Reviewer 都不接收其他 Reviewer 的工作。
-3. **接收 Author 处置。**finding Owner 接收 Author 合同的当前处置与理由，用于直接讨论；
-   Evaluation 既不选择也不重新定义该结果。
-4. **评估 Owner 结果。**finding Owner 根据当前 review 合同，对照 Author 处置与任何新的有支持
-   证据评估自己的主张。对于阻塞 finding，只有在 Owner 不再坚持任何不写入就仍成立的阻塞主张，
-   或双方分别独立同意所选修复或部分修复能够处理每个仍被坚持的阻塞部分、只待写入和复查时，
-   才形成经过推理的双边不动点。如果 Owner 仍坚持 blocker，而 Author 拒绝、保留阻塞部分或提出
-   的路径被 Owner 判断为不能解决问题，不动点为`not reached`。advisory 的不动点为
-   `not applicable`；其 Owner 可以澄清主张，但不能选择 Author 处置。任何通道仍开放时，禁止写
-   Candidate。只改变当前主张的证据留在该主张的生命周期中。只有新获得的有支持证据独立支持另
-   一项尚未报告的 finding 时，才重新打开 finding 集合。
-5. **关闭通信轮次。**Author 直接交付拟作为最终结果的处置与理由；finding Owner 评估该准确
-   结果。若讨论改变任一结果，则重复交付与评估。随后，Author 根据 Author 合同冻结准确最终
-   处置，Owner 根据当前 review 合同冻结主张有效性、严重级别与不动点状态。双方发出 Role
-   Runtime 不含语义的`DISCUSSION_CLOSED`metadata。该事件只关闭通道与轮次，绝不表示主张已经
-   解决。未解决的 blocker 继续阻塞，只能通过`FINDING_READY → CHANNEL_OPEN`进入另一冻结轮次。
+Critical 与 material finding 会阻塞 Quality。Correctness 与 Acceptance 的 Candidate 缺陷仅使用 critical。估计修复规模不能降低严重级别。仅凭品味、对称性、行数或文本差异不能确立缺陷。
 
-   关闭前，如果 Owner 根据新获得的有支持证据独立确定了另一项尚未报告的 finding，应固定该
-   finding 及其不透明 ID，并把 finding 集合状态设为`reopened`；否则状态保持`complete`。重新
-   打开会使先前的完成证据失效，只能由新获得的证据触发，而且必须增加至少一个不同 ID。当前
-   所有开放通道关闭后，同一持久 Reviewer 使用累积的已授权证据，在未改变的 Candidate 指纹
-   上重新开始私下判断；通过 Role Runtime 发出每项新固定的 finding，并在最后一次发出时恢复
-   完成状态。advisory Owner 只有获得新的有支持证据时才可升级；升级后的主张转入阻塞生命周期。
-   只有不存在尚未解决的阻塞 finding、自己负责的每项 advisory 均有冻结处置、最新 finding
-   集合状态为 complete，而且没有已选修复等待写入时，Reviewer 才可为当前指纹返回`PASS`。
-   信任、投票、其他 Reviewer 和 Controller 解释都不能作出决定。
-6. **派生写入资格并选择分支。**所有完成证据均已审计、最新 finding 集合均为 complete 且所有
-   配对均关闭后，Controller 针对每项准确最终 Author 处置与 Owner 产生的不动点状态，机械应用
-   以下穷尽映射：
+Q1 或 Q2 所负责视角内的每项有支持 critical、material 或 advisory 主张都是 finding，并遵循本处置生命周期。deferred surface 超出该 Reviewer 的视角或裁决权威；它不能替代其负责的 advisory，也不能满足 Quality PASS Gate。可能阻塞的跨视角问题遵循 Reviews 的非语义检查请求路径。该请求既不是 finding 也不是证据，但在所属视角独立检查该指纹上所指出的 Candidate 位置前，证明不能关闭。
 
-   - 阻塞`repair`或`partial repair`与`reached`组合时具备写入资格；
-   - 阻塞`repair`或`partial repair`与`not reached`组合时不具备写入资格；
-   - advisory `repair`或`partial repair`与`not applicable`组合时具备写入资格；以及
-   - 每项`decline`均不具备写入资格。
+## 修正一个指纹
 
-   任何其他组合均不可接纳。合格结果为零时，不创建 Repair Scope，也不调用 Author；同指纹
-   Reviewer 符合条件时返回`PASS`，否则阻塞 Owner 进入下一授权轮次。存在至少一项合格结果时，
-   检查 Role Runtime 由合格 ID 与匹配 scope control 组成的经认证 aggregate，再把该准确
-   aggregate 冻结复制进一份全单元 Repair Scope：单元、指纹、合格 ID 及其最终处置与写入资格
-   控制、路径与模式、preservation-reference ID 和就绪状态——绝不包含语义正文。aggregate 或
-   scope control 缺失或不匹配时，采用 Role Runtime 的不可接纳回调路径。只有此时，同一个
-   Author 才能写入。
-7. **共同复查。**授权写入后，可接纳的`COMPLETE`提升调用最终指纹，随后每个持久成员分别独立
-   复查完整 Candidate。未提升的指纹不会启动证明；若未提升，不受影响的同指纹`PASS`与已拒绝
-   advisory 保持关闭，而阻塞 Owner 重新评估。
+对于每项有支持的 finding：
 
-共识是完整已声明 cohort 分别独立生成由 Owner 负责的`PASS`，每项结论都为 expected proof state
-中同一个已提升 Candidate 指纹满足当前闭合，同时不存在尚未解决的 blocker，并且每项 advisory
-均有冻结的 Author 处置。Quality 还要求其视角合同声明的每份机械接纳 coverage record；缺失或
-不完整的记录不能成为`PASS`。开放单元在 local PASS 后仍保持开放。重新打开失效的已关闭单元
-需要全新完整 cohort；旧身份与裁决绝不返回。
+1. Reviewer 把完整 finding 直接发送给常驻 Author。
+2. Author 独立返回 repair、partial repair 或 decline，并给出有证据支持的理由。
+3. Reviewer 判断其阻塞主张是已解决、由拟议修复有条件解决，还是未改变。新的有支持证据可以细化 finding。
+4. 阻塞仍存在时，同一配对继续讨论，直到达到不动点。若连续两轮具有相同主张、证据、处置与方法，则返回 NO_PROGRESS。
+5. advisory 在 Author 作出处置后关闭，不进入 NO_PROGRESS。
 
-### 人类停止与无进展
+任一参与者返回 HUMAN_DECISION_REQUIRED 都会立即停止。保留请求，并且只能在新运行中继续。
 
-第一个 Author、Reviewer 或 Controller `HUMAN_DECISION_REQUIRED`会立即结束所有语义工作与
-讨论。保留其准确决策、未解决原因、Owner 与每个当前选择的后果；所有临时语义工作均失效。
-若请求来自 Author，则应用 Job Design 的 human-stop 转换，并保留独立的不匹配分类。完成条件式
-安全与最终化；若没有更高优先级的安全终止结果，则原样交付请求，只有在人类回答后的新运行中继续。
+所有讨论关闭后，把每项已同意的阻塞修复和每项由 Author 选择的 advisory 修复合并为一份准确 Repair Scope。常驻 Author 可以在授权内独立实现这些结果。只有 Reviewer 同意拟议变更后不再保留任何阻塞部分时，partial repair 才符合条件。decline 绝不授权写入。
 
-当两个同级都以`not reached`关闭轮次且主张仍未解决时，才计为一轮阻塞分歧；初次私下判断不算
-一轮。同一 blocker 连续完成两个计数轮次，而且没有新证据或受支持方案时，停止并返回
-`NO_PROGRESS`。advisory 在 Author 冻结修复、部分修复或拒绝后关闭，绝不会进入
-分歧或`NO_PROGRESS`。
+Author 的 COMPLETE 可接纳后，捕获并提升新指纹，并将返回的语义 Change Summary 一次性绑定到它。之前每项语义阶段裁决均失效。从 Machine 开始按顺序重新运行全部适用证明。仍保持开放的审查阶段会在修正与复查期间保留其 Reviewer 身份；每个因修复而失效或重新打开的、先前已 PASS 并关闭的审查阶段，都要根据 Role Runtime 使用全新身份。Acceptance 身份遵循 Acceptance 合同。语义裁决不能沿用。
 
-## 验证确定性事实
+Machine FAIL 使用相同的常驻 Author，并使用一份包含失败命令与受影响路径的准确 Repair Scope。如果同一失败在两轮修复与重跑后依然存在，且没有新证据或方法，则以 NO_PROGRESS 停止。
 
-Machine 适用时，只运行受影响 Owner 支持且不会自动修复的检查：frontmatter 或 schema 验证、
-注册/metadata 一致性、引用存在性、生成的 adapter、格式化和仓库测试。对于 Candidate 拥有或
-改变的每个脚本，执行 Design 已冻结的脚本到单元测试资源再到命令映射中的每条命令，确保运行
-所有适用且由 Owner 支持的单元测试。缺少映射、测试资源、命令或适用单元测试，或任何单元测试
-失败，都会阻止`PASS`，且不能变成`NOT_REQUIRED`。Machine 检查这些资源，但绝不新增或更新它们。
+## 选择出口
 
-Machine 单元测试无需直接调用真实入口或执行完整 Job。最终的条件式完整 Job 或 Finite Execution
-Projection 行为验证仍由 Acceptance 负责。除脚本要求外，不要仅为避免`NOT_REQUIRED`而虚构检查。
+选择任何结果前，完成已开始的可执行 Acceptance 安全流程与 Role Runtime 最终化。选择第一项有支持的结果：
 
-每条命令前后计算指纹，并应用 Job Design 的独立不匹配结果组合；Machine 内不存在已授权的
-Author 写入。出现不匹配时保留分类证据并停止。始终记录准确命令、退出状态和相关输出。把失败
-证据放入一份完整 Machine Repair Scope，交给同一 Author；重跑失败、
-已失效及依赖检查。一次 Machine 修正轮包含失败、修复和重跑。同一失败连续两轮没有新证据或
-方案时，停止并返回`NO_PROGRESS`。
+1. ATTEMPT_INVALID、RUNNER_NOT_QUIESCENT、CLEANUP_FAILED 或另一项已开始尝试的安全终止结果；把同时出现的人类、Candidate 或边界结果保留为下层结果；
+2. CANDIDATE_CHANGED 或 ROLE_BOUNDARY_VIOLATION；
+3. TEARDOWN_FAILED；把同时出现的低优先级终止结果保留为下层结果；
+4. HUMAN_DECISION_REQUIRED；
+5. SEMANTIC_ROLE_UNAVAILABLE 或 HOST_UNAVAILABLE；
+6. 无法满足的 CONTEXT_REQUIRED 或 ACCESS_REQUIRED；
+7. ALIGNMENT_REQUIRED、NO_PROGRESS、AMBIGUITY_UNRESOLVED 或 EXECUTION_UNAVAILABLE；
+8. 只有全部适用证明都在最终指纹上通过、每项 advisory 都有 Author 处置、清理完成且最终边界检查匹配时，才为 COMPLETE。
 
-Machine 闭合要求每项检查或`NOT_REQUIRED`绑定到当前指纹，或通过准确的 Revision Impact 兼容性
-绑定向前沿用。否则，在符合条件时使用预授权的证明 Owner 路径，或重跑检查，然后对 Quality
-应用 Revision Impact。
-
-## 转移 scope，但不转移判断
-
-一条**Scope Transfer Note**只包含 Candidate 位置、预期 Owner 和检查职责——不得包含观察、
-证据、理由、处置或裁决。只可将其路由一次：发给当前 cohort 的 Reviewer、尚未启动的后续阶段，
-或在 local PASS 后发给此前已通过的阶段；接收方独立检查。
-
-允许发往此前已通过单元的 note 会让该单元保持开放，并在转移窗口内暂停其 cohort；只恢复预期
-Owner，并在所有可能 note 与检查均结束后关闭。note 本身不改变裁决。接收方支持的 blocker 采用
-普通失效/重放；advisory 仍不阻塞，除非接受其写入后触发 Revision Impact。
-
-## 修订、回退并重放
-
-每次提升后，Revision Impact 使用 Author summary、Operation Report、当前已提升指纹、规范 delta
-及其 baseline/proof-state 绑定；只有这些内容无法确定影响时，才直接比较 Candidate。
-
-只有当某项证据的结论可能随 Candidate 字节、含义、路径或 delta 变化时，该证据才依赖内容。
-指纹只用于身份时则不依赖内容；保留无关的传输、审计、生命周期和控制证据。
-
-一份不可变的**Revision Impact 兼容性绑定**记录原始与目标指纹、未变的 Owner 结论与回调、
-来源、规范 delta 和影响证据，以及根据该证明类别冻结 manifest 机械得出的不受内容影响判定。
-
-只有 delta、表面和来源满足每项可观察谓词时，Controller 才能绑定；它不能推断标准，也不能改变
-结论、回调、指纹或来源。该绑定既不改变 Candidate 身份和 Frozen Run Contract，也不改变控制证据。
-
-语义影响或不确定影响不会生成兼容性绑定。只有身份与生命周期仍允许时，才通过证明 Owner 已有
-的冻结评估或复查生命周期，把影响路由给显式预授权的证明 Owner；任何结果都必须由 Owner 重新
-生成并绑定到当前指纹。否则，应用普通失效、回退与重放。
-
-只有 Owner 生成的结论绑定到当前指纹，或未变的原始结论具有从其指纹到当前指纹的准确兼容性
-绑定，证明才满足**当前闭合**。每次后续指纹变化都需要自己的绑定。受影响或影响不确定的证明
-得不到绑定，并遵循已有失效、回退与重放路径。
-
-Acceptance 修正会把控制权交还至此，同时保留其用例 Reviewer。Evaluation 按顺序恢复失效的
-较早阶段，然后 Acceptance 重跑该用例，之后才再次判定影响；Acceptance 不编排任何较早阶段。
-
-1. 受影响的活跃单元先在完整的新 Candidate 指纹上达到 local PASS。
-2. 找出变化可能影响的最早已通过证明。未来阶段没有可失效的证明。只保留其冻结可观察标准以
-   机械方式证明不受影响的证据，并为每个保留结论记录准确的 Revision Impact 兼容性绑定。
-3. 按冻结顺序重新打开该最早失效阶段和所有中间依赖。变更指纹后新派生的 delta 只会使内容依赖
-   结论可能受影响的 review、回调或其他证据失效；未变 no-op 按这些 Revision Impact 规则保留不受
-   影响的证据。每个绑定到指纹的 delta 均保持不可变。
-   在每个失效且已关闭的 Quality 或 Correctness 单元首次行动前，预绑定完整全新 cohort。反复
-   失效时使用成员完全不同的全新 cohort；任何此前身份或裁决都不返回。
-4. 应用每项条件式权威已冻结的保留与重放调度。保留且活跃的 worker 继续占用`P`；在剩余池中
-   分批运行全新 cohort，不改变 cohort、指纹、已提供的证据或发现授权。
-
-每次提升后重复。任何可能受到已提升变化影响的裁决都不得继续有效。
-
-## 选择全局出口
-
-消费 Role Runtime 审计后的回调结果，以及 Job Design 选定的证明状态转换。经认证的
-`HUMAN_DECISION_REQUIRED`在其他任何结果前应用[人类停止](#human-stop-and-no-progress)；其他不可接纳
-payload 一律丢弃。
-
-只有在能证明污染边界且 Candidate 与 expected proof state 准确匹配时，Controller 才能局部遏制
-其余事故；使最小受影响单元失效，保留其分类及边界外所有状态，并只通过已冻结的身份与生命周期
-路径继续。已经成立的`SEMANTIC_ROLE_UNAVAILABLE`是整次运行的终止结果，因为其所需身份不可
-替换。发生变更的 Author 调用若回调不可接纳，则属于整次运行的`ROLE_BOUNDARY_VIOLATION`；
-其他事故若无法证明准确证明状态匹配与隔离，也属于整次运行。Controller 只判断边界遵循与遏制，
-绝不判断 Candidate 含义或 finding。
-
-发出任何全局结果前，先按安全合同完成每项已经开始的条件式执行。若产生安全终止结果，则它优先，
-同时保留待处理的底层结果；安全最终化成功后，返回下列选择。然后选择第一个匹配结果：
-
-1. 第一个`HUMAN_DECISION_REQUIRED`：结束语义工作，为新运行保留请求；
-2. `CANDIDATE_CHANGED`：应用 Frozen Job Design 选定的不提升转换，然后停止；
-3. 整次运行的`ROLE_BOUNDARY_VIOLATION`：保留其取证状态与审计证据，不作提升，并停止语义继续；
-4. 整次运行的`SEMANTIC_ROLE_UNAVAILABLE`：语义角色触发已冻结异常执行条件，且没有边界违规证据；
-   保留身份、通道、终止和残留证据；
-5. `HOST_UNAVAILABLE`：宿主在启动 Author 前无法建立或提供经正确推导并冻结的容量、身份、认证
-   通道、调度或证据；
-6. 无法提供符合条件的`CONTEXT_REQUIRED`或`ACCESS_REQUIRED`；超出 envelope 的请求在新运行中
-   变为`ALIGNMENT_REQUIRED`；
-7. 阶段终止结果，例如`AMBIGUITY_UNRESOLVED`、`NO_PROGRESS`或`EXECUTION_UNAVAILABLE`；
-8. 根据 Evaluation 的同指纹或兼容性规则达到阶段当前闭合：前进；只有图关闭并完成工作流最终化
-   才允许成功。
-
-Controller 超额调度遵循不可接纳边界路径，绝不是`HOST_UNAVAILABLE`。低优先级结果不能抹去
-高优先级证据或必需的安全最终化。`TEARDOWN_FAILED`保留下层结果并阻止干净成功。
+低优先级结果不能抹去高优先级的安全、边界或残留状态证据；每项同时出现但被覆盖的终止结果都保留为下层结果。

@@ -1,86 +1,74 @@
 ---
 name: write-code-comment
-description: Use when adding, editing, or reviewing code comments or documentation comments so they follow the target project's conventions and explain non-obvious intent, constraints, or behavior.
+description: Use when deciding whether code needs a comment, or when adding, editing, or reviewing code comments or documentation comments, so they follow the target project's conventions and explain non-obvious intent, constraints, or behavior.
 ---
 
 # Write Code Comment
 
-This Judgment-led Skill writes a comment only when project convention requires it or it preserves
-information that the code, name, signature, type, and immediate control flow do not already express.
+Decide whether a code or documentation comment is necessary, then review or edit it within the
+request's authority. A useful comment preserves consequential information that its owning code,
+name, type, structure, or documentation cannot express clearly enough.
 
-## Judgment Frame
+## Establish the comment's authority
 
-Judge the comment from the request, relevant code, applicable repository and language rules, nearby
-maintained comments, formatter or linter configuration, and generated-file ownership. Let the
-target project decide:
+Inspect the relevant implementation and contract together with the target project's current rules,
+language conventions, owner documentation, configuration, and applicable maintained comments.
+Treat nearby comments as evidence only when their ownership and applicability are credible. Resolve
+from those live sources the required language, terminology, form, placement, documentation tags,
+directives, markers, and validation; do not substitute remembered syntax or tool lists.
 
-- comment language and terminology;
-- line, block, and documentation-comment syntax;
-- punctuation, capitalization, wrapping, and tag conventions;
-- whether a declaration should use a doc comment, docstring, annotation, or no comment;
-- required markers such as `TODO`, suppression directives, or API documentation tags.
+Confirm whether the request authorizes review only, comment edits, or an independently requested
+code, name, type, or structural correction, and whether the target is the owned source. Comment
+need alone grants no structural mutation. When a structural correction lacks independent request
+authority, report the exact correction and owner. For generated or otherwise managed surfaces,
+follow the canonical owner's edit and generation route only when those effects are authorized. If
+ownership, a necessary convention, or write authority cannot be established, stop and report the
+exact missing fact or access rather than changing the surface.
 
-Project conventions override the defaults below. Stop before modifying a generated target whose
-source owner or permitted edit surface cannot be established.
+Place each fact with its semantic owner. Caller-visible behavior and public contracts belong in the
+project's required API-documentation surface; broader concepts belong in their owning documentation.
+Use an implementation comment for local rationale or constraints. Preserve required directives,
+generated markers, and protocol tokens exactly unless their owner authorizes a change.
 
-Identify what a future reader would otherwise misunderstand, violate, or have to rediscover. Useful
-comment roles include:
+## Decide whether prose earns its place
 
-- behavior that callers cannot infer from the signature;
-- invariants and ordering constraints;
-- lifecycle, ownership, cancellation, or concurrency requirements;
-- edge cases, fallback behavior, and expected failure modes;
-- rationale for a non-obvious choice or for rejecting an obvious alternative;
-- external protocol, compatibility, security, or product requirements.
+A comment is warranted when an applicable convention requires it or a future maintainer or caller
+would otherwise miss consequential rationale, an invariant, a trade-off, caller-visible behavior,
+or a lifecycle, failure, ordering, concurrency, security, compatibility, or protocol constraint.
+Subject to the established authority, prefer a name, type, signature, or structural correction
+when it can make the fact enforceable or self-evident; otherwise report it instead of explaining
+around the defect.
 
-If naming or structure is the real problem, report it without changing it unless that work is also
-authorized.
+Omit narration, repeated names, edit history, and facts already clear from the immediate code or
+owned documentation. Compare every retained comment with the current behavior and contract: update
+or remove stale, misleading, or redundant prose, while preserving still-valid non-obvious meaning.
 
-## Write with restraint
+## Review or edit
 
-For an authorized edit, supply the missing information in the smallest statement, using the target
-language's syntax and project tone without narrating the next line.
+For review-only work, leave all files and structures unchanged. Report each missing, misleading,
+stale, or redundant comment at an actionable location, explain the consequential information or
+conflict, and identify the governing evidence. If none is actionable, say so.
 
-When the project is silent:
+For an authorized edit, change only the selected target—comment surface or independently authorized
+code, name, type, or structure—and required owner-managed outputs within scope. Express any comment's
+missing meaning at its narrowest truthful scope, in the target's established terminology and form.
+Keep causal rationale and constraints rather than implementation narration, and preserve required
+machine-readable forms and externally defined wording.
 
-- Match the language and terminology of nearby maintained documentation.
-- Use the language-native documentation form for public declarations and a normal line or block
-  comment for local reasoning.
-- Prefer active, direct prose and one idea per comment.
-- Use a complete sentence for prose comments; keep markers, directives, code fragments, and URLs in
-  their required native form.
-- Refer to parameters, exceptions, and symbols with the documentation syntax supported by the
-  target language.
+When related code changes within scope, keep its comments aligned with the resulting behavior. When
+the code or owning contract appears wrong but is outside scope, preserve it and hand off the exact
+conflict and owner rather than making the comment assert intended behavior as fact.
 
-Preserve valid markers, suppression directives, documentation tags, URLs, code fragments, and
-generated comments in their required form. Change one only when the target project's rule or the
-request requires it.
+## Validate and hand off
 
-## Examples
+Use checks declared by the live owner for every selected authorized target—comment, code, name,
+type, or structural change—and required owner-managed output, within the authorized effects.
+Report each target's checks and results. If no relevant check exists for a selected target, mark
+that target untested. If a required check is unavailable or fails, report the blocker or failure
+and do not claim completion.
 
-**Preferred**
-
-```text
-// Keep the old token until persistence succeeds so a failed write can be retried.
-# The service reports healthy before the index is ready; poll the readiness endpoint instead.
-```
-
-**Avoid**
-
-```text
-// Increment the retry count.
-# Return the cached value.
-```
-
-## Validate and report
-
-For review-only work, make no file or structural change and run only read-only checks. Report
-actionable missing, misleading, redundant, or stale comments by location, or report that no
-actionable issue was found.
-
-For edits, run every declared relevant formatter, documentation check, analyzer, or linter and
-report where comments were added, changed, or deliberately omitted and what information they
-preserve. If no relevant check is declared, label the result untested. If a required check is
-unavailable or fails, report it and do not claim successful completion.
-
-In both branches, name every check and distinguish validated, untested, and failed outcomes.
+Completion requires the requested review or authorized edits, preservation of owned requirements,
+and successful required validation. Hand off changed or reviewed locations, consequential
+no-comment decisions for requested or reviewed locations, the non-obvious meaning preserved,
+governing evidence, validation status, and every remaining uncertainty, ownership conflict,
+blocked action, or out-of-scope correction.

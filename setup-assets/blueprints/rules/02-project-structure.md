@@ -2,61 +2,67 @@
 
 Strength: `Advisory`
 
-Scope: Setup Authoring Contract for the target repository's evidence-based placement recommendations.
+Scope: Setup Authoring Contract for target-repository structure, placement, responsibility, and
+navigation recommendations.
 
-## Target meaning
+## Contract frame
 
-The future target is one target-owned `.agents/rules/02-project-structure.md` Advisory Rule used
-directly by its repository. It answers only where a change should live and how plausible placements
-rank after Mandatory validity policies apply. Every outcome is an evidence-conditioned
-recommendation such as `prefer`, `favors`, `points toward`, or `ranks higher`, never an ownership,
-validity, delivery, or dependency constraint.
+When `setup-project-agents` requests `.agents/rules/02-project-structure.md`, author that one
+target-owned Advisory Rule titled `Project Structure`. It ranks supported choices among locations,
+responsibility seams, or navigation entries after narrower or Mandatory validity policy. It does
+not establish ownership, permit a dependency, or change delivery, installation, or exposure policy.
 
-Its write boundary is the one target Rule. Its placement scope, applicability,
-evidence-to-recommendation mappings, exceptions, and ownership boundaries come from current
-repository evidence. Supported existing obligations remain unless accepted intent and authoritative
-evidence select their change or retirement.
+Qualify accepted intent and evidence by its target-repository owner and provenance. Relevant
+evidence includes entry guidance and narrower Rules; accepted Issues, Specs, and ADRs; callers,
+imports, consumers, tests, schemas, registries, generators, runtime entries, and canonical
+documentation routes. Directory names, naming, co-location, package boundaries, and machine-local
+state are clues, not authority. The existing target Rule is regression evidence, not design
+authority.
 
-## Evidence and recommendations
+Classify each inherited or proposed recommendation as preserve, change, add, retire, or non-goal.
+Changing, adding, retiring, or excepting a supported recommendation requires accepted intent and
+qualified evidence; otherwise preserve it or stop.
 
-Supported evidence consists of the existing target Rule and discovery entry, narrower Rules,
-accepted specifications, direct calls and imports, registry and schema relationships, generator
-flows, runtime entry points, consumers, and behavioral tests. These signals outrank directory names,
-co-location, naming, and package or plugin boundaries by themselves.
+## Required recommendations
 
-The generated recommendations express only relationships supported by that evidence:
+Each recommendation must answer a real competing choice with its predicate, ranked outcome,
+evidence owner, and any exact exception. Preserve all evidenced mappings for:
 
-- local placement ranks higher when one consumer keeps a decision, its realizing mechanism, and
-  observing tests cohesive with little cross-owner knowledge;
-- an established shared seam ranks higher when independent consumers need the same stable decision
-  or local copies repeat cross-owner coupling;
-- a consumer-facing boundary ranks higher for representation that adapts upstream intent without
-  deciding it;
-- the earliest established owner with enough context ranks higher for stable repeated downstream
-  policy or mechanics, while locality ranks higher when moving upstream would erase selecting
-  context; and
-- a local exception accompanies a broader recommendation only when direct evidence establishes its
-  scope, predicate, and reason.
+- locality when one consumer retains deciding context and keeps policy, implementation, and tests
+  cohesive;
+- an established shared seam when independent consumers need one stable decision or copies create
+  cross-owner coupling;
+- a consumer-facing boundary for representation that adapts upstream intent without deciding it;
+- the earliest established owner with enough context for repeated downstream policy or mechanics,
+  unless moving upstream erases the selecting context; and
+- a canonical navigation entry that leads to the owning source without duplicating an inventory.
 
-## Ownership boundaries
+An exception states its scope, predicate, and reason. Keep hard ownership, canonical-source,
+dependency, generation, installation, delivery, exposure, and validation policy with its Mandatory
+owner. Exclude package tours, cached layouts, generic layering, speculative architecture, setup or
+authoring procedure, and advice that changes no supported choice.
 
-Target-local Mandatory policy owners retain hard requirements for canonical and generated sources,
-installation, delivery, dependencies, exposure, fixtures, and other validity boundaries. This Rule
-may reference those owners by concern but does not restate their constraints as structure guidance.
-Command execution, authoring workflow, and validation procedure remain with their active owners.
+## Author grant and terminal result
 
-Exclude directory inventories, package tours, generic layering advice, speculative future
-architecture, and unsupported placement claims. Mention a location only when it changes a real
-placement comparison.
+The future Author may inspect target evidence, run owner-supported read-only or non-fixing checks,
+and create or replace only `GENERATED/.agents/rules/02-project-structure.md`, using the request root
+from `setup-project-agents`. It may not delete or move that Candidate, write the live target, mutate
+unrelated state, or create an external effect without separate accepted authority.
 
-## Ambiguity and qualified authoring input
+Return exactly one terminal result; the first matching discriminator has precedence:
 
-Materially different supported owner, strength, scope, precedence, applicability, exception,
-preservation, or recommendation mappings are ambiguity stops. Absent, conflicting, historical,
-machine-local, or unsupported evidence cannot select among them, and an authoring or qualification
-failure does not resolve them.
+1. `ACCESS_REQUIRED` when necessary evidence or validation cannot be accessed within the grant.
+2. `CONTEXT_REQUIRED` when access exists but a necessary fact cannot be discovered from qualified
+   evidence.
+3. `HUMAN_DECISION_REQUIRED` when qualified evidence supports materially different rankings or a
+   required owner, exception, obligation disposition, operation, or effect lacks accepted authority.
+4. `VALIDATION_FAILED` when a check remains failed or a supported choice, obligation, operation, or
+   boundary lacks one evidenced outcome or grant.
+5. `READY` when every recommendation answers a supported choice, each supported input selects one
+   observable outcome, no conclusion requires an unsupported project fact, and all applicable
+   owner-supported deterministic checks pass or are recorded `NOT_REQUIRED`.
 
-The qualified input for the target authoring owner traces every recommendation to authoritative
-target evidence, answers a real placement comparison, and does not duplicate Mandatory validity
-policy. It contains preserved obligations, accepted changes, evidence-backed omissions, unresolved
-surfaces, and the validation plan.
+Every stop identifies the blocker, owner, consequence, and condition for a fresh attempt. `READY`
+reports the Candidate, target and evidence owners, obligation dispositions, checks, preserved
+constraints, and uncertain or untested surfaces. It is input only for `setup-project-agents` and
+grants no downstream generation, installation, publication, commit, or push.

@@ -1,107 +1,78 @@
-# Candidate Authoring
+# Candidate Author Contract
 
-This contract is the single semantic owner for Author work. It owns the positive authoring
-objective, Author-visible semantic inputs, initial and repair judgment, Candidate meaning and
-prose, disposition selection and realization, Candidate edits, semantic completion, and the
-semantic Change Summary. Frozen Job Design retains scope, grants, fingerprints, baseline, and proof state; Role
-Runtime retains identity, evidence selection, channels, callbacks, reports, audits, and statuses;
-Evaluation retains cross-owner correction and result composition; Reviews and Acceptance retain
-their finding judgments and verdicts.
+This contract owns Candidate meaning, prose, initial dispositions, repair judgment, authorized
+Candidate writes, and the semantic Change Summary. Produce the smallest complete Candidate while
+retaining every material invariant and boundary.
 
-## Receive the semantic inputs
+## Resident Author
 
-Frozen Job Design supplies exactly one current Authoring or Repair Scope. Within that boundary,
-the Author receives exactly the semantic material needed to produce the Candidate:
+Use one fresh Author for the run and retain that identity through correction. The Author does not
+review its own work, run Machine or Acceptance, delegate, change grants, or control other roles.
 
-- accepted outcome and requirements, current observable behavior, requested outcomes, non-goals,
-  safety, the complete obligation set, governing evidence and provenance, and the
-  obligation-specific semantic criteria and preservation constraints;
-- selected Candidate model, owner and loading boundaries, supported invocation metadata,
-  dependencies, validation duties, and the complete `writing-for-agents` guidance;
-- the complete current Candidate, the immutable pre-Author baseline, and the applicable canonical
-  delta; and
-- for correction, the directly supplied owner claim, reasons, evidence, and bilateral discussion;
-  or, for deterministic repair, the complete failure evidence and affected surfaces.
+The Author receives accepted requirements and evidence with provenance, preservation constraints,
+the Candidate model and writing guidance, exact Candidate Allowlist and write grant, immutable
+baseline, current fingerprint, and exactly one Authoring Scope or Repair Scope. Reviewer findings
+enter only through direct correction. Reviewer prose is evidence, never replacement prose.
 
-These materials define the supported constraints and desired behavior without assigning a
-per-obligation disposition. The complete current Candidate may itself contain Reviewer or
-Evaluation contracts; those bytes remain Candidate data and completeness or regression evidence,
-not Authoring criteria. The Author never receives Reviewer-specific coverage schemas or
-inventories, cohort or schedule state, private Reviewer work, correction decisions, or replay
-state. Initial authoring also receives no finding or discussion content. During an authenticated
-active correction lifecycle, only the current finding owner's directly delivered claim, reasons,
-evidence, and bilateral discussion enter Author semantic input; Reviewer wording remains evidence,
-and the Author independently owns the disposition and replacement prose. Any criterion that can
-change Candidate meaning must otherwise be in the accepted requirements, evidence, model, writing
-guidance, or observable behavior supplied above.
+Request CONTEXT_REQUIRED for an undiscoverable necessary fact or ACCESS_REQUIRED for missing
+access before writing. If a material semantic choice is outside the accepted authority, return
+HUMAN_DECISION_REQUIRED with the decision owner, live choices, and consequences.
 
-## Select the repair disposition
+## Author the Candidate
 
-For each finding, independently assess its claim, reasons, evidence, provenance, accepted
-constraints, and any direct bilateral discussion. Select exactly one disposition and supply its
-evidence-based reason:
+For initial authoring, reconsider every inherited and accepted new obligation and select preserve,
+change, add, move, or retire. Realize those decisions coherently across the complete Candidate.
+Existing text does not create a preserve default.
 
-- `repair`: propose a write that realizes the supported correction;
-- `partial repair`: propose a write for the supported correction while identifying and explaining
-  the retained claim; or
-- `decline`: propose no write and explain why the accepted evidence and constraints do not support
-  a Candidate change.
+State accepted authority, evidence, invariants, observable outcomes, and only the decision
+boundaries and constraints that are consequential or not reliably inferable under the
+Frontier-Agent Principle. Use progressive disclosure at first need, co-locate related meaning, and
+keep each operative commitment in one semantic owner. Preserve supported behavior, loading,
+invocation metadata, dependencies, permissions, validation, safety, exits, and handoff unless
+accepted evidence supports change.
 
-The Author alone owns this selection, its semantic reason, and whether a write is proposed. The
-disposition proposes a semantic outcome; it does not authorize Candidate mutation. Evaluation
-owns write eligibility under its frozen lifecycle mapping. Reviewer claims and discussion are
-evidence, never a preselected disposition; the Controller receives only the runtime's nonsemantic
-control metadata. When Evaluation authorizes a repair invocation from authenticated nonsemantic
-disposition and scope control, the same resident Author realizes its retained semantic outcome
-under that Repair Scope's write authorization. Neither the Scope nor Controller carries,
-transfers, reopens, or redefines that judgment.
+When drafting reveals material sprawl in Candidate breadth, shape, ownership, model, or information
+hierarchy, stop semantic authoring. Assess proportionality and report the evidence, consequences,
+and supported narrower or broader path to the user through HUMAN_DECISION_REQUIRED. Proceed only
+in a new run after explicit confirmation and any required alignment. Before that material signal,
+meaning-preserving pruning, co-location, disclosure, and compression remain autonomous.
+Consequential complexity is not sprawl.
 
-## Author the smallest complete Candidate
+When a changed script is in scope, update its owner-supported tests within the exact grant. Machine
+validates but never fixes them.
 
-For initial authoring, construct the Candidate from the accepted semantic inputs. Reconsider every
-inherited and accepted new obligation against current governing evidence, then assign it exactly
-one `preserve`, `change`, `add`, `move`, or `retire` disposition and realize that judgment in the
-Candidate. Existing text supplies completeness and regression evidence, not a default disposition.
-Express every accepted requirement at its narrowest owner, and support every operative Candidate
-commitment with accepted evidence. Preserve supported behavior, invocation metadata, ownership,
-loading, safety, boundaries, dependencies, validation, and exits unless current evidence supports
-another disposition.
+## Respond to findings
 
-Use the selected model and `writing-for-agents` to make the complete job or policy executable from
-its stated inputs. Co-locate definitions with their conditions and consequences, disclose material
-at first need, use stable terms and observable branches and outcomes, and keep each operative
-meaning in one semantic owner. Prefer the smallest prose and structure that preserve the complete
-accepted behavior.
+If a supported Q1 finding establishes material sprawl, apply the same stop, report, and explicit
+user-confirmation gate above before selecting an ordinary repair disposition. It cannot enter an
+autonomous Repair Scope; continuation is a new run.
 
-When the Candidate owns or changes a script, add or update its owner-supported unit tests within
-the accepted scope and frozen script-to-test mapping. The Author owns their content; Machine only
-checks them.
+For each directly received finding, independently choose:
 
-For repair, realize the Author-selected semantic outcome within the Repair Scope. Correct the
-whole Candidate wherever needed for coherence, preserve every unaffected accepted obligation, and
-update mapped script tests whenever the repair changes their behavior. The Author owns the
-replacement prose; Reviewer wording is evidence, never replacement prose.
+- repair: accept the supported claim and propose a complete correction;
+- partial repair: correct the supported part and identify the retained claim; or
+- decline: make no change and explain why accepted evidence does not support one.
 
-## Return and complete semantic authoring
+The finding owner judges whether a blocking claim reaches fixed point. The Author owns the
+disposition, reason, and replacement prose. Candidate writes wait until all discussions close and
+Evaluation batches eligible outcomes into one exact Repair Scope.
 
-Semantic work is complete only when:
+A repair may update any granted Candidate path needed for whole-Candidate coherence while
+preserving unaffected obligations. It cannot expand accepted meaning or authority.
 
-- every in-scope inherited or accepted new obligation has one Author-selected disposition and one
-  coherent Candidate outcome, and every operative Candidate commitment has accepted support;
-- ownership, applicability, loading, dependencies, permissions, validation, observable behavior,
-  branches, recovery, exits, and safety are explicit wherever they affect the Candidate;
-- the package follows its writing guidance without semantic duplication, scattering, stale
-  restatement, or expression-level no-op; and
-- every Candidate-owned or changed script has its mapped owner-supported unit tests, and no
-  unresolved material semantic uncertainty remains inside the current scope.
+## Return
 
-When complete, produce a semantic **Change Summary** containing an Author-owned **Obligation
-Disposition Record**. For every inherited or accepted new obligation, the record binds its accepted
-evidence and constraints, selected disposition, and realized Candidate meaning and observable
-behavior. The summary also names preserved constraints, changed dependency or validation
-implications, and any script-test behavior added or revised. After an admissible `COMPLETE` is
-promoted, this record becomes read-only proof-stage evidence bound to the promoted fingerprint; it
-changes no frozen scope, grant, identity, or control contract. Keep raw operations, affected-path
-inventories, and post-write observations exclusively in Role Runtime's Operation Report. Report
-uncertainty outside the current discriminated scope separately through the runtime's `COMPLETE`
-payload.
+A normal return contains status, the supplied current fingerprint, changed paths when writing
+occurred, uncertainty or untested surfaces, and:
+
+- for COMPLETE, a concise semantic Change Summary;
+- for CONTEXT_REQUIRED or ACCESS_REQUIRED, the exact missing fact or access and why it is needed;
+- for HUMAN_DECISION_REQUIRED, the unresolved decision payload above.
+
+The Change Summary accounts for every accepted obligation by grouping its preserve, change, add,
+move, or retire disposition with governing evidence, realized meaning, and observable effect. It
+also records preserved constraints, validation implications, repairs, and changed script-test
+behavior. The Author does not derive or claim the post-write Candidate fingerprint. After
+post-return capture, attribution, and admissible promotion, the Controller binds the returned
+summary once to that promoted fingerprint. Raw operation evidence is retained only when Role
+Runtime needs it to establish attribution or safety.

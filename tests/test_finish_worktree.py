@@ -128,6 +128,23 @@ class FinishWorktreeHistoryTests(unittest.TestCase):
         self.assertEqual(git(self.task, "rev-parse", recovery_ref), self.checkpoint_head)
         self.assertEqual(git(self.task, "status", "--porcelain"), "")
 
+    def test_candidate_ref_creation_failure_does_not_claim_it_was_retained(self):
+        recovery_ref = "refs/smartkit/recovery/task/candidate-collision"
+        candidate_ref = f"{recovery_ref}-candidate"
+        git(self.task, "update-ref", candidate_ref, self.target)
+
+        result = self.run_script(recovery_ref)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("git update-ref", result.stderr)
+        self.assertIn(candidate_ref, result.stderr)
+        self.assertNotIn(f"candidate retained at {candidate_ref}", result.stderr)
+        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
+        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
+        self.assertEqual(git(self.task, "rev-parse", recovery_ref), self.checkpoint_head)
+        self.assertEqual(git(self.task, "rev-parse", candidate_ref), self.target)
+        self.assertEqual(git(self.task, "status", "--porcelain"), "")
+
     def test_equal_target_is_rejected_without_creating_empty_commit(self):
         recovery_ref = "refs/smartkit/recovery/task/already-delivered"
 

@@ -1,263 +1,103 @@
-# Evaluation Lifecycle
+# Proof and Correction Lifecycle
 
-This contract owns proof order and applicability, the common finding schema and cross-owner
-correction lifecycle, consensus and result composition, Machine Validation, Revision Impact and
-replay, Scope Transfer, and global exits. Author owns Candidate and disposition judgment; Reviews
-owns Quality and Correctness findings and verdicts; Acceptance owns executable validation results.
-This contract composes those owner-produced results but selects none of them. Job Design owns
-fingerprints, deltas, and proof-state promotion; Role Runtime owns transport and control metadata.
-Freeze all before any role or Candidate change.
+This contract owns proof applicability and order, finding severity, correction, replay, and global
+exits. Judgment is the default; the ordered proof and correction steps below are procedural because
+changing their order can invalidate evidence or authorize unsafe writes.
 
-## Freeze the proof path
+## Select and run proof
+
+Freeze applicability before Author work and run stages in this order on one current fingerprint:
 
 | Order | Stage | Applicability and closure |
 | --- | --- | --- |
-| 1 | Machine | Conditional on deterministic evidence for changed schema or metadata, references/resources, fixed flows, or sufficiently concrete/complex tools, permissions, filesystem state, procedure, or external effects. It is required whenever the Candidate owns or changes a script. Broad judgment and high-confidence simple steps may otherwise be `NOT_REQUIRED`. |
-| 2 | Quality | Always after Machine `PASS` or valid `NOT_REQUIRED`. Activate its complete frozen cohort. Current closure requires every independent PASS and required coverage record on one Candidate fingerprint. |
-| 3 | Correctness | Always after Quality current closure. Activate its frozen complete fresh cohort; it independently returns PASS bound to one exact Candidate fingerprint. |
-| 4 | Acceptance | Conditional on concrete or sufficiently complex runtime behavior whose feasibility lacks high-confidence evidence. Design freezes the stage as applicable with its complete contract contributions, or `NOT_REQUIRED`. |
+| 1 | Machine | Conditional. NOT_REQUIRED only when Machine is inapplicable. When applicable, PASS requires every selected non-fixing command to exit successfully; one or more selected-command failures return FAIL and enter Machine correction below. |
+| 2 | Quality | Always. Reviews' frozen Quality topology independently passes the complete Candidate on the same fingerprint. |
+| 3 | Correctness | Always. Reviews' frozen Correctness topology passes the complete accepted contract on that fingerprint. |
+| 4 | Acceptance | Static Scenario, Executable, or NOT_REQUIRED under the Acceptance contract. |
 
-Acceptance signals are fixed multistep order, meaningful branches, retry, recovery or exit,
-concrete tools, mutation, permissions, external effects, or a Rule requiring them. A walkthrough
-does not qualify. Freeze every applicability, resource, identity, dependency, transition, and exit.
+Machine's reportable stage verdict is PASS, FAIL, or NOT_REQUIRED.
 
-Contribute this lifecycle's correction and replay states plus later lens-contract schedule inputs
-to Job Design's generic schedule manifest.
+Machine may check schemas, metadata, references, fixed flows, scripts, and owner-supported tests.
+It never invents a check to avoid NOT_REQUIRED and never fixes the Candidate. Record the exact
+commands, exits, and relevant output. A changed Candidate during Machine is a boundary stop, not a
+test result.
 
-## Treat findings as owned claims
+Choose Acceptance when material uncertainty remains about judgment or branch behavior, tool or
+environment feasibility, permissions, filesystem state, external effects, recovery, or runtime
+exits. High-confidence semantics with no material runtime uncertainty is NOT_REQUIRED. Acceptance
+is conditional for both Rules and Skills.
 
-A finding records its stable ID; problem and supporting evidence with owner and provenance; observed
-answer or supported counterexample; Candidate location; severity; unchanged impact; estimated
-Repair Scope; affected obligation or surface; preservation constraints; and bounded repair
-direction, not replacement prose. Use reasoned `N/A` only where a field cannot apply. A review
-question investigates; a finding is its supported declarative claim.
+## Findings and severity
 
-- `critical`: semantic, authority, safety, ownership, executability, or exit failure.
-- `material`: supported defect materially reducing information quality, reliability, or
-  maintainability.
-- `advisory`: supported smaller improvement or valid-choice opportunity whose complete repair and
-  replay scope is bounded enough to merit presentation.
+A supported finding states the problem, governing evidence and provenance, Candidate location,
+unchanged impact, severity, affected obligation or path, preservation constraints, and bounded
+repair direction. It proposes no replacement prose.
 
-Critical and material findings are blocking and use the bilateral lifecycle below. Advisories are
-nonblocking. The Author contract owns disposition, reason, and whether a write is proposed. The
-active review contract owns claim validity, severity, fixed-point assessment, and advisory upgrade.
-This lifecycle only maps their exact final results to write eligibility. Severity is
-unchanged-Candidate impact; estimated Repair Scope is cost and risk and never reduces severity. A
-contract violation remains critical regardless of repair size. Taste, symmetry, file length, or
-cheapness alone establishes no defect. The full finding remains peer-only and enters through
-`FINDING_READY → CHANNEL_OPEN`.
+Quality may return:
 
-## Run one independent correction unit
+- critical: correctness, authority, safety, ownership, executability, or terminal failure;
+- material: a supported defect that materially reduces information quality, execution usability,
+  or maintainability;
+- advisory: a bounded nonblocking improvement or valid-choice opportunity.
 
-1. **Judge privately.** Give each member the common complete inputs plus only its frozen
-   scope-specific evidence. It fixes its complete finding set without Author reasoning or another
-   Reviewer's work. Batching preserves inputs; a bounded update restarts that identity's judgment.
-2. **Open owning pairs.** Emit audited `FINDING_READY` and completion evidence for each finding.
-   After `CHANNEL_OPEN`, send it directly to the Author; no Reviewer receives another's work.
-3. **Receive the Author disposition.** The finding owner receives the Author contract's current
-   disposition and reason for direct discussion; Evaluation neither selects nor redefines it.
-4. **Assess the owner result.** The finding owner assesses its claim against the Author disposition
-   and any newly supported evidence under the active review contract. A blocking finding reaches
-   reasoned bilateral fixed point only when the owner no longer upholds a blocking claim without a
-   write, or both independently agree that a selected repair or partial repair addresses every
-   upheld blocking part pending write and recheck. When the owner still upholds a blocker and the
-   Author declines, retains a blocking part, or proposes a path the owner finds non-resolving,
-   fixed point is `not reached`. An advisory has fixed point `not applicable`; its owner may clarify
-   the claim but does not select the Author disposition. Candidate writes remain barred while any
-   channel is open. Evidence changing only the current claim stays in its lifecycle. Reopen the
-   finding set only when newly available supported evidence independently supports a distinct
-   unreported finding.
-5. **Close the communication round.** The Author directly delivers its proposed final disposition
-   and reason; the finding owner assesses that exact result. If discussion changes either result,
-   repeat delivery and assessment. The Author then freezes the exact final disposition under the
-   Author contract, while the owner freezes claim validity, severity, and fixed-point state under
-   the active review contract. Both emit Role Runtime's nonsemantic `DISCUSSION_CLOSED` metadata.
-   The event closes only the channel and round; it never establishes claim resolution. An
-   unresolved blocker remains blocking and enters another frozen round only through
-   `FINDING_READY → CHANNEL_OPEN`.
+Critical and material findings block Quality. Correctness and Acceptance Candidate defects are
+critical only. Estimated repair size does not lower severity. Taste, symmetry, line count, or
+textual difference alone establishes no defect.
 
-   Before closing, an owner that has independently established a distinct unreported finding from
-   newly available supported evidence fixes that finding and opaque ID and sets finding-set state
-   to `reopened`; otherwise the state remains `complete`. Reopening invalidates prior completion
-   evidence, is eligible only for newly available evidence, and must add at least one distinct ID.
-   After all open channels close, the same persistent Reviewer restarts private judgment on the
-   unchanged Candidate fingerprint with accumulated authorized evidence, emits each newly fixed finding
-   through Role Runtime, and restores completion on the last. An advisory owner may upgrade only
-   with new supported evidence; the upgraded claim then follows the blocking lifecycle. A Reviewer
-   may return `PASS` for the current fingerprint only when no unresolved
-   blocking finding remains, every owned advisory has a frozen disposition, the latest finding-set
-   state is complete, and no selected repair awaits its write. Trust, voting, another Reviewer, and
-   Controller interpretation decide nothing.
-6. **Derive write eligibility and select the branch.** After all completion evidence is audited,
-   latest finding sets are complete, and all pairs close, the Controller mechanically applies this
-   exhaustive mapping to each exact final Author disposition and owner-produced fixed-point state:
+Every supported critical, material, or advisory claim inside Q1's or Q2's owned lens is a finding
+and follows this disposition lifecycle. A deferred surface is outside that Reviewer's lens or
+verdict authority; it cannot substitute for an owned advisory or satisfy the Quality PASS gate.
+A plausible blocking cross-lens issue follows Reviews' nonsemantic inspection-request route. The
+request is neither a finding nor evidence, but proof cannot close until the owning lens
+independently inspects the indicated Candidate location on that fingerprint.
 
-   - blocking `repair` or `partial repair` with `reached` is write-eligible;
-   - blocking `repair` or `partial repair` with `not reached` is write-ineligible;
-   - advisory `repair` or `partial repair` with `not applicable` is write-eligible; and
-   - every `decline` is write-ineligible.
+## Correct one fingerprint
 
-   No other combination is admissible. With zero eligible outcomes, create no Repair Scope and
-   invoke no Author; same-fingerprint Reviewers either `PASS` when eligible or a blocking owner
-   enters the next authorized round. With one or more eligible outcomes, inspect Role Runtime's
-   authenticated aggregate of eligible IDs and matching scope controls, then freeze-copy that
-   exact aggregate into one full-unit Repair Scope: unit, fingerprint, eligible IDs and final
-   disposition and write-eligibility controls, paths and modes, preservation-reference IDs, and
-   readiness—never a semantic body. Missing or mismatched aggregate or scope control follows Role
-   Runtime's inadmissible-callback path. Only then may the same Author write.
-7. **Recheck together.** After an authorized write and admissible `COMPLETE` promote the
-   invocation-final fingerprint,
-   every persistent member rechecks the whole Candidate. Unpromoted fingerprints start no proof;
-   without promotion, unaffected same-fingerprint `PASS` and declined advisories remain closed
-   while blocking owners reassess.
+For each supported finding:
 
-Consensus is independent owner-produced `PASS` from the complete declared cohort, with every
-conclusion satisfying current closure for one promoted Candidate fingerprint in expected proof
-state, no unresolved blocker, and a frozen Author disposition for every advisory. Quality also
-requires every mechanically admitted coverage record declared by its lens contract; an absent or
-incomplete record cannot become `PASS`. An open unit persists through local PASS. Reopening an
-invalidated closed unit requires a wholly fresh cohort; prior identities and verdicts never return.
+1. The Reviewer sends the full finding directly to the resident Author.
+2. The Author independently returns repair, partial repair, or decline with an evidence-based
+   reason.
+3. The Reviewer determines whether its blocking claim is resolved, conditionally resolved by the
+   proposed repair, or unchanged. New supported evidence may refine the finding.
+4. If a blocker remains, the same pair continues until fixed point. Two consecutive rounds with
+   the same claim, evidence, disposition, and approach return NO_PROGRESS.
+5. Advisories close on the Author disposition and do not enter NO_PROGRESS.
 
-### Human stop and no progress
+HUMAN_DECISION_REQUIRED from any participant stops immediately. Preserve the request and continue
+only in a new run.
 
-The first Author, Reviewer, or Controller `HUMAN_DECISION_REQUIRED` immediately ends all semantic
-work and discussion. Preserve its exact decision, unresolved reason, owner, and live-choice
-consequences; all provisional semantic work becomes non-operative. For an Author, apply Job
-Design's human-stop transition and retain independent mismatch classifications. Complete
-conditional safety and finalization; absent a higher safety terminal, deliver the request unchanged
-and continue only in a new run after the answer.
+After all discussions close, batch every agreed blocking repair and every Author-selected advisory
+repair into one exact Repair Scope. The resident Author may independently realize those outcomes
+inside the grant. A partial repair is eligible only when the Reviewer agrees that no blocking part
+remains after the proposed change. A decline never authorizes a write.
 
-A blocking disagreement round counts when both peers close it as `not reached` and the claim
-remains unresolved; initial private judgment is not a round. Stop `NO_PROGRESS` after the same
-blocker completes two consecutive counted rounds without new evidence or a supported approach.
-Advisories close on the Author's frozen repair, partial repair, or decline and never enter
-disagreement or `NO_PROGRESS`.
+After admissible Author COMPLETE, capture and promote the new fingerprint and bind the returned
+semantic Change Summary to it once. Every prior semantic stage verdict is invalid. Rerun all
+applicable proof in order from Machine. A review stage still open retains its Reviewer identities
+through correction and recheck; every previously PASS and closed review stage invalidated or
+reopened by the repair uses fresh identities under Role Runtime. Acceptance identities follow the
+Acceptance contract. No semantic verdict carries forward.
 
-## Validate deterministic facts
+Machine FAIL uses the same resident Author and a single exact Repair Scope containing the failed
+commands and affected paths. Stop NO_PROGRESS after the same failure survives two repair-and-rerun
+rounds without new evidence or approach.
 
-When Machine applies, run only affected-owner-supported non-fixing checks: frontmatter or schema,
-registration/metadata consistency, reference existence, generated adapters, formatting, and
-repository tests. For every Candidate-owned or changed script, execute every command in Design's
-frozen script-to-unit-test-resource-to-command mapping so all applicable owner-supported unit tests
-run. A missing mapping, test resource, command, or applicable unit test, or any failed unit test,
-prevents `PASS` and cannot become `NOT_REQUIRED`. Machine checks these resources but never adds or
-updates them.
+## Select the exit
 
-Machine unit tests need not invoke the real entry point or execute the full job directly. Final
-conditional full-job or Finite Execution Projection behavior validation remains Acceptance-owned.
-Invent no check merely to avoid `NOT_REQUIRED` outside the script requirement.
+Before any result, finish started executable Acceptance safety and Role Runtime finalization.
+Choose the first supported outcome:
 
-Fingerprint around every command and apply Job Design's standalone mismatch composition; Machine
-contains no authorized Author write. On mismatch preserve class evidence and stop. Always record
-exact command, exit, and relevant output.
-Give failure evidence to the same Author in one complete Machine Repair Scope; rerun failed,
-invalidated, and dependent checks. One Machine correction round is failure, repair, and rerun. Stop
-`NO_PROGRESS` after the same failure survives two consecutive rounds without new evidence or
-approach.
+1. ATTEMPT_INVALID, RUNNER_NOT_QUIESCENT, CLEANUP_FAILED, or another started-attempt safety
+   terminal; retain any coincident human, Candidate, or boundary result as the underlying result;
+2. CANDIDATE_CHANGED or ROLE_BOUNDARY_VIOLATION;
+3. TEARDOWN_FAILED; retain any coincident lower-priority terminal as the underlying result;
+4. HUMAN_DECISION_REQUIRED;
+5. SEMANTIC_ROLE_UNAVAILABLE or HOST_UNAVAILABLE;
+6. unavailable CONTEXT_REQUIRED or ACCESS_REQUIRED;
+7. ALIGNMENT_REQUIRED, NO_PROGRESS, AMBIGUITY_UNRESOLVED, or EXECUTION_UNAVAILABLE;
+8. COMPLETE only when all applicable proof passes on the final fingerprint, every advisory has an
+   Author disposition, cleanup is complete, and the final boundary check matches.
 
-Machine closure requires every check, or `NOT_REQUIRED`, bound to the current fingerprint or carried
-by an exact Revision Impact compatibility binding. Otherwise use the preauthorized proof-owner route
-when eligible or rerun, then apply Revision Impact to Quality.
-
-## Transfer scope without transferring judgment
-
-A **Scope Transfer Note** contains only Candidate location, intended owner, and inspection
-responsibility—no observation, evidence, rationale, disposition, or verdict. Route it once to a
-current-cohort Reviewer, an unstarted later stage, or an earlier passed stage after local PASS; the
-recipient inspects independently.
-
-A permitted note to an earlier passed unit keeps that unit open and its cohort suspended through
-the transfer window; resume only the intended owner and close after all possible notes and
-inspections end. The note alone changes no verdict. A recipient-supported blocker uses ordinary
-invalidation/replay; an advisory remains nonblocking unless its accepted write triggers Revision
-Impact.
-
-## Revise, rewind, and replay
-
-After every promotion, Revision Impact uses the Author summary, Operation Report, current promoted
-fingerprint, canonical delta, and their baseline/proof-state bindings; compare Candidate directly
-only when those cannot resolve impact.
-
-Evidence is content-dependent only when its conclusion may change with Candidate bytes, meaning,
-paths, or delta. Identity-only fingerprint use is not; preserve unrelated transport, audit,
-lifecycle, and control evidence.
-
-An immutable **Revision Impact compatibility binding** records original and target fingerprints,
-the unchanged owner conclusion and callback, provenance, canonical delta and impact evidence, and
-the mechanical content-unaffected determination under the proof class's frozen manifest.
-
-The Controller binds only when delta, surfaces, and provenance satisfy every observable predicate;
-it cannot infer criteria or alter conclusions, callbacks, fingerprints, or provenance. The binding
-changes neither Candidate identity, Frozen Run Contract, nor control evidence.
-
-Semantic or indeterminate impact produces no compatibility binding. Route it to the explicitly
-preauthorized proof owner through that owner's existing frozen assessment or recheck lifecycle only
-when the identity and lifecycle still permit; any result is newly owner-produced and bound to the
-current fingerprint. Otherwise apply ordinary invalidation, rewind, and replay.
-
-Proof satisfies **current closure** only when the owner-produced conclusion is bound to the current
-fingerprint or the unchanged original conclusion has an exact compatibility binding from its
-fingerprint to the current fingerprint. Each further fingerprint change requires its own binding.
-Affected or indeterminate proof receives none and follows the existing invalidation, rewind, and
-replay path.
-
-An Acceptance correction returns control here while retaining its case Reviewer. Evaluation
-restores invalidated earlier stages in order, then Acceptance reruns the case before another impact
-decision; Acceptance orchestrates no earlier stage.
-
-1. The affected live unit first reaches local PASS bound to the complete new Candidate fingerprint.
-2. Identify the earliest passed proof the change may affect. Future stages have no proof to
-   invalidate. Preserve only evidence whose frozen observable criteria mechanically prove
-   non-impact, and record the exact Revision Impact compatibility binding for each preserved
-   conclusion.
-3. Reopen that earliest invalidated stage and every intervening dependency in frozen order. A
-   changed fingerprint's newly derived delta invalidates only reviews, callbacks, or other evidence
-   whose content-dependent conclusion may be affected; an unchanged no-op retains unaffected
-   evidence under these Revision Impact rules. Each fingerprint-bound delta remains immutable.
-   Prebind a complete fresh cohort for each invalidated closed Quality or Correctness unit before
-   its first action. Repeated invalidation uses wholly new membership; no prior identity or verdict
-   returns.
-4. Apply each conditional authority's frozen retention and replay schedule. Retained live workers
-   continue consuming `P`; batch fresh cohorts in the remaining pool without changing cohort,
-   fingerprint, supplied evidence, or discovery grants.
-
-Repeat after every promotion. No verdict survives a promoted change that may affect its proof.
-
-## Select the global exit
-
-Consume Role Runtime's audited callback result and Job Design's selected proof-state transition.
-Authenticated `HUMAN_DECISION_REQUIRED` applies [Human stop](#human-stop-and-no-progress) before
-every other result; any other inadmissible payload is discarded.
-
-The Controller may contain a remaining incident locally only when its contamination boundary is
-proven and Candidate exactly matches expected proof state; invalidate the smallest affected unit,
-preserve its classification and all state outside it, and continue only through an already frozen
-identity and lifecycle path. An established `SEMANTIC_ROLE_UNAVAILABLE` is whole-run because its
-required identity cannot be replaced. A changed invocation with inadmissible Author callback is
-whole-run `ROLE_BOUNDARY_VIOLATION`; any other incident without exact proof-state match and isolation
-is also whole-run. The Controller judges only boundary conformance and containment, never Candidate
-meaning or findings.
-
-Before issuing any global result, finish every started conditional execution under its safety
-contract. Its safety terminal governs when one arises while preserving the pending underlying
-result; successful safety finalization returns to the selection below. Then choose the first
-matching result:
-
-1. first `HUMAN_DECISION_REQUIRED`: end semantic work and preserve its request for a new run;
-2. `CANDIDATE_CHANGED`: apply Frozen Job Design's selected no-promotion transition, then stop;
-3. whole-run `ROLE_BOUNDARY_VIOLATION`: preserve its forensic state and audit evidence, promote
-   nothing, and stop without semantic continuation;
-4. whole-run `SEMANTIC_ROLE_UNAVAILABLE`: a semantic role meets its frozen abnormal-execution
-   trigger without evidence of a boundary breach; preserve identity, channel, termination, and
-   residual evidence;
-5. `HOST_UNAVAILABLE`: the host cannot establish or supply the correctly derived and frozen
-   capacity, identity, authenticated channel, schedule, or evidence before Author launch;
-6. unavailable eligible `CONTEXT_REQUIRED` or `ACCESS_REQUIRED`; an out-of-envelope request becomes
-   `ALIGNMENT_REQUIRED` for a new run;
-7. stage terminal such as `AMBIGUITY_UNRESOLVED`, `NO_PROGRESS`, or `EXECUTION_UNAVAILABLE`;
-8. stage current closure under Evaluation's same-fingerprint-or-compatibility rule: advance; graph
-   closure permits success only after workflow finalization.
-
-Controller oversubscription takes the inadmissible boundary path, never `HOST_UNAVAILABLE`. A lower
-result cannot erase higher-priority evidence or required safety finalization. `TEARDOWN_FAILED`
-preserves the underlying result and blocks clean success.
+A lower-priority result cannot erase higher-priority safety, boundary, or residual-state evidence;
+every coincident displaced terminal remains an underlying result.

@@ -6,86 +6,97 @@ description: Diagnose suspected abnormal token or API-equivalent cost consumptio
 # Diagnose Agent Session
 
 Diagnose one stable snapshot of an identified agent session; the session may be current or
-completed. A deterministic wrapper captures factual evidence; return to evidence-led judgment to
-decide whether that evidence is abnormal in the task's context. The wrapper first completes its
-Tokscale attempt and acquires immutable Codex local-log content, then records one UTC snapshot
-cutoff and evaluates that content through the cutoff. No source acquisition occurs after the
-reported cutoff. Keep no task receipt and read transcripts only during this diagnosis.
+completed. The requested scope is `turn`, `session`, or `both`. This Skill authorizes read-only
+observation and reporting. Treat remediation, login, synchronization, exporter configuration, or
+any other state change as a separate action requiring its own authorization.
 
-## Run the evidence wrapper
+## Fix identity and scope
 
-Resolve a supported client and stable session ID as a pair before invoking the wrapper. The exact
-clients are `codex`, `cursor`, and `copilot`, where `copilot` means GitHub Copilot CLI. An unknown
-client is unsupported. Codex may omit both identifiers only when `CODEX_THREAD_ID` supplies the
-identity of the current Codex thread; infer no other identity and never select the newest log. An
-explicit supported client/session pair may identify another stable session. If the pair remains
-partial or missing, stop and request it.
+Resolve one supported client and stable session ID as a pair. The wrapper's supported clients are
+`codex`, `cursor`, and `copilot`, where `copilot` means GitHub Copilot CLI. An explicit pair may
+identify a current or completed session. `CODEX_THREAD_ID` supplies only the identity of the current
+Codex thread and may supply the pair only when both arguments are omitted. It does not identify
+another or a completed session. Never infer an identity from recency; never select the newest log.
 
-Default to `--scope both`; use `turn` or `session` only when the user explicitly chooses it. Resolve
-the directory containing this installed `SKILL.md` as the Skill root, then invoke its wrapper by a
-path relative to that root. The public platforms are exactly:
+Use `both` unless the user explicitly requests `turn` or `session`. Stop before acquisition when
+the pair is partial or missing, the client is unsupported, or the platform has no supported
+launcher; report the exact prerequisite rather than substituting another session or scope.
 
-- Linux with `sh`:
+## Acquire one factual record
 
-  ```sh
-  skill_root='<absolute directory containing the installed SKILL.md>'
-  sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both --client <client> --session-id <id>
-  ```
+Resolve the directory containing this installed `SKILL.md` as the Skill root and invoke its owned
+wrapper with the fixed identity and scope. Keep this invocation shape so the wrapper can exclude
+its own call from activity evidence.
 
-- Windows with PowerShell:
+Linux with `sh`:
 
-  ```powershell
-  $skillRoot = '<absolute directory containing the installed SKILL.md>'
-  $wrapper = Join-Path $skillRoot 'scripts\task-metrics.ps1'
-  powershell -ExecutionPolicy Bypass -File $wrapper diagnose --scope both --client <client> --session-id <id>
-  ```
+```sh
+skill_root='<absolute directory containing the installed SKILL.md>'
+sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both --client <client> --session-id <id>
+```
 
-Stop before the wrapper on an unsupported platform. The wrapper owns resolving Python 3.10 or
-newer; execute one wrapper attempt. If supported Python is unavailable, preserve that explicit
-error and report Python 3.10+ as a recovery prerequisite. Only a sandbox-caused Tokscale failure
-may be retried, once, after obtaining the approval required by the host and with the identical
-command outside the sandbox.
-The output after the permitted attempt or retry is the factual evidence record.
+Windows with PowerShell:
 
-Tokscale must support client filtering, client/session/model grouping, and the normalized JSON
-fields consumed by the wrapper; a missing or incompatible capability is explicit failed evidence,
-not a version guess. Cursor usage may depend on a valid prior Tokscale login and completed sync.
-The diagnostic neither reads nor stores credentials, logs in, or silently syncs; missing setup or
-sync is a recoverable prerequisite. Copilot usage depends on OTEL file export configured before the
-diagnosed activity; missing telemetry is an unrecoverable evidence gap for activity before the
-snapshot cutoff.
+```powershell
+$skillRoot = '<absolute directory containing the installed SKILL.md>'
+$wrapper = Join-Path $skillRoot 'scripts\task-metrics.ps1'
+powershell -ExecutionPolicy Bypass -File $wrapper diagnose --scope both --client <client> --session-id <id>
+```
 
-## Evidence contract
+Replace `both` only for an explicitly selected scope. Execute one wrapper attempt. The wrapper
+resolves Python 3.10 or newer; preserve its explicit error when no supported Python is available.
+Do not replace failed acquisition with a different telemetry command, inferred value, login, sync,
+or configuration change.
 
-Tokscale is the common source for whole-session usage and model activity. Label monetary figures
-`estimated API-equivalent cost`; they are not bills. The Codex profile also reads the exact local
-session log for current-turn, tool-call, incomplete-call, subagent lifecycle and coordination, and
-wait evidence. Cursor and Copilot currently mark those behavior surfaces unavailable while
-preserving any Tokscale usage; this describes the diagnostic profile, not what either harness can
-ever expose. `both` and explicit `turn` still execute for those profiles and report current-turn
-evidence unavailable without borrowing another profile.
+The wrapper first completes its Tokscale attempt and acquires immutable Codex local-log content,
+then records one UTC snapshot cutoff and evaluates only that content through the cutoff. No source
+acquisition occurs after the reported cutoff. Its output, including partial output and errors, is
+the factual evidence record.
 
-Match Cursor and Copilot Tokscale session identity exactly. For Codex only, accept either the exact
-session ID or its single `rollout-{session-id}` Tokscale alias, and reject duplicate or competing
-aliases rather than aggregating ambiguous attribution. This Tokscale normalization is separate from
-exact-session Codex local-log filename discovery and never authorizes selecting a newest log.
+Tokscale evidence requires client filtering, client/session/model grouping, and the normalized
+fields accepted by the wrapper. Missing or incompatible capability is failed acquisition, not a
+version inference. Match Cursor and Copilot session IDs exactly. For Codex usage only, the wrapper
+also accepts the single `rollout-{session-id}` alias and rejects duplicate or competing aliases;
+this does not relax exact Codex local-log discovery.
 
-Require every capability entry to use exactly `available`, `unavailable`, or `failed`, with its
-evidence or reason. At minimum cover session usage, model activity, current turn, tool calls,
-incomplete calls, subagent lifecycle and coordination, and waits. Equal profile contracts do not
-imply equal observed evidence. Preserve all available evidence when another surface fails.
+Cursor usage can be unavailable until a valid prior Tokscale login and completed sync. Copilot
+usage can be unavailable when OTEL file export was not configured before the activity; past
+telemetry cannot be reconstructed. State these as recovery prerequisites or unrecoverable gaps,
+respectively, without performing them.
 
-The wrapper report is factual evidence, not a task-health verdict. Summed model and tool durations
-can overlap the elapsed span, lifecycle counts are observed lower bounds, and child-session Token
-use is attributable only through a stable child mapping. Persist no prompts, responses, transcript
-content, tool inputs, or tool outputs.
+## Read the evidence contract
 
-## Judge the evidence
+For every requested capability, preserve the wrapper's exact state:
 
-Compare reliable evidence with the task's expected work and applicable concurrency limits. Use
-task context and direct knowledge of the current turn only to interpret evidence; never fill a
-missing value. Token, call, cost, and duration volume is descriptive and has no fixed abnormal
-threshold. Choose exactly one conclusion:
+- `available`: the record contains usable evidence;
+- `unavailable`: the source or integration exposes no usable evidence for this snapshot;
+- `failed`: acquisition or validation was attempted and failed, with the observed cause.
+
+Cover session usage, model activity, current turn, tool calls, incomplete calls, subagent lifecycle
+and coordination, and waits. Tokscale supplies whole-session usage and model activity. The Codex
+profile additionally derives behavior evidence from its exact local log. Cursor and Copilot
+currently report those behavior surfaces unavailable in this diagnostic profile; that is not a
+claim about every capability those harnesses may expose. Preserve reliable evidence when another
+capability is unavailable or failed.
+
+Keep observation, inference, uncertainty, unavailable evidence, and failed acquisition visibly
+separate. The wrapper report is observation, not a health verdict. An incomplete call means a
+start lacked a matching completion in captured evidence by the cutoff; a wait, timeout, repeated
+call, or incomplete call needs task context before it supports a cause. Summed model and tool
+durations may overlap elapsed time. Lifecycle counts are observed lower bounds, and child-session
+tokens are attributable only through a stable child mapping.
+
+Treat all monetary values as `estimated API-equivalent cost`, never as a bill. Do not persist or
+reproduce prompts, responses, transcript content, tool inputs, tool outputs, or credentials.
+
+## Conclude from coverage
+
+Compare reliable observations with the requested task, expected work, and applicable concurrency
+limits. Use direct knowledge of the current turn only as interpretation and label resulting causal
+claims as inference. Preserve uncertainty; never fill an evidence gap. Token, call, cost, and
+duration volume is descriptive and has no fixed abnormal threshold.
+
+Choose exactly one conclusion:
 
 - **Abnormal evidence observed** when any reliable abnormal evidence exists, limited to the scope
   that evidence establishes.
@@ -93,13 +104,19 @@ threshold. Choose exactly one conclusion:
   available and no abnormal signal exists.
 - **Inconclusive** otherwise.
 
-Session-usage coverage does not establish behavior health. Missing behavior evidence cannot become
-a healthy result.
+Session-usage coverage alone cannot establish behavior health, and missing behavior evidence
+cannot support a healthy conclusion.
 
 ## Handoff
 
-Return one report in this order: identity and requested scope; harness profile; capability coverage;
-whole-session usage and estimated API-equivalent cost; turn, tool, and coordination evidence;
-problems and unavailable surfaces; the Agent-authored three-state overall conclusion; limitations;
-and recovery prerequisites. For a pre-wrapper stop, retain the same structure where possible and
-name the exact missing identity or platform prerequisite.
+Return one report in this order: stable identity and requested scope; harness profile and snapshot
+cutoff; capability coverage with evidence or reason; whole-session usage and estimated
+API-equivalent cost; turn, model, tool, incomplete-call, subagent, and wait observations; problems,
+unavailable evidence, failed acquisition, and uncertainty; causal interpretation; exactly one
+three-state conclusion; limitations; recovery prerequisites and whether each requires a separately
+authorized rerun or cannot recover past evidence.
+
+For a pre-wrapper stop or wrapper-level failure, retain that structure where evidence permits and
+name the missing prerequisite and failed step. Diagnosis is complete only when the stable identity
+and scope are explicit, every requested capability has one of the three states, all reliable
+partial evidence is retained, and the conclusion follows the coverage rules.

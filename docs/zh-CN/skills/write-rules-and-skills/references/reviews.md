@@ -1,160 +1,55 @@
-# Quality 与 Correctness Review
+# Quality 与 Correctness 审查合同
 
-本合同是 Quality 与 Correctness Reviewer 工作的语义 Owner。它负责 Reviewer 可见的语义输入、
-视角判断、finding 主张与严重级别、不动点评估、coverage 证据、裁决、复查与 review 完成。
-Frozen Job Design 继续负责 cohort、分配、分批、scope、授权与指纹；Role Runtime 继续负责身份、
-传输、回调、报告与审计；Evaluation 继续负责通用 finding schema、跨 Owner 生命周期、共识组合
-与重放；Author 继续负责 Candidate 含义、处置与替换文本。
+本合同负责 Quality 与 Correctness 判断、finding、coverage 证明和裁决。穷尽检查证据与完整 Candidate，同时独立选择普通遍历和质询方法。
 
-## 接收 review 输入
+Reviews 负责下述准确的 Quality 与 Correctness 拓扑和视角；Role Runtime 负责身份的新鲜度、持续、重新打开与终止。所有 Reviewer 均为只读，彼此独立且独立于 Author。他们检查所提供指纹上的完整 Candidate，并可在授权内发现反证。他们返回有支持的 finding，而不是偏好或替换文本。
 
-每个 Reviewer 在修正期间保持身份，并接收同一份完整 Candidate、指纹、共同证据、选择政策与
-授权，此外只接收自己的 scope 专属证据。它不接收 Author 推理、修复意图、私有笔记或其他
-Reviewer 的工作，先作判断，再只与常驻 Author 讨论自己负责的 finding。
+只有真正非阻塞的观察超出 Reviewer 的视角或裁决权威时，才将其分类为 deferred surface。它既不是 finding，也不是证明，不改变当前裁决。可能阻塞的跨视角问题不能延后：返回一项非语义检查请求，只包含 Candidate 位置、目标所属视角与指纹，不包含推理、评估或结论。该请求既不是 finding 也不是证据；在所属视角独立检查该位置前，证明不能关闭。只有 Role Runtime 负责传输、身份处理与保留；不存在语义同级通信边。
 
-较早的`PASS`只有通过 Evaluation 接纳的兼容性绑定才能继续有效。语义影响或不确定影响在身份与
-生命周期仍符合条件时采用预授权的评估或复查；否则使用全新 cohort 重放。
+## Quality
 
-使用自适应挑战问题，直到每个有支持的答案、矛盾、缺口或风险都穷尽所分配的 scope；不设固定
-数量。问题是调查提示，不是 finding。按照 Evaluation 的完整通用 schema 记录 finding。本合同
-直接返回每项 finding、不动点评估、coverage record 与裁决；Evaluation 只通过其生命周期组合
-这些由 Owner 产生的结果。
+Quality 恰好有两名 Reviewer。
 
-## 判断并返回 Quality 结果
+### Q1：当前状态质量
 
-Quality 贡献三名 Reviewer。所有成员均接收完整 Candidate 与指纹、路径、要求、保留义务、模型、
-写作指引、证据与共同授权。Change Integrity 还接收不可变 baseline、规范 delta，以及绑定到
-所审指纹、由 Author 负责的 Obligation Disposition Record。
+Q1 负责完整当前 Candidate 的信息架构、经济性、语言和执行可用性。把每份资源和每条重要路径作为一个 package 检查。
 
-在`PASS`前，每名 Reviewer 都返回一份绑定到其单元、身份与 Candidate 指纹的临时**Quality
-Coverage Record**。Information Architecture and Economy 使用下述 Economy schema。Language
-and Execution Usability 为每项准确 Allowlist 资源记录一行，包含三个字段：`actionable paths`、
-`branches`和`exits`。每个字段要么是`none`，要么是一组唯一不透明 ID，并且每个 ID 映射到一个
-或多个 Candidate 锚点。Change Integrity 为 Job Design 当前 expected-proof-state delta 绑定中的
-每个 item 记录一行，其处置为`no quality effect`、`finding`或`transfer`；适用时还包含理由锚点
-以及 finding 或 transfer ID。每份记录都带有 coverage-complete 标记。Role Runtime 只审计冻结
-结构；Reviewer 负责选择、理由、coverage 与判断。记录是临时证据，绝不是 Candidate 制品。
+判断加载与首次需要时的披露、位置与共同定位、语义归属、重复、散落、陈旧缓存、膨胀、维护接缝、术语、力度、歧义、分支可见性、权威、依赖、可观察完成、受阻、失败、恢复与停止出口。寻找能够保留受支持行为的最小结构与措辞。后果性复杂度不是经济性缺陷。
 
-把下列每个完整视角准确绑定给一名 Reviewer。每名 Reviewer 都只通过该视角对完整 Candidate
-进行穷尽检查。视角之外的疑点应成为不含语义的 Scope Transfer Note，由相应 Owner 独立检查；
-这不会扩大发送者的 scope。前两个视角只判断完整的当前 Candidate，不作 baseline-to-current 或
-其他相对于变更的判断。
+Q1 只提出当前状态主张。不能仅凭 baseline 差异推断回归。
+当有支持的 Q1 finding 确立了实质性膨胀时，修正会调用 Author 的停写、报告与用户确认 Gate，而不是普通自主修复。
 
-### 信息架构与经济性
+### Q2：变更完整性
 
-负责整个 package 与资源内部的信息层级、加载与披露、放置与共同定位、内容蔓延与注意力成本、
-单一来源语义归属、结构或语义重复与散落、陈旧缓存与依赖、维护接缝，以及保留行为的最小结构。
-追踪每个入口、加载、指针、分支、依赖、缓存事实、操作性含义与同步编辑接缝。检查首次需要时
-披露、规范归属、必要的局部增量与指针、可减少的重复、陈旧缓存、强制预加载、碎片化含义、脆弱
-同步编辑，以及保留每条路径与提示的最小结构。
+Q2 负责 baseline-to-current Change Integrity。检查完整 baseline、完整当前 Candidate、可读 delta、已接受保留约束和 Author Change Summary。
 
-该 Reviewer 负责的 Quality Coverage Record 是**Economy Coverage Record**。构建该记录前，
-先在所审指纹下机械派生有限单元清单：Markdown 使用源文件中的每一条有编号物理行，包括空行或
-仅含空白的行；换行分隔符不另算单元，空文件没有行单元。结构化数据使用准确 key path 下的每个
-scalar field；其他文本使用每个非空行；不包含文本或结构化单元的资源使用显式值
-`no operative units`。
+判断每项删除、改写、移动、合并和新增是否保留有支持含义，是否产生无关 churn、丢失限定或上下文、降低加载或共同定位质量、产生由变更造成的碎片化或重复，或者造成清晰度、可用性或可维护性回归。baseline 与 Author summary 可以定位和解释变更，但没有治理权威；finding 必须有已接受证据和当前有支持的缺陷。
 
-Economy Coverage Record 包含：
+Q2 还检查判断每项 delta 所需的未变当前上下文。如果某项关注只能由当前状态支持，则超出 Q2 裁决范围，并遵循上述跨视角路径。
 
-- 每项 manifest 资源一行：身份、manifest 路径或条件、Candidate 规定的加载点、Reviewer 判定的
-  首次需要点、证据锚点、处置`aligned`、`premature`或`late-or-unreachable`；非 aligned 行还需
-  finding ID；
-- 每项准确 Allowlist 资源一行：派生类别、完整 unit ID 或`no operative units`、repetition-group
-  ID 或`none`，以及资源处置`necessary`、`stale cache`、`sprawl`、`attention cost`、`finding`
-  或`transfer`；任何非 necessary 结果还需锚点以及 finding 或 transfer ID；
-- 每个派生单元一行：资源与 unit ID、准确锚点、由 Reviewer 负责的`operative`/`nonoperative`
-  分类，以及 economy 处置`necessary`、`no-op`、`stale cache`、`sprawl`、`attention cost`、
-  `finding`或`transfer`；任何非 necessary 结果还需 finding 或 transfer ID；
-- Reviewer 发现的每项重复操作性含义一行：不透明 group ID、所有 Candidate 位置、规范 Owner、
-  分类`necessary local delta`、`necessary pointer`或`reducible duplication`、理由锚点，以及可减少
-  重复的 finding ID；以及
-- 通用 coverage-complete 标记。
+### Quality 返回
 
-每个非 aligned、可减少或非 necessary 行都必须在`PASS`前有已解决的 finding 或 transfer。
-Controller 审计准确资源、派生单元、字段、标签、锚点与闭合交叉引用；只有 Reviewer 判断操作性、
-必要性、证据、归属、重复、coverage 与分类。
+每名 Reviewer 都返回一份简洁的全 Candidate coverage 证明，其中指出：
 
-只有解决每个有支持的架构或经济性问题，并返回完整 Economy Coverage Record 后，才算完成。
+- 已检查的全部 Candidate 路径；
+- 在完整 Candidate 上应用的视角；对于 Q2，还包括完整 baseline-to-current 变更；
+- 有支持的 finding；以及
+- 未测试、不确定、无法访问或有意排除的表面。
 
-### 语言与执行可用性
+不要求逐行清单、economy-unit 记录、不透明 coverage 标识、资源行 schema 或机械 coverage manifest。
 
-负责陈述与段落的措辞、句法、力度、术语与表达层 no-op，以及全新 Agent 根据已陈述的输入、权威、
-证据、依赖、动作、分支和结果执行工作的能力。信息层级与结构重复仍由架构视角负责。局部检查每项
-操作性陈述，并遍历每条可执行路径与出口。检查歧义、执行者与条件是否可见、力度、术语稳定性、
-触发条件与例外的位置、可观察的分支选择、依赖与权威、可区分的完成、恢复、受阻、失败和停止
-出口，以及措辞层 no-op。
+只有不再有自己负责的 critical 或 material finding，且自己负责的每项 advisory 都已有 Author 处置时，Quality Reviewer 才通过。Q1 或 Q2 视角内的每项有支持主张（包括 advisory）都是 Evaluation 下的 finding，不能延后。只有 Q1 与 Q2 各自独立地在同一指纹上 PASS，Quality 才通过。修复后，两名 Reviewer 根据 Role Runtime 的身份生命周期复查完整 Candidate。
 
-只有解决每个有支持的清晰度或执行可用性问题，并完成准确资源 coverage record 后，才算完成。
+## Correctness
 
-### Change Integrity
+Correctness 恰好有一名独立 Reviewer。它在完整 Candidate 上结合三项职责：
 
-Change Integrity 是 Quality 中唯一感知 delta 的视角。它只负责必须依据 pre-Author baseline 与
-当前 Candidate 的关系才能成立的质量主张：有用上下文、解释或限定的缺失；不合理或
-无关的 churn；相对于变更产生的碎片化或重复；使共同定位或路由退化的移动或合并；以及只检查
-当前状态可能无法暴露的清晰度、可用性或可维护性回归。它同时检查完整当前
-Candidate 与完整规范 delta。delta 只提供不依赖 VCS 的辅助定位与证据，绝不能替代当前状态 review。
+- Spec Fidelity and Semantic Integrity：在已接受权威与 Candidate 之间双向追踪每项已接受义务、处置、实际生效的承诺、Owner、适用条件、依赖和证据路径。
+- Preservation and Regression Integrity：把 baseline 含义与完整 delta 追踪到已接受的当前结果；检测未经授权的语义丢失、弱化、无支持处置，或加载与适用性破坏。
+- Critical Behavioral Integrity：遍历每条关键路径和代表性路径，包括实质不同的同时触发条件、决策、依赖、权限、外部影响、验证、失败、恢复、路径中途停止和可观察出口。
 
-看到基线和由 Author 负责的记录都不会赋予管辖权威；已接受证据和保留约束仍是权威。通用证据
-排除项保持不变。仅凭文本删除、变更规模、churn 数量、历史偏好或文本/结构相似性，不能形成 finding。检查每项已授权的改写、
-删除、移动或合并是否造成有用上下文、限定、共同定位、路由质量或可维护性的当前损失；是否产生
-由变更导致的碎片化、重复、注意力成本、歧义或间接表达；是否存在带受支持成本的无关 churn；
-以及是否有能保留已接受含义与每项有支持处置的有界修复/重放 scope。
+只有 Quality 在同一指纹上达到当前关闭后，Controller 才启动 Correctness。该关闭状态是启动 Gate metadata，不是 Correctness 证据；不会把任何 Quality 裁决或工作提供给 Reviewer。Reviewer 根据已接受义务、baseline、delta、代表性路径与治理证据，独立检查完整 Candidate。
 
-Change Integrity finding 必须具有已接受证据及其来源、有支持的当前或由变更造成的质量成本、当前影响，
-以及有界修复与重放 scope。它可以使用 Evaluation 下 Quality 的`critical`、`material`或
-`advisory`严重级别。若某个问题仅凭当前 Candidate 就能得到支持，则应生成不含语义的 Scope
-Transfer Note，交给相应的当前状态视角。
+Correctness 只返回 critical blocker，并为每项 blocker 写明不可容忍场景和有界修复方向。非 critical 改进超出其裁决范围，遵循 deferred-surface 路径。
 
-只有在检查当前 Candidate，并在 coverage record 中核算每项规范 delta item、解决每个有支持的
-变更相对问题、转移每个当前状态问题后，才算完成。
-
-Quality 使用 Evaluation 的`critical`、`material`和`advisory`分类及共同生命周期。本合同中的
-各个视角决定 Quality finding 资格。
-
-只有所审 Candidate 指纹上不存在尚未解决的 critical 或 material 主张、自己负责的每项
-advisory 均有冻结的 Author 处置，而且每条已路由 note 都已根据 Evaluation 得到独立检查，
-Quality Reviewer 才通过。路由给后续阶段的 note 仍不阻塞，而且按照 Evaluation 的定义既不阻塞
-Quality，也不会使其失效。只有每项独立生成的`PASS`与所需 coverage record 都为同一个当前指纹
-满足 Evaluation，Quality 才达到当前闭合。后续失效需要成员完全不同的全新完整 cohort。
-
-## 判断并返回 Correctness 结果
-
-Evaluation 负责的 Quality 达到当前闭合后，激活三名 Correctness Reviewer。所有成员均接收
-已接受上下文、义务、管辖证据、模型、阶段证据、当前 Candidate 与指纹、绑定到该指纹且由
-Author 负责的 Obligation Disposition Record，以及共同授权。Preservation and Regression
-Integrity 还接收不可变 baseline 与规范 delta。每名 Reviewer 仅穷尽自己的 scope；跨 scope
-或非阻塞疑点通过 Scope Transfer 路由，且不改变原裁决。
-
-### Spec Fidelity and Semantic Integrity
-
-负责静态合同保真度。把每项已接受的义务、含义、归属边界、适用条件、Author 选择的处置和依赖
-闭包要求映射到 Candidate；再把每项处置和 Candidate 的每项操作性承诺反向映射到已接受支持。
-检查遗漏、弱化、无支持的处置、矛盾、无支持的新增、错误归属或适用性、未声明路由、同时成立
-但不兼容的义务，以及不符合条件的证据。
-
-只有两组映射都穷尽完整，并解决每个有支持的不一致，才算完成。
-
-### Preservation and Regression Integrity
-
-负责 baseline 到当前 Candidate 之间未经授权的语义损失。使用规范 delta 定位变更，但管辖证据
-与保留约束——而不是看到基线或由 Author 负责的记录——才提供权威。通过 Author 选择的处置，
-把每项 baseline 承诺、删除、弱化、替换与移动追踪到当前含义、加载、适用性、可达性，以及涵盖
-每项变更资源且绑定到指纹的完整 delta。
-
-文本变更本身不是缺陷。finding 必须有受支持的语义损失、未经授权的 delta、缺失或无支持的处置，
-或保留、加载或适用性破坏。未解决的未分类 baseline 含义应通过现有有界请求或停止路径路由。只有把每项
-baseline 承诺与变更通过完整 delta 追踪到已接受的当前结果，并解决每个有支持的问题后，才算完成。
-
-### Critical Behavioral Integrity
-
-负责已接受合同的动态执行。追踪每条关键与代表性路径，包括实质不同的同时触发条件、依赖、权限、
-影响、验证、失败、恢复、路径中途停止、决策归属、保留与安全，以及可观察的成功、受阻、失败、
-恢复和终止出口。
-
-只有每条路径、同时触发情况、权限或影响边界、验证、恢复、停止与出口都有可观察轨迹，并且没有
-有支持的矛盾，才算完成。
-
-Correctness 只产生`critical`finding，每项都指出一个不可容忍场景与修复机制；修复规模绝不会
-降低合同违规的严重级别。替换文本由 Author 负责。非阻塞改进转移给 Quality 独立检查。只有不再
-有 blocker，Reviewer 才通过；只有三项独立`PASS`结论都在同一个当前指纹上满足 Evaluation，
-Correctness 才达到当前闭合。后续失效需要全新三人 cohort。
+其返回包含 PASS 或 BLOCKED、当前指纹、critical blocker、一份简洁证明，说明三项职责已覆盖完整已接受义务集合、baseline/delta 和代表性路径，以及每个未测试、不确定、无法访问或被排除的表面。PASS 要求不存在 critical blocker。修复后，Correctness 阶段根据 Role Runtime 的身份生命周期，在新指纹上重复完整的组合审查。

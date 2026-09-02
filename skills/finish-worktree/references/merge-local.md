@@ -1,22 +1,33 @@
 # Merge Locally
 
-Advance the recorded local target branch to the verified delivery head. When the scope is
-**Already Delivered**, recheck that the local target still points to the proven commit, perform only
-cleanup authorized by this outcome, report the proof and preserved state, and stop.
+Integrate by advancing the exact authorized local target branch with one fast-forward.
 
-1. Confirm the target checkout is on the recorded target branch. If any scope path overlaps staged,
-   unstaged, or untracked target-local work in a way the merge could overwrite, leave both
-   checkouts unchanged and offer return-for-review instead.
-2. Require the recorded target `HEAD` to equal the Finalization Contract's `expected_head` and to
-   be the delivery head's required history boundary. A moved target returns to **Finalize Reviewed
-   History**.
-3. Run `git merge --ff-only <source-branch>` from the target checkout.
-4. Rerun relevant verification from the target checkout. Prove the target now points to the
-   delivery head and every unrelated target-local change still matches its snapshot.
-5. After verification passes, ask the recorded lifecycle owner to remove a host-created worktree.
-   For a Git-created worktree, remove that exact clean worktree from the target checkout and delete
-   the now-merged source branch with Git's safe branch deletion.
+1. Recheck the target identity, expected `HEAD`, complete local-state snapshot, `history_result`,
+   delivery head and tree, ancestry, and grant. Prove the operation preserves every unrelated
+   item. Target movement after the History Result does not re-enter history finalization: reprove
+   **Already Delivered** when possible, otherwise retain the result and stop for the
+   target-movement owner with a stopped `outcome_result`. Unsafe overlap stops and may identify
+   `return-for-review` as a new decision, never an automatic substitute.
+2. For **Already Delivered**, mutate nothing and reprove the accepted result on the current target.
+   Otherwise create an authorized unique recovery ref at the exact old target head with an
+   expected-absent update as one logical attempt and re-observe it. Only after that attempt is
+   proven, run one fast-forward logical attempt from the target checkout:
 
-If fast-forward integration or post-merge verification fails, preserve the source branch,
-worktree, and recovery refs and report the resulting target state. Do not rewrite or roll back the
-target automatically.
+   ```text
+   git merge --ff-only <exact-delivery-head>
+   ```
+
+   Use the immutable commit ID, not a branch name.
+3. Prove the target branch now points to the delivery head, its tree is the reviewed delivery tree,
+   required verification passes on that target, and every unrelated index, working-tree, and
+   untracked item matches the snapshot.
+
+After every recovery-ref or fast-forward attempt return or interruption, census its complete effect
+envelope. A prerequisite, guard, expected-absent, or expected-old rejection proven effect-free
+freezes stopped `outcome_result`. An occurred or ambiguous effect, or failed required post-effect
+proof, freezes failed `outcome_result`. Preserve completed recovery, the ledger, observed target
+state, `history_result`, and the exact recovery or verification owner/action; never automatically
+roll back or retry.
+
+A proven result freezes an authoritative-delivery `outcome_result` and returns to **Close from
+proof**.

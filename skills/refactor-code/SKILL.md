@@ -1,91 +1,87 @@
 ---
 name: refactor-code
-description: Use when moving, combining, splitting, extracting, or simplifying one code target's internals while preserving caller-visible behavior and external contracts.
+description: Use when moving, combining, splitting, extracting, or simplifying one code target while preserving supported caller-visible behavior and external contracts; route pure renames, open-ended architecture searches, material unresolved interface or seam design decisions, and observable contract changes before writing.
 ---
 
 # Refactor Code
 
-Restructure one concrete target without changing what its callers or external consumers observe.
+Remove one concrete target's structural pressure while preserving what supported callers and
+external consumers observe.
 
-## Judgment Frame
+## Route Before Writing
 
-### Evidence and preservation boundary
+Classify the requested outcome using authorized repository reads and non-mutating evidence. Use
+adjacent Skills only through their current public distribution interfaces:
 
-- Identify the target, structural problem, approved scope, and intended internal result.
-- Read the applicable project rules, target code, callers, tests, relevant history, and nearby
-  patterns. Discover generated owners and project verification requirements when they affect the
-  target.
-- Define the **preservation boundary** at the supported caller seam: the stable behavior and
-  external contracts, plus evidence that distinguishes preservation from regression. Establish an
-  owner inside the approved scope for every planned write.
+- A pure symbol or path rename is **Redirected** to `rename-code`.
+- An open-ended search for architectural opportunities is **Redirected** to the user-invoked
+  `improve-codebase-architecture` Skill; confirm only the search scope.
+- A material unresolved choice about an interface, seam, adapter relationship, or test surface
+  invokes `codebase-design` only when established repository evidence and ordinary in-scope
+  refactoring judgment cannot settle it. Reconcile its result with repository evidence: return
+  **Redirected** without writing through the user-invoked `implement` route when the result
+  requires caller-visible behavior or contract change; otherwise continue here.
+- A public-interface, persistence, protocol, integration, or user-visible behavior change is
+  **Redirected** to the user-invoked `implement` Skill.
 
-Unresolved target identity, scope, ownership, or distinguishing evidence is a stop, not permission
-to invent a project fact.
+A Redirected result performs no write. An architecture-search handoff carries only the confirmed
+search scope and required outcome. Rename and implementation handoffs carry the confirmed target,
+accepted preservation boundary, relevant evidence, and required outcome. If routing or a returned
+design depends on unavailable material, return **Blocked** without writing and name it.
 
-### Structural judgment
+## Establish the Refactoring Contract
 
-- Choose the smallest coherent internal structure that removes the stated problem and keeps
-  implementation knowledge local.
-- Keep caller-visible behavior, external contracts, and the supported caller seam stable. Add a
-  framework, extension point, compatibility layer, or test-only interface only when the approved
-  result requires it.
-- Keep tests at supported caller seams. Change tests coupled to retired internals only to preserve
-  those behavior assertions, and remove obsolete internals only after current evidence shows that
-  no supported path depends on them.
+Before any write, establish from the target repository:
 
-### Adjacent routes
+- the exact target, structural pressure, intended internal result, and accepted scope;
+- applicable project rules and owners, including generated-surface ownership;
+- the supported caller seam and the observable behavior, invariants, and external contracts it
+  must preserve;
+- the target, callers, tests, configuration, history, and local patterns needed to judge the
+  change;
+- focused green evidence that can discriminate preservation from regression, plus every
+  owner-required affected-surface check; and
+- authority for every required read, command, and write.
 
-- If the requested outcome is only a symbol or file rename, stop before writing and hand the target
-  and scope to `rename-code`.
-- If the request is to search a codebase for architectural opportunities, stop before writing and
-  hand the search scope to `improve-codebase-architecture`.
-- Use `codebase-design` to choose an interface, seam, adapter relationship, or test surface; return
-  here only when the result remains internal and behavior-preserving.
-- If the intended result changes a public interface, persistence format, protocol, integration, or
-  user-visible behavior, stop before writing and hand the confirmed design or specification to
-  `implement`.
+Return **Blocked** without writing when any required fact, access, authority, evidence, or supported
+check route is missing, naming the exact gap.
 
-## Apply the Selected Structure
+## Refactor
 
-Change only the owned implementation surfaces needed for the selected structure. Move affected
-internal callers, retire replaced internals, and keep every edit accountable to the approved scope
-and preservation evidence.
+Choose the smallest coherent internal structure that removes the pressure and localizes knowledge.
+Every abstraction earns a real seam; the result contains only required structure, not speculative
+frameworks, extension points, compatibility layers, or test-only interfaces.
 
-## Verification Island
+Change only necessary owner-authorized implementation surfaces and internal callers while
+preserving unrelated and user-owned state. Preserve the supported seam, behavior, invariants, and
+contracts. Account for every real reference before retiring an internal. Keep preservation
+assertions at supported seams; change structure-coupled tests only while retaining their behavioral
+assertions.
 
-After writing one coherent internal result:
+## Verify and Return
 
-1. Compare every changed surface with the approved scope and preservation boundary. Confirm that
-   the selected structure is complete, affected internal callers have moved, and replaced
-   internals are gone.
-2. At a completed-change checkpoint, use the active project's verification owner for every
-   required affected-surface check. If none is declared, discover and run the required checks from
-   applicable project rules. Include focused preservation-boundary evidence.
-3. When a changed-surface comparison or check exposes a correction uniquely determined by current
-   evidence—including an out-of-scope edit, in-scope regression, incomplete structural result, or
-   remaining obsolete internal—apply it only if it stays in scope and preserves behavior, then
-   rerun every affected check. Return to judgment after each result and continue only while
-   evidence determines another supported correction.
-4. Fail for no progress when the same finding recurs unchanged after correction or a proposed
-   correction would not change the implementation. Preserve useful partial state and the evidence
-   already obtained.
+After one coherent internal result:
 
-## Resolve and Hand Off
+1. Compare the exact final scope, ownership, and structure with the refactoring contract. Prove
+   every edit necessary, callers migrated, and retired internals free of real references.
+2. Run the discriminating preservation evidence and every owner-required affected-surface check.
+3. Apply only uniquely evidence-determined in-scope corrections, then rerun affected checks. Stop
+   when evidence no longer determines progress.
 
-- **Complete** only when the structural problem and obsolete internals are gone, the preservation
-  boundary holds, and every required check passes.
-- **Stop before writing** when an adjacent route applies or a required target, boundary, scope,
-  owner, or distinguishing evidence cannot be established. Report the route, exact missing
-  decision, or exact missing evidence and leave the refactor unstarted.
-- **Fail after writing** when a required check remains unsuccessful, a changed-surface
-  finding—including an incomplete approved result or obsolete internal—has no supported in-scope
-  correction, no progress is possible, or the evidence can no longer distinguish the refactor from
-  a regression. Preserve useful partial state and report the exact failure and next owner or
-  decision.
+Return **Failure** after writing when a required check cannot pass or run, preservation evidence
+ceases to discriminate, no supported in-scope correction exists, or the same finding recurs
+unchanged.
+Preserve useful state and evidence without inventing rollback authority. After-write Failure
+governs any coincident Blocked or Redirected fact.
 
-After writing, failure governs over a coincident stop. Include the stop fact in the handoff without
-expanding scope or changing a contract.
+Return **Complete** only when the pressure is removed, caller-visible behavior and external
+contracts remain supported, replaced internals are retired, final scope matches ownership, and all
+required checks pass.
 
-Report the structural problem removed, preserved behavior and contracts, changed internal
-surfaces, obsolete code removed, exact checks and exits, corrections or recovery performed, and
-every unresolved or untested surface.
+Hand off the pressure and result; preserved behavior, invariants, and contracts; changed internals
+and callers; retired code; exact checks and exits; corrections; and unresolved or untested
+surfaces. A non-complete result also identifies the stopping fact and preserved state.
+
+This Skill grants no publication, installation, commit, push, worktree, translation, or remote
+effect. Target-project governance remains authoritative for reads, writes, commands, and generated
+owners.

@@ -1,58 +1,73 @@
 ---
 name: diagnose-agent-session
-description: 诊断一个稳定智能体 Session 中疑似异常的 Token 或 API 等价费用消耗、模型或工具活动、子智能体协作、等待或未完成调用。
+description: 诊断一个稳定智能体会话中疑似异常的 Token 或 API 等价成本消耗、模型或工具活动、子智能体协作、等待或未完成调用。
 ---
 
-# 诊断 Agent Session
+# 诊断智能体会话
 
-诊断一个已确定身份的智能体 Session 的稳定快照；该 Session 可以仍在进行，也可以已经完成。确定性包装脚本负责采集事实证据；随后回到以证据为依据的判断，根据任务上下文决定这些证据是否异常。包装脚本先完成 Tokscale 尝试并取得不可变的 Codex 本地日志内容，然后记录一个 UTC 快照截止时间，并只评估截止时间以内的内容。报告的截止时间之后不得再采集任何来源。不要保留任务回执，并且只在本次诊断期间读取转录内容。
+诊断一个身份明确的智能体会话的稳定快照；该会话可以仍在进行，也可以已经结束。请求的范围为 `turn`、`session` 或 `both`。本 Skill 只授权只读观察和报告。补救、登录、同步、导出器配置或任何其他状态变更均视为单独操作，必须另行获得授权。
 
-## 运行证据包装脚本
+## 固定身份和范围
 
-调用包装脚本前，先把受支持的 client 和稳定 Session ID 解析为一对值。client 仅可为 `codex`、`cursor` 和 `copilot`，其中 `copilot` 表示 GitHub Copilot CLI。未知 client 不受支持。只有当 `CODEX_THREAD_ID` 提供当前 Codex thread 的身份时，Codex 才可以同时省略这两个标识符；不得推断其他身份，也绝不能选择最新日志。显式提供的受支持 client/Session 对可以指向另一个稳定 Session。如果这对值仍然不完整或缺失，应停止并向用户索取。
+将一个受支持的客户端与稳定会话 ID 解析为固定的一对值。包装器支持的客户端为 `codex`、`cursor` 和 `copilot`，其中 `copilot` 指 GitHub Copilot CLI。显式指定的客户端与会话 ID 对可以指向当前或已结束的会话。`CODEX_THREAD_ID` 只提供当前 Codex 线程的身份，并且只有在两个参数都省略时才能用来补全这一对值；它不能标识另一个会话或已结束的会话。绝不根据时间新近程度推断身份，也绝不选择最新日志。
 
-默认使用 `--scope both`；只有用户明确选择时才使用 `turn` 或 `session`。把包含当前已安装 `SKILL.md` 的目录解析为 Skill 根目录，然后通过相对于该根目录的路径调用包装脚本。公开支持的平台仅包括：
+除非用户明确要求 `turn` 或 `session`，否则使用 `both`。如果客户端与会话 ID 对不完整或缺失、客户端不受支持，或当前平台没有受支持的启动器，应在采集前停止；报告确切的前提条件，不得改用其他会话或范围。
 
-- 使用 `sh` 的 Linux：
+## 采集一份事实记录
 
-  ```sh
-  skill_root='<absolute directory containing the installed SKILL.md>'
-  sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both --client <client> --session-id <id>
-  ```
+将包含当前已安装 `SKILL.md` 的目录解析为 Skill 根目录，并使用固定的身份和范围调用该 Skill 自带的包装器。保持以下调用形式，使包装器能够从活动证据中排除自身调用。
 
-- 使用 PowerShell 的 Windows：
+使用 `sh` 的 Linux：
 
-  ```powershell
-  $skillRoot = '<absolute directory containing the installed SKILL.md>'
-  $wrapper = Join-Path $skillRoot 'scripts\task-metrics.ps1'
-  powershell -ExecutionPolicy Bypass -File $wrapper diagnose --scope both --client <client> --session-id <id>
-  ```
+```sh
+skill_root='<absolute directory containing the installed SKILL.md>'
+sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both --client <client> --session-id <id>
+```
 
-如果平台不受支持，应在运行包装脚本前停止。包装脚本负责解析 Python 3.10 或更高版本；只执行一次包装脚本尝试。如果缺少受支持的 Python，应保留这一明确错误，并把 Python 3.10+ 报告为恢复前提。只有沙箱导致的 Tokscale 失败可以重试一次；重试前必须取得宿主要求的批准，并在沙箱外执行完全相同的命令。
-允许的尝试或重试完成后，其输出就是事实证据记录。
+使用 PowerShell 的 Windows：
 
-Tokscale 必须支持按 client 筛选、按 client/Session/model 分组，以及包装脚本所使用的标准化 JSON 字段；缺少或不兼容的能力是明确的失败证据，而不是进行版本猜测的理由。Cursor 用量可能依赖此前有效的 Tokscale 登录和已完成的同步。诊断过程既不读取也不存储凭据，不执行登录，也不静默同步；缺少设置或同步属于可恢复的前提。Copilot 用量依赖在被诊断活动开始之前配置好的 OTEL 文件导出；对于快照截止时间之前的活动，缺失的遥测是不可恢复的证据缺口。
+```powershell
+$skillRoot = '<absolute directory containing the installed SKILL.md>'
+$wrapper = Join-Path $skillRoot 'scripts\task-metrics.ps1'
+powershell -ExecutionPolicy Bypass -File $wrapper diagnose --scope both --client <client> --session-id <id>
+```
 
-## 证据契约
+只有在明确选择了其他范围时才替换 `both`。只执行一次包装器尝试。包装器会解析 Python 3.10 或更高版本；如果没有受支持的 Python，应保留其明确错误。采集失败后，不得改用其他遥测命令、推断值、登录、同步或配置变更。
 
-Tokscale 是整个 Session 用量和模型活动的共同来源。货币数值必须标注为 `estimated API-equivalent cost`；它们不是账单。Codex profile 还会读取当前 Session 的精确本地日志，从中取得当前 turn、工具调用、未完成调用、子智能体生命周期与协作以及等待证据。Cursor 和 Copilot 目前会把这些行为表面标记为不可用，同时保留所有 Tokscale 用量；这描述的是诊断 profile，而不是声称任一 harness 永远无法暴露这些信息。对于这些 profile，`both` 和显式 `turn` 仍会执行，并报告当前 turn 证据不可用，而不会借用其他 profile 的证据。
+包装器先完成 Tokscale 尝试并取得不可变的 Codex 本地日志内容，随后记录一个 UTC 快照截止时间，并且只评估截止时间以内的内容。报告的截止时间之后不再采集任何来源。包装器输出（包括部分输出和错误）即为事实证据记录。
 
-Cursor 和 Copilot 的 Tokscale Session 身份必须精确匹配。只有 Codex 可以接受精确 Session ID 或其唯一的 `rollout-{session-id}` Tokscale 别名；遇到重复别名或相互竞争的别名时必须拒绝，不得聚合归属不明确的证据。Tokscale 标准化与 Codex 本地日志文件的精确 Session 发现彼此独立，绝不允许借此选择最新日志。
+Tokscale 证据要求按客户端筛选、按客户端/会话/模型分组，并具备包装器接受的标准化字段。缺少或不兼容的能力属于采集失败，而不是推断版本的依据。Cursor 和 Copilot 的会话 ID 必须精确匹配。仅对于 Codex 用量，包装器还接受唯一的 `rollout-{session-id}` 别名，并拒绝重复或相互竞争的别名；这不会放宽 Codex 本地日志的精确发现要求。
 
-每个 capability 条目必须严格使用 `available`、`unavailable` 或 `failed`，并附上相应证据或原因。至少覆盖 Session 用量、模型活动、当前 turn、工具调用、未完成调用、子智能体生命周期与协作以及等待。相同的 profile 契约并不意味着观察到的证据相同。某个表面失败时，仍须保留其他所有可用证据。
+在此前没有完成有效的 Tokscale 登录和同步时，Cursor 用量可能不可用。如果在活动发生前没有配置 OTEL 文件导出，Copilot 用量可能不可用；过去的遥测无法重建。应分别将其说明为恢复前提或不可恢复的证据缺口，不得执行这些操作。
 
-包装脚本报告是事实证据，不是任务健康状况判决。模型时长与工具时长的总和可能和经过时间重叠，生命周期计数是观察到的下界，只有存在稳定的子 Session 映射时才能归属子 Session 的 Token 用量。不得持久化 prompt、response、转录内容、工具输入或工具输出。
+## 解读证据契约
 
-## 判断证据
+对于请求的每项能力，保留包装器报告的确切状态：
 
-把可靠证据与任务的预期工作以及适用的并发上限进行比较。只可使用任务上下文和对当前 turn 的直接了解来解释证据；绝不能填补缺失值。Token、调用、费用和时长仅用于描述，没有固定的异常阈值。必须且只能选择一种结论：
+- `available`：记录中包含可用证据；
+- `unavailable`：此快照的来源或集成没有提供可用证据；
+- `failed`：已经尝试采集或验证但失败，并附有观察到的原因。
 
-- 当存在任何可靠的异常证据时，选择**Abnormal evidence observed**，并把结论限定在该证据能够证明的范围内。
-- 只有当请求涉及的每个相关 capability 都足够可用，且不存在异常信号时，才可选择**No abnormality observed**。
-- 其他情况均选择**Inconclusive**。
+覆盖会话用量、模型活动、当前轮次、工具调用、未完成调用、子智能体生命周期与协作，以及等待。Tokscale 提供整个会话的用量和模型活动。Codex profile 还会从精确匹配的本地日志中推导行为证据。Cursor 和 Copilot 当前在此诊断 profile 中将这些行为表面报告为不可用；这并不是对这些工具可能暴露的所有能力作出的断言。当某项能力不可用或失败时，仍须保留其他能力的可靠证据。
 
-Session 用量覆盖不能证明行为健康。缺失的行为证据不能转化为健康结果。
+明确区分观察、推断、不确定性、不可用证据和采集失败。包装器报告是观察结果，不是健康状况判决。未完成调用是指在截止时间前捕获的证据中，某次开始没有对应的完成；等待、超时、重复调用或未完成调用都需要结合任务上下文，才能支持原因判断。模型时长与工具时长的总和可能与经过时间重叠。生命周期计数是观察到的下界，只有存在稳定的子会话映射时，才能归属子会话 Token。
 
-## 交付
+所有货币数值都必须视为 `estimated API-equivalent cost`，绝不能视为账单。不得持久化或复述 prompt、response、转录内容、工具输入、工具输出或凭据。
 
-按以下顺序返回一份报告：身份和请求的 scope；harness profile；capability 覆盖；整个 Session 的用量与 API 等价估算费用；turn、工具与协作证据；问题和不可用表面；由 Agent 撰写的三态总体结论；限制；恢复前提。如果在运行包装脚本前停止，应尽可能保留相同结构，并指出确切缺少的身份或平台前提。
+## 根据覆盖情况得出结论
+
+将可靠观察与请求的任务、预期工作和适用的并发限制进行比较。只将对当前轮次的直接了解用于解释，并把由此产生的因果判断标记为推断。保留不确定性，绝不填补证据缺口。Token、调用、成本和时长仅用于描述，没有固定的异常阈值。
+
+必须且只能选择一种结论：
+
+- 存在任何可靠异常证据时，选择**Abnormal evidence observed（已观察到异常证据）**，并将结论限定在该证据所能证明的范围内。
+- 只有当请求涉及的每项相关能力都充分可用，且不存在异常信号时，才选择**No abnormality observed（未观察到异常）**。
+- 其他情况均选择**Inconclusive（无法确定）**。
+
+仅有会话用量覆盖不能证明行为健康；缺少行为证据也不能支持健康结论。
+
+## 交接
+
+按以下顺序返回一份报告：稳定身份和请求范围；harness profile 和快照截止时间；能力覆盖情况及证据或原因；整个会话的用量和估算 API 等价成本；轮次、模型、工具、未完成调用、子智能体与等待观察；问题、不可用证据、采集失败和不确定性；因果解释；恰好一个三态结论；局限；恢复前提，以及各项前提是否需要另行授权后重新运行，或是否无法恢复过去的证据。
+
+如果在运行包装器前停止或发生包装器级失败，应在证据允许的范围内保留上述结构，并指出缺失的前提和失败步骤。只有在稳定身份和范围均已明确、请求的每项能力都具有三种状态之一、所有可靠的部分证据均已保留，并且结论符合覆盖规则时，诊断才算完成。
