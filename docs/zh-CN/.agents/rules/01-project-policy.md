@@ -1,15 +1,15 @@
 # 项目政策
 
 **强度：** Mandatory  
-**适用范围：**项目拥有的生成、交付或安装表面，Setup 管理的状态，当前契约的移除，
-公开暴露，以及对这些变更的验证。本 Rule 不适用于由
+**适用范围：**项目拥有的生成、交付或安装表面；Setup 管理的状态；当前契约的移除；公开暴露；
+以及对这些变更的验证。下文中的规范所有权、契约与暴露及验证义务不适用于由
 `.agents/skills/write-shared-rules-and-skills/**` 或
 `.agents/skills/write-setup-authoring-contracts/**` 负责的工作。
 
 ## 规范所有权
 
-每个受影响的生成、交付或安装表面必须有唯一的规范所有者。修改其规范输入，使用所属的生成器或
-同步器，并审查生成的 diff。保留以下源文件映射：
+每个受影响的生成、交付或安装表面必须有唯一的规范所有者。修改其规范输入，并使用所属的生成器或
+同步器。保留以下源文件映射：
 
 - `VERSION` -> `scripts/sync_plugin_version.py`
 - `mcp/registry.json` -> `scripts/sync_mcp_adapters.py`

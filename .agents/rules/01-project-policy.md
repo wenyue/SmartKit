@@ -1,16 +1,16 @@
 # Project Policy
 
 **Strength:** Mandatory  
-**Scope:** Project-owned generated, delivered, or installed surfaces, setup-managed state, current-contract
-removal, public exposure, and verification of those changes. This Rule does not apply to work owned
-by `.agents/skills/write-shared-rules-and-skills/**` or
+**Scope:** Project-owned generated, delivered, or installed surfaces; setup-managed state;
+current-contract removal; public exposure; and verification of those changes. The canonical
+ownership, contracts and exposure, and verification obligations below do not apply to work owned by
+`.agents/skills/write-shared-rules-and-skills/**` or
 `.agents/skills/write-setup-authoring-contracts/**`.
 
 ## Canonical ownership
 
 Each affected generated, delivered, or installed surface must have one canonical owner. Change its
-canonical input, use the owning generator or synchronizer, and review the generated diff. Preserve
-these source mappings:
+canonical input and use the owning generator or synchronizer. Preserve these source mappings:
 
 - `VERSION` -> `scripts/sync_plugin_version.py`
 - `mcp/registry.json` -> `scripts/sync_mcp_adapters.py`

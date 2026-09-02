@@ -119,7 +119,8 @@ class PluginManifestTest(unittest.TestCase):
                 for path in (REPO_ROOT / '.agents/rules').glob('*.md')
             },
             {
-                '00-project-policy.md',
+                '00-self-hosting-authority.md',
+                '01-project-policy.md',
             },
         )
 

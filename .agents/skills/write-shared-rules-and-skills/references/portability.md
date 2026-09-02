@@ -96,10 +96,10 @@ new verdict. Public results remain authoritative and unchanged.
 
 Report portable success only when the public workflow succeeds and every obligation is closed on
 its final Candidate fingerprint. Add an exhaustive closure account to the preserved public handoff,
-naming for each obligation the observable public output that closes its pass condition and the
-current fingerprint or public compatibility binding. Include representative-target evidence only
-when the public output exposes it and the pass condition needs it. If required closure is not
-observable, leave that obligation open, preserve the public result, and report the missing
+naming for each obligation the observable public output that closes its pass condition and binding
+that account to the public workflow's final Candidate fingerprint. Include representative-target
+evidence only when the public output exposes it and the pass condition needs it. If required closure
+is not observable, leave that obligation open, preserve the public result, and report the missing
 fingerprint-bound output.
 
 Keep the closed input and closure map in Agent context. Create no Candidate copy, workflow report,
