@@ -19,8 +19,8 @@ Integrate by advancing the exact authorized local target branch with one fast-fo
 
    Use the immutable commit ID, not a branch name.
 3. Prove the target branch now points to the delivery head, its tree is the reviewed delivery tree,
-   required verification passes on that target, and every unrelated index, working-tree, and
-   untracked item matches the snapshot.
+   required verification passes on that target, and every unrelated index, working-tree,
+   untracked, and ignored item matches the snapshot.
 
 After every recovery-ref or fast-forward attempt return or interruption, census its complete effect
 envelope. A prerequisite, guard, expected-absent, or expected-old rejection proven effect-free

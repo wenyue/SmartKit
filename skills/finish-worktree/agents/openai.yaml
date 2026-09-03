@@ -1,4 +1,4 @@
 interface:
   display_name: "Finish Worktree"
   short_description: "Finalize or hand off a reviewed worktree"
-  default_prompt: "Use $finish-worktree to prove and execute the authorized integration, pull-request, retention, review-return, or discard outcome for this isolated linked Git worktree."
+  default_prompt: "Use $finish-worktree either to finalize or hand off this reviewed isolated linked Git worktree, or to carry out an explicit request to discard one exact isolated worktree and its local state."

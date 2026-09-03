@@ -1,9 +1,11 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path, PurePosixPath
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -100,6 +102,30 @@ class SetupExternalSkillTest(unittest.TestCase):
             assert second is not None
             self.assertIn('Updated.', (second / 'external-check/SKILL.md').read_text())
             self.assertFalse((second_session / 'external-checkouts').exists())
+
+    def test_git_commands_ignore_ambient_repository_and_config_overrides(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                'GIT_DIR': '/attacker/git',
+                'GIT_WORK_TREE': '/attacker/tree',
+                'GIT_INDEX_FILE': '/attacker/index',
+            },
+            clear=False,
+        ), mock.patch.object(
+            external.subprocess,
+            'run',
+            return_value=subprocess.CompletedProcess(('git', 'version'), 0, '', ''),
+        ) as run:
+            external._run_git('version')
+
+        environment = run.call_args.kwargs['env']
+        self.assertNotIn('GIT_DIR', environment)
+        self.assertNotIn('GIT_WORK_TREE', environment)
+        self.assertNotIn('GIT_INDEX_FILE', environment)
+        self.assertEqual(environment['GIT_TERMINAL_PROMPT'], '0')
+        self.assertEqual(environment['GIT_CONFIG_NOSYSTEM'], '1')
+        self.assertEqual(environment['GIT_CONFIG_GLOBAL'], os.devnull)
 
     def test_rejects_a_skill_whose_frontmatter_name_does_not_match(self):
         with tempfile.TemporaryDirectory() as temp_dir:

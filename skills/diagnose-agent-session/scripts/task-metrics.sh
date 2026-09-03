@@ -34,10 +34,5 @@ if [ -n "$python_path" ]; then
   exec "$python_path" "$script_dir/timing.py" "$@"
 fi
 
-if command -v uv >/dev/null 2>&1; then
-  python_command=$(uv python find '>=3.10')
-  exec "$python_command" "$script_dir/timing.py" "$@"
-fi
-
 echo 'ERROR: Python 3.10 or newer is required.' >&2
 exit 2

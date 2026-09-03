@@ -1,4 +1,4 @@
 interface:
   display_name: "Create Worktree"
-  short_description: "Create an isolated linked Git worktree safely"
-  default_prompt: "Use $create-worktree to create and prepare an isolated linked Git worktree for this implementation scope."
+  short_description: "Select or create an isolated Git worktree safely"
+  default_prompt: "Use $create-worktree to select or create and prepare one isolated linked Git worktree for this implementation scope."

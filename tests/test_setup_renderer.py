@@ -1359,7 +1359,7 @@ class SetupRendererTest(unittest.TestCase):
             )
             validate_rendered_state(rendered)
 
-    def test_project_rules_block_preserves_matt_agent_skills_and_is_not_owned(self):
+    def test_project_rules_section_preserves_other_entry_content_without_locking_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'

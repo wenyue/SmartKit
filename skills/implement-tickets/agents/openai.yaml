@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Tickets"
-  short_description: "Implement or resume one recoverable ticket batch"
-  default_prompt: "Use $implement-tickets to implement or resume the eligible dependency-ordered ticket batch in one isolated worktree."
+  short_description: "Run or resume a Ticket Batch, or prove no eligible work"
+  default_prompt: "Use $implement-tickets to implement or resume the eligible dependency-ordered ticket batch, or prove that no eligible work remains."

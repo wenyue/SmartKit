@@ -23,13 +23,5 @@ foreach ($pythonCommand in $pythonCommands) {
     }
 }
 
-if (Get-Command uv -ErrorAction SilentlyContinue) {
-    $pythonPath = (& uv python find '>=3.10').Trim()
-    if ($LASTEXITCODE -eq 0 -and $pythonPath) {
-        & $pythonPath $scriptPath @args
-        exit $LASTEXITCODE
-    }
-}
-
 Write-Error 'Python 3.10 or newer is required.'
 exit 2

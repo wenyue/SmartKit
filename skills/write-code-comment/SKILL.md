@@ -12,18 +12,23 @@ name, type, structure, or documentation cannot express clearly enough.
 ## Establish the comment's authority
 
 Inspect the relevant implementation and contract together with the target project's current rules,
-language conventions, owner documentation, configuration, and applicable maintained comments.
-Treat nearby comments as evidence only when their ownership and applicability are credible. Resolve
-from those live sources the required language, terminology, form, placement, documentation tags,
-directives, markers, and validation; do not substitute remembered syntax or tool lists.
+configuration, tooling, owner documentation, and applicable maintained comments. Treat nearby
+comments as evidence only when their ownership and applicability are credible. Resolve
+project-owned language, terminology, style, directives, markers, generated-source route, and
+validation from those live project sources. Resolve native comment syntax and documentation
+mechanisms from the identified language or toolchain. When no applicable project comment convention
+is found, including when the project is silent, use reliably inferable native mechanisms without
+treating that absence alone as a blocker. Do not invent project policy from remembered conventions
+or nearby examples.
 
 Confirm whether the request authorizes review only, comment edits, or an independently requested
 code, name, type, or structural correction, and whether the target is the owned source. Comment
 need alone grants no structural mutation. When a structural correction lacks independent request
 authority, report the exact correction and owner. For generated or otherwise managed surfaces,
 follow the canonical owner's edit and generation route only when those effects are authorized. If
-ownership, a necessary convention, or write authority cannot be established, stop and report the
-exact missing fact or access rather than changing the surface.
+target ownership, an applicable required convention, or write authority necessary for the selected
+action cannot be established, stop and report the exact missing fact or access rather than changing
+the surface.
 
 Place each fact with its semantic owner. Caller-visible behavior and public contracts belong in the
 project's required API-documentation surface; broader concepts belong in their owning documentation.

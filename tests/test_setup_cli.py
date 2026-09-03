@@ -61,10 +61,16 @@ class SetupCliTest(unittest.TestCase):
     @staticmethod
     def write_generated_outputs(session: Path) -> None:
         request = json.loads((session / 'request.json').read_text(encoding='utf-8'))
-        for relative in (item['target'] for item in request['generation_requests']):
+        declarations = []
+        for item in request['generation_requests']:
+            relative = item['target']
             path = session / 'generated' / PurePosixPath(relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f'# generated {path.name}\n', encoding='utf-8')
+            declarations.append({'id': item['id'], 'outputs': [relative]})
+        (session / 'generated/.setup-generation.json').write_text(
+            json.dumps({'version': 1, 'requests': declarations}), encoding='utf-8'
+        )
 
     @staticmethod
     def snapshot_tree(root: Path) -> dict[str, bytes]:
@@ -151,7 +157,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(result, 2)
             self.assertEqual(self.snapshot_tree(target), {})
 
-    def test_prepare_records_fixed_harnesses_and_five_generation_requests_without_target_writes(self):
+    def test_prepare_records_fixed_harnesses_primary_requests_and_target_fingerprint(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -165,6 +171,8 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(request['target'], str(target.absolute()))
             self.assertEqual(request['source_root'], str(REPO_ROOT.absolute()))
             self.assertEqual(request['source_commit'], self.source_commit)
+            self.assertRegex(request['source_fingerprint'], r'^[0-9a-f]{64}$')
+            self.assertRegex(request['target_fingerprint'], r'^[0-9a-f]{64}$')
             self.assertEqual(request['harnesses'], ['codex', 'cursor', 'copilot'])
             self.assertEqual(
                 request['external_sources'],
@@ -189,6 +197,208 @@ class SetupCliTest(unittest.TestCase):
             self.assertTrue((session / 'generated/.agents/rules').is_dir())
             self.assertTrue((session / 'generated/.agents/skills').is_dir())
             self.assertEqual(self.snapshot_tree(target), {})
+
+    def test_target_fingerprint_captures_ignored_files_and_git_index_state(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / 'target'
+            target.mkdir()
+            run_git(target, 'init', '--quiet')
+            run_git(target, 'config', 'user.email', 'test@example.invalid')
+            run_git(target, 'config', 'user.name', 'Setup Test')
+            (target / '.gitignore').write_text('ignored.txt\n', encoding='utf-8')
+            tracked = target / 'tracked.txt'
+            tracked.write_text('baseline\n', encoding='utf-8')
+            run_git(target, 'add', '.gitignore', 'tracked.txt')
+            run_git(target, 'commit', '--quiet', '-m', 'baseline')
+            baseline = setup_project_agents._target_fingerprint(target)
+
+            ignored = target / 'ignored.txt'
+            ignored.write_text('downstream effect\n', encoding='utf-8')
+            self.assertNotEqual(
+                setup_project_agents._target_fingerprint(target), baseline
+            )
+            ignored.unlink()
+            self.assertEqual(
+                setup_project_agents._target_fingerprint(target), baseline
+            )
+
+            tracked.write_text('staged only\n', encoding='utf-8')
+            run_git(target, 'add', 'tracked.txt')
+            tracked.write_text('baseline\n', encoding='utf-8')
+            self.assertNotEqual(
+                setup_project_agents._target_fingerprint(target), baseline
+            )
+
+    def test_finish_rejects_a_source_registry_change_after_planning(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / 'source'
+            shutil.copytree(
+                REPO_ROOT,
+                source,
+                ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'),
+            )
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            source_args = [
+                '--source-root', str(source),
+                '--source-commit', self.source_commit,
+                '--no-bootstrap',
+            ]
+            self.assertEqual(
+                setup_project_agents.main([
+                    'prepare', '--target', str(target), '--session', str(session),
+                    *source_args,
+                ]),
+                0,
+            )
+            self.write_generated_outputs(session)
+            real_plan = setup_project_agents._plan
+            registry = source / 'skills/registry.json'
+
+            def mutate_source_after_plan(*args, **kwargs):
+                result = real_plan(*args, **kwargs)
+                registry.write_bytes(registry.read_bytes() + b'\n')
+                return result
+
+            error = StringIO()
+            with (
+                mock.patch.object(
+                    setup_project_agents,
+                    '_plan',
+                    side_effect=mutate_source_after_plan,
+                ),
+                redirect_stderr(error),
+            ):
+                result = setup_project_agents.main([
+                    'finish', '--target', str(target), '--session', str(session),
+                    *source_args,
+                ])
+
+            self.assertEqual(result, 2)
+            self.assertIn('setup source changed during planning', error.getvalue())
+            self.assertEqual(self.snapshot_tree(target), {})
+
+    def test_apply_installs_only_exactly_declared_generated_skill_resources(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            manifest_path = session / 'generated/.setup-generation.json'
+            manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+            request = next(
+                item for item in manifest['requests']
+                if item['id'] == 'blueprint-change-set-verification'
+            )
+            helper = '.agents/skills/change-set-verification/scripts/select.py'
+            exact_cache_path = (
+                '.agents/skills/change-set-verification/'
+                'scripts/__pycache__/selection.json'
+            )
+            request['outputs'].extend((helper, exact_cache_path))
+            manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+            helper_path = session / 'generated' / PurePosixPath(helper)
+            helper_path.parent.mkdir(parents=True)
+            helper_path.write_text('print("selected")\n', encoding='utf-8')
+            cache_path = session / 'generated' / PurePosixPath(exact_cache_path)
+            cache_path.parent.mkdir(parents=True)
+            cache_path.write_text('{"selected": true}\n', encoding='utf-8')
+
+            with redirect_stdout(StringIO()):
+                self.assertEqual(
+                    setup_project_agents.main([
+                        'apply', '--target', str(target), '--session', str(session),
+                        *self.source_args(),
+                    ]),
+                    0,
+                )
+
+            self.assertEqual((target / helper).read_bytes(), helper_path.read_bytes())
+            self.assertEqual(
+                (target / exact_cache_path).read_bytes(), cache_path.read_bytes()
+            )
+            ownership = json.loads(
+                (target / '.agents/smartkit.lock.json').read_text(encoding='utf-8')
+            )
+            owned_paths = {item['path'] for item in ownership['assets']}
+            self.assertIn(helper, owned_paths)
+            self.assertIn(exact_cache_path, owned_paths)
+
+    def test_apply_rejects_generated_output_omitted_from_exact_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            undeclared = session / 'generated/.agents/skills/change-set-verification/scripts/extra.py'
+            undeclared.parent.mkdir(parents=True)
+            undeclared.write_text('pass\n', encoding='utf-8')
+
+            before = self.snapshot_tree(target)
+            with redirect_stderr(StringIO()):
+                result = setup_project_agents.main([
+                    'apply', '--target', str(target), '--session', str(session),
+                    *self.source_args(),
+                ])
+
+            self.assertEqual(result, 2)
+            self.assertEqual(self.snapshot_tree(target), before)
+
+    def test_apply_reports_non_utf8_generation_manifest_without_mutation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            (session / 'generated/.setup-generation.json').write_bytes(b'\xff')
+
+            error = StringIO()
+            with redirect_stderr(error):
+                result = setup_project_agents.main([
+                    'apply', '--target', str(target), '--session', str(session),
+                    *self.source_args(),
+                ])
+
+            self.assertEqual(result, 2)
+            self.assertIn('cannot read generation manifest', error.getvalue())
+            self.assertEqual(self.snapshot_tree(target), {})
+
+    def test_target_fingerprint_does_not_descend_into_junction_like_directory(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir)
+            junction = target / 'junction'
+            junction.mkdir()
+            child = junction / 'outside.txt'
+            child.write_text('first\n', encoding='utf-8')
+
+            def link_like(path: Path) -> bool:
+                return path == junction
+
+            with (
+                mock.patch.object(
+                    setup_project_agents,
+                    '_is_link_like',
+                    side_effect=link_like,
+                ),
+                mock.patch.object(
+                    setup_project_agents.os,
+                    'readlink',
+                    return_value='../outside',
+                ),
+            ):
+                first = setup_project_agents._target_fingerprint(target)
+                child.write_text('second\n', encoding='utf-8')
+                second = setup_project_agents._target_fingerprint(target)
+
+            self.assertEqual(first, second)
 
     def test_http_project_mcp_round_trips_through_prepare_apply_and_check(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -577,6 +787,87 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(check_result['changed_paths'], [])
             self.assertIsNone(check_result['drift'])
 
+    def test_finish_rolls_back_when_post_apply_validation_fails(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            before = self.snapshot_tree(target)
+            real_plan = setup_project_agents._plan
+            calls = 0
+
+            def fail_postcondition(*args, **kwargs):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise setup_project_agents.SetupError('injected post-apply failure')
+                return real_plan(*args, **kwargs)
+
+            error = StringIO()
+            with (
+                mock.patch.object(
+                    setup_project_agents,
+                    '_plan',
+                    side_effect=fail_postcondition,
+                ),
+                redirect_stderr(error),
+            ):
+                result = setup_project_agents.main([
+                    'finish', '--target', str(target), '--session', str(session),
+                    *self.source_args(),
+                ])
+
+            self.assertEqual(result, 2)
+            self.assertIn('injected post-apply failure', error.getvalue())
+            self.assertEqual(self.snapshot_tree(target), before)
+
+    def test_finish_rolls_back_setup_when_unrelated_target_changes_during_postcondition(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            real_plan = setup_project_agents._plan
+            calls = 0
+            concurrent = target / 'concurrent.txt'
+
+            def add_concurrent_change(*args, **kwargs):
+                nonlocal calls
+                calls += 1
+                result = real_plan(*args, **kwargs)
+                if calls == 2:
+                    concurrent.write_text('keep concurrent work\n', encoding='utf-8')
+                return result
+
+            error = StringIO()
+            with (
+                mock.patch.object(
+                    setup_project_agents,
+                    '_plan',
+                    side_effect=add_concurrent_change,
+                ),
+                redirect_stderr(error),
+            ):
+                result = setup_project_agents.main([
+                    'finish', '--target', str(target), '--session', str(session),
+                    *self.source_args(),
+                ])
+
+            self.assertEqual(result, 2)
+            self.assertIn('target changed during finish', error.getvalue())
+            self.assertEqual(
+                concurrent.read_text(encoding='utf-8'), 'keep concurrent work\n'
+            )
+            self.assertEqual(
+                self.snapshot_tree(target),
+                {'concurrent.txt': b'keep concurrent work\n'},
+            )
+
     def test_apply_installs_only_codex_plugin_agent_fallback(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -722,10 +1013,16 @@ class SetupEndToEndTest(unittest.TestCase):
     @staticmethod
     def write_generated_outputs(session: Path) -> None:
         request = json.loads((session / 'request.json').read_text(encoding='utf-8'))
-        for relative in (item['target'] for item in request['generation_requests']):
+        declarations = []
+        for item in request['generation_requests']:
+            relative = item['target']
             path = session / 'generated' / PurePosixPath(relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f'# generated {path.name}\n', encoding='utf-8')
+            declarations.append({'id': item['id'], 'outputs': [relative]})
+        (session / 'generated/.setup-generation.json').write_text(
+            json.dumps({'version': 1, 'requests': declarations}), encoding='utf-8'
+        )
 
     def bootstrap_prepare(self, origin: Path, target: Path, session: Path) -> None:
         with mock.patch.object(bootstrap, 'CANONICAL_REPOSITORY', origin.as_uri()):

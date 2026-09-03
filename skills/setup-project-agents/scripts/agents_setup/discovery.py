@@ -144,6 +144,8 @@ def discover_project_skills(
 def discover_generated_skill_resources(
     target_root: Path,
     catalog: Catalog,
+    *,
+    previous_managed: frozenset[PurePosixPath] = frozenset(),
 ) -> tuple[PurePosixPath, ...]:
     """Discover project-owned files beside generated Skill entrypoints."""
     generated_entries = {
@@ -176,6 +178,6 @@ def discover_generated_skill_resources(
             if not path.is_file():
                 continue
             relative = root_relative / path.relative_to(root).as_posix()
-            if relative != entry:
+            if relative != entry and relative not in previous_managed:
                 result.add(relative)
     return tuple(sorted(result, key=lambda item: item.as_posix()))

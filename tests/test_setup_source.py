@@ -838,11 +838,14 @@ class SetupSourceTest(unittest.TestCase):
 
     def test_entrypoint_prepares_a_valid_pinned_session(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            session = Path(temp_dir) / 'session'
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = root / 'session'
             session.mkdir(mode=0o700)
             result = setup_project_agents.main(
                 [
-                    'prepare', '--target', temp_dir, '--session', str(session),
+                    'prepare', '--target', str(target), '--session', str(session),
                     '--source-root', str(REPO_ROOT),
                     '--source-commit', 'offline', '--no-bootstrap',
                 ]

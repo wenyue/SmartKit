@@ -245,6 +245,7 @@ def _start(args: argparse.Namespace) -> int:
             'generated': str(session / 'generated'),
             'source_root': request.get('source_root'),
             'source_commit': request.get('source_commit'),
+            'source_fingerprint': request.get('source_fingerprint'),
             'harnesses': request.get('harnesses'),
             'generation_requests': request.get('generation_requests'),
         })
@@ -354,21 +355,23 @@ def _finish(args: argparse.Namespace) -> int:
         return 2
     try:
         request, target, source, commit = _request_context(session)
-        apply_result = _run_pinned(
-            'apply', session=session, target=target, source=source, commit=commit
+        finish_result = _run_pinned(
+            'finish', session=session, target=target, source=source, commit=commit
         )
-        check_result = _run_pinned(
-            'check', session=session, target=target, source=source, commit=commit
-        )
-        if check_result.get('changed_paths') != [] or check_result.get('drift') is not None:
-            raise WorkflowError('post-apply check did not converge')
         result = {
             'phase': 'finish',
             'source_commit': request.get('source_commit'),
+            'source_fingerprint': request.get('source_fingerprint'),
+            'source_root': request.get('source_root'),
+            'source_mode': (
+                'installed-fallback'
+                if request.get('source_commit') is None
+                else 'canonical-snapshot'
+            ),
             'harnesses': request.get('harnesses'),
-            'changed_paths': apply_result.get('changed_paths'),
-            'external_skills': apply_result.get('external_skills'),
-            'preserved_paths': apply_result.get('preserved_paths'),
+            'changed_paths': finish_result.get('changed_paths'),
+            'external_skills': finish_result.get('external_skills'),
+            'preserved_paths': finish_result.get('preserved_paths'),
             'check': 'clean',
         }
         _remove_session(session)

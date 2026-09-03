@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -222,10 +223,16 @@ class SetupWorkflowTest(unittest.TestCase):
     @staticmethod
     def write_generated_outputs(session: Path) -> None:
         request = json.loads((session / 'request.json').read_text(encoding='utf-8'))
-        for relative in (item['target'] for item in request['generation_requests']):
+        declarations = []
+        for item in request['generation_requests']:
+            relative = item['target']
             path = session / 'generated' / PurePosixPath(relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f'# generated {path.name}\n', encoding='utf-8')
+            declarations.append({'id': item['id'], 'outputs': [relative]})
+        (session / 'generated/.setup-generation.json').write_text(
+            json.dumps({'version': 1, 'requests': declarations}), encoding='utf-8'
+        )
 
     @staticmethod
     def write_matt_context(target: Path, entry_name: str = 'AGENTS.md') -> None:
@@ -350,6 +357,7 @@ class SetupWorkflowTest(unittest.TestCase):
             session = Path(start['session'])
             self.assertEqual(start['phase'], 'start')
             self.assertEqual(start['generated'], str(session / 'generated'))
+            self.assertRegex(start['source_fingerprint'], r'^[0-9a-f]{64}$')
             self.assertTrue((session / workflow._SESSION_MARKER).is_file())
             self.assertNotIn('models', start)
             self.assertFalse((session / 'models.json').exists())
@@ -364,6 +372,9 @@ class SetupWorkflowTest(unittest.TestCase):
             finish = json.loads(finish_output.getvalue())
             self.assertEqual(finish['phase'], 'finish')
             self.assertEqual(finish['check'], 'clean')
+            self.assertEqual(finish['source_mode'], 'canonical-snapshot')
+            self.assertEqual(finish['source_root'], start['source_root'])
+            self.assertEqual(finish['source_fingerprint'], start['source_fingerprint'])
             self.assertEqual(finish['external_skills'], [])
             self.assertEqual(
                 finish['preserved_paths'],
@@ -468,7 +479,7 @@ class SetupWorkflowTest(unittest.TestCase):
                     workflow.main(['finish', '--session', str(session)]), 2
                 )
 
-            self.assertIn('generated outputs must contain exactly', error.getvalue())
+            self.assertIn('generation manifest must be a regular file', error.getvalue())
             self.assertFalse(session.exists())
             self.assertEqual(tuple(target.rglob('*')), before)
 
@@ -531,6 +542,7 @@ class SetupWorkflowTest(unittest.TestCase):
                         0,
                     )
             session = Path(json.loads(output.getvalue())['session'])
+            self.write_generated_outputs(session)
             (session / 'generated/rules').mkdir()
             error = StringIO()
 
@@ -544,7 +556,7 @@ class SetupWorkflowTest(unittest.TestCase):
                 error.getvalue(),
             )
             self.assertIn(
-                'write each generation_requests target unchanged under generated',
+                'declare exact outputs in .setup-generation.json',
                 error.getvalue(),
             )
 
@@ -594,6 +606,32 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertFalse((target / '.agents').exists())
             self.assertEqual(tuple(other.rglob('*')), ())
 
+    def test_finish_rejects_target_drift_before_mutation_and_keeps_the_drift(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            origin = self.make_origin(root)
+            target = root / 'target'
+            target.mkdir()
+            self.write_matt_context(target)
+            output = StringIO()
+            with mock.patch.object(bootstrap, 'CANONICAL_REPOSITORY', origin.as_uri()):
+                with redirect_stdout(output):
+                    self.assertEqual(workflow.main(['start', '--target', str(target)]), 0)
+            session = Path(json.loads(output.getvalue())['session'])
+            self.write_generated_outputs(session)
+            concurrent = target / 'concurrent.txt'
+            concurrent.write_text('keep concurrent work\n', encoding='utf-8')
+            error = StringIO()
+
+            with redirect_stderr(error):
+                result = workflow.main(['finish', '--session', str(session)])
+
+            self.assertEqual(result, 2)
+            self.assertIn('target changed after start', error.getvalue())
+            self.assertEqual(concurrent.read_text(encoding='utf-8'), 'keep concurrent work\n')
+            self.assertFalse((target / '.agents/smartkit.lock.json').exists())
+            self.assertFalse(session.exists())
+
     def test_start_failure_cleans_the_owned_session(self):
         session = workflow._create_session()
         target = Path(tempfile.mkdtemp(prefix='setup-workflow-target-'))
@@ -620,6 +658,24 @@ class SetupWorkflowTest(unittest.TestCase):
         workflow._remove_session(session)
 
         self.assertFalse(session.exists())
+
+    def test_cleanup_failure_reports_the_exact_residual_session(self):
+        session = workflow._create_session()
+        with (
+            mock.patch.object(
+                workflow.shutil,
+                'rmtree',
+                side_effect=OSError('injected cleanup failure'),
+            ),
+            self.assertRaisesRegex(
+                workflow.WorkflowError,
+                re.escape(f'cannot remove workflow session: {session}'),
+            ),
+        ):
+            workflow._remove_session(session)
+
+        self.assertTrue(session.exists())
+        shutil.rmtree(session)
 
     def test_cancel_cleans_an_owned_unfinished_session(self):
         session = workflow._create_session()
@@ -659,11 +715,16 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertIn('using installed plugin source', warning.getvalue())
             self.write_generated_outputs(session)
 
-            with redirect_stdout(StringIO()):
+            finish_output = StringIO()
+            with redirect_stdout(finish_output):
                 self.assertEqual(
                     workflow.main(['finish', '--session', str(session)]), 0
                 )
 
+            finish = json.loads(finish_output.getvalue())
+            self.assertEqual(finish['source_mode'], 'installed-fallback')
+            self.assertIsNone(finish['source_commit'])
+            self.assertEqual(Path(finish['source_root']), REPO_ROOT)
             self.assertFalse(session.exists())
             self.assertTrue((target / 'AGENTS.md').is_file())
 

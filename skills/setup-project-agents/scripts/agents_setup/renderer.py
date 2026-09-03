@@ -544,6 +544,7 @@ def render_desired_state(
     generated_root: Path,
     external_root: Path | None = None,
     operating_system: OperatingSystem | None = None,
+    generated_outputs: tuple[PurePosixPath, ...] | None = None,
 ) -> RenderedState:
     """Render only catalog-owned project assets without mutating the target."""
     try:
@@ -606,7 +607,18 @@ def render_desired_state(
                 for item in config.external_skills
             ),
         )
-        generated_skill_resources = discover_generated_skill_resources(target_root, catalog)
+        previous_generated_resources = frozenset(
+            asset.path
+            for asset in (previous_ownership.assets if previous_ownership else ())
+            if asset.kind == 'file'
+            and asset.role == 'skill'
+            and asset.path.name != 'SKILL.md'
+        )
+        generated_skill_resources = discover_generated_skill_resources(
+            target_root,
+            catalog,
+            previous_managed=previous_generated_resources,
+        )
     except DiscoveryError as error:
         raise RenderError(str(error)) from error
 
@@ -683,7 +695,7 @@ def render_desired_state(
 
     project_agent_sources = _render_project_agents(files, target_root, config)
 
-    generated_targets = {
+    generated_targets = set(generated_outputs) if generated_outputs is not None else {
         asset.target
         for asset in catalog.assets
         if asset.kind == 'blueprint'
@@ -694,7 +706,9 @@ def render_desired_state(
         (
             item
             for item in generated_root.rglob('*')
-            if item.is_file() and not _is_transient(item)
+            if item.is_file()
+            and not _is_transient(item)
+            and item.relative_to(generated_root).as_posix() != '.setup-generation.json'
         ),
         key=lambda item: item.as_posix(),
     ):

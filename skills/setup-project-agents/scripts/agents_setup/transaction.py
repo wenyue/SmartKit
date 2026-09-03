@@ -6,6 +6,7 @@ import stat
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from typing import Callable
 
 from .catalog import ContractError, safe_relative
 from .models import Change, ChangeKind, Plan
@@ -467,7 +468,11 @@ def _rollback(root_fd: int, guard: _RootGuard, applied: list[_Mutation], created
     return tuple(errors)
 
 
-def _apply_secure(target_root: Path, plan: Plan) -> None:
+def _apply_secure(
+    target_root: Path,
+    plan: Plan,
+    postcondition: Callable[[], None] | None,
+) -> None:
     operations = _operations(plan)
     guard, root_fd = _root_guard(target_root)
     applied: list[_Mutation] = []
@@ -485,6 +490,9 @@ def _apply_secure(target_root: Path, plan: Plan) -> None:
                     _expected(root_fd, operation)
                     _apply(root_fd, guard, operation, backups[operation.path], created, applied)
                 _verify_desired(root_fd, plan.changes)
+                if postcondition is not None:
+                    postcondition()
+                _verify_desired(root_fd, plan.changes)
             except BaseException as error:
                 original = error.original_error if isinstance(error, TransactionError) else error
                 raise TransactionError(original, _rollback(root_fd, guard, applied, created)) from error
@@ -492,7 +500,11 @@ def _apply_secure(target_root: Path, plan: Plan) -> None:
         os.close(root_fd)
 
 
-def _apply_fallback(target_root: Path, plan: Plan) -> None:
+def _apply_fallback(
+    target_root: Path,
+    plan: Plan,
+    postcondition: Callable[[], None] | None,
+) -> None:
     """Functional fallback with repeated confinement; it cannot provide POSIX openat guarantees."""
     operations = _operations(plan)
     root = Path(target_root)
@@ -581,6 +593,20 @@ def _apply_fallback(target_root: Path, plan: Plan) -> None:
             if current is None or target(operation.path).read_bytes() != operation.content:
                 raise TransactionError(f'content changed before transaction commit: {_path_key(operation.path)}')
 
+    def verify_desired(change: Change) -> None:
+        path = target(change.path)
+        current = entry(
+            path,
+            directory=change.kind is ChangeKind.DELETE_DIRECTORY,
+        )
+        if change.kind in {ChangeKind.DELETE, ChangeKind.DELETE_DIRECTORY}:
+            if current is not None:
+                raise TransactionError(f'delete result changed: {_path_key(change.path)}')
+        elif current is None or path.read_bytes() != change.content:
+            raise TransactionError(
+                f'content changed before transaction commit: {_path_key(change.path)}'
+            )
+
     temporary_context = tempfile.TemporaryDirectory(prefix='agents-setup-transaction-')
     try:
         for change in plan.changes:
@@ -642,6 +668,12 @@ def _apply_fallback(target_root: Path, plan: Plan) -> None:
                 _replace(temporary, path)
             finally:
                 temporary.unlink(missing_ok=True)
+        for change in plan.changes:
+            verify_desired(change)
+        if postcondition is not None:
+            postcondition()
+        for change in plan.changes:
+            verify_desired(change)
     except BaseException as error:
         rollback_errors: list[BaseException] = []
         try:
@@ -704,18 +736,23 @@ def _apply_fallback(target_root: Path, plan: Plan) -> None:
         temporary_context.cleanup()
 
 
-def apply_plan(target_root: Path, plan: Plan) -> None:
+def apply_plan(
+    target_root: Path,
+    plan: Plan,
+    *,
+    postcondition: Callable[[], None] | None = None,
+) -> None:
     """Apply a validated plan, using descriptor-relative no-follow operations where available."""
     if _SECURE_DIR_FDS:
         try:
-            _apply_secure(Path(target_root), plan)
+            _apply_secure(Path(target_root), plan, postcondition)
         except BaseException as error:
             if isinstance(error, TransactionError):
                 raise
             raise TransactionError(error) from error
         return
     try:
-        _apply_fallback(Path(target_root), plan)
+        _apply_fallback(Path(target_root), plan, postcondition)
     except BaseException as error:
         if isinstance(error, TransactionError):
             raise

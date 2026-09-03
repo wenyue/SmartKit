@@ -5,47 +5,50 @@ description: Use when initializing or reconciling a repository's Rules, Skills, 
 
 # Setup Project Agents
 
-Reconcile one target repository's Rules, Skills, Agents, and MCP. The accepted project intent owns
-what should exist; the shipped setup workflow owns deterministic discovery, rendering, validation,
-transaction, and cleanup. Treat the four capability families as peers and change canonical input
-only when the user requests that change.
+Reconcile one repository against the SmartKit setup snapshot and its project-owned Agent inputs.
+SmartKit owns the setup catalog, generated targets, host adapters, ownership manifest, rendering,
+validation, and transaction. The target repository owns its local Rules, Skills, Agent sources,
+configuration, unrelated state, and secrets. Change target-owned intent only with accepted project
+authority; a rendered target never becomes plugin authority.
 
-## Authority and ownership
+## Supported state
 
-| Capability | Canonical project input | Setup responsibility |
-| --- | --- | --- |
-| Rules | Project-owned sources under `.agents/rules/` and requested generated Rule targets | Preserve project Rules and deliver setup-managed Rules to each host. |
-| Skills | Project-owned directories under `.agents/skills/`, requested generated Skill targets, and `.agents/config.json` `skills` declarations | Preserve project Skills and install requested generated or external Skills. |
-| Agents | Project-owned sources under `.agents/agents/` and `.agents/config.json` `agents` declarations | Preserve Agent sources, render the declared host adapters, and install catalog-declared Codex Plugin Agent defaults. |
-| MCP | `.agents/config.json` `mcp` declarations | Render declared host-native MCP entries without storing secret values. |
+The shipped catalog always enables Codex, Cursor, and Copilot, installs its declared shared Rules,
+Skills, and Codex Plugin Agent defaults, and requests the five catalog-declared project blueprints.
+Project configuration may add external Skills, project Agents, and MCP servers:
 
-Use the shipped `.agents/config.json` schema. Each configured Agent has a matching
-`.agents/agents/<id>.md` source. Each MCP entry declares exactly one of `url` or `command`; ordered
-`when`/`set` overrides may select Harnesses and Platforms, and optional readiness may scope or
-replace inferred MCP checks.
+- `.agents/config.json` follows the shipped schema. `skills` names GitHub sources and included Skill
+  directories; `agents` maps `.agents/agents/<id>.md` sources to host adapters; and `mcp` declares
+  exactly one of `url` or `command`, with optional ordered host/OS overrides and readiness.
+- Setup discovers additional project-owned Rules and Skills under `.agents/rules/` and
+  `.agents/skills/`, preserves them, and keeps every project Agent source project-owned.
+- Setup owns only files and structured fields recorded in `.agents/smartkit.lock.json`. It stops on
+  an ownership or digest conflict and preserves undeclared files, fields, directories, and secret
+  values. Environment-variable names may be rendered; secret values may not enter generated
+  content or the ownership manifest.
 
-Project-owned canonical inputs remain editable project content. Files and structured fields
-produced by setup are setup-owned and protected by its ownership manifest and digests. Stop rather
-than overwrite an ownership conflict. Plugin Rules, Skills, MCP, and native Cursor and Copilot
-Plugin Agents stay outside this workflow. Setup manages only catalog-declared Codex Plugin Agent
-defaults, which never become Project Agent declarations.
+Native Cursor and Copilot Plugin Agents and plugin Rules, Skills, and MCP remain outside this
+workflow. Catalog-declared Codex Plugin Agent defaults are fallbacks, not project Agent declarations.
+Matt repository context is also separate project-owned state: setup neither generates nor owns
+`docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, `docs/agents/domain.md`, or the
+`## Agent skills` entry block that points to them.
 
-Matt repository context is a separate project-owned prerequisite. This workflow neither generates
-nor owns `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`,
-`docs/agents/domain.md`, or the `## Agent skills` block that points to them.
+## Preflight and effects
 
-## Preconditions
+Establish accepted project intent through the supported inputs above. Require the three Matt
+context files and a matching `## Agent skills` block in `AGENTS.md` or `CLAUDE.md`. If absent, end
+this invocation and ask the user to invoke `setup-matt-pocock-skills` in the target; after that
+workflow completes, begin a fresh `setup-project-agents` invocation.
 
-Before `start`, establish the accepted intent for all four capability families and verify that Matt
-repository setup is complete: the three context files above exist and either `AGENTS.md` or
-`CLAUDE.md` contains their matching `## Agent skills` block. If the prerequisite is incomplete or
-unavailable, terminate this `setup-project-agents` invocation before `start` and tell the user to
-invoke `setup-matt-pocock-skills` explicitly in the target repository. Do not reproduce its
-questions or choose an issue tracker for it. After Matt setup reports completion, enter this Skill
-only through a fresh `setup-project-agents` invocation; never resume or proceed in the terminated
-run.
+Before `start`, obtain authority for its private system-temporary session, one read-only canonical
+Git fetch of SmartKit `master`, and the Git fetches declared by configured external Skills. These
+fetches may contact their declared repositories and create then remove private temporary checkouts;
+they do not authorize credential prompts, dependency installation, target writes, publication, or
+Git-history changes. If canonical fetch is unavailable, `start` may use the validated installed
+plugin root and reports `source_commit: null`; configured external sources still require their own
+network access. Stop before an unauthorized effect.
 
-## One-session transaction
+## Start one frozen session
 
 From the target repository root, identify this loaded Skill directory as
 `SETUP_PROJECT_AGENTS_ROOT`, then start one private session:
@@ -59,30 +62,51 @@ sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" start --target "
   --target (Get-Location).Path
 ```
 
-Stop on a nonzero result. Record the returned `session` as `SESSION`, `generated` as `GENERATED`,
-and the `request` and `source_root` paths. Continue only while exactly that private session exists
-and the target remains unchanged. The captured request is immutable: verify it expresses the
-accepted Rules, Skills, Agents, and MCP intent; if it does not, cancel, correct canonical input,
-and restart.
+Stop on a nonzero result. Record `session` as `SESSION`, `generated` as `GENERATED`, and the returned
+`request`, `source_root`, `source_commit`, and `source_fingerprint`. The request freezes setup
+inputs, external snapshots, the five generation requests, and source and target fingerprints.
+Confirm it matches accepted intent before authoring. A canonical run is pinned to its commit and
+fingerprint; an installed fallback is identified by its root, null commit, and fingerprint.
 
-Fulfil every `generation_requests` entry at its exact `GENERATED/<target>` path. Resolve its Setup
-Authoring Contract from `source_root`, keep that contract immutable, and invoke
-`$write-rules-and-skills` in the target-repository context for the requested Rule or Skill. Use
-current repository evidence and preserve complete project-owned content unless reconfiguration was
-accepted. Matt context is never a generation request.
+Keep exactly this private session until one `finish` or `cancel`. Treat the request and source as
+immutable. Any target change after `start`—including a downstream authoring Acceptance effect—ends
+this session: cancel it and restart from the resulting accepted target state. This keeps authoring
+effects under their own grant instead of silently incorporating them into setup.
 
-Before finish, `GENERATED` must contain exactly the complete declared target paths, including the
-empty set when no generation was requested. Also confirm that:
+## Fulfil generation requests
 
-- all four capability families match accepted intent;
-- Matt context remains project-owned and the prerequisite remains complete;
-- every configured Agent has a complete matching project-owned source;
-- every generated Rule and Skill satisfies its resolved contract and current repository evidence;
-- the request and target have not drifted, every requested path exists, and no undeclared path
-  exists; and
-- generated project content contains no credential or secret.
+For every request, resolve its immutable Setup Authoring Contract from `source_root` and invoke
+`write-rules-and-skills` in the target-repository context with that contract as accepted task/spec
+input. The authoring workflow independently owns its Candidate, evidence, proof, Acceptance effects,
+and result; setup supplies no target-effect authority. Continue only from its ready handoff and copy
+each exact returned Candidate path beneath `GENERATED`. Preserve complete project-owned content
+unless accepted reconfiguration says otherwise.
 
-After those conditions pass, finish the same session exactly once:
+After all five requests are ready, create `GENERATED/.setup-generation.json` with this exact shape:
+
+```json
+{
+  "version": 1,
+  "requests": [
+    {"id": "<generation request id>", "outputs": ["<exact target-relative path>"]}
+  ]
+}
+```
+
+Include every request and returned Candidate path exactly once. Each request's primary `target` is
+mandatory. A Rule request declares only its primary target. A Skill request may also declare exact
+supporting paths returned under that Skill directory by its Authoring Contract; a directory, glob,
+inferred path, or resource from a non-ready handoff is not a declaration. The manifest is private
+session control data and is not installed.
+
+Before finish, confirm that generated files equal the manifest exactly; each output satisfies its
+authoring contract and qualified target evidence; Matt context remains complete; project Agent
+sources are complete; no generated content contains a credential or secret; and the request,
+source, and target fingerprint remain unchanged.
+
+## Finish atomically
+
+Run `finish` exactly once:
 
 ```sh
 sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" finish --session "$SESSION"
@@ -92,7 +116,10 @@ sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" finish --session
 & "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" finish --session "$SESSION"
 ```
 
-Success requires a zero exit and JSON containing `phase: finish` and `check: clean`.
+Finish revalidates the request, target fingerprint, external snapshots, exact generated manifest,
+ownership, rendered state, and plan before mutation. It applies the plan and its clean postcondition
+within one rollback boundary. Success requires zero exit plus JSON with `phase: finish` and
+`check: clean`; only then is the session removed as a completed transaction.
 
 ## Stops and recovery
 
@@ -106,17 +133,21 @@ sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" cancel --session
 & "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" cancel --session "$SESSION"
 ```
 
-Use only `start`, `finish`, and `cancel`; their implementation owns selection, rendering, deletion,
-validation, transaction checking, and cleanup. Report the exact error from any failed operation.
-Unresolved declarations, ownership or digest conflicts, request or target drift, and generated-path
-mismatches stop before finish and require cancellation and a fresh session after correction.
+Before finish, unresolved declarations, ownership or digest conflicts, target drift, or generated
+path mismatches require cancellation and a fresh session after correction. A cancel failure is
+terminal and is reported unchanged.
 
-Never cancel or retry finish for a session after a `finish` attempt: finish owns cleanup on both
-success and failure. After a finish failure, discard the session and restart only after resolving
-the cause. A cancel failure is terminal for the run and must be surfaced unchanged.
+After any finish failure, preserve its exact error. The transaction restores the pre-finish setup
+state when it can do so without overwriting a concurrent third-party change; a reported rollback
+failure identifies residual state for human inspection. Finish removes its private session on
+success or failure, so never cancel or retry it. Resolve the cause, inspect residual paths, and
+start a fresh session.
 
-## Result
+## Handoff
 
-Report the finish result: pinned source commit, enabled hosts, changed paths, external Skills,
-preserved project-owned paths, and clean-check status. Ask the maintainer to review and commit the
-reported project snapshot; other developers receive it through clone or pull.
+Report the source mode, source root, source fingerprint, and commit when present; enabled hosts;
+changed paths; external Skill sources and commits from the ownership result; preserved
+project-owned paths; rollback or
+residual-state evidence when applicable; and clean-check status. Ask the maintainer to review and
+commit the project snapshot. This Skill grants no commit, push, publication, dependency
+installation, target-external installation, or release.

@@ -1,76 +1,58 @@
-# Stop the Batch
+# Stop or Hand Off the Batch
 
-Stop at the first unproved boundary and block every later ticket or phase. Select exactly one
-terminal entry below; an established-handoff transition that is itself unavailable or unresolved
-terminalizes through **Persistence is unavailable or unresolved** without another transition.
-`stopped` is available when a prerequisite, permission, dependency, decision, or required
-observation is unavailable before its guarded effect attempt. Once an owner attempted an effect,
-preserve that owner's raw status and evidence; do not reclassify it from intuition. In particular,
-a lost or ambiguous finalizer response remains `in-flight` under `recover-finalizer.md`, never a
-fabricated `stopped` or `failed` result.
+Stop at the first unproved boundary and block every later ticket and phase. Preserve an owner's raw
+result: use `stopped` for a missing prerequisite, authority, dependency, decision, or observation
+before its guarded effect; retain a returned `failed` result after an attempted effect; and use
+`in-flight` when an original worker, tracker, worktree, or finalizer attempt may still run or its
+effect cannot yet be distinguished. Do not turn one state into another from intuition.
 
-## Before a Batch exists
+For a boundary before any Batch effect, return the bounded scope, tracker route and observations,
+selection or exclusions, exact missing fact or capability, proof that no mutation occurred, and
+the decision or dependency owner. This establishes no Batch. A proven empty eligible selection is
+instead tracker.md's successful `nothing-to-do` result.
 
-Use this evidence-only entry when the bounded first-use observations prove that this Controller
-established no immutable Batch, Batch or Worker Handoff, claim, persistence transition,
-invocation/effect attempt, or guarded effect. A non-effectful Selection Result or other bounded
-observation may exist; include its identity, provenance, and content only as non-authoritative
-evidence, never as durable establishment state.
+For a Pre-ready selection, return two independent partitions. The claim partition contains the
+frozen Selection Result and claim plan; zero or more proven initial claims with raw responses and
+current tracker proof; an optional current failed or in-flight claim attempt with its intended
+delta, before-state, raw result, observation, and tracker owner/action; the untouched initial
+suffix; and every JIT/no-claim disposition. An unresolved claim belongs to neither prefix nor
+suffix.
 
-Return the bounded requested scope; frozen tracker owner, contract, and route; raw unavailable or
-ambiguous observation; any such non-authoritative evidence; proof of every absent establishment
-and effect field; residual external uncertainty; and one exact configuration/tracker owner and
-next action. Initiate no persistence transition or tracker mutation.
+The Create partition is exactly one of:
 
-This return establishes no Batch and authorizes no continuation as one. Resume only by starting
-fresh bounded observation through the frozen owner and route after the missing capability or
-decision is available, then rebuild or revalidate selection. Never consume this evidence or its
-Selection Result as Batch state.
+- `never-started`, with the worktree absent and proof that no Create attempt exists;
+- `non-ready-or-in-flight`, with the original dependency owner/action and every raw result,
+  observation, effect, artifact, and residual; or
+- attributable `ready`, with the complete public handoff and current snapshot.
 
-## Persistence is unavailable or unresolved
+Resume by re-observing both partitions. Consume proven claims without replay. Only after all
+required initial claims are proven and no claim is unresolved may `never-started` invoke one
+initial Create. `non-ready-or-in-flight` remains exclusively with its original owner/action.
+Attributable `ready` is consumed without reinvocation and enters the main Skill's common Batch
+binding and immediate readiness recheck. A drifted ready snapshot requires public
+`create-worktree` Reuse evaluation and never becomes `never-started`. Include no fabricated
+`ready` path, branch, `HEAD`, or tree.
 
-Use this evidence-only entry when a required persistence attempt could not start because its
-capability, authority, or proof route was unavailable, or when its invocation or after-state is
-ambiguous. Initiate no additional Batch, Worker, marker, cursor, or other persistence transition.
-For a pre-attempt boundary, return the exact intended record transition, observed before-state,
-missing capability/authority/proof, guarded effects, and next owner/action. Continue only after
-those requirements are available and the unchanged before-state is re-proven.
+For an established Batch, return enough current evidence for the named owner to resume safely:
 
-For an attempted transition, retain its exact identity, before-state, unknown after-state,
-invocation and raw owner evidence, frozen recovery owner, residuals, guarded-effect prohibitions,
-and next reconciliation action. Only that owner may reconcile the same attempt and prove its
-after-state. Until then, initiate no second transition, infer no record state, and perform no
-guarded effect or retry.
+- selected tickets, dependency order, immutable base and target;
+- Batch Worktree identity, branch, `HEAD`, tree, complete local state, Ticket Commit prefix, and
+  current ticket or repair range;
+- tracker observations, acquired claims, the exact requested or in-flight operation, and raw
+  response;
+- worker and finalizer identities, status, retained dependency handoffs and effects;
+- verification, review, delivery, publication, lifecycle, and retained recovery evidence; and
+- the failed or unproved boundary, residual uncertainty, next owner, and one exact next action.
 
-## Stop an established Batch or Worker
+Resume by re-observing current tracker and Git state and consuming retained attributable handoffs.
+Keep supported claims through authoritative delivery and retain source history until post-delivery
+tracker and lifecycle closure. An in-flight effect remains with its original owner and is never
+repeated merely because the current state resembles its intended result.
 
-Transition one durable Batch or Worker Handoff through the Persistence Contract. It contains the
-exact observed state and effects, immutable Batch and phase, operation and attempt identities,
-whether invocation or quiescence is proven, raw owner status/classification, completed boundaries,
-residual state, missing proof or decision, and one next owner/action. Include as applicable:
+Every handoff preserves the canonical checkout, user and unrelated state, worktrees, commits,
+refs, and external effects needed for recovery. Force, rebase, reset, clean, rollback, discard,
+claim abandonment, unconfigured tracker mutation, implicit remote effects, and deletion of
+retained recovery state require separate explicit authority and their owning workflow.
 
-- target/base, worktree/branch, claims, selection and dependency order;
-- worker handoff, unit base/range, Ticket Commits and Checkpoints, local state, validation,
-  self-review, review findings, and repair scope;
-- finalizer input and phase results, reviewed and delivered identities, history policy,
-  publication, refs, preservation evidence, tracker cursor, and cleanup/retention state; and
-- every effect whose result or ownership remains uncertain.
-
-If this transition cannot start or its invocation or after-state is ambiguous, terminalize through
-**Persistence is unavailable or unresolved** with that exact boundary; do not initiate or repeat a
-handoff transition.
-
-Keep claims through authoritative delivery and thereafter until their dependency-ordered
-completion and release are proven. Retain the reviewed source history until tracker and lifecycle
-closure prove its disposition. A resumed owner starts from this exact handoff; it does not repeat a
-Create, worker, tracker operation, finalizer effect, or cleanup whose original attempt is live or
-ambiguous.
-
-This Skill provides no force, rebase, rollback, reset, clean, discard, claim abandonment,
-unconfigured tracker mutation, unauthorized remote effect, or deletion of retained recovery state.
-Such an action needs separate explicit authority and its owning workflow.
-
-**Complete when:** all later work is blocked and exactly one entry returns: bounded pre-Batch
-evidence with no invented Batch; the unavailable or in-flight persistence boundary without another
-transition; or a durable established handoff accounting for every observed state and effect. Every
-return names the exact recovery owner and next useful action.
+**Complete when:** later work is blocked and the exact raw boundary, preserved state, recovery
+owner, and next useful action are unambiguous.

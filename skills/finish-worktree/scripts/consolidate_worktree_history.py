@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Consolidate a clean worktree branch into one hook-validated Delivery Commit."""
 
 from __future__ import annotations

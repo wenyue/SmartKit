@@ -18,6 +18,7 @@ TIMING_SCRIPT = (
     / 'scripts'
     / 'timing.py'
 )
+ACQUISITION_ID = 'a' * 64
 
 
 def load_timing_module():
@@ -276,6 +277,20 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             },
         }
 
+    def provider_evidence(self, rows=None):
+        return {
+            'outcome': 'succeeded',
+            'cause': None,
+            'executable': '/tools/tokscale',
+            'version': '4.9.0',
+            'schema_status': 'validated',
+            'identity': {'status': 'not-required', 'reason': None},
+            'observed_from': '2026-07-21T12:00:00.000000+00:00',
+            'observed_through': '2026-07-21T12:00:01.000000+00:00',
+            'rows': list(rows or []),
+            'effects': list(self.timing.TOKSCALE_EFFECTS),
+        }
+
     def assert_tokscale_row_failure(
         self,
         row,
@@ -296,7 +311,11 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             self.timing.UsageError, error_pattern
         ) as caught:
             self.timing.capture_tokscale_snapshot(
-                capture_client, None, None, runner=runner
+                capture_client,
+                None,
+                None,
+                runner=runner,
+                executable='/tools/tokscale',
             )
         usage = self.timing.build_session_usage(
             'cursor',
@@ -322,9 +341,13 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             {'outcome': 'failed', 'cause': expected_cause},
         )
         self.assertEqual(capabilities['session usage']['status'], 'failed')
+        self.assertEqual(
+            capabilities['estimated API-equivalent cost']['status'],
+            'failed',
+        )
         self.assertEqual(capabilities['model activity']['status'], 'failed')
         self.assertIn(
-            'Resolve the reported Tokscale collection failure',
+            'Make the same installed Tokscale provider available',
             report['recovery_prerequisites'][0],
         )
 
@@ -338,13 +361,22 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(set(command_choices), {'diagnose'})
 
         args = parser.parse_args(
-            ['diagnose', '--client', 'codex', '--session-id', 'session-main']
+            [
+                'diagnose',
+                '--client',
+                'codex',
+                '--session-id',
+                'session-main',
+                '--acquisition-id',
+                ACQUISITION_ID,
+            ]
         )
 
         self.assertEqual(args.command, 'diagnose')
         self.assertEqual(args.client, 'codex')
         self.assertEqual(args.session_id, 'session-main')
         self.assertEqual(args.scope, 'both')
+        self.assertEqual(args.acquisition_id, ACQUISITION_ID)
 
     def test_public_job_supports_python_3_10(self):
         ast.parse(TIMING_SCRIPT.read_text(encoding='utf-8'), feature_version=(3, 10))
@@ -358,25 +390,32 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             text = path.read_text(encoding='utf-8')
             self.assertIn('3.10', text, path)
             self.assertNotIn('3.11', text, path)
+            if path.suffix in ('.sh', '.ps1'):
+                self.assertNotIn('uv python find', text, path)
 
-    def test_skill_defines_current_thread_identity_and_snapshot_cutoff(self):
+    def test_skill_defines_identity_effects_and_source_boundaries(self):
         skill = (
             REPO_ROOT / 'skills' / 'diagnose-agent-session' / 'SKILL.md'
         ).read_text(encoding='utf-8')
 
         normalized_skill = ' '.join(skill.split())
 
-        self.assertIn('session may be current or completed', normalized_skill)
-        self.assertIn('identity of the current Codex thread', normalized_skill)
+        self.assertIn('current or completed agent session', normalized_skill)
+        self.assertIn('current Codex identity', normalized_skill)
+        self.assertIn('installed Tokscale provider', normalized_skill)
         self.assertIn(
-            'wrapper first completes its Tokscale attempt and acquires immutable '
-            'Codex local-log content',
-            normalized_skill,
+            'do not form an atomic snapshot', normalized_skill
         )
-        self.assertIn(
-            'No source acquisition occurs after the reported cutoff', normalized_skill
-        )
+        self.assertIn('pricing or provider endpoints', normalized_skill)
+        self.assertIn('Tokscale-owned config and cache directories', normalized_skill)
+        self.assertIn('Tokscale executable path and version', normalized_skill)
+        self.assertIn('Provider stdout and stderr remain withheld', normalized_skill)
+        self.assertIn('no login, sync, credential change', normalized_skill)
         self.assertIn('never select the newest log', normalized_skill)
+        self.assertIn('final recorded turn', normalized_skill)
+        self.assertIn('Exactly one match excludes that call alone', normalized_skill)
+        self.assertIn('Multiple matches exclude nothing', normalized_skill)
+        self.assertIn('no owned turn-bounded model-activity or cost provider', normalized_skill)
 
     def test_windows_resolves_tokscale_cmd_for_python_subprocess(self):
         resolved = self.timing.tokscale_executable(
@@ -385,6 +424,157 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         )
 
         self.assertEqual(resolved, 'C:/npm/tokscale.cmd')
+
+    def test_missing_tokscale_executable_is_a_structured_provider_failure(self):
+        moments = iter((self.captured_at, self.captured_at))
+
+        with mock.patch.object(
+            self.timing,
+            'tokscale_executable',
+            side_effect=self.timing.UsageError(
+                'Installed Tokscale executable was not found on PATH.'
+            ),
+        ):
+            result = self.timing.acquire_tokscale_evidence(
+                'codex',
+                'session-main',
+                None,
+                None,
+                now=lambda: next(moments),
+            )
+
+        self.assertEqual(result['outcome'], 'failed')
+        self.assertIsNone(result['executable'])
+        self.assertEqual(
+            result['cause'],
+            'Installed Tokscale executable was not found on PATH.',
+        )
+
+    def test_tokscale_provider_failure_withholds_stdout_and_stderr(self):
+        moments = iter((self.captured_at, self.captured_at))
+
+        def runner(command, **kwargs):
+            return self.timing.subprocess.CompletedProcess(
+                command,
+                7,
+                stdout='private provider stdout',
+                stderr='private provider stderr',
+            )
+
+        with mock.patch.object(
+            self.timing, 'tokscale_executable', return_value='/tools/tokscale'
+        ):
+            result = self.timing.acquire_tokscale_evidence(
+                'codex',
+                'session-main',
+                None,
+                None,
+                runner=runner,
+                now=lambda: next(moments),
+            )
+
+        serialized = json.dumps(result)
+        self.assertEqual(result['outcome'], 'failed')
+        self.assertIn('exited with code 7', result['cause'])
+        self.assertNotIn('private provider stdout', serialized)
+        self.assertNotIn('private provider stderr', serialized)
+
+    def test_tokscale_provider_records_version_boundary_and_effect_contract(self):
+        moments = iter(
+            (
+                datetime(2026, 7, 21, 12, 0, tzinfo=timezone.utc),
+                datetime(2026, 7, 21, 12, 0, 2, tzinfo=timezone.utc),
+            )
+        )
+        row = self.usage_row() | {'client': 'cursor'}
+        calls = []
+
+        def runner(command, **kwargs):
+            calls.append(command)
+            if command[-1] == '--version':
+                return self.timing.subprocess.CompletedProcess(
+                    command, 0, stdout='tokscale 4.9.0\n', stderr=''
+                )
+            if command[1:] == ['cursor', 'status']:
+                return self.timing.subprocess.CompletedProcess(
+                    command, 0, stdout='authenticated\n', stderr=''
+                )
+            return self.timing.subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=json.dumps({'entries': [row]}),
+                stderr='',
+            )
+
+        with mock.patch.object(
+            self.timing, 'tokscale_executable', return_value='/tools/tokscale'
+        ):
+            result = self.timing.acquire_tokscale_evidence(
+                'cursor',
+                'session-main',
+                None,
+                None,
+                runner=runner,
+                now=lambda: next(moments),
+            )
+
+        self.assertEqual(result['outcome'], 'succeeded')
+        self.assertEqual(result['executable'], '/tools/tokscale')
+        self.assertEqual(result['version'], '4.9.0')
+        self.assertEqual(result['schema_status'], 'validated')
+        self.assertEqual(result['identity']['status'], 'available')
+        self.assertEqual(result['rows'], [row])
+        self.assertEqual(calls[0], ['/tools/tokscale', '--version'])
+        self.assertEqual(calls[1], ['/tools/tokscale', 'cursor', 'status'])
+        self.assertEqual(
+            calls[2],
+            [
+                '/tools/tokscale',
+                '--json',
+                '--client',
+                'cursor',
+                '--group-by',
+                'client,session,model',
+                '--no-spinner',
+            ],
+        )
+        self.assertIn('may access Tokscale pricing or provider endpoints', result['effects'])
+        self.assertIn('available local history', result['effects'][0])
+        self.assertEqual(
+            result['observed_from'], '2026-07-21T12:00:00.000000+00:00'
+        )
+        self.assertEqual(
+            result['observed_through'], '2026-07-21T12:00:02.000000+00:00'
+        )
+
+    def test_tokscale_provider_gates_by_schema_not_a_fixed_version(self):
+        moments = iter((self.captured_at, self.captured_at))
+
+        def runner(command, **kwargs):
+            if command[-1] == '--version':
+                return self.timing.subprocess.CompletedProcess(
+                    command, 0, stdout='tokscale 99.0.0\n', stderr=''
+                )
+            return self.timing.subprocess.CompletedProcess(
+                command, 0, stdout=json.dumps({'unexpected': []}), stderr=''
+            )
+
+        with mock.patch.object(
+            self.timing, 'tokscale_executable', return_value='/tools/tokscale'
+        ):
+            result = self.timing.acquire_tokscale_evidence(
+                'codex',
+                'session-main',
+                None,
+                None,
+                runner=runner,
+                now=lambda: next(moments),
+            )
+
+        self.assertEqual(result['outcome'], 'failed')
+        self.assertEqual(result['version'], '99.0.0')
+        self.assertIn('has no entries array', result['cause'])
+        self.assertEqual(result['rows'], [])
 
     def test_tokscale_snapshot_supports_cursor_without_date_bounds(self):
         calls = []
@@ -399,7 +589,11 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             )
 
         result = self.timing.capture_tokscale_snapshot(
-            'cursor', None, None, runner=runner
+            'cursor',
+            None,
+            None,
+            runner=runner,
+            executable='/tools/tokscale',
         )
 
         self.assertEqual(result, [])
@@ -424,7 +618,11 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             'Tokscale JSON for client cursor contains a row for client copilot',
         ) as caught:
             self.timing.capture_tokscale_snapshot(
-                'cursor', None, None, runner=runner
+                'cursor',
+                None,
+                None,
+                runner=runner,
+                executable='/tools/tokscale',
             )
         usage = self.timing.build_session_usage(
             'cursor',
@@ -449,7 +647,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(capabilities['session usage']['status'], 'failed')
         self.assertEqual(capabilities['model activity']['status'], 'failed')
         self.assertIn(
-            'Resolve the reported Tokscale collection failure',
+            'Make the same installed Tokscale provider available',
             report['recovery_prerequisites'][0],
         )
 
@@ -457,7 +655,11 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         row['sessionId'] = 'another-cursor-session'
         self.assertEqual(
             self.timing.capture_tokscale_snapshot(
-                'cursor', None, None, runner=runner
+                'cursor',
+                None,
+                None,
+                runner=runner,
+                executable='/tools/tokscale',
             ),
             [row],
         )
@@ -488,6 +690,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             None,
             runner=runner,
             session_id='session-main',
+            executable='/tools/tokscale',
         )
         usage = self.timing.build_session_usage(
             'cursor',
@@ -510,6 +713,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                 None,
                 runner=runner,
                 session_id='session-main',
+                executable='/tools/tokscale',
             )
 
     def test_reads_latest_codex_token_totals_without_message_content(self):
@@ -641,10 +845,10 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         )
         self.assertEqual(report['scopes'][0]['tokens']['status'], 'partial')
         self.assertEqual(report['scopes'][0]['cost'], 'unavailable')
-        self.assertIn('Tokscale timed out.', report['problems'])
-        self.assertIn('unavailable', report['problems'])
+        self.assertIn('Tokscale timed out.', report['failed_acquisition'])
+        self.assertTrue(report['unavailable_evidence'])
         self.assertIn(
-            'Resolve the reported Tokscale collection failure',
+            'Make the same installed Tokscale provider available',
             report['recovery_prerequisites'][0],
         )
 
@@ -715,14 +919,14 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             usage['fallback'],
             {
                 'outcome': 'failed',
-                'cause': 'Tokscale field input_tokens must be numeric.',
+                'cause': 'Codex token field input_tokens must be an integer.',
             },
         )
         self.assertEqual(capabilities['session usage']['status'], 'failed')
         self.assertEqual(capabilities['model activity']['status'], 'unavailable')
         self.assertEqual(capabilities['tool calls']['status'], 'available')
         self.assertEqual(activity['completed_calls'], 1)
-        self.assertIn('Tokscale field input_tokens must be numeric.', rendered)
+        self.assertIn('Codex token field input_tokens must be an integer.', rendered)
         self.assertIn('Tool calls: 1 started, 1 completed', rendered)
         self.assertIn(
             'Repair or restore the exact Codex local session log token totals',
@@ -891,6 +1095,24 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         usage = self.timing.build_codex_turn_usage(
             'session-main', self.captured_at, bounds, self.codex_home
         )
+        activity = self.timing.analyze_codex_tool_activity(
+            'session-main', self.codex_home, bounds[0], bounds[1]
+        )
+        session_usage = self.timing.build_session_usage(
+            'codex',
+            'session-main',
+            self.captured_at,
+            tokscale_rows=[self.usage_row()],
+        )
+        report = self.timing.build_diagnostic_report(
+            session_usage,
+            activity,
+            self.timing.codex_session_bounds('session-main', self.codex_home),
+            turn_usage=usage,
+            turn_activity=activity,
+            turn_bounds=bounds,
+            selected_scope='turn',
+        )
 
         self.assertEqual(
             bounds,
@@ -913,6 +1135,196 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                 'model_activity_ms': 0,
             },
         )
+        self.assertEqual(
+            report['scopes'][0]['observed_from'],
+            '2026-07-21T11:00:00.000000+00:00',
+        )
+        self.assertEqual(
+            report['scopes'][0]['observed_through'],
+            '2026-07-21T12:00:00.000000+00:00',
+        )
+
+    def test_later_turn_without_observed_token_baseline_is_failed(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = [
+            {
+                'timestamp': '2026-07-21T10:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T12:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'token_count',
+                    'info': {
+                        'total_token_usage': {
+                            'input_tokens': 100,
+                            'output_tokens': 20,
+                        }
+                    },
+                },
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        bounds = self.timing.codex_current_turn_bounds(
+            'session-main', self.codex_home
+        )
+
+        usage = self.timing._build_codex_turn_usage_evidence(
+            'session-main', self.captured_at, bounds, self.codex_home
+        )
+
+        self.assertEqual(usage['status'], 'failed')
+        self.assertEqual(
+            usage['warnings'],
+            [
+                'Codex cumulative token baseline before the current-turn '
+                'boundary was not found.'
+            ],
+        )
+
+    def test_first_turn_uses_observed_log_origin_as_zero_baseline(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = [
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T12:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'token_count',
+                    'info': {
+                        'total_token_usage': {
+                            'input_tokens': 40,
+                            'output_tokens': 8,
+                        }
+                    },
+                },
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        bounds = self.timing.codex_current_turn_bounds(
+            'session-main', self.codex_home
+        )
+
+        usage = self.timing.build_codex_turn_usage(
+            'session-main', self.captured_at, bounds, self.codex_home
+        )
+
+        self.assertEqual(usage['status'], 'available')
+        self.assertEqual(usage['totals']['total_tokens'], 48)
+
+    def test_equal_timestamp_token_counters_respect_snapshot_event_order(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = [
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'token_count',
+                    'info': {
+                        'total_token_usage': {
+                            'input_tokens': 30,
+                            'output_tokens': 5,
+                        }
+                    },
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'token_count',
+                    'info': {
+                        'total_token_usage': {
+                            'input_tokens': 50,
+                            'output_tokens': 9,
+                        }
+                    },
+                },
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        bounds = self.timing.codex_current_turn_bounds(
+            'session-main', self.codex_home
+        )
+
+        usage = self.timing.build_codex_turn_usage(
+            'session-main', self.captured_at, bounds, self.codex_home
+        )
+
+        self.assertEqual(usage['status'], 'available')
+        self.assertEqual(usage['totals']['input'], 20)
+        self.assertEqual(usage['totals']['output'], 4)
+
+    def test_equal_timestamp_prior_boundary_prevents_zero_baseline(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = [
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {'type': 'message', 'role': 'user', 'content': []},
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'token_count',
+                    'info': {
+                        'total_token_usage': {
+                            'input_tokens': 50,
+                            'output_tokens': 9,
+                        }
+                    },
+                },
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        bounds = self.timing.codex_current_turn_bounds(
+            'session-main', self.codex_home
+        )
+
+        usage = self.timing._build_codex_turn_usage_evidence(
+            'session-main', self.captured_at, bounds, self.codex_home
+        )
+
+        self.assertEqual(usage['status'], 'failed')
+        self.assertIn('baseline before the current-turn boundary', usage['warnings'][0])
 
     def test_current_turn_read_failure_is_failed_with_actual_reason(self):
         path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
@@ -1134,6 +1546,10 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(capabilities['current turn']['status'], 'failed')
         self.assertEqual(capabilities['session usage']['status'], 'available')
         self.assertEqual(capabilities['model activity']['status'], 'available')
+        self.assertEqual(
+            capabilities['current-turn model activity']['status'],
+            'unavailable',
+        )
         self.assertEqual(capabilities['tool calls']['status'], 'available')
         self.assertEqual(report['session_usage']['tokens']['status'], 'available')
         self.assertIn('120 total', rendered)
@@ -1218,82 +1634,158 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(result['coordination']['observed_peak_live_agents'], 1)
         self.assertEqual(result['coordination']['completed_agents'], 1)
 
-    def test_diagnostic_wrapper_does_not_report_itself_as_incomplete(self):
+    def test_current_turn_behavior_respects_same_timestamp_boundary_order(self):
         path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
         path.parent.mkdir(parents=True, exist_ok=True)
-        windows_command = (
-            "$skillRoot = 'C:\\installed\\diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -ExecutionPolicy Bypass -File $wrapper diagnose '
-            '--scope both --client codex --session-id session-main'
-        )
-        linux_command = (
-            "skill_root='/opt/installed/diagnose-agent-session'\n"
-            'sh "$skill_root/scripts/task-metrics.sh" diagnose '
-            '--scope both --client codex --session-id session-main'
-        )
         events = [
             {
                 'timestamp': '2026-07-21T11:00:00Z',
                 'type': 'response_item',
                 'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'diagnose-1',
+                    'type': 'function_call',
+                    'call_id': 'prior-exec',
                     'name': 'exec',
-                    'input': 'powershell -ExecutionPolicy Bypass -File C:/installed/diagnose-agent-session/scripts/task-metrics.ps1 diagnose --scope both',
+                    'arguments': '{}',
                 },
             },
             {
-                'timestamp': '2026-07-21T11:00:01Z',
+                'timestamp': '2026-07-21T11:00:00Z',
                 'type': 'response_item',
                 'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'diagnose-2',
-                    'name': 'exec',
-                    'input': {
-                        'command': 'sh /opt/skills/diagnose-agent-session/'
-                        'scripts/task-metrics.sh diagnose --scope both'
+                    'type': 'function_call',
+                    'call_id': 'prior-spawn',
+                    'name': 'spawn_agent',
+                    'arguments': '{}',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call_output',
+                    'call_id': 'prior-spawn',
+                    'output': {'agent_id': 'agent-1'},
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'sub_agent_activity',
+                    'agent_thread_id': 'agent-1',
+                    'agent_path': '/root/worker',
+                    'kind': 'started',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call_output',
+                    'call_id': 'prior-exec',
+                    'output': {'exit_code': 1},
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'sub_agent_activity',
+                    'agent_thread_id': 'agent-1',
+                    'agent_path': '/root/worker',
+                    'kind': 'interacted',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call',
+                    'call_id': 'current-wait',
+                    'name': 'wait_agent',
+                    'arguments': '{}',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call_output',
+                    'call_id': 'current-wait',
+                    'output': {
+                        'status': {'agent-1': {'completed': 'done'}},
+                        'timed_out': False,
                     },
+                },
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        snapshot = self.timing._load_codex_log_snapshot(
+            'session-main', self.codex_home
+        )
+        boundary_index = self.timing._latest_codex_user_boundary_index(
+            snapshot['events']
+        )
+
+        result = self.timing.analyze_codex_tool_activity(
+            'session-main',
+            started_at=datetime(2026, 7, 21, 11, tzinfo=timezone.utc),
+            ended_at=datetime(2026, 7, 21, 11, tzinfo=timezone.utc),
+            snapshot=snapshot,
+            scope_start_index=boundary_index,
+        )
+
+        self.assertEqual(result['started_calls'], 1)
+        self.assertEqual(result['completed_calls'], 1)
+        self.assertEqual(result['failed_calls'], 0)
+        self.assertEqual(result['incomplete_calls'], 0)
+        self.assertEqual(result['coordination']['spawn_agent'], 0)
+        self.assertEqual(result['coordination']['wait_agent'], 1)
+        self.assertEqual(result['coordination']['wait_without_observed_live_agent'], 0)
+        self.assertEqual(result['coordination']['observed_peak_live_agents'], 1)
+        self.assertEqual(result['coordination']['lifecycle_started_events'], 0)
+        self.assertEqual(result['coordination']['lifecycle_interacted_events'], 1)
+
+    def test_one_nonce_match_excludes_only_the_current_acquisition_call(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        old_id = 'b' * 64
+        events = [
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call',
+                    'call_id': 'old-diagnosis',
+                    'name': 'exec',
+                    'arguments': {'acquisition_id': old_id},
                 },
             },
             {
                 'timestamp': '2026-07-21T11:00:02Z',
                 'type': 'response_item',
                 'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'diagnose-3',
-                    'name': 'exec',
-                    'input': {
-                        'cmd': 'powershell.exe -File C:/skills/'
-                        'diagnose-agent-session/scripts/task-metrics.ps1 '
-                        'diagnose --scope both'
-                    },
+                    'type': 'function_call_output',
+                    'call_id': 'old-diagnosis',
+                    'output': {'exit_code': 2},
                 },
             },
             {
                 'timestamp': '2026-07-21T11:00:03Z',
                 'type': 'response_item',
                 'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'diagnose-4',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": windows_command})}); text(r.output);'
-                    ),
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:04Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'diagnose-5',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": linux_command})}); text(r.output);'
-                    ),
+                    'type': 'function_call',
+                    'call_id': 'current-diagnosis',
+                    'name': 'exec',
+                    'arguments': {'opaque_launcher_record': ACQUISITION_ID},
                 },
             },
         ]
@@ -1302,704 +1794,116 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         )
 
         result = self.timing.analyze_codex_tool_activity(
-            'session-main', self.codex_home
+            'session-main', self.codex_home, acquisition_id=ACQUISITION_ID
         )
 
-        self.assertEqual(result['started_calls'], 0)
+        self.assertEqual(result['started_calls'], 1)
+        self.assertEqual(result['completed_calls'], 1)
+        self.assertEqual(result['failed_calls'], 1)
         self.assertEqual(result['incomplete_calls'], 0)
+        self.assertEqual(result['longest_call_ms'], 2000)
+        self.assertEqual(result['self_call_attribution']['status'], 'available')
+        self.assertEqual(result['self_call_attribution']['matches'], 1)
 
-    def test_self_call_envelope_must_be_complete_and_unambiguous(self):
-        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
-        path.parent.mkdir(parents=True, exist_ok=True)
-        wrapper = (
-            'sh /opt/diagnose-agent-session/scripts/task-metrics.sh diagnose '
-            '--scope both --client codex --session-id session-main'
-        )
-        wrapper_json = json.dumps({'cmd': wrapper})
-        canonical = (
-            f'const r = await tools.exec_command({wrapper_json}); '
-            'text(r.output);'
-        )
-        second_exec = (
-            canonical
-            + ' const x = await tools.exec_command('
-            + json.dumps({'cmd': 'curl https://example.invalid'})
-            + '); text(x.output);'
-        )
-        side_effect = canonical + ' notify("diagnostic complete");'
-        duplicate_cmd = (
-            'const r = await tools.exec_command('
-            f'{{"cmd":{json.dumps(wrapper)},"cmd":{json.dumps(wrapper)}}}'
-            '); text(r.output);'
-        )
-        events = [
-            {
-                'timestamp': '2026-07-21T11:00:00Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'canonical',
-                    'name': 'functions.exec',
-                    'input': canonical,
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:01Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'second-exec',
-                    'name': 'functions.exec',
-                    'input': second_exec,
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:02Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call_output',
-                    'call_id': 'second-exec',
-                    'output': {'exit_code': 1},
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:03Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'side-effect',
-                    'name': 'functions.exec',
-                    'input': side_effect,
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:04Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'duplicate-cmd',
-                    'name': 'functions.exec',
-                    'input': duplicate_cmd,
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:05Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call_output',
-                    'call_id': 'duplicate-cmd',
-                    'output': {'exit_code': 0},
-                },
-            },
-        ]
-        path.write_text(
-            '\n'.join(json.dumps(event) for event in events) + '\n',
-            encoding='utf-8',
-        )
+    def test_zero_nonce_matches_preserves_all_calls_and_reports_unobserved(self):
+        snapshot = {
+            'events': [
+                {
+                    '_parsed_timestamp': self.captured_at,
+                    'type': 'response_item',
+                    'payload': {
+                        'type': 'function_call',
+                        'call_id': 'other-call',
+                        'name': 'exec',
+                        'arguments': {'acquisition_id': 'b' * 64},
+                    },
+                }
+            ],
+            'warnings': [],
+            'acquisition': {'outcome': 'available', 'causes': []},
+        }
 
         result = self.timing.analyze_codex_tool_activity(
-            'session-main', self.codex_home
+            'session-main', snapshot=snapshot, acquisition_id=ACQUISITION_ID
         )
 
-        self.assertEqual(
-            self.timing._shell_command(
-                {'name': 'functions.exec', 'input': {'cmd': wrapper}}
-            ),
-            wrapper,
-        )
-        self.assertEqual(
-            self.timing._shell_command(
-                {'name': 'functions.exec', 'input': wrapper}
-            ),
-            wrapper,
-        )
-        self.assertIsNone(
-            self.timing._shell_command(
+        self.assertEqual(result['started_calls'], 1)
+        self.assertEqual(result['incomplete_calls'], 1)
+        self.assertEqual(result['self_call_attribution']['status'], 'unavailable')
+        self.assertIn('was not observed', result['self_call_attribution']['reason'])
+
+    def test_multiple_nonce_matches_excludes_nothing_and_reports_ambiguity(self):
+        snapshot = {
+            'events': [
                 {
-                    'name': 'functions.exec',
-                    'input': {'cmd': wrapper, 'command': wrapper},
+                    '_parsed_timestamp': self.captured_at,
+                    'type': 'response_item',
+                    'payload': {
+                        'type': 'function_call',
+                        'call_id': f'call-{index}',
+                        'name': 'exec',
+                        'arguments': {'nonce': ACQUISITION_ID},
+                    },
                 }
+                for index in range(2)
+            ],
+            'warnings': [],
+            'acquisition': {'outcome': 'available', 'causes': []},
+        }
+
+        result = self.timing.analyze_codex_tool_activity(
+            'session-main', snapshot=snapshot, acquisition_id=ACQUISITION_ID
+        )
+        usage = self.timing.build_session_usage(
+            'codex',
+            'session-main',
+            self.captured_at,
+            tokscale_rows=[self.usage_row()],
+        )
+        report = self.timing.build_diagnostic_report(
+            usage,
+            result,
+            (self.captured_at, self.captured_at),
+            selected_scope='session',
+        )
+
+        self.assertEqual(result['started_calls'], 2)
+        self.assertEqual(result['incomplete_calls'], 2)
+        self.assertEqual(result['status'], 'failed')
+        self.assertEqual(result['self_call_attribution']['status'], 'failed')
+        self.assertIn('ambiguous-self-call-attribution', result['findings'])
+        self.assertIn(
+            'Self-call attribution: failed',
+            self.timing.render_diagnostic_markdown(report),
+        )
+
+    def test_nonce_match_accepts_nested_or_text_tool_arguments_only_as_identity(self):
+        self.assertTrue(
+            self.timing._value_contains_acquisition_id(
+                {'transport': [{'opaque': f'id={ACQUISITION_ID}'}]},
+                ACQUISITION_ID,
             )
         )
-        self.assertEqual(result['started_calls'], 3)
-        self.assertEqual(result['completed_calls'], 2)
-        self.assertEqual(result['failed_calls'], 1)
-        self.assertEqual(result['incomplete_calls'], 1)
-        self.assertIn('failed-tool-calls', result['findings'])
-        self.assertIn('incomplete-tool-calls', result['findings'])
-        self.assertNotIn('diagnostic complete', json.dumps(result))
-        self.assertNotIn('example.invalid', json.dumps(result))
-
-    def test_self_call_object_accepts_only_bounded_transport_fields(self):
-        wrapper = (
-            'sh /opt/diagnose-agent-session/scripts/task-metrics.sh diagnose '
-            '--scope both'
+        self.assertFalse(
+            self.timing._value_contains_acquisition_id(
+                f'{ACQUISITION_ID}a', ACQUISITION_ID
+            )
         )
-        canonical = (
-            'const r = await tools.exec_command('
-            f'{json.dumps({"cmd": wrapper})}); text(r.output);'
-        )
-        negatives = (
-            {'cmd': wrapper, 'command': wrapper},
-            {'cmd': wrapper, 'environment': {'SIDE_EFFECT': '1'}},
-            json.dumps({'cmd': wrapper, 'yield_time_ms': 'soon'}),
-            (
-                'const r = await tools.exec_command('
-                f'{json.dumps({"command": wrapper, "workdir": "/tmp"})}); '
-                'text(r.output);'
-            ),
-            (
-                'const r = await tools.exec_command('
-                f'{json.dumps({"cmd": wrapper, "unknown": True})}); '
-                'text(r.output);'
-            ),
-        )
-        positives = (
-            {'cmd': wrapper},
-            {'command': wrapper},
-            {'cmd': wrapper, 'shell': 'sh', 'login': False, 'workdir': '/tmp'},
-            json.dumps({'cmd': wrapper}),
-            json.dumps({'command': wrapper}),
-            json.dumps({'cmd': wrapper, 'sandbox_permissions': 'use_default'}),
-            (
-                'const r = await tools.exec_command('
-                f'{json.dumps({"cmd": wrapper, "shell": "sh"})}); '
-                'text(r.output);'
-            ),
-            canonical,
-            wrapper,
+        self.assertFalse(
+            self.timing._value_contains_acquisition_id(
+                {'opaque': 'b' * 64}, ACQUISITION_ID
+            )
         )
 
-        for value in positives:
-            with self.subTest(value=value, expected='trusted'):
-                self.assertEqual(
-                    self.timing._shell_command(
-                        {'name': 'functions.exec', 'input': value}
-                    ),
-                    wrapper,
-                )
-        for value in negatives:
-            with self.subTest(value=value, expected='visible'):
-                self.assertIsNone(
-                    self.timing._shell_command(
-                        {'name': 'functions.exec', 'input': value}
-                    )
-                )
-
-        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
-        path.parent.mkdir(parents=True, exist_ok=True)
-        events = [
-            {
-                'timestamp': '2026-07-21T11:00:00Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'configured-wrapper',
-                    'name': 'functions.exec',
-                    'input': {'cmd': wrapper, 'shell': 'sh'},
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:01Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call_output',
-                    'call_id': 'configured-wrapper',
-                    'output': {'exit_code': 1},
-                },
-            },
-        ]
-        path.write_text(
-            '\n'.join(json.dumps(event) for event in events) + '\n',
-            encoding='utf-8',
+    def test_acquisition_id_validation_remains_exact(self):
+        self.assertEqual(
+            self.timing.validate_acquisition_id(ACQUISITION_ID), ACQUISITION_ID
         )
-
-        result = self.timing.analyze_codex_tool_activity(
-            'session-main', self.codex_home
-        )
-
-        self.assertEqual(result['started_calls'], 0)
-        self.assertEqual(result['completed_calls'], 0)
-        self.assertEqual(result['failed_calls'], 0)
-        self.assertNotIn('failed-tool-calls', result['findings'])
-
-    def test_inspecting_diagnostic_files_remains_visible(self):
-        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
-        path.parent.mkdir(parents=True, exist_ok=True)
-        inspection_command = (
-            'rg "skill_root=.*task-metrics.sh.*diagnose" '
-            'skills/diagnose-agent-session'
-        )
-        lookalike_command = (
-            "$skillRoot = 'C:\\installed\\diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics-copy.ps1'; "
-            'powershell -File $wrapper diagnose --scope both'
-        )
-        unrelated_root_command = (
-            "$skillRoot = 'C:\\installed\\another-skill'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -File $wrapper diagnose --scope both'
-        )
-        chained_command = (
-            "skill_root='/opt/installed/diagnose-agent-session'\n"
-            'sh "$skill_root/scripts/task-metrics.sh" diagnose '
-            '--scope both && echo done'
-        )
-        direct_prefixed_compound = (
-            'powershell -Command Write-Output pre; powershell '
-            '-ExecutionPolicy Bypass -File '
-            'C:/installed/diagnose-agent-session/scripts/task-metrics.ps1 '
-            'diagnose --scope both'
-        )
-        root_prefixed_compound = (
-            "$skillRoot = 'C:\\installed\\diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -Command Write-Output pre; powershell '
-            '-ExecutionPolicy Bypass -File $wrapper diagnose --scope both'
-        )
-        events = [
-            {
-                'timestamp': '2026-07-21T11:00:00Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-1',
-                    'name': 'exec',
-                    'input': 'const r = await tools.shell_command({command:"rg \'powershell.exe -File skills/diagnose-agent-session/scripts/task-metrics.ps1 diagnose\' ."}); text(r);',
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:01Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call_output',
-                    'call_id': 'inspect-1',
-                    'output': 'ok',
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:02Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-2',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": inspection_command})}); text(r.output);'
-                    ),
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:03Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-3',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": lookalike_command})}); text(r.output);'
-                    ),
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:04Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-4',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": unrelated_root_command})}); '
-                        'text(r.output);'
-                    ),
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:05Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-5',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": chained_command})}); text(r.output);'
-                    ),
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:06Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-6',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": direct_prefixed_compound})}); '
-                        'text(r.output);'
-                    ),
-                },
-            },
-            {
-                'timestamp': '2026-07-21T11:00:07Z',
-                'type': 'response_item',
-                'payload': {
-                    'type': 'custom_tool_call',
-                    'call_id': 'inspect-7',
-                    'name': 'functions.exec',
-                    'input': (
-                        'const r = await tools.exec_command('
-                        f'{json.dumps({"cmd": root_prefixed_compound})}); '
-                        'text(r.output);'
-                    ),
-                },
-            },
-        ]
-        path.write_text('\n'.join(json.dumps(event) for event in events) + '\n', encoding='utf-8')
-
-        result = self.timing.analyze_codex_tool_activity(
-            'session-main', self.codex_home
-        )
-
-        self.assertEqual(result['started_calls'], 7)
-        self.assertEqual(result['completed_calls'], 1)
-        self.assertEqual(result['incomplete_calls'], 6)
-
-    def test_powershell_self_call_requires_safe_horizontal_tokens_and_path(self):
-        positives = (
-            (
-                'powershell -ExecutionPolicy Bypass -File '
-                '"C:/Program Files/diagnose-agent-session/scripts/task-metrics.ps1" '
-                'diagnose --client codex --session-id session-main --scope both'
-            ),
-            (
-                'powershell -ExecutionPolicy Bypass -File '
-                '"C:/程序 Files (x86)/diagnose-agent-session/scripts/task-metrics.ps1" '
-                'diagnose --client codex --session-id session-main --scope both'
-            ),
-        )
-        negatives = (
-            (
-                'powershell\n-ExecutionPolicy Bypass -File '
-                'C:/installed/diagnose-agent-session/scripts/task-metrics.ps1 '
-                'diagnose --scope both'
-            ),
-            (
-                "$skillRoot = 'C:\\installed\\diagnose-agent-session'; "
-                "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-                'powershell\n-ExecutionPolicy Bypass -File $wrapper '
-                'diagnose --scope both'
-            ),
-            (
-                'powershell -File C:/prefix;C:/installed/'
-                'diagnose-agent-session/scripts/task-metrics.ps1 '
-                'diagnose --scope both'
-            ),
-            (
-                'powershell -File "C:/prefix|C:/installed/'
-                'diagnose-agent-session/scripts/task-metrics.ps1" '
-                'diagnose --scope both'
-            ),
-        )
-
-        for command in positives:
-            with self.subTest(command=command, expected='trusted'):
-                self.assertTrue(
-                    self.timing._is_diagnostic_call(
-                        {
-                            'name': 'functions.exec',
-                            'input': {
-                                'cmd': command,
-                                'shell': 'cmd.exe',
-                                'workdir': 'C:/work',
-                                'login': False,
-                            },
-                        }
-                    )
-                )
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-
-    def test_self_call_trust_requires_literals_paired_quotes_and_shell_assignment(self):
-        negatives = (
-            (
-                'powershell -File "C:/$(Write-Output bad)/'
-                'diagnose-agent-session/scripts/task-metrics.ps1" '
-                'diagnose --scope both'
-            ),
-            (
-                '$skillRoot = "C:\\$(Write-Output bad)\\'
-                'diagnose-agent-session"; '
-                "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-                'powershell -File $wrapper diagnose --scope both'
-            ),
-            (
-                'powershell -File C:/installed/diagnose-agent-session/'
-                'scripts/task-metrics.ps1 diagnose --session-id $(Get-Date)'
-            ),
-            (
-                "$skillRoot = 'C:\\installed\\diagnose-agent-session'; "
-                '$wrapper = Join-Path $skillRoot '
-                "'scripts\\task-metrics.ps1\"; "
-                'powershell -File $wrapper diagnose --scope both'
-            ),
-            (
-                "skill_root='/opt/diagnose-agent-session\"\n"
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                "skill_root='/opt/diagnose-agent-session'\n"
-                'sh "$skill_root/scripts/task-metrics.sh\' diagnose --scope both'
-            ),
-            (
-                "skill_root = '/opt/diagnose-agent-session'\n"
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both'
-            ),
-        )
-
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-
-    def test_linux_self_call_trust_rejects_shell_substitution_fragments(self):
-        negatives = (
-            (
-                'sh "/opt/$(pwd)/diagnose-agent-session/scripts/'
-                'task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                'sh /opt/$HOME/diagnose-agent-session/scripts/'
-                'task-metrics.sh diagnose --scope both'
-            ),
-            (
-                'sh "/opt/`pwd`/diagnose-agent-session/scripts/'
-                'task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                'skill_root="/opt/$(pwd)/diagnose-agent-session"\n'
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                'skill_root="/opt/$HOME/diagnose-agent-session"\n'
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                'skill_root="/opt/`pwd`/diagnose-agent-session"\n'
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                'sh /opt/diagnose-agent-session/scripts/task-metrics.sh '
-                'diagnose --session-id `date` --scope both'
-            ),
-        )
-
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-
-    def test_self_call_trust_rejects_shell_active_literal_metacharacters(self):
-        negatives = (
-            (
-                'sh "/opt/*/diagnose-agent-session/scripts/task-metrics.sh" '
-                'diagnose --scope both'
-            ),
-            (
-                "skill_root='/opt/>/diagnose-agent-session'\n"
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both'
-            ),
-            (
-                'powershell -File "C:/?/diagnose-agent-session/scripts/'
-                'task-metrics.ps1" diagnose --scope both'
-            ),
-            (
-                "$skillRoot = 'C:\\{dynamic}\\diagnose-agent-session'; "
-                "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-                'powershell -File $wrapper diagnose --scope both'
-            ),
-            (
-                'sh /opt/diagnose-agent-session/scripts/task-metrics.sh '
-                'diagnose --scope both --session-id session>capture.txt'
-            ),
-        )
-
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-
-    def test_self_call_literal_atoms_reject_ambiguous_path_and_session_syntax(self):
-        positives = (
-            (
-                'sh "/opt/Smart Kit/diagnose-agent-session/scripts/'
-                'task-metrics.sh" diagnose --session-id session-01 --scope both'
-            ),
-            (
-                "$skillRoot = 'C:\\Smart Kit\\diagnose-agent-session'; "
-                "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-                'powershell -ExecutionPolicy Bypass -File $wrapper '
-                'diagnose --scope both --session-id session-01'
-            ),
-        )
-        negatives = (
-            'sh /opt/~/diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            'sh /opt/#note/diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            "sh /opt/'quoted'/diagnose-agent-session/scripts/task-metrics.sh diagnose",
-            'sh /opt\\escaped/diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            (
-                "skill_root='/opt/~/diagnose-agent-session'\n"
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose'
-            ),
-            (
-                "skill_root='/opt\\escaped/diagnose-agent-session'\n"
-                'sh "$skill_root/scripts/task-metrics.sh" diagnose'
-            ),
-            (
-                "$skillRoot = 'C:\\#note\\diagnose-agent-session'; "
-                "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-                'powershell -File $wrapper diagnose'
-            ),
-            (
-                'powershell -File C:/~/diagnose-agent-session/scripts/'
-                'task-metrics.ps1 diagnose'
-            ),
-            (
-                'sh /opt/diagnose-agent-session/scripts/task-metrics.sh '
-                'diagnose --session-id session#note'
-            ),
-            (
-                'sh /opt/diagnose-agent-session/scripts/task-metrics.sh '
-                'diagnose --session-id session~home'
-            ),
-            (
-                'sh /opt/diagnose-agent-session/scripts/task-metrics.sh '
-                'diagnose --session-id session\\escaped'
-            ),
-            (
-                'powershell -File C:/installed/diagnose-agent-session/scripts/'
-                'task-metrics.ps1 diagnose --session-id session"quoted'
-            ),
-        )
-
-        for command in positives:
-            with self.subTest(command=command):
-                self.assertTrue(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-
-    def test_self_call_trust_requires_absolute_wrapper_and_root_paths(self):
-        positives = (
-            'sh "/opt/Smart Kit/diagnose-agent-session/scripts/task-metrics.sh" '
-            'diagnose --scope both',
-            'powershell -File '
-            '"C:/Smart Kit/diagnose-agent-session/scripts/task-metrics.ps1" '
-            'diagnose --scope both',
-            'powershell -File '
-            '"\\\\server\\share\\diagnose-agent-session\\scripts\\task-metrics.ps1" '
-            'diagnose --scope both',
-            "skill_root='/opt/Smart Kit/diagnose-agent-session'\n"
-            'sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both',
-            "$skillRoot = 'C:\\Smart Kit\\diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -File $wrapper diagnose --scope both',
-        )
-        negatives = (
-            'sh ./diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            'sh diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            'powershell -File .\\diagnose-agent-session\\scripts\\task-metrics.ps1 '
-            'diagnose',
-            'powershell -File diagnose-agent-session/scripts/task-metrics.ps1 '
-            'diagnose',
-            "skill_root='relative/diagnose-agent-session'\n"
-            'sh "$skill_root/scripts/task-metrics.sh" diagnose',
-            "$skillRoot = 'relative\\diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -File $wrapper diagnose',
-        )
-
-        for command in positives:
-            with self.subTest(command=command):
-                self.assertTrue(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-
-    def test_self_call_skill_name_must_be_an_exact_path_segment(self):
-        positives = (
-            'sh /diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            'sh "/opt/Smart Kit/diagnose-agent-session/scripts/task-metrics.sh" '
-            'diagnose --scope both',
-            "skill_root='/diagnose-agent-session'\n"
-            'sh "$skill_root/scripts/task-metrics.sh" diagnose',
-            'powershell -File C:/diagnose-agent-session/scripts/'
-            'task-metrics.ps1 diagnose',
-            'powershell -File "\\\\server\\share\\diagnose-agent-session\\scripts\\'
-            'task-metrics.ps1" diagnose',
-            "$skillRoot = '\\\\server\\share\\diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -File $wrapper diagnose',
-        )
-        negatives = (
-            'sh /opt/not-diagnose-agent-session/scripts/task-metrics.sh diagnose',
-            "skill_root='/opt/not-diagnose-agent-session'\n"
-            'sh "$skill_root/scripts/task-metrics.sh" diagnose',
-            'powershell -File C:/opt/not-diagnose-agent-session/scripts/'
-            'task-metrics.ps1 diagnose',
-            "$skillRoot = 'C:\\opt\\not-diagnose-agent-session'; "
-            "$wrapper = Join-Path $skillRoot 'scripts\\task-metrics.ps1'; "
-            'powershell -File $wrapper diagnose',
-        )
-
-        for command in positives:
-            with self.subTest(command=command):
-                self.assertTrue(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
-        for command in negatives:
-            with self.subTest(command=command):
-                self.assertFalse(
-                    self.timing._is_diagnostic_call(
-                        {'name': 'functions.exec', 'input': {'cmd': command}}
-                    )
-                )
+        for invalid in ('A' * 64, 'a' * 63, 'a' * 65, 'g' * 64):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                self.timing.UsageError, 'exactly 64 lowercase hexadecimal digits'
+            ):
+                self.timing.validate_acquisition_id(invalid)
 
     def test_list_agents_updates_observed_lifecycle_lower_bounds(self):
         path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
@@ -2450,6 +2354,161 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         )
         self.assertTrue(self.timing._tool_failed('Process exited with code 1.'))
 
+    def test_current_codex_lifecycle_and_input_text_output_are_separate_evidence(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = [
+            {
+                'timestamp': '2026-07-21T11:00:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'message',
+                    'role': 'user',
+                    'content': [{'type': 'input_text', 'text': 'private transcript'}],
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:01Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'custom_tool_call',
+                    'call_id': 'exec-1',
+                    'name': 'exec',
+                    'input': '{"cmd":"private tool input"}',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:02Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'custom_tool_call_output',
+                    'call_id': 'exec-1',
+                    'output': [
+                        {
+                            'type': 'input_text',
+                            'text': 'Process exited with code 2.\nprivate tool output',
+                        }
+                    ],
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:03Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'sub_agent_activity',
+                    'event_id': 'event-1',
+                    'occurred_at_ms': 1,
+                    'agent_thread_id': 'agent-1',
+                    'agent_path': '/root/worker',
+                    'kind': 'started',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:04Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'sub_agent_activity',
+                    'event_id': 'event-2',
+                    'occurred_at_ms': 2,
+                    'agent_thread_id': 'agent-1',
+                    'agent_path': '/root/worker',
+                    'kind': 'interacted',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T11:00:05Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'sub_agent_activity',
+                    'event_id': 'event-3',
+                    'occurred_at_ms': 3,
+                    'agent_thread_id': 'agent-1',
+                    'agent_path': '/root/worker',
+                    'kind': 'interrupted',
+                },
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        snapshot = self.timing._load_codex_log_snapshot(
+            'session-main', self.codex_home, self.captured_at
+        )
+        activity = self.timing.analyze_codex_tool_activity(
+            'session-main', snapshot=snapshot
+        )
+        usage = self.timing.build_session_usage(
+            'codex',
+            'session-main',
+            self.captured_at,
+            tokscale_rows=[],
+            snapshot_unavailable='Tokscale was not acquired in this fixture.',
+            codex_snapshot=snapshot,
+        )
+        report = self.timing.build_diagnostic_report(
+            usage,
+            activity,
+            self.timing.codex_session_bounds('session-main', snapshot=snapshot),
+            selected_scope='session',
+            codex_acquisition=snapshot['acquisition'],
+        )
+        capabilities = {
+            item['name']: item for item in report['capabilities']
+        }
+        rendered = self.timing.render_diagnostic_markdown(report)
+
+        self.assertEqual(activity['failed_calls'], 1)
+        self.assertEqual(activity['coordination']['lifecycle_started_events'], 1)
+        self.assertEqual(activity['coordination']['lifecycle_interacted_events'], 1)
+        self.assertEqual(activity['coordination']['lifecycle_interrupted_events'], 1)
+        self.assertEqual(
+            capabilities['subagent lifecycle']['status'],
+            'available',
+        )
+        self.assertEqual(capabilities['waits']['status'], 'unavailable')
+        self.assertIn('Subagent lifecycle: started=1, interacted=1, interrupted=1', rendered)
+        self.assertNotIn('private transcript', json.dumps(report))
+        self.assertNotIn('private tool input', rendered)
+        self.assertNotIn('private tool output', rendered)
+
+    def test_unknown_codex_lifecycle_kind_fails_only_that_surface(self):
+        snapshot = {
+            'events': [
+                {
+                    'timestamp': '2026-07-21T11:00:00Z',
+                    '_parsed_timestamp': datetime(
+                        2026, 7, 21, 11, tzinfo=timezone.utc
+                    ),
+                    'type': 'event_msg',
+                    'payload': {
+                        'type': 'sub_agent_activity',
+                        'agent_thread_id': 'agent-1',
+                        'agent_path': '/root/worker',
+                        'kind': 'future-kind',
+                    },
+                }
+            ],
+            'warnings': [],
+            'acquisition': {'outcome': 'available', 'causes': []},
+            'captured_at': '2026-07-21T12:00:00.000000+00:00',
+        }
+
+        activity = self.timing.analyze_codex_tool_activity(
+            'session-main', snapshot=snapshot
+        )
+
+        self.assertEqual(
+            activity['surface_coverage']['subagent lifecycle'][
+                'status'
+            ],
+            'failed',
+        )
+        self.assertEqual(
+            activity['surface_coverage']['tool calls']['status'], 'available'
+        )
+        self.assertEqual(activity['surface_coverage']['waits']['status'], 'unavailable')
+
     def test_diagnostic_output_keeps_usage_and_tool_evidence_separate(self):
         usage = self.timing.build_session_usage(
             'codex',
@@ -2515,7 +2574,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
         self.assertEqual(len(report['recovery_prerequisites']), 2)
         self.assertIn(
-            'Resolve the reported Tokscale collection failure',
+            'Make the same installed Tokscale provider available',
             report['recovery_prerequisites'][0],
         )
         self.assertIn(
@@ -2549,17 +2608,15 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             {key: result[key] for key in public_shape},
             public_shape,
         )
+        self.assertEqual(result['acquisition']['outcome'], 'unavailable')
         self.assertEqual(
-            result['acquisition'],
-            {
-                'outcome': 'unavailable',
-                'causes': [
-                    {
-                        'kind': 'no-matching-log',
-                        'message': 'Codex log was not found.',
-                    }
-                ],
-            },
+            result['acquisition']['causes'],
+            [
+                {
+                    'kind': 'no-matching-log',
+                    'message': 'Codex log was not found.',
+                }
+            ],
         )
         self.assertIn(
             'Provide the exact Codex local log for the requested thread',
@@ -2721,6 +2778,10 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                 self.assertEqual(turn_activity['completed_calls'], 1)
                 self.assertEqual(capabilities['session usage']['status'], 'available')
                 self.assertEqual(capabilities['model activity']['status'], 'available')
+                self.assertEqual(
+                    capabilities['current-turn model activity']['status'],
+                    'unavailable',
+                )
                 self.assertEqual(capabilities['current turn']['status'], 'failed')
                 self.assertEqual(capabilities['tool calls']['status'], 'failed')
                 self.assertIn(
@@ -3004,6 +3065,10 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(activity['started_calls'], 0)
         self.assertEqual(capabilities['session usage']['status'], 'available')
         self.assertEqual(capabilities['model activity']['status'], 'available')
+        self.assertEqual(
+            capabilities['current-turn model activity']['status'],
+            'unavailable',
+        )
         self.assertEqual(capabilities['current turn']['status'], 'failed')
         self.assertEqual(capabilities['tool calls']['status'], 'failed')
         self.assertIn('120 total', rendered)
@@ -3084,18 +3149,63 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             report['recovery_prerequisites'][0],
         )
 
-    def test_cursor_missing_session_reports_recoverable_tokscale_prerequisites(self):
-        result = self.timing.build_session_usage(
+    def test_cursor_missing_session_does_not_infer_sync_prerequisite(self):
+        usage = self.timing.build_session_usage(
             'cursor',
             'missing-session',
             self.captured_at,
             tokscale_rows=[],
         )
+        report = self.timing.build_diagnostic_report(
+            usage,
+            self.timing.unavailable_tool_activity(
+                self.timing._profile_behavior_reason('cursor')
+            ),
+            None,
+            selected_scope='session',
+        )
 
-        self.assertEqual(result['status'], 'unavailable')
-        self.assertEqual(result['collection']['outcome'], 'succeeded')
-        self.assertIn('valid Tokscale login', result['warnings'][0])
-        self.assertIn('completed sync', result['warnings'][0])
+        self.assertEqual(usage['status'], 'unavailable')
+        self.assertEqual(usage['collection']['outcome'], 'succeeded')
+        self.assertIn('No exact Tokscale row was available', usage['warnings'][0])
+        self.assertNotIn('sync', usage['warnings'][0].lower())
+        self.assertEqual(report['recovery_prerequisites'], [])
+
+    def test_cursor_observed_identity_unavailable_has_exact_recovery(self):
+        provider = self.provider_evidence()
+        provider['identity'] = {
+            'status': 'unavailable',
+            'reason': 'No existing valid Tokscale Cursor identity was available.',
+        }
+        usage = self.timing.build_session_usage(
+            'cursor',
+            'missing-session',
+            self.captured_at,
+            tokscale_rows=[],
+            tokscale_evidence=provider,
+        )
+        report = self.timing.build_diagnostic_report(
+            usage,
+            self.timing.unavailable_tool_activity(
+                self.timing._profile_behavior_reason('cursor')
+            ),
+            None,
+            selected_scope='session',
+        )
+
+        self.assertEqual(
+            usage['warnings'],
+            [
+                'No exact Tokscale row was available for the requested Cursor session.',
+                provider['identity']['reason'],
+            ],
+        )
+        self.assertEqual(len(report['recovery_prerequisites']), 1)
+        self.assertIn(
+            'Provide an existing valid Tokscale Cursor identity',
+            report['recovery_prerequisites'][0],
+        )
+        self.assertNotIn('sync', report['recovery_prerequisites'][0].lower())
 
     def test_supported_clients_are_exact_and_unknown_client_is_observable(self):
         for client in ('codex', 'cursor', 'copilot'):
@@ -3112,6 +3222,12 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             self.timing.UsageError, "Unsupported client 'Codex'"
         ):
             self.timing.detect_current_session('Codex', 'stable-session')
+        for invalid_id in ('session;unexpected', 'session with space', 'session\nnext'):
+            with self.subTest(invalid_id=invalid_id), self.assertRaisesRegex(
+                self.timing.UsageError,
+                'Session ID must contain only letters',
+            ):
+                self.timing.detect_current_session('codex', invalid_id)
 
     def test_tokscale_session_aliases_are_client_specific_and_unambiguous(self):
         for client in ('codex', 'cursor', 'copilot'):
@@ -3168,6 +3284,40 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(duplicate['collection']['outcome'], 'failed')
         self.assertIn('duplicate rows', duplicate['collection']['cause'])
 
+    def test_tokscale_acquisition_fails_ambiguous_codex_aliases(self):
+        exact = self.usage_row()
+        alias = dict(exact)
+        alias['sessionId'] = 'rollout-session-main'
+        moments = iter((self.captured_at, self.captured_at))
+
+        def runner(command, **kwargs):
+            if command[-1] == '--version':
+                return self.timing.subprocess.CompletedProcess(
+                    command, 0, stdout='tokscale 4.9.0\n', stderr=''
+                )
+            return self.timing.subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=json.dumps({'entries': [exact, alias]}),
+                stderr='',
+            )
+
+        with mock.patch.object(
+            self.timing, 'tokscale_executable', return_value='/tools/tokscale'
+        ):
+            result = self.timing.acquire_tokscale_evidence(
+                'codex',
+                'session-main',
+                None,
+                None,
+                runner=runner,
+                now=lambda: next(moments),
+            )
+
+        self.assertEqual(result['outcome'], 'failed')
+        self.assertEqual(result['rows'], [])
+        self.assertIn('attribution is ambiguous', result['cause'])
+
     def test_missing_identity_never_selects_a_newest_local_log(self):
         self.write_token_count('newest-looking-session')
 
@@ -3188,6 +3338,31 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                 self.timing.detect_current_session(),
                 ('codex', 'environment-session'),
             )
+
+    def test_explicit_invalid_identity_never_falls_back_to_ambient_codex_thread(self):
+        with mock.patch.dict(
+            self.timing.os.environ,
+            {'CODEX_THREAD_ID': 'environment-session'},
+            clear=True,
+        ):
+            self.assertEqual(
+                self.timing.detect_current_session(),
+                ('codex', 'environment-session'),
+            )
+            invalid_pairs = (
+                ('', ''),
+                ('', None),
+                (None, ''),
+                ('codex', None),
+                (None, 'explicit-session'),
+                ('codex', ''),
+                ('', 'explicit-session'),
+            )
+            for client, session_id in invalid_pairs:
+                with self.subTest(client=client, session_id=session_id), self.assertRaises(
+                    self.timing.UsageError
+                ):
+                    self.timing.detect_current_session(client, session_id)
 
     def test_tokscale_requires_normalized_grouped_fields(self):
         def runner(command, **kwargs):
@@ -3211,7 +3386,11 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             self.timing.UsageError, 'incompatible with session diagnostics'
         ):
             self.timing.capture_tokscale_snapshot(
-                'cursor', None, None, runner=runner
+                'cursor',
+                None,
+                None,
+                runner=runner,
+                executable='/tools/tokscale',
             )
 
     def test_tokscale_numeric_normalization_failure_is_structured_failed_evidence(self):
@@ -3284,6 +3463,18 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
         self.assertEqual(normalized['provider'], '')
 
+    def test_tokscale_provider_rejects_structured_or_empty_values(self):
+        for provider in ({'name': 'private'}, ['private'], ''):
+            with self.subTest(provider=provider):
+                row = self.usage_row()
+                row['provider'] = provider
+
+                with self.assertRaisesRegex(
+                    self.timing.UsageError,
+                    'Tokscale field provider must be a nonempty string',
+                ):
+                    self.timing.normalize_usage_row(row)
+
     def test_tokscale_session_id_alias_is_selected_and_validated(self):
         valid = self.usage_row()
         valid['sessionId'] = 'rollout-session-main'
@@ -3300,6 +3491,105 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             'Tokscale field sessionId must be a nonempty string',
         ):
             self.timing.normalize_usage_row(invalid)
+
+    def test_tokscale_dual_session_id_aliases_must_agree(self):
+        equal = self.usage_row()
+        equal['session_id'] = equal['sessionId']
+        conflicting = dict(equal)
+        conflicting['session_id'] = 'another-session'
+
+        self.assertEqual(
+            self.timing.normalize_usage_row(equal)['session_id'],
+            'session-main',
+        )
+        with self.assertRaisesRegex(
+            self.timing.UsageError,
+            'sessionId and session_id contain conflicting values',
+        ):
+            self.timing.normalize_usage_row(conflicting)
+
+    def test_tokscale_numeric_alias_pairs_must_agree(self):
+        cases = (
+            ('cacheRead', 'cache_read', 'cache_read'),
+            ('cacheWrite', 'cache_write', 'cache_write'),
+            ('messageCount', 'message_count', 'message_count'),
+        )
+        for camel, snake, normalized_field in cases:
+            with self.subTest(field=normalized_field, outcome='agree'):
+                row = self.usage_row()
+                row[snake] = float(row[camel])
+
+                normalized = self.timing.normalize_usage_row(row)
+
+                self.assertEqual(normalized[normalized_field], row[camel])
+            with self.subTest(field=normalized_field, outcome='conflict'):
+                row = self.usage_row()
+                row[snake] = row[camel] + 1
+
+                with self.assertRaisesRegex(
+                    self.timing.UsageError,
+                    f'{camel} and {snake} contain conflicting values',
+                ):
+                    self.timing.normalize_usage_row(row)
+            with self.subTest(field=normalized_field, outcome='malformed'):
+                row = self.usage_row()
+                row[snake] = 'not-numeric'
+
+                with self.assertRaisesRegex(
+                    self.timing.UsageError,
+                    f'Tokscale field {snake} must be numeric',
+                ):
+                    self.timing.normalize_usage_row(row)
+
+    def test_tokscale_duration_aliases_must_agree(self):
+        agreeing = self.usage_row()
+        agreeing['model_activity_ms'] = 2000.0
+        conflicting = self.usage_row()
+        conflicting['model_activity_ms'] = 2001
+        malformed = self.usage_row()
+        malformed['performance'] = []
+        malformed['model_activity_ms'] = 2000
+
+        self.assertEqual(
+            self.timing.normalize_usage_row(agreeing)['model_activity_ms'],
+            2000,
+        )
+        with self.assertRaisesRegex(
+            self.timing.UsageError,
+            'performance.totalDurationMs and model_activity_ms contain conflicting values',
+        ):
+            self.timing.normalize_usage_row(conflicting)
+        with self.assertRaisesRegex(
+            self.timing.UsageError,
+            'Tokscale performance data must be an object',
+        ):
+            self.timing.normalize_usage_row(malformed)
+
+    def test_tokscale_conflicting_session_aliases_fail_before_attribution(self):
+        row = self.usage_row()
+        row['client'] = 'cursor'
+        row['session_id'] = 'another-session'
+
+        def runner(command, **kwargs):
+            return self.timing.subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=json.dumps({'entries': [row]}),
+                stderr='',
+            )
+
+        with self.assertRaisesRegex(
+            self.timing.UsageError,
+            'sessionId and session_id contain conflicting values',
+        ):
+            self.timing.capture_tokscale_snapshot(
+                'cursor',
+                None,
+                None,
+                runner=runner,
+                session_id='session-main',
+                executable='/tools/tokscale',
+            )
 
     def test_required_zero_and_optional_codex_token_fields_remain_valid(self):
         row = self.usage_row()
@@ -3319,6 +3609,72 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(codex_totals['total_tokens'], 0)
         self.assertEqual(codex_totals['cache_read'], 0)
 
+    def test_codex_required_token_counters_reject_missing_null_or_strings(self):
+        invalid_rows = (
+            {'output_tokens': 1},
+            {'input_tokens': 1},
+            {'input_tokens': None, 'output_tokens': 1},
+            {'input_tokens': 1, 'output_tokens': None},
+            {'input_tokens': '1', 'output_tokens': 1},
+            {'input_tokens': 1, 'output_tokens': '1'},
+        )
+        for raw in invalid_rows:
+            with self.subTest(raw=raw), self.assertRaises(self.timing.UsageError):
+                self.timing._normalize_codex_token_totals(raw)
+
+    def test_codex_optional_token_counters_default_only_when_absent(self):
+        self.assertEqual(
+            self.timing._normalize_codex_token_totals(
+                {'input_tokens': 4, 'output_tokens': 2}
+            ),
+            {
+                'input': 4,
+                'cache_read': 0,
+                'cache_write': 0,
+                'output': 2,
+                'reasoning': 0,
+                'total_tokens': 6,
+            },
+        )
+        for field in (
+            'cached_input_tokens',
+            'cache_write_input_tokens',
+            'reasoning_output_tokens',
+        ):
+            for value in (None, '1'):
+                with self.subTest(field=field, value=value), self.assertRaises(
+                    self.timing.UsageError
+                ):
+                    self.timing._normalize_codex_token_totals(
+                        {
+                            'input_tokens': 4,
+                            'output_tokens': 2,
+                            field: value,
+                        }
+                    )
+
+    def test_codex_token_counters_reject_non_integer_json_values(self):
+        fields = (
+            'input_tokens',
+            'output_tokens',
+            'cached_input_tokens',
+            'cache_write_input_tokens',
+            'reasoning_output_tokens',
+        )
+        invalid_values = (True, -1, 1.0, 1.5, float('inf'), float('nan'))
+        for field in fields:
+            for value in invalid_values:
+                with self.subTest(field=field, value=value), self.assertRaises(
+                    self.timing.UsageError
+                ):
+                    self.timing._normalize_codex_token_totals(
+                        {
+                            'input_tokens': 4,
+                            'output_tokens': 2,
+                            field: value,
+                        }
+                    )
+
     def test_tokscale_integral_float_fields_remain_valid(self):
         row = self.usage_row()
         row['client'] = 'cursor'
@@ -3334,7 +3690,11 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             )
 
         result = self.timing.capture_tokscale_snapshot(
-            'cursor', None, None, runner=runner
+            'cursor',
+            None,
+            None,
+            runner=runner,
+            executable='/tools/tokscale',
         )
 
         self.assertEqual(result, [row])
@@ -3395,7 +3755,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                     f'Tokscale field {field} must be numeric.',
                 )
 
-    def test_codex_profile_can_make_every_relevant_capability_available(self):
+    def test_codex_profile_does_not_infer_coordination_or_wait_coverage(self):
         self.write_turn_tokens()
         session_bounds = self.timing.codex_session_bounds(
             'session-main', self.codex_home
@@ -3432,13 +3792,16 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
         self.assertEqual(report['profile'], 'Codex')
         self.assertEqual(report['session_usage']['models'][0]['model'], 'gpt-test')
-        self.assertTrue(
-            all(
-                capability['status'] == 'available'
-                for capability in report['capabilities']
-                if capability['relevant']
-            )
+        capabilities = {
+            capability['name']: capability for capability in report['capabilities']
+        }
+        self.assertEqual(capabilities['tool calls']['status'], 'available')
+        self.assertEqual(capabilities['incomplete calls']['status'], 'available')
+        self.assertEqual(
+            capabilities['subagent lifecycle']['status'],
+            'unavailable',
         )
+        self.assertEqual(capabilities['waits']['status'], 'unavailable')
 
     def test_cursor_profile_preserves_usage_and_marks_behavior_unavailable(self):
         row = self.usage_row()
@@ -3464,7 +3827,19 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
         self.assertEqual(report['profile'], 'Cursor')
         self.assertEqual(capabilities['session usage']['status'], 'available')
+        self.assertEqual(
+            capabilities['estimated API-equivalent cost']['status'],
+            'available',
+        )
         self.assertEqual(capabilities['model activity']['status'], 'available')
+        self.assertEqual(
+            capabilities['current-turn model activity']['status'],
+            'unavailable',
+        )
+        self.assertIn(
+            'owns no turn-bounded model-activity provider',
+            capabilities['current-turn model activity']['reason'],
+        )
         self.assertEqual(capabilities['current turn']['status'], 'unavailable')
         self.assertEqual(capabilities['tool calls']['status'], 'unavailable')
         self.assertIn(
@@ -3472,6 +3847,10 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             capabilities['tool calls']['reason'],
         )
         self.assertEqual(report['recovery_prerequisites'], [])
+        self.assertIn(
+            'Current-turn model activity and estimated API-equivalent cost are unsupported',
+            ' '.join(report['limitations']),
+        )
 
     def test_copilot_profile_reports_successful_usage_without_behavior_parity(self):
         row = self.usage_row()
@@ -3500,8 +3879,12 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(capabilities['current turn']['status'], 'unavailable')
         self.assertEqual(capabilities['waits']['status'], 'unavailable')
         self.assertEqual(report['recovery_prerequisites'], [])
+        self.assertIn(
+            'Current-turn model activity and estimated API-equivalent cost are unsupported',
+            ' '.join(report['limitations']),
+        )
 
-    def test_copilot_missing_otel_is_unrecoverable_for_completed_session(self):
+    def test_copilot_no_row_does_not_infer_otel_or_irrecoverability(self):
         usage = self.timing.build_session_usage(
             'copilot',
             'completed-session',
@@ -3514,16 +3897,14 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                 self.timing._profile_behavior_reason('copilot')
             ),
             None,
-            selected_scope='turn',
+            selected_scope='session',
         )
 
-        self.assertIn('pre-session OTEL file export', usage['warnings'][0])
-        self.assertIn('cannot be recovered', usage['warnings'][0])
+        self.assertIn('No exact Tokscale row was available', usage['warnings'][0])
+        self.assertNotIn('OTEL', usage['warnings'][0])
+        self.assertNotIn('cannot be recovered', usage['warnings'][0])
         self.assertEqual(usage['collection']['outcome'], 'succeeded')
-        self.assertIn(
-            'cannot regain missing usage and model-activity telemetry',
-            report['recovery_prerequisites'][0],
-        )
+        self.assertEqual(report['recovery_prerequisites'], [])
 
     def test_tokscale_failure_is_failed_capability_not_healthy_usage(self):
         usage = self.timing.build_session_usage(
@@ -3549,7 +3930,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(capabilities['model activity']['status'], 'failed')
         self.assertFalse(capabilities['current turn']['relevant'])
         self.assertIn(
-            'Resolve the reported Tokscale collection failure',
+            'Make the same installed Tokscale provider available',
             report['recovery_prerequisites'][0],
         )
         self.assertEqual(len(report['recovery_prerequisites']), 1)
@@ -3615,7 +3996,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
         self.assertEqual(capabilities['tool calls']['status'], 'failed')
         self.assertEqual(capabilities['incomplete calls']['status'], 'failed')
         self.assertEqual(
-            capabilities['subagent lifecycle and coordination']['status'],
+            capabilities['subagent lifecycle']['status'],
             'failed',
         )
         self.assertEqual(capabilities['waits']['status'], 'failed')
@@ -3641,9 +4022,9 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             with mock.patch.dict(self.timing.os.environ, environment, clear=True), \
                  mock.patch.object(
                      self.timing,
-                     'capture_tokscale_snapshot',
-                     return_value=[self.usage_row()],
-                 ), \
+                     'acquire_tokscale_evidence',
+                     return_value=self.provider_evidence([self.usage_row()]),
+                 ) as acquire, \
                  mock.patch.object(
                      self.timing,
                      '_codex_current_turn_discovery',
@@ -3659,7 +4040,7 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                      'analyze_codex_tool_activity',
                      wraps=self.timing.analyze_codex_tool_activity,
                  ) as activity, \
-                 mock.patch('builtins.print'):
+                 mock.patch('builtins.print') as output:
                 result = self.timing.main(
                     [
                         'diagnose',
@@ -3669,27 +4050,30 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                         'session-main',
                         '--scope',
                         'session',
+                        '--acquisition-id',
+                        ACQUISITION_ID,
                     ]
                 )
 
             self.assertEqual(result, 0)
             turn_discovery.assert_not_called()
             turn_usage.assert_not_called()
+            acquire.assert_called_once()
             self.assertEqual(activity.call_count, 1)
 
         with self.subTest(scope='turn'):
             with mock.patch.dict(self.timing.os.environ, environment, clear=True), \
                  mock.patch.object(
                      self.timing,
-                     'capture_tokscale_snapshot',
-                     return_value=[self.usage_row()],
-                 ), \
+                     'acquire_tokscale_evidence',
+                     return_value=self.provider_evidence([self.usage_row()]),
+                 ) as acquire, \
                  mock.patch.object(
                      self.timing,
                      'analyze_codex_tool_activity',
                      wraps=self.timing.analyze_codex_tool_activity,
                  ) as activity, \
-                 mock.patch('builtins.print'):
+                 mock.patch('builtins.print') as output:
                 result = self.timing.main(
                     [
                         'diagnose',
@@ -3699,11 +4083,17 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                         'session-main',
                         '--scope',
                         'turn',
+                        '--acquisition-id',
+                        ACQUISITION_ID,
                     ]
                 )
 
             self.assertEqual(result, 0)
+            acquire.assert_not_called()
             self.assertEqual(activity.call_count, 1)
+            rendered = output.call_args.args[0]
+            self.assertNotIn('#### Session Usage and API-Equivalent Cost', rendered)
+            self.assertIn('- session usage: unavailable (not requested)', rendered)
             self.assertEqual(
                 activity.call_args.kwargs['started_at'],
                 datetime(2026, 7, 21, 11, tzinfo=timezone.utc),
@@ -3713,16 +4103,12 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                 datetime(2026, 7, 21, 12, tzinfo=timezone.utc),
             )
 
-    def test_main_reads_one_codex_snapshot_and_propagates_failure(self):
+    def test_main_keeps_codex_and_tokscale_acquisition_boundaries_separate(self):
         self.write_token_count()
         environment = {'CODEX_HOME': str(self.codex_home)}
         order = []
         original_timestamp = self.timing._timestamp
         original_load_snapshot = self.timing._load_codex_log_snapshot
-
-        def capture(*args, **kwargs):
-            order.append('tokscale')
-            return [self.usage_row()]
 
         def timestamp(now=None):
             if now is None:
@@ -3747,9 +4133,9 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
              ) as load_snapshot, \
              mock.patch.object(
                  self.timing,
-                 'capture_tokscale_snapshot',
-                 side_effect=capture,
-             ), \
+                 'acquire_tokscale_evidence',
+                 return_value=self.provider_evidence([self.usage_row()]),
+             ) as acquire, \
              mock.patch.object(
                  Path,
                  'read_text',
@@ -3765,18 +4151,23 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
                     'session-main',
                     '--scope',
                     'both',
+                    '--acquisition-id',
+                    ACQUISITION_ID,
                 ]
             )
 
         self.assertEqual(result, 0)
-        self.assertEqual(order[:3], ['tokscale', 'codex-log', 'cutoff'])
+        self.assertEqual(order[:2], ['codex-log', 'cutoff'])
+        acquire.assert_called_once()
         self.assertTrue(
             load_snapshot.call_args.kwargs['capture_cutoff_after_read']
         )
         self.assertEqual(read_text.call_count, 1)
         rendered = output.call_args.args[0]
+        self.assertIn('executable /tools/tokscale; version 4.9.0', rendered)
+        self.assertIn('schema validated', rendered)
         self.assertIn('- current turn: failed (relevant)', rendered)
-        self.assertIn('- tool calls: failed (relevant)', rendered)
+        self.assertIn('- session tool calls: failed (relevant)', rendered)
         self.assertIn(
             'Tool calls: failed — Codex log could not be read: permission denied',
             rendered,
@@ -3786,6 +4177,233 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
             rendered,
         )
         self.assertNotIn('- Tool calls: unavailable', rendered)
+
+    def test_main_does_not_bound_tokscale_from_failed_codex_snapshot(self):
+        path = self.codex_home / 'sessions' / 'rollout-session-main.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = [
+            {
+                'timestamp': '2026-07-20T23:59:59Z',
+                'type': 'event_msg',
+                'payload': [],
+            },
+            {
+                'timestamp': '2026-07-21T10:00:00Z',
+                'type': 'event_msg',
+                'payload': {'type': 'user_message'},
+            },
+            {
+                'timestamp': '2026-07-21T10:01:00Z',
+                'type': 'event_msg',
+                'payload': {
+                    'type': 'token_count',
+                    'info': {
+                        'total_token_usage': {
+                            'input_tokens': 10,
+                            'output_tokens': 2,
+                        }
+                    },
+                },
+            },
+            {
+                'timestamp': '2026-07-21T10:02:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call',
+                    'call_id': 'tool-1',
+                    'name': 'exec',
+                    'arguments': '{}',
+                },
+            },
+            {
+                'timestamp': '2026-07-21T10:03:00Z',
+                'type': 'response_item',
+                'payload': {
+                    'type': 'function_call_output',
+                    'call_id': 'tool-1',
+                    'output': {'exit_code': 0},
+                },
+            },
+            {
+                'timestamp': '2026-07-22T00:00:00Z',
+                'type': 'event_msg',
+                'payload': [],
+            },
+        ]
+        path.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n',
+            encoding='utf-8',
+        )
+        environment = {'CODEX_HOME': str(self.codex_home)}
+
+        with mock.patch.dict(self.timing.os.environ, environment, clear=True), \
+             mock.patch.object(
+                 self.timing,
+                 'acquire_tokscale_evidence',
+                 return_value=self.provider_evidence([self.usage_row()]),
+             ) as acquire, \
+             mock.patch('builtins.print') as output:
+            result = self.timing.main(
+                [
+                    'diagnose',
+                    '--client',
+                    'codex',
+                    '--session-id',
+                    'session-main',
+                    '--scope',
+                    'both',
+                    '--acquisition-id',
+                    ACQUISITION_ID,
+                ]
+            )
+
+        self.assertEqual(result, 0)
+        acquire.assert_called_once_with('codex', 'session-main', None, None)
+        rendered = output.call_args.args[0]
+        self.assertIn('Codex local log: failed', rendered)
+        self.assertIn('Observed tool calls: 1 started, 1 completed', rendered)
+        self.assertIn('- session tool calls: failed (relevant)', rendered)
+        self.assertIn('120 total', rendered)
+
+    def test_both_scope_keeps_turn_and_session_behavior_coverage_separate(self):
+        self.write_tool_calls()
+        session_activity = self.timing.analyze_codex_tool_activity(
+            'session-main', self.codex_home
+        )
+        turn_activity = self.timing.unavailable_tool_activity(
+            'Current-turn boundary was not found in the Codex log.'
+        )
+        usage = self.timing.build_session_usage(
+            'codex',
+            'session-main',
+            self.captured_at,
+            tokscale_rows=[self.usage_row()],
+        )
+        report = self.timing.build_diagnostic_report(
+            usage,
+            session_activity,
+            self.timing.codex_session_bounds('session-main', self.codex_home),
+            turn_usage=self.timing._build_codex_turn_usage_evidence(
+                'session-main', self.captured_at, None, self.codex_home
+            ),
+            turn_activity=turn_activity,
+            selected_scope='both',
+        )
+
+        tool_capabilities = [
+            (item['scope'], item['status'])
+            for item in report['capabilities']
+            if item['name'] == 'tool calls'
+        ]
+
+        self.assertEqual(
+            tool_capabilities,
+            [('turn', 'unavailable'), ('session', 'available')],
+        )
+        rendered = self.timing.render_diagnostic_markdown(report)
+        self.assertIn('- turn tool calls: unavailable (relevant)', rendered)
+        self.assertIn('- session tool calls: available (relevant)', rendered)
+
+    def test_non_codex_turn_only_stops_before_any_provider_acquisition(self):
+        with mock.patch.object(
+            self.timing, 'acquire_tokscale_evidence'
+        ) as acquire, mock.patch.object(
+            self.timing, '_timestamp'
+        ) as timestamp, mock.patch('builtins.print') as output:
+            result = self.timing.main(
+                [
+                    'diagnose',
+                    '--client',
+                    'cursor',
+                    '--session-id',
+                    'session-main',
+                    '--scope',
+                    'turn',
+                    '--acquisition-id',
+                    ACQUISITION_ID,
+                ]
+            )
+
+        self.assertEqual(result, 2)
+        acquire.assert_not_called()
+        timestamp.assert_not_called()
+        self.assertIn('turn-only diagnosis is unsupported', output.call_args.args[0])
+
+    def test_recovery_comes_only_from_a_requested_attempted_source(self):
+        provider = self.provider_evidence()
+        provider['identity'] = {
+            'status': 'unavailable',
+            'reason': 'No existing valid Tokscale Cursor identity was available.',
+        }
+        usage = self.timing.build_session_usage(
+            'cursor',
+            'completed-session',
+            self.captured_at,
+            tokscale_rows=[],
+            tokscale_evidence=provider,
+        )
+        activity = self.timing.unavailable_tool_activity(
+            self.timing._profile_behavior_reason('cursor')
+        )
+
+        turn_report = self.timing.build_diagnostic_report(
+            usage, activity, None, selected_scope='turn'
+        )
+        session_report = self.timing.build_diagnostic_report(
+            usage, activity, None, selected_scope='session'
+        )
+
+        self.assertEqual(turn_report['recovery_prerequisites'], [])
+        self.assertIn(
+            'Provide an existing valid Tokscale Cursor identity',
+            session_report['recovery_prerequisites'][0],
+        )
+
+    def test_missing_turn_boundary_still_reports_exact_self_call_attribution(self):
+        for matches, expected_status, activity_status in (
+            (0, 'unavailable', 'unavailable'),
+            (1, 'available', 'unavailable'),
+            (2, 'failed', 'failed'),
+        ):
+            with self.subTest(matches=matches):
+                snapshot = {
+                    'events': [
+                        {
+                            '_parsed_timestamp': self.captured_at,
+                            'type': 'response_item',
+                            'payload': {
+                                'type': 'function_call',
+                                'call_id': f'current-{index}',
+                                'name': 'exec',
+                                'arguments': {'acquisition_id': ACQUISITION_ID},
+                            },
+                        }
+                        for index in range(matches)
+                    ],
+                    'warnings': [],
+                    'acquisition': {'outcome': 'available', 'causes': []},
+                }
+
+                activity = self.timing._unavailable_codex_turn_activity(
+                    snapshot,
+                    ACQUISITION_ID,
+                    ['Current-turn boundary was not found in the Codex log.'],
+                )
+
+                self.assertEqual(
+                    activity['self_call_attribution']['status'], expected_status
+                )
+                self.assertEqual(activity['status'], activity_status)
+                self.assertEqual(activity['started_calls'], 0)
+                if matches == 1:
+                    self.assertEqual(
+                        activity['self_call_attribution']['excluded_call_id'],
+                        'current-0',
+                    )
+                if matches == 2:
+                    self.assertIn(
+                        'ambiguous-self-call-attribution', activity['findings']
+                    )
 
     def test_markdown_rendering_contains_untrusted_values_on_one_safe_line(self):
         session_id = 'private-session\n#### Forged Heading'
@@ -3846,9 +4464,10 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
         self.assertIn('#### Identity and Scope', rendered)
         self.assertIn(
-            '- Snapshot cutoff (UTC): 2026-07-21T12:00:00.000000+00:00',
+            '- Report reference time (UTC): 2026-07-21T12:00:00.000000+00:00',
             rendered,
         )
+        self.assertIn('- Source boundaries:', rendered)
         self.assertIn('#### Capability Coverage', rendered)
         self.assertIn('#### Session Usage and API-Equivalent Cost', rendered)
         self.assertIn('#### Overall Conclusion', rendered)

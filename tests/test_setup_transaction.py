@@ -95,6 +95,83 @@ class SetupTransactionTest(unittest.TestCase):
             self.assertEqual(first.read_bytes(), b'a-old\n')
             self.assertEqual(second.read_bytes(), b'b-old\n')
 
+    def test_rolls_back_all_changes_when_postcondition_fails(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir)
+            original = self.write(target, 'owned.txt', b'old\n')
+
+            def reject() -> None:
+                raise ValueError('post-apply validation failed')
+
+            with self.assertRaisesRegex(TransactionError, 'post-apply validation failed'):
+                apply_plan(
+                    target,
+                    self.plan(Change(
+                        ChangeKind.UPDATE,
+                        PurePosixPath('owned.txt'),
+                        b'new\n',
+                    )),
+                    postcondition=reject,
+                )
+
+            self.assertEqual(original.read_bytes(), b'old\n')
+
+    def test_rollback_retains_an_in_place_third_party_change(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure in modes:
+            with self.subTest(secure=secure), tempfile.TemporaryDirectory() as temp_dir:
+                target = Path(temp_dir)
+                original = self.write(target, 'owned.txt', b'old\n')
+
+                def conflict() -> None:
+                    original.write_bytes(b'third-party\n')
+                    raise ValueError('post-apply validation failed')
+
+                with (
+                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
+                    self.assertRaisesRegex(TransactionError, 'rollback failed'),
+                ):
+                    apply_plan(
+                        target,
+                        self.plan(Change(
+                            ChangeKind.UPDATE,
+                            PurePosixPath('owned.txt'),
+                            b'new\n',
+                        )),
+                        postcondition=conflict,
+                    )
+
+                self.assertEqual(original.read_bytes(), b'third-party\n')
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX mode changes are not portable to Windows')
+    def test_postcondition_mode_change_is_retained_and_reported(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure in modes:
+            with self.subTest(secure=secure), tempfile.TemporaryDirectory() as temp_dir:
+                target = Path(temp_dir)
+                original = self.write(target, 'owned.txt', b'old\n')
+                original.chmod(0o644)
+
+                def change_mode() -> None:
+                    original.chmod(0o600)
+
+                with (
+                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
+                    self.assertRaisesRegex(TransactionError, 'rollback failed'),
+                ):
+                    apply_plan(
+                        target,
+                        self.plan(Change(
+                            ChangeKind.UPDATE,
+                            PurePosixPath('owned.txt'),
+                            b'new\n',
+                        )),
+                        postcondition=change_mode,
+                    )
+
+                self.assertEqual(original.read_bytes(), b'new\n')
+                self.assertEqual(stat.S_IMODE(original.stat().st_mode), 0o600)
+
     def test_rolls_back_when_structured_field_file_replace_fails(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir)

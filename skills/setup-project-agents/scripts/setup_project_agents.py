@@ -6,6 +6,7 @@ import json
 import os
 import re
 import stat
+import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
@@ -16,6 +17,7 @@ from agents_setup.catalog import (
     parse_external_skills,
     parse_mcp_servers,
     parse_project_agents,
+    safe_relative,
 )
 from agents_setup.discovery import DiscoveryError
 from agents_setup.external import ExternalSkillError, snapshot_external_skills
@@ -31,6 +33,7 @@ from agents_setup.validation import validate_rendered_state
 _COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
 _REQUEST_NAME = 'request.json'
 _GENERATED_NAME = 'generated'
+_GENERATION_MANIFEST = '.setup-generation.json'
 _BLUEPRINT_TARGETS = (
     PurePosixPath('.agents/rules/00-project-tools.md'),
     PurePosixPath('.agents/rules/01-project-contracts.md'),
@@ -114,7 +117,9 @@ def _request(
     *,
     target: Path,
     source_root: Path,
+    source_fingerprint: str,
     external_snapshot_sha256: str | None,
+    target_fingerprint: str,
 ) -> dict[str, object]:
     blueprint_assets = {
         asset.target: asset
@@ -135,7 +140,9 @@ def _request(
         'target': str(target),
         'source_root': str(source_root),
         'source_commit': source_commit,
+        'source_fingerprint': source_fingerprint,
         'external_snapshot_sha256': external_snapshot_sha256,
+        'target_fingerprint': target_fingerprint,
         'harnesses': [item.value for item in _HARNESSES],
         'selected_rules': list(config.selected_rules),
         'selected_skills': list(config.selected_skills),
@@ -276,7 +283,8 @@ def _request_config(
     required = {
         'target', 'source_root', 'source_commit', 'harnesses', 'selected_rules',
         'selected_skills', 'external_sources', 'mcp_servers', 'generation_requests',
-        'external_snapshot_sha256', 'project_agents',
+        'external_snapshot_sha256', 'project_agents', 'source_fingerprint',
+        'target_fingerprint',
     }
     if set(request) != required:
         raise SetupError('session request has an invalid shape')
@@ -286,6 +294,20 @@ def _request_config(
         raise SetupError('session request target does not match this invocation')
     if request.get('source_root') != str(source_root):
         raise SetupError('session request source root does not match this pinned source')
+    source_fingerprint = request.get('source_fingerprint')
+    if (
+        not isinstance(source_fingerprint, str)
+        or len(source_fingerprint) != 64
+        or any(character not in '0123456789abcdef' for character in source_fingerprint)
+    ):
+        raise SetupError('session request source fingerprint is invalid')
+    fingerprint = request.get('target_fingerprint')
+    if (
+        not isinstance(fingerprint, str)
+        or len(fingerprint) != 64
+        or any(character not in '0123456789abcdef' for character in fingerprint)
+    ):
+        raise SetupError('session request target fingerprint is invalid')
     try:
         snapshot_digest = request['external_snapshot_sha256']
         if snapshot_digest is not None and (
@@ -335,7 +357,10 @@ def _request_config(
     return config
 
 
-def _generated_root(session: Path) -> Path:
+def _generated_outputs(
+    session: Path,
+    generation_requests: object,
+) -> tuple[Path, tuple[PurePosixPath, ...]]:
     root = session / _GENERATED_NAME
     try:
         status = root.lstat()
@@ -343,10 +368,60 @@ def _generated_root(session: Path) -> Path:
         raise SetupError('generated output directory is missing') from error
     if stat.S_ISLNK(status.st_mode) or not stat.S_ISDIR(status.st_mode):
         raise SetupError('generated output directory is not a safe directory')
-    expected = {path.as_posix() for path in _BLUEPRINT_TARGETS}
+    if not isinstance(generation_requests, list) or not all(
+        isinstance(item, Mapping) for item in generation_requests
+    ):
+        raise SetupError('session generation requests are invalid')
+    expected_requests = {
+        str(item['id']): PurePosixPath(str(item['target']))
+        for item in generation_requests
+    }
+    manifest = _read_json(root / _GENERATION_MANIFEST, 'generation manifest')
+    if set(manifest) != {'version', 'requests'} or manifest.get('version') != 1:
+        raise SetupError('generation manifest has an invalid shape')
+    declarations = manifest.get('requests')
+    if not isinstance(declarations, list):
+        raise SetupError('generation manifest requests must be an array')
+    declared: set[PurePosixPath] = set()
+    seen_ids: set[str] = set()
+    for declaration in declarations:
+        if not isinstance(declaration, Mapping) or set(declaration) != {'id', 'outputs'}:
+            raise SetupError('generation manifest request has an invalid shape')
+        request_id = declaration.get('id')
+        outputs = declaration.get('outputs')
+        if (
+            not isinstance(request_id, str)
+            or request_id not in expected_requests
+            or request_id in seen_ids
+            or not isinstance(outputs, list)
+            or not outputs
+            or not all(isinstance(item, str) for item in outputs)
+        ):
+            raise SetupError('generation manifest request does not match the session request')
+        seen_ids.add(request_id)
+        primary = expected_requests[request_id]
+        paths: list[PurePosixPath] = []
+        for value in outputs:
+            try:
+                path = safe_relative(value, 'generation manifest output path')
+            except ContractError as error:
+                raise SetupError('generation manifest contains an unsafe output path') from error
+            paths.append(path)
+        if len(paths) != len(set(paths)) or primary not in paths:
+            raise SetupError('generation manifest must declare each primary target exactly once')
+        if primary.parts[:2] == ('.agents', 'rules'):
+            if set(paths) != {primary}:
+                raise SetupError('generated Rule request cannot declare supporting outputs')
+        elif any(path != primary and primary.parent not in path.parents for path in paths):
+            raise SetupError('generated Skill supporting output is outside its Skill directory')
+        if declared.intersection(paths):
+            raise SetupError('generation manifest declares one output more than once')
+        declared.update(paths)
+    if seen_ids != set(expected_requests):
+        raise SetupError('generation manifest does not declare every generation request')
     files: set[str] = set()
     expected_directories = {PurePosixPath('.')}
-    for expected_path in _BLUEPRINT_TARGETS:
+    for expected_path in declared:
         parent = expected_path.parent
         while parent != PurePosixPath('.'):
             expected_directories.add(parent)
@@ -359,21 +434,124 @@ def _generated_root(session: Path) -> Path:
         if stat.S_ISLNK(status.st_mode):
             raise SetupError('generated output contains a symlink')
         relative = PurePosixPath(path.relative_to(root).as_posix())
+        if path.is_file() and relative == PurePosixPath(_GENERATION_MANIFEST):
+            continue
         if path.is_file():
             files.add(path.relative_to(root).as_posix())
         elif path.is_dir() and relative not in expected_directories:
             raise SetupError(
                 'generated output contains an undeclared directory: '
-                f'{relative.as_posix()}; write each generation_requests target '
-                'unchanged under generated'
+                f'{relative.as_posix()}; declare exact outputs in {_GENERATION_MANIFEST}'
             )
         elif not path.is_dir():
             raise SetupError('generated output contains a non-file entry')
+    expected = {path.as_posix() for path in declared}
     if files != expected:
-        raise SetupError(
-            f'generated outputs must contain exactly {len(_BLUEPRINT_TARGETS)} requested files'
+        raise SetupError('generated outputs must match the exact generation manifest')
+    return root, tuple(sorted(declared, key=lambda item: item.as_posix()))
+
+
+def _target_fingerprint(root: Path) -> str:
+    """Fingerprint repository state that can affect or be affected by setup."""
+    root = Path(root).absolute()
+    paths: set[Path] = set()
+    try:
+        completed = subprocess.run(
+            ('git', '-C', str(root), 'ls-files', '-co', '--exclude-standard', '-z'),
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
-    return root
+    except OSError:
+        completed = None
+    if completed is not None and completed.returncode == 0:
+        paths.update(root / os.fsdecode(value) for value in completed.stdout.split(b'\0') if value)
+    else:
+        for directory, directories, files in os.walk(root, followlinks=False):
+            parent = Path(directory)
+            directories[:] = [name for name in directories if name != '.git']
+            paths.update(parent / name for name in directories)
+            paths.update(parent / name for name in files)
+    for relative in (
+        '.agents', '.codex', '.cursor', '.github', 'docs/agents', 'AGENTS.md', 'CLAUDE.md'
+    ):
+        candidate = root / relative
+        if not candidate.exists() and not candidate.is_symlink():
+            continue
+        paths.add(candidate)
+        if candidate.is_dir() and not candidate.is_symlink():
+            for directory, directories, files in os.walk(candidate, followlinks=False):
+                parent = Path(directory)
+                paths.update(parent / name for name in directories)
+                paths.update(parent / name for name in files)
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=lambda item: item.relative_to(root).as_posix()):
+        relative = path.relative_to(root).as_posix().encode('utf-8', 'surrogateescape')
+        try:
+            status = path.lstat()
+        except FileNotFoundError:
+            digest.update(
+                b'M\0' + relative + b'\0' + b'0\0' + hashlib.sha256(b'').digest()
+            )
+            continue
+        except OSError as error:
+            raise SetupError('target changed while its setup fingerprint was captured') from error
+        if stat.S_ISLNK(status.st_mode):
+            kind, content = b'L', os.fsencode(os.readlink(path))
+        elif stat.S_ISREG(status.st_mode):
+            kind = b'F'
+            try:
+                content = path.read_bytes()
+            except OSError as error:
+                raise SetupError('target changed while its setup fingerprint was captured') from error
+        elif stat.S_ISDIR(status.st_mode):
+            kind, content = b'D', b''
+        else:
+            kind, content = b'O', b''
+        digest.update(kind + b'\0' + relative + b'\0')
+        digest.update(str(stat.S_IMODE(status.st_mode)).encode() + b'\0')
+        digest.update(hashlib.sha256(content).digest())
+    return digest.hexdigest()
+
+
+def _source_fingerprint(root: Path, catalog: Catalog) -> str:
+    """Bind every setup-controlled source byte used after prepare."""
+    root = Path(root).absolute()
+    paths = {
+        root / relative
+        for relative in (
+            'VERSION',
+            '.codex-plugin/plugin.json',
+            '.cursor-plugin/plugin.json',
+            'plugin.json',
+            'setup-assets/catalog/assets.json',
+            'setup-assets/catalog/harnesses.json',
+            'setup-assets/catalog/project-config.schema.json',
+        )
+    }
+    sources = [root / asset.source.as_posix() for asset in catalog.assets]
+    sources.append(root / 'skills/setup-project-agents')
+    for source in sources:
+        if source.is_file():
+            paths.add(source)
+        elif source.is_dir():
+            paths.update(
+                path for path in source.rglob('*')
+                if path.is_file()
+                and '__pycache__' not in path.parts
+                and path.suffix not in {'.pyc', '.pyo'}
+            )
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=lambda item: item.relative_to(root).as_posix()):
+        relative = path.relative_to(root).as_posix().encode()
+        try:
+            content = path.read_bytes()
+            mode = stat.S_IMODE(path.stat().st_mode)
+        except OSError as error:
+            raise SetupError('setup source changed while its fingerprint was captured') from error
+        digest.update(relative + b'\0' + str(mode).encode() + b'\0')
+        digest.update(hashlib.sha256(content).digest())
+    return digest.hexdigest()
 
 
 def _emit_result(
@@ -399,11 +577,11 @@ def _emit_result(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description='Prepare, apply, or check a pinned project-agent setup session.',
+        description='Prepare, finish, apply, or check a pinned project-agent setup session.',
         allow_abbrev=False,
     )
     phases = parser.add_subparsers(dest='phase', required=True)
-    for phase in ('prepare', 'apply', 'check'):
+    for phase in ('prepare', 'finish', 'apply', 'check'):
         command = phases.add_parser(phase, allow_abbrev=False)
         command.add_argument('--target', type=Path, required=True)
         command.add_argument('--session', type=Path, required=True)
@@ -415,8 +593,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None) -> None:
     catalog = load_catalog(args.source_root)
+    source_fingerprint = _source_fingerprint(args.source_root, catalog)
     project = inspect_project(args.target, catalog=catalog)
     config = project.config
+    target_fingerprint = _target_fingerprint(project.root)
     generated = session / _GENERATED_NAME
     generated_rules = generated / '.agents' / 'rules'
     generated_skills = generated / '.agents' / 'skills'
@@ -437,6 +617,10 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
             external_snapshot_sha256 = hashlib.sha256(metadata.read_bytes()).hexdigest()
         except OSError as error:
             raise SetupError('cannot bind external Skill source metadata') from error
+    if target_fingerprint != _target_fingerprint(project.root):
+        raise SetupError('target changed during start; retry from current state')
+    if source_fingerprint != _source_fingerprint(args.source_root, catalog):
+        raise SetupError('setup source changed during start; retry')
     _write_json(
         session / _REQUEST_NAME,
         _request(
@@ -445,12 +629,20 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
             catalog,
             target=project.root,
             source_root=Path(args.source_root).absolute(),
+            source_fingerprint=source_fingerprint,
             external_snapshot_sha256=external_snapshot_sha256,
+            target_fingerprint=target_fingerprint,
         ),
     )
 
 
-def _plan(args: argparse.Namespace, session: Path, source_commit: str | None):
+def _plan(
+    args: argparse.Namespace,
+    session: Path,
+    source_commit: str | None,
+    *,
+    verify_target_fingerprint: bool,
+):
     catalog = load_catalog(args.source_root)
     project = inspect_project(args.target, catalog=catalog)
     request = _read_json(session / _REQUEST_NAME, 'session request')
@@ -461,6 +653,13 @@ def _plan(args: argparse.Namespace, session: Path, source_commit: str | None):
         source_root=Path(args.source_root).absolute(),
         catalog=catalog,
     )
+    if (
+        verify_target_fingerprint
+        and request['target_fingerprint'] != _target_fingerprint(project.root)
+    ):
+        raise SetupError('target changed after start; cancel and restart from current state')
+    if request['source_fingerprint'] != _source_fingerprint(args.source_root, catalog):
+        raise SetupError('setup source changed after start; cancel and restart')
     external_root = session / 'external-skills'
     expected_snapshot_digest = request['external_snapshot_sha256']
     if bool(config.external_sources) != (expected_snapshot_digest is not None):
@@ -474,7 +673,9 @@ def _plan(args: argparse.Namespace, session: Path, source_commit: str | None):
             raise SetupError('external Skill source metadata is missing') from error
         if actual_snapshot_digest != expected_snapshot_digest:
             raise SetupError('external Skill source metadata changed after prepare')
-    generated = _generated_root(session)
+    generated, generated_outputs = _generated_outputs(
+        session, request['generation_requests']
+    )
     rendered = render_desired_state(
         args.source_root,
         project.root,
@@ -482,6 +683,7 @@ def _plan(args: argparse.Namespace, session: Path, source_commit: str | None):
         config,
         generated,
         external_root if config.external_sources else None,
+        generated_outputs=generated_outputs,
     )
     validate_rendered_state(rendered)
     plan = build_plan(
@@ -507,7 +709,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.phase == 'prepare':
             _prepare(args, session, source_commit)
             return 0
-        plan, target, config, rendered = _plan(args, session, source_commit)
+        plan, target, config, rendered = _plan(
+            args,
+            session,
+            source_commit,
+            verify_target_fingerprint=args.phase in {'finish', 'apply'},
+        )
         result_context = {
             'harnesses': [item.value for item in _HARNESSES],
             'external_skills': [item.name for item in config.external_skills],
@@ -534,15 +741,36 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ),
             )
             return 0 if not changed_paths else 1
-        apply_plan(target, plan)
+        changed_paths = [
+            change.path.as_posix()
+            for change in plan.changes
+            if change.kind.value != 'unchanged'
+        ]
+        if args.phase == 'finish':
+            def postcondition() -> None:
+                check_plan, _, _, _ = _plan(
+                    args,
+                    session,
+                    source_commit,
+                    verify_target_fingerprint=False,
+                )
+                drift = [
+                    change.path.as_posix()
+                    for change in check_plan.changes
+                    if change.kind.value != 'unchanged'
+                ]
+                if drift:
+                    raise SetupError(
+                        'post-apply validation did not converge: ' + ', '.join(drift)
+                    )
+
+            apply_plan(target, plan, postcondition=postcondition)
+        else:
+            apply_plan(target, plan)
         _emit_result(
             phase=args.phase,
             source_commit=source_commit,
-            changed_paths=[
-                change.path.as_posix()
-                for change in plan.changes
-                if change.kind.value != 'unchanged'
-            ],
+            changed_paths=changed_paths,
             **result_context,
             drift=None,
         )

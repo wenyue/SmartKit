@@ -30,20 +30,25 @@ TERMINAL_AGENT_STATES = ('completed', 'failed', 'cancelled', 'canceled', 'errore
 BEHAVIOR_CAPABILITY_NAMES = (
     'tool calls',
     'incomplete calls',
-    'subagent lifecycle and coordination',
+    'subagent lifecycle',
+    'agent coordination',
     'waits',
 )
+DIAGNOSTIC_SCOPES = ('turn', 'session', 'both')
 PROFILE_LABELS = {
     'codex': 'Codex',
     'cursor': 'Cursor',
     'copilot': 'GitHub Copilot CLI',
 }
-WINDOWS_LITERAL_PATH_CHARS = r'\w._:/\\ ()\-'
-WINDOWS_UNQUOTED_PATH_CHARS = r'A-Za-z0-9._:/\\\-'
-LINUX_LITERAL_PATH_CHARS = r'\w._/ ()\-'
-LINUX_UNQUOTED_PATH_CHARS = r'A-Za-z0-9._/\-'
 SESSION_ID_LITERAL = r'[A-Za-z0-9._:\-]+'
-WINDOWS_ABSOLUTE_PREFIX = r'(?:[A-Za-z]:[\\/]|\\\\)'
+SESSION_ID_PATTERN = re.compile(SESSION_ID_LITERAL)
+ACQUISITION_ID_LITERAL = r'[a-f0-9]{64}'
+ACQUISITION_ID_PATTERN = re.compile(ACQUISITION_ID_LITERAL)
+TOKSCALE_EFFECTS = (
+    'scan selected client session records in the requested date window or available local history when bounds are unavailable, and read existing Tokscale identity state',
+    'may access Tokscale pricing or provider endpoints',
+    'may read or write Tokscale-owned config and cache directories',
+)
 
 
 class UsageError(RuntimeError):
@@ -57,6 +62,45 @@ def validate_client(client: str) -> str:
             f'Unsupported client {client!r}; supported clients are: {supported}.'
         )
     return client
+
+
+def validate_session_id(session_id: str) -> str:
+    if not isinstance(session_id, str) or SESSION_ID_PATTERN.fullmatch(session_id) is None:
+        raise UsageError(
+            'Session ID must contain only letters, digits, dot, underscore, colon, or hyphen.'
+        )
+    return session_id
+
+
+def validate_acquisition_id(acquisition_id: str) -> str:
+    if (
+        not isinstance(acquisition_id, str)
+        or ACQUISITION_ID_PATTERN.fullmatch(acquisition_id) is None
+    ):
+        raise UsageError('Acquisition ID must be exactly 64 lowercase hexadecimal digits.')
+    return acquisition_id
+
+
+def _requested_scopes(selected_scope: str) -> tuple[str, ...]:
+    if selected_scope == 'turn':
+        return ('turn',)
+    if selected_scope == 'session':
+        return ('session',)
+    if selected_scope == 'both':
+        return ('turn', 'session')
+    raise UsageError(f'Unsupported diagnostic scope: {selected_scope}')
+
+
+def _validate_supported_scope(client: str, selected_scope: str) -> None:
+    validate_client(client)
+    requested = _requested_scopes(selected_scope)
+    if client != 'codex' and requested == ('turn',):
+        raise UsageError(
+            f'{PROFILE_LABELS[client]} turn-only diagnosis is unsupported: '
+            'this package has no turn-bounded evidence source for that client. '
+            'Use --scope session or --scope both when whole-session Tokscale '
+            'evidence is required.'
+        )
 
 
 def _timestamp(now: datetime | None = None) -> datetime:
@@ -91,6 +135,17 @@ def session_id_matches(client: str, candidate: str, requested: str) -> bool:
     return client == 'codex' and candidate == f'rollout-{requested}'
 
 
+def _tokscale_session_id(row: dict[str, Any]) -> str:
+    has_camel = 'sessionId' in row
+    has_snake = 'session_id' in row
+    if has_camel and has_snake and row['sessionId'] != row['session_id']:
+        raise UsageError(
+            'Tokscale fields sessionId and session_id contain conflicting values.'
+        )
+    value = row['sessionId'] if has_camel else row.get('session_id')
+    return _required_text(value, 'sessionId')
+
+
 def _matching_tokscale_rows(
     client: str,
     requested: str,
@@ -102,10 +157,8 @@ def _matching_tokscale_rows(
     for row in rows:
         if row.get('client') != client:
             continue
-        candidate = row.get('sessionId', row.get('session_id'))
-        if not isinstance(candidate, str) or not session_id_matches(
-            client, candidate, requested
-        ):
+        candidate = _tokscale_session_id(row)
+        if not session_id_matches(client, candidate, requested):
             continue
         normalized = normalize_usage_row(row)
         group = (
@@ -184,6 +237,36 @@ def _number(
     return result
 
 
+def _tokscale_integer_alias(
+    representations: tuple[tuple[str, bool, Any], ...],
+    field: str,
+) -> int:
+    values = [
+        (
+            name,
+            _integer(
+                value,
+                name,
+                allow_none=False,
+                require_json_number=True,
+            ),
+        )
+        for name, present, value in representations
+        if present
+    ]
+    if not values:
+        return _integer(
+            None,
+            field,
+            allow_none=False,
+            require_json_number=True,
+        )
+    if any(value != values[0][1] for _, value in values[1:]):
+        names = ' and '.join(name for name, _ in values)
+        raise UsageError(f'Tokscale fields {names} contain conflicting values.')
+    return values[0][1]
+
+
 def _required_text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise UsageError(f'Tokscale field {field} must be a nonempty string.')
@@ -191,15 +274,14 @@ def _required_text(value: Any, field: str) -> str:
 
 
 def normalize_usage_row(row: dict[str, Any]) -> dict[str, Any]:
-    performance = row.get('performance') or {}
+    performance = row.get('performance', {})
     if not isinstance(performance, dict):
         raise UsageError('Tokscale performance data must be an object.')
-    session_id = row['sessionId'] if 'sessionId' in row else row.get('session_id')
     provider = row.get('provider')
     return {
         'client': _required_text(row.get('client'), 'client'),
-        'session_id': _required_text(session_id, 'sessionId'),
-        'provider': '' if provider is None else str(provider),
+        'session_id': _tokscale_session_id(row),
+        'provider': '' if provider is None else _required_text(provider, 'provider'),
         'model': _required_text(row.get('model'), 'model'),
         'input': _integer(
             row.get('input'), 'input', allow_none=False, require_json_number=True
@@ -213,32 +295,44 @@ def normalize_usage_row(row: dict[str, Any]) -> dict[str, Any]:
             allow_none=False,
             require_json_number=True,
         ),
-        'cache_read': _integer(
-            row.get('cacheRead', row.get('cache_read')),
+        'cache_read': _tokscale_integer_alias(
+            (
+                ('cacheRead', 'cacheRead' in row, row.get('cacheRead')),
+                ('cache_read', 'cache_read' in row, row.get('cache_read')),
+            ),
             'cacheRead',
-            allow_none=False,
-            require_json_number=True,
         ),
-        'cache_write': _integer(
-            row.get('cacheWrite', row.get('cache_write')),
+        'cache_write': _tokscale_integer_alias(
+            (
+                ('cacheWrite', 'cacheWrite' in row, row.get('cacheWrite')),
+                ('cache_write', 'cache_write' in row, row.get('cache_write')),
+            ),
             'cacheWrite',
-            allow_none=False,
-            require_json_number=True,
         ),
         'cost': _number(
             row.get('cost'), 'cost', allow_none=False, require_json_number=True
         ),
-        'message_count': _integer(
-            row.get('messageCount', row.get('message_count')),
+        'message_count': _tokscale_integer_alias(
+            (
+                ('messageCount', 'messageCount' in row, row.get('messageCount')),
+                ('message_count', 'message_count' in row, row.get('message_count')),
+            ),
             'messageCount',
-            allow_none=False,
-            require_json_number=True,
         ),
-        'model_activity_ms': _integer(
-            performance.get('totalDurationMs', row.get('model_activity_ms')),
+        'model_activity_ms': _tokscale_integer_alias(
+            (
+                (
+                    'performance.totalDurationMs',
+                    'totalDurationMs' in performance,
+                    performance.get('totalDurationMs'),
+                ),
+                (
+                    'model_activity_ms',
+                    'model_activity_ms' in row,
+                    row.get('model_activity_ms'),
+                ),
+            ),
             'performance.totalDurationMs',
-            allow_none=False,
-            require_json_number=True,
         ),
     }
 
@@ -287,7 +381,132 @@ def tokscale_executable(
         resolved = which(candidate)
         if resolved:
             return resolved
-    return 'tokscale'
+    raise UsageError('Installed Tokscale executable was not found on PATH.')
+
+
+def _run_tokscale(
+    command: list[str],
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+    operation: str,
+) -> subprocess.CompletedProcess[str]:
+    try:
+        completed = runner(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=TOKSCALE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise UsageError(
+            f'Tokscale {operation} timed out after {TOKSCALE_TIMEOUT_SECONDS} seconds.'
+        ) from error
+    except OSError as error:
+        raise UsageError(f'Tokscale {operation} could not run: {error}') from error
+    if completed.returncode != 0:
+        raise UsageError(
+            f'Tokscale {operation} exited with code {completed.returncode}; '
+            'provider output was withheld.'
+        )
+    return completed
+
+
+def read_tokscale_version(
+    executable: str,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> str:
+    completed = _run_tokscale([executable, '--version'], runner, 'version probe')
+    match = re.fullmatch(
+        r'tokscale\s+([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?)\s*',
+        completed.stdout,
+    )
+    if match is None:
+        raise UsageError('Tokscale version output used an unsupported schema.')
+    return match.group(1)
+
+
+def probe_tokscale_identity(
+    client: str,
+    executable: str,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> dict[str, str | None]:
+    if client != 'cursor':
+        return {'status': 'not-required', 'reason': None}
+    try:
+        completed = runner(
+            [executable, 'cursor', 'status'],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=TOKSCALE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return {
+            'status': 'failed',
+            'reason': 'Tokscale Cursor identity probe timed out.',
+        }
+    except OSError:
+        return {
+            'status': 'failed',
+            'reason': 'Tokscale Cursor identity probe could not run.',
+        }
+    if completed.returncode != 0:
+        return {
+            'status': 'unavailable',
+            'reason': 'No existing valid Tokscale Cursor identity was available.',
+        }
+    return {'status': 'available', 'reason': None}
+
+
+def acquire_tokscale_evidence(
+    client: str,
+    session_id: str,
+    started_at: datetime | None,
+    ended_at: datetime | None,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    *,
+    now: Callable[[], datetime] = _timestamp,
+) -> dict[str, Any]:
+    """Acquire one versioned provider record without retaining provider output."""
+    client = validate_client(client)
+    session_id = validate_session_id(session_id)
+    observed_from = now()
+    executable = None
+    version = None
+    schema_status = 'not-validated'
+    identity = {'status': 'unknown', 'reason': None}
+    rows: list[dict[str, Any]] = []
+    error = None
+    try:
+        executable = tokscale_executable()
+        version = read_tokscale_version(executable, runner)
+        identity = probe_tokscale_identity(client, executable, runner)
+        rows = capture_tokscale_snapshot(
+            client,
+            started_at,
+            ended_at,
+            runner,
+            session_id=session_id,
+            executable=executable,
+        )
+        schema_status = 'validated'
+        _matching_tokscale_rows(client, session_id, rows)
+    except UsageError as caught:
+        error = str(caught)
+        rows = []
+    observed_through = now()
+    return {
+        'outcome': 'failed' if error else 'succeeded',
+        'cause': error,
+        'executable': executable,
+        'version': version,
+        'schema_status': schema_status,
+        'identity': identity,
+        'observed_from': _serialize_timestamp(observed_from),
+        'observed_through': _serialize_timestamp(observed_through),
+        'rows': rows,
+        'effects': list(TOKSCALE_EFFECTS),
+    }
 
 
 def capture_tokscale_snapshot(
@@ -297,10 +516,11 @@ def capture_tokscale_snapshot(
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
     *,
     session_id: str | None = None,
+    executable: str | None = None,
 ) -> list[dict[str, Any]]:
     client = validate_client(client)
     command = [
-        tokscale_executable(),
+        executable or tokscale_executable(),
         '--json',
         '--client',
         client,
@@ -315,23 +535,7 @@ def capture_tokscale_snapshot(
             ]
         )
     command.extend(['--group-by', 'client,session,model', '--no-spinner'])
-    try:
-        completed = runner(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=TOKSCALE_TIMEOUT_SECONDS,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise UsageError(
-            f'Tokscale timed out after {TOKSCALE_TIMEOUT_SECONDS} seconds for client {client}.'
-        ) from error
-    except OSError as error:
-        raise UsageError(f'Tokscale could not run for client {client}: {error}') from error
-    if completed.returncode != 0:
-        detail = completed.stderr.strip() or completed.stdout.strip() or 'unknown error'
-        raise UsageError(f'Tokscale failed for client {client}: {detail}')
+    completed = _run_tokscale(command, runner, f'collection for client {client}')
     try:
         payload = json.loads(completed.stdout)
     except json.JSONDecodeError as error:
@@ -351,10 +555,7 @@ def capture_tokscale_snapshot(
                 f'Tokscale JSON for client {client} contains a row for '
                 f'client {entry_client}.'
             )
-        entry_session = _required_text(
-            entry['sessionId'] if 'sessionId' in entry else entry.get('session_id'),
-            'sessionId',
-        )
+        entry_session = _tokscale_session_id(entry)
         if session_id is not None and not session_id_matches(
             client, entry_session, session_id
         ):
@@ -400,13 +601,15 @@ def capture_tokscale_snapshot(
 def detect_current_session(
     client: str | None = None, session_id: str | None = None
 ) -> tuple[str | None, str | None]:
-    if client or session_id:
-        if not client or not session_id:
+    client_supplied = client is not None
+    session_id_supplied = session_id is not None
+    if client_supplied or session_id_supplied:
+        if not client_supplied or not session_id_supplied:
             raise UsageError('Client and session ID must be provided together.')
-        return validate_client(client), session_id
+        return validate_client(client), validate_session_id(session_id)
     codex_session = os.environ.get('CODEX_THREAD_ID')
     if codex_session:
-        return 'codex', codex_session
+        return 'codex', validate_session_id(codex_session)
     return None, None
 
 
@@ -491,6 +694,11 @@ def _load_codex_log_snapshot(
     *,
     capture_cutoff_after_read: bool = False,
 ) -> dict[str, Any]:
+    observation_started = (
+        _timestamp(captured_at)
+        if captured_at is not None
+        else _timestamp() if capture_cutoff_after_read else None
+    )
     configured_home = os.environ.get('CODEX_HOME')
     root = (
         codex_home
@@ -581,7 +789,18 @@ def _load_codex_log_snapshot(
     return {
         'events': events,
         'warnings': warnings,
-        'acquisition': {'outcome': outcome, 'causes': causes},
+        'acquisition': {
+            'outcome': outcome,
+            'causes': causes,
+            'observed_from': (
+                _serialize_timestamp(observation_started)
+                if observation_started is not None
+                else None
+            ),
+            'observed_through': (
+                _serialize_timestamp(cutoff) if cutoff is not None else None
+            ),
+        },
         'captured_at': _serialize_timestamp(cutoff) if cutoff is not None else None,
     }
 
@@ -621,21 +840,13 @@ def _codex_current_turn_discovery(
     events, warnings = _codex_events(session_id, codex_home, snapshot)
     if not events:
         return None, warnings
-    user_boundaries = []
-    for event in events:
-        payload = event.get('payload') or {}
-        if (
-            event.get('type') == 'event_msg'
-            and payload.get('type') == 'user_message'
-        ) or (
-            event.get('type') == 'response_item'
-            and payload.get('type') == 'message'
-            and payload.get('role') == 'user'
-        ):
-            user_boundaries.append(event['_parsed_timestamp'])
-    if not user_boundaries:
+    boundary_index = _latest_codex_user_boundary_index(events)
+    if boundary_index is None:
         return None, warnings
-    return (max(user_boundaries), events[-1]['_parsed_timestamp']), warnings
+    return (
+        events[boundary_index]['_parsed_timestamp'],
+        events[-1]['_parsed_timestamp'],
+    ), warnings
 
 
 def codex_current_turn_bounds(
@@ -645,6 +856,31 @@ def codex_current_turn_bounds(
 ) -> tuple[datetime, datetime] | None:
     bounds, _ = _codex_current_turn_discovery(session_id, codex_home, snapshot)
     return bounds
+
+
+def _is_codex_user_boundary(event: dict[str, Any]) -> bool:
+    payload = event.get('payload') or {}
+    return (
+        event.get('type') == 'event_msg'
+        and payload.get('type') == 'user_message'
+    ) or (
+        event.get('type') == 'response_item'
+        and payload.get('type') == 'message'
+        and payload.get('role') == 'user'
+    )
+
+
+def _latest_codex_user_boundary_index(
+    events: list[dict[str, Any]],
+) -> int | None:
+    return next(
+        (
+            index
+            for index in range(len(events) - 1, -1, -1)
+            if _is_codex_user_boundary(events[index])
+        ),
+        None,
+    )
 
 
 def _normalize_tool_name(name: str) -> str:
@@ -699,15 +935,19 @@ def _failure_envelope_texts(value: Any) -> list[str]:
             item['text']
             for item in parsed
             if isinstance(item, dict)
-            and item.get('type') == 'text'
+            and item.get('type') in ('text', 'input_text', 'output_text')
             and isinstance(item.get('text'), str)
         ]
     if isinstance(parsed, dict):
-        return [
+        texts = [
             parsed[field]
             for field in ('error', 'message')
             if isinstance(parsed.get(field), str)
         ]
+        for field in ('content', 'output'):
+            if field in parsed:
+                texts.extend(_failure_envelope_texts(parsed[field]))
+        return texts
     return []
 
 
@@ -720,8 +960,9 @@ def _tool_failed(output: Any) -> bool:
             r'^(?:execution error:|script (?:failed\b|error:)|tool error:|collab .* failed:)',
             text.strip().lower(),
         )
-        or re.fullmatch(
-            r'process exited with code (?:-[0-9]+|\+?[1-9][0-9]*)[.!]?',
+        or re.search(
+            r'(?:^|\n)process exited with code '
+            r'(?:-[0-9]+|\+?[1-9][0-9]*)[.!]?(?:\n|$)',
             text.strip().lower(),
         )
         for text in _failure_envelope_texts(output)
@@ -733,190 +974,67 @@ def _call_fingerprint(tool_name: str, payload: dict[str, Any]) -> str:
     return hashlib.sha256(f'{tool_name}\0{arguments}'.encode()).hexdigest()
 
 
-def _shell_command(payload: dict[str, Any]) -> str | None:
-    if _normalize_tool_name(str(payload.get('name', ''))) not in (
-        'exec',
-        'shell_command',
-    ):
-        return None
-    arguments = payload.get('input', payload.get('arguments', ''))
-
-    def command_from_object(
-        value: Any, *, require_cmd: bool = False
-    ) -> str | None:
-        if not isinstance(value, dict):
-            return None
-        fields = [field for field in ('command', 'cmd') if field in value]
-        if len(fields) != 1 or not isinstance(value[fields[0]], str):
-            return None
-        if require_cmd and fields[0] != 'cmd':
-            return None
-        transport = set(value) - {fields[0]}
-        if not transport.issubset(
-            {
-                'justification',
-                'login',
-                'max_output_tokens',
-                'prefix_rule',
-                'sandbox_permissions',
-                'shell',
-                'tty',
-                'workdir',
-                'yield_time_ms',
-            }
-        ):
-            return None
-        if any(
-            field in value and not isinstance(value[field], bool)
-            for field in ('login', 'tty')
-        ):
-            return None
-        if any(
-            field in value
-            and (
-                isinstance(value[field], bool)
-                or not isinstance(value[field], int)
-                or value[field] < 0
-            )
-            for field in ('max_output_tokens', 'yield_time_ms')
-        ):
-            return None
-        if any(
-            field in value
-            and (not isinstance(value[field], str) or not value[field])
-            for field in ('justification', 'shell', 'workdir')
-        ):
-            return None
-        if 'sandbox_permissions' in value and value['sandbox_permissions'] not in (
-            'use_default',
-            'require_escalated',
-        ):
-            return None
-        if 'prefix_rule' in value and (
-            not isinstance(value['prefix_rule'], list)
-            or not value['prefix_rule']
-            or any(not isinstance(item, str) or not item for item in value['prefix_rule'])
-        ):
-            return None
-        return value[fields[0]].strip()
-
-    if isinstance(arguments, dict):
-        return command_from_object(arguments)
-    if not isinstance(arguments, str):
-        return None
-
-    stripped = arguments.strip()
-    if re.match(r'^(?:&\s*)?(?:powershell|pwsh)(?:\.exe)?\b', stripped, re.I):
-        return stripped
-    if re.match(r'^(?:sh|bash)\s+', stripped, re.I):
-        return stripped
-
-    def unique_object_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        result = {}
-        for key, value in pairs:
-            if key in result:
-                raise ValueError(f'Duplicate JSON field: {key}')
-            result[key] = value
-        return result
-
-    decoder = json.JSONDecoder(object_pairs_hook=unique_object_pairs)
-    if stripped.startswith('{'):
-        try:
-            parsed, end = decoder.raw_decode(stripped)
-        except (json.JSONDecodeError, ValueError):
-            return None
-        if stripped[end:].strip():
-            return None
-        return command_from_object(parsed)
-
-    envelope = re.match(
-        r'^const[ \t]+([A-Za-z_$][A-Za-z0-9_$]*)[ \t]*=[ \t]*'
-        r'await[ \t]+tools\.exec_command[ \t]*\([ \t\r\n]*',
-        stripped,
-    )
-    if not envelope:
-        return None
-    try:
-        parsed, end = decoder.raw_decode(stripped, envelope.end())
-    except (json.JSONDecodeError, ValueError):
-        return None
-    variable = re.escape(envelope.group(1))
-    if re.fullmatch(
-        rf'[ \t\r\n]*\)[ \t]*;[ \t\r\n]*text[ \t]*\('
-        rf'[ \t]*{variable}\.output[ \t]*\)[ \t]*;[ \t\r\n]*',
-        stripped[end:],
-    ) is None:
-        return None
-    return command_from_object(parsed, require_cmd=True)
-
-
-def _is_diagnostic_call(payload: dict[str, Any]) -> bool:
-    command = _shell_command(payload)
-    if not command:
-        return False
-    flags = re.IGNORECASE | re.DOTALL
-    windows_wrapper_path = (
-        rf'(?:"{WINDOWS_ABSOLUTE_PREFIX}'
-        rf'(?:[{WINDOWS_LITERAL_PATH_CHARS}]*[\\/])?diagnose-agent-session'
-        rf'[\\/]scripts[\\/]task-metrics\.ps1"'
-        rf"|'{WINDOWS_ABSOLUTE_PREFIX}"
-        rf"(?:[{WINDOWS_LITERAL_PATH_CHARS}]*[\\/])?diagnose-agent-session"
-        rf"[\\/]scripts[\\/]task-metrics\.ps1'"
-        rf'|{WINDOWS_ABSOLUTE_PREFIX}'
-        rf'(?:[{WINDOWS_UNQUOTED_PATH_CHARS}]*[\\/])?diagnose-agent-session'
-        rf'[\\/]scripts[\\/]task-metrics\.ps1)'
-    )
-    linux_wrapper_path = (
-        rf'(?:"/(?:[{LINUX_LITERAL_PATH_CHARS}]*/)?diagnose-agent-session/'
-        rf'scripts/task-metrics\.sh"'
-        rf"|'/(?:[{LINUX_LITERAL_PATH_CHARS}]*/)?diagnose-agent-session/"
-        rf"scripts/task-metrics\.sh'"
-        rf'|/(?:[{LINUX_UNQUOTED_PATH_CHARS}]*/)?diagnose-agent-session/'
-        rf'scripts/task-metrics\.sh)'
-    )
-    invocation_patterns = (
-        (
-            r'^[ \t]*(?:&[ \t]*)?(?:powershell|pwsh)(?:\.exe)?'
-            r'(?:[ \t]+-ExecutionPolicy[ \t]+Bypass)?[ \t]+-File[ \t]+'
-            + windows_wrapper_path
-        ),
-        (
-            r'^[ \t]*(?:sh|bash)[ \t]+' + linux_wrapper_path
-        ),
-        (
-            r"^[ \t]*\$skillRoot[ \t]*=[ \t]*(['\"])"
-            rf"{WINDOWS_ABSOLUTE_PREFIX}"
-            rf"(?:[{WINDOWS_LITERAL_PATH_CHARS}]*[\\/])?"
-            r"diagnose-agent-session[\\/]?\1[ \t]*(?:;[ \t]*|\r?\n[ \t]*)"
-            r"\$wrapper[ \t]*=[ \t]*Join-Path[ \t]+\$skillRoot[ \t]+(['\"])"
-            r"scripts\\task-metrics\.ps1\2[ \t]*"
-            r"(?:;[ \t]*|\r?\n[ \t]*)"
-            r"(?:&[ \t]*)?(?:powershell|pwsh)(?:\.exe)?"
-            r"(?:[ \t]+-ExecutionPolicy[ \t]+Bypass)?"
-            r"[ \t]+-File[ \t]+\$wrapper"
-        ),
-        (
-            rf"^[ \t]*skill_root=(['\"])/"
-            rf"(?:[{LINUX_LITERAL_PATH_CHARS}]*/)?"
-            r"diagnose-agent-session/?\1[ \t]*(?:;[ \t]*|\r?\n[ \t]*)"
-            r"(?:sh|bash)[ \t]+(['\"])\$skill_root/scripts/"
-            r"task-metrics\.sh\2"
-        ),
-    )
-    allowed_arguments = (
-        r'(?:[ \t]+--scope[ \t]+(?:turn|session|both)'
-        r'|[ \t]+--client[ \t]+(?:codex|cursor|copilot)'
-        rf'|[ \t]+--session-id[ \t]+{SESSION_ID_LITERAL})*[ \t]*'
-    )
-    return any(
-        re.fullmatch(
-            rf'{invocation}[ \t]+diagnose{allowed_arguments}',
-            command,
-            flags,
+def _value_contains_acquisition_id(value: Any, acquisition_id: str) -> bool:
+    if isinstance(value, str):
+        return re.search(
+            rf'(?<![a-f0-9]){re.escape(acquisition_id)}(?![a-f0-9])', value
+        ) is not None
+    if isinstance(value, dict):
+        return any(
+            _value_contains_acquisition_id(item, acquisition_id)
+            for item in value.values()
         )
-        is not None
-        for invocation in invocation_patterns
-    )
+    if isinstance(value, list):
+        return any(
+            _value_contains_acquisition_id(item, acquisition_id) for item in value
+        )
+    return False
+
+
+def _self_call_attribution(
+    events: list[dict[str, Any]], acquisition_id: str | None
+) -> dict[str, Any]:
+    if acquisition_id is None:
+        return {
+            'status': 'not-requested',
+            'matches': 0,
+            'excluded_call_id': None,
+            'reason': None,
+        }
+    acquisition_id = validate_acquisition_id(acquisition_id)
+    matches = []
+    for event in events:
+        if event.get('type') != 'response_item':
+            continue
+        payload = event.get('payload') or {}
+        if payload.get('type') not in ('custom_tool_call', 'function_call'):
+            continue
+        arguments = payload.get('input', payload.get('arguments'))
+        if _value_contains_acquisition_id(arguments, acquisition_id):
+            matches.append(str(payload['call_id']))
+    if len(matches) == 1:
+        return {
+            'status': 'available',
+            'matches': 1,
+            'excluded_call_id': matches[0],
+            'reason': None,
+        }
+    if not matches:
+        return {
+            'status': 'unavailable',
+            'matches': 0,
+            'excluded_call_id': None,
+            'reason': 'The current acquisition call was not observed in the Codex tool-call records.',
+        }
+    return {
+        'status': 'failed',
+        'matches': len(matches),
+        'excluded_call_id': None,
+        'reason': (
+            'Multiple Codex tool-call records carried the current acquisition ID; '
+            'self-call attribution was ambiguous and no call was excluded.'
+        ),
+    }
 
 
 def _spawned_agent_aliases(output: Any) -> tuple[str | None, set[str]]:
@@ -999,10 +1117,15 @@ def analyze_codex_tool_activity(
     started_at: datetime | None = None,
     ended_at: datetime | None = None,
     snapshot: dict[str, Any] | None = None,
+    acquisition_id: str | None = None,
+    scope_start_index: int | None = None,
 ) -> dict[str, Any]:
     evidence = snapshot or _load_codex_log_snapshot(session_id, codex_home)
     events, warnings = _codex_events(session_id, codex_home, evidence)
     acquisition = evidence['acquisition']
+    self_call_attribution = _self_call_attribution(events, acquisition_id)
+    if self_call_attribution['reason']:
+        warnings.append(str(self_call_attribution['reason']))
     if not events:
         activity = _unavailable_tool_activity(
             warnings or _codex_acquisition_messages(evidence),
@@ -1013,7 +1136,11 @@ def analyze_codex_tool_activity(
             ),
         )
         activity['acquisition'] = acquisition
+        activity['self_call_attribution'] = self_call_attribution
         return activity
+
+    if scope_start_index is not None and not 0 <= scope_start_index < len(events):
+        raise UsageError('Codex scope start event index was outside the snapshot.')
 
     scope_start = _timestamp(started_at or events[0]['_parsed_timestamp'])
     scope_end = _timestamp(ended_at or events[-1]['_parsed_timestamp'])
@@ -1026,6 +1153,11 @@ def analyze_codex_tool_activity(
     scope_failed_agents: set[str] = set()
     scope_list_completed: set[str] = set()
     scope_list_failed: set[str] = set()
+    lifecycle_starts = 0
+    lifecycle_interactions = 0
+    lifecycle_interruptions = 0
+    lifecycle_events = 0
+    lifecycle_schema_failed = False
     observed_peak_live = 0
     wait_without_live = 0
     wait_timeouts = 0
@@ -1034,20 +1166,53 @@ def analyze_codex_tool_activity(
     previous_fingerprint = None
     repeated_identical_calls = 0
 
-    for event in events:
+    for event_index, event in enumerate(events):
         event_time = event['_parsed_timestamp']
         if event_time > scope_end:
             break
-        in_scope = scope_start <= event_time <= scope_end
+        in_scope = scope_start <= event_time <= scope_end and (
+            scope_start_index is None
+            or event_time > scope_start
+            or event_index >= scope_start_index
+        )
         if in_scope:
             observed_peak_live = max(observed_peak_live, len(live_agents))
+        payload = event.get('payload') or {}
+        if (
+            event.get('type') == 'event_msg'
+            and payload.get('type') == 'sub_agent_activity'
+        ):
+            agent_id = payload.get('agent_thread_id')
+            agent_path = payload.get('agent_path')
+            kind = payload.get('kind')
+            if (
+                not isinstance(agent_id, str)
+                or not agent_id
+                or not isinstance(agent_path, str)
+                or not agent_path
+                or kind not in ('started', 'interacted', 'interrupted')
+            ):
+                if in_scope:
+                    lifecycle_schema_failed = True
+                    warnings.append(
+                        'A Codex subagent lifecycle event used an unsupported schema.'
+                    )
+                continue
+            if in_scope:
+                lifecycle_events += 1
+                if kind == 'started':
+                    lifecycle_starts += 1
+                elif kind == 'interacted':
+                    lifecycle_interactions += 1
+                else:
+                    lifecycle_interruptions += 1
+            continue
         if event.get('type') != 'response_item':
             continue
-        payload = event.get('payload') or {}
         payload_type = payload.get('type')
         call_id = str(payload.get('call_id', ''))
         if payload_type in ('custom_tool_call', 'function_call') and call_id:
-            if _is_diagnostic_call(payload):
+            if call_id == self_call_attribution['excluded_call_id']:
                 continue
             tool_name = _normalize_tool_name(str(payload.get('name', '')))
             fingerprint = _call_fingerprint(tool_name, payload)
@@ -1160,6 +1325,10 @@ def analyze_codex_tool_activity(
         findings.append('wait-without-observed-live-agent')
     if scope_failed_agents or scope_list_failed:
         findings.append('agent-failures')
+    if lifecycle_interruptions:
+        findings.append('interrupted-subagent-lifecycle')
+    if self_call_attribution['status'] == 'failed':
+        findings.append('ambiguous-self-call-attribution')
 
     coordination = {name: 0 for name in COORDINATION_TOOLS}
     for name in COORDINATION_TOOLS:
@@ -1177,12 +1346,103 @@ def analyze_codex_tool_activity(
             'wait_timeouts': wait_timeouts,
             'max_consecutive_wait_timeouts': max_consecutive_wait_timeouts,
             'wait_without_observed_live_agent': wait_without_live,
+            'lifecycle_started_events': lifecycle_starts,
+            'lifecycle_interacted_events': lifecycle_interactions,
+            'lifecycle_interrupted_events': lifecycle_interruptions,
         }
     )
+    acquisition_status = acquisition['outcome']
+    if acquisition_status == 'failed':
+        base_surface_status = 'failed'
+    elif acquisition_status == 'unavailable':
+        base_surface_status = 'unavailable'
+    else:
+        base_surface_status = 'available'
+    coordination_calls = sum(coordination[name] for name in COORDINATION_TOOLS)
+    surface_coverage = {
+        'tool calls': {
+            'status': base_surface_status,
+            'evidence': (
+                'Codex response_item tool-call records'
+                if base_surface_status == 'available'
+                else None
+            ),
+            'reason': None,
+        },
+        'incomplete calls': {
+            'status': base_surface_status,
+            'evidence': (
+                'Codex response_item call/output pairing'
+                if base_surface_status == 'available'
+                else None
+            ),
+            'reason': None,
+        },
+        'subagent lifecycle': {
+            'status': (
+                base_surface_status
+                if base_surface_status != 'available'
+                else 'failed' if lifecycle_schema_failed
+                else 'available' if lifecycle_events
+                else 'unavailable'
+            ),
+            'evidence': (
+                'Codex sub_agent_activity lifecycle records'
+                if lifecycle_events
+                else None
+            ),
+            'reason': (
+                'A Codex subagent lifecycle event used an unsupported schema.'
+                if lifecycle_schema_failed
+                else None if lifecycle_events
+                else 'No supported Codex subagent lifecycle records were present.'
+            ),
+        },
+        'agent coordination': {
+            'status': (
+                base_surface_status
+                if base_surface_status != 'available'
+                else 'available' if coordination_calls
+                else 'unavailable'
+            ),
+            'evidence': (
+                'Codex coordination tool call/output records'
+                if coordination_calls
+                else None
+            ),
+            'reason': (
+                None
+                if coordination_calls
+                else 'No supported Codex coordination tool record was present.'
+            ),
+        },
+        'waits': {
+            'status': (
+                base_surface_status
+                if base_surface_status != 'available' or coordination['wait_agent']
+                else 'unavailable'
+            ),
+            'evidence': (
+                'Codex wait_agent call/output records'
+                if coordination['wait_agent']
+                else None
+            ),
+            'reason': (
+                None
+                if coordination['wait_agent']
+                else 'Codex sub_agent_activity does not identify waits, and no wait_agent record was present.'
+            ),
+        },
+    }
+    acquisition_reasons = '; '.join(_codex_acquisition_messages(evidence))
+    for surface in surface_coverage.values():
+        if surface['status'] in ('failed', 'unavailable') and not surface['reason']:
+            surface['reason'] = acquisition_reasons or 'Codex local-log evidence was unavailable.'
     return {
         'status': (
             'failed'
             if acquisition['outcome'] == 'failed'
+            or self_call_attribution['status'] == 'failed'
             else 'partial' if warnings else 'available'
         ),
         'started_calls': started_calls,
@@ -1199,6 +1459,8 @@ def analyze_codex_tool_activity(
         'findings': findings,
         'warnings': warnings,
         'acquisition': acquisition,
+        'self_call_attribution': self_call_attribution,
+        'surface_coverage': surface_coverage,
     }
 
 
@@ -1239,13 +1501,25 @@ def read_codex_token_totals(
 
 
 def _normalize_codex_token_totals(raw: dict[str, Any]) -> dict[str, int]:
-    total_input = _integer(raw.get('input_tokens'), 'input_tokens')
-    cache_read = _integer(raw.get('cached_input_tokens'), 'cached_input_tokens')
-    cache_write = _integer(
-        raw.get('cache_write_input_tokens'), 'cache_write_input_tokens'
-    )
-    total_output = _integer(raw.get('output_tokens'), 'output_tokens')
-    reasoning = _integer(raw.get('reasoning_output_tokens'), 'reasoning_output_tokens')
+    def counter(field: str, *, required: bool) -> int:
+        if field not in raw:
+            if required:
+                raise UsageError(f'Codex token field {field} is required.')
+            return 0
+        value = raw[field]
+        if value is None:
+            raise UsageError(f'Codex token field {field} must not be null.')
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise UsageError(f'Codex token field {field} must be an integer.')
+        if value < 0:
+            raise UsageError(f'Codex token field {field} must not be negative.')
+        return value
+
+    total_input = counter('input_tokens', required=True)
+    cache_read = counter('cached_input_tokens', required=False)
+    cache_write = counter('cache_write_input_tokens', required=False)
+    total_output = counter('output_tokens', required=True)
+    reasoning = counter('reasoning_output_tokens', required=False)
     if cache_read + cache_write > total_input:
         raise UsageError('Codex cached input exceeds total input tokens.')
     if reasoning > total_output:
@@ -1268,11 +1542,20 @@ def read_codex_token_delta(
     snapshot: dict[str, Any] | None = None,
 ) -> dict[str, int] | None:
     events, _ = _codex_events(session_id, codex_home, snapshot)
+    boundary_index = _latest_codex_user_boundary_index(events)
+    if (
+        boundary_index is None
+        or events[boundary_index]['_parsed_timestamp'] != started_at
+    ):
+        raise UsageError('Codex current-turn user boundary was not found.')
+    earlier_user_boundary = False
     before = None
     after = None
-    for event in events:
+    for index, event in enumerate(events):
         event_time = event['_parsed_timestamp']
         payload = event.get('payload') or {}
+        if index < boundary_index and _is_codex_user_boundary(event):
+            earlier_user_boundary = True
         info = payload.get('info') or {}
         raw = info.get('total_token_usage')
         if (
@@ -1282,12 +1565,17 @@ def read_codex_token_delta(
         ):
             continue
         totals = _normalize_codex_token_totals(raw)
-        if event_time < started_at:
+        if index < boundary_index:
             before = totals
-        if started_at <= event_time <= ended_at:
+        if boundary_index < index and event_time <= ended_at:
             after = totals
     if after is None:
         return None
+    if before is None and earlier_user_boundary:
+        raise UsageError(
+            'Codex cumulative token baseline before the current-turn boundary '
+            'was not found.'
+        )
     baseline = before or {field: 0 for field in (*TOKEN_FIELDS, 'total_tokens')}
     delta = {}
     for field in (*TOKEN_FIELDS, 'total_tokens'):
@@ -1305,8 +1593,10 @@ def build_session_usage(
     *,
     tokscale_rows: list[dict[str, Any]],
     snapshot_error: str | None = None,
+    snapshot_unavailable: str | None = None,
     codex_home: Path | None = None,
     codex_snapshot: dict[str, Any] | None = None,
+    tokscale_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     client = validate_client(client)
     try:
@@ -1314,10 +1604,23 @@ def build_session_usage(
     except UsageError as error:
         matching_rows = []
         snapshot_error = str(error)
-    warnings = [snapshot_error] if snapshot_error else []
+    warnings = [message for message in (snapshot_error, snapshot_unavailable) if message]
     collection = {
-        'outcome': 'failed' if snapshot_error else 'succeeded',
-        'cause': snapshot_error,
+        'outcome': (
+            'failed'
+            if snapshot_error
+            else 'unavailable' if snapshot_unavailable else 'succeeded'
+        ),
+        'cause': snapshot_error or snapshot_unavailable,
+    }
+    provider = tokscale_evidence or {
+        **collection,
+        'executable': None,
+        'version': None,
+        'schema_status': 'not-recorded',
+        'observed_from': None,
+        'observed_through': None,
+        'effects': list(TOKSCALE_EFFECTS),
     }
     fallback = {'outcome': 'not-attempted', 'cause': None}
     local_log_acquisition = (
@@ -1336,6 +1639,7 @@ def build_session_usage(
             'totals': totals,
             'warnings': warnings,
             'collection': collection,
+            'provider': provider,
             'fallback': fallback,
             'local_log_acquisition': local_log_acquisition,
         }
@@ -1363,7 +1667,7 @@ def build_session_usage(
                 fallback = {'outcome': 'succeeded', 'cause': None}
             totals = _empty_usage_totals()
             totals.update(log_totals)
-            if not snapshot_error:
+            if not snapshot_error and not snapshot_unavailable:
                 warnings.append('Tokscale returned no matching session row.')
             return {
                 'client': client,
@@ -1376,24 +1680,28 @@ def build_session_usage(
                 'totals': totals,
                 'warnings': warnings,
                 'collection': collection,
+                'provider': provider,
                 'fallback': fallback,
                 'local_log_acquisition': local_log_acquisition,
             }
         if fallback['outcome'] != 'failed':
             fallback = {'outcome': 'no-evidence', 'cause': None}
-    if not snapshot_error and fallback['outcome'] != 'failed':
+    if not snapshot_error and not snapshot_unavailable and fallback['outcome'] != 'failed':
         if client == 'codex':
             warnings.append('No matching Tokscale row or Codex token event was found.')
         elif client == 'cursor':
             warnings.append(
-                'No matching Cursor Tokscale session row was found; an existing valid '
-                'Tokscale login and completed sync are recoverable prerequisites.'
+                'No exact Tokscale row was available for the requested Cursor session.'
             )
+            identity = provider.get('identity', {})
+            if identity.get('status') in ('failed', 'unavailable'):
+                warnings.append(
+                    str(identity.get('reason') or 'Tokscale Cursor identity was unavailable.')
+                )
         else:
             warnings.append(
-                'No matching GitHub Copilot CLI Tokscale session row was found; '
-                'pre-session OTEL file export was required and cannot be recovered '
-                'for activity before this snapshot cutoff.'
+                'No exact Tokscale row was available for the requested GitHub '
+                'Copilot CLI session.'
             )
     return {
         'client': client,
@@ -1406,8 +1714,38 @@ def build_session_usage(
         'totals': _empty_usage_totals(),
         'warnings': warnings,
         'collection': collection,
+        'provider': provider,
         'fallback': fallback,
         'local_log_acquisition': local_log_acquisition,
+    }
+
+
+def build_unrequested_session_usage(
+    client: str, session_id: str, captured_at: datetime
+) -> dict[str, Any]:
+    return {
+        'client': validate_client(client),
+        'session_id': session_id,
+        'captured_at': _serialize_timestamp(captured_at),
+        'status': 'unavailable',
+        'source': 'none',
+        'cost_status': 'unavailable',
+        'rows': [],
+        'totals': _empty_usage_totals(),
+        'warnings': ['Whole-session usage was not requested.'],
+        'collection': {'outcome': 'not-attempted', 'cause': None},
+        'provider': {
+            'outcome': 'not-attempted',
+            'cause': None,
+            'executable': None,
+            'version': None,
+            'schema_status': 'not-requested',
+            'observed_from': None,
+            'observed_through': None,
+            'effects': [],
+        },
+        'fallback': {'outcome': 'not-attempted', 'cause': None},
+        'local_log_acquisition': None,
     }
 
 
@@ -1489,6 +1827,7 @@ def _capability(
     name: str,
     status: str,
     *,
+    scope: str,
     relevant: bool = True,
     evidence: str | None = None,
     reason: str | None = None,
@@ -1497,6 +1836,7 @@ def _capability(
         raise UsageError(f'Invalid capability status for {name}: {status}')
     return {
         'name': name,
+        'scope': scope,
         'status': status,
         'relevant': relevant,
         'evidence': evidence,
@@ -1531,6 +1871,53 @@ def _profile_behavior_reason(client: str) -> str:
     )
 
 
+def _behavior_capability(
+    client: str,
+    scope: str,
+    name: str,
+    activity: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if client != 'codex':
+        return _capability(
+            name,
+            'unavailable',
+            scope=scope,
+            reason=_profile_behavior_reason(client),
+        )
+    if activity is None:
+        return _capability(
+            name,
+            'unavailable',
+            scope=scope,
+            reason=f'Requested Codex {scope} behavior evidence was unavailable.',
+        )
+    surface = activity.get('surface_coverage', {}).get(name)
+    if surface is not None:
+        return _capability(
+            name,
+            str(surface['status']),
+            scope=scope,
+            evidence=surface.get('evidence'),
+            reason=surface.get('reason'),
+        )
+    status = _activity_capability_status(activity)
+    reasons = _unique_problems(list(activity.get('warnings', [])))
+    return _capability(
+        name,
+        status,
+        scope=scope,
+        evidence='Codex local-log behavior records' if status == 'available' else None,
+        reason=(
+            '; '.join(reasons)
+            or (
+                f'Requested Codex {scope} behavior evidence was unavailable.'
+                if status != 'available'
+                else None
+            )
+        ),
+    )
+
+
 def build_capability_coverage(
     session_usage: dict[str, Any],
     session_activity: dict[str, Any],
@@ -1559,6 +1946,8 @@ def build_capability_coverage(
         _capability(
             'session usage',
             usage_status,
+            scope='session',
+            relevant=selected_scope in ('session', 'both'),
             evidence=(
                 f"{session_usage['source']} whole-session usage"
                 if usage_status == 'available'
@@ -1568,27 +1957,60 @@ def build_capability_coverage(
         )
     ]
 
-    model_status = 'available' if session_usage['source'] == 'tokscale' else (
-        'failed' if _collection_failed(session_usage) else 'unavailable'
-    )
-    if model_status == 'failed':
-        model_reason = '; '.join(usage_warnings)
-    elif model_status == 'unavailable' and client == 'codex':
-        model_reason = 'No matching Tokscale session/model activity row was available.'
-    elif model_status == 'unavailable':
-        model_reason = (
-            '; '.join(usage_warnings)
-            or 'Tokscale model-activity evidence was not available.'
-        )
+    if session_usage['cost_status'] == 'available':
+        cost_status = 'available'
+        cost_reason = None
+    elif _collection_failed(session_usage):
+        cost_status = 'failed'
+        cost_reason = '; '.join(usage_warnings)
     else:
+        cost_status = 'unavailable'
+        cost_reason = '; '.join(usage_warnings) or (
+            'No exact Tokscale client/session/model row supplied estimated '
+            'API-equivalent cost.'
+        )
+    coverage.append(
+        _capability(
+            'estimated API-equivalent cost',
+            cost_status,
+            scope='session',
+            relevant=selected_scope in ('session', 'both'),
+            evidence=(
+                'Tokscale whole-session client/session/model cost fields'
+                if cost_status == 'available'
+                else None
+            ),
+            reason=cost_reason,
+        )
+    )
+
+    session_relevant = selected_scope in ('session', 'both')
+    if session_usage['source'] == 'tokscale':
+        model_status = 'available'
         model_reason = None
+    elif _collection_failed(session_usage):
+        model_status = 'failed'
+        model_reason = '; '.join(usage_warnings)
+    elif usage_warnings:
+        model_status = 'unavailable'
+        model_reason = '; '.join(usage_warnings)
+    elif client == 'codex':
+        model_status = 'unavailable'
+        model_reason = 'No matching session/model activity row was available.'
+    else:
+        model_status = 'unavailable'
+        model_reason = 'Tokscale model-activity evidence was not available.'
     coverage.append(
         _capability(
             'model activity',
             model_status,
-            evidence='Tokscale client/session/model grouping and duration fields'
-            if model_status == 'available'
-            else None,
+            scope='session',
+            relevant=session_relevant,
+            evidence=(
+                'Tokscale whole-session client/session/model grouping and duration fields'
+                if session_usage['source'] == 'tokscale'
+                else None
+            ),
             reason=model_reason,
         )
     )
@@ -1647,62 +2069,43 @@ def build_capability_coverage(
         _capability(
             'current turn',
             turn_status,
+            scope='turn',
             relevant=turn_relevant,
             evidence=turn_evidence,
             reason=turn_reason,
         )
     )
-
-    activities = [session_activity]
-    if selected_scope == 'turn':
-        activities = [turn_activity] if turn_activity is not None else []
-    elif selected_scope == 'both':
-        if turn_activity is not None:
-            activities.append(turn_activity)
-    if client == 'codex' and activities:
-        activity_statuses = [_activity_capability_status(activity) for activity in activities]
-        if 'failed' in activity_statuses:
-            behavior_status = 'failed'
-        elif 'unavailable' in activity_statuses or (
-            selected_scope == 'both' and len(activities) != 2
-        ):
-            behavior_status = 'unavailable'
-        else:
-            behavior_status = 'available'
-        behavior_reasons = _unique_problems(
-            [
-                warning
-                for activity in activities
-                for warning in activity.get('warnings', [])
-            ]
-        )
-        behavior_reason = '; '.join(behavior_reasons) or (
-            'Requested Codex local-log behavior evidence was unavailable.'
-            if behavior_status != 'available'
-            else None
-        )
-        behavior_evidence = (
-            'Codex local-log call and coordination records'
-            if behavior_status == 'available'
-            else None
-        )
-    elif client != 'codex':
-        behavior_status = 'unavailable'
-        behavior_reason = _profile_behavior_reason(client)
-        behavior_evidence = None
-    else:
-        behavior_status = 'unavailable'
-        behavior_reason = 'Requested Codex local-log behavior evidence was unavailable.'
-        behavior_evidence = None
-    for name in BEHAVIOR_CAPABILITY_NAMES:
-        coverage.append(
+    coverage.extend(
+        (
             _capability(
-                name,
-                behavior_status,
-                evidence=behavior_evidence,
-                reason=behavior_reason,
-            )
+                'current-turn model activity',
+                'unavailable',
+                scope='turn',
+                relevant=turn_relevant,
+                reason=(
+                    'Unsupported: this package owns no turn-bounded model-activity '
+                    'provider or invocation path.'
+                ),
+            ),
+            _capability(
+                'current-turn estimated API-equivalent cost',
+                'unavailable',
+                scope='turn',
+                relevant=turn_relevant,
+                reason=(
+                    'Unsupported: this package owns no turn-bounded cost provider or '
+                    'invocation path.'
+                ),
+            ),
         )
+    )
+
+    activities = {'turn': turn_activity, 'session': session_activity}
+    for scope in _requested_scopes(selected_scope):
+        for name in BEHAVIOR_CAPABILITY_NAMES:
+            coverage.append(
+                _behavior_capability(client, scope, name, activities[scope])
+            )
     return coverage
 
 
@@ -1715,6 +2118,12 @@ def _build_scope_report(
     totals = usage['totals']
     return {
         'name': name,
+        'observed_from': (
+            _serialize_timestamp(bounds[0]) if bounds is not None else None
+        ),
+        'observed_through': (
+            _serialize_timestamp(bounds[1]) if bounds is not None else None
+        ),
         'span_ms': (
             None if bounds is None else _duration_milliseconds(bounds[0], bounds[1])
         ),
@@ -1770,11 +2179,15 @@ def build_diagnostic_report(
     selected_scope: str = 'both',
     codex_acquisition: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if selected_scope not in ('turn', 'session', 'both'):
-        raise UsageError(f'Unsupported diagnostic scope: {selected_scope}')
+    requested_scopes = _requested_scopes(selected_scope)
     client = validate_client(str(session_usage['client']))
     local_acquisition = _report_codex_acquisition(
         session_usage, session_activity, codex_acquisition
+    )
+    self_call_attribution = (
+        session_activity.get('self_call_attribution')
+        if selected_scope in ('session', 'both')
+        else (turn_activity or {}).get('self_call_attribution')
     )
     scopes = []
     if selected_scope in ('turn', 'both') and turn_usage is not None and turn_activity is not None:
@@ -1784,12 +2197,6 @@ def build_diagnostic_report(
             _build_scope_report(
                 'whole session', session_usage, session_activity, session_bounds
             )
-        )
-    problems = [problem for scope in scopes for problem in scope['problems']]
-    if selected_scope in ('turn', 'both') and turn_usage is None:
-        problems.append(
-            f'Current-turn diagnostics are unavailable for the '
-            f'{PROFILE_LABELS[client]} profile.'
         )
     findings = [
         f"{scope['name']}: {finding}"
@@ -1806,39 +2213,64 @@ def build_diagnostic_report(
         selected_scope=selected_scope,
         codex_acquisition=local_acquisition,
     )
-    unavailable_surfaces = [
-        f"{capability['name']}: {capability['reason']}"
+    unavailable_evidence = [
+        f"{capability['scope']} {capability['name']}: {capability['reason']}"
         for capability in capabilities
-        if capability['relevant'] and capability['status'] in ('unavailable', 'failed')
+        if capability['relevant'] and capability['status'] == 'unavailable'
     ]
-    recovery_prerequisites = []
-    if _collection_failed(session_usage):
-        recovery_prerequisites.append(
-            'Resolve the reported Tokscale collection failure for the same '
-            'client/session pair; install or restore a compatible build when the '
-                'reported cause identifies missing or incompatible Tokscale.'
+    session_requested = 'session' in requested_scopes
+    failed_acquisition = []
+    if local_acquisition is not None and local_acquisition['outcome'] == 'failed':
+        failed_acquisition.extend(
+            str(cause['message'])
+            for cause in local_acquisition.get('causes', [])
         )
-    if _fallback_failed(session_usage):
+    provider = session_usage.get('provider', {})
+    if (
+        session_requested
+        and provider.get('outcome') == 'failed'
+        and provider.get('cause')
+    ):
+        failed_acquisition.append(str(provider['cause']))
+    if (
+        self_call_attribution is not None
+        and self_call_attribution.get('status') == 'failed'
+    ):
+        failed_acquisition.append(str(self_call_attribution['reason']))
+    provider_identity = provider.get('identity', {})
+    if (
+        session_requested
+        and provider_identity.get('status') == 'failed'
+        and provider_identity.get('reason')
+    ):
+        failed_acquisition.append(str(provider_identity['reason']))
+    recovery_prerequisites = []
+    if session_requested and _collection_failed(session_usage):
+        recovery_prerequisites.append(
+            'Make the same installed Tokscale provider available with compatible '
+            'version output and JSON schema, then authorize and rerun the same '
+            'client/session pair. The diagnostic does not install or repair it.'
+        )
+    if session_requested and _fallback_failed(session_usage):
         recovery_prerequisites.append(
             'Repair or restore the exact Codex local session log token totals; '
             'the reported local fallback cause must be resolved before usage can '
             'be recovered.'
         )
     if (
-        not _collection_failed(session_usage)
-        and not _fallback_failed(session_usage)
+        session_requested
+        and client == 'cursor'
         and session_usage['status'] == 'unavailable'
     ):
-        if client == 'cursor':
+        if provider_identity.get('status') == 'unavailable':
             recovery_prerequisites.append(
-                'Use an existing valid Tokscale login and complete Cursor sync, then rerun '
-                'the same client/session pair; the diagnostic performs neither action.'
+                'Provide an existing valid Tokscale Cursor identity, then separately '
+                'authorize a rerun of the same pair. The diagnostic does not log in.'
             )
-        elif client == 'copilot':
+        elif provider_identity.get('status') == 'failed':
             recovery_prerequisites.append(
-                'Activity before this snapshot cutoff cannot regain missing usage and '
-                'model-activity telemetry. For future activity, configure OTEL file '
-                'export before the session starts.'
+                'Resolve the reported Tokscale Cursor identity probe failure, then '
+                'separately authorize a rerun of the same pair.'
             )
     if (
         client == 'codex'
@@ -1850,25 +2282,76 @@ def build_diagnostic_report(
             'readable and well-formed; Tokscale usage does not replace local '
             'behavior evidence.'
         )
+    source_boundaries = []
+    if local_acquisition is not None:
+        source_boundaries.append(
+            {
+                'source': 'Codex local log',
+                'status': local_acquisition['outcome'],
+                'version': None,
+                'observed_from': (
+                    local_acquisition.get('observed_from')
+                    or 'not recorded by this caller'
+                ),
+                'observed_through': (
+                    local_acquisition.get('observed_through')
+                    or session_usage['captured_at']
+                ),
+                'effects': [
+                    'read the exact Codex local session log',
+                    'retain no transcript or tool content after this attempt',
+                ],
+            }
+        )
+    if session_requested and provider.get('outcome') in ('succeeded', 'failed'):
+        source_boundaries.append(
+            {
+                'source': 'Tokscale',
+                'status': provider['outcome'],
+                'executable': provider.get('executable'),
+                'version': provider.get('version'),
+                'schema_status': provider.get('schema_status'),
+                'identity_status': provider_identity.get('status'),
+                'observed_from': (
+                    provider.get('observed_from') or 'not recorded by this caller'
+                ),
+                'observed_through': (
+                    provider.get('observed_through') or 'not recorded by this caller'
+                ),
+                'effects': provider.get('effects', []),
+            }
+        )
     return {
         'client': client,
         'session_id': session_usage['session_id'],
         'captured_at': session_usage['captured_at'],
         'selected_scope': selected_scope,
         'profile': PROFILE_LABELS[client],
+        'self_call_attribution': self_call_attribution,
+        'source_boundaries': source_boundaries,
         'capabilities': capabilities,
         'session_usage': _build_scope_report(
             'whole session', session_usage, session_activity, session_bounds
         ),
         'scopes': scopes,
         'findings': _unique_problems(findings),
-        'problems': _unique_problems(problems + unavailable_surfaces),
+        'problems': _unique_problems(findings),
+        'unavailable_evidence': _unique_problems(unavailable_evidence),
+        'failed_acquisition': _unique_problems(failed_acquisition),
         'limitations': [
             'Summed model and tool durations can overlap the elapsed span.',
             'Subagent lifecycle counts are observed lower bounds.',
             'Child-session tokens require a stable child mapping for attribution.',
             'Session usage coverage does not establish behavior health.',
-        ],
+            'Each acquisition boundary applies only to its source; no cross-source atomic snapshot is claimed.',
+        ]
+        + (
+            [
+                'Current-turn model activity and estimated API-equivalent cost are unsupported: this package owns no turn-bounded provider or invocation path.'
+            ]
+            if selected_scope in ('turn', 'both')
+            else []
+        ),
         'recovery_prerequisites': recovery_prerequisites,
     }
 
@@ -1900,6 +2383,13 @@ def _render_scope(
             f"reasoning {_format_tokens(tokens['reasoning'])})"
         )
     lines.append(f"#### {_markdown_text(scope['name'].title())}")
+    if scope['observed_from'] is not None:
+        lines.append(
+            f"- Boundaries: {_markdown_text(scope['observed_from'])} through "
+            f"{_markdown_text(scope['observed_through'])}"
+        )
+    else:
+        lines.append('- Boundaries: unavailable')
     if include_usage:
         lines.extend(
             [
@@ -1930,18 +2420,15 @@ def _render_scope(
     if not include_behavior:
         return
     activity = scope['tool_activity']
+    surfaces = activity.get('surface_coverage', {})
+    tool_surface = surfaces.get('tool calls', {})
     if activity['status'] == 'unavailable':
-        lines.extend(['- Tool calls: unavailable', '- Agent coordination: unavailable'])
+        lines.append('- Tool calls: unavailable')
     else:
-        if activity['status'] == 'failed':
-            reason = _markdown_text(
-                '; '.join(activity.get('warnings', [])) or 'collection failed'
-            )
-            lines.extend(
-                [
-                    f'- Tool calls: failed — {reason}',
-                    f'- Agent coordination: failed — {reason}',
-                ]
+        if tool_surface.get('status') == 'failed':
+            lines.append(
+                '- Tool calls: failed — '
+                f"{_markdown_text(tool_surface.get('reason') or 'collection failed')}"
             )
         tool_label = (
             'Observed tool calls' if activity['status'] == 'failed' else 'Tool calls'
@@ -1963,28 +2450,55 @@ def _render_scope(
             for tool in activity['tools']
         ) or 'none'
         lines.append(f'- Tools: {tool_summary}')
-        coordination = activity['coordination']
+    coordination = activity.get('coordination', {})
+    lifecycle_surface = surfaces.get('subagent lifecycle', {})
+    if lifecycle_surface.get('status') == 'available':
+        lines.append(
+            '- Subagent lifecycle: '
+            f"started={coordination.get('lifecycle_started_events', 0)}, "
+            f"interacted={coordination.get('lifecycle_interacted_events', 0)}, "
+            f"interrupted={coordination.get('lifecycle_interrupted_events', 0)}"
+        )
+    else:
+        lines.append(
+            f"- Subagent lifecycle: {lifecycle_surface.get('status', 'unavailable')} — "
+            f"{_markdown_text(lifecycle_surface.get('reason') or 'no supported evidence')}"
+        )
+    coordination_surface = surfaces.get('agent coordination', {})
+    if coordination_surface.get('status') == 'available':
         calls = ', '.join(
             f'{name}={coordination.get(name, 0)}'
             for name in COORDINATION_TOOLS
             if coordination.get(name, 0)
-        ) or 'none observed'
+        )
         lines.append(f'- Agent coordination calls: {calls}')
         lines.append(
-            '- Agent lifecycle: '
+            '- Observed agent state: '
             f"spawned={coordination.get('spawn_successes', 0)}, "
             f"spawn failures={coordination.get('spawn_failures', 0)}, "
             f"completed={coordination.get('completed_agents', 0)}, "
             f"failed={coordination.get('failed_agents', 0)}, "
-            f"observed peak live={coordination.get('observed_peak_live_agents', 0)}, "
-            f"observed live at end={coordination.get('observed_live_agents_at_end', 0)}"
+            f"peak live={coordination.get('observed_peak_live_agents', 0)}, "
+            f"live at end={coordination.get('observed_live_agents_at_end', 0)}"
         )
+    else:
+        lines.append(
+            f"- Agent coordination: {coordination_surface.get('status', 'unavailable')} — "
+            f"{_markdown_text(coordination_surface.get('reason') or 'no supported evidence')}"
+        )
+    wait_surface = surfaces.get('waits', {})
+    if wait_surface.get('status') == 'available':
         lines.append(
             '- Wait behavior: '
             f"timeouts={coordination.get('wait_timeouts', 0)}, "
             f"max consecutive timeouts={coordination.get('max_consecutive_wait_timeouts', 0)}, "
             'without observed live agent='
             f"{coordination.get('wait_without_observed_live_agent', 0)}"
+        )
+    else:
+        lines.append(
+            f"- Wait behavior: {wait_surface.get('status', 'unavailable')} — "
+            f"{_markdown_text(wait_surface.get('reason') or 'no supported evidence')}"
         )
 
 
@@ -1997,24 +2511,76 @@ def render_diagnostic_markdown(report: dict[str, Any]) -> str:
         f"{_markdown_text(report['session_id'])}",
         f"- Requested scope: {_markdown_text(report['selected_scope'])}",
         f"- Harness profile: {_markdown_text(report['profile'])}",
-        f"- Snapshot cutoff (UTC): {_markdown_text(report['captured_at'])}",
+        f"- Report reference time (UTC): {_markdown_text(report['captured_at'])}",
+        '- Source boundaries:',
+    ]
+    if report['source_boundaries']:
+        for boundary in report['source_boundaries']:
+            version = (
+                f"; version {_markdown_text(boundary['version'])}"
+                if boundary.get('version')
+                else ''
+            )
+            executable = (
+                f"; executable {_markdown_text(boundary['executable'])}"
+                if boundary.get('executable')
+                else ''
+            )
+            identity = (
+                f"; identity {_markdown_text(boundary['identity_status'])}"
+                if boundary.get('identity_status')
+                else ''
+            )
+            schema = (
+                f"; schema {_markdown_text(boundary['schema_status'])}"
+                if boundary.get('schema_status')
+                else ''
+            )
+            lines.append(
+                f"  - {_markdown_text(boundary['source'])}: "
+                f"{_markdown_text(boundary['status'])}{executable}{version}{schema}{identity}; observed from "
+                f"{_markdown_text(boundary['observed_from'])} through "
+                f"{_markdown_text(boundary['observed_through'])}"
+            )
+            effects = '; '.join(boundary.get('effects', [])) or 'none recorded'
+            lines.append(f"    - Effects: {_markdown_text(effects)}")
+    else:
+        lines.append('  - No source was acquired.')
+    attribution = report.get('self_call_attribution')
+    if attribution and attribution['status'] != 'not-requested':
+        detail = attribution.get('reason') or 'Exactly one matching call was excluded.'
+        lines.append(
+            '- Self-call attribution: '
+            f"{_markdown_text(attribution['status'])} — {_markdown_text(detail)}"
+        )
+    lines.extend(
+        [
         '',
         '#### Capability Coverage',
-    ]
+        ]
+    )
     for capability in report['capabilities']:
-        detail = capability['evidence'] or capability['reason'] or 'no detail'
+        capability_label = capability['name']
+        if capability_label in BEHAVIOR_CAPABILITY_NAMES:
+            capability_label = f"{capability['scope']} {capability_label}"
+        detail = '; '.join(
+            value
+            for value in (capability['evidence'], capability['reason'])
+            if value
+        ) or 'no detail'
         relevance = 'relevant' if capability['relevant'] else 'not requested'
         lines.append(
-            f"- {_markdown_text(capability['name'])}: "
+            f"- {_markdown_text(capability_label)}: "
             f"{_markdown_text(capability['status'])} "
             f"({_markdown_text(relevance)}) — {_markdown_text(detail)}"
         )
-    lines.extend(['', '#### Session Usage and API-Equivalent Cost'])
-    _render_scope(
-        lines,
-        report['session_usage'],
-        include_behavior=False,
-    )
+    if report['selected_scope'] in ('session', 'both'):
+        lines.extend(['', '#### Session Usage and API-Equivalent Cost'])
+        _render_scope(
+            lines,
+            report['session_usage'],
+            include_behavior=False,
+        )
     lines.extend(['', '#### Turn, Tool, and Coordination Evidence'])
     for scope in report['scopes']:
         lines.append('')
@@ -2025,16 +2591,25 @@ def render_diagnostic_markdown(report: dict[str, Any]) -> str:
         )
     if not report['scopes']:
         lines.append('- No requested behavior scope had available evidence.')
-    lines.extend(['', '#### Problems and Unavailable Surfaces'])
-    lines.append(
-        f"- Findings: {_markdown_text('; '.join(report['findings']))}"
-        if report['findings']
-        else '- Findings: none from available evidence'
-    )
+    lines.extend(['', '#### Observed Problems'])
     if report['problems']:
         lines.extend(f'- {_markdown_text(problem)}' for problem in report['problems'])
     else:
         lines.append('- Problems: none from available evidence')
+    lines.extend(['', '#### Unavailable Evidence'])
+    if report['unavailable_evidence']:
+        lines.extend(
+            f'- {_markdown_text(item)}' for item in report['unavailable_evidence']
+        )
+    else:
+        lines.append('- None')
+    lines.extend(['', '#### Failed Acquisition'])
+    if report['failed_acquisition']:
+        lines.extend(
+            f'- {_markdown_text(item)}' for item in report['failed_acquisition']
+        )
+    else:
+        lines.append('- None')
     lines.extend(
         [
             '',
@@ -2065,7 +2640,10 @@ def build_parser() -> argparse.ArgumentParser:
     diagnose.add_argument('--client')
     diagnose.add_argument('--session-id')
     diagnose.add_argument(
-        '--scope', choices=('turn', 'session', 'both'), default='both'
+        '--acquisition-id', required=True, type=validate_acquisition_id
+    )
+    diagnose.add_argument(
+        '--scope', choices=DIAGNOSTIC_SCOPES, default='both'
     )
     return parser
 
@@ -2073,6 +2651,7 @@ def build_parser() -> argparse.ArgumentParser:
 def _unavailable_tool_activity(
     warnings: list[str], *, status: str = 'unavailable'
 ) -> dict[str, Any]:
+    reason = '; '.join(warnings) or 'Codex local-log evidence was unavailable.'
     return {
         'status': status,
         'started_calls': 0,
@@ -2086,11 +2665,38 @@ def _unavailable_tool_activity(
         'coordination': {},
         'findings': [],
         'warnings': warnings,
+        'surface_coverage': {
+            name: {'status': status, 'evidence': None, 'reason': reason}
+            for name in BEHAVIOR_CAPABILITY_NAMES
+        },
     }
 
 
 def unavailable_tool_activity(problem: str) -> dict[str, Any]:
     return _unavailable_tool_activity([problem])
+
+
+def _unavailable_codex_turn_activity(
+    snapshot: dict[str, Any],
+    acquisition_id: str,
+    problems: list[str],
+) -> dict[str, Any]:
+    attribution = _self_call_attribution(snapshot['events'], acquisition_id)
+    warnings = list(problems)
+    if attribution['reason']:
+        warnings.append(str(attribution['reason']))
+    acquisition = snapshot['acquisition']
+    status = (
+        'failed'
+        if acquisition['outcome'] == 'failed' or attribution['status'] == 'failed'
+        else 'unavailable'
+    )
+    activity = _unavailable_tool_activity(_unique_problems(warnings), status=status)
+    activity['acquisition'] = acquisition
+    activity['self_call_attribution'] = attribution
+    if attribution['status'] == 'failed':
+        activity['findings'].append('ambiguous-self-call-attribution')
+    return activity
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2104,14 +2710,7 @@ def main(argv: list[str] | None = None) -> int:
             raise UsageError(
                 'No supported current session was detected; pass --client and --session-id.'
             )
-        rows = []
-        error = None
-        try:
-            rows = capture_tokscale_snapshot(
-                client, None, None, session_id=session_id
-            )
-        except UsageError as usage_error:
-            error = str(usage_error)
+        _validate_supported_scope(client, args.scope)
         if client == 'codex':
             codex_snapshot = _load_codex_log_snapshot(
                 session_id, capture_cutoff_after_read=True
@@ -2125,15 +2724,37 @@ def main(argv: list[str] | None = None) -> int:
             if client == 'codex'
             else None
         )
-        started_at, ended_at = session_bounds or (None, None)
-        usage_report = build_session_usage(
-            client,
-            session_id,
-            captured,
-            tokscale_rows=rows,
-            snapshot_error=error,
-            codex_snapshot=codex_snapshot,
+        provider_bounds = (
+            session_bounds
+            if codex_snapshot is not None
+            and codex_snapshot['acquisition']['outcome'] == 'available'
+            else None
         )
+        started_at, ended_at = provider_bounds or (None, None)
+        if args.scope in ('session', 'both'):
+            tokscale_evidence = acquire_tokscale_evidence(
+                client,
+                session_id,
+                started_at,
+                ended_at,
+            )
+            usage_report = build_session_usage(
+                client,
+                session_id,
+                captured,
+                tokscale_rows=tokscale_evidence['rows'],
+                snapshot_error=(
+                    tokscale_evidence['cause']
+                    if tokscale_evidence['outcome'] == 'failed'
+                    else None
+                ),
+                codex_snapshot=codex_snapshot,
+                tokscale_evidence=tokscale_evidence,
+            )
+        else:
+            usage_report = build_unrequested_session_usage(
+                client, session_id, captured
+            )
         if client == 'codex':
             snapshot_warnings = list(codex_snapshot['warnings'])
             acquisition = codex_snapshot['acquisition']
@@ -2144,6 +2765,7 @@ def main(argv: list[str] | None = None) -> int:
                     started_at=session_bounds[0] if session_bounds else None,
                     ended_at=session_bounds[1] if session_bounds else None,
                     snapshot=codex_snapshot,
+                    acquisition_id=args.acquisition_id,
                 )
             else:
                 session_activity = _unavailable_tool_activity(
@@ -2175,20 +2797,22 @@ def main(argv: list[str] | None = None) -> int:
                         started_at=turn_bounds[0],
                         ended_at=turn_bounds[1],
                         snapshot=codex_snapshot,
+                        acquisition_id=args.acquisition_id,
+                        scope_start_index=_latest_codex_user_boundary_index(
+                            codex_snapshot['events']
+                        ),
                     )
                     if turn_bounds
-                    else _unavailable_tool_activity(
+                    else _unavailable_codex_turn_activity(
+                        codex_snapshot,
+                        args.acquisition_id,
                         turn_discovery_problems
                         or acquisition_messages
                         or ['Current-turn boundary was not found in the Codex log.'],
-                        status=(
-                            'failed'
-                            if acquisition['outcome'] == 'failed'
-                            else 'unavailable'
-                        ),
                     )
                 )
-                turn_activity['acquisition'] = acquisition
+                if turn_bounds:
+                    turn_activity['acquisition'] = acquisition
             else:
                 turn_bounds = None
                 turn_discovery_problems = []

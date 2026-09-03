@@ -1,6 +1,6 @@
 ---
 name: refactor-code
-description: Use when moving, combining, splitting, extracting, or simplifying one code target while preserving supported caller-visible behavior and external contracts; route pure renames, open-ended architecture searches, material unresolved interface or seam design decisions, and observable contract changes before writing.
+description: Use when moving, combining, splitting, extracting, or simplifying one code target while preserving supported caller-visible behavior and external contracts; also use to route pure renames and open-ended architecture searches, resolve material interface or seam design choices, or identify a non-rename observable change that makes the request out of scope.
 ---
 
 # Refactor Code
@@ -13,21 +13,25 @@ external consumers observe.
 Classify the requested outcome using authorized repository reads and non-mutating evidence. Use
 adjacent Skills only through their current public distribution interfaces:
 
-- A pure symbol or path rename is **Redirected** to `rename-code`.
+- A pure symbol or path rename is **Redirected** to `rename-code`, including a public name or
+  externally observed path. `rename-code` owns its compatibility decision.
 - An open-ended search for architectural opportunities is **Redirected** to the user-invoked
   `improve-codebase-architecture` Skill; confirm only the search scope.
 - A material unresolved choice about an interface, seam, adapter relationship, or test surface
   invokes `codebase-design` only when established repository evidence and ordinary in-scope
   refactoring judgment cannot settle it. Reconcile its result with repository evidence: return
-  **Redirected** without writing through the user-invoked `implement` route when the result
-  requires caller-visible behavior or contract change; otherwise continue here.
-- A public-interface, persistence, protocol, integration, or user-visible behavior change is
-  **Redirected** to the user-invoked `implement` Skill.
+  **Out of Scope** without writing when the result requires a non-rename caller-visible behavior or
+  external-contract change; otherwise continue here.
+- Any requested non-rename change to caller-visible behavior or an external contract is **Out of
+  Scope**. This includes public-interface, persistence, protocol, integration, and user-visible
+  behavior changes.
 
-A Redirected result performs no write. An architecture-search handoff carries only the confirmed
-search scope and required outcome. Rename and implementation handoffs carry the confirmed target,
-accepted preservation boundary, relevant evidence, and required outcome. If routing or a returned
-design depends on unavailable material, return **Blocked** without writing and name it.
+A **Redirected** or **Out of Scope** result performs no write. An architecture-search handoff
+carries only the confirmed search scope and required outcome. A rename handoff carries the
+confirmed target, accepted preservation boundary, relevant evidence, and required outcome. An Out
+of Scope report carries the confirmed target, evidence that the requested outcome changes
+observable behavior or an external contract, and the required outcome. If classification or a
+returned design depends on unavailable material, return **Blocked** without writing and name it.
 
 ## Establish the Refactoring Contract
 
@@ -72,7 +76,7 @@ Return **Failure** after writing when a required check cannot pass or run, prese
 ceases to discriminate, no supported in-scope correction exists, or the same finding recurs
 unchanged.
 Preserve useful state and evidence without inventing rollback authority. After-write Failure
-governs any coincident Blocked or Redirected fact.
+governs any coincident Blocked, Redirected, or Out of Scope fact.
 
 Return **Complete** only when the pressure is removed, caller-visible behavior and external
 contracts remain supported, replaced internals are retired, final scope matches ownership, and all
@@ -82,6 +86,6 @@ Hand off the pressure and result; preserved behavior, invariants, and contracts;
 and callers; retired code; exact checks and exits; corrections; and unresolved or untested
 surfaces. A non-complete result also identifies the stopping fact and preserved state.
 
-This Skill grants no publication, installation, commit, push, worktree, translation, or remote
-effect. Target-project governance remains authoritative for reads, writes, commands, and generated
-owners.
+This Skill grants no publication, installation, commit, push, worktree, translation, network
+access, or remote effect. Target-project governance remains authoritative for reads, writes,
+commands, and generated owners.
