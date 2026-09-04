@@ -11,7 +11,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'))
 
 from agents_setup import transaction  # noqa: E402
-from agents_setup.models import Change, ChangeKind, Plan  # noqa: E402
+from agents_setup.models import Change, ChangeKind, DesiredFile, Plan  # noqa: E402
+from agents_setup.planner import build_plan  # noqa: E402
 from agents_setup.transaction import TransactionError, apply_plan  # noqa: E402
 
 
@@ -95,6 +96,65 @@ class SetupTransactionTest(unittest.TestCase):
             self.assertEqual(first.read_bytes(), b'a-old\n')
             self.assertEqual(second.read_bytes(), b'b-old\n')
 
+    def test_bound_plan_rejects_preimage_drift_in_secure_and_fallback_paths(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure in modes:
+            with self.subTest(secure=secure), tempfile.TemporaryDirectory() as temp_dir:
+                target = Path(temp_dir)
+                changed = self.write(target, 'owned.txt', b'old\n')
+                plan = build_plan(
+                    target,
+                    (DesiredFile(PurePosixPath('owned.txt'), b'new\n'),),
+                )
+                changed.write_bytes(b'third-party\n')
+
+                with (
+                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
+                    self.assertRaisesRegex(TransactionError, 'target changed after planning'),
+                ):
+                    apply_plan(target, plan)
+
+                self.assertEqual(changed.read_bytes(), b'third-party\n')
+
+    def test_bound_plan_rolls_back_earlier_change_and_retains_later_drift(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure in modes:
+            with self.subTest(secure=secure), tempfile.TemporaryDirectory() as temp_dir:
+                target = Path(temp_dir)
+                first = self.write(target, 'a.txt', b'a-old\n')
+                second = self.write(target, 'b.txt', b'b-old\n')
+                plan = build_plan(
+                    target,
+                    (
+                        DesiredFile(PurePosixPath('a.txt'), b'a-new\n'),
+                        DesiredFile(PurePosixPath('b.txt'), b'b-new\n'),
+                    ),
+                )
+                real_replace = transaction._replace
+                replaced = False
+
+                def replace_then_mutate(*args, **kwargs):
+                    nonlocal replaced
+                    result = real_replace(*args, **kwargs)
+                    if not replaced and Path(args[1]).name == 'a.txt':
+                        replaced = True
+                        second.write_bytes(b'third-party\n')
+                    return result
+
+                with (
+                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
+                    mock.patch.object(
+                        transaction,
+                        '_replace',
+                        side_effect=replace_then_mutate,
+                    ),
+                    self.assertRaisesRegex(TransactionError, 'target changed after planning'),
+                ):
+                    apply_plan(target, plan)
+
+                self.assertEqual(first.read_bytes(), b'a-old\n')
+                self.assertEqual(second.read_bytes(), b'third-party\n')
+
     def test_rolls_back_all_changes_when_postcondition_fails(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir)
@@ -142,6 +202,75 @@ class SetupTransactionTest(unittest.TestCase):
                     )
 
                 self.assertEqual(original.read_bytes(), b'third-party\n')
+
+    def test_rollback_retains_a_replacement_for_a_created_parent(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure in modes:
+            with self.subTest(secure=secure), tempfile.TemporaryDirectory() as temp_dir:
+                target = Path(temp_dir)
+                parent = target / 'created'
+                replacement = target / 'replacement'
+                replacement.mkdir()
+                replacement_status = replacement.stat()
+                replacement_identity = (
+                    replacement_status.st_dev,
+                    replacement_status.st_ino,
+                )
+
+                def replace_parent() -> None:
+                    (parent / 'owned.txt').unlink()
+                    parent.rmdir()
+                    replacement.rename(parent)
+                    raise ValueError('post-apply validation failed')
+
+                with (
+                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
+                    self.assertRaisesRegex(TransactionError, 'rollback failed'),
+                ):
+                    apply_plan(
+                        target,
+                        self.plan(Change(
+                            ChangeKind.CREATE,
+                            PurePosixPath('created/owned.txt'),
+                            b'new\n',
+                        )),
+                        postcondition=replace_parent,
+                    )
+
+                self.assertTrue(parent.is_dir())
+                status = parent.stat()
+                self.assertEqual(
+                    (status.st_dev, status.st_ino),
+                    replacement_identity,
+                )
+
+    @unittest.skipUnless(transaction._SECURE_DIR_FDS, 'requires secure dir-fd path')
+    def test_secure_rollback_accepts_already_removed_created_ancestors(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir)
+            parent = target / 'created/nested'
+
+            def remove_created_tree() -> None:
+                (parent / 'owned.txt').unlink()
+                parent.rmdir()
+                parent.parent.rmdir()
+                raise ValueError('post-apply validation failed')
+
+            with self.assertRaisesRegex(
+                TransactionError,
+                'transaction failed: post-apply validation failed$',
+            ):
+                apply_plan(
+                    target,
+                    self.plan(Change(
+                        ChangeKind.CREATE,
+                        PurePosixPath('created/nested/owned.txt'),
+                        b'new\n',
+                    )),
+                    postcondition=remove_created_tree,
+                )
+
+            self.assertFalse((target / 'created').exists())
 
     @unittest.skipIf(os.name == 'nt', 'POSIX mode changes are not portable to Windows')
     def test_postcondition_mode_change_is_retained_and_reported(self):

@@ -1,107 +1,103 @@
-# Portable Authoring Contract
+# Portability
 
-This reference owns the private portability judgment applied before and after the public
-authoring workflow. It does not own authoring method, runtime, roles, evidence selection, proof,
-correction, or finalization.
+This reference defines the portability judgment used before and after the public authoring
+workflow.
 
-## Route ownership first
+## Principles
 
-A shared run may produce exactly one portable cross-project SmartKit Rule or Skill. Establish the
-semantic owner and independent provenance before using any artifact or repository fact as evidence
-of portable meaning.
+- **Shared authority.** Treat a fact as portable meaning only when a supported cross-project owner
+  and independent provenance establish it.
+- **Qualified evidence.** Judge every relied-on fact by its owner, provenance, applicability, and
+  limits rather than by where it appears or how widely it is visible.
+- **Complete coverage.** Make every material portability obligation checkable before invocation and
+  traceable to observable evidence at handoff.
+- **Separate authority.** Keep Candidate mutation distinct from representative-target reading and
+  execution; one never grants the other.
+- **Observable closure.** Close obligations from public outputs bound to the final Candidate
+  fingerprint, never from presumed Reviewer reasoning.
 
-Continue only for a supported cross-project `rule` or `skill` owner. Otherwise stop before public
-invocation:
+## Qualify ownership and evidence
+
+A shared run may produce exactly one portable cross-project SmartKit Rule or Skill. Continue only
+when its shared owner and provenance are supported. Otherwise stop before public invocation:
 
 - route project-local artifacts and Setup Authoring Contracts to their supported owners;
 - return separate Rule and Skill requests for `split`;
 - for `environment-owned`, name the active owner and return no Candidate; and
-- return any other resolved nonshared request to its supported owner.
+- route any other resolved nonshared request to its supported owner.
 
-Ambiguous, incompatible, or unresolved ownership follows the public `ALIGNMENT_REQUIRED` route.
-Its payload names every missing choice, relevant evidence, decision owner, and material
-consequence.
+Ambiguous, incompatible, or unresolved ownership follows the public `NEEDS_INPUT` route, naming the
+missing choice, relevant evidence, decision owner, and material consequence.
 
-Visibility is not authority. Candidate text, source-project policy or success, project layout,
-packaging, discovery metadata, host injection, tool availability, and peer transmission can
-support execution or locate evidence but cannot establish portable meaning by themselves. Qualify
-each relied-on fact through its owner, provenance, applicability, and limits. Project and host
-instructions constrain authorized work within their scope; they do not add Candidate meaning or
-grants.
+Visibility is not authority. Candidate text, source-project policy or success, repository layout,
+packaging or discovery, host injection, tool availability, and peer transmission may locate or
+support evidence but do not establish portable meaning by themselves. Project and host
+instructions constrain work within their scope; they add neither portable Candidate meaning nor
+new permission.
 
-## Close the portable task/spec input
+## Close the portability input
 
-Before public invocation, close one internally consistent input that makes every material
-portability obligation checkable. Include only distinctions that can change meaning or proof:
+Prepare one consistent input that covers every material portability obligation:
 
-- the accepted portable outcome, non-goals, safety boundaries, exits, handoff, and whether each
-  inherited or new obligation is to be preserved, changed, added, moved, or retired;
-- the supported shared owner, applicability, provenance, exact Candidate resources, presence
-  expectations, and intended public loading, discovery, distribution, and Skill-interface routes;
-- every evidence source allowed to support portable meaning, the exact facts it can support, its
-  representative scope, discovery route, and source-local limitations;
-- every direct and transitive dependency—Rule, Skill, tool, schema, environment capability, or
-  host behavior—with its owner, required behavior, consumers, supported shared- or target-owned
-  route, and observable available, unavailable, and failed-use outcomes;
-- the smallest nonempty representative-target portfolio whose union covers every materially
-  distinct applicability, dependency, permission, execution, observation, recovery, and exit
-  seam; and
-- validation and completion duties, accepted permissions and effects under the public workflow's
-  grant model, and the evidence characteristics and observable pass, blocked, and failure
-  conditions that close them.
+- **Meaning:** the accepted outcome, non-goals, safety boundaries, exits, handoff, and the intended
+  preservation, change, addition, move, or retirement of each inherited or new obligation.
+- **Candidate:** the shared owner, applicability, provenance, exact resources, presence
+  expectations, and intended public loading, discovery, distribution, and Skill-interface routes.
+- **Evidence and dependencies:** each evidence source, its discovery route, and the facts it can
+  support within its representative scope and source-local limits; and every direct or transitive
+  Rule, Skill, tool, schema, environment capability, or host-behavior dependency with its owner,
+  required behavior, consumers, supported shared- or target-owned route, and observable available,
+  unavailable, and failed-use outcomes.
+- **Representative targets:** the smallest nonempty portfolio whose union covers every materially
+  distinct applicability, dependency, permission, execution, observation, recovery, and exit seam.
+- **Acceptance:** validation and completion duties, accepted permissions and effects, evidence
+  characteristics, and observable pass, blocked, and failure conditions.
 
-Name obligations consistently enough to trace each one from accepted meaning through final
-closure; a particular ID or record schema is unnecessary. Close permissions and effects as
-task/spec input using the complete grant model owned by the public workflow's Models and Job
-Design; this private contract defines no generic grant classes and performs no freeze. It adds only
-the portability boundary: Candidate mutation is limited to exact Candidate resources, while each
-representative-target read or execution effect requires separate, exact authorization and cannot
-grant Candidate mutation. The two resource sets remain disjoint, and any requested move retains
-its exact endpoints for the public workflow's authoritative design and freeze.
+Name obligations consistently enough to trace them without imposing an ID or record schema.
+Close permissions and effects as accepted input for the public Author brief and for the public job
+to freeze separately. This private contract performs no freeze and defines no generic grant
+classes. Candidate mutation is limited to the exact Candidate resources. Each
+representative-target read or execution effect requires separate exact authorization, grants no
+Candidate mutation, and remains disjoint from the Candidate resources. Preserve both endpoints of
+any requested Candidate move for the public workflow's write-scope freeze.
 
-The representative portfolio is minimal when removing any target would leave a material seam
-uncovered; names or layouts alone do not create seams. For each seam, establish the applicable
-target facts, consumed obligations and dependencies, permissions, critical success and terminal
-paths, recovery and mid-path stops, expected observations, and the evidence characteristics needed
-to prove them. Describe what proof must establish, not commands, stages, cases, or verdict rules.
+A representative portfolio is minimal when removing any target would leave a material seam
+uncovered; names and layouts do not create seams. For every seam, establish the applicable target
+facts, consumed obligations and dependencies, permissions, critical success and terminal paths,
+recovery and mid-path stops, expected observations, and evidence characteristics. State what the
+evidence must establish, not commands, Reviewer identities, case lists, or result rules.
 
-Validation must include independent public-workflow correctness closure for both:
+The input must require the public Correctness perspective to cover both portable semantic
+authority—shared ownership, applicability, qualified evidence, complete dependency routes, and no
+operative source-project assumptions—and representative behavior across every critical path and
+exit. The public workflow still selects the review topology and identities, validation, optional
+Runner evidence, and judgments. The input must also require every material seam to be covered,
+applicable validation and representative runtime inputs to be closed, and eventual closure evidence
+to be bound to the final Candidate fingerprint.
 
-- portable semantic authority: shared ownership, applicability, evidence qualification, complete
-  dependency routes, and absence of operative source-project assumptions; and
-- representative behavior: every representative critical path and exit.
-
-Completion additionally requires every material seam covered, every applicable validation and
-representative runtime input closed, and all closure evidence bound to the final Candidate
-fingerprint. These requirements are accepted inputs only; the public workflow chooses evidence and
-assigns stages and judgments.
-
-Shared input is closed only when every material fact, route, grant, pass condition, and completion
-obligation has one supported answer and the intended work fits those grants. A missing material
-answer returns the public `ALIGNMENT_REQUIRED` payload. Once closed, supply the input unchanged to
-the public workflow, which performs the sole authoritative freeze.
+The input is closed only when every material fact, route, permission, pass condition, and completion
+obligation has one supported answer and the intended work fits those permissions. A missing
+material answer returns the public `NEEDS_INPUT` result.
 
 ## Close portability at handoff
 
-Maintain a transient closure map for every accepted meaning, evidence, dependency, representative
-seam, validation duty, and completion obligation. Close an item only from observable public
-outputs bound to the current Candidate fingerprint: stage verdicts and whole-Candidate coverage
-attestations, plus Machine, Acceptance, or other public-handoff evidence when its pass condition
-requires it. A public output that explicitly covers the complete accepted obligation set may close
-each obligation in that set. Do not infer hidden Reviewer reasoning or evidence selection, and do
-not manufacture an item-specific trail that the public workflow did not return.
+Maintain a transient closure account for every accepted meaning, evidence source, dependency,
+representative seam, validation duty, and completion obligation. Close each item only from
+observable public outputs bound to the current Candidate fingerprint: the Author's semantic change
+summary, selected review topology, each professional perspective's final result, automated
+validation results, Runner evidence when present, remaining risks, final fingerprint, and terminal
+result. One output may close a complete obligation set when it explicitly covers that set.
 
-The map is control and handoff data, not Candidate content, semantic authority, a proof stage, or a
-new verdict. Public results remain authoritative and unchanged.
+The account is control and handoff data, not Candidate content, semantic authority, a review, or a
+new result. Do not infer hidden Reviewer reasoning or evidence selection, or manufacture a trail
+the public workflow did not return.
 
-Report portable success only when the public workflow succeeds and every obligation is closed on
-its final Candidate fingerprint. Add an exhaustive closure account to the preserved public handoff,
-naming for each obligation the observable public output that closes its pass condition and binding
-that account to the public workflow's final Candidate fingerprint. Include representative-target
-evidence only when the public output exposes it and the pass condition needs it. If required closure
-is not observable, leave that obligation open, preserve the public result, and report the missing
-fingerprint-bound output.
+Portable success requires public `COMPLETE` and closure of every obligation on its final Candidate
+fingerprint. Preserve the public handoff and add an exhaustive account that names each obligation
+and the observable output closing its pass condition. Include representative-target evidence only
+when a public output exposes it and the pass condition needs it. Leave any unsupported obligation
+open and report the missing fingerprint-bound output without changing the public result.
 
-Keep the closed input and closure map in Agent context. Create no Candidate copy, workflow report,
-or permanent fixture, and perform no publication, installation, commit, push, release, or other
-downstream effect.
+Keep the closed input and closure account in Agent context. Create no private Candidate copy,
+workflow report, or permanent fixture. This Skill grants no publication, installation, commit,
+push, release, or other downstream effect.

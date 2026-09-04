@@ -1,27 +1,26 @@
 $scriptPath = Join-Path $PSScriptRoot 'timing.py'
 
-if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 -c 'import sys; raise SystemExit(sys.version_info < (3, 10))'
-    if ($LASTEXITCODE -eq 0) {
-        & py -3 $scriptPath @args
-        exit $LASTEXITCODE
-    }
-}
-
-$pythonCommands = @('python3', 'python') + @(
-    Get-Command 'python3.*' -CommandType Application -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match '^python3\.\d+(?:\.exe)?$' } |
-        Select-Object -ExpandProperty Source
-)
+$pythonCommands = @('python3', 'python')
 foreach ($pythonCommand in $pythonCommands) {
-    if (Get-Command $pythonCommand -ErrorAction SilentlyContinue) {
-        & $pythonCommand -c 'import sys; raise SystemExit(sys.version_info < (3, 10))'
-        if ($LASTEXITCODE -eq 0) {
-            & $pythonCommand $scriptPath @args
+    $pythonExecutable = Get-Command $pythonCommand -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -ne $pythonExecutable) {
+        $pythonPath = $pythonExecutable.Source
+        $probeSucceeded = $false
+        $LASTEXITCODE = $null
+        try {
+            & $pythonPath -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' *> $null
+            $probeSucceeded = $LASTEXITCODE -eq 0
+        }
+        catch {
+            continue
+        }
+        if ($probeSucceeded) {
+            & $pythonPath $scriptPath @args
             exit $LASTEXITCODE
         }
     }
 }
 
-Write-Error 'Python 3.10 or newer is required.'
+[Console]::Error.WriteLine('ERROR: Python 3.10 or newer is required; checked python3, then python.')
 exit 2

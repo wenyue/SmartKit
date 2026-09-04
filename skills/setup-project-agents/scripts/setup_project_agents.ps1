@@ -1,47 +1,31 @@
 $ErrorActionPreference = 'Stop'
 $workflow = Join-Path $PSScriptRoot 'workflow.py'
 
-if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 -c 'import sys; raise SystemExit(sys.version_info < (3, 10))'
-    if ($LASTEXITCODE -eq 0) {
-        & py -3 $workflow @args
-        exit $LASTEXITCODE
-    }
-}
-
-$pythonCommands = @('python3', 'python') + @(
-    Get-Command 'python3.*' -CommandType Application -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match '^python3\.\d+(?:\.exe)?$' } |
-        Select-Object -ExpandProperty Source
-)
+$pythonCommands = @('python3', 'python')
 foreach ($pythonCommand in $pythonCommands) {
-    if (Get-Command $pythonCommand -ErrorAction SilentlyContinue) {
-        & $pythonCommand -c 'import sys; raise SystemExit(sys.version_info < (3, 10))'
-        if ($LASTEXITCODE -eq 0) {
-            & $pythonCommand $workflow @args
-            exit $LASTEXITCODE
+    $pythonExecutable = Get-Command $pythonCommand -CommandType Application `
+        -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($pythonExecutable) {
+        $pythonPath = $pythonExecutable.Source
+        $pythonProbeExitCode = 1
+        $LASTEXITCODE = $null
+        try {
+            & $pythonPath -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' *> $null
+            if ($null -ne $LASTEXITCODE) {
+                $pythonProbeExitCode = $LASTEXITCODE
+            }
         }
-    }
-}
-
-if (Get-Command uv -ErrorAction SilentlyContinue) {
-    $pythonOutput = $null
-    $uvExitCode = 1
-    try {
-        $pythonOutput = & uv python find '>=3.10' 2>$null
-        $uvExitCode = $LASTEXITCODE
-    }
-    catch {
-        $uvExitCode = 1
-    }
-    if ($uvExitCode -eq 0 -and $pythonOutput) {
-        $pythonPath = "$pythonOutput".Trim()
-        if ($pythonPath) {
+        catch {
+            $pythonProbeExitCode = 1
+        }
+        if ($pythonProbeExitCode -eq 0) {
             & $pythonPath $workflow @args
             exit $LASTEXITCODE
         }
     }
 }
 
-[Console]::Error.WriteLine('Python 3.10 or newer is required.')
+[Console]::Error.WriteLine(
+    'ERROR: Python 3.10 or newer is required; checked python3, then python.'
+)
 exit 2

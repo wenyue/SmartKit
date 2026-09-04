@@ -6,6 +6,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -1349,6 +1350,102 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             self.assertFalse(uncached.ran)
             self.assertTrue(uncached.internal_error)
             self.assertEqual(len(calls), 1)
+
+
+class PythonLauncherContractTest(unittest.TestCase):
+    launchers = (
+        REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.sh',
+        REPO_ROOT / 'runtime/recommended-tools/maintain_recommended_tools.sh',
+        REPO_ROOT / 'runtime/rules/dispatch.sh',
+        REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.ps1',
+        REPO_ROOT / 'runtime/recommended-tools/maintain_recommended_tools.ps1',
+        REPO_ROOT / 'runtime/rules/dispatch.ps1',
+    )
+
+    def test_launchers_share_the_bounded_python_contract(self):
+        failure = (
+            'ERROR: Python 3.10 or newer is required; '
+            'checked python3, then python.'
+        )
+        for launcher in self.launchers:
+            with self.subTest(launcher=launcher.relative_to(REPO_ROOT).as_posix()):
+                content = launcher.read_text(encoding='utf-8')
+                self.assertIn(failure, content)
+                self.assertIn("sys.version_info < (3, 10)", content)
+                if launcher.suffix == '.sh':
+                    self.assertIn('for python_command in python3 python; do', content)
+                else:
+                    self.assertIn("foreach ($pythonCommand in @('python3', 'python'))", content)
+                    self.assertIn('catch {', content)
+                    self.assertIn('continue', content)
+                self.assertNotIn('python3.*', content)
+                self.assertNotIn('uv python find', content)
+                self.assertNotIn('Get-Command py ', content)
+
+    @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
+    def test_rule_launcher_falls_back_from_python3_to_python(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executable_root = Path(temp_dir)
+            (executable_root / 'python3').write_text(
+                '#!/bin/sh\nexit 1\n', encoding='utf-8'
+            )
+            (executable_root / 'python3').chmod(0o755)
+            (executable_root / 'python').symlink_to(sys.executable)
+            dirname = shutil.which('dirname')
+            self.assertIsNotNone(dirname)
+            (executable_root / 'dirname').symlink_to(dirname)
+            environment = dict(os.environ)
+            environment['PATH'] = str(executable_root)
+
+            completed = subprocess.run(
+                ('/bin/sh', str(REPO_ROOT / 'runtime/rules/dispatch.sh'), '--help'),
+                check=False,
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn('usage:', completed.stdout.lower())
+
+    @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
+    def test_readiness_hook_reports_missing_python_through_host_output(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executable_root = Path(temp_dir)
+            dirname = shutil.which('dirname')
+            self.assertIsNotNone(dirname)
+            (executable_root / 'dirname').symlink_to(dirname)
+            for name in ('python3', 'python'):
+                candidate = executable_root / name
+                candidate.write_text('#!/bin/sh\nexit 1\n', encoding='utf-8')
+                candidate.chmod(0o755)
+            environment = dict(os.environ)
+            environment['PATH'] = str(executable_root)
+
+            completed = subprocess.run(
+                (
+                    '/bin/sh',
+                    str(REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.sh'),
+                    'hook', '--harness', 'codex',
+                ),
+                check=False,
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+
+        self.assertEqual(completed.returncode, 0)
+        self.assertEqual(
+            json.loads(completed.stdout),
+            {
+                'continue': True,
+                'systemMessage': (
+                    'ERROR: Python 3.10 or newer is required; '
+                    'checked python3, then python.'
+                ),
+            },
+        )
+        self.assertIn('ERROR: Python 3.10 or newer is required', completed.stderr)
 
 
 class RecommendedToolMaintainerTest(unittest.TestCase):

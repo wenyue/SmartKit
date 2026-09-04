@@ -1,78 +1,95 @@
 ---
 name: write-rules-and-skills
-description: 编写或修订一份英文 Rule 或 Agent Skill。
+description: 编写或修订一个英文 Rule 或 Agent Skill。
 ---
 
 # 编写 Rule 与 Skill
 
-## 前沿 Agent 原则
+当前 Agent 是 Controller。它管理一次编写任务及其边界；Author 负责 Candidate，Reviewer 负责各自的判断，需要时由 Runner 提供运行时事实。Controller 不参与编写、审查，也不解释这些角色的语义工作。
 
-面向有能力的当前前沿 Agent 设计并执行此工作流。写明语义权威、证据、不变量，以及省略后会实质改变正确性、安全、协议、归属、协调、外部影响、可执行性或交接的决策边界、约束或例外。把普通方法选择、证据遍历、可可靠推断的决策边界与边缘处理，以及局部判断留给 Agent。
+## 1. 对齐任务
 
-这项原则支配每个阶段和参考资料。工作流采用 Hybrid：默认由判断主导，仅在顺序或协议会改变结果时设置有界的流程岛。
+根据请求的结果和治理证据，准确识别一个 Rule 或 Skill。Rule 是在触发的工作中持续生效的政策；Skill 是一项有明确结果和边界的触发式任务。如果请求混合了多个所有者，先拆分再继续。如果请求的事实已经由代码、配置、schema 或其他现有所有者负责，则把工作交给该所有者。
 
-当前 Agent 是 Controller。它负责编排和边界强制落实，绝不负责 Candidate 含义或审查判断。一名常驻 Author 负责 Candidate 含义和写入。独立 Reviewer 负责 finding 与裁决。需要时，Runner 只执行一项已冻结的可执行 Acceptance 尝试。
+查明能够从权威来源确定的事实。解决预期结果、当前行为、非目标、保留与兼容性、依赖、权限、验证、安全、分发和交接方面的实质性选择。现有 Candidate 文本是回归证据，不是设计权威；在仓库中可见不代表它拥有含义或权限。
 
-## 渐进加载参考资料
+将确立本任务意图的用户对话保存为权威的用户意图证据：原始请求；会影响含义、范围或非目标的后续修正、确认和决策；以及这些回复所指向的提案、问题或选项。该证据应与 Controller 的解释分开保留；不得用 Author brief 替代或缩减这些证据。
 
-辅助 Skill 的使用必须与正在编写的内容表面相匹配。编写 Rule 或 Skill 的契约——包括指令、语义、结构和正文——时，不得使用面向代码设计或代码编写的 Skill，包括 `codebase-design`。只有当 Skill 包含可执行脚本时，才可使用这些 Skill 设计、实现或验证脚本；其权威和产出仅限于脚本表面，不得决定或修改外层契约。插件公开、可见或可用并不会扩大这一边界。
+准备一份自包含的 Author brief，其中包括：
 
-在第一次需要时加载每份完整合同，而不是在入口一次性加载：
+- 目标和要求的变更；
+- 准确的 Candidate 路径，以及允许的创建、编辑、移动或删除操作；
+- 已接受的约束和权威证据路径；
+- 必需的自动验证；以及
+- 可观察的完成条件。
 
-1. 处理归属、对齐和 Candidate 形态时，读取[模型](references/models.md)以及已安装的 writing-for-agents Skill。
-2. 对齐关闭后，读取[Job Design](references/job-design.md)。Design 期间，在冻结身份生命周期与回调时读取[Role Runtime](references/role-runtime.md)，在冻结审查拓扑与视角时读取[Reviews](references/reviews.md)，然后在冻结证明适用性与出口时读取[Evaluation](references/evaluation.md)。如果 Evaluation 选择 Acceptance，则在冻结其模式、用例、身份或安全之前读取[Acceptance](references/acceptance.md)；否则保持未加载并标记为 NOT_REQUIRED。
-3. 在常驻 Author 开始前立即读取[Author](references/author.md)。
+如果缺少的用户决策、事实、访问授权或权限可能实质性改变任务，则返回 `NEEDS_INPUT`。当一个 Candidate 和一份 brief 足以表达已接受的结果，并且没有尚未解决的实质性选择时，继续执行。
 
-每份参考资料负责一个具名合同，只陈述相对于前沿 Agent 原则新增的局部边界或例外；后续编排不重复陈述这些合同。当本 Skill 或另一份治理合同本身属于写入 scope 时，遵循[Job Design 的自托管冻结](references/job-design.md#freeze-self-hosting-authority)；否则保持上述渐进加载方式不变。
+## 2. 冻结 Candidate 和审查范围
 
-## 1. 对齐并建模
+首次写入之前，使用当前宿主平台对应的随附 `candidate_evidence` 脚本，捕获完整 Candidate 基线和指纹。快照应保存在 Candidate 之外。分别冻结写入范围、验证命令和权限；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
 
-使用 Models 路由到唯一的 Rule 或 Skill Owner，并关闭结果、权威、证据、保留、安全、边界、授权、验证、加载和交接方面的所有重要问题。由 Agent 查明可解决的事实；对于 Agent 权威之外的任何重要选择，遵循 Models 唯一的对齐路径。只能在其对齐交接所授权的新运行中继续。
+如果 Candidate 包含本 Skill 或其他治理指令，还要冻结其完整的写前文本，并在本次运行余下阶段以该副本为权威。新编写的文本在下一次调用前仍只是 Candidate 证据，不能支配对自身的审查。
 
-当一个受支持的 Candidate 模型和准确 Candidate 表面能够表达每项已接受义务，且没有尚未解决的重要决策时，本阶段完成。
+为整项任务分配同一个常驻 Author。两种审查拓扑都覆盖 Quality、Change 和 Correctness；根据任务所需的独立程度进行选择：
 
-## 2. 设计并冻结
+- **Integrated Review**：把三个视角全部分配给一个 Integrated Reviewer。适用于受影响的义务、路径和集成上下文已经封闭，不存在实质性不确定因素，并且风险有限的任务。
+- **Independent Review**：把 Quality、Change 和 Correctness 分配给三个不同的 Reviewer。自托管变更、影响广泛、风险较高，或者所有权、安全、权限、外部影响、恢复、验证或关键路径存在不确定性时，应采用这种方式。
 
-冻结 Job Design 的紧凑 Run Contract：已接受含义；准确 Candidate Allowlist 与操作授权；一名常驻 Author；Reviews 的 Quality 与 Correctness 拓扑；Role Runtime 的身份生命周期；条件式 Machine 与 Acceptance；确定性检查；出口；外部影响安全；以及清理。证明顺序冻结为条件式 Machine、Quality、Correctness、条件式 Acceptance。
+在选择和执行审查时，Controller 只管理拓扑，不参与语义判断。采用 Integrated Review 时，启动一个身份，并向其提供 Reviewer 公共合同和全部三个专业合同。采用 Independent Review 时，启动三个身份，每个身份都获得公共合同，但只获得自己的专业合同。各身份自行打开分配给自己的文件；Controller 不打开这些文件。
 
-在 Author 工作前捕获准确的全 Candidate baseline 与指纹。若它与 Design 关闭时的 Candidate 不匹配，则在任何角色或写入开始前停止。
+## 3. 编写并验证
 
-当每个可达角色、写入、证明、停止与清理动作都符合授权和可用容量时，本阶段完成。
+确认 Candidate 仍与基线一致，然后启动 Author，并将 Author brief 作为其唯一的会话上下文。同时提供基线位置、当前指纹和 [Author 角色](references/author.md)的指针；不要提供完整的用户意图证据。只有该 Author 可以写入 Candidate。
 
-## 3. 编写
+Author 返回后，再次捕获完整 Candidate。只有经过身份确认、由 Author 返回 `COMPLETE`，并且变更可归因于该 Author 且符合冻结的写入范围时，才能继续。Author 返回 `NEEDS_INPUT` 或 `BLOCKED` 时，应在完成边界检查和清理后以该结果结束任务；保留任何局部变更作为证据，但不得将其接纳为验证或审查对象。范围外或无法确定归属的变更应视为 `BLOCKED`，并且不得回退状态不明确的内容。
 
-向全新常驻 Author 提供已接受的语义输入、baseline、准确授权与 Authoring Scope，然后启动它。严格按照 Job Design 的要求，在写入前以及 Author 返回后立即验证完整 Candidate。只有授权内、可归因于 Author 的写入才能推进 Candidate 指纹。Author 返回调用指纹与语义 Change Summary；完成可接纳的提升后，Controller 把该 Summary 绑定到其派生的写后指纹。
+在审查前运行已冻结、由所有者支持且不会自动修复内容的自动验证。开始审查和最终返回 `COMPLETE` 前，当前指纹上的每条适用命令都必须成功。记录每条命令及其退出状态。如果失败由 Candidate 引起，将证据交给同一个 Author 进行一次连贯修复，然后重新应用 Author 返回门槛、捕获指纹并执行验证。缺少用户控制的事实、访问或权限时返回 `NEEDS_INPUT`；其他未解决的失败，或在没有新证据和进展的情况下反复修正时，返回 `BLOCKED`。这两种情况都不授予写入 Candidate 的权限，也不允许继续审查。
 
-当 Author 的 COMPLETE 被接纳并绑定到已提升指纹，或已选择一个终止状态时，本阶段完成。
+## 4. 审查并修正
 
-## 4. 证明并修正
+### 启动审查
 
-按照 Evaluation 冻结的顺序运行每个适用阶段：
+在同一指纹上按照选定拓扑启动审查。向每个审查身份提供 [Reviewer 公共合同](references/reviewer.md)，并按照拓扑分配以下专业合同：
 
-- Machine 执行 Owner 支持的确定性、非修复检查。
-- Quality 使用 Reviews 冻结的独立视角审查完整 Candidate。
-- Correctness 使用 Reviews 合并后的独立视角审查完整的已接受合同；
-- 只有仍存在重要不确定性时，Acceptance 才使用其已选择模式。
+- [Quality Reviewer](references/quality-reviewer.md)
+- [Change Reviewer](references/change-reviewer.md)
+- [Correctness Reviewer](references/correctness-reviewer.md)
 
-Reviewer 把有支持的 finding 直接发送给常驻 Author。把符合条件的修复合并到一份准确的 Repair Scope。Author 返回 COMPLETE 后，捕获新指纹，并从 Machine 开始按顺序，根据 Evaluation 的重放规则与 Role Runtime 的身份生命周期重新运行每个适用证明阶段。任何语义证明都不能跨修复沿用。
+向每个审查身份提供分配的视角、审查拓扑、Candidate 路径、当前指纹和审查轮次。Change 和 Correctness 还应获得基线位置。对于文件中已有的证据，只提供位置而不复制内容；每份专业合同自行决定相应视角要读取哪些稳定证据。
 
-HUMAN_DECISION_REQUIRED 会立即停止语义工作，并且只能在新运行中继续。其他终止结果遵循 Evaluation。
+只传递 Reviewer 无法从这些来源恢复的会话上下文：
 
-当每个适用阶段都在最终指纹上通过、不再有阻塞 finding，且每项非阻塞 finding 都已有 Author 处置时，本阶段完成。
+- Quality 接收已接受的目标，以及仅存在于会话中的质量或表达约束。
+- Change 接收要求的变更、保留与兼容性决策，以及 Author 的语义变更摘要。
+- Correctness 接收完整的权威用户意图证据和 Author brief，并将二者作为不同输入；同时接收仅存在于会话中的关键行为与安全决策，以及自动验证结果。
 
-## 5. 最终化并交接
+Independent Reviewer 只接收其专业视角所需的上下文；Integrated Reviewer 接收三个视角所需上下文的并集。
 
-应用 Role Runtime 的最终化合同、Acceptance 对每项已开始尝试的安全合同，以及 Evaluation 的终止优先级。只有这些合同的关闭要求和最终全 Candidate 边界检查均通过后，才能声明成功。
+### 执行审查轮次
 
-返回简洁交接，其中包含：
+只要拓扑不变，最多三轮审查都沿用相同身份。Reviewer 的证据、沟通和结果遵循公共合同与专业合同。Author 等待所有身份返回后，再进行一次连贯修复。Controller 只跟踪角色是否完成和审查轮次；它不转述，也不判断语义内容。
 
-- Candidate 类型、Owner、准确路径与最终指纹；
-- 每个阶段的裁决，以及 Machine 命令与退出状态，或 NOT_REQUIRED；
-- Acceptance 模式与证据，或 NOT_REQUIRED；
-- 编写变更与修复；
-- 未解决、不确定或未测试的表面；
-- 外部影响清理与残留状态；
-- 最终边界检查结果；以及
-- 选定的终止结果、Evaluation 优先级所保留的每个下层终止结果或其他结果，以及适用时准确的 HUMAN_DECISION_REQUIRED 请求。
+每次修复后都应用 Author 返回门槛，并在进入下一轮审查前运行自动验证。修复会产生新指纹，因此当前拓扑中的每个身份都要重新检查其完整证据。只有三个专业视角在同一指纹上全部返回 `PASS`，并且自动验证也在该指纹上通过时，才能成功结束。最多允许三轮；第三轮后仍有阻塞性 finding 时，返回 `BLOCKED`。
 
-本工作流不授予发布、安装、commit、push、release、翻译或其他下游影响的权限。不要把临时工作流证据写入 Candidate。
+当 Reviewer 返回 `INDEPENDENT_REVIEW_REQUIRED`、Correctness 证明 Author brief 遗漏或曲解了用户意图、因实质性的意图歧义需要返回 `NEEDS_INPUT`，或 Correctness 返回 `RUNTIME_REQUIRED` 时，加载 [Controller 的条件审查编排](references/controller-review.md)中相应的分支。
+
+每个 Reviewer 和 Runner 返回后，都要确认 Candidate 指纹没有变化。
+
+## 5. 完成
+
+当必需角色不可用、角色越界、Candidate 状态不可信，或者已启动的运行时检查无法终止或清理时，应安全停止。结束所有活动角色，记录任何残留状态，并执行最终 Candidate 边界检查。
+
+只返回有用的交接内容：
+
+- Candidate 类型和准确路径；
+- Integrated 或 Independent Review，以及每个专业视角的最终结果；
+- 自动验证命令和结果；
+- 使用 Runner 时的场景和观察；
+- Correctness 视角对用户意图的覆盖情况和一致性结果；
+- Author 最终的语义变更摘要，并原样绑定到最终指纹；
+- 剩余风险和残留状态；
+- 最终指纹；以及
+- `COMPLETE`、`NEEDS_INPUT` 或 `BLOCKED`。
+
+除非用户另行授权，否则本工作流不授予发布、安装、commit、push、release、翻译、网络访问或任何其他下游操作的权限。临时工作流证据应保存在 Candidate 之外。

@@ -1,6 +1,9 @@
 import ast
 import importlib.util
 import json
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -19,6 +22,7 @@ TIMING_SCRIPT = (
     / 'timing.py'
 )
 ACQUISITION_ID = 'a' * 64
+POWERSHELL = shutil.which('pwsh') or shutil.which('powershell')
 
 
 def load_timing_module():
@@ -380,18 +384,104 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
     def test_public_job_supports_python_3_10(self):
         ast.parse(TIMING_SCRIPT.read_text(encoding='utf-8'), feature_version=(3, 10))
+        shell_launcher = TIMING_SCRIPT.with_name('task-metrics.sh')
+        powershell_launcher = TIMING_SCRIPT.with_name('task-metrics.ps1')
+        skill_path = REPO_ROOT / 'skills' / 'diagnose-agent-session' / 'SKILL.md'
         public_files = [
             TIMING_SCRIPT,
-            TIMING_SCRIPT.with_name('task-metrics.ps1'),
-            TIMING_SCRIPT.with_name('task-metrics.sh'),
-            REPO_ROOT / 'skills' / 'diagnose-agent-session' / 'SKILL.md',
+            powershell_launcher,
+            shell_launcher,
+            skill_path,
         ]
         for path in public_files:
             text = path.read_text(encoding='utf-8')
             self.assertIn('3.10', text, path)
             self.assertNotIn('3.11', text, path)
-            if path.suffix in ('.sh', '.ps1'):
-                self.assertNotIn('uv python find', text, path)
+
+        shell_text = shell_launcher.read_text(encoding='utf-8')
+        powershell_text = powershell_launcher.read_text(encoding='utf-8')
+        skill_text = skill_path.read_text(encoding='utf-8')
+        expected_error = (
+            'Python 3.10 or newer is required; checked python3, then python.'
+        )
+        version_check = (
+            'import sys; raise SystemExit(sys.version_info < (3, 10))'
+        )
+
+        self.assertIn('for python_command in python3 python; do', shell_text)
+        self.assertIn("$pythonCommands = @('python3', 'python')", powershell_text)
+        self.assertIn('-CommandType Application', powershell_text)
+        self.assertIn('$probeSucceeded = $false', powershell_text)
+        self.assertIn('$LASTEXITCODE = $null', powershell_text)
+        self.assertIn('$probeSucceeded = $LASTEXITCODE -eq 0', powershell_text)
+        self.assertIn('catch {\n            continue\n        }', powershell_text)
+        self.assertEqual(shell_text.count(version_check), 1)
+        self.assertEqual(powershell_text.count(version_check), 1)
+        self.assertIn("' >/dev/null 2>&1", shell_text)
+        self.assertIn("' *> $null", powershell_text)
+        self.assertIn(expected_error, shell_text)
+        self.assertIn(expected_error, powershell_text)
+        self.assertIn('[Console]::Error.WriteLine(', powershell_text)
+        self.assertNotIn('Write-Error', powershell_text)
+        self.assertIn('exit 2', shell_text)
+        self.assertIn('exit 2', powershell_text)
+        self.assertIn('check only `python3`, then\n`python`', skill_text)
+
+        for path, text in (
+            (shell_launcher, shell_text),
+            (powershell_launcher, powershell_text),
+        ):
+            self.assertNotIn('python3.*', text, path)
+            self.assertNotIn('uv python find', text, path)
+            self.assertNotIn('py -3', text, path)
+
+    @unittest.skipUnless(
+        POWERSHELL and os.name == 'posix',
+        'requires PowerShell on POSIX',
+    )
+    def test_powershell_probe_start_failure_ignores_stale_exit_code(self):
+        launcher = TIMING_SCRIPT.with_name('task-metrics.ps1')
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executable_root = Path(temp_dir)
+            broken_python3 = executable_root / 'python3'
+            broken_python3.write_text(
+                '#!/missing-python-probe-interpreter\n',
+                encoding='utf-8',
+            )
+            broken_python3.chmod(0o755)
+
+            fallback_python = executable_root / 'python'
+            fallback_python.write_text(
+                '#!/bin/sh\n'
+                'if [ "${1-}" = "-c" ]; then\n'
+                '  exit 0\n'
+                'fi\n'
+                "printf 'python fallback executed\\n'\n"
+                'exit 9\n',
+                encoding='utf-8',
+            )
+            fallback_python.chmod(0o755)
+
+            environment = dict(os.environ)
+            environment['PATH'] = str(executable_root)
+            environment['DIAGNOSE_WRAPPER'] = str(launcher)
+            result = subprocess.run(
+                (
+                    str(POWERSHELL),
+                    '-NoProfile',
+                    '-Command',
+                    '$global:LASTEXITCODE = 0; '
+                    '& $env:DIAGNOSE_WRAPPER diagnose',
+                ),
+                check=False,
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+
+        self.assertEqual(result.returncode, 9, result.stdout + result.stderr)
+        self.assertEqual(result.stdout, 'python fallback executed\n')
+        self.assertEqual(result.stderr, '')
 
     def test_skill_defines_identity_effects_and_source_boundaries(self):
         skill = (

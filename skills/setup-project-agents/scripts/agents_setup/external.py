@@ -10,11 +10,17 @@ from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 
 from .models import ExternalSourceSpec
-from .ownership import OwnershipError, load_ownership_file
+from .ownership import (
+    OwnershipError,
+    load_ownership_file,
+    normalize_external_sources,
+)
 from .external_contract import (
     ExternalContractError,
     discover_license,
     COMMIT,
+    isolated_git_environment,
+    is_link_like as _is_link_like,
     resolve_ref,
     snapshot_skill_tree,
 )
@@ -122,16 +128,16 @@ def validated_snapshot_metadata(
             'license': dict(license_item),
             'skills': compact_skills,
         })
-    return tuple(result)
+    try:
+        return normalize_external_sources(
+            result,
+            label='external Skill source metadata',
+        )
+    except OwnershipError as error:
+        raise ExternalSkillError(str(error)) from error
 
 
-def _git_environment() -> dict[str, str]:
-    environment = dict(os.environ)
-    environment['GIT_TERMINAL_PROMPT'] = '0'
-    return environment
-
-
-def _run_git(*args: str) -> str:
+def _run_git(*args: str, cwd: Path) -> str:
     try:
         completed = subprocess.run(
             ('git', *args),
@@ -139,7 +145,8 @@ def _run_git(*args: str) -> str:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            env=_git_environment(),
+            env=isolated_git_environment(cwd),
+            cwd=cwd,
         )
     except OSError as error:
         raise ExternalSkillError('Git is unavailable for external Skill setup') from error
@@ -157,15 +164,24 @@ def _previous_sources(path: Path | None) -> dict[str, dict[str, object]]:
     except OwnershipError as error:
         raise ExternalSkillError('existing SmartKit ownership manifest is invalid') from error
     assert ownership is not None
-    return {str(source['id']): dict(source) for source in ownership.sources}
+    return {str(source['id']).casefold(): dict(source) for source in ownership.sources}
 
 
 def _remove_checkouts(root: Path) -> None:
     if not root.exists():
         return
     try:
-        for path in root.rglob('*'):
-            if path.is_file():
+        for directory, directories, files in os.walk(root, topdown=True, followlinks=False):
+            parent = Path(directory)
+            directories[:] = [
+                name
+                for name in directories
+                if not _is_link_like(parent / name)
+            ]
+            for name in files:
+                path = parent / name
+                if _is_link_like(path):
+                    continue
                 path.chmod(stat.S_IREAD | stat.S_IWRITE)
         shutil.rmtree(root)
     except OSError as error:
@@ -187,30 +203,48 @@ def snapshot_external_skills(
     previous_sources = _previous_sources(existing_manifest)
     try:
         lock_sources: list[dict[str, object]] = []
-        for source_spec in specs:
-            checkout = checkouts / source_spec.id.replace('/', '--')
+        for source_index, source_spec in enumerate(specs):
+            checkout = checkouts / f'source-{source_index:04d}'
             checkout.mkdir()
-            _run_git('init', '--quiet', str(checkout))
-            _run_git('-C', str(checkout), 'remote', 'add', 'origin', source_spec.url)
+            _run_git('init', '--quiet', str(checkout), cwd=checkout)
+            _run_git(
+                '-C', str(checkout), 'remote', 'add', 'origin', source_spec.url,
+                cwd=checkout,
+            )
             try:
                 resolution = resolve_ref(
                     source_spec.url,
                     source_spec.ref,
-                    lambda arguments: _run_git(*arguments),
+                    lambda arguments: _run_git(*arguments, cwd=checkout),
                 )
             except ExternalContractError as error:
                 raise ExternalSkillError(f'{source_spec.id}: {error}') from error
+            fetch_ref = resolution.fetch_ref
+            if source_spec.ref is not None and resolution.ref_kind in {'branch', 'tag'}:
+                namespace = 'heads' if resolution.ref_kind == 'branch' else 'tags'
+                fetch_ref = f'refs/{namespace}/{resolution.fetch_ref}'
             _run_git(
                 '-C', str(checkout), 'fetch', '--depth=1',
-                'origin', resolution.fetch_ref,
+                'origin', fetch_ref,
+                cwd=checkout,
             )
-            _run_git('-C', str(checkout), 'checkout', '--quiet', '--detach', 'FETCH_HEAD')
-            commit = _run_git('-C', str(checkout), 'rev-parse', 'HEAD')
+            _run_git(
+                '-C', str(checkout), 'checkout', '--quiet', '--detach', 'FETCH_HEAD',
+                cwd=checkout,
+            )
+            commit = _run_git(
+                '-C', str(checkout), 'rev-parse', 'HEAD', cwd=checkout,
+            )
             if (
-                resolution.ref_kind == 'tag'
-                and (previous := previous_sources.get(source_spec.id)) is not None
-                and previous.get('requested_ref') == source_spec.ref
-                and previous.get('commit') != commit
+                (previous := previous_sources.get(source_spec.id.casefold())) is not None
+                and previous.get('ref_kind') == 'tag'
+                and source_spec.ref is not None
+                and isinstance(previous.get('requested_ref'), str)
+                and previous['requested_ref'].casefold() == source_spec.ref.casefold()
+                and (
+                    resolution.ref_kind != 'tag'
+                    or previous.get('commit') != commit
+                )
             ):
                 raise ExternalSkillError(
                     f'external source tag moved: {source_spec.id}:{source_spec.ref}'

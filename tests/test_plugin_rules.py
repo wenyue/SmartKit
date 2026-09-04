@@ -249,7 +249,7 @@ class PluginRuleContractTest(unittest.TestCase):
                     handler
                     for group in hooks[event]
                     for handler in group['hooks']
-                    if 'runtime/rules/dispatch.py' in handler['command']
+                    if 'runtime/rules/dispatch.' in handler['command']
                 ]
                 self.assertEqual(len(handlers), 1)
                 self.assertEqual(handlers[0]['additionalContextLimit'], 50000)

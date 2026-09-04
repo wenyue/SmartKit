@@ -41,6 +41,14 @@ class SetupPlannerTest(unittest.TestCase):
                     ('update.md', ChangeKind.UPDATE),
                 ],
             )
+            by_path = {item.path.as_posix(): item for item in plan.changes}
+            self.assertIsNone(by_path['create.md'].expected)
+            self.assertEqual(by_path['same.md'].expected.content, b'same\n')
+            self.assertEqual(by_path['update.md'].expected.content, b'user edit\n')
+            self.assertTrue(all(
+                item.expected.mode >= 0 and len(item.expected.identity) == 2
+                for item in (by_path['same.md'], by_path['update.md'])
+            ))
 
     def test_explicit_retired_path_is_deleted_without_a_lock(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -76,6 +84,11 @@ class SetupPlannerTest(unittest.TestCase):
 
             self.assertFalse(retired.exists())
             self.assertEqual(sibling.read_bytes(), b'keep\n')
+            self.assertTrue(all(
+                change.expected is not None
+                for change in plan.changes
+                if change.kind in {ChangeKind.DELETE, ChangeKind.DELETE_DIRECTORY}
+            ))
 
     def test_replace_root_removes_stale_files_and_preserves_other_directories(self):
         with tempfile.TemporaryDirectory() as temp_dir:

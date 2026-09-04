@@ -7,9 +7,22 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from .catalog import safe_field_key, safe_relative
+from .external_contract import (
+    ExternalContractError,
+    LICENSE_MARKERS,
+    is_link_like as _is_link_like,
+    validate_ref,
+    validate_source_identity,
+)
 from .models import ContractError, DesiredField, DesiredFile
 from .project import ProjectError, confined_target
-from .structured import StructuredConfigError, format_for_path, parse_document
+from .structured import (
+    StructuredConfigError,
+    canonical_value_bytes,
+    field_value,
+    format_for_path,
+    parse_document,
+)
 
 
 OWNERSHIP_PATH = PurePosixPath('.agents/smartkit.lock.json')
@@ -68,9 +81,7 @@ def _is_digest(value: object, length: int = 64) -> bool:
 
 
 def _value_digest(value: object) -> str:
-    return _digest(json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(',', ':'),
-    ).encode('utf-8'))
+    return _digest(canonical_value_bytes(value))
 
 
 def _tree_digest_from_files(
@@ -99,12 +110,6 @@ def _target(target_root: Path, path: PurePosixPath) -> Path:
         return confined_target(target_root, path)
     except ProjectError as error:
         raise OwnershipError(str(error)) from error
-
-
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
-    )
 
 
 def _actual_file_digest(target_root: Path, path: PurePosixPath) -> str | None:
@@ -140,15 +145,6 @@ def _actual_tree_digest(target_root: Path, root: PurePosixPath) -> str | None:
     return _tree_digest_entries(entries)
 
 
-def _dotted_value(document: Mapping[str, object], key: str) -> tuple[bool, object | None]:
-    current: object = document
-    for segment in key.split('.'):
-        if not isinstance(current, Mapping) or segment not in current:
-            return False, None
-        current = current[segment]
-    return True, current
-
-
 def _actual_field_digest(
     target_root: Path,
     path: PurePosixPath,
@@ -164,7 +160,7 @@ def _actual_field_digest(
         document = parse_document(target.read_bytes(), format_name)
     except (OSError, StructuredConfigError) as error:
         raise OwnershipError(f'cannot parse managed field path: {path.as_posix()}') from error
-    exists, value = _dotted_value(document, key)
+    exists, value = field_value(document, key)
     return _value_digest(value) if exists else None
 
 
@@ -215,64 +211,115 @@ def _parse_asset(raw: object, index: int) -> OwnedAsset:
     return OwnedAsset(kind, role, path, digest, key, source, source_path)
 
 
-def _parse_source(raw: object, index: int) -> Mapping[str, object]:
+def _parse_source(
+    raw: object,
+    index: int,
+    *,
+    label: str,
+) -> Mapping[str, object]:
     if not isinstance(raw, Mapping) or set(raw) != _SOURCE_FIELDS:
-        raise OwnershipError(f'SmartKit ownership manifest source {index} is invalid')
+        raise OwnershipError(f'{label} source {index} is invalid')
     required_strings = ('id', 'url', 'resolved_ref', 'commit')
     if any(not isinstance(raw.get(key), str) or not raw[key] for key in required_strings):
-        raise OwnershipError(f'SmartKit ownership manifest source {index} is invalid')
+        raise OwnershipError(f'{label} source {index} is invalid')
+    try:
+        validate_source_identity(raw['id'], raw['url'])
+    except ExternalContractError as error:
+        raise OwnershipError(f'{label} source {index} identity is invalid') from error
     if len(raw['commit']) != 40 or any(
         character not in '0123456789abcdef' for character in raw['commit']
     ):
-        raise OwnershipError(f'SmartKit ownership manifest source {index} is invalid')
+        raise OwnershipError(f'{label} source {index} is invalid')
     if raw.get('requested_ref') is not None and (
         not isinstance(raw['requested_ref'], str) or not raw['requested_ref']
     ):
-        raise OwnershipError(f'SmartKit ownership manifest source {index} is invalid')
+        raise OwnershipError(f'{label} source {index} is invalid')
+    try:
+        validate_ref(raw.get('requested_ref'))
+    except ExternalContractError as error:
+        raise OwnershipError(f'{label} source {index} ref is invalid') from error
     if raw.get('ref_kind') not in {'branch', 'tag', 'commit'}:
-        raise OwnershipError(f'SmartKit ownership manifest source {index} is invalid')
+        raise OwnershipError(f'{label} source {index} is invalid')
     license_item = raw.get('license')
     if not isinstance(license_item, Mapping) or set(license_item) != _LICENSE_FIELDS:
-        raise OwnershipError(f'SmartKit ownership manifest source {index} license is invalid')
+        raise OwnershipError(f'{label} source {index} license is invalid')
     if (
         not isinstance(license_item.get('spdx'), str)
-        or not license_item['spdx']
+        or license_item['spdx'] not in LICENSE_MARKERS
         or not isinstance(license_item.get('path'), str)
         or not license_item['path']
         or not _is_digest(license_item.get('sha256'))
     ):
-        raise OwnershipError(f'SmartKit ownership manifest source {index} license is invalid')
+        raise OwnershipError(f'{label} source {index} license is invalid')
+    try:
+        license_path = safe_relative(license_item['path'], f'{label} source license path')
+    except ContractError as error:
+        raise OwnershipError(f'{label} source {index} license is invalid') from error
     skills = raw.get('skills')
     if not isinstance(skills, list) or not skills:
-        raise OwnershipError(f'SmartKit ownership manifest source {index} Skills are invalid')
+        raise OwnershipError(f'{label} source {index} Skills are invalid')
     normalized_skills: list[Mapping[str, object]] = []
     for skill_index, item in enumerate(skills):
         if not isinstance(item, Mapping) or set(item) != _SOURCE_SKILL_FIELDS:
             raise OwnershipError(
-                f'SmartKit ownership manifest source {index} Skill {skill_index} is invalid'
+                f'{label} source {index} Skill {skill_index} is invalid'
             )
         if not isinstance(item.get('id'), str) or not item['id']:
             raise OwnershipError(
-                f'SmartKit ownership manifest source {index} Skill {skill_index} is invalid'
+                f'{label} source {index} Skill {skill_index} is invalid'
             )
         try:
             skill_path = safe_relative(item.get('path'), 'ownership source Skill path')
         except ContractError as error:
             raise OwnershipError(str(error)) from error
+        owner = str(raw['id']).split('/', 1)[0]
+        if item['id'] != f'{owner}/{skill_path.name}':
+            raise OwnershipError(
+                f'{label} source {index} Skill {skill_index} identity is invalid'
+            )
         normalized_skills.append({'id': item['id'], 'path': skill_path.as_posix()})
     skill_ids = [item['id'] for item in normalized_skills]
     if len(skill_ids) != len(set(skill_ids)):
-        raise OwnershipError(f'SmartKit ownership manifest source {index} has duplicate Skills')
+        raise OwnershipError(f'{label} source {index} has duplicate Skills')
     return {
         'id': raw['id'],
         'url': raw['url'],
         'requested_ref': raw['requested_ref'],
         'resolved_ref': raw['resolved_ref'],
         'ref_kind': raw['ref_kind'],
-        'commit': raw['commit'],
-        'license': dict(license_item),
+        'commit': raw['commit'].lower(),
+        'license': {
+            'spdx': license_item['spdx'],
+            'path': license_path.as_posix(),
+            'sha256': license_item['sha256'],
+        },
         'skills': normalized_skills,
     }
+
+
+def normalize_external_sources(
+    value: object,
+    *,
+    label: str = 'SmartKit ownership manifest',
+) -> tuple[Mapping[str, object], ...]:
+    """Validate and normalize compact external-source provenance at every trust boundary."""
+    if not isinstance(value, (list, tuple)):
+        raise OwnershipError(f'{label} sources are invalid')
+    sources = tuple(
+        _parse_source(item, index, label=label)
+        for index, item in enumerate(value)
+    )
+    source_ids = [str(item['id']).casefold() for item in sources]
+    skill_ids = [
+        str(skill['id'])
+        for source in sources
+        for skill in source['skills']
+    ]
+    if len(source_ids) != len(set(source_ids)):
+        raise OwnershipError(f'{label} has duplicate sources')
+    if len(skill_ids) != len(set(skill_ids)):
+        raise OwnershipError(f'{label} has duplicate Skills')
+    return sources
 
 
 def _parse_ownership_document(document: object) -> OwnershipState:
@@ -282,10 +329,7 @@ def _parse_ownership_document(document: object) -> OwnershipState:
         raise OwnershipError('SmartKit ownership manifest is invalid')
     if not isinstance(document.get('assets'), list):
         raise OwnershipError('SmartKit ownership manifest is invalid')
-    sources = tuple(_parse_source(item, index) for index, item in enumerate(document['sources']))
-    source_ids = [item['id'] for item in sources]
-    if len(source_ids) != len(set(source_ids)):
-        raise OwnershipError('SmartKit ownership manifest has duplicate sources')
+    sources = normalize_external_sources(document['sources'])
     assets = tuple(_parse_asset(item, index) for index, item in enumerate(document['assets']))
     identities = [item.identity for item in assets]
     if len(identities) != len(set(identities)):

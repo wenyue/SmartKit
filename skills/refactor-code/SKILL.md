@@ -1,90 +1,110 @@
 ---
 name: refactor-code
-description: Use when moving, combining, splitting, extracting, or simplifying one code target while preserving supported caller-visible behavior and external contracts; also use to route pure renames and open-ended architecture searches, resolve material interface or seam design choices, or identify a non-rename observable change that makes the request out of scope.
+description: Refactor one concrete code target while preserving supported caller-visible behavior and external contracts; also route pure renames, open-ended architecture searches, material interface or seam choices, and non-rename observable changes before writing.
 ---
 
 # Refactor Code
 
-Remove one concrete target's structural pressure while preserving what supported callers and
-external consumers observe.
+Restructure one concrete target to remove established structural pressure while preserving what
+supported callers and external consumers observe.
 
-## Route Before Writing
+## Principles
+
+- **Behavior is the boundary.** Internal structure may change; supported caller-visible behavior,
+  invariants, and external contracts remain unchanged.
+- **One pressure, one target.** Keep scope anchored to the concrete target and structural problem
+  accepted for this run.
+- **Minimum coherent structure.** Localize knowledge and introduce only abstractions earned by a
+  real seam. Speculative frameworks, extension points, compatibility layers, and test-only APIs are
+  outside the result.
+- **Owned change.** Follow target-project governance and each generated or hand-written surface's
+  owner. Authority for one internal does not authorize another.
+- **Proportionate proof.** Gather the least evidence that can distinguish preservation from
+  regression at every supported seam, plus every owner-required affected-surface check.
+
+## Route before writing
 
 Classify the requested outcome using authorized repository reads and non-mutating evidence. Use
-adjacent Skills only through their current public distribution interfaces:
+adjacent Skills only through their existing public distribution interfaces; never reproduce their
+workflows here.
 
-- A pure symbol or path rename is **Redirected** to `rename-code`, including a public name or
-  externally observed path. `rename-code` owns its compatibility decision.
-- An open-ended search for architectural opportunities is **Redirected** to the user-invoked
-  `improve-codebase-architecture` Skill; confirm only the search scope.
-- A material unresolved choice about an interface, seam, adapter relationship, or test surface
-  invokes `codebase-design` only when established repository evidence and ordinary in-scope
-  refactoring judgment cannot settle it. Reconcile its result with repository evidence: return
-  **Out of Scope** without writing when the result requires a non-rename caller-visible behavior or
-  external-contract change; otherwise continue here.
-- Any requested non-rename change to caller-visible behavior or an external contract is **Out of
-  Scope**. This includes public-interface, persistence, protocol, integration, and user-visible
-  behavior changes.
+- **Redirected — rename.** A pure symbol or tracked-path rename belongs to `rename-code`, including
+  a public name or externally observed path. `rename-code` owns its compatibility decision.
+- **Redirected — architecture search.** An open-ended search for architectural opportunities
+  belongs to the user-invoked `improve-codebase-architecture` Skill. Confirm only its search scope.
+- **Design dependency.** Use `codebase-design` for a material unresolved interface, seam, adapter,
+  or test-surface choice only when established repository evidence and ordinary in-scope judgment
+  cannot settle it. Reconcile the result with repository evidence. If it requires a non-rename
+  caller-visible behavior or external-contract change, return **Out of Scope**; otherwise continue.
+- **Out of Scope.** Any requested non-rename change to caller-visible behavior or an external
+  contract belongs elsewhere, including public-interface, persistence, protocol, integration, and
+  user-visible behavior changes.
 
-A **Redirected** or **Out of Scope** result performs no write. An architecture-search handoff
-carries only the confirmed search scope and required outcome. A rename handoff carries the
-confirmed target, accepted preservation boundary, relevant evidence, and required outcome. An Out
-of Scope report carries the confirmed target, evidence that the requested outcome changes
-observable behavior or an external contract, and the required outcome. If classification or a
-returned design depends on unavailable material, return **Blocked** without writing and name it.
+**Redirected**, **Out of Scope**, and pre-write **Blocked** results perform no write. A rename
+handoff carries the confirmed target, preservation boundary, relevant evidence, and required
+outcome. An architecture-search handoff carries only its confirmed scope and outcome. An Out of
+Scope report carries the target, evidence of the observable or contract change, and required
+outcome. When classification or a returned design depends on unavailable material, return
+**Blocked** with the exact missing evidence.
 
-## Establish the Refactoring Contract
+## Establish the boundary
 
-Before any write, establish from the target repository:
+Before writing, establish from the target repository:
 
-- the exact target, structural pressure, intended internal result, and accepted scope;
-- applicable project rules and owners, including generated-surface ownership;
-- the supported caller seam and the observable behavior, invariants, and external contracts it
-  must preserve;
-- the target, callers, tests, configuration, history, and local patterns needed to judge the
-  change;
-- focused green evidence that can discriminate preservation from regression, plus every
-  owner-required affected-surface check; and
+- the target, structural pressure, intended internal result, and accepted scope;
+- applicable project rules and owners, including each generated surface's established owner;
+- supported caller seams and the behavior, invariants, and external contracts they expose;
+- affected implementation and caller paths, plus only the tests, configuration, history, and local
+  patterns needed to judge the change;
+- preservation evidence for each supported seam and every owner-required affected-surface check;
+  and
 - authority for every required read, command, and write.
 
-Return **Blocked** without writing when any required fact, access, authority, evidence, or supported
-check route is missing, naming the exact gap.
+Bound discovery and proof to these obligations and the integration context needed to interpret
+them. Widen only when evidence exposes another materially affected path or unresolved risk.
+Unavailable noncritical evidence narrows the supported conclusion and enters the handoff. Return
+**Blocked** without writing when a missing fact, access, authority, material evidence, or check
+route leaves the safe change or a preservation claim unsupported; name the exact gap.
 
-## Refactor
+## Restructure the target
 
 Choose the smallest coherent internal structure that removes the pressure and localizes knowledge.
-Every abstraction earns a real seam; the result contains only required structure, not speculative
-frameworks, extension points, compatibility layers, or test-only interfaces.
+Change only necessary, owner-authorized implementation surfaces and internal callers. Change a
+generated surface only through its established owner and only when the required operation is
+authorized; otherwise return **Blocked** before writing.
 
-Change only necessary owner-authorized implementation surfaces and internal callers while
-preserving unrelated and user-owned state. Preserve the supported seam, behavior, invariants, and
-contracts. Account for every real reference before retiring an internal. Keep preservation
-assertions at supported seams; change structure-coupled tests only while retaining their behavioral
-assertions.
+Preserve unrelated and user-owned state along with every supported seam, behavior, invariant, and
+contract. Account for every materially reachable reference before retiring an internal. Keep
+preservation assertions at supported seams; change structure-coupled tests only while retaining
+their behavioral assertions.
 
-## Verify and Return
+## Prove the result
 
 After one coherent internal result:
 
-1. Compare the exact final scope, ownership, and structure with the refactoring contract. Prove
-   every edit necessary, callers migrated, and retired internals free of real references.
+1. Inspect the final diff and necessary integration context against the established boundary.
+   Confirm every edit belongs to the authorized result, affected callers are migrated, and retired
+   internals have no materially reachable reference.
 2. Run the discriminating preservation evidence and every owner-required affected-surface check.
+   Reuse valid evidence for equivalent claims; add proof only for an uncovered material risk or an
+   independently required check.
 3. Apply only uniquely evidence-determined in-scope corrections, then rerun affected checks. Stop
    when evidence no longer determines progress.
 
-Return **Failure** after writing when a required check cannot pass or run, preservation evidence
-ceases to discriminate, no supported in-scope correction exists, or the same finding recurs
-unchanged.
-Preserve useful state and evidence without inventing rollback authority. After-write Failure
-governs any coincident Blocked, Redirected, or Out of Scope fact.
+## Results and handoff
 
-Return **Complete** only when the pressure is removed, caller-visible behavior and external
-contracts remain supported, replaced internals are retired, final scope matches ownership, and all
-required checks pass.
+Return **Failure** after writing when a required check cannot pass or run, preservation evidence no
+longer discriminates, no supported in-scope correction exists, or the same finding recurs unchanged.
+Preserve useful state and evidence without inventing rollback authority. After-write Failure takes
+precedence over any coincident Blocked, Redirected, or Out of Scope fact.
+
+Return **Complete** only when the structural pressure is removed, supported caller-visible behavior
+and external contracts remain preserved, replaced internals are retired, the final scope matches
+ownership and authority, and every required check passes.
 
 Hand off the pressure and result; preserved behavior, invariants, and contracts; changed internals
-and callers; retired code; exact checks and exits; corrections; and unresolved or untested
-surfaces. A non-complete result also identifies the stopping fact and preserved state.
+and callers; retired code; exact checks and exits; corrections; and unresolved or untested surfaces.
+A non-complete result also identifies the stopping fact and preserved state.
 
 This Skill grants no publication, installation, commit, push, worktree, translation, network
 access, or remote effect. Target-project governance remains authoritative for reads, writes,

@@ -23,6 +23,10 @@ from pathlib import Path, PurePosixPath
 from typing import Mapping
 
 from .catalog import ContractError, load_catalog
+from .external_contract import (
+    isolated_git_environment,
+    is_link_like as _is_link_like,
+)
 from .models import AssetSpec, Catalog
 
 
@@ -60,6 +64,18 @@ _MANIFESTS = (
         {'agents': './agents/copilot/', 'skills': './skills/'},
     ),
 )
+_SOURCE_CONTRACT_FILES = (
+    PurePosixPath('VERSION'),
+    PurePosixPath('skills/registry.json'),
+    PurePosixPath('setup-assets/catalog/assets.json'),
+    PurePosixPath('setup-assets/catalog/harnesses.json'),
+    PurePosixPath('setup-assets/catalog/project-config.schema.json'),
+)
+_AUTHORING_DEPENDENCY_TREES = (
+    PurePosixPath('skills/setup-project-agents'),
+    PurePosixPath('skills/write-rules-and-skills'),
+    PurePosixPath('skills/writing-for-agents'),
+)
 _ROOT_FIELDS = frozenset({'skills', 'rules', 'agents'})
 _INCOMPLETE_MARKER = '.agents-setup-incomplete-v1'
 _INCOMPLETE_MARKER_BYTES = b'agents-setup-incomplete-v1\n'
@@ -71,12 +87,6 @@ class SourceUnavailable(RuntimeError):
 
 class InvalidFetchedSource(ValueError):
     """Raised when a fetched or installed source fails the source contract."""
-
-
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
-    )
 
 
 @dataclass(frozen=True)
@@ -134,13 +144,35 @@ def _safe_required(root: Path, relative: PurePosixPath, *, directory: bool = Fal
     return current
 
 
-def _reject_source_symlinks(root: Path) -> None:
-    for directory, directories, files in os.walk(root, followlinks=False):
+def _validate_source_tree(root: Path, relative: PurePosixPath) -> Path:
+    tree = _safe_required(root, relative, directory=True)
+
+    def failed(error: OSError) -> None:
+        raise InvalidFetchedSource(
+            f'cannot inspect source directory: {relative.as_posix()}'
+        ) from error
+
+    for directory, directories, files in os.walk(
+        tree, followlinks=False, onerror=failed,
+    ):
         parent = Path(directory)
-        for name in (*directories, *files):
+        for name in directories:
             candidate = parent / name
-            if _is_link_like(candidate):
-                raise InvalidFetchedSource(f'source path contains a symlink: {candidate}')
+            try:
+                status = candidate.lstat()
+            except OSError as error:
+                failed(error)
+            if _is_link_like(candidate) or not stat.S_ISDIR(status.st_mode):
+                raise InvalidFetchedSource(f'source path is unsafe: {candidate}')
+        for name in files:
+            candidate = parent / name
+            try:
+                status = candidate.lstat()
+            except OSError as error:
+                failed(error)
+            if _is_link_like(candidate) or not stat.S_ISREG(status.st_mode):
+                raise InvalidFetchedSource(f'source path is unsafe: {candidate}')
+    return tree
 
 
 def _load_manifest(path: Path, version: str, expected_roots: Mapping[str, str]) -> None:
@@ -162,27 +194,29 @@ def _load_manifest(path: Path, version: str, expected_roots: Mapping[str, str]) 
 def _validate_catalog_sources(root: Path, catalog_assets: tuple[AssetSpec, ...]) -> None:
     for asset in catalog_assets:
         relative = asset.source
-        current = root
-        for part in relative.parts:
-            current /= part
-            if _is_link_like(current):
-                raise InvalidFetchedSource(f'source path contains a symlink: {current}')
+        if asset.kind in {'agent', 'skill'}:
+            try:
+                current = _validate_source_tree(root, relative)
+            except InvalidFetchedSource as error:
+                if asset.kind == 'agent' and 'source directory is missing' in str(error):
+                    raise InvalidFetchedSource(
+                        f'Plugin Agent source is not a directory: {relative.as_posix()}'
+                    ) from error
+                raise
+        else:
+            current = _safe_required(root, relative)
         if asset.kind == 'agent':
-            if not current.is_dir():
-                raise InvalidFetchedSource(
-                    f'Plugin Agent source is not a directory: {relative.as_posix()}'
-                )
             children = tuple(current.iterdir())
             if not children or any(
-                not child.is_file() or child.suffix != '.toml'
+                _is_link_like(child)
+                or not child.is_file()
+                or child.suffix != '.toml'
                 for child in children
             ):
                 raise InvalidFetchedSource(
                     f'Plugin Agent source must contain only direct TOML adapters: '
                     f'{relative.as_posix()}'
                 )
-        elif not current.exists():
-            raise InvalidFetchedSource(f'catalog source is missing: {relative.as_posix()}')
 
 
 def _control_plane_source(catalog: Catalog) -> PurePosixPath:
@@ -213,7 +247,8 @@ def _validate_source(source_root: Path, *, fd_root: bool) -> Path:
     root = Path(source_root) if fd_root else _safe_root(source_root, 'source root')
     if fd_root and not root.is_dir():
         raise InvalidFetchedSource('held source root is not a directory')
-    _reject_source_symlinks(root)
+    for relative in _SOURCE_CONTRACT_FILES:
+        _safe_required(root, relative)
     version_path = _safe_required(root, PurePosixPath('VERSION'))
     try:
         version = version_path.read_text(encoding='utf-8').strip()
@@ -239,6 +274,8 @@ def _validate_source(source_root: Path, *, fd_root: bool) -> Path:
     ):
         raise InvalidFetchedSource('source catalog identity/version/ref mismatch')
     _validate_catalog_sources(root, catalog.assets)
+    for relative in _AUTHORING_DEPENDENCY_TREES:
+        _validate_source_tree(root, relative)
     control_plane_source = _control_plane_source(catalog)
     _safe_required(root, control_plane_source / _CONTROL_PLANE_ENTRYPOINT)
     for relative in _CONTROL_PLANE_VENDORED_FILES:
@@ -258,6 +295,7 @@ def _run_git(
     argv: tuple[str, ...],
     *,
     failure: type[SourceUnavailable] | type[InvalidFetchedSource],
+    cwd: str | Path,
     pass_fds: tuple[int, ...] = (),
 ) -> subprocess.CompletedProcess[str]:
     try:
@@ -267,30 +305,15 @@ def _run_git(
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             text=True,
-            env=_git_environment(),
+            env=isolated_git_environment(Path(cwd)),
             pass_fds=pass_fds,
+            cwd=cwd,
         )
     except OSError as error:
         raise SourceUnavailable('Git is unavailable') from error
     if completed.returncode != 0:
         raise failure('Git could not produce a valid canonical source')
     return completed
-
-
-def _git_environment() -> dict[str, str]:
-    environment = {
-        key: value
-        for key, value in os.environ.items()
-        if not key.startswith('GIT_')
-    }
-    environment.update(
-        {
-            'GIT_TERMINAL_PROMPT': '0',
-            'GIT_CONFIG_NOSYSTEM': '1',
-            'GIT_CONFIG_GLOBAL': os.devnull,
-        }
-    )
-    return environment
 
 
 def _secure_dirfd_supported() -> bool:
@@ -366,7 +389,7 @@ def _open_safe_workspace_fallback(value: Path) -> _Workspace:
                 raise InvalidFetchedSource('cannot validate source workspace') from error
         except OSError as error:
             raise InvalidFetchedSource('cannot validate source workspace') from error
-        if stat.S_ISLNK(status.st_mode) or not stat.S_ISDIR(status.st_mode):
+        if _is_link_like(current) or not stat.S_ISDIR(status.st_mode):
             raise InvalidFetchedSource(f'source workspace contains unsafe path: {current}')
     return _Workspace(path, None)
 
@@ -382,25 +405,33 @@ def _fetch_canonical_fallback(repository: str, work_root: Path) -> SourceSnapsho
         candidate.mkdir()
         marker = candidate / _INCOMPLETE_MARKER
         marker.write_bytes(_INCOMPLETE_MARKER_BYTES)
-        _run_git(('git', 'init', '--quiet', str(candidate)), failure=SourceUnavailable)
+        _run_git(
+            ('git', 'init', '--quiet', str(candidate)),
+            failure=SourceUnavailable,
+            cwd=candidate,
+        )
         _run_git(
             ('git', '-C', str(candidate), 'remote', 'add', 'origin', repository),
             failure=SourceUnavailable,
+            cwd=candidate,
         )
         _run_git(
             (
                 'git', '-C', str(candidate), 'fetch', '--depth=1',
-                'origin', CANONICAL_REF,
+                'origin', f'refs/heads/{CANONICAL_REF}',
             ),
             failure=SourceUnavailable,
+            cwd=candidate,
         )
         _run_git(
             ('git', '-C', str(candidate), 'checkout', '--quiet', '--detach', 'FETCH_HEAD'),
             failure=InvalidFetchedSource,
+            cwd=candidate,
         )
         commit = _run_git(
             ('git', '-C', str(candidate), 'rev-parse', 'HEAD'),
             failure=InvalidFetchedSource,
+            cwd=candidate,
         ).stdout.strip()
         if not _COMMIT.fullmatch(commit):
             raise InvalidFetchedSource('Git returned an invalid source commit')
@@ -712,6 +743,7 @@ def fetch_canonical(repository: str, *, work_root: Path) -> SourceSnapshot:
             _run_git(
                 ('git', 'init', '--quiet', git_root),
                 failure=SourceUnavailable,
+                cwd=git_root,
                 pass_fds=(source.fd,),
             )
         except (SourceUnavailable, InvalidFetchedSource):
@@ -719,24 +751,28 @@ def fetch_canonical(repository: str, *, work_root: Path) -> SourceSnapshot:
         _run_git(
             ('git', '-C', git_root, 'remote', 'add', 'origin', repository),
             failure=SourceUnavailable,
+            cwd=git_root,
             pass_fds=(source.fd,),
         )
         _run_git(
             (
                 'git', '-C', git_root, 'fetch', '--depth=1',
-                'origin', CANONICAL_REF,
+                'origin', f'refs/heads/{CANONICAL_REF}',
             ),
             failure=SourceUnavailable,
+            cwd=git_root,
             pass_fds=(source.fd,),
         )
         _run_git(
             ('git', '-C', git_root, 'checkout', '--quiet', '--detach', 'FETCH_HEAD'),
             failure=InvalidFetchedSource,
+            cwd=git_root,
             pass_fds=(source.fd,),
         )
         commit = _run_git(
             ('git', '-C', git_root, 'rev-parse', 'HEAD'),
             failure=InvalidFetchedSource,
+            cwd=git_root,
             pass_fds=(source.fd,),
         ).stdout.strip()
         if not _COMMIT.fullmatch(commit):

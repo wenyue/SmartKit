@@ -60,6 +60,14 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
         vendored_file = root / relative
         vendored_file.parent.mkdir(parents=True, exist_ok=True)
         vendored_file.write_text('test\n', encoding='utf-8')
+    for relative in (
+        'skills/write-rules-and-skills/SKILL.md',
+        'skills/write-rules-and-skills/references/author.md',
+        'skills/writing-for-agents/SKILL.md',
+    ):
+        dependency = root / relative
+        dependency.parent.mkdir(parents=True, exist_ok=True)
+        dependency.write_text('test\n', encoding='utf-8')
     (root / 'VERSION').write_text(f'{version}\n', encoding='utf-8')
     manifests = {
         '.codex-plugin/plugin.json': {
@@ -109,6 +117,8 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
         ),
         encoding='utf-8',
     )
+    for name in ('harnesses.json', 'project-config.schema.json'):
+        (root / 'setup-assets' / 'catalog' / name).write_text('{}\n', encoding='utf-8')
 
 
 def candidate_directories(workspace: Path) -> list[Path]:
@@ -165,6 +175,33 @@ class SetupSourceTest(unittest.TestCase):
                 second.root.joinpath('new-master.txt').read_text(),
                 'new master\n',
             )
+
+    def test_canonical_fetches_bind_the_master_branch_when_a_tag_has_the_same_name(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temporary = Path(temp_dir)
+            origin, origin_work = self.make_origin(temporary)
+            run_git(origin_work, 'tag', 'master')
+            run_git(origin_work, 'push', '--quiet', 'origin', 'refs/tags/master')
+            branch_only = origin_work / 'branch-only.txt'
+            branch_only.write_text('canonical branch\n', encoding='utf-8')
+            run_git(origin_work, 'add', 'branch-only.txt')
+            run_git(origin_work, 'commit', '--quiet', '-m', 'advance master branch')
+            run_git(origin_work, 'push', '--quiet', 'origin', 'refs/heads/master')
+            expected = run_git(origin_work, 'rev-parse', 'refs/heads/master').strip()
+
+            snapshots = (
+                fetch_canonical(origin.as_uri(), work_root=temporary / 'secure'),
+                source_module._fetch_canonical_fallback(
+                    origin.as_uri(), temporary / 'fallback',
+                ),
+            )
+
+            for snapshot in snapshots:
+                self.assertEqual(snapshot.commit, expected)
+                self.assertEqual(
+                    snapshot.root.joinpath('branch-only.txt').read_text(),
+                    'canonical branch\n',
+                )
 
     def test_bootstrap_fetches_canonical_master_when_main_is_stale(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -242,6 +279,24 @@ class SetupSourceTest(unittest.TestCase):
             entrypoint.unlink()
             entrypoint.symlink_to(temporary / 'outside.py')
             with self.assertRaises(InvalidFetchedSource):
+                validate_source(source)
+
+    def test_validate_source_confines_link_checks_to_consumed_trees(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temporary = Path(temp_dir)
+            source = temporary / 'source'
+            write_valid_source(source)
+            outside = temporary / 'outside'
+            outside.mkdir()
+
+            unrelated = source / 'docs' / 'current'
+            unrelated.parent.mkdir()
+            unrelated.symlink_to(outside, target_is_directory=True)
+            self.assertEqual(validate_source(source), source)
+
+            consumed = source / 'skills/write-rules-and-skills/references/current'
+            consumed.symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(InvalidFetchedSource, 'source path'):
                 validate_source(source)
 
     def test_validate_source_accepts_the_actual_plugin_root(self):
@@ -401,6 +456,26 @@ class SetupSourceTest(unittest.TestCase):
 
             self.assertFalse((outside / 'session').exists())
 
+    def test_windows_fallback_rejects_a_junction_like_workspace_ancestor(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temporary = Path(temp_dir)
+            ancestor = temporary / 'ancestor'
+            ancestor.mkdir()
+            session = ancestor / 'session'
+
+            with mock.patch.object(
+                source_module,
+                '_is_link_like',
+                side_effect=lambda path: path == ancestor,
+            ):
+                with self.assertRaisesRegex(
+                    InvalidFetchedSource,
+                    'source workspace contains unsafe path',
+                ):
+                    source_module._open_safe_workspace_fallback(session)
+
+            self.assertFalse(session.exists())
+
     @unittest.skipUnless(os.name == 'posix', 'requires POSIX ownership and mode checks')
     def test_fetch_canonical_rejects_a_nonprivate_workspace_before_git(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -414,19 +489,37 @@ class SetupSourceTest(unittest.TestCase):
     def test_git_commands_receive_a_sanitized_environment(self):
         with mock.patch.dict(
             os.environ,
-            {'GIT_DIR': '/attacker/git', 'GIT_WORK_TREE': '/attacker/tree', 'GIT_INDEX_FILE': '/attacker/index'},
+            {
+                'GIT_DIR': '/attacker/git',
+                'GIT_WORK_TREE': '/attacker/tree',
+                'GIT_INDEX_FILE': '/attacker/index',
+                'HOME': '/attacker/home',
+                'ALL_PROXY': 'https://attacker.invalid',
+                'SSH_AUTH_SOCK': '/attacker/ssh-agent',
+            },
             clear=False,
         ), mock.patch.object(
             source_module.subprocess,
             'run',
             return_value=subprocess.CompletedProcess(('git', 'version'), 0),
         ) as run:
-            source_module._run_git(('git', 'version'), failure=SourceUnavailable)
+            source_module._run_git(
+                ('git', 'version'),
+                failure=SourceUnavailable,
+                cwd=Path('/private/canonical-checkout'),
+            )
 
         environment = run.call_args.kwargs['env']
+        self.assertEqual(
+            run.call_args.kwargs['cwd'], Path('/private/canonical-checkout')
+        )
         self.assertNotIn('GIT_DIR', environment)
         self.assertNotIn('GIT_WORK_TREE', environment)
         self.assertNotIn('GIT_INDEX_FILE', environment)
+        self.assertNotIn('ALL_PROXY', environment)
+        self.assertNotIn('SSH_AUTH_SOCK', environment)
+        self.assertEqual(environment['HOME'], '/private/canonical-checkout')
+        self.assertEqual(environment['USERPROFILE'], '/private/canonical-checkout')
         self.assertEqual(environment['GIT_TERMINAL_PROMPT'], '0')
         self.assertEqual(environment['GIT_CONFIG_NOSYSTEM'], '1')
         self.assertEqual(environment['GIT_CONFIG_GLOBAL'], os.devnull)
@@ -516,6 +609,10 @@ class SetupSourceTest(unittest.TestCase):
             argv = run.call_args_list[0].args[0]
             self.assertRegex(argv[-1], r'^/proc/self/fd/[0-9]+$')
             self.assertEqual(run.call_args_list[0].kwargs['pass_fds'], (int(argv[-1].rsplit('/', 1)[1]),))
+            self.assertTrue(all(
+                call.kwargs['cwd'] == argv[-1]
+                for call in run.call_args_list
+            ))
             candidates = candidate_directories(workspace)
             self.assertEqual(len(candidates), 1)
             self.assertTrue((candidates[0] / source_module._INCOMPLETE_MARKER).is_file())
@@ -819,7 +916,7 @@ class SetupSourceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             temporary = Path(temp_dir)
             for argv in (
-                ['apply', '--session', str(temporary / 'session')],
+                ['finish', '--session', str(temporary / 'session')],
                 ['prepare', '--session', str(temporary / 'session'), '--source-root', 'forged'],
                 ['prepare', '--session', str(temporary / 'session'), '--source-commit=forged'],
                 ['prepare', '--session', str(temporary / 'session'), '--no-bootstrap'],

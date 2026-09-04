@@ -1,17 +1,27 @@
 # Tracker Boundary
 
-The configured tracker owns authoritative ticket identities, status, blockers, claims, completion,
-release, observation, and mutation operations. Consume only the meanings and capabilities its
-current project contract actually documents. This reference owns Batch selection and the safe use
-of those operations; it does not invent compare-and-set, operation cursors, Batch-specific claims,
-release operations, or recovery interfaces.
+This reference owns Batch selection and safe use of the configured tracker. The tracker owns the
+authoritative identities, status, blockers, claims, completion, release, observations, and
+mutations. Consume only operations and meanings its current project contract documents; do not
+invent compare-and-set, operation cursors, Batch-specific claims, releases, or recovery interfaces.
+
+## Principles
+
+- **Positive eligibility.** Select a ticket only from affirmative agent-executable eligibility
+  evidence; a negative state is an exclusion, not an alternative test.
+- **Frozen selection.** Dependency order, sources, exclusions, and claim timing form one immutable
+  Selection Result. Current observations can validate or invalidate it, never silently update it.
+- **Attributed effects.** Request a documented tracker mutation once and accept it only from its
+  authoritative after-state. Retain a failed or ambiguous attempt under its original owner, and hold
+  acquired claims until authoritative delivery.
 
 ## Select the Batch
 
 Resolve the configured tracker/triage owner's affirmative agent-executable eligibility predicate,
-then read every ticket and blocker in the caller's bounded scope through that owner's route. Retain
-each canonical identity, complete ticket/spec sources, authoritative status, claim or owner,
-blocking edges, public order, and eligibility result. A missing or ambiguous predicate or result
+then use its authoritative query or observation route to classify the complete candidate set in the
+caller's bounded scope and the blocker edges needed for dependency closure. Retain the identity,
+sources, status, claim or owner, ordering evidence, and eligibility reason needed for each selected
+ticket or exclusion. A missing or ambiguous predicate, candidate-set boundary, or material result
 stops before a Selection Result can establish a Batch.
 
 Select only tickets with authoritative positive eligibility proof. Recursively include a
@@ -22,12 +32,13 @@ only when the tracker proves it complete; otherwise exclude its dependent. Rejec
 identities, ambiguous edges, and cycles. Order the remaining graph by dependencies, using stable
 public order only to break ties between equally ready tickets.
 
-For every selected ticket, resolve the tracker owner's claim requirement, session boundary, legal
-timing, and whether a blocked or later-frontier ticket may be claimed initially. The resulting
-claim plan must give every ticket one owner-supported route: an initial claim before other Batch
-writes, an expressly compatible just-in-time claim after earlier Batch effects, or no claim when
-the tracker does not require one. Ordinary per-ticket claim syntax does not by itself authorize an
-initial claim for a not-yet-ready ticket. Missing or incompatible timing stops before any write.
+Resolve the tracker owner's claim requirement, session boundary, and legal timing for each distinct
+claim policy represented in the selection, applying ticket-specific evidence only where that policy
+or current state differs. The resulting claim plan gives every ticket one owner-supported route: an
+initial claim before other Batch writes, an expressly compatible just-in-time claim after earlier
+Batch effects, or no claim when the tracker does not require one. Ordinary per-ticket claim syntax
+does not by itself authorize an initial claim for a not-yet-ready ticket. Missing or incompatible
+timing stops before any write.
 
 Return one frozen Selection Result with the tickets, complete sources, graph, order, exclusions and
 reasons, external completion proofs, and the complete claim plan. If no ticket remains eligible,
@@ -47,11 +58,13 @@ complete owner-supported claim plan are proven, or an empty eligible selection i
 
 ## Satisfy the initial claim gate
 
-Enter before the first Batch write with the nonempty Selection Result. For every claim assigned to
-this gate, first require [`worker-transaction.md`](worker-transaction.md)'s current non-mutating
-feasibility result for that selected ticket. Then request only tracker-authorized initial claims,
-in stable dependency order, through the operation boundary below. Re-observe and consume each
-exact after-state before the next claim.
+Enter before the first Batch write with the nonempty Selection Result. Before an initial claim,
+require [`worker-transaction.md`](worker-transaction.md)'s non-mutating qualification only when a
+failed later dispatch could strand that claim under the tracker-owned release, reassignment, or
+expiry semantics. Qualify shared runtime, authority, and environment facts once while their
+freshness predicates hold; add only ticket-specific constraints that can change feasibility. Then
+request the tracker-authorized initial claims in stable dependency order through the operation
+boundary below, re-observing each exact after-state before the next claim.
 
 Stop at the first unavailable, failed, or in-flight qualification or claim. Preserve the frozen
 Selection Result and claim plan; the proven claimed prefix and its raw responses/current tracker
@@ -69,14 +82,39 @@ remains compatible, every required initial claim is proven, and no claim attempt
 **Complete when:** every required initial claim and every deferred or no-claim route is currently
 proved under the tracker-owned plan.
 
+## Resume a Pre-ready selection
+
+Reconstruct the claim partition defined by [`stop.md`](stop.md): its proven initial-claim prefix,
+optional failed or in-flight current attempt, untouched suffix, and every just-in-time or no-claim
+disposition. Re-observe each retained result and consume only the exact proven tracker effect. An
+unresolved claim remains outside both prefix and suffix and stays with its original owner; no
+Create effect may follow it.
+
+Reconstruct the independent Create partition as `never-started`, original
+`non-ready-or-in-flight`, or attributable `ready`. When no claim is unresolved and every required
+initial claim is proven, `never-started` may invoke `create-worktree` once. A
+`non-ready-or-in-flight` result stays with its dependency owner and recovery action. An attributable
+`ready` result is consumable only while its recorded snapshot matches current state.
+
+If selection or readiness must be re-established before Batch binding, invoke public
+`create-worktree` against the existing candidate and current evidence; it selects its own route.
+This re-evaluates readiness and cannot become a second initial Create. Consume a fresh `ready`
+result only when it identifies the same candidate; preserve every `non-ready` or unresolved result
+with its owner.
+
+**Complete when:** the claim partition is proved and either one current `ready` result is safely
+consumable or the exact non-ready or unresolved dependency result has been retained and stops the
+Batch without another effect.
+
 ## Revalidate the frozen selection
 
-After the complete verification/review barrier and immediately before finalization, re-observe
-every selected ticket and relevant blocker through the configured tracker, and re-read every
-frozen acceptance source through its authoritative route. Compare those complete sources,
-dependency graph, statuses, owners, and claims with the frozen Selection Result. Permit only each
-exact claim or owner delta already consumed and authoritatively proved for this Batch under the
-operation boundary below.
+After the verification/review barrier and immediately before finalization, re-observe every
+selected ticket and relevant blocker through the configured tracker. Revalidate frozen acceptance
+sources through their authoritative revision, digest, or change signal; reread content only where
+the owner exposes no stable freshness evidence or reports a change. Compare the resulting material
+sources, dependency graph, statuses, owners, and claims with the frozen Selection Result. Permit
+only each exact claim or owner delta already consumed and authoritatively proved for this Batch
+under the operation boundary below.
 
 Any other material change invalidates the verification/review barrier and enters
 [`stop.md`](stop.md) before the finalizer effect. Current observations never silently update the

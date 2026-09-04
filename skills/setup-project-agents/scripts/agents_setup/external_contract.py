@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
+import stat
 from collections.abc import Callable
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
@@ -14,16 +16,55 @@ GITHUB_URL = re.compile(
 )
 GIT_REF = re.compile(r'^[A-Za-z0-9._/-]+$')
 FRONTMATTER_NAME = re.compile(
-    r'(?m)^name:\s*["\']?([^\s"\']+)["\']?\s*$'
+    r'name:[ \t]*(?:"([^"]+)"|\'([^\']+)\'|([A-Za-z0-9][A-Za-z0-9_-]*))[ \t]*'
 )
-LICENSE_MARKERS: dict[str, tuple[str, ...]] = {
-    'MIT': ('mit license', 'permission is hereby granted'),
-    'Apache-2.0': ('apache license', 'version 2.0'),
-    'BSD-2-Clause': ('redistribution and use', 'disclaimer'),
-    'BSD-3-Clause': ('redistribution and use', 'neither the name'),
-    'MPL-2.0': ('mozilla public license', 'version 2.0'),
-    'ISC': ('permission to use, copy, modify', 'the software is provided'),
+LICENSE_SIGNATURES: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    'MIT': ((
+        'permission is hereby granted, free of charge, to any person obtaining a copy',
+        'the above copyright notice and this permission notice shall be included',
+        'the software is provided "as is", without warranty of any kind',
+        'in no event shall the authors or copyright holders be liable',
+    ), ()),
+    'Apache-2.0': ((
+        'apache license version 2.0, january 2004',
+        'terms and conditions for use, reproduction, and distribution',
+        'grant of copyright license',
+        'grant of patent license',
+        'redistribution. you may reproduce and distribute copies',
+        'acceptance of support, warranty, indemnity, or other liability obligations',
+        'end of terms and conditions',
+    ), ()),
+    'BSD-2-Clause': ((
+        'redistribution and use in source and binary forms, with or without modification',
+        'redistributions of source code must retain the above copyright notice',
+        'redistributions in binary form must reproduce the above copyright notice',
+        'this software is provided by the copyright holders and contributors "as is"',
+    ), (
+        'neither the name of the copyright holder nor the names of its contributors',
+    )),
+    'BSD-3-Clause': ((
+        'redistribution and use in source and binary forms, with or without modification',
+        'redistributions of source code must retain the above copyright notice',
+        'redistributions in binary form must reproduce the above copyright notice',
+        'neither the name of the copyright holder nor the names of its contributors',
+        'this software is provided by the copyright holders and contributors "as is"',
+    ), ()),
+    'MPL-2.0': ((
+        'mozilla public license version 2.0',
+        '1. definitions',
+        '2. license grants and conditions',
+        '3. responsibilities',
+        '10. versions of the license',
+        'exhibit a - source code form license notice',
+    ), ()),
+    'ISC': ((
+        'permission to use, copy, modify, and/or distribute this software for any purpose',
+        'the above copyright notice and this permission notice appear in all copies',
+        'the software is provided "as is" and the author disclaims all warranties',
+        'in no event shall the author be liable for any special, direct, indirect, or consequential damages',
+    ), ()),
 }
+LICENSE_MARKERS = frozenset(LICENSE_SIGNATURES)
 LICENSE_CANDIDATES = (
     PurePosixPath('LICENSE'),
     PurePosixPath('LICENSE.txt'),
@@ -39,6 +80,9 @@ LICENSE_DISCOVERY_ORDER = (
     'BSD-2-Clause',
     'MPL-2.0',
     'ISC',
+)
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(
+    stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0x400,
 )
 
 
@@ -65,6 +109,30 @@ class LicenseDiscovery(NamedTuple):
 
 
 GitRunner = Callable[[tuple[str, ...]], str]
+
+
+def isolated_git_environment(home: Path) -> dict[str, str]:
+    """Return the small host environment needed for isolated non-interactive Git reads."""
+    inherited = (
+        'PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'COMSPEC',
+        'TEMP', 'TMP', 'TMPDIR', 'LANG', 'LC_ALL',
+    )
+    environment = {
+        key: os.environ[key]
+        for key in inherited
+        if key in os.environ
+    }
+    private_home = str(Path(home).absolute())
+    environment.update({
+        'HOME': private_home,
+        'USERPROFILE': private_home,
+        'XDG_CONFIG_HOME': str(Path(private_home) / '.config'),
+        'GIT_TERMINAL_PROMPT': '0',
+        'GIT_CONFIG_NOSYSTEM': '1',
+        'GIT_CONFIG_GLOBAL': os.devnull,
+        'GCM_INTERACTIVE': 'Never',
+    })
+    return environment
 
 
 def validate_source_identity(source_id: str, url: str) -> None:
@@ -97,15 +165,29 @@ def resolve_ref(url: str, requested_ref: str | None, run_git: GitRunner) -> RefR
     raise ExternalContractError(f'source ref does not exist: {requested_ref}')
 
 
-def license_matches(spdx: str, content: bytes) -> bool:
-    expected = LICENSE_MARKERS.get(spdx)
-    if expected is None:
-        raise ExternalContractError(f'unsupported SPDX license: {spdx}')
+def _license_text(content: bytes) -> str | None:
     try:
-        text = content.decode('utf-8').casefold()
+        return ' '.join(content.decode('utf-8').casefold().split())
     except UnicodeDecodeError:
-        return False
-    return all(marker in text for marker in expected)
+        return None
+
+
+def _matching_licenses(content: bytes) -> frozenset[str]:
+    text = _license_text(content)
+    if text is None:
+        return frozenset()
+    return frozenset(
+        spdx
+        for spdx, (required, forbidden) in LICENSE_SIGNATURES.items()
+        if all(marker in text for marker in required)
+        and not any(marker in text for marker in forbidden)
+    )
+
+
+def license_matches(spdx: str, content: bytes) -> bool:
+    if spdx not in LICENSE_SIGNATURES:
+        raise ExternalContractError(f'unsupported SPDX license: {spdx}')
+    return _matching_licenses(content) == {spdx}
 
 
 def discover_license(root: Path, label: str) -> LicenseDiscovery:
@@ -120,10 +202,12 @@ def discover_license(root: Path, label: str) -> LicenseDiscovery:
             content = path.read_bytes()
         except OSError as error:
             raise ExternalContractError(f'{label} cannot be read: {relative}') from error
-        for spdx in LICENSE_DISCOVERY_ORDER:
-            if license_matches(spdx, content):
-                discoveries.append(LicenseDiscovery(spdx, relative, content))
-                break
+        matches = _matching_licenses(content)
+        if len(matches) > 1:
+            raise ExternalContractError(f'{label} is ambiguous: {relative}')
+        if matches:
+            spdx = next(item for item in LICENSE_DISCOVERY_ORDER if item in matches)
+            discoveries.append(LicenseDiscovery(spdx, relative, content))
     if not discoveries:
         raise ExternalContractError(f'{label} was not found or recognized')
     signatures = {
@@ -136,10 +220,18 @@ def discover_license(root: Path, label: str) -> LicenseDiscovery:
     return discoveries[0]
 
 
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
+def is_link_like(path: Path) -> bool:
+    """Return whether a path redirects through a symlink or Windows reparse point."""
+    try:
+        status = path.lstat()
+    except FileNotFoundError:
+        return False
+    return stat.S_ISLNK(status.st_mode) or bool(
+        getattr(status, 'st_file_attributes', 0) & _FILE_ATTRIBUTE_REPARSE_POINT
     )
+
+
+_is_link_like = is_link_like
 
 
 def source_path(root: Path, relative: PurePosixPath, label: str) -> Path:
@@ -177,10 +269,34 @@ def snapshot_skill_tree(
         text = skill.read_text(encoding='utf-8')
     except (OSError, UnicodeDecodeError) as error:
         raise ExternalContractError(f'{label} is missing a UTF-8 SKILL.md') from error
-    if not text.startswith('---\n'):
+    lines = text.splitlines()
+    if not lines or lines[0] != '---':
         raise ExternalContractError(f'{label} SKILL.md has no YAML frontmatter')
-    end = text.find('\n---', 4)
-    match = FRONTMATTER_NAME.search(text[4:end]) if end >= 0 else None
-    if match is None or match.group(1) != expected_name:
+    try:
+        end = lines.index('---', 1)
+    except ValueError as error:
+        raise ExternalContractError(
+            f'{label} SKILL.md has malformed YAML frontmatter'
+        ) from error
+    body_start = end + 1
+    while body_start < len(lines) and not lines[body_start].strip():
+        body_start += 1
+    if (
+        body_start < len(lines)
+        and lines[body_start] == '---'
+        and '---' in lines[body_start + 1:]
+    ):
+        raise ExternalContractError(f'{label} SKILL.md has duplicate YAML frontmatter')
+    names: list[str] = []
+    for line in lines[1:end]:
+        if line.lstrip() != line or not line.startswith('name:'):
+            continue
+        match = FRONTMATTER_NAME.fullmatch(line)
+        if match is None:
+            raise ExternalContractError(f'{label} SKILL.md has malformed name frontmatter')
+        names.append(next(value for value in match.groups() if value is not None))
+    if len(names) != 1:
+        raise ExternalContractError(f'{label} SKILL.md must declare one frontmatter name')
+    if names[0] != expected_name:
         raise ExternalContractError(f'{label} name does not match config')
     return SkillTreeSnapshot(root, files)

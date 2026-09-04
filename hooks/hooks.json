@@ -9,12 +9,12 @@
             "command": "sh \"${PLUGIN_ROOT}/runtime/recommended-tools/check_recommended_tools.sh\" hook --harness codex",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\recommended-tools\\check_recommended_tools.ps1\" hook --harness codex",
             "timeout": 30,
-            "statusMessage": "Checking daily project readiness"
+            "statusMessage": "Checking Python and daily project readiness"
           },
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/runtime/rules/dispatch.py\" --harness codex --event session",
-            "commandWindows": "python \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.py\" --harness codex --event session",
+            "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event session",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event session",
             "timeout": 30,
             "additionalContextLimit": 50000,
             "statusMessage": "Loading SmartKit plugin rules"
@@ -27,8 +27,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/runtime/rules/dispatch.py\" --harness codex --event prompt",
-            "commandWindows": "python \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.py\" --harness codex --event prompt",
+            "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event prompt",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event prompt",
             "timeout": 30,
             "additionalContextLimit": 50000
           }
@@ -40,8 +40,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/runtime/rules/dispatch.py\" --harness codex --event tool",
-            "commandWindows": "python \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.py\" --harness codex --event tool",
+            "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event tool",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event tool",
             "timeout": 30,
             "additionalContextLimit": 50000
           }

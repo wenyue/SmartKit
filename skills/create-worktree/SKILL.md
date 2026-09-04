@@ -5,143 +5,145 @@ description: Use when state-changing repository work requires an isolated linked
 
 # Create Worktree
 
-Select, establish, and prepare exactly one safe linked Git worktree, then return an evidence-bound
-`ready` or `non-ready` mechanical handoff. This Skill owns worktree selection, creation,
-validation, readiness, and handoff. The caller owns the accepted implementation scope and the
-authority requiring isolation; it need not choose Create versus Reuse, a path, or a branch.
+Select, establish, and prepare exactly one linked Git worktree, then return its current `ready` or
+`non-ready` result. The caller owns the implementation scope and the authority requiring isolation;
+this Skill owns target selection, creation, validation, and readiness.
 
-Keep `scope_owner`, the actor responsible for any creation and attempt recovery
-(`creation_owner`), and the later `integration_owner` and `cleanup_owner` explicit. Those
-identities do not grant effects. This Skill owns no implementation, commit, completed-change
-verification, integration, tracking, cleanup, publication, or remote action.
+Keep the accepted scope and its `scope_owner` explicit. For a creation attempt, also name the actor
+accountable for the attempt and authorized recovery as `creation_owner`. These roles record
+accountability; each effect still requires an explicit grant from its owner. Implementation,
+commits, completed-change verification, integration, tracking, lifecycle cleanup, publication, and
+remote action remain with their established owners.
 
-## Establish the boundary
+## Principles
 
-Resolve from the owning workflow and current authoritative repository evidence:
+- **One exact target.** A result covers one linked worktree with a proved repository identity,
+  physical location, registration, branch/ref, base, and owned local state.
+- **Preservation by default.** Protect all pre-existing, unrelated, and user-owned state. Prefer a
+  non-destructive target whenever an action would overwrite, stash, reset, clean, or discard it.
+- **Effects require authority.** Bound and authorize filesystem, Git-common, subprocess, credential,
+  network, service, and other persistent effects before they occur.
+- **Uncertainty remains visible.** Retain partial or ambiguous state until current evidence and an
+  exact recovery grant make cleanup safe.
+- **Readiness is fresh.** `ready` describes the recorded observation boundary, not a durable claim.
 
-- the accepted scope, `scope_owner`, isolation requirement, exact immutable base commit and tree,
-  and any required base-lineage relationship;
-- repository identity, the source checkout, resolved Git common directory, every registered
-  worktree, and current path and branch conventions;
-- lifecycle ownership and any caller-owned constraints on the selected path or branch; and
-- the authority available for creation, target preparation, baseline verification, recovery, and
-  every external or persistent effect.
+## 1. Establish the safety boundary
 
-A current branch tip, visible convention, existing worktree, or owner identity is evidence, not
-authority. Materially ambiguous scope, base, ownership, or permission yields `non-ready` before
-the affected action.
+Resolve the accepted scope, `scope_owner`, isolation requirement, immutable base commit and tree,
+and any required base lineage. Establish repository identity, source checkout, physical Git common
+directory, registered worktrees, current path and branch conventions, caller constraints, ownership
+of existing target state, and authority for creation, preparation, baseline checks, recovery, and
+every external or persistent effect. A branch tip, convention, existing worktree, or owner identity
+is evidence rather than authority. Material ambiguity yields `non-ready` before the affected action.
 
-Before mutation, capture enough current state to attribute every possible effect: the identity and
-local state of each checkout an operation can reach; affected refs and Git-common administration;
-the proposed target; and every declared filesystem, subprocess, external, or persistent effect
-target. Preserve all pre-existing staged, unstaged, untracked, and unrelated state. The source
-checkout's branch, `HEAD`, tree, index, and local content remain exact; outside an authorized target
-or effect envelope, every observed item remains exact. Use a non-destructive alternative whenever
-an action would overwrite, stash, reset, clean, or discard existing state.
+Before mutation, freeze the exact paths, refs, registrations, and Git administration state that an
+operation can write, overwrite, or delete, or that recovery must restore. For committed and staged
+content in this write-and-recovery set, record commit object IDs and affected index entries. For
+every non-index item—including tracked unstaged, untracked, and ignored content—record file type,
+mode, symlink target, size, and content hash. Preserve raw bytes only for an existing at-risk path
+that authorized recovery may need to restore.
 
-**Complete when:** the scope and base are exact, the potential effect boundary is observable, and
-each possible mutation has an applicable owner and grant.
+For all other checkout state, prove non-reachability from the operation's semantics, resolved
+physical boundaries, and bounded repository identity and status evidence. Expand observation only
+when a concrete alias, configuration, hook, filter, or subprocess creates a plausible path to that
+state, and record every applicable subprocess, external, or persistent target. Continue only when
+the scope and base are exact, the full potential effect boundary is observable, and every possible
+mutation has an owner and grant.
 
-## Select one target
+## 2. Select Reuse or Create
 
-Inspect current registrations, branches, paths, handoffs, and scope ownership, then choose Reuse
-when one existing linked worktree is uniquely safe for the accepted scope. Prove its physical path
-and Git common directory, registration, named branch/ref, `HEAD`, tree, index, complete local
-state, base lineage, and lifecycle disposition. Every commit in the target-specific comparison
-range defined by the accepted immutable base and required lineage, and every local-state item that
-Reuse would consume, must be attributable to this scope; base-reachable history before the
-immutable base is outside this attribution test. Current identity and ownership are sufficient;
-historical creator identity is not required. Never adopt, repair, reset, clean, or repurpose
-ambiguous or unrelated state.
+Choose **Reuse** only when one existing linked worktree is uniquely safe for the scope. Prove its
+lexical and physical path, Git common directory, registration, named branch/ref, `HEAD`, tree, index
+identity, base lineage, and current ownership. Every commit in the target-specific comparison range
+defined by the immutable base and required lineage, and every local-state item Reuse would consume,
+must be attributable to this scope. Base-reachable history before the immutable base is outside that
+test. Protect state beyond Reuse's consumed, write, and recovery paths through the safety boundary.
+Ambiguous or unrelated state is never adopted, repaired, reset, cleaned, or repurposed.
 
-Otherwise choose Create. Follow current target- or host-owned path and branch conventions when they
-apply. When none applies and the grant permits selection, derive a valid, unique path and named
-branch from the scope. Validate both with the current filesystem and Git interfaces, including
-physical-path aliases, symlinks, junctions or reparse points, registrations, and ref conflicts. A
-target nested under another checkout is eligible only when it is already excluded from that
-checkout's tracked and untracked surface and creation cannot alter surrounding state; do not edit
-ignore rules to make it eligible. An external or sibling target is valid when repository identity
-and authority are proved.
+Otherwise choose **Create**. Follow applicable target- or host-owned path and branch conventions;
+when none applies and selection is authorized, derive a valid unique path and named branch from the
+scope. Validate both through current filesystem and Git interfaces, including physical aliases,
+symlinks, junctions or reparse points, registrations, and ref conflicts. A path nested under another
+checkout is eligible only when already excluded from that checkout's tracked and untracked surface
+and creation cannot alter surrounding state; ignore rules remain unchanged. An external or sibling
+path requires proved repository identity and authority.
 
-Freeze the selected mode, lexical and physical path, branch/ref, base, and expected local state.
-Reuse permits no registration or branch creation. Create requires the path, branch, and registration
-to be absent and uses a non-clobbering mechanism; force, reset, replacement, or branch reuse is
-outside this contract. When multiple choices remain materially different and evidence cannot select
-one safely, return `non-ready` with the decision owner and choices.
+Freeze the mode, lexical and physical path, branch/ref, base, and expected consumed or affected
+local state. Reuse permits no registration or branch creation. Create requires absent path, branch,
+and registration and a conflict-rejecting mechanism; force, reset, replacement, and branch reuse
+remain outside this contract. If materially different choices remain and evidence cannot select one,
+return `non-ready` with the decision owner and choices. Continue only with one conflict-free target
+whose consumed or affected existing state has proved scope ownership.
 
-**Complete when:** exactly one target has a frozen, conflict-free identity and every existing item
-that will be retained or consumed has proved scope and lifecycle ownership.
+## 3. Establish the selected worktree
 
-## Establish a new worktree
+For **Reuse**, make no establishment mutation. Immediately before preparation, recheck its frozen
+identity and every local-state item it will consume or can affect. Drift or ownership ambiguity is
+`non-ready`.
 
-For Create, resolve the actual worktree-creation mechanism at use. Before invoking it, close its
-complete effect envelope, including target checkout population, branch/ref and Git-common
-administration, configured hooks, filters and subprocesses, and any credential, network, service, or
-other external or persistent effect they can cause. Require authority for the exact path, ref, and
-each applicable effect. An unavailable or unresolved effect boundary is `non-ready`; a generic
-request to create a worktree does not silently authorize unrelated effects.
+For **Create**:
 
-Immediately before the attempt, recheck the immutable base, source preservation boundary, target
-path and branch absence, registration set, mechanism, and grants. Use the applicable host-native or
-Git worktree interface only with conflict-rejecting semantics. After every success, failure, or
-interruption, inspect the complete attempted envelope and Git state before deciding what happened.
-A successful attempt must prove one registration at the selected physical path, its named branch
-and ref, and `HEAD` and tree exactly at the immutable base, with only authorized creation effects.
+1. Resolve the actual creation mechanism and its effects from current semantics and configuration.
+   Include checkout population, branch/ref and Git-common administration, and applicable hooks,
+   filters, or subprocesses; follow those integrations far enough to identify material filesystem,
+   credential, network, service, and persistent effects. Require authority for the path, ref, and
+   each effect. An unresolved or unobservable material boundary is `non-ready`.
+2. Immediately before the attempt, recheck the immutable base, source preservation boundary, path
+   and branch absence, registrations, mechanism, and grants. Invoke the applicable host-native or
+   Git worktree interface only with conflict-rejecting semantics.
+3. After success, failure, or interruption, re-observe the frozen effect boundary before deciding
+   what occurred. Success requires exactly one registration at the selected physical path, its named
+   branch and ref, `HEAD` and tree at the immutable base, and only authorized effects.
+4. After an unsuccessful or uncertain attempt, retain every artifact unless current evidence proves
+   it came solely from that attempt, contains no user or unrelated work, and an exact recovery grant
+   authorizes removal. Retry only when the mechanism owner supports repetition from the observed
+   state, recovery restores the complete pre-attempt boundary, and every creation gate passes again.
+   An unchanged failure is not retried. Unexpected, unauthorized, ambiguous, or unobservable effects
+   end `non-ready` with artifacts and recovery evidence retained.
 
-On an unsuccessful or uncertain attempt, retain every artifact unless current evidence proves it
-was created solely by that attempt, contains no user or unrelated work, and an exact recovery grant
-authorizes its removal. Retry only after the mechanism owner supports repetition from the observed
-state, recovery restores the complete pre-attempt boundary, and every creation gate passes again.
-Do not repeat an unchanged failure. Unexpected, out-of-envelope, ambiguous, or unobservable effects
-end `non-ready` with the artifact and recovery evidence retained.
+## 4. Prepare the environment and check the baseline
 
-For Reuse, make no establishment mutation. Recheck its frozen identity and local state immediately
-before preparation; drift or ownership ambiguity is `non-ready`.
+When current target evidence declares `worktree-environment-setup` applicable, invoke that
+target-owned Skill with the exact selected root and accepted setup-effect authority. It owns command
+selection, effect accounting, recovery, and Git preservation; consume only `environment-ready` or
+`environment-non-ready` without reproducing its procedure. Record `not-required` only when current
+target evidence establishes that preparation is unnecessary. A missing or unavailable applicable
+capability, or an ambiguous, failed, interrupted, or `environment-non-ready` result, ends
+`non-ready` before baseline checks.
 
-## Prepare and prove readiness
+After either supported `not-required` or `environment-ready`, select the least burdensome
+repository-owned baseline check or set that covers every accepted material worktree and environment
+risk. Use a mandatory canonical baseline when repository evidence requires it; otherwise choose the
+narrowest supported coverage and report only noncritical gaps. Freeze each invocation, target
+binding, success condition, and effect set; require exact authority for every mutation or external
+effect. Never invent a baseline or substitute completed-change verification.
 
-Invoke a target-owned `worktree-environment-setup` when current target evidence declares it
-applicable. Supply the exact selected root and accepted setup-effect authority; that dependency owns
-its command selection, effect accounting, recovery, and Git preservation proof. Do not reproduce
-its internal procedure. Consume only its exact `environment-ready` or
-`environment-non-ready` result. A supported absence is `not-required`; any other unavailable,
-ambiguous, failed, interrupted, or non-ready outcome stops before the baseline.
+A pass is compatible with readiness. An exact observed failure requires the user's explicit
+acceptance. A proved absence or uncovered material readiness risk requires explicit acceptance from
+the user or owning workflow. After every preparation or baseline attempt, re-observe its effect set,
+investigate unexpected change, and recheck target identity. Branch/ref, `HEAD`, tree, and index must
+remain exact; local additions must be expected, authorized, and owned by the scope. An unauthorized,
+unexplained, out-of-boundary, or incompletely observed effect or result is `non-ready`, with partial
+and uncertain state preserved.
 
-Then resolve and run the current repository-owned baseline in the selected physical root. Freeze
-its invocation, target binding, success condition, and complete effect envelope before execution;
-require exact authority for every mutation or external effect. Do not invent a baseline or
-substitute completed-change verification. A pass is ready-compatible. An exact observed failure is
-ready-compatible only with the user's explicit acceptance; a proved absence requires explicit
-acceptance from the user or owning workflow.
+## 5. Return a fresh readiness result
 
-After each preparation or baseline attempt, recheck its effect envelope, all potentially affected
-pre-existing state, and target identity. The selected branch/ref, `HEAD`, tree, and index must
-remain exact; local additions must be scope-owned, expected, and authorized. Preserve partial or
-uncertain state and return `non-ready` when an effect, result, or preservation proof is
-unauthorized, unexplained, out of envelope, or incomplete.
+Return `ready` only when target identity is current; unrelated state is preserved; every effect is
+owned, authorized, and fully observed; environment setup is `environment-ready` or supported
+`not-required`; the baseline passed or has the exact required acceptance; and the final readiness
+snapshot is complete. Every other result is `non-ready`. Except for the authorized attempt recovery
+above, retain the selected worktree and residual state for its current owner.
 
-Return `ready` only when selection or creation identity is current; all unrelated state is
-preserved; every actual effect is owned and authorized; setup is `environment-ready` or
-`not-required`; the baseline passed or has the exact required acceptance; lifecycle owners are
-known; and the final readiness snapshot is complete. Every other exit is `non-ready`. Apart from
-explicit attempt recovery above, retain the selected worktree and residual state for its owner.
+Return a compact handoff containing the status and terminal reason; accepted scope, `scope_owner`,
+mode, and rationale; repository and Git-common identity; immutable base and lineage; lexical and
+physical root, registration, named branch/ref, `HEAD`, tree, index, and scope-owned local state;
+`creation_owner` and recovery disposition when applicable; preservation verdict; authorized and
+actual effects; retained state; exact environment and baseline evidence, including any accepted
+failure or absence; and the observation boundary. For `non-ready`, also identify the failed boundary,
+partial effect, next owner, and exact next action.
 
-## Handoff
-
-Return a compact mechanical handoff containing:
-
-- status, exact terminal reason, accepted scope, `scope_owner`, mode and selection rationale;
-- repository and Git-common identity; immutable base and lineage; selected lexical and physical
-  root, registration, named branch/ref, `HEAD`, tree, index, and scope-owned local state;
-- `creation_owner` when creation was attempted, `integration_owner`, and `cleanup_owner`;
-- the final preservation verdict, authorized and actual effects, and retained or residual state;
-- the exact environment result and its evidence, plus the baseline invocation, result, effects, and
-  any accepted failure or absence; and
-- the readiness snapshot's observation boundary and, for `non-ready`, the failed boundary,
-  unresolved or partial effect, next owner, and exact next action.
-
-Use exact observations rather than inferred values. A consumer may use a `ready` target only after
-rechecking its physical identity, registration, branch/ref, `HEAD`, tree, index, and local-state
-snapshot immediately before the first mutation. Drift invalidates consumption and requires a fresh
-Reuse evaluation; later authorized work does not retroactively change this run's result. The
-handoff records authority already supplied but grants none.
+Use observations rather than inferred values. Before its first mutation, the caller rechecks the
+physical identity, registration, branch/ref, `HEAD`, tree, index, and scoped local-state snapshot.
+Any drift requires a fresh `create-worktree` evaluation, which again selects Reuse or Create from
+current evidence. Later workflows and finalizers establish their own current contracts; all effects
+remain under their originating grants.

@@ -11,6 +11,9 @@ project Rule or Skill, use its corresponding current-checkout source when it exi
 - SmartKit Skills exposed by plugin manifests: `skills/<name>/**`
 - project Skills: `.agents/skills/**`
 
+Resolve an unqualified user reference to a SmartKit Rule or Skill as the corresponding
+current-checkout source above. An explicit reference to another copy identifies that copy instead.
+
 An installed, injected, packaged, or cached copy is a fallback only when the corresponding checkout
 source does not exist. For a checkout-resolved Skill, read its complete `SKILL.md` and every
 required referenced resource from the same checkout source tree.

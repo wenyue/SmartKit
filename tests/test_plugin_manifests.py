@@ -260,13 +260,13 @@ class PluginManifestTest(unittest.TestCase):
         authoring_roots = (public_root, *(private_root / name for name in private_names))
         expected_references = {
             'write-rules-and-skills': {
-                'acceptance.md',
                 'author.md',
-                'evaluation.md',
-                'job-design.md',
-                'models.md',
-                'reviews.md',
-                'role-runtime.md',
+                'change-reviewer.md',
+                'controller-review.md',
+                'correctness-reviewer.md',
+                'quality-reviewer.md',
+                'reviewer.md',
+                'runner.md',
             },
             'write-shared-rules-and-skills': {
                 'portability.md',
@@ -484,6 +484,7 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertNotIn('.agents\\', content)
                 self.assertNotIn(' install', content.lower())
                 self.assertNotIn(' upgrade', content.lower())
+                self.assertNotRegex(content, r'\bpython(?:3)?\b')
 
         self.assertEqual(
             set(load_json('hooks/hooks.json')['hooks']),
@@ -537,6 +538,32 @@ class PluginManifestTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('usage:', result.stdout.lower())
+
+    def test_rule_hooks_use_cross_platform_python_launchers(self):
+        codex = load_json('hooks/hooks.json')['hooks']
+        codex_handlers = [
+            handler
+            for groups in codex.values()
+            for group in groups
+            for handler in group['hooks']
+            if 'runtime/rules/dispatch.' in handler['command']
+        ]
+        self.assertTrue(codex_handlers)
+        for handler in codex_handlers:
+            self.assertIn('runtime/rules/dispatch.sh', handler['command'])
+            self.assertIn('runtime\\rules\\dispatch.ps1', handler['commandWindows'])
+
+        copilot = load_json('hooks/copilot.json')['hooks']
+        copilot_handlers = [
+            handler
+            for handlers in copilot.values()
+            for handler in handlers
+            if 'runtime/rules/dispatch.' in handler['bash']
+        ]
+        self.assertTrue(copilot_handlers)
+        for handler in copilot_handlers:
+            self.assertIn('runtime/rules/dispatch.sh', handler['bash'])
+            self.assertIn('runtime\\rules\\dispatch.ps1', handler['powershell'])
 
     def test_hook_harness_contract(self):
         contract_path = REPO_ROOT / 'setup-assets/catalog/harnesses.json'

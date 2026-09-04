@@ -11,6 +11,9 @@ checkout 中存在对应来源，就必须使用该来源：
 - 插件清单暴露的 SmartKit Skills：`skills/<name>/**`
 - 项目 Skills：`.agents/skills/**`
 
+将用户未限定副本地提到的 SmartKit Rule 或 Skill 解析为上述当前 checkout 中对应的
+来源。如果用户明确指定另一副本，则该引用改为指向所指副本。
+
 只有当前 checkout 中不存在对应来源时，才以已安装、注入、打包或缓存的副本作为回退。对于解析到
 checkout 的 Skill，必须从同一 checkout 来源树中读取其完整的 `SKILL.md` 及每个必需的引用资源。
 

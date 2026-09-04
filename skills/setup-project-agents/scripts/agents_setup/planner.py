@@ -1,21 +1,25 @@
 from __future__ import annotations
 
+import stat
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
 from .catalog import safe_field_key
-from .models import Change, ChangeKind, ContractError, DesiredField, DesiredFile, Plan
+from .external_contract import is_link_like as _is_link_like
+from .models import (
+    Change,
+    ChangeKind,
+    ContractError,
+    DesiredField,
+    DesiredFile,
+    ExpectedEntry,
+    Plan,
+)
 from .project import ProjectError, confined_target
 
 
 class PlanningError(ValueError):
     """Raised when a desired project state cannot be planned safely."""
-
-
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
-    )
 
 
 def _path_key(path: PurePosixPath) -> str:
@@ -56,19 +60,55 @@ def _validate_fields(
         seen.add(identity)
 
 
-def _read_current(target: Path, path: PurePosixPath) -> bytes | None:
+def _read_current(
+    target: Path,
+    path: PurePosixPath,
+) -> tuple[bytes | None, ExpectedEntry | None]:
     try:
         current = confined_target(target, path)
     except ProjectError as error:
         raise PlanningError(str(error)) from error
     if not current.exists():
-        return None
-    if not current.is_file():
+        return None, None
+    try:
+        before = current.lstat()
+    except OSError as error:
+        raise PlanningError(f'cannot inspect target path: {_path_key(path)}') from error
+    if _is_link_like(current) or not stat.S_ISREG(before.st_mode):
         raise PlanningError(f'target path is not a regular file: {_path_key(path)}')
     try:
-        return current.read_bytes()
+        content = current.read_bytes()
+        after = current.lstat()
     except OSError as error:
         raise PlanningError(f'cannot read target path: {_path_key(path)}') from error
+    before_identity = (before.st_dev, before.st_ino)
+    after_identity = (after.st_dev, after.st_ino)
+    if (
+        not stat.S_ISREG(after.st_mode)
+        or before_identity != after_identity
+        or stat.S_IMODE(before.st_mode) != stat.S_IMODE(after.st_mode)
+    ):
+        raise PlanningError(f'target changed while planning: {_path_key(path)}')
+    return content, ExpectedEntry(
+        content,
+        stat.S_IMODE(after.st_mode),
+        after_identity,
+    )
+
+
+def _directory_expected(target: Path, path: PurePosixPath) -> ExpectedEntry:
+    try:
+        current = confined_target(target, path)
+        entry = current.lstat()
+    except (OSError, ProjectError) as error:
+        raise PlanningError(f'target changed while planning: {_path_key(path)}') from error
+    if _is_link_like(current) or not stat.S_ISDIR(entry.st_mode):
+        raise PlanningError(f'target path is not a regular directory: {_path_key(path)}')
+    return ExpectedEntry(
+        None,
+        stat.S_IMODE(entry.st_mode),
+        (entry.st_dev, entry.st_ino),
+    )
 
 
 def _files_under(target: Path, root: PurePosixPath) -> set[PurePosixPath]:
@@ -157,21 +197,26 @@ def build_plan(
 
     changes: list[Change] = []
     for path in sorted(set(files) | removals, key=_path_key):
-        current = _read_current(target_root, path)
+        current, expected = _read_current(target_root, path)
         desired = files.get(path)
         if desired is None:
             if current is not None:
-                changes.append(Change(ChangeKind.DELETE, path, None))
+                changes.append(Change(ChangeKind.DELETE, path, None, expected))
             continue
         if current is None:
             changes.append(Change(ChangeKind.CREATE, path, desired.content))
         elif current == desired.content:
-            changes.append(Change(ChangeKind.UNCHANGED, path, desired.content))
+            changes.append(Change(ChangeKind.UNCHANGED, path, desired.content, expected))
         else:
-            changes.append(Change(ChangeKind.UPDATE, path, desired.content))
+            changes.append(Change(ChangeKind.UPDATE, path, desired.content, expected))
     for path in sorted(
         directory_removals,
         key=lambda item: (-len(item.parts), _path_key(item)),
     ):
-        changes.append(Change(ChangeKind.DELETE_DIRECTORY, path, None))
+        changes.append(Change(
+            ChangeKind.DELETE_DIRECTORY,
+            path,
+            None,
+            _directory_expected(target_root, path),
+        ))
     return Plan(tuple(changes))

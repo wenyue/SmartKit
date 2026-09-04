@@ -23,16 +23,18 @@ Scope: Workspace selection, local Git state, commit authority, and remote action
   parallel work does not need separate state, and existing checkout state can be preserved in place.
 - Apply `create-worktree` when the user, Harness, or an applicable Skill requires isolation,
   parallel work needs separate state, or isolation is needed to protect existing checkout state.
-  It owns linked-worktree selection, creation, validation, readiness, and the mechanical handoff.
-- After `create-worktree` returns a ready result and the caller rechecks it, the owning workflow may
+  It owns linked-worktree selection, creation, validation, and the current readiness result used by
+  its caller.
+- After the caller receives and rechecks a ready `create-worktree` result, the owning workflow may
   create scope-only Checkpoint Commits in that worktree through the repository's normal commit
   hooks without separate authorization. A later Agent may continue that authority only when the
   accepted workflow identifies the exact worktree and base and current Git evidence proves that
   every intervening commit and local change belongs to the same scope; ambiguity stops new commits.
-- Apply `finish-worktree` when an implementation workflow is ready to consolidate or deliver.
-  The implementation workflow owns formal review; `finish-worktree` owns finalization and may
-  deliver only after proving that the same head and tree passed verification and formal
-  review with no blocking finding.
+- Apply `finish-worktree` to a reviewed isolated linked worktree when an implementation workflow is
+  ready to consolidate or deliver. The implementation workflow owns formal review.
+  `finish-worktree` independently proves the current worktree, head and tree, delivery target,
+  authority for every requested effect, and that the same head and tree passed verification and
+  formal review with no blocking finding.
 - Synchronization that changes reviewed content returns it to the implementation workflow for
   verification and formal review before delivery.
 

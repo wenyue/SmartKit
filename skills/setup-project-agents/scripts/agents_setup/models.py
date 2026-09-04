@@ -150,6 +150,13 @@ class ChangeKind(str, Enum):
 
 
 @dataclass(frozen=True)
+class ExpectedEntry:
+    content: bytes | None
+    mode: int
+    identity: tuple[int, int]
+
+
+@dataclass(frozen=True)
 class DesiredFile:
     path: PurePosixPath
     content: bytes
@@ -168,6 +175,7 @@ class Change:
     kind: ChangeKind
     path: PurePosixPath
     content: bytes | None
+    expected: ExpectedEntry | None = None
 
 
 @dataclass(frozen=True)

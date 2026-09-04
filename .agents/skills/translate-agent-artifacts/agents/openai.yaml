@@ -1,4 +1,4 @@
 interface:
   display_name: "Translate Agent Artifacts"
   short_description: "Translate final English agent artifacts"
-  default_prompt: "Use $translate-agent-artifacts to update the complete required Simplified-Chinese mirror set from final English sources."
+  default_prompt: "Use $translate-agent-artifacts to apply the supplied Simplified-Chinese mirror create, update, move, or delete operations for final English Rule or Skill additions, changes, moves, or retirements."

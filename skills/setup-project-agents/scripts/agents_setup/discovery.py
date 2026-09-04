@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path, PurePosixPath
 
+from .external_contract import is_link_like as _is_link_like
 from .models import Catalog, ProjectRuleSpec, ProjectSkillSpec
 from .project import ProjectError, confined_target
 
@@ -14,12 +15,6 @@ class DiscoveryError(ValueError):
 _RULE_NAME = re.compile(r'^(\d{2})-[a-z0-9][a-z0-9-]*\.md$')
 _STRENGTH = re.compile(r'^Strength:\s*`(Mandatory|Default|Advisory)`\s*$', re.MULTILINE)
 _SCOPE = re.compile(r'^Scope:\s*(.+(?:\n(?!\s*$|[A-Za-z][A-Za-z ]+:|#).+)*)', re.MULTILINE)
-
-
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
-    )
 
 
 def _managed_targets(catalog: Catalog, kind: str) -> set[PurePosixPath]:

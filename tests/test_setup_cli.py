@@ -198,7 +198,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertTrue((session / 'generated/.agents/skills').is_dir())
             self.assertEqual(self.snapshot_tree(target), {})
 
-    def test_target_fingerprint_captures_ignored_files_and_git_index_state(self):
+    def test_target_fingerprint_tracks_setup_evidence_not_checkout_noise(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / 'target'
             target.mkdir()
@@ -210,24 +210,113 @@ class SetupCliTest(unittest.TestCase):
             tracked.write_text('baseline\n', encoding='utf-8')
             run_git(target, 'add', '.gitignore', 'tracked.txt')
             run_git(target, 'commit', '--quiet', '-m', 'baseline')
-            baseline = setup_project_agents._target_fingerprint(target)
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            config = setup_project_agents.inspect_project(
+                target, catalog=catalog,
+            ).config
+
+            def fingerprint() -> str:
+                return setup_project_agents._target_fingerprint(
+                    target,
+                    source_root=REPO_ROOT,
+                    catalog=catalog,
+                    config=config,
+                )
+
+            baseline = fingerprint()
 
             ignored = target / 'ignored.txt'
             ignored.write_text('downstream effect\n', encoding='utf-8')
-            self.assertNotEqual(
-                setup_project_agents._target_fingerprint(target), baseline
-            )
+            self.assertEqual(fingerprint(), baseline)
             ignored.unlink()
-            self.assertEqual(
-                setup_project_agents._target_fingerprint(target), baseline
-            )
 
             tracked.write_text('staged only\n', encoding='utf-8')
             run_git(target, 'add', 'tracked.txt')
             tracked.write_text('baseline\n', encoding='utf-8')
-            self.assertNotEqual(
-                setup_project_agents._target_fingerprint(target), baseline
+            self.assertEqual(fingerprint(), baseline)
+
+            for relative in (
+                'skills/fast-mode/SKILL.md',
+                'skills/write-rules-and-skills/SKILL.md',
+                '.cache/setup.log',
+            ):
+                path = target / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('unrelated work\n', encoding='utf-8')
+            self.assertEqual(fingerprint(), baseline)
+
+            project_rule = target / '.agents/rules/30-local.md'
+            project_rule.parent.mkdir(parents=True)
+            project_rule.write_text(
+                '# Local\n\nStrength: `Default`\n\nScope: Local changes\n',
+                encoding='utf-8',
             )
+            self.assertNotEqual(fingerprint(), baseline)
+
+    def test_prepare_rejects_preexisting_ownership_conflict_before_generation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            managed = target / '.agents/rules/managed.md'
+            managed.parent.mkdir(parents=True)
+            managed.write_text('changed\n', encoding='utf-8')
+            lock = target / '.agents/smartkit.lock.json'
+            lock.write_text(json.dumps({
+                'sources': [],
+                'assets': [{
+                    'kind': 'file',
+                    'role': 'rule',
+                    'path': '.agents/rules/managed.md',
+                    'digest': hashlib.sha256(b'original\n').hexdigest(),
+                }],
+            }), encoding='utf-8')
+            session = self.private_session(root)
+
+            def unexpected_snapshot(*args, **kwargs):
+                self.fail('external snapshot must not run after an ownership conflict')
+
+            with redirect_stderr(StringIO()):
+                result = self.prepare(
+                    target, session, snapshot=unexpected_snapshot,
+                )
+
+            self.assertEqual(result, 2)
+            self.assertFalse((session / 'generated').exists())
+            self.assertFalse((session / 'request.json').exists())
+
+    def test_prepare_rejects_config_changed_before_first_fingerprint(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            config = target / '.agents/config.json'
+            config.parent.mkdir(parents=True)
+            config.write_text('{}\n', encoding='utf-8')
+            session = self.private_session(root)
+            original_fingerprint = setup_project_agents._target_fingerprint
+            mutated = False
+
+            def fingerprint(*args, **kwargs):
+                nonlocal mutated
+                if not mutated:
+                    mutated = True
+                    config.write_text(json.dumps({
+                        'mcp': [{
+                            'id': 'changed',
+                            'url': 'https://example.invalid/mcp',
+                        }],
+                    }), encoding='utf-8')
+                return original_fingerprint(*args, **kwargs)
+
+            with mock.patch.object(
+                setup_project_agents,
+                '_target_fingerprint',
+                side_effect=fingerprint,
+            ), redirect_stderr(StringIO()):
+                result = self.prepare(target, session)
+
+            self.assertEqual(result, 2)
+            self.assertFalse((session / 'generated').exists())
+            self.assertFalse((session / 'request.json').exists())
 
     def test_finish_rejects_a_source_registry_change_after_planning(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -280,7 +369,26 @@ class SetupCliTest(unittest.TestCase):
             self.assertIn('setup source changed during planning', error.getvalue())
             self.assertEqual(self.snapshot_tree(target), {})
 
-    def test_apply_installs_only_exactly_declared_generated_skill_resources(self):
+    def test_source_fingerprint_binds_public_authoring_contract(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / 'source'
+            shutil.copytree(
+                REPO_ROOT,
+                source,
+                ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'),
+            )
+            catalog = setup_project_agents.load_catalog(source)
+            baseline = setup_project_agents._source_fingerprint(source, catalog)
+            contract = source / 'skills/write-rules-and-skills/SKILL.md'
+
+            contract.write_bytes(contract.read_bytes() + b'\n')
+
+            self.assertNotEqual(
+                setup_project_agents._source_fingerprint(source, catalog),
+                baseline,
+            )
+
+    def test_finish_installs_only_exactly_declared_generated_skill_resources(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -311,7 +419,7 @@ class SetupCliTest(unittest.TestCase):
             with redirect_stdout(StringIO()):
                 self.assertEqual(
                     setup_project_agents.main([
-                        'apply', '--target', str(target), '--session', str(session),
+                        'finish', '--target', str(target), '--session', str(session),
                         *self.source_args(),
                     ]),
                     0,
@@ -328,7 +436,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertIn(helper, owned_paths)
             self.assertIn(exact_cache_path, owned_paths)
 
-    def test_apply_rejects_generated_output_omitted_from_exact_manifest(self):
+    def test_finish_rejects_generated_output_omitted_from_exact_manifest(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -343,14 +451,14 @@ class SetupCliTest(unittest.TestCase):
             before = self.snapshot_tree(target)
             with redirect_stderr(StringIO()):
                 result = setup_project_agents.main([
-                    'apply', '--target', str(target), '--session', str(session),
+                    'finish', '--target', str(target), '--session', str(session),
                     *self.source_args(),
                 ])
 
             self.assertEqual(result, 2)
             self.assertEqual(self.snapshot_tree(target), before)
 
-    def test_apply_reports_non_utf8_generation_manifest_without_mutation(self):
+    def test_finish_reports_non_utf8_generation_manifest_without_mutation(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -363,7 +471,7 @@ class SetupCliTest(unittest.TestCase):
             error = StringIO()
             with redirect_stderr(error):
                 result = setup_project_agents.main([
-                    'apply', '--target', str(target), '--session', str(session),
+                    'finish', '--target', str(target), '--session', str(session),
                     *self.source_args(),
                 ])
 
@@ -371,13 +479,55 @@ class SetupCliTest(unittest.TestCase):
             self.assertIn('cannot read generation manifest', error.getvalue())
             self.assertEqual(self.snapshot_tree(target), {})
 
+    def test_generated_outputs_reject_junction_like_directory_without_descent(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            request = json.loads(
+                (session / 'request.json').read_text(encoding='utf-8')
+            )
+            junction = (
+                session / 'generated/.agents/skills/change-set-verification'
+            )
+
+            with (
+                mock.patch.object(
+                    setup_project_agents,
+                    '_is_link_like',
+                    side_effect=lambda path: path == junction,
+                ),
+                self.assertRaisesRegex(
+                    setup_project_agents.SetupError,
+                    'generated output contains a link-like entry',
+                ),
+            ):
+                setup_project_agents._generated_outputs(
+                    session, request['generation_requests']
+                )
+
     def test_target_fingerprint_does_not_descend_into_junction_like_directory(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir)
-            junction = target / 'junction'
-            junction.mkdir()
+            junction = target / '.agents/rules'
+            junction.mkdir(parents=True)
             child = junction / 'outside.txt'
             child.write_text('first\n', encoding='utf-8')
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            config = setup_project_agents.inspect_project(
+                target, catalog=catalog,
+            ).config
+
+            def fingerprint() -> str:
+                return setup_project_agents._target_fingerprint(
+                    target,
+                    source_root=REPO_ROOT,
+                    catalog=catalog,
+                    config=config,
+                )
 
             def link_like(path: Path) -> bool:
                 return path == junction
@@ -394,13 +544,30 @@ class SetupCliTest(unittest.TestCase):
                     return_value='../outside',
                 ),
             ):
-                first = setup_project_agents._target_fingerprint(target)
+                first = fingerprint()
                 child.write_text('second\n', encoding='utf-8')
-                second = setup_project_agents._target_fingerprint(target)
+                second = fingerprint()
 
             self.assertEqual(first, second)
+            with (
+                mock.patch.object(
+                    setup_project_agents,
+                    '_is_link_like',
+                    side_effect=link_like,
+                ),
+                mock.patch.object(
+                    setup_project_agents.os,
+                    'readlink',
+                    side_effect=OSError('inaccessible junction target'),
+                ),
+                self.assertRaisesRegex(
+                    setup_project_agents.SetupError,
+                    'link-like entry that cannot be fingerprinted',
+                ),
+            ):
+                fingerprint()
 
-    def test_http_project_mcp_round_trips_through_prepare_apply_and_check(self):
+    def test_http_project_mcp_round_trips_through_prepare_and_finish(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -445,7 +612,7 @@ class SetupCliTest(unittest.TestCase):
                 '--target', str(target), '--session', str(session),
                 *self.source_args(),
             ]
-            self.assertEqual(setup_project_agents.main(['apply', *invocation]), 0)
+            self.assertEqual(setup_project_agents.main(['finish', *invocation]), 0)
             self.assertEqual(
                 tomllib.loads((target / '.codex/config.toml').read_text())[
                     'mcp_servers'
@@ -473,9 +640,8 @@ class SetupCliTest(unittest.TestCase):
             self.assertTrue(any(key.startswith('mcp_servers.sentry.') for key in keys))
             self.assertTrue(any(key.startswith('mcpServers.sentry.') for key in keys))
             self.assertTrue(any(key.startswith('servers.sentry.') for key in keys))
-            self.assertEqual(setup_project_agents.main(['check', *invocation]), 0)
 
-    def test_apply_rejects_cross_target_replay(self):
+    def test_finish_rejects_cross_target_replay(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -488,14 +654,14 @@ class SetupCliTest(unittest.TestCase):
 
             self.assertEqual(
                 setup_project_agents.main(
-                    ['apply', '--target', str(other_target), '--session', str(session), *self.source_args()]
+                    ['finish', '--target', str(other_target), '--session', str(session), *self.source_args()]
                 ),
                 2,
             )
             self.assertEqual(self.snapshot_tree(target), {})
             self.assertEqual(self.snapshot_tree(other_target), {})
 
-    def test_apply_requires_all_generated_outputs_then_writes_a_complete_project(self):
+    def test_finish_requires_all_generated_outputs_then_writes_a_complete_project(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -505,16 +671,18 @@ class SetupCliTest(unittest.TestCase):
 
             self.assertEqual(
                 setup_project_agents.main(
-                    ['apply', '--target', str(target), '--session', str(session), *self.source_args()]
+                    ['finish', '--target', str(target), '--session', str(session), *self.source_args()]
                 ),
                 2,
             )
             self.assertEqual(self.snapshot_tree(target), {})
 
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
             self.write_generated_outputs(session)
             self.assertEqual(
                 setup_project_agents.main(
-                    ['apply', '--target', str(target), '--session', str(session), *self.source_args()]
+                    ['finish', '--target', str(target), '--session', str(session), *self.source_args()]
                 ),
                 0,
             )
@@ -586,15 +754,36 @@ class SetupCliTest(unittest.TestCase):
                 ['example/repository'],
             )
             self.write_generated_outputs(session)
-            self.assertEqual(
-                setup_project_agents.main(
-                    ['apply', '--target', str(target), '--session', str(session), *self.source_args()]
-                ),
-                0,
-            )
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(
+                    setup_project_agents.main(
+                        ['finish', '--target', str(target), '--session', str(session), *self.source_args()]
+                    ),
+                    0,
+                )
             self.assertIn('name: external-check', (installed / 'SKILL.md').read_text())
+            result = json.loads(output.getvalue())
+            self.assertEqual(result['external_skills'], ['external-check'])
+            self.assertEqual(result['external_sources'], [{
+                'id': 'example/repository',
+                'url': 'https://github.com/example/repository',
+                'requested_ref': 'main',
+                'resolved_ref': 'main',
+                'ref_kind': 'branch',
+                'commit': 'a' * 40,
+                'license': {
+                    'spdx': 'MIT',
+                    'path': 'LICENSE',
+                    'sha256': 'b' * 64,
+                },
+                'skills': [{
+                    'id': 'example/external-check',
+                    'path': 'skills/external-check',
+                }],
+            }])
 
-    def test_apply_rejects_external_snapshot_metadata_changed_after_prepare(self):
+    def test_finish_rejects_external_snapshot_metadata_changed_after_prepare(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -617,7 +806,7 @@ class SetupCliTest(unittest.TestCase):
 
             with redirect_stderr(StringIO()):
                 result = setup_project_agents.main([
-                    'apply', '--target', str(target), '--session', str(session),
+                    'finish', '--target', str(target), '--session', str(session),
                     *self.source_args(),
                 ])
 
@@ -654,47 +843,6 @@ class SetupCliTest(unittest.TestCase):
                 '.agents/config.json': config.read_bytes(),
             })
 
-    def test_check_rejects_modified_managed_file_without_writing(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            target = root / 'target'
-            target.mkdir()
-            session = self.private_session(root)
-            self.assertEqual(self.prepare(target, session), 0)
-            self.write_generated_outputs(session)
-            apply_args = ['apply', '--target', str(target), '--session', str(session), *self.source_args()]
-            check_args = ['check', '--target', str(target), '--session', str(session), *self.source_args()]
-            self.assertEqual(setup_project_agents.main(apply_args), 0)
-
-            self.assertEqual(setup_project_agents.main(check_args), 0)
-            (target / '.agents/rules/00-project-tools.md').write_text('drift\n', encoding='utf-8')
-            before = self.snapshot_tree(target)
-            with redirect_stderr(StringIO()):
-                self.assertEqual(setup_project_agents.main(check_args), 2)
-            self.assertEqual(self.snapshot_tree(target), before)
-
-    def test_check_rejects_modified_managed_field_without_writing(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            target = root / 'target'
-            target.mkdir()
-            session = self.private_session(root)
-            self.assertEqual(self.prepare(target, session), 0)
-            self.write_generated_outputs(session)
-            apply_args = ['apply', '--target', str(target), '--session', str(session), *self.source_args()]
-            check_args = ['check', *apply_args[1:]]
-            with redirect_stdout(StringIO()):
-                self.assertEqual(setup_project_agents.main(apply_args), 0)
-            cursor_config = target / '.cursor/cli.json'
-            document = json.loads(cursor_config.read_text(encoding='utf-8'))
-            document['permissions']['allow'] = []
-            cursor_config.write_text(json.dumps(document), encoding='utf-8')
-            before = self.snapshot_tree(target)
-
-            with redirect_stderr(StringIO()):
-                self.assertEqual(setup_project_agents.main(check_args), 2)
-            self.assertEqual(self.snapshot_tree(target), before)
-
     def test_first_adoption_rejects_conflicting_managed_path(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -711,13 +859,13 @@ class SetupCliTest(unittest.TestCase):
             with redirect_stderr(StringIO()):
                 self.assertEqual(
                     setup_project_agents.main(
-                        ['check', '--target', str(target), '--session', str(session), *self.source_args()]
+                        ['finish', '--target', str(target), '--session', str(session), *self.source_args()]
                     ),
                     2,
                 )
             self.assertEqual(self.snapshot_tree(target), before)
 
-    def test_apply_rejects_tampered_selections_without_writing(self):
+    def test_finish_rejects_tampered_selections_without_writing(self):
         tamper = (
             ('selected_rules', ['unknown-rule']),
             ('selected_skills', ['refactor-code', 'refactor-code']),
@@ -737,13 +885,13 @@ class SetupCliTest(unittest.TestCase):
 
                 self.assertEqual(
                     setup_project_agents.main(
-                        ['apply', '--target', str(target), '--session', str(session), *self.source_args()]
+                        ['finish', '--target', str(target), '--session', str(session), *self.source_args()]
                     ),
                     2,
                 )
                 self.assertEqual(self.snapshot_tree(target), {})
 
-    def test_apply_and_check_emit_one_project_scoped_structured_result(self):
+    def test_finish_emits_one_project_scoped_structured_result(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -751,41 +899,32 @@ class SetupCliTest(unittest.TestCase):
             session = self.private_session(root)
             self.assertEqual(self.prepare(target, session), 0)
             self.write_generated_outputs(session)
-            apply_args = [
-                'apply', '--target', str(target), '--session', str(session),
+            finish_args = [
+                'finish', '--target', str(target), '--session', str(session),
                 *self.source_args(),
             ]
-            check_args = ['check', *apply_args[1:]]
 
-            apply_output = StringIO()
-            with redirect_stdout(apply_output):
-                self.assertEqual(setup_project_agents.main(apply_args), 0)
-            apply_result = json.loads(apply_output.getvalue())
-            self.assertEqual(apply_result['phase'], 'apply')
-            self.assertEqual(apply_result['source_commit'], self.source_commit)
-            self.assertIsNone(apply_result['drift'])
-            self.assertEqual(apply_result['changed_paths'], sorted(apply_result['changed_paths']))
-            self.assertIn('.agents/rules/00-project-tools.md', apply_result['changed_paths'])
+            finish_output = StringIO()
+            with redirect_stdout(finish_output):
+                self.assertEqual(setup_project_agents.main(finish_args), 0)
+            finish_result = json.loads(finish_output.getvalue())
+            self.assertEqual(finish_result['phase'], 'finish')
+            self.assertEqual(finish_result['source_commit'], self.source_commit)
+            self.assertEqual(finish_result['changed_paths'], sorted(finish_result['changed_paths']))
+            self.assertIn('.agents/rules/00-project-tools.md', finish_result['changed_paths'])
             self.assertEqual(
-                apply_result['harnesses'], ['codex', 'cursor', 'copilot']
+                finish_result['harnesses'], ['codex', 'cursor', 'copilot']
             )
-            self.assertEqual(apply_result['external_skills'], [])
-            self.assertEqual(apply_result['preserved_paths'], [])
+            self.assertEqual(finish_result['external_skills'], [])
+            self.assertEqual(finish_result['external_sources'], [])
+            self.assertEqual(finish_result['preserved_paths'], [])
             self.assertEqual(
-                set(apply_result),
+                set(finish_result),
                 {
                     'phase', 'source_commit', 'changed_paths', 'harnesses',
-                    'external_skills', 'preserved_paths', 'drift',
+                    'external_skills', 'external_sources', 'preserved_paths',
                 },
             )
-
-            check_output = StringIO()
-            with redirect_stdout(check_output):
-                self.assertEqual(setup_project_agents.main(check_args), 0)
-            check_result = json.loads(check_output.getvalue())
-            self.assertEqual(check_result['phase'], 'check')
-            self.assertEqual(check_result['changed_paths'], [])
-            self.assertIsNone(check_result['drift'])
 
     def test_finish_rolls_back_when_post_apply_validation_fails(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -824,7 +963,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertIn('injected post-apply failure', error.getvalue())
             self.assertEqual(self.snapshot_tree(target), before)
 
-    def test_finish_rolls_back_setup_when_unrelated_target_changes_during_postcondition(self):
+    def test_finish_preserves_unrelated_target_change_during_postcondition(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -844,31 +983,28 @@ class SetupCliTest(unittest.TestCase):
                     concurrent.write_text('keep concurrent work\n', encoding='utf-8')
                 return result
 
-            error = StringIO()
+            output = StringIO()
             with (
                 mock.patch.object(
                     setup_project_agents,
                     '_plan',
                     side_effect=add_concurrent_change,
                 ),
-                redirect_stderr(error),
+                redirect_stdout(output),
             ):
                 result = setup_project_agents.main([
                     'finish', '--target', str(target), '--session', str(session),
                     *self.source_args(),
                 ])
 
-            self.assertEqual(result, 2)
-            self.assertIn('target changed during finish', error.getvalue())
+            self.assertEqual(result, 0)
+            self.assertEqual(json.loads(output.getvalue())['phase'], 'finish')
             self.assertEqual(
                 concurrent.read_text(encoding='utf-8'), 'keep concurrent work\n'
             )
-            self.assertEqual(
-                self.snapshot_tree(target),
-                {'concurrent.txt': b'keep concurrent work\n'},
-            )
+            self.assertTrue((target / '.agents/smartkit.lock.json').is_file())
 
-    def test_apply_installs_only_codex_plugin_agent_fallback(self):
+    def test_finish_installs_only_codex_plugin_agent_fallback(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -888,7 +1024,7 @@ class SetupCliTest(unittest.TestCase):
                 self.assertEqual(
                     setup_project_agents.main(
                         [
-                            'apply', '--target', str(target), '--session', str(session),
+                            'finish', '--target', str(target), '--session', str(session),
                             *self.source_args(),
                         ]
                     ),
@@ -913,7 +1049,7 @@ class SetupCliTest(unittest.TestCase):
             )
             self.assertEqual(verifier['role'], 'agent')
 
-    def test_project_agent_round_trips_through_prepare_apply_and_check(self):
+    def test_project_agent_round_trips_through_prepare_and_finish(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -950,8 +1086,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(request['project_agents'][0]['id'], 'l10n')
             self.write_generated_outputs(session)
             with redirect_stdout(StringIO()):
-                self.assertEqual(setup_project_agents.main(['apply', *invocation]), 0)
-                self.assertEqual(setup_project_agents.main(['check', *invocation]), 0)
+                self.assertEqual(setup_project_agents.main(['finish', *invocation]), 0)
 
             self.assertTrue((target / '.codex/agents/l10n.toml').is_file())
             self.assertTrue((target / '.cursor/agents/l10n.md').is_file())
@@ -1033,14 +1168,14 @@ class SetupEndToEndTest(unittest.TestCase):
                 0,
             )
 
-    def apply_pinned(self, target: Path, session: Path) -> tuple[int, dict[str, object] | None]:
+    def finish_pinned(self, target: Path, session: Path) -> tuple[int, dict[str, object] | None]:
         request = json.loads((session / 'request.json').read_text(encoding='utf-8'))
         source_root = Path(request['source_root'])
         completed = subprocess.run(
             (
                 sys.executable,
                 str(source_root / 'skills/setup-project-agents/scripts/setup_project_agents.py'),
-                'apply', '--target', str(target), '--session', str(session),
+                'finish', '--target', str(target), '--session', str(session),
                 '--source-root', str(source_root),
                 '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap',
             ),
@@ -1051,11 +1186,11 @@ class SetupEndToEndTest(unittest.TestCase):
         )
         return completed.returncode, json.loads(completed.stdout) if completed.stdout else None
 
-    def apply_with_injected_transaction_failure(self, target: Path, session: Path) -> int:
-        """Only the fault injection stays in-process; ordinary E2E applies use the pinned CLI."""
+    def finish_with_injected_transaction_failure(self, target: Path, session: Path) -> int:
+        """Only fault injection stays in-process; ordinary E2E finishes use the pinned CLI."""
         request = json.loads((session / 'request.json').read_text(encoding='utf-8'))
         return setup_project_agents.main([
-            'apply', '--target', str(target), '--session', str(session),
+            'finish', '--target', str(target), '--session', str(session),
             '--source-root', request['source_root'],
             '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap',
         ])
@@ -1070,7 +1205,7 @@ class SetupEndToEndTest(unittest.TestCase):
             first_session = self.private_session(root, 'first-session')
             self.bootstrap_prepare(origin, target, first_session)
             self.write_generated_outputs(first_session)
-            first_result, _ = self.apply_pinned(target, first_session)
+            first_result, _ = self.finish_pinned(target, first_session)
             self.assertEqual(first_result, 0)
             self.assertFalse((target / '.agents/lock.json').exists())
             self.assertFalse((target / '.codex/hooks.json').exists())
@@ -1095,7 +1230,7 @@ class SetupEndToEndTest(unittest.TestCase):
             second_session = self.private_session(root, 'second-session')
             self.bootstrap_prepare(origin, target, second_session)
             self.write_generated_outputs(second_session)
-            second_result, second_output = self.apply_pinned(target, second_session)
+            second_result, second_output = self.finish_pinned(target, second_session)
             self.assertEqual(second_result, 0)
             assert second_output is not None
             self.assertIn('.cursor/cli.json', second_output['changed_paths'])
@@ -1116,7 +1251,7 @@ class SetupEndToEndTest(unittest.TestCase):
             third_session = self.private_session(root, 'third-session')
             self.bootstrap_prepare(origin, target, third_session)
             self.write_generated_outputs(third_session)
-            third_result, third_output = self.apply_pinned(target, third_session)
+            third_result, third_output = self.finish_pinned(target, third_session)
             self.assertEqual(third_result, 0)
             assert third_output is not None
             self.assertEqual(third_output['changed_paths'], [])
@@ -1166,7 +1301,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 '--source-commit', 'a' * 40, '--no-bootstrap',
             ]), 0)
             self.write_generated_outputs(baseline_session)
-            self.assertEqual(self.apply_pinned(target, baseline_session)[0], 0)
+            self.assertEqual(self.finish_pinned(target, baseline_session)[0], 0)
             original = self.snapshot_tree(target)
             collision_target = root / 'collision-target'
             collision_target.mkdir()
@@ -1181,7 +1316,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 '--source-commit', 'a' * 40, '--no-bootstrap',
             ]), 0)
             self.write_generated_outputs(collision_session)
-            self.assertEqual(self.apply_pinned(collision_target, collision_session)[0], 2)
+            self.assertEqual(self.finish_pinned(collision_target, collision_session)[0], 2)
             self.assertEqual(
                 collision.read_bytes(),
                 collision_content,
@@ -1220,7 +1355,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 return real_replace(*args, **kwargs)
 
             with mock.patch.object(transaction, '_replace', side_effect=replace_then_fail):
-                self.assertEqual(self.apply_with_injected_transaction_failure(target, rollback_session), 2)
+                self.assertEqual(self.finish_with_injected_transaction_failure(target, rollback_session), 2)
             self.assertEqual(self.snapshot_tree(target), before_rollback)
 
 

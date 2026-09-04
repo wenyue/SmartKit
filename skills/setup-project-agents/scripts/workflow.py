@@ -14,12 +14,16 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import bootstrap
+from agents_setup.external_contract import is_link_like as _is_link_like
+from agents_setup.ownership import OwnershipError, normalize_external_sources
 from agents_setup.source import InvalidFetchedSource, setup_entrypoint
 
 
 _SESSION_PREFIX = 'setup-project-agents-'
 _SESSION_MARKER = '.workflow-session'
 _SESSION_MARKER_CONTENT = b'setup-project-agents-workflow-v1\n'
+_SESSION_CLAIM = '.workflow-claim'
+_SESSION_CLAIM_CONTENT = b'setup-project-agents-workflow-claim-v1\n'
 _WORKFLOW_CONTEXT = 'workflow.json'
 _COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
 _MATT_CONTEXT_PATHS = (
@@ -34,12 +38,6 @@ _MARKDOWN_FENCE = re.compile(r'^ {0,3}(`{3,}|~{3,})')
 
 class WorkflowError(ValueError):
     """Raised when the public two-stage setup workflow cannot continue safely."""
-
-
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
-    )
 
 
 def _write_exclusive(path: Path, content: bytes) -> None:
@@ -117,9 +115,22 @@ def _remove_session(session: Path) -> None:
         _clear_readonly_files(owned)
         shutil.rmtree(owned)
     except OSError as error:
-        raise WorkflowError('cannot remove workflow session') from error
+        raise WorkflowError(f'cannot remove workflow session: {owned}') from error
     if owned.exists():
-        raise WorkflowError('workflow session still exists after cleanup')
+        raise WorkflowError(f'workflow session still exists after cleanup: {owned}')
+
+
+def _claim_session(session: Path) -> Path:
+    owned = _owned_session(session)
+    try:
+        _write_exclusive(owned / _SESSION_CLAIM, _SESSION_CLAIM_CONTENT)
+    except FileExistsError as error:
+        raise WorkflowError(
+            f'workflow session is already claimed: {owned}'
+        ) from error
+    except OSError as error:
+        raise WorkflowError(f'cannot claim workflow session: {owned}') from error
+    return owned
 
 
 def _read_json(path: Path, label: str) -> Mapping[str, object]:
@@ -127,7 +138,7 @@ def _read_json(path: Path, label: str) -> Mapping[str, object]:
         raise WorkflowError(f'{label} must be a regular file')
     try:
         document = json.loads(path.read_text(encoding='utf-8'))
-    except (OSError, json.JSONDecodeError) as error:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise WorkflowError(f'cannot read {label}') from error
     if not isinstance(document, Mapping):
         raise WorkflowError(f'{label} must be a JSON object')
@@ -344,12 +355,34 @@ def _run_pinned(
         raise WorkflowError(f'pinned {phase} returned invalid JSON') from error
     if not isinstance(result, Mapping) or result.get('phase') != phase:
         raise WorkflowError(f'pinned {phase} returned an invalid result')
-    return result
+    normalized = dict(result)
+    try:
+        external_sources = list(normalize_external_sources(
+            result.get('external_sources'),
+            label='pinned result external sources',
+        ))
+    except OwnershipError as error:
+        raise WorkflowError('pinned result external sources are invalid') from error
+    external_skills = result.get('external_skills')
+    if (
+        not isinstance(external_skills, list)
+        or not all(isinstance(item, str) and item for item in external_skills)
+        or len(external_skills) != len(set(external_skills))
+        or sorted(external_skills) != sorted(
+            str(skill['id']).rsplit('/', 1)[-1]
+            for source in external_sources
+            for skill in source['skills']
+        )
+    ):
+        raise WorkflowError('pinned result external Skill provenance is invalid')
+    normalized['external_skills'] = list(external_skills)
+    normalized['external_sources'] = external_sources
+    return normalized
 
 
 def _finish(args: argparse.Namespace) -> int:
     try:
-        session = _owned_session(args.session)
+        session = _claim_session(args.session)
     except WorkflowError as error:
         print(f'ERROR: {error}', file=sys.stderr)
         return 2
@@ -371,6 +404,7 @@ def _finish(args: argparse.Namespace) -> int:
             'harnesses': request.get('harnesses'),
             'changed_paths': finish_result.get('changed_paths'),
             'external_skills': finish_result.get('external_skills'),
+            'external_sources': finish_result.get('external_sources'),
             'preserved_paths': finish_result.get('preserved_paths'),
             'check': 'clean',
         }
@@ -392,7 +426,7 @@ def _finish(args: argparse.Namespace) -> int:
 
 def _cancel(args: argparse.Namespace) -> int:
     try:
-        session = _owned_session(args.session)
+        session = _claim_session(args.session)
         _remove_session(session)
         _emit({'phase': 'cancel', 'cancelled': True})
         return 0

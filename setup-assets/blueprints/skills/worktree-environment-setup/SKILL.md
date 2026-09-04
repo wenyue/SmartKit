@@ -12,7 +12,9 @@ When `setup-project-agents` requests
 model-invoked Skill. Its actor is an Agent preparing the exact linked worktree already selected by
 an owning workflow; its trigger is that worktree's need for repository-specific preparation before
 implementation. The Skill owns environment setup evidence and an environment-only result.
-`create-worktree` alone decides whole-worktree readiness and lifecycle handoff.
+`create-worktree` combines that result with current selection and baseline evidence to decide
+whole-worktree readiness. Later lifecycle and finalization owners reconstruct current state from
+current evidence and exercise effects under explicit grants.
 
 The target uses `name: worktree-environment-setup`, remains model-invoked, and gives `description`
 the trigger and environment result. Keep runtime judgment in `SKILL.md`; live repository owners
@@ -102,9 +104,10 @@ Return exactly one result; the first matching discriminator governs and ends the
 Report the root; preparation and optional-branch dispositions; invocations and results; effects;
 readiness evidence; Git preservation verdict; and work left to another owner.
 `environment-non-ready` also reports the blocker, retained partial state, recovery condition, and
-when a fresh invocation is safe. Neither result authorizes baseline verification or later
-lifecycle action. `environment-ready` is setup evidence for `create-worktree`; only that owner may
-combine it with its other gates and issue a worktree-ready handoff.
+when a fresh invocation is safe. Baseline verification and later lifecycle action remain with their
+owning workflows and explicit grants. `environment-ready` is current setup evidence for
+`create-worktree`, which combines it with its other current evidence to return an immediate
+readiness result.
 
 ## Future Author grant and validation
 
@@ -144,7 +147,8 @@ Each accepted optional branch with materially distinct behavior, effects, or ris
 Acceptance or owner-supported deterministic proof of its distinct control path, envelope,
 preservation, and result. Qualified evidence may share one proof only across equivalent branches.
 Unaccepted or unreachable branches need no exercise and are reported outside the accepted
-capability. An unproved accepted distinct branch fails validation and blocks ready handoff.
+capability. An unproved accepted distinct branch fails validation and blocks a `READY` authoring
+result.
 
 Return exactly one authoring result; the first matching discriminator has precedence:
 
@@ -174,6 +178,6 @@ required to retry in a fresh run. In addition:
 
 `READY` reports the Candidate fingerprint, evidence owners, obligation dispositions, Machine and
 Review decisions, Acceptance coverage and effects, Git preservation verdict, excluded or
-unreachable branches, and untested non-capabilities. It is ready input only for
-`setup-project-agents`; it neither invokes setup nor authorizes generation, installation,
-publication, commit, push, or a whole-worktree ready handoff.
+unreachable branches, and untested non-capabilities. It is ready input for
+`setup-project-agents`; generation and downstream effects remain with their owning workflows and
+explicit grants.

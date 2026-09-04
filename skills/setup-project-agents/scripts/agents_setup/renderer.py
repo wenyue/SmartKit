@@ -37,6 +37,7 @@ from .ownership import (
 from .structured import (
     StructuredConfigError,
     dump_document as _dump_structured,
+    field_value,
     format_for_path as _format_for,
     parse_document,
 )
@@ -53,6 +54,7 @@ class RenderedState:
     delete_paths: tuple[PurePosixPath, ...] = ()
     replace_roots: tuple[PurePosixPath, ...] = ()
     preserved_paths: tuple[PurePosixPath, ...] = ()
+    external_sources: tuple[Mapping[str, object], ...] = ()
 
     @property
     def files_by_path(self) -> Mapping[str, bytes]:
@@ -129,6 +131,8 @@ _MCP_NATIVE = {
 }
 _ENTRY_AGENTS = PurePosixPath('AGENTS.md')
 _PROJECT_RULES_TITLE = 'Project rules'
+_PROJECT_RULES_START = '<!-- smartkit:project-rules:start -->'
+_PROJECT_RULES_END = '<!-- smartkit:project-rules:end -->'
 _MARKDOWN_HEADING = re.compile(r'^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$')
 _MARKDOWN_FENCE = re.compile(r'^ {0,3}(`{3,}|~{3,})')
 
@@ -180,8 +184,7 @@ def _render_text(template: str, values: Mapping[str, object]) -> bytes:
     return template.encode()
 
 
-def _level_two_section_bounds(content: str, title: str) -> tuple[int, int] | None:
-    headings: list[tuple[int, int, str]] = []
+def _live_markdown_lines(content: str):
     fence_character: str | None = None
     fence_length = 0
     offset = 0
@@ -203,14 +206,20 @@ def _level_two_section_bounds(content: str, title: str) -> tuple[int, int] | Non
                 fence_character = None
                 fence_length = 0
         elif fence_character is None:
-            heading = _MARKDOWN_HEADING.match(line)
-            if heading is not None:
-                level = len(heading.group(1))
-                heading_title = re.sub(
-                    r'[ \t]+#+[ \t]*$', '', heading.group(2)
-                ).strip()
-                headings.append((offset, level, heading_title))
+            yield offset, offset + len(line), offset + len(raw_line), line
         offset += len(raw_line)
+
+
+def _level_two_section_bounds(content: str, title: str) -> tuple[int, int] | None:
+    headings: list[tuple[int, int, str]] = []
+    for offset, _, _, line in _live_markdown_lines(content):
+        heading = _MARKDOWN_HEADING.match(line)
+        if heading is not None:
+            level = len(heading.group(1))
+            heading_title = re.sub(
+                r'[ \t]+#+[ \t]*$', '', heading.group(2)
+            ).strip()
+            headings.append((offset, level, heading_title))
     matches = [index for index, item in enumerate(headings) if item[1:] == (2, title)]
     if len(matches) > 1:
         raise RenderError(f'project AGENTS.md has duplicate ## {title} sections')
@@ -225,6 +234,41 @@ def _level_two_section_bounds(content: str, title: str) -> tuple[int, int] | Non
     return start, end
 
 
+def _marker_lines(content: str, marker: str) -> list[tuple[int, int, int]]:
+    return [
+        (start, content_end, line_end)
+        for start, content_end, line_end, line in _live_markdown_lines(content)
+        if line == marker
+    ]
+
+
+def _marked_project_rules_bounds(content: str) -> tuple[int, int] | None:
+    starts = _marker_lines(content, _PROJECT_RULES_START)
+    ends = _marker_lines(content, _PROJECT_RULES_END)
+    if not starts and not ends:
+        return None
+    if len(starts) != 1 or len(ends) != 1:
+        raise RenderError('project AGENTS.md has ambiguous Project rules ownership markers')
+    start_line, _, content_start = starts[0]
+    end_line, end_marker, _ = ends[0]
+    if content_start > end_line:
+        raise RenderError('project AGENTS.md has invalid Project rules ownership markers')
+    inner = content[content_start:end_line]
+    bounds = _level_two_section_bounds(inner, _PROJECT_RULES_TITLE)
+    if bounds is None or inner[:bounds[0]].strip() or inner[bounds[1]:].strip():
+        raise RenderError('project AGENTS.md has invalid Project rules generated unit')
+    return start_line, end_marker
+
+
+def _marked_project_rules(rendered: str) -> str:
+    body = rendered.rstrip('\r\n')
+    return (
+        f'{_PROJECT_RULES_START}\n'
+        f'{body}\n'
+        f'{_PROJECT_RULES_END}'
+    )
+
+
 def _render_entry_agents(target_root: Path, block: bytes) -> bytes:
     try:
         rendered = block.decode('utf-8')
@@ -233,27 +277,45 @@ def _render_entry_agents(target_root: Path, block: bytes) -> bytes:
     rendered_bounds = _level_two_section_bounds(rendered, _PROJECT_RULES_TITLE)
     if rendered_bounds is None or rendered[:rendered_bounds[0]].strip() or rendered[rendered_bounds[1]:].strip():
         raise RenderError('entry AGENTS template must contain only one Project rules section')
+    marked = _marked_project_rules(rendered)
     try:
         target = confined_target(target_root, _ENTRY_AGENTS)
     except ProjectError as error:
         raise RenderError(str(error)) from error
     if not target.exists():
-        return rendered.rstrip().encode('utf-8') + b'\n'
+        return marked.encode('utf-8') + b'\n'
     if target.is_symlink() or not target.is_file():
         raise RenderError('project AGENTS.md is unsafe')
     try:
-        current = target.read_text(encoding='utf-8')
+        current = target.read_bytes().decode('utf-8')
     except (OSError, UnicodeDecodeError) as error:
         raise RenderError('project AGENTS.md is not readable UTF-8') from error
+    marked_bounds = _marked_project_rules_bounds(current)
     bounds = _level_two_section_bounds(current, _PROJECT_RULES_TITLE)
+    if marked_bounds is not None:
+        if bounds is None or not (
+            marked_bounds[0] < bounds[0] < marked_bounds[1]
+        ):
+            raise RenderError('project AGENTS.md has ambiguous Project rules generated unit')
+        return (
+            current[:marked_bounds[0]] + marked + current[marked_bounds[1]:]
+        ).encode('utf-8')
     if bounds is None:
-        prefix = current.rstrip()
-        separator = '\n\n' if prefix else ''
-        return (prefix + separator + rendered.rstrip() + '\n').encode('utf-8')
+        if not current:
+            separator = ''
+        elif current.endswith(('\n\n', '\r\n\r\n')):
+            separator = ''
+        elif current.endswith(('\n', '\r')):
+            separator = '\n'
+        else:
+            separator = '\n\n'
+        return (current + separator + marked + '\n').encode('utf-8')
     start, end = bounds
+    if current[start:end].rstrip('\r\n') != rendered.rstrip('\r\n'):
+        raise RenderError('project AGENTS.md Project rules section is project-owned')
     suffix = current[end:]
     separator = '\n\n' if suffix else '\n'
-    return (current[:start] + rendered.rstrip() + separator + suffix).encode('utf-8')
+    return (current[:start] + marked + separator + suffix).encode('utf-8')
 
 
 def _quoted(value: str) -> str:
@@ -383,15 +445,6 @@ def _remove_dotted_field(document: dict[str, object], key: str) -> bool:
     return True
 
 
-def _existing_dotted_field(document: Mapping[str, object], key: str) -> tuple[bool, object | None]:
-    current: object = document
-    for segment in key.split('.'):
-        if not isinstance(current, Mapping) or segment not in current:
-            return False, None
-        current = current[segment]
-    return True, current
-
-
 def _set_dotted_field(document: dict[str, object], key: str, value: object) -> None:
     segments = key.split('.')
     current = document
@@ -508,13 +561,13 @@ def _render_project_mcp(
             desired_fields = dict(_safe_leaves(desired, key))
             for owned_path, owned_key in previous_owned_fields:
                 if owned_path == path and owned_key.startswith(key + '.'):
-                    exists, current = _existing_dotted_field(document, owned_key)
+                    exists, current = field_value(document, owned_key)
                     if owned_key in desired_fields and (
                         not exists or current != desired_fields[owned_key]
                     ):
                         _remove_dotted_field(document, owned_key)
             for desired_key, desired_value in desired_fields.items():
-                exists, current = _existing_dotted_field(document, desired_key)
+                exists, current = field_value(document, desired_key)
                 if exists and current != desired_value:
                     raise RenderError(
                         f'Project MCP entry conflicts with user configuration: '
@@ -707,7 +760,7 @@ def render_desired_state(
             item
             for item in generated_root.rglob('*')
             if item.is_file()
-            and not _is_transient(item)
+            and (generated_outputs is not None or not _is_transient(item))
             and item.relative_to(generated_root).as_posix() != '.setup-generation.json'
         ),
         key=lambda item: item.as_posix(),
@@ -812,4 +865,5 @@ def render_desired_state(
                 key=lambda item: item.as_posix(),
             )
         ),
+        tuple(dict(item) for item in sources),
     )

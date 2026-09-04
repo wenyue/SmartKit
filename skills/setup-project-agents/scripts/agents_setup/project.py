@@ -4,17 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from .catalog import load_project_config
+from .external_contract import is_link_like as _is_link_like
 from .models import Catalog, ProjectConfig
 
 
 class ProjectError(ValueError):
     """Raised when a target project cannot be inspected safely."""
-
-
-def _is_link_like(path: Path) -> bool:
-    return path.is_symlink() or (
-        hasattr(path, 'is_junction') and path.is_junction()
-    )
 
 
 @dataclass(frozen=True)

@@ -144,7 +144,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--repository", type=Path, default=Path.cwd())
     parser.add_argument("--target", required=True)
     parser.add_argument("--message-file", required=True, type=Path)
-    parser.add_argument("--recovery-ref", required=True)
+    parser.add_argument(
+        "--recovery-ref",
+        required=True,
+        help=f"expected-absent recovery ref under {RECOVERY_PREFIX}",
+    )
     return parser.parse_args(argv)
 
 
