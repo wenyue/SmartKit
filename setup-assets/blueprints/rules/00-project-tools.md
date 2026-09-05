@@ -2,66 +2,59 @@
 
 Strength: `Mandatory`
 
-Scope: Setup Authoring Contract for the target repository's project-tool, MCP, runtime,
+Scope: Setup Authoring Contract for the target repository's tooling, MCP, runtime,
 synchronization, mutation, and complete-change verification policy.
 
-## Contract frame
+## Purpose and evidence
 
-When `setup-project-agents` requests `.agents/rules/00-project-tools.md`, author that one
-target-owned Mandatory Rule. It applies to project tooling, MCP, runtime, or verification and owns
-only the persistent policy needed to select a safe tool outcome, synchronize canonical-source
-changes, authorize mutation, verify a complete change, or hand a job to an existing Skill.
+For a `setup-project-agents` request targeting `.agents/rules/00-project-tools.md`, the Author
+produces one target-owned Mandatory Rule. It governs tool selection, canonical-source
+synchronization, mutation authority, complete-change verification, and handoff to existing Skills.
 
-Use accepted project intent and evidence qualified by its target-repository owner and provenance.
-Relevant evidence includes entry guidance; manifests and runtime declarations; repository scripts
-and current help; task-runner and CI configuration; version-control state; existing Rules and
-Skills; and accepted Issues, Specs, or ADRs. The existing target Rule is preservation and regression
-evidence, not design authority. Preserve its supported policy unless accepted intent expressly
-changes or retires it; visibility, tool availability, or write access grants no meaning or
-permission.
+Setup must make the relevant target evidence available: entry guidance, manifests and runtime
+requirements, repository scripts and current help, task runners and CI, Git state, existing Rules
+and Skills, and accepted Issues, Specs, or ADRs. Qualify each source by owner and provenance.
+Accepted project intent governs; existing Rule text supplies preservation and regression evidence.
+Classify obligations as preserve, change, add, retire, or non-goal, preserving supported policy
+unless accepted intent changes or retires it. Visibility and access confer no authority.
 
-## Required policy
+## Policy to establish
 
-Require every consequential mapping supported by qualified evidence:
+The Rule connects each consequential condition to its required outcome:
 
-- the working directory or runtime predicate that changes whether an invocation succeeds, and the
-  resulting requirement;
-- each canonical-source predicate, its required synchronization outcome, any supported read-only
-  drift check, and the generated effects that require review;
-- each mutating operation, the exact authority that permits it, and the read-only, scoped, dry-run,
-  or stop outcome when that authority is absent;
-- complete-change verification from the declared comparison point across tracked, staged, and
-  untracked state, generated effects, affected surfaces, and all applicable non-fixing checks; and
-- an existing Skill handoff only when its observable trigger and bounded result own the job.
+- **Invocation:** working-directory and runtime requirements that determine whether a tool works.
+- **Synchronization:** canonical changes, their required synchronization, supported read-only drift
+  checks, and generated effects requiring review.
+- **Mutation:** the authority for each operation and the permitted read-only, scoped, dry-run, or
+  stop alternative when authority is absent.
+- **Verification:** the complete change from its declared comparison point, including tracked,
+  staged, unstaged, and untracked state, generated effects, affected surfaces, and every applicable
+  non-fixing check.
+- **Handoff:** an existing Skill's observable trigger and bounded result when that Skill owns the job.
 
-Keep target-local API, generated-source, capability, delivery, installation, dependency,
-contract-evolution, and placement policy with their existing owners; deterministic mechanics stay
-in repository scripts and procedures in the invoked Skill. Exclude inventories, snapshots, command
-catalogs, setup mechanics, and facts recoverable from a live owner unless omission changes an
-outcome.
+Keep API, capability, generated-source, delivery, installation, dependency, contract-evolution, and
+placement policy with their existing owners. Scripts retain deterministic mechanics; Skills retain
+procedures. Include live-owner facts only when their omission changes a policy outcome, leaving
+inventories, command catalogs, snapshots, and setup mechanics to those owners.
 
-## Author grant and terminal result
+## Author boundary and result
 
-The future Author may inspect target evidence, run owner-supported read-only or non-fixing checks,
-and create or replace only `GENERATED/.agents/rules/00-project-tools.md`, where `GENERATED` is the
-request root supplied by `setup-project-agents`. The Author may not delete or move that candidate,
-write the live target, mutate unrelated target state, or create an external effect without separate
-accepted authority.
+The Author may inspect target evidence, run owner-supported read-only or non-fixing checks, and
+create or replace `GENERATED/.agents/rules/00-project-tools.md`. `GENERATED` is the request root
+supplied by setup. Deletion, moves, live-target writes, unrelated mutation, and external effects
+require separate accepted authority.
 
-Return exactly one terminal result; the first matching discriminator has precedence:
+The first applicable condition determines the sole authoring result:
 
-1. `ACCESS_REQUIRED` when necessary evidence or validation cannot be accessed within the grant.
-2. `CONTEXT_REQUIRED` when access exists but a necessary fact cannot be discovered from qualified
-   evidence.
-3. `HUMAN_DECISION_REQUIRED` when qualified evidence permits materially different policies or the
-   required mutation, effect, ownership, comparison point, or exception lacks accepted authority.
-4. `VALIDATION_FAILED` when a check remains failed, an exact command is unsupported, or a required
-   mapping, affected surface, or supported input has no evidenced outcome.
-5. `READY` when the one candidate contains every required mapping, each supported predicate selects
-   one observable policy outcome, and all applicable owner-supported deterministic checks pass or
-   are recorded `NOT_REQUIRED`.
+| Result | Discriminator |
+| --- | --- |
+| `ACCESS_REQUIRED` | Necessary evidence or validation is inaccessible within the grant. |
+| `CONTEXT_REQUIRED` | Access exists, but a necessary fact cannot be discovered from qualified evidence. |
+| `HUMAN_DECISION_REQUIRED` | Material policy alternatives remain, or a required mutation, effect, owner, comparison point, exception, or obligation disposition lacks accepted authority. |
+| `VALIDATION_FAILED` | A required check fails, an exact command is unsupported, or a required mapping, affected surface, or supported input lacks an evidenced outcome. |
+| `READY` | Every required mapping is present, each supported predicate selects one observable policy outcome without invented facts, and all applicable deterministic checks pass or are evidenced as `NOT_REQUIRED`. |
 
-Every stop identifies the blocker, owner, consequence, and condition for a fresh attempt. `READY`
-reports the candidate, evidence owners, obligation dispositions, checks, and untested surfaces; it
-is input only for `setup-project-agents` and grants no downstream generation, installation,
-publication, commit, or push.
+A stop names the blocker, owner, consequence, and condition for a fresh attempt. A ready handoff
+identifies the Candidate, target and evidence owners, obligation dispositions, checks, preserved
+constraints, and uncertain or untested surfaces. It is input to `setup-project-agents`; it grants
+no downstream generation, installation, publication, commit, or push.

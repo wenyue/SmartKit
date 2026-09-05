@@ -24,6 +24,10 @@ report defined below. Before shaping a contract, read and apply the checkout-aut
   stop on. Leave setup discovery, ordering, tool choice, retries, writes, and generation mechanics
   to their runtime owners. A procedure-led target must express its supported procedure, but its
   Setup Authoring Contract remains descriptive.
+- **Capable models.** Write contracts for frontier LLMs with mature reasoning and tool-use
+  capabilities. Focus on project-specific semantics, constraints, and acceptance conditions; leave
+  routine reasoning and execution details to model judgment within existing runtime ownership.
+  Retain necessary details that change behavior, authorization boundaries, or stop conditions.
 - **Exact authority.** Create, replace, delete, or move a contract only when that exact path and
   operation are separately authorized; otherwise stop before writing. Nonnormative context,
   repository visibility, discoverability, tool availability, catalog metadata, or write access
