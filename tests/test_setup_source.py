@@ -52,6 +52,7 @@ def run_git(directory: Path, *args: str) -> str:
 def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
     (root / '.codex-plugin').mkdir(parents=True)
     (root / '.cursor-plugin').mkdir()
+    (root / '.qoder-plugin').mkdir()
     (root / 'setup-assets' / 'catalog').mkdir(parents=True)
     entrypoint = root / 'skills' / 'setup-project-agents' / 'scripts' / 'setup_project_agents.py'
     entrypoint.parent.mkdir(parents=True)
@@ -82,6 +83,10 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
         'plugin.json': {
             'name': 'smartkit', 'version': version,
             'agents': './agents/copilot/', 'skills': './skills/',
+        },
+        '.qoder-plugin/plugin.json': {
+            'name': 'smartkit', 'version': version,
+            'agents': './agents/qoder/', 'skills': './skills/',
         },
     }
     for relative, document in manifests.items():
@@ -351,6 +356,8 @@ class SetupSourceTest(unittest.TestCase):
                 ('.cursor-plugin/plugin.json', {'rules': '../rules/'}),
                 ('plugin.json', {'agents': '../agents/'}),
                 ('plugin.json', {'agents': None}),
+                ('.qoder-plugin/plugin.json', {'agents': '../agents/'}),
+                ('.qoder-plugin/plugin.json', {'rules': './rules/'}),
             )
             for index, (relative, updates) in enumerate(cases):
                 with self.subTest(relative=relative, updates=updates):

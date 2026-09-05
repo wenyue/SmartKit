@@ -1,6 +1,6 @@
 ---
 name: setup-project-agents
-description: Use when initializing or reconciling a repository's Rules, Skills, Agents, or MCP across Codex, Cursor, and Copilot.
+description: Use when initializing or reconciling a repository's Rules, Skills, Agents, or MCP across Codex, Cursor, Copilot, and Qoder.
 ---
 
 # Setup Project Agents
@@ -25,7 +25,7 @@ Reconcile one repository against a trusted SmartKit snapshot and the repository'
 
 ## Inputs and ownership
 
-The shipped catalog always enables Codex, Cursor, and Copilot. It installs its declared shared Rules
+The shipped catalog always enables Codex, Cursor, Copilot, and Qoder. It installs its declared shared Rules
 and Skills, the Codex Plugin Agent defaults, and every catalog-declared project blueprint. Optional
 project configuration can add external Skills, project Agents, and MCP servers.
 
@@ -38,7 +38,7 @@ exactly one of `url` or `command`, with optional ordered host/OS overrides and r
 
 Setup discovers and preserves additional project-owned Rules and Skills under `.agents/rules/` and
 `.agents/skills/`. Project Agent sources also remain project-owned. Catalog-declared Codex Plugin
-Agent defaults are fallbacks, not project Agent declarations. Native Cursor and Copilot Plugin
+Agent defaults are fallbacks, not project Agent declarations. Native Cursor, Copilot, and Qoder Plugin
 Agents, and native plugin Rules, Skills, and MCP, are outside this workflow.
 
 SmartKit owns only the files and structured fields recorded in `.agents/smartkit.lock.json`, plus one

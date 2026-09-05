@@ -1,0 +1,21 @@
+{
+  "name": "smartkit",
+  "displayName": "WenYue SmartKit",
+  "version": "1.2.6",
+  "description": "Install and maintain shared project-agent workflows across repositories.",
+  "author": {
+    "name": "wenyue"
+  },
+  "homepage": "https://github.com/wenyue/agents",
+  "repository": "https://github.com/wenyue/agents",
+  "keywords": [
+    "coding-agents",
+    "project-setup",
+    "skills"
+  ],
+  "category": "developer-tools",
+  "agents": "./agents/qoder/",
+  "skills": "./skills/",
+  "hooks": "./hooks/qoder.json",
+  "mcpServers": "./mcp/qoder.json"
+}

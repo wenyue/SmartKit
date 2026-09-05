@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-`WenYue SmartKit` is a cross-Harness plugin for Codex, Cursor, and GitHub Copilot. It provides
+`WenYue SmartKit` is a cross-Harness plugin for Codex, Cursor, GitHub Copilot, and Qoder. It provides
 Rules, Skills, Agents, and MCP as peer capabilities, then checks whether recommended tools and
 configured MCP prerequisites are available when a session starts.
 
@@ -38,16 +38,23 @@ copilot plugin install smartkit@wenyue
 To update the Copilot plugin, run `copilot plugin marketplace update wenyue`, followed by
 `copilot plugin update smartkit`.
 
+Qoder:
+
+```sh
+qoder plugin marketplace add wenyue/agents
+qoder plugin install smartkit@wenyue
+```
+
 ## Plugin Rules, Skills, Agents, and MCP
 
 | Capability | What SmartKit provides |
 | --- | --- |
 | Rules | Always-on, file-scoped, and Harness-scoped instructions. Strength wins first (`Mandatory` > `Default` > `Advisory`), followed by project ownership and narrower file scope. Harness scope controls activation and shares the always-on precedence tier. |
 | Skills | SmartKit workflows plus reviewed, licensed, version-pinned third-party workflows. |
-| Agents | `change-set-verifier` on all three hosts. It uses the project's change-set-verification Skill, reports `inconclusive` when setup has not installed that Skill, and inherits the host-selected model. Cursor and Copilot receive it from the plugin; Codex receives it through setup-managed default delivery. |
-| MCP | Playwright in isolated headless mode on all three hosts, subject to normal host approval. |
+| Agents | `change-set-verifier` on all four hosts. It uses the project's change-set-verification Skill, reports `inconclusive` when setup has not installed that Skill, and inherits the host-selected model. Cursor, Copilot, and Qoder receive it from the plugin; Codex receives it through setup-managed default delivery. |
+| MCP | Playwright in isolated headless mode on all four hosts, subject to normal host approval. |
 
-Codex and Copilot CLI receive Rules through Hooks; Cursor uses native plugin Rules. Inspect the
+Codex, Copilot CLI, and Qoder receive Rules through Hooks; Cursor uses native plugin Rules. Inspect the
 host's Hook diagnostics when an expected Rule is absent. Copilot cloud agents are outside this
 plugin-Rule contract.
 
@@ -57,18 +64,19 @@ remains plugin-owned and does not need an `.agents/config.json` Project Agent de
 
 ## Harness and platform support
 
-All three hosts support Windows and Linux.
+All four hosts support Windows and Linux.
 
 | Host | Rules | Skills | Agents | MCP |
 | --- | --- | --- | --- | --- |
 | Codex | Session, prompt, and structured-tool Hooks | Plugin Skill catalog | Setup-managed `change-set-verifier` | Playwright |
 | Cursor | Native plugin Rules | Plugin Skill catalog | `change-set-verifier` | Playwright |
 | GitHub Copilot CLI | Session, transformed-prompt, and structured-tool Hooks | Plugin Skill catalog | `change-set-verifier` | Playwright |
+| Qoder | Session, prompt, and structured-tool Hooks | Plugin Skill catalog | `change-set-verifier` | Playwright |
 
 ## Set up each project
 
 In the target repository, ask the Agent to use `setup-project-agents` to configure Codex, Cursor,
-and Copilot. It checks the Matt repository context before opening a setup session. If that context
+Copilot, and Qoder. It checks the Matt repository context before opening a setup session. If that context
 is incomplete, it stops and asks the maintainer to explicitly invoke `setup-matt-pocock-skills`.
 That Skill asks which issue tracker to use and owns `docs/agents/` plus its `## Agent skills` entry
 block. After Matt setup completes, invoke `setup-project-agents` again to continue.

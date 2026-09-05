@@ -128,6 +128,7 @@ _MCP_NATIVE = {
     Harness.CODEX: (PurePosixPath('.codex/config.toml'), 'mcp_servers'),
     Harness.CURSOR: (PurePosixPath('.cursor/mcp.json'), 'mcpServers'),
     Harness.COPILOT: (PurePosixPath('.vscode/mcp.json'), 'servers'),
+    Harness.QODER: (PurePosixPath('.qoder/mcp.json'), 'mcpServers'),
 }
 _ENTRY_AGENTS = PurePosixPath('AGENTS.md')
 _PROJECT_RULES_TITLE = 'Project rules'
@@ -419,6 +420,24 @@ def _render_project_agents(
                 PurePosixPath('.github/agents') / f'{agent.id}.agent.md',
                 ('\n'.join(lines) + '\n').encode(),
             )
+        if agent.qoder is not None:
+            lines = [
+                '---',
+                f'name: {_quoted(agent.id)}',
+                f'description: {_quoted(agent.description)}',
+            ]
+            if agent.qoder.model is not None:
+                lines.append(f'model: {_quoted(agent.qoder.model)}')
+            lines.extend((
+                '---',
+                '',
+                f'Apply @{reference}',
+            ))
+            _copy_file(
+                files,
+                PurePosixPath('.qoder/agents') / f'{agent.id}.md',
+                ('\n'.join(lines) + '\n').encode(),
+            )
     return tuple(preserved)
 
 
@@ -494,12 +513,12 @@ def _render_mcp_entry(
     if server.transport is McpTransport.HTTP:
         assert url is not None
         return {
-            **({'type': 'http'} if harness is not Harness.CODEX else {}),
+            **({'type': 'http'} if harness not in (Harness.CODEX, Harness.QODER) else {}),
             'url': url,
         }
     assert command is not None
     entry: dict[str, object] = {
-        **({'type': 'stdio'} if harness is not Harness.CODEX else {}),
+        **({'type': 'stdio'} if harness not in (Harness.CODEX, Harness.QODER) else {}),
         'command': command,
         'args': list(args),
     }

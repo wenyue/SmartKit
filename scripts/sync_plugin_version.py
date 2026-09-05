@@ -19,10 +19,12 @@ PLUGIN_NAME = 'smartkit'
 MANIFEST_PATHS = (
     Path('.codex-plugin/plugin.json'),
     Path('.cursor-plugin/plugin.json'),
+    Path('.qoder-plugin/plugin.json'),
     Path('plugin.json'),
 )
 MARKETPLACE_PATHS = (
     Path('.cursor-plugin/marketplace.json'),
+    Path('.qoder-plugin/marketplace.json'),
     Path('.github/plugin/marketplace.json'),
 )
 CATALOG_PATH = Path('setup-assets/catalog/assets.json')

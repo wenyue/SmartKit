@@ -342,6 +342,7 @@ class PluginManifestTest(unittest.TestCase):
         manifests = (
             REPO_ROOT / '.codex-plugin' / 'plugin.json',
             REPO_ROOT / '.cursor-plugin' / 'plugin.json',
+            REPO_ROOT / '.qoder-plugin' / 'plugin.json',
             REPO_ROOT / 'plugin.json',
         )
         for manifest_path in manifests:
@@ -357,6 +358,10 @@ class PluginManifestTest(unittest.TestCase):
             load_json('.cursor-plugin/plugin.json')['displayName'],
             'WenYue SmartKit',
         )
+        self.assertEqual(
+            load_json('.qoder-plugin/plugin.json')['displayName'],
+            'WenYue SmartKit',
+        )
         self.assertFalse((REPO_ROOT / 'agents' / '.codex-plugin').exists())
         self.assertFalse((REPO_ROOT / 'agents' / 'skills').exists())
 
@@ -364,6 +369,7 @@ class PluginManifestTest(unittest.TestCase):
         version = (REPO_ROOT / 'VERSION').read_text(encoding='utf-8').strip()
         for relative in (
             '.cursor-plugin/marketplace.json',
+            '.qoder-plugin/marketplace.json',
             '.github/plugin/marketplace.json',
         ):
             marketplace = load_json(relative)
@@ -382,29 +388,35 @@ class PluginManifestTest(unittest.TestCase):
         codex = load_json('.codex-plugin/plugin.json')
         cursor = load_json('.cursor-plugin/plugin.json')
         copilot = load_json('plugin.json')
+        qoder = load_json('.qoder-plugin/plugin.json')
 
         self.assertEqual(codex['hooks'], './hooks/hooks.json')
         self.assertEqual(cursor['hooks'], './hooks/cursor.json')
         self.assertEqual(cursor['rules'], './rules/cursor/')
         self.assertEqual(copilot['hooks'], './hooks/copilot.json')
+        self.assertEqual(qoder['hooks'], './hooks/qoder.json')
         self.assertEqual(codex['mcpServers'], './.mcp.json')
         self.assertEqual(cursor['mcpServers'], './mcp/cursor.json')
         self.assertEqual(copilot['mcpServers'], './mcp/copilot.json')
+        self.assertEqual(qoder['mcpServers'], './mcp/qoder.json')
         self.assertNotIn('agents', codex)
         self.assertEqual(cursor['agents'], './agents/cursor/')
         self.assertEqual(copilot['agents'], './agents/copilot/')
+        self.assertEqual(qoder['agents'], './agents/qoder/')
         for manifest, expected in (
             (codex, '.mcp.json'),
             (cursor, 'mcp/cursor.json'),
             (copilot, 'mcp/copilot.json'),
+            (qoder, 'mcp/qoder.json'),
         ):
             self.assertTrue((REPO_ROOT / expected).is_file())
-        for manifest in (codex, cursor, copilot):
+        for manifest in (codex, cursor, copilot, qoder):
             self.assertTrue((REPO_ROOT / manifest['skills']).is_dir())
-        for manifest in (cursor, copilot):
+        for manifest in (cursor, copilot, qoder):
             self.assertTrue((REPO_ROOT / manifest['agents']).is_dir())
         self.assertNotIn('rules', codex)
         self.assertNotIn('rules', copilot)
+        self.assertNotIn('rules', qoder)
 
         plugin_skills = {
             path.name
@@ -467,6 +479,7 @@ class PluginManifestTest(unittest.TestCase):
             'codex': REPO_ROOT / 'hooks/hooks.json',
             'cursor': REPO_ROOT / cursor['hooks'],
             'copilot': REPO_ROOT / copilot['hooks'],
+            'qoder': REPO_ROOT / qoder['hooks'],
         }
         for harness, path in hook_paths.items():
             with self.subTest(harness=harness):
@@ -508,6 +521,10 @@ class PluginManifestTest(unittest.TestCase):
                 'preToolUse',
                 'agentStop',
             },
+        )
+        self.assertEqual(
+            set(load_json('hooks/qoder.json')['hooks']),
+            {'SessionStart', 'UserPromptSubmit', 'PreToolUse'},
         )
 
     def test_cursor_hook_uses_cross_platform_dispatcher(self):
@@ -577,7 +594,7 @@ class PluginManifestTest(unittest.TestCase):
         )
         self.assertEqual(
             set(contract['harnesses']),
-            {'codex', 'cursor', 'copilot'},
+            {'codex', 'cursor', 'copilot', 'qoder'},
         )
 
         for harness, spec in contract['harnesses'].items():
@@ -615,6 +632,7 @@ class PluginManifestTest(unittest.TestCase):
             'codex': REPO_ROOT / 'agents/codex/change-set-verifier.toml',
             'cursor': REPO_ROOT / 'agents/cursor/change-set-verifier.md',
             'copilot': REPO_ROOT / 'agents/copilot/change-set-verifier.agent.md',
+            'qoder': REPO_ROOT / 'agents/qoder/change-set-verifier.md',
         }
         for harness, path in paths.items():
             with self.subTest(harness=harness):

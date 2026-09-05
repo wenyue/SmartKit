@@ -30,7 +30,7 @@ class RepositoryFixture:
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.repo = self.root / "main"
         git(self.root, "init", "--quiet", "--initial-branch=main", str(self.repo))
         git(self.repo, "config", "user.name", "Evidence Test")

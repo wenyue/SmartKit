@@ -31,11 +31,12 @@ def git(repository, *args):
                           check=True, capture_output=True).stdout
 
 
+@unittest.skipUnless(sys.platform.startswith("linux"), "Linux mechanics; native Windows has its own suite")
 class TransferTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.repo = self.root / "target"
         git(self.root, "init", "--quiet", "--initial-branch=main", str(self.repo))
         git(self.repo, "config", "user.name", "Transfer Test")
@@ -398,6 +399,27 @@ class TransferTests(unittest.TestCase):
         result = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT.with_suffix(".ps1")), "--help"], capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(b"prepare", result.stdout)
+
+
+@unittest.skipIf(os.name == "nt", "Windows uses its native admission path")
+class UnsupportedHostTests(unittest.TestCase):
+    def test_unsupported_host_rejects_before_observation_or_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            target = root / "target"
+            target.mkdir()
+            sentinel = target / "user.txt"
+            sentinel.write_bytes(b"preserve user state")
+            operation = root / "operation"
+            plan = {"schema": transfer.SCHEMA, "repository": str(target)}
+            for platform in ("darwin", "freebsd14"):
+                with self.subTest(platform=platform), patch.object(transfer.sys, "platform", platform):
+                    with patch.object(evidence, "snapshot", side_effect=AssertionError("unexpected Git observation")):
+                        with self.assertRaisesRegex(transfer.TransferError, "host is unsupported"):
+                            transfer.prepare(plan, operation)
+                    self.assertFalse(operation.exists())
+                    self.assertEqual(sentinel.read_bytes(), b"preserve user state")
+                    self.assertEqual(list(target.iterdir()), [sentinel])
 
 
 if __name__ == "__main__":

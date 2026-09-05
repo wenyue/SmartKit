@@ -34,6 +34,16 @@ def create_repository_fixture(root: Path, stored_version: str = '0.0.0') -> None
             relative_path,
             {'name': 'smartkit', 'version': stored_version},
         )
+    write_json(
+        root,
+        '.qoder-plugin/plugin.json',
+        {
+            'name': 'smartkit',
+            'version': stored_version,
+            'agents': './agents/qoder/',
+            'skills': './skills/',
+        },
+    )
     for relative_path in (
         '.cursor-plugin/marketplace.json',
         '.github/plugin/marketplace.json',
@@ -49,6 +59,27 @@ def create_repository_fixture(root: Path, stored_version: str = '0.0.0') -> None
                 ],
             },
         )
+    write_json(
+        root,
+        '.qoder-plugin/marketplace.json',
+        {
+            'name': 'wenyue',
+            'owner': {'name': 'wenyue'},
+            'metadata': {
+                'description': 'Cross-platform project agent workflows',
+                'version': stored_version,
+            },
+            'plugins': [{
+                'name': 'smartkit',
+                'source': './',
+                'version': stored_version,
+                'description': (
+                    'Install and maintain shared project-agent workflows '
+                    'across repositories.'
+                ),
+            }],
+        },
+    )
     write_json(
         root,
         'setup-assets/catalog/assets.json',
@@ -74,6 +105,7 @@ class SyncPluginVersionTest(unittest.TestCase):
             for relative_path in (
                 '.codex-plugin/plugin.json',
                 '.cursor-plugin/plugin.json',
+                '.qoder-plugin/plugin.json',
                 'plugin.json',
             ):
                 self.assertEqual(
@@ -97,6 +129,19 @@ class SyncPluginVersionTest(unittest.TestCase):
                     marketplace['plugins'][0]['version'],
                     '9.9.9',
                 )
+            qoder_marketplace = load_json(root, '.qoder-plugin/marketplace.json')
+            self.assertEqual(
+                qoder_marketplace['metadata']['version'],
+                '2.3.4-beta.1+build.5',
+            )
+            self.assertEqual(
+                qoder_marketplace['plugins'][0]['name'],
+                'smartkit',
+            )
+            self.assertEqual(
+                qoder_marketplace['plugins'][0]['version'],
+                '2.3.4-beta.1+build.5',
+            )
             self.assertEqual(
                 load_json(root, 'setup-assets/catalog/assets.json')['plugin'][
                     'version'

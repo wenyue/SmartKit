@@ -14,6 +14,7 @@ class Harness(str, Enum):
     CODEX = 'codex'
     CURSOR = 'cursor'
     COPILOT = 'copilot'
+    QODER = 'qoder'
 
 
 class OperatingSystem(str, Enum):
@@ -78,6 +79,11 @@ class CopilotAgentConfig:
 
 
 @dataclass(frozen=True)
+class QoderAgentConfig:
+    model: str | None = None
+
+
+@dataclass(frozen=True)
 class ProjectAgentSpec:
     id: str
     source: PurePosixPath
@@ -85,6 +91,7 @@ class ProjectAgentSpec:
     codex: CodexAgentConfig | None = None
     cursor: CursorAgentConfig | None = None
     copilot: CopilotAgentConfig | None = None
+    qoder: QoderAgentConfig | None = None
 
 
 @dataclass(frozen=True)

@@ -9,11 +9,12 @@ from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 
 
-HARNESSES = ('codex', 'cursor', 'copilot')
+HARNESSES = ('codex', 'cursor', 'copilot', 'qoder')
 OUTPUTS = {
     'codex': Path('agents/codex'),
     'cursor': Path('agents/cursor'),
     'copilot': Path('agents/copilot'),
+    'qoder': Path('agents/qoder'),
 }
 REGISTRY_PATH = Path('agents/registry.json')
 SAFE_ID = re.compile(r'^[a-z0-9][a-z0-9-]*$')
@@ -113,7 +114,7 @@ def load_registry(root: Path) -> tuple[dict[str, object], ...]:
                         f'{label}.harnesses.cursor.readonly must be a boolean'
                     )
                 rendered_harnesses[harness] = {'readonly': readonly}
-            else:
+            elif harness == 'copilot':
                 _fields(
                     config,
                     {'disable_model_invocation'},
@@ -126,6 +127,9 @@ def load_registry(root: Path) -> tuple[dict[str, object], ...]:
                         'must be a boolean'
                     )
                 rendered_harnesses[harness] = {'disable_model_invocation': disabled}
+            elif harness == 'qoder':
+                _fields(config, set(), f'{label}.harnesses.qoder')
+                rendered_harnesses[harness] = {}
 
         agents.append({
             'id': agent_id,
@@ -169,7 +173,7 @@ def render_agent(agent: Mapping[str, object], harness: str) -> tuple[str, bytes]
             '---\n\n'
             f'{instructions}\n'
         )
-    else:
+    elif harness == 'copilot':
         name = f'{agent_id}.agent.md'
         content = (
             '---\n'
@@ -177,6 +181,15 @@ def render_agent(agent: Mapping[str, object], harness: str) -> tuple[str, bytes]
             f'description: {_quoted(description)}\n'
             'disable-model-invocation: '
             f'{str(config["disable_model_invocation"]).lower()}\n'
+            '---\n\n'
+            f'{instructions}\n'
+        )
+    elif harness == 'qoder':
+        name = f'{agent_id}.md'
+        content = (
+            '---\n'
+            f'name: {_quoted(agent_id)}\n'
+            f'description: {_quoted(description)}\n'
             '---\n\n'
             f'{instructions}\n'
         )

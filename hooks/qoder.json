@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/recommended-tools/check_recommended_tools.sh\" hook --harness qoder",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\recommended-tools\\check_recommended_tools.ps1\" hook --harness qoder",
+            "timeout": 30,
+            "statusMessage": "Checking daily project readiness"
+          },
+          {
+            "type": "command",
+            "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness qoder --event session",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness qoder --event session",
+            "timeout": 30,
+            "additionalContextLimit": 50000,
+            "statusMessage": "Loading SmartKit plugin rules"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness qoder --event prompt",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness qoder --event prompt",
+            "timeout": 30,
+            "additionalContextLimit": 50000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness qoder --event tool",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness qoder --event tool",
+            "timeout": 30,
+            "additionalContextLimit": 50000
+          }
+        ]
+      }
+    ]
+  }
+}

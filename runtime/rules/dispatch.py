@@ -21,7 +21,11 @@ PATH_TOKEN = re.compile(
 
 
 def plugin_root() -> Path:
-    configured = os.environ.get('PLUGIN_ROOT') or os.environ.get('CURSOR_PLUGIN_ROOT')
+    configured = (
+        os.environ.get('PLUGIN_ROOT')
+        or os.environ.get('QODER_PLUGIN_ROOT')
+        or os.environ.get('CURSOR_PLUGIN_ROOT')
+    )
     return Path(configured).resolve() if configured else Path(__file__).resolve().parents[2]
 
 
@@ -363,7 +367,7 @@ def delivery(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--harness', choices=('codex', 'copilot'), required=True)
+    parser.add_argument('--harness', choices=('codex', 'copilot', 'qoder'), required=True)
     parser.add_argument(
         '--event',
         choices=('session', 'prompt', 'tool', 'compact', 'stop'),

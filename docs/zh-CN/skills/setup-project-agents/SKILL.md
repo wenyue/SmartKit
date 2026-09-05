@@ -1,6 +1,6 @@
 ---
 name: setup-project-agents
-description: 用于在 Codex、Cursor 和 Copilot 之间初始化或协调一个仓库的 Rules、Skills、Agents 或 MCP。
+description: 用于在 Codex、Cursor、Copilot 和 Qoder 之间初始化或协调一个仓库的 Rules、Skills、Agents 或 MCP。
 ---
 
 # 设置项目 Agent
@@ -18,11 +18,11 @@ description: 用于在 Codex、Cursor 和 Copilot 之间初始化或协调一个
 
 ## 输入与所有权
 
-随附目录始终启用 Codex、Cursor 和 Copilot。它会安装声明的共享 Rules 和 Skills、Codex Plugin Agent 默认值，以及目录声明的所有项目蓝图。可选项目配置可以添加外部 Skills、项目 Agents 和 MCP 服务器。
+随附目录始终启用 Codex、Cursor、Copilot 和 Qoder。它会安装声明的共享 Rules 和 Skills、Codex Plugin Agent 默认值，以及目录声明的所有项目蓝图。可选项目配置可以添加外部 Skills、项目 Agents 和 MCP 服务器。
 
 若 `.agents/config.json` 存在，或已接受意图要求任何非默认输入，则从当前已加载 Skill 目录解析[随附 schema](../../setup-assets/catalog/project-config.schema.json)，并在 `start` 前使用它协调或创建该目标所有文件。没有此文件表示使用随附默认值。在 schema 中，`skills` 标识 GitHub 来源和包含的 Skill 目录；`agents` 将项目所有的 `.agents/agents/<id>.md` 来源映射到主机适配器；`mcp` 声明 `url` 或 `command` 中恰好一项，还可包含有序的主机或操作系统覆盖以及就绪元数据。
 
-设置会发现并保留 `.agents/rules/` 和 `.agents/skills/` 下额外的项目所有 Rules 与 Skills。项目 Agent 来源也仍归项目所有。目录声明的 Codex Plugin Agent 默认值只是回退项，不是项目 Agent 声明。原生 Cursor 和 Copilot Plugin Agents，以及原生插件 Rules、Skills 和 MCP，均不属于本工作流。
+设置会发现并保留 `.agents/rules/` 和 `.agents/skills/` 下额外的项目所有 Rules 与 Skills。项目 Agent 来源也仍归项目所有。目录声明的 Codex Plugin Agent 默认值只是回退项，不是项目 Agent 声明。原生 Cursor、Copilot 和 Qoder Plugin Agents，以及原生插件 Rules、Skills 和 MCP，均不属于本工作流。
 
 SmartKit 只拥有 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及一个由所有权标记包围并包含 `## Project rules` 的已认证 `AGENTS.md` 单元。若不存在该节，它会追加此单元；只有当一个无标记旧节的全部内容与当前生成内容完全相同时，才可接管它。节内容冲突、标记格式错误或重复、所有权模糊，或任何其他所有权或摘要冲突，都会在替换前停止设置。保留标记单元之外的每个字节，以及每个未声明文件、字段、目录和秘密值。
 

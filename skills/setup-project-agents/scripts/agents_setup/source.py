@@ -63,6 +63,10 @@ _MANIFESTS = (
         PurePosixPath('plugin.json'),
         {'agents': './agents/copilot/', 'skills': './skills/'},
     ),
+    (
+        PurePosixPath('.qoder-plugin/plugin.json'),
+        {'agents': './agents/qoder/', 'skills': './skills/'},
+    ),
 )
 _SOURCE_CONTRACT_FILES = (
     PurePosixPath('VERSION'),

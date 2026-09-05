@@ -9,12 +9,13 @@ from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 
 
-HARNESSES = ('codex', 'cursor', 'copilot')
+HARNESSES = ('codex', 'cursor', 'copilot', 'qoder')
 OPERATING_SYSTEMS = ('windows', 'linux')
 OUTPUTS = {
     'codex': Path('.mcp.json'),
     'cursor': Path('mcp/cursor.json'),
     'copilot': Path('mcp/copilot.json'),
+    'qoder': Path('mcp/qoder.json'),
 }
 REGISTRY_PATH = Path('mcp/registry.json')
 SAFE_ID = re.compile(r'^[a-z0-9][a-z0-9-]*$')
@@ -210,14 +211,14 @@ def render_harness(servers: tuple[dict[str, object], ...], harness: str) -> byte
             continue
         if server['transport'] == 'http':
             entry: dict[str, object] = {
-                **({'type': 'http'} if harness != 'codex' else {}),
+                **({'type': 'http'} if harness not in ('codex', 'qoder') else {}),
                 'url': server['url'],
             }
         else:
             entry = {
                 **(
                     {'type': 'local' if harness == 'copilot' else 'stdio'}
-                    if harness != 'codex'
+                    if harness not in ('codex', 'qoder')
                     else {}
                 ),
                 'command': server['command'],

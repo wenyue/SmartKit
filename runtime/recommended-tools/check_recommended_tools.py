@@ -861,7 +861,7 @@ def _load_json_object(path: Path, label: str) -> dict[str, Any]:
 
 
 def _mcp_servers_from_registry(path: Path, harness: str) -> list[dict[str, Any]]:
-    if harness not in {'codex', 'cursor', 'copilot'}:
+    if harness not in {'codex', 'cursor', 'copilot', 'qoder'}:
         raise PolicyError('MCP harness is invalid')
     document = _load_json_object(path, 'plugin MCP registry')
     if set(document) != {'servers'} or not isinstance(document.get('servers'), list):
@@ -876,7 +876,7 @@ def _mcp_servers_from_registry(path: Path, harness: str) -> list[dict[str, Any]]
             or not harnesses
             or not all(isinstance(item, str) for item in harnesses)
             or len(harnesses) != len(set(harnesses))
-            or set(harnesses) - {'codex', 'cursor', 'copilot'}
+            or set(harnesses) - {'codex', 'cursor', 'copilot', 'qoder'}
         ):
             raise PolicyError('plugin MCP registry is invalid')
         if harness in harnesses:
@@ -945,7 +945,7 @@ def _effective_readiness_checks(
     selected_harnesses = enabled_harnesses
     if 'harnesses' in readiness:
         selected_harnesses = _override_selector_values(
-            readiness['harnesses'], allowed={'codex', 'cursor', 'copilot'}
+            readiness['harnesses'], allowed={'codex', 'cursor', 'copilot', 'qoder'}
         )
         if set(selected_harnesses) - set(enabled_harnesses):
             raise PolicyError(f'{label} readiness is invalid')
@@ -1012,7 +1012,7 @@ def _validate_override_values(values: dict[str, Any], transport: str) -> None:
 
 
 def _mcp_servers_from_project(project_root: Path, harness: str) -> list[dict[str, Any]]:
-    if harness not in {'codex', 'cursor', 'copilot'}:
+    if harness not in {'codex', 'cursor', 'copilot', 'qoder'}:
         raise PolicyError('MCP harness is invalid')
     path = project_root / '.agents' / 'config.json'
     if not path.is_file():
@@ -1027,13 +1027,13 @@ def _mcp_servers_from_project(project_root: Path, harness: str) -> list[dict[str
     for raw_server in mcp:
         if not isinstance(raw_server, dict):
             raise PolicyError('project MCP configuration is invalid')
-        harnesses = raw_server.get('harnesses', ['codex', 'cursor', 'copilot'])
+        harnesses = raw_server.get('harnesses', ['codex', 'cursor', 'copilot', 'qoder'])
         if (
             not isinstance(harnesses, list)
             or not harnesses
             or not all(isinstance(item, str) for item in harnesses)
             or len(harnesses) != len(set(harnesses))
-            or set(harnesses) - {'codex', 'cursor', 'copilot'}
+            or set(harnesses) - {'codex', 'cursor', 'copilot', 'qoder'}
         ):
             raise PolicyError('project MCP configuration is invalid')
         if harness in harnesses:
@@ -1065,7 +1065,7 @@ def _mcp_servers_from_project(project_root: Path, harness: str) -> list[dict[str
                     raise PolicyError('project MCP configuration is invalid')
                 selected_harnesses = (
                     _override_selector_values(
-                        selector['harnesses'], allowed={'codex', 'cursor', 'copilot'}
+                        selector['harnesses'], allowed={'codex', 'cursor', 'copilot', 'qoder'}
                     )
                     if 'harnesses' in selector else harnesses
                 )
@@ -1536,7 +1536,7 @@ def render_hook_result(
     findings = render_findings(result.findings)
     rendered = findings
     if result.requires_user_prompt:
-        if harness == 'codex':
+        if harness in {'codex', 'qoder'}:
             return json.dumps(
                 {
                     'continue': True,
@@ -1577,7 +1577,7 @@ def render_hook_result(
         message = rendered
     if not message:
         return ''
-    if harness == 'codex':
+    if harness in {'codex', 'qoder'}:
         return json.dumps({'continue': True, 'systemMessage': message})
     if harness == 'cursor':
         if delivery == 'context':
@@ -1591,7 +1591,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest='command', required=True)
     for command in ('check', 'hook'):
         child = subparsers.add_parser(command)
-        child.add_argument('--harness', required=True, choices=('codex', 'cursor', 'copilot'))
+        child.add_argument('--harness', required=True, choices=('codex', 'cursor', 'copilot', 'qoder'))
         child.add_argument('--policy', type=Path)
         if command == 'hook':
             child.add_argument('--force', action='store_true')

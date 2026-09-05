@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-`WenYue SmartKit` 是同时适配 Codex、Cursor 和 GitHub Copilot 的跨 Harness 插件。它将 Rules、Skills、
+`WenYue SmartKit` 是同时适配 Codex、Cursor、GitHub Copilot 和 Qoder 的跨 Harness 插件。它将 Rules、Skills、
 Agents 和 MCP 作为平级能力提供，并在会话开始时检查推荐工具和已配置 MCP 的前置条件是否可用。
 
 ## 安装插件
@@ -36,16 +36,23 @@ copilot plugin install smartkit@wenyue
 需要更新 Copilot 插件时，先运行 `copilot plugin marketplace update wenyue`，再运行
 `copilot plugin update smartkit`。
 
+Qoder：
+
+```sh
+qoder plugin marketplace add wenyue/agents
+qoder plugin install smartkit@wenyue
+```
+
 ## 插件 Rules、Skills、Agents 与 MCP
 
 | 能力 | SmartKit 提供的内容 |
 | --- | --- |
 | Rules | Always-on、file-scoped 和 Harness-scoped 指令。优先比较强度（`Mandatory` > `Default` > `Advisory`），再比较项目归属和更窄的文件范围。Harness 范围只控制激活，并与 always-on 处于同一优先级层级。 |
 | Skills | SmartKit 工作流，以及经过审查、许可证校验和版本固定的第三方工作流。 |
-| Agents | 三个宿主上的 `change-set-verifier`。它使用项目的 change-set-verification Skill；setup 未安装该 Skill 时报告 `inconclusive`，并继承宿主选择的模型。Cursor 和 Copilot 从插件获取它；Codex 通过 setup-managed 默认交付获取它。 |
-| MCP | 三个宿主上隔离、无界面模式的 Playwright，并继续遵守宿主正常的审批行为。 |
+| Agents | 四个宿主上的 `change-set-verifier`。它使用项目的 change-set-verification Skill；setup 未安装该 Skill 时报告 `inconclusive`，并继承宿主选择的模型。Cursor、Copilot 和 Qoder 从插件获取它；Codex 通过 setup-managed 默认交付获取它。 |
+| MCP | 四个宿主上隔离、无界面模式的 Playwright，并继续遵守宿主正常的审批行为。 |
 
-Codex 和 Copilot CLI 通过 Hook 接收 Rules；Cursor 使用原生插件 Rules。预期 Rule 未生效时，请检查
+Codex、Copilot CLI 和 Qoder 通过 Hook 接收 Rules；Cursor 使用原生插件 Rules。预期 Rule 未生效时，请检查
 宿主 Hook 诊断。Copilot cloud agent 不在此插件 Rule 契约范围内。
 
 Codex 插件包不会加载自定义 Agents。请在每个受维护的项目快照中运行 `setup-project-agents`，将
@@ -54,17 +61,18 @@ SmartKit 的 Codex Agent adapter 安装到 `.codex/agents/`。该 adapter 仍归
 
 ## Harness 与平台支持
 
-三个宿主都支持 Windows 和 Linux。
+四个宿主都支持 Windows 和 Linux。
 
 | 宿主 | Rules | Skills | Agents | MCP |
 | --- | --- | --- | --- | --- |
 | Codex | 会话、提示词和结构化工具 Hook | 插件 Skill catalog | Setup-managed `change-set-verifier` | Playwright |
 | Cursor | 原生插件 Rules | 插件 Skill catalog | `change-set-verifier` | Playwright |
 | GitHub Copilot CLI | 会话、转换提示词和结构化工具 Hook | 插件 Skill catalog | `change-set-verifier` | Playwright |
+| Qoder | 会话、提示词和结构化工具 Hook | 插件 Skill catalog | `change-set-verifier` | Playwright |
 
 ## 为每个项目执行设置
 
-进入目标仓库后，请 Agent 使用 `setup-project-agents` 配置 Codex、Cursor 和 Copilot。它会在创建
+进入目标仓库后，请 Agent 使用 `setup-project-agents` 配置 Codex、Cursor、Copilot 和 Qoder。它会在创建
 setup session 前检查 Matt repository context。如果 context 尚未完成，它会停止并要求维护者显式调用
 `setup-matt-pocock-skills`。该 Skill 会询问使用哪种 issue tracker，并拥有 `docs/agents/` 及其
 `## Agent skills` 入口区块。Matt setup 完成后，再次调用 `setup-project-agents` 继续。

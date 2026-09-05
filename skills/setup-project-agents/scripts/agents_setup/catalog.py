@@ -23,6 +23,7 @@ from .models import (
     Harness,
     ProjectAgentSpec,
     ProjectConfig,
+    QoderAgentConfig,
 )
 from .external_contract import (
     ExternalContractError,
@@ -63,10 +64,11 @@ _MCP_OVERRIDE_SELECTOR_FIELDS = frozenset({'harnesses', 'operatingSystems'})
 _MCP_OVERRIDE_VALUE_FIELDS = frozenset({'command', 'args', 'cwd', 'env', 'url'})
 _MCP_READINESS_FIELDS = frozenset({'harnesses', 'operatingSystems', 'checks'})
 _PROJECT_AGENT_FIELDS = frozenset({'id', 'source', 'description', 'harnesses'})
-_PROJECT_AGENT_HARNESS_FIELDS = frozenset({'codex', 'cursor', 'copilot'})
+_PROJECT_AGENT_HARNESS_FIELDS = frozenset({'codex', 'cursor', 'copilot', 'qoder'})
 _CODEX_AGENT_FIELDS = frozenset({'model', 'model_reasoning_effort', 'sandbox_mode'})
 _CURSOR_AGENT_FIELDS = frozenset({'model', 'readonly'})
 _COPILOT_AGENT_FIELDS = frozenset({'model', 'disable_model_invocation'})
+_QODER_AGENT_FIELDS = frozenset({'model'})
 _ENVIRONMENT_NAME = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 _RUNTIME_VERSION = re.compile(r'^[0-9]+\.[0-9]+\.[0-9]+$')
 
@@ -717,8 +719,16 @@ def parse_project_agents(value: object) -> tuple[ProjectAgentSpec, ...]:
                 model=_optional_agent_text(config, 'model', f'{label}.harnesses.copilot'),
             )
 
+        qoder = None
+        if 'qoder' in harnesses:
+            config = _object(harnesses['qoder'], f'{label}.harnesses.qoder')
+            _fields(config, _QODER_AGENT_FIELDS, f'{label}.harnesses.qoder')
+            qoder = QoderAgentConfig(
+                model=_optional_agent_text(config, 'model', f'{label}.harnesses.qoder'),
+            )
+
         result.append(ProjectAgentSpec(
-            agent_id, source, description, codex, cursor, copilot,
+            agent_id, source, description, codex, cursor, copilot, qoder,
         ))
     ids = [agent.id for agent in result]
     if len(ids) != len(set(ids)):

@@ -93,6 +93,7 @@ _HARNESS_RECIPES = {
             'upgrade': Recipe('GitHub Copilot CLI', command=('copilot', 'update')),
         },
     },
+    'qoder': {},
 }
 
 
@@ -344,7 +345,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest='command', required=True)
     apply = subparsers.add_parser('apply')
-    apply.add_argument('--harness', required=True, choices=('codex', 'cursor', 'copilot'))
+    apply.add_argument('--harness', required=True, choices=('codex', 'cursor', 'copilot', 'qoder'))
     apply.add_argument('--tool', required=True)
     apply.add_argument('--action', required=True, choices=('install', 'upgrade'))
     apply.add_argument('--approved', action='store_true')

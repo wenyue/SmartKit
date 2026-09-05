@@ -615,6 +615,8 @@ def _target_evidence_paths(
             add(PurePosixPath('.cursor/agents') / f'{agent.id}.md')
         if agent.copilot is not None:
             add(PurePosixPath('.github/agents') / f'{agent.id}.agent.md')
+        if agent.qoder is not None:
+            add(PurePosixPath('.qoder/agents') / f'{agent.id}.md')
     for skill in config.external_skills:
         _add_target_tree(
             root,
@@ -625,6 +627,7 @@ def _target_evidence_paths(
         Harness.CODEX: PurePosixPath('.codex/config.toml'),
         Harness.CURSOR: PurePosixPath('.cursor/mcp.json'),
         Harness.COPILOT: PurePosixPath('.vscode/mcp.json'),
+        Harness.QODER: PurePosixPath('.qoder/mcp.json'),
     }
     for server in config.mcp_servers:
         for harness in server.harnesses:
@@ -733,6 +736,7 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
             'VERSION',
             '.codex-plugin/plugin.json',
             '.cursor-plugin/plugin.json',
+            '.qoder-plugin/plugin.json',
             'plugin.json',
             'skills/registry.json',
             'setup-assets/catalog/assets.json',

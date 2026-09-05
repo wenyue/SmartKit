@@ -13,7 +13,8 @@
         },
         "copilot": {
           "disable_model_invocation": false
-        }
+        },
+        "qoder": {}
       }
     }
   ]

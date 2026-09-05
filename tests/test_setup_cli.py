@@ -173,7 +173,9 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(request['source_commit'], self.source_commit)
             self.assertRegex(request['source_fingerprint'], r'^[0-9a-f]{64}$')
             self.assertRegex(request['target_fingerprint'], r'^[0-9a-f]{64}$')
-            self.assertEqual(request['harnesses'], ['codex', 'cursor', 'copilot'])
+            self.assertEqual(
+                request['harnesses'], ['codex', 'cursor', 'copilot', 'qoder']
+            )
             self.assertEqual(
                 request['external_sources'],
                 [],
@@ -595,7 +597,7 @@ class SetupCliTest(unittest.TestCase):
             request = json.loads((session / 'request.json').read_text(encoding='utf-8'))
             self.assertEqual(request['mcp_servers'], [{
                 'id': 'sentry',
-                'harnesses': ['codex', 'cursor', 'copilot'],
+                'harnesses': ['codex', 'cursor', 'copilot', 'qoder'],
                 'url': 'https://mcp.sentry.dev/mcp',
                 'overrides': [{
                     'when': {'harnesses': ['cursor']},
@@ -630,6 +632,12 @@ class SetupCliTest(unittest.TestCase):
                     'servers'
                 ]['sentry'],
                 {'type': 'http', 'url': 'https://mcp.sentry.dev/mcp'},
+            )
+            self.assertEqual(
+                json.loads((target / '.qoder/mcp.json').read_text())[
+                    'mcpServers'
+                ]['sentry'],
+                {'url': 'https://mcp.sentry.dev/mcp'},
             )
             lock = json.loads(
                 (target / '.agents/smartkit.lock.json').read_text()
@@ -913,7 +921,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(finish_result['changed_paths'], sorted(finish_result['changed_paths']))
             self.assertIn('.agents/rules/00-project-tools.md', finish_result['changed_paths'])
             self.assertEqual(
-                finish_result['harnesses'], ['codex', 'cursor', 'copilot']
+                finish_result['harnesses'], ['codex', 'cursor', 'copilot', 'qoder']
             )
             self.assertEqual(finish_result['external_skills'], [])
             self.assertEqual(finish_result['external_sources'], [])

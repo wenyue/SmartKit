@@ -28,7 +28,9 @@ class SyncAgentAdaptersTest(unittest.TestCase):
     def test_repository_adapters_match_registry(self):
         agents = self.module.load_registry(ROOT)
         self.assertEqual([agent['id'] for agent in agents], ['change-set-verifier'])
-        self.assertEqual(set(agents[0]['harnesses']), {'codex', 'cursor', 'copilot'})
+        self.assertEqual(
+            set(agents[0]['harnesses']), {'codex', 'cursor', 'copilot', 'qoder'}
+        )
 
         result = subprocess.run(
             [sys.executable, str(SCRIPT), '--check'],
@@ -42,7 +44,8 @@ class SyncAgentAdaptersTest(unittest.TestCase):
         codex = (ROOT / 'agents/codex/change-set-verifier.toml').read_text()
         cursor = (ROOT / 'agents/cursor/change-set-verifier.md').read_text()
         copilot = (ROOT / 'agents/copilot/change-set-verifier.agent.md').read_text()
-        for adapter in (codex, cursor, copilot):
+        qoder = (ROOT / 'agents/qoder/change-set-verifier.md').read_text()
+        for adapter in (codex, cursor, copilot, qoder):
             self.assertIn('.agents/skills/change-set-verification/SKILL.md', adapter)
             self.assertNotIn('model =', adapter)
             self.assertNotIn('model:', adapter)
@@ -89,6 +92,7 @@ class SyncAgentAdaptersTest(unittest.TestCase):
                         'codex': {'sandbox_mode': 'read-only'},
                         'cursor': {'readonly': True},
                         'copilot': {'disable_model_invocation': False},
+                        'qoder': {},
                     },
                 }]
                 registry.write_text(
@@ -101,6 +105,7 @@ class SyncAgentAdaptersTest(unittest.TestCase):
                 Path('agents/codex/old-name.toml'),
                 Path('agents/cursor/old-name.md'),
                 Path('agents/copilot/old-name.agent.md'),
+                Path('agents/qoder/old-name.md'),
             ))
 
             write_registry('new-name')
@@ -108,15 +113,18 @@ class SyncAgentAdaptersTest(unittest.TestCase):
             self.assertFalse((root / 'agents/codex/old-name.toml').exists())
             self.assertFalse((root / 'agents/cursor/old-name.md').exists())
             self.assertFalse((root / 'agents/copilot/old-name.agent.md').exists())
+            self.assertFalse((root / 'agents/qoder/old-name.md').exists())
             self.assertTrue((root / 'agents/codex/new-name.toml').is_file())
             self.assertTrue((root / 'agents/cursor/new-name.md').is_file())
             self.assertTrue((root / 'agents/copilot/new-name.agent.md').is_file())
+            self.assertTrue((root / 'agents/qoder/new-name.md').is_file())
 
             write_registry(None)
             self.module.synchronize(root, write=True)
             self.assertFalse((root / 'agents/codex/new-name.toml').exists())
             self.assertFalse((root / 'agents/cursor/new-name.md').exists())
             self.assertFalse((root / 'agents/copilot/new-name.agent.md').exists())
+            self.assertFalse((root / 'agents/qoder/new-name.md').exists())
 
     def test_registry_rejects_unknown_fields_and_unsafe_sources(self):
         with tempfile.TemporaryDirectory() as directory:

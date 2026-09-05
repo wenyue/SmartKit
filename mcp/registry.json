@@ -13,7 +13,8 @@
       "harnesses": [
         "codex",
         "cursor",
-        "copilot"
+        "copilot",
+        "qoder"
       ],
       "tools": ["*"],
       "readiness": {
