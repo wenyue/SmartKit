@@ -12,9 +12,9 @@ When `setup-project-agents` requests
 model-invoked Skill. Its actor is an Agent preparing the exact linked worktree already selected by
 an owning workflow; its trigger is that worktree's need for repository-specific preparation before
 implementation. The Skill owns environment setup evidence and an environment-only result.
-`create-worktree` combines that result with current selection and baseline evidence to decide
-whole-worktree readiness. Later lifecycle and finalization owners reconstruct current state from
-current evidence and exercise effects under explicit grants.
+`create-worktree` combines that result with current selection and workspace-state evidence to
+decide whole-worktree readiness; it runs no project baseline checks. Later lifecycle and finalization
+owners reconstruct current state from current evidence and exercise effects under explicit grants.
 
 The target uses `name: worktree-environment-setup`, remains model-invoked, and gives `description`
 the trigger and environment result. Keep runtime judgment in `SKILL.md`; live repository owners
@@ -104,8 +104,8 @@ Return exactly one result; the first matching discriminator governs and ends the
 Report the root; preparation and optional-branch dispositions; invocations and results; effects;
 readiness evidence; Git preservation verdict; and work left to another owner.
 `environment-non-ready` also reports the blocker, retained partial state, recovery condition, and
-when a fresh invocation is safe. Baseline verification and later lifecycle action remain with their
-owning workflows and explicit grants. `environment-ready` is current setup evidence for
+when a fresh invocation is safe. Completed-change verification and later lifecycle action remain
+with their owning workflows and explicit grants. `environment-ready` is current setup evidence for
 `create-worktree`, which combines it with its other current evidence to return an immediate
 readiness result.
 

@@ -25,6 +25,15 @@ A single delivery-history commit that consolidates the complete reviewed result 
 implementation scope.
 _Avoid_: Checkpoint Commit, Ticket Commit
 
+**Ticket Review（工单审查）**:
+A review of one ticket's fulfillment of its accepted requirements and applicable project standards.
+_Avoid_: Implementation self-check, Batch Review
+
+**Batch Review（批次审查）**:
+A review of the combined ticket results, including their interactions, shared constraints, and
+fulfillment of the overall accepted requirements.
+_Avoid_: Repeated Ticket Review, Batch Delivery
+
 **Ticket Commit（工单提交）**:
 The commit that marks one completed ticket's boundary in a Batch Worktree with exactly one
 `SmartKit-Ticket` trailer. It may follow that ticket's Checkpoint Commits and may be consolidated

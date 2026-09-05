@@ -1,161 +1,81 @@
 # Tracker Boundary
 
-This reference owns Batch selection and safe use of the configured tracker. The tracker owns the
-authoritative identities, status, blockers, claims, completion, release, observations, and
-mutations. Consume only operations and meanings its current project contract documents; do not
-invent compare-and-set, operation cursors, Batch-specific claims, releases, or recovery interfaces.
+Use the target project's configured tracker and triage contracts for authoritative identity,
+agent-executable eligibility, blockers, ordering, claims, completion and release. Resolve them from
+`docs/agents/issue-tracker.md` and its owner pointers. Missing configuration or unsupported operations
+stop with that owner; never invent claim, compare-and-set, release, cursor or recovery interfaces.
 
-## Principles
+## Select and freeze
 
-- **Positive eligibility.** Select a ticket only from affirmative agent-executable eligibility
-  evidence; a negative state is an exclusion, not an alternative test.
-- **Frozen selection.** Dependency order, sources, exclusions, and claim timing form one immutable
-  Selection Result. Current observations can validate or invalidate it, never silently update it.
-- **Attributed effects.** Request a documented tracker mutation once and accept it only from its
-  authoritative after-state. Retain a failed or ambiguous attempt under its original owner, and hold
-  acquired claims until authoritative delivery.
+Observe the complete candidate set in the caller's bounded scope and every dependency edge needed
+for closure. Retain each candidate's identity, sources, status, owner/claim, ordering evidence and
+positive eligibility proof or exclusion reason. Missing eligibility meaning, uncertain membership,
+conflicting identities or ambiguous edges prevent selection.
 
-## Select the Batch
-
-Resolve the configured tracker/triage owner's affirmative agent-executable eligibility predicate,
-then use its authoritative query or observation route to classify the complete candidate set in the
-caller's bounded scope and the blocker edges needed for dependency closure. Retain the identity,
-sources, status, claim or owner, ordering evidence, and eligibility reason needed for each selected
-ticket or exclusion. A missing or ambiguous predicate, candidate-set boundary, or material result
-stops before a Selection Result can establish a Batch.
-
-Select only tickets with authoritative positive eligibility proof. Recursively include a
-same-scope open blocker only with the same proof. Record authoritative negative results—such as
-completed, rejected, human-owned, information-blocked, or externally claimed tickets—as
-exclusions and reasons, never as an alternative eligibility test. An external blocker is satisfied
-only when the tracker proves it complete; otherwise exclude its dependent. Reject conflicting
-identities, ambiguous edges, and cycles. Order the remaining graph by dependencies, using stable
+Recursively include same-scope open blockers only with affirmative eligibility proof. Record
+completed, rejected, human-owned, information-blocked, externally claimed or other authoritative
+negative results as exclusions. An external blocker is satisfied only when the tracker proves it
+complete; otherwise exclude its dependent. Propagate unsatisfied dependencies so every selected
+ticket has a closed readiness proof. Reject cycles. Use dependency order and the owner's stable
 public order only to break ties between equally ready tickets.
 
-Resolve the tracker owner's claim requirement, session boundary, and legal timing for each distinct
-claim policy represented in the selection, applying ticket-specific evidence only where that policy
-or current state differs. The resulting claim plan gives every ticket one owner-supported route: an
-initial claim before other Batch writes, an expressly compatible just-in-time claim after earlier
-Batch effects, or no claim when the tracker does not require one. Ordinary per-ticket claim syntax
-does not by itself authorize an initial claim for a not-yet-ready ticket. Missing or incompatible
-timing stops before any write.
+Resolve claim requirements, session boundaries and legal timing for each represented policy. Every
+ticket needs an owner-supported route: an initial claim before other batch writes, an expressly
+compatible just-in-time claim after earlier batch effects, or no claim when the owner requires none.
+Per-ticket claim syntax alone does not authorize claiming a not-yet-ready ticket. Incompatible or
+uncertain claim timing stops before writes.
 
-Return one frozen Selection Result with the tickets, complete sources, graph, order, exclusions and
-reasons, external completion proofs, and the complete claim plan. If no ticket remains eligible,
-return `nothing-to-do` with those observations and exclusions. That is a successful no-effect
-result: it establishes no Batch and authorizes no mutation.
+Freeze the selection with membership, dependency graph/order, complete accepted requirements and
+source revisions, external completion proofs, exclusions/reasons and every claim route. An empty
+eligible selection returns `nothing-to-do` with observations and exclusions, creates no batch, and
+makes no mutation. Report a nonempty selection before acting so excluded input is not mistaken for
+work the batch will complete.
 
-Re-observe a ticket and its blockers before its claim and before accepting its Ticket Commit. A
-proven Ticket Commit satisfies that selected ticket for later in-Batch readiness. Any other
-material status, owner, claim, requirement, or edge change stops the frozen Batch instead of
-silently changing it. The sole expected claim or owner delta is the exact after-state that this
-tracker owner has already proved for this ticket's configured claim operation; exempt only the
-fields attributable to that consumed effect.
+## Claim and revalidate
 
-**Complete when:** either an acyclic, closed, nonempty selection, its first frontier, and its
-complete owner-supported claim plan are proven, or an empty eligible selection is proven as
-`nothing-to-do`.
+Before an initial or just-in-time claim, use [Worker boundary](worker-transaction.md)'s read-only
+qualification only if dispatch failure could strand it under the tracker lifecycle. Complete all
+required initial claims in stable dependency order before `create-worktree` or another batch write.
+Prove each after-state before the next claim. Defer just-in-time claims to their ticket frontier;
+consume proven initial claims without repeating them, and re-establish current no-claim eligibility.
 
-## Satisfy the initial claim gate
+At each claim, ticket acceptance, and finalization boundary, re-observe the relevant tickets and
+blockers and revalidate accepted requirements through authoritative revisions, digests or change
+signals. Reread content when no stable signal exists or a source changed. Ticket acceptance checks
+its full accepted sources; finalization checks every selected ticket and the complete graph.
+A `completed-in-batch` commit with retained acceptance proof satisfies that selected dependency for
+later in-batch readiness.
 
-Enter before the first Batch write with the nonempty Selection Result. Before an initial claim,
-require [`worker-transaction.md`](worker-transaction.md)'s non-mutating qualification only when a
-failed later dispatch could strand that claim under the tracker-owned release, reassignment, or
-expiry semantics. Qualify shared runtime, authority, and environment facts once while their
-freshness predicates hold; add only ticket-specific constraints that can change feasibility. Then
-request the tracker-authorized initial claims in stable dependency order through the operation
-boundary below, re-observing each exact after-state before the next claim.
+Compare with the frozen selection. Exempt only exact claim/owner deltas already proved for this
+batch's consumed tracker operations. Any other material requirement, status, owner, claim or edge
+change pauses the whole batch for reconciliation. Preserve membership and requirements; current
+observations never silently revise them. Refresh checks and review whose inputs changed before
+accepting the reconciled result.
 
-Stop at the first unavailable, failed, or in-flight qualification or claim. Preserve the frozen
-Selection Result and claim plan; the proven claimed prefix and its raw responses/current tracker
-state; the exact current failed or in-flight claim attempt, if one started, including intended
-delta, before-state, raw result and observation, and tracker owner/action; and the untouched
-suffix. An unresolved current claim belongs to neither prefix nor suffix and is never retried from
-current-state inference.
+## Perform one documented effect
 
-Return that evidence as the claim partition of the Pre-ready selection handoff, including every
-frozen JIT/no-claim disposition, with Create state `never-started` and the worktree explicitly
-absent. A later public Create result may advance only that independent Create partition. Do not
-invoke `create-worktree` or perform another Batch write unless every selected ticket's claim route
-remains compatible, every required initial claim is proven, and no claim attempt is unresolved.
+A claim, completion or release requires its owner's documented operation and observable success
+meaning plus exact effect authority. Observe the before-state, request it once, retain the raw
+response, and observe the authoritative after-state. If the intended state already exists, consume
+it only when its provenance and meaning suffice for this batch; otherwise treat it as drift.
+A successful response without the required after-state does not pass. Preserve returned failures.
 
-**Complete when:** every required initial claim and every deferred or no-claim route is currently
-proved under the tracker-owned plan.
-
-## Resume a Pre-ready selection
-
-Reconstruct the claim partition defined by [`stop.md`](stop.md): its proven initial-claim prefix,
-optional failed or in-flight current attempt, untouched suffix, and every just-in-time or no-claim
-disposition. Re-observe each retained result and consume only the exact proven tracker effect. An
-unresolved claim remains outside both prefix and suffix and stays with its original owner; no
-Create effect may follow it.
-
-Reconstruct the independent Create partition as `never-started`, original
-`non-ready-or-in-flight`, or attributable `ready`. When no claim is unresolved and every required
-initial claim is proven, `never-started` may invoke `create-worktree` once. A
-`non-ready-or-in-flight` result stays with its dependency owner and recovery action. An attributable
-`ready` result is consumable only while its recorded snapshot matches current state.
-
-If selection or readiness must be re-established before Batch binding, invoke public
-`create-worktree` against the existing candidate and current evidence; it selects its own route.
-This re-evaluates readiness and cannot become a second initial Create. Consume a fresh `ready`
-result only when it identifies the same candidate; preserve every `non-ready` or unresolved result
-with its owner.
-
-**Complete when:** the claim partition is proved and either one current `ready` result is safely
-consumable or the exact non-ready or unresolved dependency result has been retained and stops the
-Batch without another effect.
-
-## Revalidate the frozen selection
-
-After the verification/review barrier and immediately before finalization, re-observe every
-selected ticket and relevant blocker through the configured tracker. Revalidate frozen acceptance
-sources through their authoritative revision, digest, or change signal; reread content only where
-the owner exposes no stable freshness evidence or reports a change. Compare the resulting material
-sources, dependency graph, statuses, owners, and claims with the frozen Selection Result. Permit
-only each exact claim or owner delta already consumed and authoritatively proved for this Batch
-under the operation boundary below.
-
-Any other material change invalidates the verification/review barrier and enters
-[`stop.md`](stop.md) before the finalizer effect. Current observations never silently update the
-frozen Batch.
-
-**Complete when:** the whole frozen selection remains current except for its exact attributable
-claim effects, on the state immediately preceding finalizer invocation.
-
-## Use one documented tracker effect
-
-Perform a claim, completion, or release only when the tracker contract documents that operation,
-its success meaning is observable, and the caller supplies authority for the exact effect. Observe
-the current state immediately before the request. If the tracker already proves the intended
-state, consume it only when its meaning is sufficient for this Batch; otherwise treat it as drift.
-
-Request the operation once, preserve its raw response, then re-observe authoritative state. A
-successful return without the documented after-state does not pass. A returned failure remains a
-failure. When the response is missing or the observation cannot distinguish success from no
-effect, keep that exact tracker effect in flight with its ticket, intended delta, before-state, raw
-evidence, owner, and next observation or recovery action. Do not repeat it by inference.
-
-Before implementation, request a claim only when the configured tracker provides one. If it has no
-claim operation, continue only when its own contract and the accepted workflow still establish
-that the ticket is eligible for this worker; otherwise stop at the unsupported capability. Hold
-every acquired claim through authoritative delivery. A distinct release is required only when the
-tracker contract defines it as part of closure.
-
-**Complete when:** the intended tracker state is authoritatively observed, or the original raw
-failure or in-flight effect is retained with its owner and next action.
+For a missing response or ambiguous outcome, retain the original attempt, ticket, intended delta,
+before-state, raw evidence, current observation and next owner/action. Resume through that owner's
+observation/recovery route; never repeat a possibly completed effect to obtain a response.
+Stop the dependent work at the first unresolved operation. Hold acquired claims through authoritative
+delivery; a distinct release is required only where the tracker defines it as part of closure.
 
 ## Close after authoritative delivery
 
-Enter only with the unchanged `finish-worktree` result whose own classification is authoritative
-delivery, plus the selected order and recoverable Ticket Commit boundaries. In dependency order,
-re-observe each ticket, request its documented completion when needed, and perform any separately
-documented required claim release. Stop before the first unresolved effect; leave the remaining
-suffix untouched. Delivery is retained and never rolled back.
+Enter only with public `finish-worktree`'s attributable `authoritative delivery` classification and
+recoverable accepted ticket boundaries. Re-observe each ticket in dependency order, perform its
+required documented completion and any separately required claim release, and prove each after-state.
+Consume a proven completed prefix and continue only its unresolved suffix. The first failed or
+ambiguous effect stops closure; preserve delivery and leave later tickets untouched.
 
-After every ticket is authoritatively complete, give the closure proof to the lifecycle owner named
-by the `finish-worktree` handoff. Retain source history, claims, refs, worktrees, and other recovery
-state until their owner proves an authorized removed, released, or retained disposition.
-
-**Complete when:** every selected ticket is authoritatively complete, every tracker-required claim
-disposition is proven, and the lifecycle owner receives the proof needed to close retained state.
+PRs, retained worktrees, review transfers, history preparation and explicit discard do not permit
+tracker completion. A cancellation requiring claim disposition stays with the tracker owner under
+separate exact authority. When closure is proven, give that proof to the lifecycle owner named by
+the finalizer. Retain source history and recovery items until their owners establish authorized
+retention, release or removal.

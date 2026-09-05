@@ -1,43 +1,82 @@
-# Return for Review
+# Transfer Back to a Checkout
 
-Materialize the accepted result in the target working tree while preserving target `HEAD` and every
-index entry exactly. This is a non-integrating handoff.
+The public route remains `return-for-review` for established callers. Its effect is a working-file
+transfer, useful before or after review: bring accepted task changes into one target checkout while
+preserving that checkout's HEAD and complete index exactly. Existing staged content stays staged;
+transferred changes affect working files only. This is always a non-integrating handoff.
 
-1. Recheck target identity and derive the exact transfer write set from the difference between the
-   proven target boundary and delivery tree. If **Already Delivered** leaves no accepted effect to
-   return, reprove that authoritative result and end the outcome immediately: preserve the target,
-   create no backup or manifest, perform no transfer, and enter no recovery step. Otherwise capture
-   scoped read-only preflight evidence: `HEAD`; exact index entries and blob OIDs for write-set paths;
-   and their non-index status, file type, mode, applicable symlink target, and content hash. Use
-   bounded identity and status evidence to place every other item outside the write set and detect
-   unexpected effects.
-2. Before writing, create an authorized external backup and manifest for every path the transfer
-   could touch as one logical backup attempt, including absence, file type, symlink target, mode,
-   and bytes. Prove that attempt complete, readable, and outside every affected worktree.
-3. Classify every path. For a scope path without target-local change, validate the complete
-   worktree-only patch. For overlapping text, build a three-way candidate in temporary files from
-   the merge-base version, current target working file, and accepted result. Stop before an unsafe
-   write for a delete/modify conflict, complex rename, binary overlap, incompatible file type or
-   mode, mutually exclusive behavior, ambiguous generated output, or any result accepted evidence
-   cannot determine. Regenerate only through an explicitly authorized deterministic owner procedure.
-4. Once every path is unambiguous, apply the complete worktree-only transfer without staging as one
-   guarded-batch logical attempt. Per-path writes are child effects. A shared pathname is overlap,
-   not by itself evidence of conflict.
-5. Run the required non-mutating verification in the target. A formatter, fixer, generator, or
-   dependency updater is a separate mutation and requires its own authority and proof.
-6. Prove target `HEAD` and the write-set index entries are unchanged, every affected path contains
-   the accepted change plus every compatible local change, and bounded Git identity and status
-   evidence shows no unexpected effect outside the write set. Returned changes remain unstaged or
-   untracked.
-7. Retain the source branch and worktree, history recovery refs, and external backup until the result
-   owner accepts the working-tree handoff. Freeze `outcome_result: proven` as a non-integrating
-   handoff and return each exact location and the next review action.
+## Freeze the three inputs
 
-After a partial or failed batch transfer, restore only this run's exact writes from backup, only when
-the written set is completely observed and no intervening edit would be overwritten, and only as a
-separately authorized restore attempt. An ambiguous write set or unsafe restore retains the exact
-current target and backup. If the batch completed but post-transfer verification or proof fails,
-retain that reviewable target and backup; do not restore it. A successful transfer and proof enters
-no recovery path. Classify the outcome under the top-level phase states and record any later restore
-without replacing the causal status. Never retry an ambiguous attempt, move target `HEAD`, alter the
-index, or reset unrelated state.
+Identify the target checkout and accepted task scope. Establish **B**, the immutable shared baseline
+from which the task changes are measured; **S**, a frozen snapshot of the accepted task result; and
+**W**, the target's actual working files at preparation time. Pin B by commit/tree OID and S by exact
+file bytes, absence, types and modes. S may include attributable staged, unstaged and untracked task
+work without making a commit or changing the source index. Resolve layered edits to their accepted
+final contents; ambiguous ownership stops. Exclude unrelated source work from S.
+
+Transfer only the task difference **B → S**. W is not the target HEAD or index version: it includes
+committed target evolution and the user's local changes. Never copy the whole source checkout, and
+never use the destination's current HEAD as B merely because it is convenient. If there is no
+unambiguous shared baseline or accepted source snapshot, retain both sides and return that decision
+to the result owner. Formal review is needed only when independently required by project/caller
+policy or an expressly selected history operation.
+
+## Prepare the entire result before writing
+
+Derive the exact affected paths from B → S, including both ends of any supported rename. Use
+bounded evidence for those paths and their ancestors, with complete target HEAD/index evidence at
+batch boundaries. Existing evidence for immutable B and accepted S remains usable while its
+dependencies match. Inspect unrelated paths only when a concrete preservation risk reaches them;
+ordinary transfer needs no repeated global status, untracked or ignored inventory.
+
+Prepare the accepted combined result in one local batch. Where W equals B, S is the result: a
+three-way merge adds no information. Preserve target-only changes and include identical edits once.
+For overlapping ordinary text, use native three-way merging with B as ancestor, W as local and S
+as incoming input, such as `git merge-file -p` on temporary files. Inspect semantic compatibility
+and verify the combined behavior even when Git reports no textual conflict. Conflicting hunks,
+delete/modify, complex renames, binary overlap, unsupported types/modes, incompatible behavior and
+ambiguous generated output stop before target writes. Regeneration keeps its deterministic owner
+and needs accepted authority.
+
+Use the [batch transfer helper](recovery.md#batch-transfer-mechanism) for ordinary file
+create/update/delete operations in existing directories. Give it one accepted-output plan, including
+expected W and output states. For the simple W=B case, that plan can refer directly to accepted S
+files; for overlap, provide the prepared combined outputs. The helper freezes every output and a
+readable backup outside affected worktrees before applying anything. It gathers deterministic facts
+and performs bounded mechanics; the Agent owns task attribution, B/S/W reasoning, semantics and
+needed verification. Prepare a whole plan, rather than driving one subprocess per file through
+Agent tool calls.
+
+Keep unsupported transfers with their owning implementation workflow. A different authorized
+mechanism must establish the same complete preparation and preservation contract, including absence,
+types, modes, aliases and symlink ancestors; the helper's support limit is not permission to improvise
+an unsafe write. Failed preparation leaves target working files untouched.
+
+## Apply with preservation evidence
+
+Coordinate with other writers, then apply the prepared batch once. The helper checks accepted S,
+target identity, HEAD and complete index at entry; inside the batch it guards only each related path,
+ancestor and output. It records writes durably and checks the resulting paths and unchanged HEAD/index
+at exit. Reuse this proof instead of repeating whole-repository checks around each child operation.
+Additional observation follows actual drift or a dependency changed by another effect.
+
+There is no portable atomic multi-file filesystem guarantee. The procedure protects against
+cooperative concurrency and detected drift, not arbitrary simultaneous writers. Partial writes,
+missing responses and observed drift use [recovery](recovery.md#partial-file-transfer); inspect the
+original receipt before choosing continuation. A shared pathname alone is not a conflict, and a
+clean textual merge alone is not semantic proof.
+
+Run relevant non-mutating verification on the combined target. Reuse still-valid checks; renew those
+whose inputs changed. A formatter, fixer or generator is a separate effect outside this transfer
+unless expressly authorized. Complete index preservation keeps existing staged content staged;
+the transfer itself changes working files only. Use the helper's output proof and bounded evidence
+for concrete outside dependencies to establish preservation. If later verification fails, retain
+the reviewable target, source and backup with that failure; do not roll back a completed transfer.
+
+A proven transfer returns `outcome_result: proven`, `classification: non-integrating handoff`, and
+the exact source, target and backup locations with the next review/acceptance action. Keep the source
+worktree, branch, snapshot, backup and required recovery items until the user accepts this transfer.
+Delegated acceptance must be traceable to the user's authority; a lifecycle owner cannot accept on
+the user's behalf merely by owning cleanup. Until acceptance, the cleanup disposition is retention;
+afterward, existing cleanup authority and lifecycle conditions still apply. No working-file transfer
+proves delivery, even when the target already had identical changes.

@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 
 
-ZERO_OID = "0" * 40
 RECOVERY_PREFIX = "refs/smartkit/recovery/"
 
 
@@ -53,8 +52,18 @@ def restore_source_checkout(
     branch_name: str,
     old_head: str,
     branch_updated: bool,
+    expected_head: str,
 ) -> str | None:
     try:
+        if git_output(repository, "rev-parse", "HEAD^{commit}") != expected_head:
+            return "checkout recovery stopped: HEAD moved"
+        expected_branch = expected_head if branch_updated else old_head
+        if git_output(repository, "rev-parse", f"refs/heads/{branch_name}") != expected_branch:
+            return "checkout recovery stopped: source branch moved"
+        if run_git(repository, "diff", "--quiet", check=False).returncode != 0 or run_git(
+            repository, "diff", "--cached", "--quiet", old_head, check=False
+        ).returncode != 0:
+            return "checkout recovery stopped: index or working files changed"
         if not branch_updated:
             run_git(repository, "reset", "--soft", old_head)
         run_git(repository, "checkout", "--quiet", branch_name)
@@ -91,21 +100,25 @@ def consolidate(
         raise ConsolidationError("delivery target is not an ancestor of checkpoint HEAD")
 
     validate_recovery_ref(repository, recovery_ref)
+    validate_recovery_ref(repository, f"{recovery_ref}-candidate")
     old_tree = git_output(repository, "rev-parse", f"{old_head}^{{tree}}")
-    run_git(repository, "update-ref", recovery_ref, old_head, ZERO_OID)
+    run_git(repository, "update-ref", recovery_ref, old_head, "0" * len(old_head))
 
     branch_updated = False
     candidate_ref: str | None = None
+    expected_head = old_head
     try:
         run_git(repository, "checkout", "--quiet", "--detach", old_head)
         run_git(repository, "reset", "--soft", target_head)
+        expected_head = target_head
         if run_git(repository, "diff", "--cached", "--quiet", check=False).returncode == 0:
             raise ConsolidationError("checkpoint tree has no delivery change from target")
 
         run_git(repository, "commit", "--file", str(message_file))
         delivery_commit = git_output(repository, "rev-parse", "HEAD^{commit}")
+        expected_head = delivery_commit
         new_candidate_ref = f"{recovery_ref}-candidate"
-        run_git(repository, "update-ref", new_candidate_ref, delivery_commit, ZERO_OID)
+        run_git(repository, "update-ref", new_candidate_ref, delivery_commit, "0" * len(delivery_commit))
         candidate_ref = new_candidate_ref
         delivery_tree = git_output(repository, "rev-parse", f"{delivery_commit}^{{tree}}")
         parents = git_output(repository, "show", "-s", "--format=%P", delivery_commit).split()
@@ -114,6 +127,7 @@ def consolidate(
         if delivery_tree != old_tree:
             raise ConsolidationError("Delivery Commit tree differs from source HEAD")
 
+        require_clean(repository)
         run_git(repository, "update-ref", branch_ref, delivery_commit, old_head)
         branch_updated = True
         run_git(repository, "checkout", "--quiet", branch_name)
@@ -130,7 +144,9 @@ def consolidate(
             "recovery_ref": recovery_ref,
         }
     except (ConsolidationError, OSError) as error:
-        recovery_error = restore_source_checkout(repository, branch_name, old_head, branch_updated)
+        recovery_error = restore_source_checkout(
+            repository, branch_name, old_head, branch_updated, expected_head
+        )
         detail = str(error)
         if candidate_ref is not None:
             detail += f"; candidate retained at {candidate_ref}"

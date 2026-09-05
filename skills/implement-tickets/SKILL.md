@@ -1,116 +1,106 @@
 ---
 name: implement-tickets
-description: Implement or resume a dependency-ordered batch of eligible tracker tickets in one isolated worktree, or prove that the bounded scope has no eligible work; review and finalize a nonempty batch once.
+description: Implement or resume a dependency-ordered batch of eligible tracker tickets in one isolated worktree, or prove that the bounded scope has no eligible work; independently accept each ticket, then review and finalize the batch.
 ---
 
 # Implement Tickets
 
-Resolve one bounded ticket scope. A proven empty selection is a successful no-effect result. A
-nonempty selection becomes one **Ticket Batch** in one isolated **Batch Worktree**.
+Complete one frozen ticket selection in dependency order, with one accepted commit per ticket and
+one final whole-batch review and finalization. A proven empty selection returns `nothing-to-do`
+without creating a worktree or making another effect.
 
-## Principles
+The active Agent is the **Controller**. It owns selection, serial implementation, independent
+acceptance, and the final evidence handoff. The configured project tracker owns eligibility,
+dependencies, claims, and tracker completion. Public `create-worktree` owns workspace readiness and
+its environment dependency; public `code-review` owns Standards and Spec review; public
+`finish-worktree` owns history preparation, the selected outcome, recovery of its effects, and
+cleanup. Read their current public contracts before using them. Resolve the tracker through the
+target project's `docs/agents/issue-tracker.md` and its configured triage owner; resolve required
+verification through applicable project rules and documented verification interfaces. Missing,
+unavailable, failed, or ambiguous required capabilities stop at their owner, with attributable
+state retained. A present dependency that failed is never treated as absent.
 
-- **Controller-owned orchestration.** The active Agent is the Controller and owns Batch
-  orchestration. The configured tracker owns ticket, blocker, claim, and completion meaning;
-  `create-worktree` owns worktree choice and readiness; `code-review` owns its Standards and Spec
-  judgments; and `finish-worktree` owns history, delivery, **Already Delivered**, non-integrating
-  handoffs, recovery, and cleanup judgments.
-- **Stable Batch.** Freeze one positively eligible, dependency-ordered selection. Run at most one
-  ticket or repair worker at a time, and never silently widen or reorder the Batch.
-- **Commit boundary.** Each selected ticket ends in exactly one first-parent **Ticket Commit** whose
-  sole ticket trailer is `SmartKit-Ticket: <canonical-id>`. Checkpoint and repair commits carry no
-  ticket trailer. Preserve these source-history boundaries even if finalization consolidates them.
-- **One final barrier.** Verify and review the whole Batch once, then finalize it once. Any repair
-  replays the complete verification and both review axes on the new immutable state.
-- **Explicit effects.** Use only accepted authority for the exact tracker, worktree, worker,
-  repository, finalizer, and cleanup effects. Preserve the canonical checkout and unrelated or
-  user-owned state. Force, rebase, reset, clean, discard, and implicit remote or tracker effects are
-  outside the grant.
-- **Recover from evidence.** Recover from Git history, current tracker state, retained dependency
-  handoffs, and observable live-worker or finalizer state. Keep no Batch journal, and never retry an
-  effect merely because current state resembles its intended result.
+Use only authority supplied by the accepted request, applicable policy, and these owner contracts.
+After consuming and rechecking worktree readiness, scope-only local candidate commits and bounded
+amendments use the workflow's commit authority and normal repository hooks. They grant no tracker,
+remote, installation, finalizer, or cleanup effect. Preserve the canonical checkout and unrelated
+work. Preserve accepted commits by default; consolidation requires a separate explicit selection.
 
-The caller supplies the accepted scope, target, outcome, history policy, and exact effect
-authorities. Project rules, ticket and spec sources, repository validation, and the current public
-dependency contracts supply the remaining meaning.
+## 1. Establish the batch
 
-Use proportionate evidence for ordinary judgments, but exhaustively close ticket selection and
-dependencies, mutation attribution, repository-required verification, and effect recovery. Reuse
-attributable evidence only while its freshness condition holds. Missing noncritical evidence
-narrows the claim and is reported; uncertainty about safety, permission, ownership, an external
-effect, or recovery stops before that effect.
+Identify the bounded input scope and target. Before fresh selection, observe relevant repository
+and registered-worktree state, branch history, retained selection and dependency handoffs, and live
+Worker or finalizer identities. Read [Tracker boundary](references/tracker.md) before any tracker
+observation. If these observations identify an existing or possible batch attempt, use
+[Pause and resume](references/resume.md) to recover its original phase and frozen scope. A prior
+finalizer or closure handoff takes precedence over current ticket eligibility.
 
-## Establish the route
+Only evidence supporting a new batch permits fresh selection. Establish its accepted committed
+`batch_base`, requested finalizer outcome, history policy and exact effect authorities. Use
+`tracker.md` to resolve same-scope dependencies and freeze membership, order, complete accepted
+requirements and their source revisions, exclusions, and the owner-supported claim plan. Report
+selected tickets and exclusions; selection does not promise completion of the user's broader input.
+A proven empty new selection ends here without effects.
 
-Read [`references/tracker.md`](references/tracker.md) before the first tracker observation. Observe
-the bounded scope and target, repository and registered worktrees, relevant branch history and
-local state, retained public-Skill handoffs, and any live worker or finalizer identity. Select
-exactly one route:
+## 2. Establish one environment
 
-- **New.** No evidence identifies an unfinished Batch. Let `tracker.md` select the Batch. Its
-  `nothing-to-do` result ends with no Batch and no effect. For a nonempty selection, complete its
-  initial claim gate before asking `create-worktree` to establish the Batch Worktree from the exact
-  target base. Consume only an attributable current `ready` result; otherwise retain the dependency
-  result and enter the Pre-ready handoff.
-- **Pre-ready selection.** A frozen nonempty Selection Result and claim plan exist, but no current
-  `ready` result has been consumed. Resume through [`references/stop.md`](references/stop.md), which
-  owns the independent claim and Create partitions. Consume readiness only while its recorded
-  snapshot still matches current state.
-- **Before finalization.** The Batch has consumed its initial readiness and has no possible
-  finalizer attempt, response, or consumed-result handoff. Reconstruct the immutable base,
-  dependency-valid Ticket Commit prefix, and at most one current ticket or repair tail, accounting
-  for every commit and local-state item. With continuous attributable control, recheck current Git,
-  tracker, worktree, and worker evidence before continuing. After any gap in control or evidence,
-  first use
-  [`references/worker-transaction.md`](references/worker-transaction.md) to prove quiescence and
-  attribution. At a ticket or retained-repair frontier after a gap, ask `create-worktree` to
-  re-evaluate the existing candidate before another mutation. Consume its fresh `ready` result only
-  for the same candidate; preserve any `non-ready` or unresolved result with its owner. Continue a
-  ticket through
-  [`references/process-one-ticket.md`](references/process-one-ticket.md), a retained repair through
-  [`references/complete-run.md`](references/complete-run.md), or, after every Ticket Commit is
-  proven, freeze the registered path, branch, `HEAD`, tree, index, local state, base, and target
-  before entering `complete-run.md`.
-- **Retained finalizer result.** No consumed terminal handoff exists. Give the complete attributable
-  raw response to `complete-run.md`'s sole result route, including authoritative delivery with
-  incomplete tracker closure.
-- **Finalizer response missing or possibly live.** Enter
-  [`references/recover-finalizer.md`](references/recover-finalizer.md) with the original attempt.
-- **Consumed terminal handoff.** Preserve a consumed `non-integrating handoff`, `history finalized`,
-  or `no positive result` result, or an unresolved classification already returned to the dependency
-  owner. Resume only the named owner and action; do not consume the result or repeat an effect.
+If a selected ticket depends on uncommitted source-checkout work, pause before batch implementation
+and resolve a separately authorized committed baseline through that work's owner. Preserve the
+source checkout; do not automatically commit, discard, reimplement or absorb its work as ticket
+changes. Reconcile the accepted base before continuing.
 
-An unconsumed `ready` result remains Pre-ready until its snapshot and the common binding below pass.
-Once a finalizer attempt exists or cannot be excluded, Before finalization is ineligible.
+Satisfy every required initial claim before other batch writes. Request **clean** creation at the
+frozen `batch_base` through public `create-worktree`, with the accepted scope, ownership, placement,
+and setup-effect authority. This explicit clean choice preserves a dirty source without importing
+its changes. Placement decisions, source preservation, and environment preparation remain with
+that owner, including its target `worktree-environment-setup` dependency.
 
-Ambiguous Batch identity, scope, base, route, ownership, or effect state reads
-[`references/stop.md`](references/stop.md) and stops at that boundary.
+Consume only its attributable current `ready` result. Recheck the physical path, Git common
+identity, linked-worktree registration, branch, base, HEAD/tree, index, and expected local state
+before the first worker or deferred claim effect. Bind that exact worktree to this batch. Reuse its
+environment for all Workers and Reviewers; refresh readiness on material drift or interrupted
+control as described in `resume.md`. Required project checks still run when their inputs change.
 
-**Route complete:** one authoritative route and next owner are established, or `nothing-to-do` is
-proven.
+## 3. Implement and accept each ticket
 
-## Execute a nonempty Batch
+For each dependency-ready ticket, follow [Process one ticket](references/process-one-ticket.md).
+That procedure owns dispatch, the nonempty candidate/review loop or independent no-change branch,
+and Controller acceptance. Give it the frozen ticket and preceding accepted HEAD; require
+`completed-in-batch` with exactly one independently accepted first-parent commit before advancing.
+Earlier accepted commits stay fixed. Tickets remain open and claims stay held.
 
-When either New or Pre-ready selection yields an attributable current `ready` result, bind the
-frozen tracker selection, immutable target base, accepted outcome and history policy, explicit
-authorities, lifecycle owners, and recorded worktree identity. Immediately recheck its physical
-path, registration, branch, `HEAD`, tree, index, and local state before a pending just-in-time claim
-and before the first post-readiness implementation, worktree, or worker effect. Consume the initial
-claims and readiness result without repeating them.
+## 4. Verify and review the batch
 
-Process each dependency-ready ticket through `process-one-ticket.md`. Return its independently
-proven Ticket Commit to the frozen selection before choosing the next frontier. Tickets remain open
-and supported claims remain held until authoritative delivery.
+After all selected tickets are accepted and Workers are quiescent, freeze the final HEAD/tree and
+run required whole-batch verification. Choose the review route from the final diff against immutable
+`batch_base` before invoking review:
 
-After every Ticket Commit is proven, enter `complete-run.md`. Only `finish-worktree`'s authoritative
-delivery classification, including its own **Already Delivered** result, permits tracker closure.
-Preserve its strongest classification and raw status: a coincident `stopped` or `failed` status
-does not erase delivery, while every non-delivery, unavailable, ambiguous, or in-flight result
-retains the handoff, tickets, claims, worktree, and source history required by its owner.
+- For a nonempty diff, invoke public `code-review` with every accepted ticket/spec source and its
+  provenance. Both axes examine the complete combined result, emphasizing interactions, shared
+  constraints, regressions and overall fulfillment. Individual reports provide context; they do not
+  replace examination of the final state or narrow its coverage to interactions alone.
+- For an empty diff, including changed tickets whose effects cancel, use
+  [independent empty-diff acceptance](references/review.md#independently-accept-an-empty-difference)
+  over the final implementation and all accepted requirements.
 
-At the first noncomplete boundary, read `stop.md`, preserve the raw owner result and observed
-effects, and block later tickets and phases.
+Whole-batch findings requiring repair enter [batch repair](references/review.md#repair-the-whole-batch).
+Preserve ticket boundaries through both routes. Accept the batch only when required checks and both
+independent judgments pass on its exact final state with complete accepted scope coverage.
 
-**Invocation complete:** either the empty selection is proven with no effects; delivery, tracker
-closure, and lifecycle disposition are proven; or one exact noncomplete handoff names the only safe
-next owner and action.
+## 5. Finalize and report
+
+Read [Finalize the accepted batch](references/complete-run.md). Revalidate frozen source facts and
+current worktree/target evidence, then give public `finish-worktree` the accepted scope, exact
+base/HEAD/tree, ticket boundaries, complete verification/review evidence, chosen outcome and
+history policy, and exact effect authority. It consumes that evidence without a duplicate formal
+review and performs its own operation-sensitive verification.
+
+Consume its strongest proven classification with its raw status. Only its `authoritative delivery`
+classification permits tracker closure. PRs, retained worktrees, review transfers, and empty diffs
+do not establish delivery. Report accepted tickets, exclusions, finalizer outcome, tracker and
+lifecycle dispositions, retained locations, and the next owner/action for any unfinished boundary.
+
+At a material blocker, use `resume.md` to pause the whole batch and preserve partial work. Supported
+ordinary repairs continue while they make progress; an unavailable capability or no-progress
+failure stops with its exact owner. Never skip a ticket, change the queue, revert work, or repeat a
+possibly completed external effect to get past a blocker.

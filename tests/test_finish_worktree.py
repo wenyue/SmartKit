@@ -157,12 +157,15 @@ class FinishWorktreeHistoryTests(unittest.TestCase):
         result = self.run_script(recovery_ref)
 
         self.assertEqual(result.returncode, 1)
-        self.assertIn("git update-ref", result.stderr)
+        self.assertIn("recovery ref already exists", result.stderr)
         self.assertIn(candidate_ref, result.stderr)
         self.assertNotIn(f"candidate retained at {candidate_ref}", result.stderr)
         self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
         self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
-        self.assertEqual(git(self.task, "rev-parse", recovery_ref), self.checkpoint_head)
+        self.assertNotEqual(subprocess.run(
+            ["git", "-C", str(self.task), "show-ref", "--verify", "--quiet", recovery_ref],
+            check=False,
+        ).returncode, 0)
         self.assertEqual(git(self.task, "rev-parse", candidate_ref), self.target)
         self.assertEqual(git(self.task, "status", "--porcelain"), "")
 
@@ -184,6 +187,27 @@ class FinishWorktreeHistoryTests(unittest.TestCase):
         )
         self.assertEqual(git(self.task, "status", "--porcelain"), "")
 
+
+    def test_hook_edit_is_retained_when_checkout_recovery_would_change_state(self):
+        self.install_hook(1)
+        hooks = Path(git(self.task, "rev-parse", "--git-common-dir")) / "hooks"
+        hook = hooks / "pre-commit"
+        hook.write_text("#!/bin/sh\nprintf 'hook edit\\n' > artifact.txt\nexit 1\n")
+        result = self.run_script("refs/smartkit/recovery/task/hook-edit")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("checkout recovery stopped", result.stderr)
+        self.assertEqual((self.task / "artifact.txt").read_text(), "hook edit\n")
+        self.assertEqual(git(self.task, "rev-parse", "refs/heads/task"), self.checkpoint_head)
+        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.target)
+
+    def test_dirty_source_rejects_history_before_recovery_ref_creation(self):
+        (self.task / "unfinished.txt").write_text("unfinished\n")
+        refs_before = git(self.task, "for-each-ref", "--format=%(refname):%(objectname)")
+        result = self.run_script("refs/smartkit/recovery/task/dirty")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("source worktree is not clean", result.stderr)
+        self.assertEqual(git(self.task, "for-each-ref", "--format=%(refname):%(objectname)"), refs_before)
+        self.assertEqual((self.task / "unfinished.txt").read_text(), "unfinished\n")
 
 class FinishWorktreeLauncherTests(unittest.TestCase):
     @staticmethod

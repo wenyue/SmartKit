@@ -1,21 +1,19 @@
 # Keep for Later
 
-Retain the finalized result exactly as observed, without another local or remote mutation. This is
-a successful non-integrating handoff, not delivery.
+Retain this worktree as it stands so its owner can resume it. Unfinished implementation, unreviewed
+commits, staged and unstaged changes, untracked files, and ignored local material may all remain.
+Neither a clean tree nor formal review is a prerequisite imposed by this outcome.
 
-Recheck that the source branch still points to the delivery head, its tree and review binding remain
-unchanged, publication matches the contract, and each recovery ref remains at its recorded object.
-Compare source-local state with the bounded preflight evidence. If it changed, refresh the evidence
-and reclassify every changed item. Continue only when each item is proven unrelated to the accepted
-result and current job and outside the selected effect set, or independent accepted authority makes
-that exact item a preserved successor scope. Retain and report all eligible source-local state.
-State material to the current job or accepted result, or whose relationship remains ambiguous,
-stops the outcome and returns to the implementation owner. For **Already Delivered**, reprove the
-target and leave source and target exactly as found.
+Observe enough state to identify the retained branch and HEAD, local work, known publication,
+unfinished verification or review, and any recovery items. Record the next owner and the concrete
+resume action. Describe uncertain attribution as retained uncertainty; retention does not require
+resolving it or reading every ignored file. Preserve the source, target, index, refs, and files.
+If the source changes while being observed, refresh the retention record rather than freezing a
+false exact snapshot. An unresolved earlier destructive or publishing attempt must still be handed
+to its recovery owner; retention cannot relabel that attempt successful.
 
-Freeze `outcome_result: proven`, classified `non-integrating handoff`, and a `cleanup_result` that
-records every item as intentionally retained. Return `status: complete`, the target boundary, source
-identity, history policy, review and verification binding, publication, retained recovery,
-lifecycle owners, and one exact later integration or cleanup action. If **Already Delivered** is
-reproven on the authoritative target, classify the outcome as authoritative delivery instead.
-Retention is the selected result, never failed cleanup.
+Ordinary retention returns `history_result: inapplicable`, `outcome_result: proven`,
+`cleanup_result: complete`, `status: complete`, and `classification: non-integrating handoff`.
+List lifecycle items as intentionally retained, with their owners and release conditions. An
+expressly selected history preparation must first satisfy its own contract; preserve its result.
+This outcome proves availability for later work, never authoritative delivery or review completion.

@@ -1,30 +1,36 @@
 # Create a Pull Request
 
-Publish the verified delivery head without force, then establish at most one exact pull request.
-This remains a non-integrating handoff until the authoritative target contains the accepted result.
+Publish one exact verified and reviewed commit and establish its pull request. The accepted PR
+request supplies publication authority; use the repository-approved host interface and infer routine
+title, body and draft choices from the accepted scope and project conventions.
 
-1. Require explicit authority for every remote effect. Freeze the repository, base branch and
-   observed commit, head ref, delivery commit, title, body, draft state, repository-approved host
-   interface, and success proof. Authorized observation must also establish any existing remote head
-   and pull request.
-2. Recheck the source, immutable `history_result`, owned range, delivery head and tree, review
-   binding, publication, and remote base and head. A moved base is target drift after history; never
-   repeat the history policy. Reprove **Already Delivered** when possible. Otherwise retain
-   `history_result` for the target-movement owner and stop with `outcome_result: stopped`. An
-   incompatible head, uncertain publication, unavailable host proof, or ambiguous earlier attempt
-   also stops before another effect.
-3. If the base contains every accepted effect, return **Already Delivered** without a push or empty
-   pull request. If one open pull request already matches every frozen field and exact delivery
-   commit, verify and return that existing handoff without duplication.
-4. Otherwise push the exact delivery commit once to the frozen head ref with a normal, non-force
-   push as one logical attempt. Only after proving that result, create the pull request once through
-   the approved interface as a second logical attempt. Re-observe before and after each. An
-   ambiguous result remains in-flight, is retained, and is never retried.
-5. Prove the remote head commit and the pull request's repository, base, head, title, body, draft
-   state, open state, and URL. A pushed branch without a created and verified pull request is
-   a failed `outcome_result`; report the proven push and branch as residual publication with the
-   continuation owner and exact action. Preserve `history_result`.
+Establish the remote repository, base branch and observed base commit, intended head ref, and current
+host state. Search for an existing PR by repository, base and head before any creation. A matching
+open PR may be reused; check its actual head commit and metadata, updating only fields within the
+accepted request. A closed, merged, incompatible or ambiguously identified PR requires a specific
+continuation decision; never create a replacement merely because a prior call lacked a response.
 
-Retain the source branch, worktree, and required recovery refs for review updates. Pull-request
-creation alone never authorizes cleanup; a later independently proven integration may do so. A
-verified pull request produces `outcome_result: proven`, classified `non-integrating handoff`.
+Use [history preparation](history.md) to bind the delivery commit and exact tree to required
+verification and blocker-free formal review. Task work outside that committed result returns to the
+implementation owner unless accepted authority identifies it as a separate preserved successor
+scope. Proven unrelated local state can remain outside the publication effect; retain a dirty source.
+
+Before publication, recheck the delivery binding and remote base/head. Base movement invalidating
+the frozen boundary returns to implementation for synchronization and renewed verification/review;
+preserve any proven history result. If the authoritative base already contains the accepted result,
+use history.md's **Already Delivered** proof and create no empty PR. An existing exact PR is a
+successful handoff without a duplicate push or creation.
+
+Otherwise push the immutable delivery OID to the exact head ref using a normal non-force push.
+Observe that the remote ref equals that OID before creating or updating the PR. Treat publication
+and PR establishment as separate effects in the receipt. A race, rejection, timeout or interruption
+enters [recovery](recovery.md); observe the server before deciding which effect remains incomplete.
+
+Prove the remote head and PR head equal the delivery OID, and verify repository, base, head ref,
+open state, intended metadata and URL. That yields `outcome_result: proven` and
+`classification: non-integrating handoff`. A proven push followed by failed PR establishment is
+`outcome_result: failed`: retain the publication fact, source, branch, receipt and recovery owner.
+Resume PR establishment after observation; do not push again merely because PR creation failed.
+
+Retain the source and required recovery state for review updates. A PR alone does not release them
+for cleanup or establish authoritative delivery.
