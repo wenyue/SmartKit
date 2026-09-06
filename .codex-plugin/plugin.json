@@ -6,8 +6,8 @@
     "name": "wenyue",
     "url": "https://github.com/wenyue"
   },
-  "homepage": "https://github.com/wenyue/agents",
-  "repository": "https://github.com/wenyue/agents",
+  "homepage": "https://github.com/wenyue/SmartKit",
+  "repository": "https://github.com/wenyue/SmartKit",
   "keywords": [
     "coding-agents",
     "project-setup",
@@ -27,7 +27,7 @@
       "Write",
       "Interactive"
     ],
-    "websiteURL": "https://github.com/wenyue/agents",
+    "websiteURL": "https://github.com/wenyue/SmartKit",
     "defaultPrompt": [
       "Use setup-project-agents to initialize this repository.",
       "Check and update this repository's agent assets."

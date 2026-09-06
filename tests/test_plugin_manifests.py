@@ -504,6 +504,21 @@ class PluginManifestTest(unittest.TestCase):
             set(load_json('hooks/hooks.json')['hooks']),
             {'SessionStart', 'UserPromptSubmit', 'PreToolUse'},
         )
+        codex_hooks = load_json('hooks/hooks.json')['hooks']
+        self.assertEqual(
+            {
+                handler['statusMessage']
+                for groups in codex_hooks.values()
+                for group in groups
+                for handler in group['hooks']
+            },
+            {
+                'SmartKit project readiness',
+                'SmartKit prompt rules',
+                'SmartKit session rules',
+                'SmartKit tool rules',
+            },
+        )
         self.assertEqual(
             set(load_json('hooks/cursor.json')['hooks']),
             {'sessionStart'},

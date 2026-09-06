@@ -13,7 +13,7 @@ Install `smartkit` once in each host you use.
 Codex:
 
 ```sh
-codex plugin marketplace add wenyue/agents
+codex plugin marketplace add wenyue/SmartKit
 codex plugin add smartkit@wenyue
 ```
 
@@ -31,7 +31,7 @@ a team marketplace or as a local plugin.
 GitHub Copilot CLI:
 
 ```sh
-copilot plugin marketplace add wenyue/agents
+copilot plugin marketplace add wenyue/SmartKit
 copilot plugin install smartkit@wenyue
 ```
 
@@ -41,7 +41,7 @@ To update the Copilot plugin, run `copilot plugin marketplace update wenyue`, fo
 Qoder:
 
 ```sh
-qoder plugin marketplace add wenyue/agents
+qoder plugin marketplace add wenyue/SmartKit
 qoder plugin install smartkit@wenyue
 ```
 

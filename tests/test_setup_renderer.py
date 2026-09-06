@@ -427,7 +427,7 @@ class SetupRendererTest(unittest.TestCase):
             )
             self.assertEqual(
                 rendered_config['$schema'],
-                'https://raw.githubusercontent.com/wenyue/agents/master/'
+                'https://raw.githubusercontent.com/wenyue/SmartKit/master/'
                 'setup-assets/catalog/project-config.schema.json',
             )
             self.assertEqual(

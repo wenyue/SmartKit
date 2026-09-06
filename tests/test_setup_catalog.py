@@ -542,7 +542,7 @@ class SetupCatalogTest(unittest.TestCase):
                         'plugin': {
                             'id': 'smartkit',
                             'version': '0.1.0',
-                            'repository': 'https://github.com/wenyue/agents.git',
+                            'repository': 'https://github.com/wenyue/SmartKit.git',
                             'ref': 'main',
                         },
                         'assets': [],

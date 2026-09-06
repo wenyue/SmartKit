@@ -27,7 +27,7 @@ import bootstrap  # noqa: E402
 import setup_project_agents  # noqa: E402
 
 
-CANONICAL_REPOSITORY = 'https://github.com/wenyue/agents.git'
+CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
 VENDORED_TOMLI_FILES = (
     'skills/setup-project-agents/scripts/_vendor/__init__.py',
     'skills/setup-project-agents/scripts/_vendor/tomli/LICENSE',

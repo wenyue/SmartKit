@@ -30,7 +30,7 @@ from .external_contract import (
 from .models import AssetSpec, Catalog
 
 
-CANONICAL_REPOSITORY = 'https://github.com/wenyue/agents.git'
+CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
 CANONICAL_REF = 'master'
 _COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
 _CONTROL_PLANE_SKILL_ID = 'smartkit/setup-project-agents'

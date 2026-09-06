@@ -9,7 +9,7 @@
             "command": "sh \"${PLUGIN_ROOT}/runtime/recommended-tools/check_recommended_tools.sh\" hook --harness codex",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\recommended-tools\\check_recommended_tools.ps1\" hook --harness codex",
             "timeout": 30,
-            "statusMessage": "Checking Python and daily project readiness"
+            "statusMessage": "SmartKit project readiness"
           },
           {
             "type": "command",
@@ -17,7 +17,7 @@
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event session",
             "timeout": 30,
             "additionalContextLimit": 50000,
-            "statusMessage": "Loading SmartKit plugin rules"
+            "statusMessage": "SmartKit session rules"
           }
         ]
       }
@@ -30,7 +30,8 @@
             "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event prompt",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event prompt",
             "timeout": 30,
-            "additionalContextLimit": 50000
+            "additionalContextLimit": 50000,
+            "statusMessage": "SmartKit prompt rules"
           }
         ]
       }
@@ -43,7 +44,8 @@
             "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event tool",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event tool",
             "timeout": 30,
-            "additionalContextLimit": 50000
+            "additionalContextLimit": 50000,
+            "statusMessage": "SmartKit tool rules"
           }
         ]
       }

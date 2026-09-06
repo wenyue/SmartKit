@@ -12,7 +12,7 @@ Agents 和 MCP 作为平级能力提供，并在会话开始时检查推荐工�
 Codex：
 
 ```sh
-codex plugin marketplace add wenyue/agents
+codex plugin marketplace add wenyue/SmartKit
 codex plugin add smartkit@wenyue
 ```
 
@@ -29,7 +29,7 @@ Cursor：通过 Plugin Marketplace 或 `/add-plugin` 安装；私有版本请通
 GitHub Copilot CLI：
 
 ```sh
-copilot plugin marketplace add wenyue/agents
+copilot plugin marketplace add wenyue/SmartKit
 copilot plugin install smartkit@wenyue
 ```
 
@@ -39,7 +39,7 @@ copilot plugin install smartkit@wenyue
 Qoder：
 
 ```sh
-qoder plugin marketplace add wenyue/agents
+qoder plugin marketplace add wenyue/SmartKit
 qoder plugin install smartkit@wenyue
 ```
 

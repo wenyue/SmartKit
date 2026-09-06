@@ -29,7 +29,7 @@ import bootstrap  # noqa: E402
 from agents_setup import transaction  # noqa: E402
 
 
-CANONICAL_REPOSITORY = 'https://github.com/wenyue/agents.git'
+CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
 
 
 def run_git(directory: Path, *args: str) -> str:
