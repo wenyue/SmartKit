@@ -27,7 +27,9 @@ description: 编写或修订一个英文 Rule 或 Agent Skill。
 
 ## 2. 冻结 Candidate 和审查范围
 
-首次写入之前，使用当前宿主平台对应的随附 `candidate_evidence` 脚本，捕获完整 Candidate 基线和指纹。快照应保存在 Candidate 之外。分别冻结写入范围、验证命令和权限；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
+将当前已加载 Skill 的目录解析为 `<skill-root>`，并调用 `python "<skill-root>/scripts/candidate_evidence.py" --help`。
+
+首次写入之前，使用该 Python CLI 捕获完整 Candidate 基线和指纹。快照应保存在 Candidate 之外。分别冻结写入范围、验证命令和权限；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
 
 如果 Candidate 包含本 Skill 或其他治理指令，还要冻结其完整的写前文本，并在本次运行余下阶段以该副本为权威。新编写的文本在下一次调用前仍只是 Candidate 证据，不能支配对自身的审查。
 

@@ -3,17 +3,18 @@
 import importlib.util
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "skills/finish-worktree/scripts/worktree_evidence.py"
+sys.path.insert(0, str(SCRIPT.parent))
 spec = importlib.util.spec_from_file_location("worktree_evidence", SCRIPT)
 evidence = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(evidence)
@@ -45,6 +46,38 @@ class RepositoryFixture:
 
 
 class EvidenceTests(RepositoryFixture, unittest.TestCase):
+    def test_windows_file_read_accepts_api_specific_ctime(self):
+        path = self.repo / "text.txt"
+        actual_fstat = os.fstat
+
+        def handle_stat(fd):
+            observed = actual_fstat(fd)
+            fields = {name: getattr(observed, name) for name in dir(observed) if name.startswith("st_")}
+            fields["st_ctime_ns"] = path.lstat().st_ctime_ns + 100
+            return SimpleNamespace(**fields)
+
+        with patch.object(evidence.os, "name", "nt"), patch.object(evidence.os, "fstat", side_effect=handle_stat):
+            observed = evidence.file_state(path)
+        self.assertEqual(observed["size"], len(path.read_bytes()))
+        self.assertEqual(observed["type"], "file")
+
+    def test_windows_file_read_rejects_handle_ctime_change(self):
+        path = self.repo / "text.txt"
+        actual_fstat = os.fstat
+        calls = 0
+
+        def handle_stat(fd):
+            nonlocal calls
+            calls += 1
+            observed = actual_fstat(fd)
+            fields = {name: getattr(observed, name) for name in dir(observed) if name.startswith("st_")}
+            fields["st_ctime_ns"] += calls
+            return SimpleNamespace(**fields)
+
+        with patch.object(evidence.os, "name", "nt"), patch.object(evidence.os, "fstat", side_effect=handle_stat):
+            with self.assertRaises(evidence.EvidenceError):
+                evidence.file_state(path)
+
     def test_default_is_boundary_only_and_inventory_is_explicit(self):
         actual_git = evidence.git
         calls = []
@@ -81,8 +114,9 @@ class EvidenceTests(RepositoryFixture, unittest.TestCase):
     def test_dirty_retention_is_read_only_and_records_every_layer(self):
         (self.repo / "text.txt").write_text("staged\n")
         git(self.repo, "add", "text.txt")
-        (self.repo / "text.txt").write_text("working\n")
-        (self.repo / "untracked\nname.txt").write_text("local\n")
+        (self.repo / "text.txt").write_bytes(("working\n").encode("utf-8"))
+        untracked_name = "untracked name.txt" if os.name == "nt" else "untracked\nname.txt"
+        (self.repo / untracked_name).write_text("local\n")
         (self.repo / "ignored").mkdir()
         (self.repo / "ignored/secret").write_text("retained\n")
         index = self.repo / ".git/index"
@@ -94,7 +128,7 @@ class EvidenceTests(RepositoryFixture, unittest.TestCase):
         self.assertEqual(git(self.repo, "rev-parse", "HEAD").stdout, head_before)
         self.assertEqual(git(self.repo, "show", ":text.txt").stdout, b"staged\n")
         self.assertEqual((self.repo / "text.txt").read_bytes(), b"working\n")
-        self.assertIn("untracked\nname.txt", observed["files"])
+        self.assertIn(untracked_name, observed["files"])
         self.assertIn("ignored/secret", observed["files"])
 
     def test_compare_detects_content_drift_even_when_status_is_unchanged(self):
@@ -195,40 +229,13 @@ class EvidenceTests(RepositoryFixture, unittest.TestCase):
         snapshot_file.write_text("{}")
         self.assertEqual(subprocess.run(command, capture_output=True).returncode, 2)
 
-    @unittest.skipUnless(os.name == "posix", "requires a POSIX shell")
-    def test_shell_launcher_collects_and_compares_actual_state(self):
-        launcher = SCRIPT.with_suffix(".sh")
-        result = subprocess.run(
-            ["sh", str(launcher), "snapshot", "--repository", str(self.repo), "--path", "text.txt"],
-            capture_output=True, check=True,
-        )
-        observed = json.loads(result.stdout)
-        self.assertEqual(observed, self.capture("text.txt"))
-        receipt = self.root / "snapshot.json"
-        receipt.write_bytes(result.stdout)
-        (self.repo / "text.txt").write_text("changed\n")
-        result = subprocess.run(
-            ["sh", str(launcher), "compare", "--snapshot", str(receipt)], capture_output=True,
-        )
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("files", json.loads(result.stdout)["changed"])
-
-    @unittest.skipUnless(shutil.which("pwsh"), "PowerShell runtime unavailable")
-    def test_powershell_launcher_runs_actual_helper(self):
-        result = subprocess.run(
-            ["pwsh", "-NoProfile", "-File", str(SCRIPT.with_suffix(".ps1")), "--help"],
-            capture_output=True,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(b"snapshot", result.stdout)
-
 
 class NativeTransferSeamTests(RepositoryFixture, unittest.TestCase):
     # These fixtures exercise the documented native mechanisms; semantic approval remains Agent-owned.
     def setUp(self):
         super().setUp()
         self.lines = [f"line {number}\n" for number in range(40)]
-        (self.repo / "text.txt").write_text("".join(self.lines))
+        (self.repo / "text.txt").write_bytes(("".join(self.lines)).encode("utf-8"))
         git(self.repo, "commit", "--quiet", "-am", "text baseline")
         self.baseline = git(self.repo, "rev-parse", "HEAD").stdout.decode().strip()
         self.source = self.root / "source"
@@ -246,20 +253,20 @@ class NativeTransferSeamTests(RepositoryFixture, unittest.TestCase):
     def test_transfer_combines_staged_unstaged_and_source_work_without_index_change(self):
         staged = self.lines.copy()
         staged[2] = "target staged\n"
-        (self.repo / "text.txt").write_text("".join(staged))
+        (self.repo / "text.txt").write_bytes(("".join(staged)).encode("utf-8"))
         git(self.repo, "add", "text.txt")
         working = staged.copy()
         working[10] = "target unstaged\n"
-        (self.repo / "text.txt").write_text("".join(working))
+        (self.repo / "text.txt").write_bytes(("".join(working)).encode("utf-8"))
         source_staged = self.lines.copy()
         source_staged[25] = "source staged\n"
-        (self.source / "text.txt").write_text("".join(source_staged))
+        (self.source / "text.txt").write_bytes(("".join(source_staged)).encode("utf-8"))
         git(self.source, "add", "text.txt")
         source_working = source_staged.copy()
         source_working[35] = "source unstaged\n"
-        (self.source / "text.txt").write_text("".join(source_working))
-        (self.source / "new.txt").write_text("task untracked\n")
-        (self.source / "private.txt").write_text("unrelated source\n")
+        (self.source / "text.txt").write_bytes(("".join(source_working)).encode("utf-8"))
+        (self.source / "new.txt").write_bytes(("task untracked\n").encode("utf-8"))
+        (self.source / "private.txt").write_bytes(("unrelated source\n").encode("utf-8"))
         before = self.capture()
         source_before = evidence.snapshot(self.source)
         candidate = self.prepared_text((self.source / "text.txt").read_bytes())
@@ -280,7 +287,7 @@ class NativeTransferSeamTests(RepositoryFixture, unittest.TestCase):
     def test_identical_edits_are_present_once(self):
         incoming = self.lines.copy()
         incoming[20] = "shared edit\n"
-        (self.repo / "text.txt").write_text("".join(incoming))
+        (self.repo / "text.txt").write_bytes(("".join(incoming)).encode("utf-8"))
         candidate = self.prepared_text("".join(incoming).encode())
         self.assertEqual(candidate.returncode, 0)
         self.assertEqual(candidate.stdout.count(b"shared edit"), 1)
@@ -288,7 +295,7 @@ class NativeTransferSeamTests(RepositoryFixture, unittest.TestCase):
     def test_conflict_is_detected_in_temporary_storage_before_target_write(self):
         local = self.lines.copy()
         local[20] = "target choice\n"
-        (self.repo / "text.txt").write_text("".join(local))
+        (self.repo / "text.txt").write_bytes(("".join(local)).encode("utf-8"))
         incoming = self.lines.copy()
         incoming[20] = "source choice\n"
         before = self.capture()
@@ -302,25 +309,25 @@ class NativeTransferSeamTests(RepositoryFixture, unittest.TestCase):
         incoming[20] = "task\n"
         candidate = self.prepared_text("".join(incoming).encode())
         self.assertEqual(candidate.returncode, 0)
-        (self.repo / "text.txt").write_text("user edit before apply\n")
+        (self.repo / "text.txt").write_bytes(("user edit before apply\n").encode("utf-8"))
         self.assertIn("files", evidence.compare(before))
         self.assertEqual((self.repo / "text.txt").read_text(), "user edit before apply\n")
         applied = self.capture()
-        (self.repo / "text.txt").write_text("user edit after partial application\n")
+        (self.repo / "text.txt").write_bytes(("user edit after partial application\n").encode("utf-8"))
         self.assertIn("files", evidence.compare(applied))
         self.assertEqual((self.repo / "text.txt").read_text(), "user edit after partial application\n")
 
     def test_ff_only_integrates_and_divergence_is_effect_free(self):
-        (self.source / "task.txt").write_text("task\n")
+        (self.source / "task.txt").write_bytes(("task\n").encode("utf-8"))
         git(self.source, "add", "task.txt")
         git(self.source, "commit", "--quiet", "-m", "task")
         delivery = git(self.source, "rev-parse", "HEAD").stdout.decode().strip()
         git(self.repo, "merge", "--ff-only", delivery)
         self.assertEqual(git(self.repo, "rev-parse", "HEAD").stdout.decode().strip(), delivery)
-        (self.repo / "target.txt").write_text("target change\n")
+        (self.repo / "target.txt").write_bytes(("target change\n").encode("utf-8"))
         git(self.repo, "add", "target.txt")
         git(self.repo, "commit", "--quiet", "-m", "target advance")
-        (self.source / "task.txt").write_text("task advance\n")
+        (self.source / "task.txt").write_bytes(("task advance\n").encode("utf-8"))
         git(self.source, "commit", "--quiet", "-am", "task advance")
         next_delivery = git(self.source, "rev-parse", "HEAD").stdout.decode().strip()
         before = self.capture()

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import os
 import subprocess
@@ -9,11 +10,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "skills/finish-worktree/scripts/consolidate_worktree_history.py"
-SHELL_LAUNCHER = SCRIPT.with_suffix(".sh")
-POWERSHELL_LAUNCHER = SCRIPT.with_suffix(".ps1")
-PYTHON_ERROR = (
-    "ERROR: Python 3.10 or newer is required; checked python3, then python."
-)
 
 
 def git(repository: Path, *args: str) -> str:
@@ -208,103 +204,6 @@ class FinishWorktreeHistoryTests(unittest.TestCase):
         self.assertIn("source worktree is not clean", result.stderr)
         self.assertEqual(git(self.task, "for-each-ref", "--format=%(refname):%(objectname)"), refs_before)
         self.assertEqual((self.task / "unfinished.txt").read_text(), "unfinished\n")
-
-class FinishWorktreeLauncherTests(unittest.TestCase):
-    @staticmethod
-    def write_command(directory: Path, name: str, body: str) -> None:
-        command = directory / name
-        command.write_text("#!/bin/sh\n" + body, encoding="utf-8")
-        command.chmod(0o755)
-
-    @unittest.skipUnless(os.name == "posix", "requires a POSIX shell")
-    def test_shell_launcher_checks_python3_then_python_and_forwards_arguments(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            command_dir = Path(temp_dir)
-            trace = command_dir / "trace"
-            self.write_command(
-                command_dir,
-                "python3",
-                'printf \'python3:%s\\n\' "$1" >> "$TRACE"\nexit 1\n',
-            )
-            self.write_command(
-                command_dir,
-                "python",
-                'printf \'python:%s\\n\' "$1" >> "$TRACE"\n'
-                'if [ "$1" = "-c" ]; then exit 0; fi\n'
-                'printf \'argument:%s\\n\' "$2" "$3" >> "$TRACE"\n'
-                'exit 7\n',
-            )
-            environment = {
-                **os.environ,
-                "PATH": str(command_dir),
-                "TRACE": str(trace),
-            }
-
-            completed = subprocess.run(
-                ("/bin/sh", str(SHELL_LAUNCHER), "--sentinel", "value"),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-            )
-
-            self.assertEqual(completed.returncode, 7)
-            self.assertEqual(
-                trace.read_text(encoding="utf-8").splitlines(),
-                [
-                    "python3:-c",
-                    "python:-c",
-                    f"python:{SCRIPT}",
-                    "argument:--sentinel",
-                    "argument:value",
-                ],
-            )
-
-    @unittest.skipUnless(os.name == "posix", "requires a POSIX shell")
-    def test_shell_launcher_reports_exact_error_when_both_candidates_fail(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            command_dir = Path(temp_dir)
-            for name in ("python3", "python"):
-                self.write_command(
-                    command_dir,
-                    name,
-                    "printf 'probe stdout\\n'\n"
-                    "printf 'probe stderr\\n' >&2\n"
-                    "exit 1\n",
-                )
-
-            completed = subprocess.run(
-                ("/bin/sh", str(SHELL_LAUNCHER), "--help"),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env={**os.environ, "PATH": str(command_dir)},
-            )
-
-            self.assertEqual(completed.returncode, 2)
-            self.assertEqual(completed.stdout, "")
-            self.assertEqual(completed.stderr.strip(), PYTHON_ERROR)
-
-    def test_powershell_launcher_has_the_same_bounded_candidate_contract(self):
-        wrapper = POWERSHELL_LAUNCHER.read_text(encoding="utf-8")
-
-        self.assertIn("@('python3', 'python')", wrapper)
-        self.assertIn("sys.version_info < (3, 10)", wrapper)
-        self.assertIn("*> $null", wrapper)
-        self.assertIn("$LASTEXITCODE = $null", wrapper)
-        self.assertIn("try {", wrapper)
-        self.assertIn("catch {", wrapper)
-        self.assertIn(
-            "$probeSucceeded = $null -ne $LASTEXITCODE -and $LASTEXITCODE -eq 0",
-            wrapper,
-        )
-        self.assertIn(PYTHON_ERROR, wrapper)
-        self.assertIn("exit 2", wrapper)
-        self.assertNotIn("py -3", wrapper)
-        self.assertNotIn("python3.*", wrapper)
-        self.assertNotIn("uv python", wrapper)
 
 
 if __name__ == "__main__":

@@ -1,25 +1,25 @@
 $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path $PSScriptRoot 'dispatch.py'
 
-foreach ($pythonCommand in @('python3', 'python')) {
-    $resolved = Get-Command $pythonCommand -CommandType Application -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-    if ($null -eq $resolved) {
-        continue
-    }
+$resolved = Get-Command python -CommandType Application -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+$pythonReady = $false
+if ($null -ne $resolved) {
     try {
-        & $resolved.Source -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' *> $null
+        $LASTEXITCODE = $null
+        & $resolved.Source -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' *> $null
+        $pythonReady = $LASTEXITCODE -eq 0
     }
     catch {
-        continue
+        $pythonReady = $false
     }
-    if ($LASTEXITCODE -eq 0) {
-        & $resolved.Source $scriptPath @args
-        exit $LASTEXITCODE
-    }
+}
+if ($pythonReady) {
+    & $resolved.Source $scriptPath @args
+    exit $LASTEXITCODE
 }
 
 [Console]::Error.WriteLine(
-    'ERROR: Python 3.10 or newer is required; checked python3, then python.'
+    'ERROR: Python 3.8 or newer is required; checked python.'
 )
 exit 2

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
 import stat
@@ -23,9 +22,6 @@ import bootstrap  # noqa: E402
 import workflow  # noqa: E402
 
 
-POWERSHELL = shutil.which('pwsh') or shutil.which('powershell')
-
-
 def run_git(directory: Path, *args: str) -> None:
     subprocess.run(
         ('git', '-C', str(directory), *args),
@@ -36,285 +32,7 @@ def run_git(directory: Path, *args: str) -> None:
 
 
 class SetupWorkflowTest(unittest.TestCase):
-    def test_shell_wrapper_uses_only_the_ordered_python_candidates(self):
-        wrapper = (
-            SCRIPTS_ROOT / 'setup_project_agents.sh'
-        ).read_text(encoding='utf-8')
 
-        self.assertIn('for python_command in python3 python; do', wrapper)
-        self.assertIn('>/dev/null 2>&1', wrapper)
-        self.assertNotIn('python3.*', wrapper)
-        self.assertNotIn('uv python find', wrapper)
-
-    def test_powershell_wrapper_keeps_minimum_version_exit_reachable(self):
-        wrapper = (
-            SCRIPTS_ROOT / 'setup_project_agents.ps1'
-        ).read_text(encoding='utf-8')
-
-        self.assertIn(
-            "'ERROR: Python 3.10 or newer is required; checked python3, then python.'",
-            wrapper,
-        )
-        self.assertIn("$pythonCommands = @('python3', 'python')", wrapper)
-        self.assertIn('Select-Object -First 1', wrapper)
-        self.assertIn('$pythonPath = $pythonExecutable.Source', wrapper)
-        self.assertIn('& $pythonPath -c', wrapper)
-        self.assertIn('& $pythonPath $workflow @args', wrapper)
-        self.assertIn('$pythonProbeExitCode = 1', wrapper)
-        self.assertIn('$LASTEXITCODE = $null', wrapper)
-        self.assertIn('try {', wrapper)
-        self.assertIn('catch {', wrapper)
-        self.assertIn('if ($pythonProbeExitCode -eq 0) {', wrapper)
-        self.assertNotIn('& $pythonCommand -c', wrapper)
-        self.assertNotIn('& $pythonCommand $workflow', wrapper)
-        self.assertIn("*> $null", wrapper)
-        self.assertIn('[Console]::Error.WriteLine(', wrapper)
-        self.assertNotIn('Write-Error', wrapper)
-        self.assertNotIn("Get-Command py ", wrapper)
-        self.assertNotIn("Get-Command 'python3.*'", wrapper)
-        self.assertNotIn('uv python find', wrapper)
-        self.assertIn("exit 2", wrapper)
-
-    @unittest.skipUnless(
-        os.name == 'posix' and shutil.which('dirname'),
-        'requires POSIX shell tools',
-    )
-    def test_shell_wrapper_reports_minimum_when_candidates_are_incompatible(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            for name in ('dirname',):
-                executable = shutil.which(name)
-                self.assertIsNotNone(executable)
-                (executable_root / name).symlink_to(executable)
-            for name in ('python3', 'python'):
-                incompatible_command = executable_root / name
-                incompatible_command.write_text(
-                    '#!/bin/sh\n'
-                    "printf 'candidate stdout\\n'\n"
-                    "printf 'candidate stderr\\n' >&2\n"
-                    'exit 1\n',
-                    encoding='utf-8',
-                )
-                incompatible_command.chmod(0o755)
-            environment = dict(os.environ)
-            environment['PATH'] = str(executable_root)
-
-            completed = subprocess.run(
-                (
-                    '/bin/sh',
-                    str(SCRIPTS_ROOT / 'setup_project_agents.sh'),
-                    '--help',
-                ),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-            )
-
-            self.assertEqual(completed.returncode, 2)
-            self.assertEqual(completed.stdout, '')
-            self.assertEqual(
-                completed.stderr,
-                'ERROR: Python 3.10 or newer is required; '
-                'checked python3, then python.\n',
-            )
-
-    @unittest.skipUnless(POWERSHELL, 'requires PowerShell')
-    def test_powershell_wrapper_reports_minimum_when_candidates_are_incompatible(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            for name in ('python3', 'python'):
-                if os.name == 'nt':
-                    incompatible_command = executable_root / f'{name}.cmd'
-                    incompatible_command.write_text(
-                        '@echo candidate stdout\r\n'
-                        '@echo candidate stderr 1>&2\r\n'
-                        '@exit /b 1\r\n',
-                        encoding='utf-8',
-                    )
-                else:
-                    incompatible_command = executable_root / name
-                    incompatible_command.write_text(
-                        '#!/bin/sh\n'
-                        "printf 'candidate stdout\\n'\n"
-                        "printf 'candidate stderr\\n' >&2\n"
-                        'exit 1\n',
-                        encoding='utf-8',
-                    )
-                    incompatible_command.chmod(0o755)
-            environment = dict(os.environ)
-            environment['PATH'] = str(executable_root)
-
-            completed = subprocess.run(
-                (
-                    str(POWERSHELL),
-                    '-NoProfile',
-                    '-File',
-                    str(SCRIPTS_ROOT / 'setup_project_agents.ps1'),
-                    '--help',
-                ),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-                cwd=executable_root,
-            )
-
-            self.assertEqual(completed.returncode, 2)
-            self.assertEqual(completed.stdout, '')
-            self.assertEqual(
-                completed.stderr.strip(),
-                'ERROR: Python 3.10 or newer is required; '
-                'checked python3, then python.',
-            )
-
-    @unittest.skipUnless(
-        POWERSHELL and os.name == 'posix',
-        'requires PowerShell on POSIX',
-    )
-    def test_powershell_wrapper_falls_back_after_python3_cannot_start(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            unstartable_python3 = executable_root / 'python3'
-            unstartable_python3.write_text(
-                'not an executable image\n', encoding='utf-8'
-            )
-            unstartable_python3.chmod(0o755)
-            (executable_root / 'python').symlink_to(sys.executable)
-            environment = dict(os.environ)
-            environment['PATH'] = str(executable_root)
-            wrapper = str(SCRIPTS_ROOT / 'setup_project_agents.ps1').replace(
-                "'", "''"
-            )
-
-            completed = subprocess.run(
-                (
-                    str(POWERSHELL),
-                    '-NoProfile',
-                    '-Command',
-                    f"$global:LASTEXITCODE = 0; & '{wrapper}' --help",
-                ),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-                cwd=executable_root,
-            )
-
-            self.assertEqual(completed.returncode, 0, completed.stderr)
-            self.assertIn('usage:', completed.stdout)
-
-    @unittest.skipUnless(
-        os.name == 'posix'
-        and shutil.which('python3.10')
-        and shutil.which('dirname'),
-        'requires Python 3.10 and POSIX shell tools',
-    )
-    def test_shell_wrapper_runs_workflow_with_python_310(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            for name in ('python3', 'dirname'):
-                executable = shutil.which('python3.10' if name == 'python3' else name)
-                self.assertIsNotNone(executable)
-                (executable_root / name).symlink_to(executable)
-            for name in ('python',):
-                incompatible_command = executable_root / name
-                incompatible_command.write_text(
-                    '#!/bin/sh\nexit 1\n', encoding='utf-8'
-                )
-                incompatible_command.chmod(0o755)
-            environment = dict(os.environ)
-            environment['PATH'] = str(executable_root)
-
-            completed = subprocess.run(
-                (
-                    '/bin/sh',
-                    str(SCRIPTS_ROOT / 'setup_project_agents.sh'),
-                    '--help',
-                ),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-            )
-
-            self.assertEqual(completed.returncode, 0, completed.stderr)
-            self.assertIn('usage:', completed.stdout)
-
-    @unittest.skipUnless(
-        os.name == 'posix' and shutil.which('dirname'),
-        'requires POSIX shell tools',
-    )
-    def test_shell_wrapper_uses_python_when_python3_is_incompatible(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            dirname = shutil.which('dirname')
-            self.assertIsNotNone(dirname)
-            (executable_root / 'dirname').symlink_to(dirname)
-            incompatible_python3 = executable_root / 'python3'
-            incompatible_python3.write_text(
-                '#!/bin/sh\nexit 1\n', encoding='utf-8'
-            )
-            incompatible_python3.chmod(0o755)
-            (executable_root / 'python').symlink_to(sys.executable)
-            environment = dict(os.environ)
-            environment['PATH'] = str(executable_root)
-
-            completed = subprocess.run(
-                (
-                    '/bin/sh',
-                    str(SCRIPTS_ROOT / 'setup_project_agents.sh'),
-                    '--help',
-                ),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-            )
-
-            self.assertEqual(completed.returncode, 0, completed.stderr)
-            self.assertIn('usage:', completed.stdout)
-
-    @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
-    def test_shell_wrapper_does_not_select_a_versioned_python(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            dirname = shutil.which('dirname')
-            self.assertIsNotNone(dirname)
-            (executable_root / 'dirname').symlink_to(dirname)
-            for name in ('python3', 'python'):
-                incompatible_command = executable_root / name
-                incompatible_command.write_text(
-                    '#!/bin/sh\nexit 1\n', encoding='utf-8'
-                )
-                incompatible_command.chmod(0o755)
-            compatible_python = executable_root / (
-                f'python{sys.version_info.major}.{sys.version_info.minor}'
-            )
-            compatible_python.symlink_to(sys.executable)
-            environment = dict(os.environ)
-            environment['PATH'] = str(executable_root)
-
-            completed = subprocess.run(
-                (
-                    '/bin/sh',
-                    str(SCRIPTS_ROOT / 'setup_project_agents.sh'),
-                    '--help',
-                ),
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=environment,
-            )
-
-            self.assertEqual(completed.returncode, 2)
-            self.assertIn('checked python3, then python.', completed.stderr)
 
     @staticmethod
     def make_origin(root: Path) -> Path:
@@ -383,10 +101,8 @@ class SetupWorkflowTest(unittest.TestCase):
             target = Path(temp_dir) / 'target'
             target.mkdir()
             error = StringIO()
-            with (
-                mock.patch.object(workflow, '_create_session') as create_session,
-                redirect_stderr(error),
-            ):
+            with mock.patch.object(workflow, '_create_session') as create_session, \
+                 redirect_stderr(error):
                 self.assertEqual(
                     workflow.main(['start', '--target', str(target)]), 2
                 )
@@ -557,22 +273,20 @@ class SetupWorkflowTest(unittest.TestCase):
                     }),
                     '',
                 )
-                with (
-                    mock.patch.object(
+                with mock.patch.object(
                         workflow,
                         'setup_entrypoint',
                         return_value=Path('setup.py'),
-                    ),
-                    mock.patch.object(
+                    ), \
+                     mock.patch.object(
                         workflow.subprocess,
                         'run',
                         return_value=completed,
-                    ),
-                    self.assertRaisesRegex(
+                    ), \
+                     self.assertRaisesRegex(
                         workflow.WorkflowError,
                         'pinned result external sources are invalid',
-                    ),
-                ):
+                    ):
                     workflow._run_pinned(
                         'finish',
                         session=Path('/session'),
@@ -838,10 +552,8 @@ class SetupWorkflowTest(unittest.TestCase):
         target = Path(tempfile.mkdtemp(prefix='setup-workflow-target-'))
         try:
             self.write_matt_context(target)
-            with (
-                mock.patch.object(workflow, '_create_session', return_value=session),
-                mock.patch.object(bootstrap, 'main', return_value=1),
-            ):
+            with mock.patch.object(workflow, '_create_session', return_value=session), \
+                 mock.patch.object(bootstrap, 'main', return_value=1):
                 self.assertEqual(
                     workflow.main(['start', '--target', str(target)]), 1
                 )
@@ -862,17 +574,15 @@ class SetupWorkflowTest(unittest.TestCase):
 
     def test_cleanup_failure_reports_the_exact_residual_session(self):
         session = workflow._create_session()
-        with (
-            mock.patch.object(
+        with mock.patch.object(
                 workflow.shutil,
                 'rmtree',
                 side_effect=OSError('injected cleanup failure'),
-            ),
-            self.assertRaisesRegex(
+            ), \
+             self.assertRaisesRegex(
                 workflow.WorkflowError,
                 re.escape(f'cannot remove workflow session: {session}'),
-            ),
-        ):
+            ):
             workflow._remove_session(session)
 
         self.assertTrue(session.exists())
@@ -919,11 +629,9 @@ class SetupWorkflowTest(unittest.TestCase):
             warning = StringIO()
             missing = (root / 'missing.git').as_uri()
 
-            with (
-                mock.patch.object(bootstrap, 'CANONICAL_REPOSITORY', missing),
-                redirect_stdout(output),
-                redirect_stderr(warning),
-            ):
+            with mock.patch.object(bootstrap, 'CANONICAL_REPOSITORY', missing), \
+                 redirect_stdout(output), \
+                 redirect_stderr(warning):
                 self.assertEqual(
                     workflow.main(['start', '--target', str(target)]),
                     0,

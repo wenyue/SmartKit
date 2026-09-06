@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import annotations
 
 import argparse
@@ -11,9 +11,9 @@ import stat
 import subprocess
 import sys
 import tempfile
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
-from typing import NamedTuple
+from typing import Callable, NamedTuple, Optional
 
 
 SETUP_SCRIPTS = Path(__file__).resolve().parents[1] / 'skills/setup-project-agents/scripts'
@@ -92,7 +92,7 @@ class UpdateResult(NamedTuple):
 
 
 Resolver = Callable[[ExternalSource], ResolvedCheckout]
-ReplacePath = Callable[[Path | None, Path], None]
+ReplacePath = Callable[[Optional[Path], Path], None]
 
 
 def _read_json(path: Path, label: str) -> Mapping[str, object]:

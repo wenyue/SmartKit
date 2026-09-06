@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Check harness recommendations and required effective runtime values."""
 
 from __future__ import annotations

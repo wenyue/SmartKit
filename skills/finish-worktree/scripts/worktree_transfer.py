@@ -410,7 +410,7 @@ def apply(operation: Path) -> dict:
                     "post-apply preservation proof failed")
             receipt.update(phase="applied", observed=observed)
             save(operation, receipt)
-            return observed | {"phase": "applied"}
+            return {**observed, "phase": "applied"}
         except (OSError, ValueError, evidence.EvidenceError, TransferError) as error:
             if receipt["inflight"] is not None:
                 current = next(item for item in receipt["entries"] if item["path"] == receipt["inflight"]["path"])
@@ -470,7 +470,7 @@ def recover(operation: Path, quiescent: bool = False) -> dict:
             require(observed["boundary_preserved"], "post-recovery HEAD/index proof failed")
             receipt.update(phase="restored", recovery_observed=observed)
             save(operation, receipt)
-            return observed | {"phase": "restored"}
+            return {**observed, "phase": "restored"}
         except (OSError, ValueError, evidence.EvidenceError, TransferError) as error:
             receipt.update(phase="failed", recovery_error=str(error))
             save(operation, receipt)

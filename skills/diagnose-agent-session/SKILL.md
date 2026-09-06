@@ -44,7 +44,7 @@ whole-session Tokscale evidence. Stop before acquisition for a Cursor or Copilot
 session evidence as turn evidence.
 
 Also stop before acquisition when the client/session pair is missing or partial, its client or ID is
-unsupported, another historical turn is requested, or the platform has no supported launcher.
+unsupported, or another historical turn is requested.
 Report the exact prerequisite without changing the identity or scope.
 
 ## 2. Authorize the sources
@@ -69,7 +69,7 @@ authority.
 
 ## 3. Acquire immutable evidence
 
-Resolve the directory containing the installed `SKILL.md` as `skill_root`. Generate 32 fresh random
+Resolve the directory containing the loaded `SKILL.md` as `<skill-root>`. Generate 32 fresh random
 bytes and encode them as exactly 64 lowercase hexadecimal characters. Pass that acquisition ID to
 the owned wrapper once. The Codex profile matches only that exact ID against tool-call records:
 Exactly one match excludes that call alone. Zero matches exclude nothing and report that the
@@ -77,25 +77,12 @@ current acquisition call was not observed. Multiple matches exclude nothing and 
 ambiguous self-call attribution. Historical IDs and unrelated or completed diagnosis calls remain
 evidence.
 
-On Linux with `sh`:
-
-```sh
-skill_root='<absolute directory containing the installed SKILL.md>'
-sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both --client <client> --session-id <id> --acquisition-id <64-lowercase-hex>
+```text
+python "<skill-root>/scripts/timing.py" diagnose --scope both --client "<client>" --session-id "<id>" --acquisition-id "<64-lowercase-hex>"
 ```
 
-On Windows with PowerShell:
-
-```powershell
-$skillRoot = '<absolute directory containing the installed SKILL.md>'
-$wrapper = Join-Path $skillRoot 'scripts\task-metrics.ps1'
-powershell -ExecutionPolicy Bypass -File $wrapper diagnose --scope both --client <client> --session-id <id> --acquisition-id <64-lowercase-hex>
-```
-
-Replace `both` with the selected narrower scope. The launchers check only `python3`, then
-`python`, and use the first executable that reports Python 3.10 or newer. If neither qualifies,
-preserve the launcher error naming Python 3.10+ and the checked order. When a surface is unavailable
-or fails, retain its partial evidence instead of trying another telemetry command.
+Replace `both` with the selected narrower scope. When a surface is unavailable or fails, retain its
+partial evidence instead of trying another telemetry command.
 
 ### Codex source
 

@@ -354,14 +354,12 @@ class SetupCliTest(unittest.TestCase):
                 return result
 
             error = StringIO()
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     setup_project_agents,
                     '_plan',
                     side_effect=mutate_source_after_plan,
-                ),
-                redirect_stderr(error),
-            ):
+                ), \
+                 redirect_stderr(error):
                 result = setup_project_agents.main([
                     'finish', '--target', str(target), '--session', str(session),
                     *source_args,
@@ -496,17 +494,15 @@ class SetupCliTest(unittest.TestCase):
                 session / 'generated/.agents/skills/change-set-verification'
             )
 
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     setup_project_agents,
                     '_is_link_like',
                     side_effect=lambda path: path == junction,
-                ),
-                self.assertRaisesRegex(
+                ), \
+                 self.assertRaisesRegex(
                     setup_project_agents.SetupError,
                     'generated output contains a link-like entry',
-                ),
-            ):
+                ):
                 setup_project_agents._generated_outputs(
                     session, request['generation_requests']
                 )
@@ -534,39 +530,35 @@ class SetupCliTest(unittest.TestCase):
             def link_like(path: Path) -> bool:
                 return path == junction
 
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     setup_project_agents,
                     '_is_link_like',
                     side_effect=link_like,
-                ),
-                mock.patch.object(
+                ), \
+                 mock.patch.object(
                     setup_project_agents.os,
                     'readlink',
                     return_value='../outside',
-                ),
-            ):
+                ):
                 first = fingerprint()
                 child.write_text('second\n', encoding='utf-8')
                 second = fingerprint()
 
             self.assertEqual(first, second)
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     setup_project_agents,
                     '_is_link_like',
                     side_effect=link_like,
-                ),
-                mock.patch.object(
+                ), \
+                 mock.patch.object(
                     setup_project_agents.os,
                     'readlink',
                     side_effect=OSError('inaccessible junction target'),
-                ),
-                self.assertRaisesRegex(
+                ), \
+                 self.assertRaisesRegex(
                     setup_project_agents.SetupError,
                     'link-like entry that cannot be fingerprinted',
-                ),
-            ):
+                ):
                 fingerprint()
 
     def test_http_project_mcp_round_trips_through_prepare_and_finish(self):
@@ -954,14 +946,12 @@ class SetupCliTest(unittest.TestCase):
                 return real_plan(*args, **kwargs)
 
             error = StringIO()
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     setup_project_agents,
                     '_plan',
                     side_effect=fail_postcondition,
-                ),
-                redirect_stderr(error),
-            ):
+                ), \
+                 redirect_stderr(error):
                 result = setup_project_agents.main([
                     'finish', '--target', str(target), '--session', str(session),
                     *self.source_args(),
@@ -992,14 +982,12 @@ class SetupCliTest(unittest.TestCase):
                 return result
 
             output = StringIO()
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     setup_project_agents,
                     '_plan',
                     side_effect=add_concurrent_change,
-                ),
-                redirect_stdout(output),
-            ):
+                ), \
+                 redirect_stdout(output):
                 result = setup_project_agents.main([
                     'finish', '--target', str(target), '--session', str(session),
                     *self.source_args(),

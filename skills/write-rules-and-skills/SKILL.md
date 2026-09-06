@@ -40,9 +40,12 @@ outcome without an unresolved material choice.
 
 ## 2. Freeze the Candidate and review scope
 
-Capture the complete Candidate baseline and fingerprint before any write, using the bundled
-`candidate_evidence` script for the host platform. Keep the snapshot outside the Candidate. Freeze
-the write scope, validation commands, and permissions separately; an allowed addition and deletion
+Resolve `<skill-root>` as this loaded Skill directory and invoke
+`python "<skill-root>/scripts/candidate_evidence.py" --help`.
+
+Capture the complete Candidate baseline and fingerprint before any write using that Python CLI.
+Keep the snapshot outside the Candidate. Freeze the write scope, validation commands, and
+permissions separately; an allowed addition and deletion
 do not imply an allowed move. Preserve unrelated staged, unstaged, and untracked work.
 
 When the Candidate includes this Skill or another governing instruction, also freeze its complete

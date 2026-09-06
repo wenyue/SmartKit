@@ -96,21 +96,15 @@ removes its private checkout. Correct the declaration or source, then begin a fr
 
 ## Start a frozen session
 
-From the target repository root, identify this loaded Skill directory as
-`SETUP_PROJECT_AGENTS_ROOT`, then start one private session:
+Identify this loaded Skill directory as `<skill-root>` and the target repository root as
+`<target-root>`. Start one private session through the public `scripts/workflow.py` entry:
 
-```sh
-sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" start --target "$PWD"
+```text
+python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 
-```powershell
-& "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" start `
-  --target (Get-Location).Path
-```
-
-Both launchers check only `python3`, then `python`, require Python 3.10 or newer, and execute with
-the first compatible command. If neither command qualifies, the launcher names the requirement and
-checked order, then exits 2. Do not search for another interpreter or bypass the launcher.
+`workflow.py` owns public `start`, `finish`, and `cancel`; `setup_project_agents.py` remains an
+internal implementation CLI.
 
 Stop on a nonzero result. Record `session` as `SESSION`, `generated` as `GENERATED`, and the returned
 `request`, `source_root`, `source_commit`, and `source_fingerprint`. The request freezes setup
@@ -163,12 +157,8 @@ session control data and is not installed.
 
 Run `finish` exactly once:
 
-```sh
-sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" finish --session "$SESSION"
-```
-
-```powershell
-& "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" finish --session "$SESSION"
+```text
+python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
 Finish revalidates the request, setup-relevant target fingerprint, source and external snapshots,
@@ -185,12 +175,8 @@ as a completed transaction.
 
 If work must stop after `start` and before any `finish` attempt, cancel the session:
 
-```sh
-sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" cancel --session "$SESSION"
-```
-
-```powershell
-& "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" cancel --session "$SESSION"
+```text
+python "<skill-root>/scripts/workflow.py" cancel --session "<SESSION>"
 ```
 
 Before finish, unresolved declarations, ownership or digest conflicts, setup-relevant target drift,

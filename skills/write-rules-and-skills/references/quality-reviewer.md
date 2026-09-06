@@ -22,8 +22,12 @@ objective and any session-only quality or expression constraints routed by the C
 Judge the Candidate's overall structure, progressive disclosure, co-location, semantic ownership,
 terminology, economy, elegance, human readability, and execution usability. Look for ambiguity,
 scattering, duplication, stale explanation, hidden branches, missing completion or stop conditions,
-and rules that grew by addition rather than coherent revision. Preserve consequential complexity;
-do not impose mechanical length or formatting preferences.
+and rules that grew by addition rather than coherent revision. Assess economy by whether removing
+content leaves a material gap in understanding, execution, or acceptance in the full context;
+being correct, harmless, or possibly helpful alone does not justify retention. Preserve consequential
+complexity and explanations that materially clarify relationships or prevent real ambiguity;
+do not require each sentence to add a unique fact or impose mechanical length or formatting
+preferences.
 
 In the first round, report every quality problem worth repairing. When the artifact's overall
 quality is poor, say so and give a bounded restructuring direction instead of producing a long list

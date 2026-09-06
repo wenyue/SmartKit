@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import stat
 import sys
@@ -108,10 +109,8 @@ class SetupTransactionTest(unittest.TestCase):
                 )
                 changed.write_bytes(b'third-party\n')
 
-                with (
-                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
-                    self.assertRaisesRegex(TransactionError, 'target changed after planning'),
-                ):
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     self.assertRaisesRegex(TransactionError, 'target changed after planning'):
                     apply_plan(target, plan)
 
                 self.assertEqual(changed.read_bytes(), b'third-party\n')
@@ -141,15 +140,13 @@ class SetupTransactionTest(unittest.TestCase):
                         second.write_bytes(b'third-party\n')
                     return result
 
-                with (
-                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
-                    mock.patch.object(
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     mock.patch.object(
                         transaction,
                         '_replace',
                         side_effect=replace_then_mutate,
-                    ),
-                    self.assertRaisesRegex(TransactionError, 'target changed after planning'),
-                ):
+                    ), \
+                     self.assertRaisesRegex(TransactionError, 'target changed after planning'):
                     apply_plan(target, plan)
 
                 self.assertEqual(first.read_bytes(), b'a-old\n')
@@ -187,10 +184,8 @@ class SetupTransactionTest(unittest.TestCase):
                     original.write_bytes(b'third-party\n')
                     raise ValueError('post-apply validation failed')
 
-                with (
-                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
-                    self.assertRaisesRegex(TransactionError, 'rollback failed'),
-                ):
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     self.assertRaisesRegex(TransactionError, 'rollback failed'):
                     apply_plan(
                         target,
                         self.plan(Change(
@@ -223,10 +218,8 @@ class SetupTransactionTest(unittest.TestCase):
                     replacement.rename(parent)
                     raise ValueError('post-apply validation failed')
 
-                with (
-                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
-                    self.assertRaisesRegex(TransactionError, 'rollback failed'),
-                ):
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     self.assertRaisesRegex(TransactionError, 'rollback failed'):
                     apply_plan(
                         target,
                         self.plan(Change(
@@ -284,10 +277,8 @@ class SetupTransactionTest(unittest.TestCase):
                 def change_mode() -> None:
                     original.chmod(0o600)
 
-                with (
-                    mock.patch.object(transaction, '_SECURE_DIR_FDS', secure),
-                    self.assertRaisesRegex(TransactionError, 'rollback failed'),
-                ):
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     self.assertRaisesRegex(TransactionError, 'rollback failed'):
                     apply_plan(
                         target,
                         self.plan(Change(

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Apply one approved recommended-tool maintenance action."""
 
 from __future__ import annotations

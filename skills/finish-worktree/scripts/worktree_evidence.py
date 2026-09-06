@@ -34,6 +34,13 @@ def encoded(data: bytes) -> str:
     return base64.b64encode(data).decode("ascii")
 
 
+def _same_file_stat(left: os.stat_result, right: os.stat_result, *, compare_ctime: bool = True) -> bool:
+    fields = ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns", "st_uid", "st_gid")
+    return all(getattr(left, field) == getattr(right, field) for field in fields) and (
+        not compare_ctime or left.st_ctime_ns == right.st_ctime_ns
+    )
+
+
 def file_state(path: Path) -> dict:
     try:
         before = path.lstat()
@@ -50,18 +57,16 @@ def file_state(path: Path) -> dict:
     fd = os.open(path, flags)
     with os.fdopen(fd, "rb") as stream:
         opened = os.fstat(stream.fileno())
-        if (opened.st_dev, opened.st_ino, opened.st_mode) != (
-            before.st_dev, before.st_ino, before.st_mode
-        ):
+        if not _same_file_stat(before, opened, compare_ctime=os.name != "nt"):
             raise EvidenceError(f"file changed during open: {path}")
         hasher = hashlib.sha256()
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             hasher.update(chunk)
         after = os.fstat(stream.fileno())
-    if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
-        after.st_size, after.st_mtime_ns, after.st_ctime_ns
-    ):
+    if not _same_file_stat(opened, after):
         raise EvidenceError(f"file changed during read: {path}")
+    if not _same_file_stat(before, path.lstat()):
+        raise EvidenceError(f"file path changed during read: {path}")
     return {"type": "file", "mode": mode, "size": after.st_size, "sha256": hasher.hexdigest(),
             "uid": after.st_uid, "gid": after.st_gid}
 

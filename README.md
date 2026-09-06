@@ -110,7 +110,7 @@ and a later rule wins only for fields it declares:
 ```json
 {
   "id": "inspector",
-  "command": "python3",
+  "command": "python",
   "overrides": [
     {
       "when": {"operatingSystems": ["windows"]},

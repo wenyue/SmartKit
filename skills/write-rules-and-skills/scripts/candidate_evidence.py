@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Capture and compare deterministic, Candidate-read-only evidence."""
 
 from __future__ import annotations
@@ -114,21 +114,21 @@ def _existing_snapshot_path(raw: str, root: Path) -> Path:
     return snapshot
 
 
-def _same_stat(left: os.stat_result, right: os.stat_result) -> bool:
-    return (
+def _same_stat(
+    left: os.stat_result, right: os.stat_result, *, compare_ctime: bool = True
+) -> bool:
+    return (not compare_ctime or left.st_ctime_ns == right.st_ctime_ns) and (
         left.st_dev,
         left.st_ino,
         left.st_mode,
         left.st_size,
         left.st_mtime_ns,
-        left.st_ctime_ns,
     ) == (
         right.st_dev,
         right.st_ino,
         right.st_mode,
         right.st_size,
         right.st_mtime_ns,
-        right.st_ctime_ns,
     )
 
 
@@ -166,7 +166,12 @@ def _observe_entry(root: Path, relative: str) -> bytes | None:
         raise EvidenceError(f"cannot read Candidate path {relative!r}: {exc}") from exc
     if not stat.S_ISREG(before.st_mode) or not _same_stat(before, after):
         raise EvidenceError(f"Candidate entry changed during observation: {relative!r}")
-    if not _same_stat(chain[-1][1], before) or len(data) != before.st_size:
+    # Windows path and handle queries can report different ctime values for one file.
+    # Keep ctime checks within each API to detect changes during the observation.
+    if (
+        not _same_stat(chain[-1][1], before, compare_ctime=os.name != "nt")
+        or len(data) != before.st_size
+    ):
         raise EvidenceError(f"Candidate entry changed during observation: {relative!r}")
     for path, original in chain:
         try:

@@ -44,18 +44,13 @@ MCP 就绪状态属于另一个每日自动项目检查。设置会验证、冻�
 
 ## 启动冻结会话
 
-从目标仓库根目录，将当前已加载 Skill 目录标识为 `SETUP_PROJECT_AGENTS_ROOT`，然后启动一个私有会话：
+将当前已加载 Skill 的目录标识为 `<skill-root>`，目标仓库根目录标识为 `<target-root>`。通过公共入口 `scripts/workflow.py` 启动一个私有会话：
 
-```sh
-sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" start --target "$PWD"
+```text
+python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 
-```powershell
-& "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" start `
-  --target (Get-Location).Path
-```
-
-两个启动器都只先检查 `python3`，再检查 `python`，要求 Python 3.10 或更高版本，并使用第一个兼容命令执行。若两个命令都不合格，启动器会说明要求和检查顺序，然后以 2 退出。不要搜索其他解释器或绕过启动器。
+`workflow.py` 负责公共 `start`、`finish` 和 `cancel`；`setup_project_agents.py` 仍是内部实现 CLI。
 
 遇到非零结果时停止。将 `session` 记录为 `SESSION`，将 `generated` 记录为 `GENERATED`，并记录返回的 `request`、`source_root`、`source_commit` 和 `source_fingerprint`。请求会冻结设置输入、外部快照、生成请求，以及源和设置相关目标指纹。目标指纹只覆盖设置使用的证据：项目设置配置、所有权与托管资产、生成目标、项目 Rule 元数据、项目 Agent 来源，以及涉及的原生主机配置。Git 历史和索引状态、缓存、日志及其他项目所有工作均不在其中。
 编写前确认它符合已接受意图。规范运行固定到其提交和指纹；已安装回退由其根目录、空提交和指纹标识。
@@ -83,12 +78,8 @@ sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" start --target "
 
 恰好运行一次 `finish`：
 
-```sh
-sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" finish --session "$SESSION"
-```
-
-```powershell
-& "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" finish --session "$SESSION"
+```text
+python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
 变更前，Finish 会重新验证请求、设置相关目标指纹、来源与外部快照、确切生成清单、所有权、渲染状态和计划。它在一个回滚边界内应用计划及其干净后置条件。在返回前，给予 `finish` 对每个计划目标路径的独占访问。每次变更前，它会重新检查观察到的完成前内容、模式和身份，但受支持主机文件系统无法通过先前身份提供可移植的原子比较交换替换或删除。因此，不协作的写入者在检查与文件系统变更之间的狭窄时间窗内所作的写入可能被覆盖。成功要求零退出，并返回包含 `phase: finish` 和 `check: clean` 的 JSON；只有此时，会话才会作为已完成事务被移除。
@@ -97,12 +88,8 @@ sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" finish --session
 
 若工作必须在 `start` 后、任何 `finish` 尝试前停止，取消该会话：
 
-```sh
-sh "$SETUP_PROJECT_AGENTS_ROOT/scripts/setup_project_agents.sh" cancel --session "$SESSION"
-```
-
-```powershell
-& "$SETUP_PROJECT_AGENTS_ROOT\scripts\setup_project_agents.ps1" cancel --session "$SESSION"
+```text
+python "<skill-root>/scripts/workflow.py" cancel --session "<SESSION>"
 ```
 
 完成前，未解决的声明、所有权或摘要冲突、设置相关目标漂移，或生成路径不匹配，都要求取消会话，并在修正后新建会话。取消失败是终止结果，应原样报告。

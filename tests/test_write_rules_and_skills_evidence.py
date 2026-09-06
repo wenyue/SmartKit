@@ -1,13 +1,15 @@
-import hashlib
+from __future__ import annotations
 import importlib.util
+import hashlib
 import io
 import json
 import os
 from pathlib import Path
-import shutil
+import stat
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
@@ -15,10 +17,6 @@ from unittest import mock
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 SCRIPT = REPOSITORY / "skills/write-rules-and-skills/scripts/candidate_evidence.py"
-SHELL_LAUNCHER = SCRIPT.with_suffix(".sh")
-POWERSHELL_LAUNCHER = SCRIPT.with_suffix(".ps1")
-POWERSHELL = shutil.which("pwsh") or shutil.which("powershell")
-POSIX_LAUNCHER_READY = os.name == "posix" and shutil.which("dirname")
 
 
 def helper_cache_state():
@@ -85,15 +83,6 @@ class CandidateEvidenceTest(unittest.TestCase):
         )
         executable.chmod(0o755)
 
-    def launcher_environment(self, executable_root: Path) -> dict[str, str]:
-        environment = dict(os.environ)
-        environment["PATH"] = str(executable_root)
-        return environment
-
-    def provide_posix_launcher_tools(self, executable_root: Path) -> None:
-        dirname = shutil.which("dirname")
-        self.assertIsNotNone(dirname)
-        (executable_root / "dirname").symlink_to(dirname)
 
     def capture(self, snapshot: Path, *paths: str) -> subprocess.CompletedProcess[str]:
         arguments: list[object] = ["capture", "--root", self.root, "--output", snapshot]
@@ -270,6 +259,72 @@ class CandidateEvidenceTest(unittest.TestCase):
         self.assertEqual(compared.returncode, 0, compared.stderr)
         self.assertEqual(self.candidate_digest(), before)
 
+    def test_windows_observation_accepts_distinct_path_and_handle_ctime(self):
+        path = self.root / "existing.txt"
+        data = b"existing\r\ncontent\r\n"
+        path.write_bytes(data)
+        path_stat = os.lstat(path)
+        handle_stat = self.observation_stat(path_stat, st_ctime_ns=path_stat.st_ctime_ns + 1)
+        with mock.patch.object(EVIDENCE.os, "name", "nt"):
+            with mock.patch.object(EVIDENCE.os, "fstat", return_value=handle_stat):
+                self.assertEqual(EVIDENCE.stable_observation(self.root, [path.name]), {path.name: data})
+
+    def observation_stat(self, original, **changes):
+        fields = ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns", "st_ctime_ns")
+        values = {field: getattr(original, field) for field in fields}
+        values.update(changes)
+        return SimpleNamespace(**values)
+
+    def test_windows_observation_rejects_ctime_changes_within_each_api(self):
+        path = self.root / "file.txt"
+        path.write_bytes(b"content")
+        original = os.lstat(path)
+        handle = self.observation_stat(original, st_ctime_ns=original.st_ctime_ns + 1)
+        changed_handle = self.observation_stat(handle, st_ctime_ns=handle.st_ctime_ns + 1)
+        changed_path = self.observation_stat(original, st_ctime_ns=original.st_ctime_ns + 1)
+        cases = (
+            ("handle", [original, original], [handle, changed_handle]),
+            ("path", [original, changed_path], [handle, handle]),
+        )
+        for name, path_stats, handle_stats in cases:
+            with self.subTest(api=name), mock.patch.object(EVIDENCE.os, "name", "nt"):
+                with mock.patch.object(EVIDENCE.os, "lstat", side_effect=path_stats):
+                    with mock.patch.object(EVIDENCE.os, "fstat", side_effect=handle_stats):
+                        with self.assertRaisesRegex(EVIDENCE.EvidenceError, "changed during observation"):
+                            EVIDENCE.observe(self.root, [path.name])
+
+    def test_windows_observation_rejects_path_and_handle_metadata_mismatch(self):
+        path = self.root / "file.txt"
+        path.write_bytes(b"content")
+        original = os.lstat(path)
+        for field in ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns"):
+            with self.subTest(field=field):
+                changed = self.observation_stat(original, **{field: getattr(original, field) + 1})
+                with mock.patch.object(EVIDENCE.os, "name", "nt"):
+                    with mock.patch.object(EVIDENCE.os, "fstat", return_value=changed):
+                        with self.assertRaisesRegex(EVIDENCE.EvidenceError, "changed during observation"):
+                            EVIDENCE.observe(self.root, [path.name])
+
+    def test_observation_rejects_path_replaced_by_symlink_during_read(self):
+        path = self.root / "file.txt"
+        path.write_bytes(b"content")
+        original = os.lstat(path)
+        replacement = self.observation_stat(original, st_mode=stat.S_IFLNK | 0o777)
+        with mock.patch.object(EVIDENCE.os, "lstat", side_effect=[original, replacement]):
+            with mock.patch.object(EVIDENCE.os, "fstat", return_value=original):
+                with self.assertRaisesRegex(EVIDENCE.EvidenceError, "path changed during observation"):
+                    EVIDENCE.observe(self.root, [path.name])
+
+    def test_posix_observation_rejects_path_and_handle_ctime_mismatch(self):
+        path = self.root / "file.txt"
+        path.write_bytes(b"content")
+        original = os.lstat(path)
+        changed = self.observation_stat(original, st_ctime_ns=original.st_ctime_ns + 1)
+        with mock.patch.object(EVIDENCE.os, "name", "posix"):
+            with mock.patch.object(EVIDENCE.os, "fstat", return_value=changed):
+                with self.assertRaisesRegex(EVIDENCE.EvidenceError, "changed during observation"):
+                    EVIDENCE.observe(self.root, [path.name])
+
     def test_binary_change_reports_bounded_metadata(self):
         path = self.root / "binary.bin"
         path.write_bytes(b"\x00before")
@@ -288,7 +343,7 @@ class CandidateEvidenceTest(unittest.TestCase):
         path.write_text("same", encoding="utf-8")
         newline_snapshot = self.base / "newline-snapshot"
         self.assertEqual(self.capture(newline_snapshot, "text.txt").returncode, 0)
-        path.write_text("same\n", encoding="utf-8")
+        path.write_bytes(("same\n").encode("utf-8"))
         first = self.compare(newline_snapshot, "text.txt")
         second = self.compare(newline_snapshot, "text.txt")
         self.assertEqual(first.returncode, 0, first.stderr)
@@ -330,10 +385,10 @@ class CandidateEvidenceTest(unittest.TestCase):
         )
         for name, before, after in cases:
             with self.subTest(name=name):
-                path.write_text(before, encoding="utf-8", newline="")
+                path.write_bytes((before).encode("utf-8"))
                 snapshot = self.base / f"snapshot-{name}"
                 self.assertEqual(self.capture(snapshot, "endings.txt").returncode, 0)
-                path.write_text(after, encoding="utf-8", newline="")
+                path.write_bytes((after).encode("utf-8"))
                 first = self.compare(snapshot, "endings.txt")
                 second = self.compare(snapshot, "endings.txt")
                 self.assertEqual(first.returncode, 0, first.stderr)
@@ -372,7 +427,7 @@ class CandidateEvidenceTest(unittest.TestCase):
         self.assertEqual(result, 2)
         self.assertEqual(stdout.getvalue(), "")
         self.assertTrue(output.exists())
-        self.assertIn(str(output), stderr.getvalue())
+        self.assertIn(repr(str(output)), stderr.getvalue())
         self.assertIn("Controller cleanup", stderr.getvalue())
 
     def test_help_documents_output_schemas_and_exit_statuses(self):
@@ -388,87 +443,6 @@ class CandidateEvidenceTest(unittest.TestCase):
         self.assertIn("exit 3", result.stdout)
         self.assertIn("not operation authorization", normalized_help)
 
-    @unittest.skipUnless(POSIX_LAUNCHER_READY, "requires POSIX launcher tools")
-    def test_shell_launcher_uses_first_compatible_candidate_in_fixed_order(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            self.provide_posix_launcher_tools(executable_root)
-            self.make_python_candidate(executable_root, "python3", version_ok=False)
-            self.make_python_candidate(
-                executable_root, "python", version_ok=True, target_exit=7
-            )
-
-            result = subprocess.run(
-                ("/bin/sh", str(SHELL_LAUNCHER), "capture", "--root", "candidate"),
-                check=False,
-                capture_output=True,
-                text=True,
-                env=self.launcher_environment(executable_root),
-            )
-
-        self.assertEqual(result.returncode, 7, result.stderr)
-        self.assertEqual(result.stdout.splitlines()[0], "python")
-        self.assertEqual(result.stdout.splitlines()[1], str(SCRIPT))
-        self.assertEqual(result.stdout.splitlines()[2:], ["capture", "--root", "candidate"])
-
-    @unittest.skipUnless(POSIX_LAUNCHER_READY, "requires POSIX launcher tools")
-    def test_shell_launcher_fails_once_when_no_candidate_qualifies(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            self.provide_posix_launcher_tools(executable_root)
-            self.make_python_candidate(executable_root, "python3", version_ok=False)
-            self.make_python_candidate(executable_root, "python", version_ok=False)
-
-            result = subprocess.run(
-                ("/bin/sh", str(SHELL_LAUNCHER), "--help"),
-                check=False,
-                capture_output=True,
-                text=True,
-                env=self.launcher_environment(executable_root),
-            )
-
-        expected = "ERROR: Python 3.10 or newer is required; checked python3, then python.\n"
-        self.assertEqual(result.returncode, 2)
-        self.assertEqual(result.stdout, "")
-        self.assertEqual(result.stderr, expected)
-
-    def test_launchers_share_the_bounded_python_discovery_contract(self):
-        shell = SHELL_LAUNCHER.read_text(encoding="utf-8")
-        powershell = POWERSHELL_LAUNCHER.read_text(encoding="utf-8")
-        expected_error = "Python 3.10 or newer is required; checked python3, then python."
-
-        self.assertIn("for python_command in python3 python; do", shell)
-        self.assertIn("foreach ($pythonName in @('python3', 'python'))", powershell)
-        self.assertIn(expected_error, shell)
-        self.assertIn(expected_error, powershell)
-        for launcher in (shell, powershell):
-            self.assertEqual(launcher.count(expected_error), 1)
-            self.assertIn("sys.version_info < (3, 10)", launcher)
-            self.assertNotIn("python3.*", launcher)
-            self.assertNotIn("uv python find", launcher)
-            self.assertNotIn("py -3", launcher)
-
-    @unittest.skipUnless(POWERSHELL and os.name == "posix", "requires PowerShell on POSIX")
-    def test_powershell_launcher_uses_first_compatible_candidate_in_fixed_order(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            executable_root = Path(temp_dir)
-            self.make_python_candidate(executable_root, "python3", version_ok=False)
-            self.make_python_candidate(
-                executable_root, "python", version_ok=True, target_exit=9
-            )
-
-            result = subprocess.run(
-                (str(POWERSHELL), "-NoProfile", "-File", str(POWERSHELL_LAUNCHER), "compare"),
-                check=False,
-                capture_output=True,
-                text=True,
-                env=self.launcher_environment(executable_root),
-            )
-
-        self.assertEqual(result.returncode, 9, result.stdout + result.stderr)
-        self.assertEqual(result.stdout.splitlines()[0], "python")
-        self.assertEqual(result.stdout.splitlines()[1], str(SCRIPT))
-        self.assertEqual(result.stdout.splitlines()[2:], ["compare"])
 
     def test_compare_rejects_snapshot_payload_tampering(self):
         (self.root / "file.txt").write_text("baseline\n", encoding="utf-8")

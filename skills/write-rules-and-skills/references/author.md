@@ -11,8 +11,11 @@ job so that initial writing, review responses, and repairs remain coherent.
   evidence, not inherited wording, convenience, or taste.
 - **Holistic coherence.** Reconsider the complete Candidate on every change. Give each meaning one
   clear home; integrate, replace, move, or remove existing content instead of accumulating patches.
-- **Minimal completeness.** Preserve every consequential obligation, boundary, and exception, and
-  leave inferable method and immaterial detail to the Agent.
+- **Minimal completeness.** Preserve every consequential obligation, boundary, and exception.
+  Include explicit content for its material contribution to understanding, execution, or acceptance
+  in the full context, including explanations that clarify relationships or prevent real ambiguity.
+  Leave reliably inferable method and immaterial detail to the Agent; apparent completeness alone
+  does not justify retaining them.
 - **Elegant and human-readable.** Write natural, precise, coherent English that both people and
   Agents can understand.
 - **Operational closure.** Make the trigger, responsible actor, required behavior, completion, and
@@ -92,8 +95,13 @@ made no progress. The Author does not claim the post-write fingerprint or review
 
 ### Python-backed Skills
 
-Unless a more specific authority overrides it, a Skill that bundles or calls Python provides
-aligned, self-contained POSIX and PowerShell launchers. They silently select the first Python 3.10+
-runtime from `python3`, then `python`, and preserve arguments and exit status. If neither qualifies,
-they probe no other names, write `ERROR: Python 3.10 or newer is required; checked python3, then
-python.` once to standard error, and exit 2.
+Expose first-party Agent-invoked tools through their Python CLI, with one plain command example per
+operation:
+`python "<skill-root>/scripts/tool.py" --help`. Assume `python` is usable; omit interpreter discovery,
+version preflight, executable variables, and separate platform examples from Skills and Rules.
+
+Report command failures
+through the owning workflow; this contract grants no runtime installation or forwarding launchers.
+
+Unattended host hooks retain their separately owned bootstrap adapters and runtime-failure output.
+External Skills retain their own invocation contracts.

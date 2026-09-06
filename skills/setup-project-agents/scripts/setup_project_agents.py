@@ -829,8 +829,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             'Implementation CLI for setup bootstrap and workflow only. Direct public use of '
-            'prepare or finish is unsupported; use setup_project_agents.sh or '
-            'setup_project_agents.ps1.'
+            'prepare or finish is unsupported; use python workflow.py.'
         ),
         allow_abbrev=False,
     )

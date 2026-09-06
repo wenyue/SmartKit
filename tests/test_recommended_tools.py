@@ -1355,39 +1355,36 @@ class RecommendedToolCheckerTest(unittest.TestCase):
 class PythonLauncherContractTest(unittest.TestCase):
     launchers = (
         REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.sh',
-        REPO_ROOT / 'runtime/recommended-tools/maintain_recommended_tools.sh',
         REPO_ROOT / 'runtime/rules/dispatch.sh',
         REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.ps1',
-        REPO_ROOT / 'runtime/recommended-tools/maintain_recommended_tools.ps1',
         REPO_ROOT / 'runtime/rules/dispatch.ps1',
     )
 
     def test_launchers_share_the_bounded_python_contract(self):
         failure = (
-            'ERROR: Python 3.10 or newer is required; '
-            'checked python3, then python.'
+            'ERROR: Python 3.8 or newer is required; '
+            'checked python.'
         )
         for launcher in self.launchers:
             with self.subTest(launcher=launcher.relative_to(REPO_ROOT).as_posix()):
                 content = launcher.read_text(encoding='utf-8')
                 self.assertIn(failure, content)
-                self.assertIn("sys.version_info < (3, 10)", content)
+                self.assertIn("sys.version_info < (3, 8)", content)
                 if launcher.suffix == '.sh':
-                    self.assertIn('for python_command in python3 python; do', content)
+                    self.assertIn('command -v python', content)
                 else:
-                    self.assertIn("foreach ($pythonCommand in @('python3', 'python'))", content)
+                    self.assertIn("Get-Command python -CommandType Application", content)
                     self.assertIn('catch {', content)
-                    self.assertIn('continue', content)
-                self.assertNotIn('python3.*', content)
+                self.assertNotIn('python3', content)
                 self.assertNotIn('uv python find', content)
                 self.assertNotIn('Get-Command py ', content)
 
     @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
-    def test_rule_launcher_falls_back_from_python3_to_python(self):
+    def test_rule_launcher_uses_python_without_probing_python3(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             executable_root = Path(temp_dir)
             (executable_root / 'python3').write_text(
-                '#!/bin/sh\nexit 1\n', encoding='utf-8'
+                '#!/bin/sh\n: > "$DECOY_MARKER"\nexit 1\n', encoding='utf-8'
             )
             (executable_root / 'python3').chmod(0o755)
             (executable_root / 'python').symlink_to(sys.executable)
@@ -1396,6 +1393,7 @@ class PythonLauncherContractTest(unittest.TestCase):
             (executable_root / 'dirname').symlink_to(dirname)
             environment = dict(os.environ)
             environment['PATH'] = str(executable_root)
+            environment['DECOY_MARKER'] = str(executable_root / 'decoy-used')
 
             completed = subprocess.run(
                 ('/bin/sh', str(REPO_ROOT / 'runtime/rules/dispatch.sh'), '--help'),
@@ -1404,6 +1402,8 @@ class PythonLauncherContractTest(unittest.TestCase):
                 text=True,
                 env=environment,
             )
+
+            self.assertFalse((executable_root / 'decoy-used').exists())
 
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn('usage:', completed.stdout.lower())
@@ -1440,12 +1440,82 @@ class PythonLauncherContractTest(unittest.TestCase):
             {
                 'continue': True,
                 'systemMessage': (
-                    'ERROR: Python 3.10 or newer is required; '
-                    'checked python3, then python.'
+                    'ERROR: Python 3.8 or newer is required; '
+                    'checked python.'
                 ),
             },
         )
-        self.assertIn('ERROR: Python 3.10 or newer is required', completed.stderr)
+        self.assertIn('ERROR: Python 3.8 or newer is required', completed.stderr)
+
+    def test_host_launchers_require_python_and_preserve_exit_contracts(self):
+        powershell = shutil.which('powershell') or shutil.which('pwsh')
+        host_launchers = []
+        for launcher in self.launchers:
+            if launcher.suffix == '.sh' and os.name == 'posix':
+                host_launchers.append((launcher, ['/bin/sh', str(launcher)]))
+            elif launcher.suffix == '.ps1' and powershell:
+                host_launchers.append((launcher, [powershell, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(launcher)]))
+        if not host_launchers:
+            self.skipTest('no supported host shell')
+        failure = 'ERROR: Python 3.8 or newer is required; checked python.'
+        for launcher, command in host_launchers:
+            for availability in ('missing', 'incompatible', 'compatible'):
+                with self.subTest(launcher=launcher.name, availability=availability):
+                    with tempfile.TemporaryDirectory(prefix='python hook ') as temp_dir:
+                        root = Path(temp_dir)
+                        suffix = '.cmd' if os.name == 'nt' else ''
+                        decoy = root / ('python3' + suffix)
+                        marker = root / 'decoy-used'
+                        if os.name == 'nt':
+                            decoy.write_text('@echo decoy>"%DECOY_MARKER%"\n@exit /b 0\n')
+                        else:
+                            decoy.write_text('#!/bin/sh\n: > "$DECOY_MARKER"\nexit 0\n')
+                            decoy.chmod(0o755)
+                            dirname = shutil.which('dirname')
+                            self.assertIsNotNone(dirname)
+                            (root / 'dirname').symlink_to(dirname)
+                        if availability != 'missing':
+                            candidate = root / ('python' + suffix)
+                            probe_exit = 0 if availability == 'compatible' else 1
+                            if os.name == 'nt':
+                                candidate.write_text(
+                                    '@echo off\n'
+                                    'if "%~1"=="-c" (\n'
+                                    '  echo probe-noise\n'
+                                    f'  exit /b {probe_exit}\n'
+                                    ')\n'
+                                    'echo forwarded\nexit /b 7\n'
+                                )
+                            else:
+                                candidate.write_text(
+                                    '#!/bin/sh\n'
+                                    'if [ "$1" = "-c" ]; then\n'
+                                    f'  echo probe-noise; exit {probe_exit}\n'
+                                    'fi\n'
+                                    'echo forwarded\nexit 7\n'
+                                )
+                                candidate.chmod(0o755)
+                        environment = dict(os.environ, PATH=str(root), DECOY_MARKER=str(marker))
+                        result = subprocess.run(command + ['--help'], env=environment, cwd=root,
+                                                capture_output=True, text=True)
+                        self.assertFalse(marker.exists())
+                        self.assertNotIn('probe-noise', result.stdout + result.stderr)
+                        if availability == 'compatible':
+                            self.assertEqual(result.returncode, 7, result.stderr)
+                            self.assertEqual(result.stdout.strip(), 'forwarded')
+                        else:
+                            self.assertEqual(result.returncode, 2, result.stderr)
+                            self.assertEqual(result.stdout, '')
+                            self.assertEqual(result.stderr.strip(), failure)
+                        if launcher.stem == 'check_recommended_tools':
+                            result = subprocess.run(command + ['hook', '--harness', 'codex'],
+                                                    env=environment, cwd=root, capture_output=True, text=True)
+                            self.assertEqual(result.returncode, 0, result.stderr)
+                            if availability == 'compatible':
+                                self.assertEqual(result.stdout.strip(), 'forwarded')
+                            else:
+                                self.assertEqual(json.loads(result.stdout),
+                                                 {'continue': True, 'systemMessage': failure})
 
 
 class RecommendedToolMaintainerTest(unittest.TestCase):
@@ -1464,10 +1534,6 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
                         self.assertTrue(recipe.command or recipe.manual_guidance)
                         self.assertFalse(recipe.command and recipe.manual_guidance)
 
-    def test_shared_maintenance_workflow_has_paired_entry_points(self):
-        scripts = MAINTAINER_PATH.parent
-        self.assertTrue((scripts / 'maintain_recommended_tools.sh').is_file())
-        self.assertTrue((scripts / 'maintain_recommended_tools.ps1').is_file())
 
     def test_maintenance_requires_consent_before_execution(self):
         executor = mock.Mock()

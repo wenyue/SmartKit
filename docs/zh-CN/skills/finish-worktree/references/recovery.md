@@ -39,14 +39,11 @@
 
 ## 只读取证 <a id="read-only-evidence"></a>
 
-`scripts/worktree_evidence.sh` 和 `.ps1` 按 `python3`、`python` 的顺序选择 Python 3.10+，并提供
-`scripts/worktree_evidence.py` 的接口。在当前宿主上探测 `--help`。Snapshot 将 JSON 写到 stdout；compare
-读取外部快照。两个命令都不写入 Git 状态或工作文件状态。示例使用 POSIX `sh`；在 PowerShell 中，使用 `&`
-调用对应的 `.ps1`，并传入相同参数。
+使用前运行 `python "<skill-root>/scripts/worktree_evidence.py" --help` 探测。Snapshot 将 JSON 写到 stdout；compare 读取外部快照。两个命令都不写入 Git 状态或工作文件状态。重定向 stdout 时，要保留快照的 UTF-8 JSON 编码。
 
-```sh
-sh "<skill-root>/scripts/worktree_evidence.sh" snapshot --repository <physical-checkout> --path <relative-file> > <external-snapshot.json>
-sh "<skill-root>/scripts/worktree_evidence.sh" compare --snapshot <external-snapshot.json>
+```text
+python "<skill-root>/scripts/worktree_evidence.py" snapshot --repository "<physical-checkout>" --path "<relative-file>" > "<external-snapshot.json>"
+python "<skill-root>/scripts/worktree_evidence.py" compare --snapshot "<external-snapshot.json>"
 ```
 
 重复 `--path` 可指定依赖集合。不指定路径时，snapshot 只采集仓库、HEAD 和暂存区的边界证据。`--inventory` 会明确
@@ -65,11 +62,7 @@ Snapshot 观察两次，拒绝检测到的不稳定状态。Compare 按记录的
 
 ## 批量转移机制 <a id="batch-transfer-mechanism"></a>
 
-`scripts/worktree_transfer.sh` 和 `.ps1` 使用相同的 Python 查找方式，并提供 `scripts/worktree_transfer.py`
-的接口。其有界接口包括 `prepare`、`apply`、`inspect` 和 `recover`；在宿主上探测 `--help`。使用一个新的物理操作
-目录，位于来源、目标及其 Git 目录之外，并与目标父目录处于同一文件系统。该目录与来源一起保留，直到满足转移的用户
-验收条件。下方 POSIX 示例使用 `.sh`；在 PowerShell 中，使用 `&` 调用 `scripts/worktree_transfer.ps1`，
-并传入相同参数。
+`scripts/worktree_transfer.py` 的有界接口包括 `prepare`、`apply`、`inspect` 和 `recover`；使用前运行 `python "<skill-root>/scripts/worktree_transfer.py" --help` 探测。使用一个新的物理操作目录，位于来源、目标及其 Git 目录之外，并与目标父目录处于同一文件系统。该目录与来源一起保留，直到满足转移的用户验收条件。
 
 工具处理通过准入检查的普通文件新增、修改和删除操作，目标须位于现有真实目录中。其实现负责宿主特定的能力和
 元数据检查。只有这些检查能够证明目标路径、操作存储及每份生成或使用的材料满足所需的内容、安全属性、所有者、
@@ -95,10 +88,10 @@ Snapshot 观察两次，拒绝检测到的不稳定状态。Compare 按记录的
 输出必须匹配 S。删除操作的 `output` 为 null。除非已接受改动有意改变权限细节，否则保留目标权限细节。智能体负责
 确立每项都属于 B → S，且组合输出保留了 W 中兼容的改动；这份清单不能绕过语义判断。
 
-```sh
-sh "<skill-root>/scripts/worktree_transfer.sh" prepare --plan <external-plan.json> --operation <new-operation-directory>
-sh "<skill-root>/scripts/worktree_transfer.sh" apply --operation <operation-directory>
-sh "<skill-root>/scripts/worktree_transfer.sh" inspect --operation <operation-directory>
+```text
+python "<skill-root>/scripts/worktree_transfer.py" prepare --plan "<external-plan.json>" --operation "<new-operation-directory>"
+python "<skill-root>/scripts/worktree_transfer.py" apply --operation "<operation-directory>"
+python "<skill-root>/scripts/worktree_transfer.py" inspect --operation "<operation-directory>"
 ```
 
 `prepare` 冻结所有已接受输出、待写入副本和可读备份，并写入 `receipt.json`，记录操作前状态、权限、负责人和保留
@@ -116,8 +109,8 @@ sh "<skill-root>/scripts/worktree_transfer.sh" inspect --operation <operation-di
 
 对于部分完成的尝试，先确立原进程已停止，再调用：
 
-```sh
-sh "<skill-root>/scripts/worktree_transfer.sh" recover --operation <operation-directory> --quiescent
+```text
+python "<skill-root>/scripts/worktree_transfer.py" recover --operation "<operation-directory>" --quiescent
 ```
 
 `--quiescent` 记录调用方已经确立的进程事实；它允许替换残留的操作锁，绝不能仅凭经过的时间推断。恢复保留原始错误，

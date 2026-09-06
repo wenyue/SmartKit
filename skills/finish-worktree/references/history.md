@@ -36,23 +36,22 @@ accepted result and selected effect boundary.
 
 Require a clean source under `git status --porcelain=v1 -z`, a wholly task-owned range whose exact
 target is an ancestor, and evidence that the range is unpublished and unrelied-upon. Establish the
-commit authority and normal repository hooks. Probe the appropriate launcher with `--help` before
-preparation. Both launchers check only `python3`, then `python`, selecting Python 3.10+; when neither
-qualifies they report that requirement once and exit 2 without a history effect.
+commit authority and normal repository hooks. Probe
+`python "<skill-root>/scripts/consolidate_worktree_history.py" --help` before
+preparation. A failed probe stops preparation without a history effect.
 
 Prepare an owned commit-message file outside affected worktrees. Reserve an expected-absent unique
 ref under `refs/smartkit/recovery/` and its derived `<recovery-ref>-candidate` ref. Record their exact
 create/retain/delete authority, expected values, message bytes and lifecycle owner in the external
 [operation receipt](recovery.md). Create the message once and verify it before the helper invocation.
 
-On POSIX, invoke:
+Invoke:
 
-```sh
-sh "<skill-root>/scripts/consolidate_worktree_history.sh"   --repository <source-worktree> --target <exact-target-oid>   --message-file <external-message-file> --recovery-ref <new-recovery-ref>
+```text
+python "<skill-root>/scripts/consolidate_worktree_history.py" --repository "<source-worktree>" --target "<exact-target-oid>" --message-file "<external-message-file>" --recovery-ref "<new-recovery-ref>"
 ```
 
-Use `scripts/consolidate_worktree_history.ps1` with the same arguments on PowerShell. The helper's
-normal commit runs hooks, preserves the checkpoint under the recovery ref, and checks that the new
+The helper's normal commit runs hooks, preserves the checkpoint under the recovery ref, and checks that the new
 commit has the target as sole parent and the reviewed tree unchanged. Its internal Git operations
 belong to one history attempt. Its JSON is evidence to recheck, not an authoritative phase result.
 

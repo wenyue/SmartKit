@@ -103,7 +103,7 @@ Setup 会保留不受其管理的宿主配置；受管条目发生冲突或被�
 ```json
 {
   "id": "inspector",
-  "command": "python3",
+  "command": "python",
   "overrides": [
     {
       "when": {"operatingSystems": ["windows"]},

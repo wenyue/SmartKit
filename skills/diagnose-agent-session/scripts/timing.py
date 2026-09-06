@@ -2700,8 +2700,8 @@ def _unavailable_codex_turn_activity(
 
 
 def main(argv: list[str] | None = None) -> int:
-    if sys.version_info < (3, 10):
-        print('ERROR: Python 3.10 or newer is required.', file=sys.stderr)
+    if sys.version_info < (3, 8):
+        print('ERROR: Python 3.8 or newer is required.', file=sys.stderr)
         return 2
     args = build_parser().parse_args(sys.argv[1:] if argv is None else argv)
     try:

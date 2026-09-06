@@ -55,14 +55,13 @@ target HEAD, changes its index or resets unrelated state.
 
 ## Read-only evidence
 
-`scripts/worktree_evidence.sh` and `.ps1` select Python 3.10+ from `python3`, then `python`, and expose
-`scripts/worktree_evidence.py`. Probe `--help` on the current host. Snapshot writes JSON to stdout;
-compare reads an external snapshot. Neither command writes Git or working-file state. The examples
-use POSIX `sh`; in PowerShell, invoke the corresponding `.ps1` with `&` and the same arguments.
+Probe `python "<skill-root>/scripts/worktree_evidence.py" --help` before use.
+Snapshot writes JSON to stdout; compare reads an external snapshot. Neither command writes Git or
+working-file state. Preserve the snapshot's UTF-8 JSON when redirecting stdout.
 
-```sh
-sh "<skill-root>/scripts/worktree_evidence.sh" snapshot --repository <physical-checkout> --path <relative-file> > <external-snapshot.json>
-sh "<skill-root>/scripts/worktree_evidence.sh" compare --snapshot <external-snapshot.json>
+```text
+python "<skill-root>/scripts/worktree_evidence.py" snapshot --repository "<physical-checkout>" --path "<relative-file>" > "<external-snapshot.json>"
+python "<skill-root>/scripts/worktree_evidence.py" compare --snapshot "<external-snapshot.json>"
 ```
 
 Repeat `--path` for the dependency set. With no paths, snapshot captures only repository/HEAD/index
@@ -87,12 +86,11 @@ globally atomic snapshot, detect edits reverted between observations, or establi
 
 ## Batch transfer mechanism
 
-`scripts/worktree_transfer.sh` and `.ps1` use the same Python discovery and expose
-`scripts/worktree_transfer.py`. Its bounded interface is `prepare`, `apply`, `inspect`, and `recover`;
-probe `--help` on the host. Use one new physical operation directory outside source, target and their
+The bounded interface of `scripts/worktree_transfer.py` is `prepare`, `apply`, `inspect`, and `recover`;
+probe `python "<skill-root>/scripts/worktree_transfer.py" --help` before use.
+Use one new physical operation directory outside source, target and their
 Git directories, on the same filesystem as destination parents. Keep that directory with the source
-until the transfer's user-acceptance condition is met. The POSIX examples below use `.sh`; in
-PowerShell invoke `scripts/worktree_transfer.ps1` with `&` and the same arguments.
+until the transfer's user-acceptance condition is met.
 
 The helper handles admitted regular-file create/update/delete operations in existing real
 directories. Its implementation owns host-specific capability and metadata checks. Use it only when
@@ -125,10 +123,10 @@ source output must match S. For deletion, `output` is null. Preserve target perm
 the accepted change intentionally alters them. The Agent establishes that each entry is part of
 B → S and that combined outputs preserve compatible W changes; this manifest is no semantic bypass.
 
-```sh
-sh "<skill-root>/scripts/worktree_transfer.sh" prepare --plan <external-plan.json> --operation <new-operation-directory>
-sh "<skill-root>/scripts/worktree_transfer.sh" apply --operation <operation-directory>
-sh "<skill-root>/scripts/worktree_transfer.sh" inspect --operation <operation-directory>
+```text
+python "<skill-root>/scripts/worktree_transfer.py" prepare --plan "<external-plan.json>" --operation "<new-operation-directory>"
+python "<skill-root>/scripts/worktree_transfer.py" apply --operation "<operation-directory>"
+python "<skill-root>/scripts/worktree_transfer.py" inspect --operation "<operation-directory>"
 ```
 
 `prepare` freezes all accepted outputs, pending write copies and readable backups, and writes
@@ -153,8 +151,8 @@ or behavioral verification result.
 
 For a partial attempt, establish that the original process has stopped before invoking:
 
-```sh
-sh "<skill-root>/scripts/worktree_transfer.sh" recover --operation <operation-directory> --quiescent
+```text
+python "<skill-root>/scripts/worktree_transfer.py" recover --operation "<operation-directory>" --quiescent
 ```
 
 `--quiescent` records the caller's established process fact; it permits replacing a stale operation

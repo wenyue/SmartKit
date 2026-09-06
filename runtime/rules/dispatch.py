@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Deliver SmartKit plugin Rules for hosts that expose command Hooks."""
 from __future__ import annotations
 

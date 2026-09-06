@@ -670,10 +670,8 @@ class SetupSourceTest(unittest.TestCase):
                     (replacement / 'sentinel').write_text('keep\\n', encoding='utf-8')
                     replacements.append(replacement)
 
-            with (
-                mock.patch.object(source_module.os, 'mkdir', side_effect=replace_before_mkdir_returns),
-                mock.patch.object(source_module.subprocess, 'run') as run,
-            ):
+            with mock.patch.object(source_module.os, 'mkdir', side_effect=replace_before_mkdir_returns), \
+                 mock.patch.object(source_module.subprocess, 'run') as run:
                 with self.assertRaises((SourceUnavailable, InvalidFetchedSource)):
                     fetch_canonical('file:///origin.git', work_root=workspace)
 
@@ -768,11 +766,9 @@ class SetupSourceTest(unittest.TestCase):
     def test_unavailable_secure_staging_primitives_do_not_mutate_or_run_git(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir) / 'session'
-            with (
-                mock.patch.object(source_module, '_secure_fetch_supported', return_value=False),
-                mock.patch.object(source_module.os, 'mkdir') as mkdir,
-                mock.patch.object(source_module.subprocess, 'run') as run,
-            ):
+            with mock.patch.object(source_module, '_secure_fetch_supported', return_value=False), \
+                 mock.patch.object(source_module.os, 'mkdir') as mkdir, \
+                 mock.patch.object(source_module.subprocess, 'run') as run:
                 with self.assertRaises(SourceUnavailable):
                     fetch_canonical('file:///origin.git', work_root=workspace)
             mkdir.assert_not_called()
@@ -823,14 +819,12 @@ class SetupSourceTest(unittest.TestCase):
             write_valid_source(installed)
             session = temporary / 'session'
             completed = subprocess.CompletedProcess(('child',), 23)
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     bootstrap,
                     'fetch_canonical',
                     side_effect=SourceUnavailable('network unavailable'),
-                ),
-                mock.patch.object(bootstrap.subprocess, 'run', return_value=completed) as run,
-            ):
+                ), \
+                 mock.patch.object(bootstrap.subprocess, 'run', return_value=completed) as run:
                 result = bootstrap.main(
                     ['prepare', '--session', str(session), '--target', str(temporary / 'target')],
                     installed_root=installed,
@@ -847,14 +841,12 @@ class SetupSourceTest(unittest.TestCase):
             temporary = Path(temp_dir)
             installed = temporary / 'installed'
             write_valid_source(installed)
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     bootstrap,
                     'fetch_canonical',
                     side_effect=InvalidFetchedSource('bad fetched source'),
-                ),
-                mock.patch.object(bootstrap.subprocess, 'run') as run,
-            ):
+                ), \
+                 mock.patch.object(bootstrap.subprocess, 'run') as run:
                 result = bootstrap.main(
                     ['prepare', '--session', str(temporary / 'session')],
                     installed_root=installed,
@@ -870,14 +862,12 @@ class SetupSourceTest(unittest.TestCase):
             write_valid_source(source)
             snapshot = SourceSnapshot(source, 'a' * 40)
             forwarded = ['prepare', '--session', str(temporary / 'session'), '--target', str(temporary / 'target')]
-            with (
-                mock.patch.object(bootstrap, 'fetch_canonical', return_value=snapshot) as fetch,
-                mock.patch.object(
+            with mock.patch.object(bootstrap, 'fetch_canonical', return_value=snapshot) as fetch, \
+                 mock.patch.object(
                     bootstrap.subprocess,
                     'run',
                     return_value=subprocess.CompletedProcess(('child',), 23),
-                ) as run,
-            ):
+                ) as run:
                 result = bootstrap.main(forwarded, installed_root=temporary / 'installed')
 
             self.assertEqual(result, 23)
@@ -899,18 +889,16 @@ class SetupSourceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             temporary = Path(temp_dir)
             session = temporary / 'session'
-            with (
-                mock.patch.object(
+            with mock.patch.object(
                     bootstrap,
                     'fetch_canonical',
                     side_effect=SourceUnavailable('network unavailable'),
-                ),
-                mock.patch.object(
+                ), \
+                 mock.patch.object(
                     bootstrap.subprocess,
                     'run',
                     return_value=subprocess.CompletedProcess(('child',), 23),
-                ) as run,
-            ):
+                ) as run:
                 result = bootstrap.main(['prepare', '--session', str(session)])
 
             self.assertEqual(result, 23)

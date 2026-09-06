@@ -4,9 +4,8 @@ import hashlib
 import os
 import re
 import stat
-from collections.abc import Callable
 from pathlib import Path, PurePosixPath
-from typing import NamedTuple
+from typing import Callable, NamedTuple, Tuple
 
 
 COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
@@ -108,7 +107,7 @@ class LicenseDiscovery(NamedTuple):
     content: bytes
 
 
-GitRunner = Callable[[tuple[str, ...]], str]
+GitRunner = Callable[[Tuple[str, ...]], str]
 
 
 def isolated_git_environment(home: Path) -> dict[str, str]:

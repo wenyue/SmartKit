@@ -1,30 +1,30 @@
 $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path $PSScriptRoot 'check_recommended_tools.py'
 
-foreach ($pythonCommand in @('python3', 'python')) {
-    $resolved = Get-Command $pythonCommand -CommandType Application -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-    if ($null -eq $resolved) {
-        continue
-    }
+$resolved = Get-Command python -CommandType Application -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+$pythonReady = $false
+if ($null -ne $resolved) {
     try {
-        & $resolved.Source -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' *> $null
+        $LASTEXITCODE = $null
+        & $resolved.Source -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' *> $null
+        $pythonReady = $LASTEXITCODE -eq 0
     }
     catch {
-        continue
+        $pythonReady = $false
     }
-    if ($LASTEXITCODE -eq 0) {
-        & $resolved.Source $scriptPath @args
-        $status = $LASTEXITCODE
-        if ($args.Count -gt 0 -and $args[0] -eq 'hook') {
-            exit 0
-        }
-        exit $status
+}
+if ($pythonReady) {
+    & $resolved.Source $scriptPath @args
+    $status = $LASTEXITCODE
+    if ($args.Count -gt 0 -and $args[0] -eq 'hook') {
+        exit 0
     }
+    exit $status
 }
 
 [Console]::Error.WriteLine(
-    'ERROR: Python 3.10 or newer is required; checked python3, then python.'
+    'ERROR: Python 3.8 or newer is required; checked python.'
 )
 if ($args.Count -gt 0 -and $args[0] -eq 'hook') {
     $harness = $null
@@ -37,7 +37,7 @@ if ($args.Count -gt 0 -and $args[0] -eq 'hook') {
             $delivery = $args[$index + 1]
         }
     }
-    $message = 'ERROR: Python 3.10 or newer is required; checked python3, then python.'
+    $message = 'ERROR: Python 3.8 or newer is required; checked python.'
     if ($harness -eq 'codex') {
         @{ continue = $true; systemMessage = $message } |
             ConvertTo-Json -Compress | Write-Output

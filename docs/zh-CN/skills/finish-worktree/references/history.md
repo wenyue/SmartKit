@@ -24,21 +24,19 @@
 
 ## 整理检查点提交
 
-要求来源按 `git status --porcelain=v1 -z` 判断为干净，整个范围归属任务、准确目标是其祖先，并有证据证明该范围
-尚未发布且没有被依赖。确定提交权限和仓库正常 hook。准备前使用 `--help` 探测相应启动器。两个启动器都只按
-`python3`、`python` 的顺序检查，选择 Python 3.10+；若都不满足，只报告一次要求并以退出码 2 结束，不产生历史影响。
+要求来源按 `git status --porcelain=v1 -z` 判断为干净，整个范围归属任务、准确目标是其祖先，并有证据证明该范围尚未发布且没有被依赖。确定提交权限和仓库正常 hook。准备前运行 `python "<skill-root>/scripts/consolidate_worktree_history.py" --help` 探测。探测失败时停止准备，不产生历史影响。
 
 在受影响工作树之外准备自有提交消息文件。在 `refs/smartkit/recovery/` 下预留一个预期不存在的唯一引用，及其派生的
 `<recovery-ref>-candidate` 引用。在外部[操作记录](recovery.md)中记录准确创建、保留、删除权限、预期值、消息字节
 及生命周期负责人。消息文件只创建一次，并在调用工具前验证。
 
-在 POSIX 上调用：
+调用：
 
-```sh
-sh "<skill-root>/scripts/consolidate_worktree_history.sh"   --repository <source-worktree> --target <exact-target-oid>   --message-file <external-message-file> --recovery-ref <new-recovery-ref>
+```text
+python "<skill-root>/scripts/consolidate_worktree_history.py" --repository "<source-worktree>" --target "<exact-target-oid>" --message-file "<external-message-file>" --recovery-ref "<new-recovery-ref>"
 ```
 
-在 PowerShell 上使用 `scripts/consolidate_worktree_history.ps1`，参数相同。工具通过正常提交运行 hook，将检查点
+工具通过正常提交运行 hook，将检查点
 保留在恢复引用上，并检查新提交以目标为唯一父提交、已审查树保持不变。它内部的 Git 操作属于一次历史尝试。
 其 JSON 是需要复核的证据，不是权威阶段结果。
 

@@ -1,9 +1,8 @@
+import importlib.util
 """Real batch mechanics in disposable linked worktrees; semantic acceptance is caller-owned."""
 
-import importlib.util
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -307,12 +306,12 @@ class TransferTests(unittest.TestCase):
         self.assertEqual((self.repo / "nested/file.txt").read_bytes(), b"nested user\n")
         self.assertFalse(self.operation.exists())
 
-    @unittest.skipUnless(os.name == "posix", "requires POSIX launcher")
+    @unittest.skipUnless(os.name == "posix", "requires POSIX transfer backend")
     def test_cli_prepare_apply_inspect_and_refused_recovery(self):
         plan = self.plan({"a.txt": b"cli\n"})
         plan_file = self.root / "plan.json"
         plan_file.write_text(json.dumps(plan))
-        launcher = ["sh", str(SCRIPT.with_suffix(".sh"))]
+        launcher = [sys.executable, str(SCRIPT)]
         for command in ("prepare", "apply", "inspect"):
             arguments = [command, "--operation", str(self.operation)]
             if command == "prepare":
@@ -393,12 +392,6 @@ class TransferTests(unittest.TestCase):
         self.assertEqual((self.repo / "a.txt").read_bytes(), b"new a\n")
         self.assertEqual(os.listxattr(self.repo / "a.txt"), [])
         self.assertTrue((self.operation / "backup-0").exists())
-
-    @unittest.skipUnless(shutil.which("pwsh"), "PowerShell runtime unavailable")
-    def test_powershell_launcher(self):
-        result = subprocess.run(["pwsh", "-NoProfile", "-File", str(SCRIPT.with_suffix(".ps1")), "--help"], capture_output=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(b"prepare", result.stdout)
 
 
 @unittest.skipIf(os.name == "nt", "Windows uses its native admission path")

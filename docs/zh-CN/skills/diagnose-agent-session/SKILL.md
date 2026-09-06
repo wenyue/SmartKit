@@ -25,7 +25,7 @@ description: 诊断一个当前或已完成的 Agent 会话中疑似异常的 to
 
 Codex 支持 `turn`、`session` 和 `both`。Cursor 和 GitHub Copilot CLI 仅支持整个会话的 Tokscale 证据。若 Cursor 或 Copilot 请求 `turn`，在获取前停止。对于 `both`，获取请求的会话证据，并将轮次证据标记为不受支持；绝不把会话证据呈现为轮次证据。
 
-若客户端与会话组合缺失或不完整、客户端或 ID 不受支持、请求了其他历史轮次，或平台没有受支持启动器，也要在获取前停止。报告确切前置条件，不改变身份或范围。
+若客户端与会话组合缺失或不完整、客户端或 ID 不受支持，或请求了其他历史轮次，也要在获取前停止。报告确切前置条件，不改变身份或范围。
 
 ## 2. 授权数据来源
 
@@ -41,24 +41,13 @@ Codex profile 会读取确切的本地会话日志。它只为本次尝试保留
 
 ## 3. 获取不可变证据
 
-将包含已安装 `SKILL.md` 的目录解析为 `skill_root`。生成 32 个新的随机字节，并编码为恰好 64 个小写十六进制字符。将该获取 ID 只传给所属包装器一次。Codex profile 仅在工具调用记录中匹配这个确切 ID：恰好一次匹配时，只排除该次调用。零次匹配时不排除任何调用，并报告未观察到当前获取调用。多次匹配时不排除任何调用，并报告自身调用归因失败且存在歧义。历史 ID 以及无关或已完成的诊断调用仍属于证据。
+将包含已加载 `SKILL.md` 的目录解析为 `<skill-root>`。生成 32 个新的随机字节，并编码为恰好 64 个小写十六进制字符。将该获取 ID 只传给所属包装器一次。Codex profile 仅在工具调用记录中匹配这个确切 ID：恰好一次匹配时，只排除该次调用。零次匹配时不排除任何调用，并报告未观察到当前获取调用。多次匹配时不排除任何调用，并报告自身调用归因失败且存在歧义。历史 ID 以及无关或已完成的诊断调用仍属于证据。
 
-在 Linux 上使用 `sh`：
-
-```sh
-skill_root='<absolute directory containing the installed SKILL.md>'
-sh "$skill_root/scripts/task-metrics.sh" diagnose --scope both --client <client> --session-id <id> --acquisition-id <64-lowercase-hex>
+```text
+python "<skill-root>/scripts/timing.py" diagnose --scope both --client "<client>" --session-id "<id>" --acquisition-id "<64-lowercase-hex>"
 ```
 
-在 Windows 上使用 PowerShell：
-
-```powershell
-$skillRoot = '<absolute directory containing the installed SKILL.md>'
-$wrapper = Join-Path $skillRoot 'scripts\task-metrics.ps1'
-powershell -ExecutionPolicy Bypass -File $wrapper diagnose --scope both --client <client> --session-id <id> --acquisition-id <64-lowercase-hex>
-```
-
-将 `both` 替换为选定的更窄范围。启动器只先检查 `python3`，再检查 `python`，并使用第一个报告 Python 3.10 或更高版本的可执行文件。若两者均不合格，保留指出 Python 3.10+ 和检查顺序的启动器错误。当某个表面不可用或失败时，保留其部分证据，不尝试其他遥测命令。
+将 `both` 替换为选定的更窄范围。当某个表面不可用或失败时，保留其部分证据，不尝试其他遥测命令。
 
 ### Codex 来源
 

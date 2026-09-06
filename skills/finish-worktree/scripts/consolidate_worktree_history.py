@@ -87,7 +87,7 @@ def consolidate(
     branch_ref = git_output(repository, "symbolic-ref", "-q", "HEAD")
     if not branch_ref.startswith("refs/heads/"):
         raise ConsolidationError("source worktree HEAD is detached")
-    branch_name = branch_ref.removeprefix("refs/heads/")
+    branch_name = branch_ref[len("refs/heads/"):]
     require_clean(repository)
 
     old_head = git_output(repository, "rev-parse", "HEAD^{commit}")
