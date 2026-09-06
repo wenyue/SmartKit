@@ -24,7 +24,7 @@ class SyncMcpAdaptersTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.module = load_module()
 
-    def test_repository_registry_generates_three_current_adapters(self):
+    def test_repository_registry_generates_four_current_adapters(self):
         servers = self.module.load_registry(REPO_ROOT / 'mcp/registry.json')
 
         self.assertEqual([server['id'] for server in servers], ['playwright'])
@@ -35,7 +35,7 @@ class SyncMcpAdaptersTest(unittest.TestCase):
                     self.module.render_harness(servers, harness),
                 )
 
-        codex = json.loads((REPO_ROOT / '.mcp.json').read_text())
+        codex = json.loads((REPO_ROOT / 'mcp/codex.json').read_text())
         cursor = json.loads((REPO_ROOT / 'mcp/cursor.json').read_text())
         copilot = json.loads((REPO_ROOT / 'mcp/copilot.json').read_text())
         expected_args = ['-y', '@playwright/mcp@latest', '--isolated', '--headless']
@@ -70,7 +70,7 @@ class SyncMcpAdaptersTest(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 1)
-            self.assertFalse((root / '.mcp.json').exists())
+            self.assertFalse((root / 'mcp/codex.json').exists())
 
     def test_registry_rejects_unknown_fields_and_unsafe_readiness(self):
         with tempfile.TemporaryDirectory() as directory:

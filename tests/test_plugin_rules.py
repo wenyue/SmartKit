@@ -242,7 +242,7 @@ class PluginRuleContractTest(unittest.TestCase):
         self.assertIn('required: --harness', result.stderr.decode())
 
     def test_codex_rule_hooks_allow_large_additional_context(self):
-        hooks = json.loads((ROOT / 'hooks/hooks.json').read_text(encoding='utf-8'))['hooks']
+        hooks = json.loads((ROOT / 'hooks/codex.json').read_text(encoding='utf-8'))['hooks']
 
         for event in ('SessionStart', 'UserPromptSubmit', 'PreToolUse'):
             with self.subTest(event=event):

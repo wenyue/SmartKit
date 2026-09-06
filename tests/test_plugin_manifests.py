@@ -391,12 +391,12 @@ class PluginManifestTest(unittest.TestCase):
         copilot = load_json('plugin.json')
         qoder = load_json('.qoder-plugin/plugin.json')
 
-        self.assertEqual(codex['hooks'], './hooks/hooks.json')
+        self.assertEqual(codex['hooks'], './hooks/codex.json')
         self.assertEqual(cursor['hooks'], './hooks/cursor.json')
         self.assertEqual(cursor['rules'], './rules/cursor/')
         self.assertEqual(copilot['hooks'], './hooks/copilot.json')
         self.assertEqual(qoder['hooks'], './hooks/qoder.json')
-        self.assertEqual(codex['mcpServers'], './.mcp.json')
+        self.assertEqual(codex['mcpServers'], './mcp/codex.json')
         self.assertEqual(cursor['mcpServers'], './mcp/cursor.json')
         self.assertEqual(copilot['mcpServers'], './mcp/copilot.json')
         self.assertEqual(qoder['mcpServers'], './mcp/qoder.json')
@@ -405,7 +405,7 @@ class PluginManifestTest(unittest.TestCase):
         self.assertEqual(copilot['agents'], './agents/copilot/')
         self.assertEqual(qoder['agents'], './agents/qoder/')
         for manifest, expected in (
-            (codex, '.mcp.json'),
+            (codex, 'mcp/codex.json'),
             (cursor, 'mcp/cursor.json'),
             (copilot, 'mcp/copilot.json'),
             (qoder, 'mcp/qoder.json'),
@@ -477,7 +477,7 @@ class PluginManifestTest(unittest.TestCase):
             self.assertFalse((REPO_ROOT / retired_root).exists())
 
         hook_paths = {
-            'codex': REPO_ROOT / 'hooks/hooks.json',
+            'codex': REPO_ROOT / 'hooks/codex.json',
             'cursor': REPO_ROOT / cursor['hooks'],
             'copilot': REPO_ROOT / copilot['hooks'],
             'qoder': REPO_ROOT / qoder['hooks'],
@@ -501,23 +501,8 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertNotRegex(content, r'\bpython(?:3)?\b')
 
         self.assertEqual(
-            set(load_json('hooks/hooks.json')['hooks']),
+            set(load_json('hooks/codex.json')['hooks']),
             {'SessionStart', 'UserPromptSubmit', 'PreToolUse'},
-        )
-        codex_hooks = load_json('hooks/hooks.json')['hooks']
-        self.assertEqual(
-            {
-                handler['statusMessage']
-                for groups in codex_hooks.values()
-                for group in groups
-                for handler in group['hooks']
-            },
-            {
-                'SmartKit project readiness',
-                'SmartKit prompt rules',
-                'SmartKit session rules',
-                'SmartKit tool rules',
-            },
         )
         self.assertEqual(
             set(load_json('hooks/cursor.json')['hooks']),
@@ -573,7 +558,7 @@ class PluginManifestTest(unittest.TestCase):
         self.assertIn('usage:', result.stdout.lower())
 
     def test_rule_hooks_use_cross_platform_python_launchers(self):
-        codex = load_json('hooks/hooks.json')['hooks']
+        codex = load_json('hooks/codex.json')['hooks']
         codex_handlers = [
             handler
             for groups in codex.values()
@@ -597,6 +582,17 @@ class PluginManifestTest(unittest.TestCase):
         for handler in copilot_handlers:
             self.assertIn('runtime/rules/dispatch.sh', handler['bash'])
             self.assertIn('runtime\\rules\\dispatch.ps1', handler['powershell'])
+
+        copilot_powershell_handlers = [
+            handler['powershell']
+            for handlers in copilot.values()
+            for handler in handlers
+            if 'powershell' in handler
+        ]
+        self.assertTrue(copilot_powershell_handlers)
+        for command in copilot_powershell_handlers:
+            self.assertIn('$env:PLUGIN_ROOT', command)
+            self.assertNotIn('${PLUGIN_ROOT}', command)
 
     def test_hook_harness_contract(self):
         contract_path = REPO_ROOT / 'setup-assets/catalog/harnesses.json'

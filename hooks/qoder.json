@@ -30,7 +30,8 @@
             "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness qoder --event prompt",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness qoder --event prompt",
             "timeout": 30,
-            "additionalContextLimit": 50000
+            "additionalContextLimit": 50000,
+            "statusMessage": "Loading SmartKit prompt rules"
           }
         ]
       }
@@ -43,7 +44,8 @@
             "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness qoder --event tool",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness qoder --event tool",
             "timeout": 30,
-            "additionalContextLimit": 50000
+            "additionalContextLimit": 50000,
+            "statusMessage": "Loading SmartKit tool rules"
           }
         ]
       }

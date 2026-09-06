@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 HARNESSES = ('codex', 'cursor', 'copilot', 'qoder')
 OPERATING_SYSTEMS = ('windows', 'linux')
 OUTPUTS = {
-    'codex': Path('.mcp.json'),
+    'codex': Path('mcp/codex.json'),
     'cursor': Path('mcp/cursor.json'),
     'copilot': Path('mcp/copilot.json'),
     'qoder': Path('mcp/qoder.json'),

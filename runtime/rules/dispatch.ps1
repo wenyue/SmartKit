@@ -6,7 +6,6 @@ $resolved = Get-Command python -CommandType Application -ErrorAction SilentlyCon
 $pythonReady = $false
 if ($null -ne $resolved) {
     try {
-        $LASTEXITCODE = $null
         & $resolved.Source -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' *> $null
         $pythonReady = $LASTEXITCODE -eq 0
     }

@@ -91,7 +91,7 @@ class RecommendedToolPolicyTest(unittest.TestCase):
 
     def test_codex_readiness_hook_timeout_remains_thirty_seconds(self):
         manifest = json.loads(
-            (REPO_ROOT / 'hooks' / 'hooks.json').read_text(encoding='utf-8')
+            (REPO_ROOT / 'hooks' / 'codex.json').read_text(encoding='utf-8')
         )
         readiness_hook = manifest['hooks']['SessionStart'][0]['hooks'][0]
 
@@ -1378,6 +1378,33 @@ class PythonLauncherContractTest(unittest.TestCase):
                 self.assertNotIn('python3', content)
                 self.assertNotIn('uv python find', content)
                 self.assertNotIn('Get-Command py ', content)
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows PowerShell')
+    def test_powershell_launchers_forward_to_compatible_python(self):
+        powershell = shutil.which('powershell') or shutil.which('pwsh')
+        if not powershell:
+            self.skipTest('PowerShell executable is unavailable')
+
+        for launcher in self.launchers:
+            if launcher.suffix != '.ps1':
+                continue
+            with self.subTest(launcher=launcher.relative_to(REPO_ROOT).as_posix()):
+                completed = subprocess.run(
+                    [
+                        powershell,
+                        '-NoProfile',
+                        '-ExecutionPolicy',
+                        'Bypass',
+                        '-Command',
+                        f"& '{launcher}' --help",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                self.assertIn('usage:', completed.stdout.lower())
 
     @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
     def test_rule_launcher_uses_python_without_probing_python3(self):

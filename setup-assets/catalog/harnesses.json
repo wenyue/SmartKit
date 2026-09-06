@@ -2,7 +2,7 @@
   "requiredOperatingSystems": ["windows", "linux"],
   "harnesses": {
     "codex": {
-      "hookManifest": "hooks/hooks.json",
+      "hookManifest": "hooks/codex.json",
       "hookEvent": "SessionStart",
       "hookRoutes": {
         "windows": "commandWindows",
