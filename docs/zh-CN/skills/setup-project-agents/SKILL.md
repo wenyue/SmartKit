@@ -24,7 +24,7 @@ description: 用于在 Codex、Cursor、Copilot 和 Qoder 之间初始化或协�
 
 设置会发现并保留 `.agents/rules/` 和 `.agents/skills/` 下额外的项目所有 Rules 与 Skills。项目 Agent 来源也仍归项目所有。目录声明的 Codex Plugin Agent 默认值只是回退项，不是项目 Agent 声明。原生 Cursor、Copilot 和 Qoder Plugin Agents，以及原生插件 Rules、Skills 和 MCP，均不属于本工作流。
 
-SmartKit 只拥有 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及一个由所有权标记包围并包含 `## Project rules` 的已认证 `AGENTS.md` 单元。若不存在该节，它会追加此单元；只有当一个无标记旧节的全部内容与当前生成内容完全相同时，才可接管它。节内容冲突、标记格式错误或重复、所有权模糊，或任何其他所有权或摘要冲突，都会在替换前停止设置。保留标记单元之外的每个字节，以及每个未声明文件、字段、目录和秘密值。
+SmartKit 只拥有 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及 `AGENTS.md` 中的一个 `## Project rules` 节。设置会替换该节，范围延伸到下一个一级或二级标题之前，或文件末尾；若不存在该节，则追加。围栏代码块中的标题不作为章节边界。Project rules 节重复，或出现任何所有权或摘要冲突时，设置都会在替换前停止。保留该节之外的每个字节，以及每个未声明文件、字段、目录和秘密值。
 
 MCP 环境字段命名环境变量；URL、命令、参数和覆盖字面量仍属于项目输入。不要推断任意字符串是敏感信息。若合格的仓库证据识别出真实的敏感字面量，在渲染前停止，并要求项目所有者将其替换为受支持的间接引用。
 

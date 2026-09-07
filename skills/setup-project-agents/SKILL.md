@@ -41,13 +41,12 @@ Setup discovers and preserves additional project-owned Rules and Skills under `.
 Agent defaults are fallbacks, not project Agent declarations. Native Cursor, Copilot, and Qoder Plugin
 Agents, and native plugin Rules, Skills, and MCP, are outside this workflow.
 
-SmartKit owns only the files and structured fields recorded in `.agents/smartkit.lock.json`, plus one
-authenticated `AGENTS.md` unit bounded by its ownership markers and containing `## Project rules`.
-It appends the unit when no such section exists, and may adopt an unmarked legacy section only when
-the whole section exactly equals the current generated content. A conflicting section, malformed or
-duplicate markers, ambiguous ownership, or any other ownership or digest conflict stops setup before
-replacement. Preserve every byte outside the marked unit and every undeclared file, field,
-directory, and secret value.
+SmartKit owns only the files and structured fields recorded in `.agents/smartkit.lock.json`, plus
+one `## Project rules` section in `AGENTS.md`. Setup replaces that section through the next heading
+of level one or two, or the end of the file, and appends it when absent. Headings inside fenced code
+blocks do not define section boundaries. Duplicate Project rules sections or any ownership or
+digest conflict stop setup before replacement. Preserve every byte outside the section and every
+undeclared file, field, directory, and secret value.
 
 MCP environment fields name environment variables; URL, command, argument, and override literals
 remain project input. Do not infer that an arbitrary string is sensitive. If qualified repository
