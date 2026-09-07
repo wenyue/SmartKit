@@ -60,7 +60,7 @@ _MANIFESTS = (
         },
     ),
     (
-        PurePosixPath('plugin.json'),
+        PurePosixPath('.claude-plugin/plugin.json'),
         {'agents': './agents/copilot/', 'skills': './skills/'},
     ),
     (

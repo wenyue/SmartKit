@@ -38,6 +38,13 @@ copilot plugin install smartkit@wenyue
 To update the Copilot plugin, run `copilot plugin marketplace update wenyue`, followed by
 `copilot plugin update smartkit`.
 
+Copilot CLI and VS Code discover SmartKit through `.claude-plugin/plugin.json`,
+following Superpowers' entry layout. Codex and Cursor retain their native manifests;
+Qoder retains its existing native integration. This does not add Claude Code as a
+supported SmartKit host. Copilot hooks use `CLAUDE_PLUGIN_ROOT`, including
+`$env:CLAUDE_PLUGIN_ROOT` in PowerShell. The entry change does not make Copilot CLI
+and VS Code hook events or response protocols identical.
+
 Qoder:
 
 ```sh

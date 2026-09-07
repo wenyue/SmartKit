@@ -53,6 +53,7 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
     (root / '.codex-plugin').mkdir(parents=True)
     (root / '.cursor-plugin').mkdir()
     (root / '.qoder-plugin').mkdir()
+    (root / '.claude-plugin').mkdir()
     (root / 'setup-assets' / 'catalog').mkdir(parents=True)
     entrypoint = root / 'skills' / 'setup-project-agents' / 'scripts' / 'setup_project_agents.py'
     entrypoint.parent.mkdir(parents=True)
@@ -80,7 +81,7 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
             'agents': './agents/cursor/', 'skills': './skills/',
             'rules': './rules/cursor/',
         },
-        'plugin.json': {
+        '.claude-plugin/plugin.json': {
             'name': 'smartkit', 'version': version,
             'agents': './agents/copilot/', 'skills': './skills/',
         },
@@ -354,8 +355,8 @@ class SetupSourceTest(unittest.TestCase):
             cases = (
                 ('.codex-plugin/plugin.json', {'rules': './rules/'}),
                 ('.cursor-plugin/plugin.json', {'rules': '../rules/'}),
-                ('plugin.json', {'agents': '../agents/'}),
-                ('plugin.json', {'agents': None}),
+                ('.claude-plugin/plugin.json', {'agents': '../agents/'}),
+                ('.claude-plugin/plugin.json', {'agents': None}),
                 ('.qoder-plugin/plugin.json', {'agents': '../agents/'}),
                 ('.qoder-plugin/plugin.json', {'rules': './rules/'}),
             )

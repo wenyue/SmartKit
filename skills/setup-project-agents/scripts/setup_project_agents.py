@@ -737,7 +737,7 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
             '.codex-plugin/plugin.json',
             '.cursor-plugin/plugin.json',
             '.qoder-plugin/plugin.json',
-            'plugin.json',
+            '.claude-plugin/plugin.json',
             'skills/registry.json',
             'setup-assets/catalog/assets.json',
             'setup-assets/catalog/harnesses.json',

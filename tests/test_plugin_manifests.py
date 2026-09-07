@@ -344,7 +344,7 @@ class PluginManifestTest(unittest.TestCase):
             REPO_ROOT / '.codex-plugin' / 'plugin.json',
             REPO_ROOT / '.cursor-plugin' / 'plugin.json',
             REPO_ROOT / '.qoder-plugin' / 'plugin.json',
-            REPO_ROOT / 'plugin.json',
+            REPO_ROOT / '.claude-plugin' / 'plugin.json',
         )
         for manifest_path in manifests:
             manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
@@ -365,6 +365,10 @@ class PluginManifestTest(unittest.TestCase):
         )
         self.assertFalse((REPO_ROOT / 'agents' / '.codex-plugin').exists())
         self.assertFalse((REPO_ROOT / 'agents' / 'skills').exists())
+        for obsolete_manifest in (
+            'plugin.json', '.plugin/plugin.json', '.github/plugin/plugin.json',
+        ):
+            self.assertFalse((REPO_ROOT / obsolete_manifest).exists())
 
     def test_local_marketplaces_point_at_the_repository_root(self):
         version = (REPO_ROOT / 'VERSION').read_text(encoding='utf-8').strip()
@@ -388,7 +392,7 @@ class PluginManifestTest(unittest.TestCase):
     def test_root_manifests_expose_plugin_owned_capabilities(self):
         codex = load_json('.codex-plugin/plugin.json')
         cursor = load_json('.cursor-plugin/plugin.json')
-        copilot = load_json('plugin.json')
+        copilot = load_json('.claude-plugin/plugin.json')
         qoder = load_json('.qoder-plugin/plugin.json')
 
         self.assertEqual(codex['hooks'], './hooks/codex.json')
@@ -591,8 +595,12 @@ class PluginManifestTest(unittest.TestCase):
         ]
         self.assertTrue(copilot_powershell_handlers)
         for command in copilot_powershell_handlers:
-            self.assertIn('$env:PLUGIN_ROOT', command)
+            self.assertIn('$env:CLAUDE_PLUGIN_ROOT', command)
             self.assertNotIn('${PLUGIN_ROOT}', command)
+        for handlers in copilot.values():
+            for handler in handlers:
+                self.assertIn('${CLAUDE_PLUGIN_ROOT}', handler['bash'])
+                self.assertNotIn('${PLUGIN_ROOT}', handler['bash'])
 
     def test_hook_harness_contract(self):
         contract_path = REPO_ROOT / 'setup-assets/catalog/harnesses.json'

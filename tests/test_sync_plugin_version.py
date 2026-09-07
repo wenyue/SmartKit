@@ -28,7 +28,7 @@ def create_repository_fixture(root: Path, stored_version: str = '0.0.0') -> None
     for relative_path in (
         '.codex-plugin/plugin.json',
         '.cursor-plugin/plugin.json',
-        'plugin.json',
+        '.claude-plugin/plugin.json',
     ):
         write_json(
             root,
@@ -107,7 +107,7 @@ class SyncPluginVersionTest(unittest.TestCase):
                 '.codex-plugin/plugin.json',
                 '.cursor-plugin/plugin.json',
                 '.qoder-plugin/plugin.json',
-                'plugin.json',
+                '.claude-plugin/plugin.json',
             ):
                 self.assertEqual(
                     load_json(root, relative_path)['version'],

@@ -36,6 +36,11 @@ copilot plugin install smartkit@wenyue
 需要更新 Copilot 插件时，先运行 `copilot plugin marketplace update wenyue`，再运行
 `copilot plugin update smartkit`。
 
+Copilot CLI 和 VS Code 通过 `.claude-plugin/plugin.json` 发现 SmartKit，入口布局对齐
+Superpowers。Codex 和 Cursor 保留原生清单，Qoder 保留现有原生集成；这不代表新增了对
+Claude Code 宿主的支持。Copilot hooks 使用 `CLAUDE_PLUGIN_ROOT`，PowerShell 中写作
+`$env:CLAUDE_PLUGIN_ROOT`。入口迁移不会消除 Copilot CLI 与 VS Code 的 hook 事件及响应协议差异。
+
 Qoder：
 
 ```sh

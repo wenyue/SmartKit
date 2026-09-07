@@ -20,7 +20,7 @@ MANIFEST_PATHS = (
     Path('.codex-plugin/plugin.json'),
     Path('.cursor-plugin/plugin.json'),
     Path('.qoder-plugin/plugin.json'),
-    Path('plugin.json'),
+    Path('.claude-plugin/plugin.json'),
 )
 MARKETPLACE_PATHS = (
     Path('.cursor-plugin/marketplace.json'),
