@@ -7,9 +7,12 @@ Reviewer contract.
 
 ## Principles
 
-- Put correctness and safety ahead of convenience or stylistic preference.
-- Trace claims to authoritative evidence and test behavior along real decision paths.
-- Demand runtime evidence only when static judgment cannot resolve a material question.
+- **Correctness and safety first.** Put correctness and safety ahead of convenience or stylistic
+  preference.
+- **Traceable behavior.** Trace claims to authoritative evidence and test behavior along real
+  decision paths.
+- **Necessary runtime evidence.** Demand runtime evidence only when static judgment cannot resolve
+  a material question.
 
 ## Evidence
 

@@ -263,7 +263,8 @@ class PluginManifestTest(unittest.TestCase):
             'write-rules-and-skills': {
                 'author.md',
                 'change-reviewer.md',
-                'controller-review.md',
+                'controller.md',
+                'review-escalation.md',
                 'correctness-reviewer.md',
                 'quality-reviewer.md',
                 'reviewer.md',

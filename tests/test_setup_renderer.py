@@ -60,7 +60,10 @@ class SetupRendererTest(unittest.TestCase):
         generated = root / 'generated'
         rule = generated / '.agents/rules/00-project-tools.md'
         rule.parent.mkdir(parents=True, exist_ok=True)
-        rule.write_text('# generated tooling rule\n', encoding='utf-8')
+        rule.write_text(
+            '# generated tooling rule\n\nStrength: `Mandatory`\n\nScope: Project tooling\n',
+            encoding='utf-8',
+        )
         skill = generated / '.agents/skills/change-set-verification/SKILL.md'
         skill.parent.mkdir(parents=True, exist_ok=True)
         skill.write_text('# generated verification skill\n', encoding='utf-8')
@@ -678,7 +681,36 @@ class SetupRendererTest(unittest.TestCase):
                     self.generated_tree(root), external_root,
                 )
 
-    def test_managed_blueprint_rule_rename_is_delete_plus_create_not_project_discovery(self):
+    def test_project_edits_preserve_contract_fingerprint_without_content_digests(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            generated = self.generated_tree(root)
+            first = self.render(target, generated)
+            self.materialize(target, first.files)
+            paths = (
+                '.agents/rules/00-project-tools.md',
+                '.agents/skills/change-set-verification/SKILL.md',
+            )
+            for relative in paths:
+                (target / relative).write_bytes(b'project edit\n')
+            empty = root / 'empty-generated'
+            empty.mkdir()
+            second = self.render(target, empty)
+            first_lock = json.loads(first.files_by_path['.agents/smartkit.lock.json'])
+            second_lock = json.loads(second.files_by_path['.agents/smartkit.lock.json'])
+            self.assertEqual(first_lock, second_lock)
+            self.assertEqual(len(second_lock['contracts']), 2)
+            self.assertTrue(set(paths).isdisjoint(
+                item['path'] for item in second_lock['assets']
+            ))
+            for relative in paths:
+                self.assertIn(PurePosixPath(relative), second.preserved_paths)
+                self.assertNotIn(PurePosixPath(relative), second.delete_paths)
+                self.assertEqual((target / relative).read_bytes(), b'project edit\n')
+
+    def test_blueprint_rule_rename_retires_previous_output(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
@@ -708,7 +740,7 @@ class SetupRendererTest(unittest.TestCase):
 
             self.assertIn(old, rendered.delete_paths)
             self.assertIn(new.as_posix(), rendered.files_by_path)
-            self.assertNotIn(old.as_posix(), rendered.preserved_paths)
+            self.assertNotIn(old, rendered.preserved_paths)
 
     def test_unsafe_structured_template_field_is_rejected(self):
         with self.assertRaisesRegex(RenderError, 'unsafe template field'):
@@ -888,6 +920,9 @@ class SetupRendererTest(unittest.TestCase):
             shared_source = source / 'rules/shared.md'
             shared_source.parent.mkdir(parents=True)
             shared_source.write_text('shared\n', encoding='utf-8')
+            contract_source = source / 'blueprints/shared.md'
+            contract_source.parent.mkdir(parents=True)
+            contract_source.write_bytes(b'contract')
             target_path = PurePosixPath('.agents/rules/shared.md')
             catalog = Catalog(
                 'test',
@@ -1387,7 +1422,7 @@ class SetupRendererTest(unittest.TestCase):
                 '## Agent skills\n\n'
                 'GitHub Issues. See `docs/agents/issue-tracker.md`.\n'
             )
-            entry.write_text(outside, encoding='utf-8')
+            entry.write_bytes(outside.encode('utf-8'))
             generated = self.generated_tree(root)
 
             first = self.render(target, generated)
@@ -1402,14 +1437,13 @@ class SetupRendererTest(unittest.TestCase):
             ))
 
             self.materialize(target, first.files)
-            entry.write_text(
-                entry.read_text(encoding='utf-8')
+            entry.write_bytes(
+                entry.read_bytes()
                 .replace(
-                    'Read every project Rule',
-                    'Local generated-unit edit.\n\nRead every project Rule',
+                    b'Read every project Rule',
+                    b'Local generated-unit edit.\n\nRead every project Rule',
                 )
-                .replace('GitHub Issues', 'Local issues'),
-                encoding='utf-8',
+                .replace(b'GitHub Issues', b'Local issues')
             )
             second = self.render(target, generated)
             updated = second.files_by_path['AGENTS.md'].decode()
@@ -1447,9 +1481,8 @@ class SetupRendererTest(unittest.TestCase):
                 }
             )
             outside = '## Agent skills\n\nKeep this exact block.\n'
-            (target / 'AGENTS.md').write_text(
-                '# Repository\n\n' + legacy.rstrip() + '\n\n' + outside,
-                encoding='utf-8',
+            (target / 'AGENTS.md').write_bytes(
+                ('# Repository\n\n' + legacy.rstrip() + '\n\n' + outside).encode('utf-8')
             )
 
             adopted = self.render(target, generated).files_by_path['AGENTS.md'].decode()
@@ -1505,12 +1538,11 @@ class SetupRendererTest(unittest.TestCase):
                 2,
             )
             self.materialize(target, first.files)
-            entry.write_text(
-                entry.read_text(encoding='utf-8').replace(
-                    'Read every project Rule',
-                    'Stale generated unit.\n\nRead every project Rule',
-                ),
-                encoding='utf-8',
+            entry.write_bytes(
+                entry.read_bytes().replace(
+                    b'Read every project Rule',
+                    b'Stale generated unit.\n\nRead every project Rule',
+                )
             )
 
             second = self.render(target, generated)

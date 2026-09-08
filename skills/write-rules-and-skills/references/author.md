@@ -28,6 +28,12 @@ Before writing, read the checkout-authoritative `writing-for-agents` Skill and, 
 complete baseline, current Candidate and fingerprint, exact write scope, and validation
 requirements.
 
+For either a Rule or a Skill, use the brief's responsibility allocation, ownership and
+supported-loading evidence, caller plan when present, and owner dependency state to apply the
+criteria in [Allocate responsibility](controller.md#allocate-responsibility) under this Author
+contract. Inspect the named owners and evidence yourself; an allocation is a decision to substantiate,
+not authority to bypass a missing source, loading guarantee, or permission.
+
 Only the Author may modify Candidate paths. Work within the allowed operations and preserve
 unaffected behavior, loading, metadata, dependencies, permissions, validation, safety, exits, and
 handoff unless accepted evidence supports a change. Ask for `NEEDS_INPUT` before writing when a
@@ -62,10 +68,12 @@ Choose the Skill shape that fits the work:
   parts. Read the one or two base-shape exemplars relevant to those parts; a Hybrid needs no fourth
   example.
 
-If persistent policy rather than one triggered job owns the requested behavior, stop and return
-`NEEDS_INPUT` so the Controller can route a Rule. If the accepted scope cannot express a coherent
-artifact without changing ownership, meaning, permissions, dependencies, or external effects,
-stop rather than widening it.
+Shape the Candidate around its allocated responsibility, using owner pointers and necessary local
+decision context where other policies apply. If the evidence requires a different owner or leaves
+an owner dependency unresolved, return `NEEDS_INPUT` with the allocation problem and the evidence
+or action needed to resolve it. If the accepted scope cannot express a coherent artifact without
+changing ownership, meaning, permissions, dependencies, or external effects, stop rather than
+widening it.
 
 Keep every in-scope executable asset, launcher, and owner-supported test consistent with its
 accepted runtime contract. Apply the conditional [Python-backed Skills](#python-backed-skills)

@@ -77,27 +77,21 @@ SmartKit 的 Codex Agent adapter 安装到 `.codex/agents/`。该 adapter 仍归
 
 ## 为每个项目执行设置
 
-进入目标仓库后，请 Agent 使用 `setup-project-agents` 配置 Codex、Cursor、Copilot 和 Qoder。它会在创建
-setup session 前检查 Matt repository context。如果 context 尚未完成，它会停止并要求维护者显式调用
-`setup-matt-pocock-skills`。该 Skill 会询问使用哪种 issue tracker，并拥有 `docs/agents/` 及其
-`## Agent skills` 入口区块。Matt setup 完成后，再次调用 `setup-project-agents` 继续。
+进入目标仓库，请 Agent 使用 `setup-project-agents` 配置 Codex、Cursor、Copilot 和 Qoder。
+如果提示需要先运行 `setup-matt-pocock-skills`，完成后再继续设置。
 
-两个工作流可以独立升级：project setup 只检查 Matt setup 是否完成；它不复制、不生成 Matt context
-文件，也不记录其所有权。在 `AGENTS.md` 中，它只更新 Project Rules 区块，并保留 Matt 的 Agent
-Skills 区块及其他项目自有内容。
+由一名维护者运行设置、审查并提交改动，团队其他成员通过 Git 获取配置。需要同步插件变化时，再次运行设置。
 
-新仓库由一名维护者运行 setup、审查结果并提交受管项目快照。其他开发者通过 clone 或 pull 获取，
-无需逐人运行 setup。只有项目需要采用新版 setup 受管快照契约时，才再次运行
-`setup-project-agents`。
+生成的项目 Rules 和 Skills 可以直接编辑。插件中的对应契约变化时，设置流程会更新或删除相关文件。
 
-| 能力 | 项目配置 |
+| 能力 | 配置位置 |
 | --- | --- |
-| Rules | 将项目自有 source 保存在 `.agents/rules/`；setup 会保留这些 source，并安装请求生成的 Rules。 |
-| Skills | 将项目自有 Skills 保存在 `.agents/skills/`，或在 `.agents/config.json` 的 `skills` 中声明 GitHub `source`、可选 `ref` 和非空 `include`。 |
-| Agents | 将 canonical source 保存在 `.agents/agents/`，并在 `.agents/config.json` 的 `agents` 中声明匹配的 `id`、`source`、`description` 和 `harnesses`；应编辑这些输入，而不是生成的 adapter。 |
-| MCP | 在 `.agents/config.json` 的 `mcp` 中用稳定 ID 和 `url` 或 `command` 之一声明每个 server；环境变量仅按名称引用，不存储 secret 值。 |
+| Rules | `.agents/rules/` |
+| Skills | `.agents/skills/`；外部 Skills 在 `.agents/config.json` 中声明 |
+| Agents | `.agents/agents/`；在 `.agents/config.json` 中声明 |
+| MCP | `.agents/config.json` |
 
-Setup 会保留不受其管理的宿主配置；受管条目发生冲突或被本地修改时，会在写入前停止。
+支持的字段见[配置 schema](setup-assets/catalog/project-config.schema.json)。
 
 ### MCP overrides
 

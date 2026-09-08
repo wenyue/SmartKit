@@ -83,29 +83,22 @@ All four hosts support Windows and Linux.
 ## Set up each project
 
 In the target repository, ask the Agent to use `setup-project-agents` to configure Codex, Cursor,
-Copilot, and Qoder. It checks the Matt repository context before opening a setup session. If that context
-is incomplete, it stops and asks the maintainer to explicitly invoke `setup-matt-pocock-skills`.
-That Skill asks which issue tracker to use and owns `docs/agents/` plus its `## Agent skills` entry
-block. After Matt setup completes, invoke `setup-project-agents` again to continue.
+Copilot, and Qoder. If prompted, complete `setup-matt-pocock-skills` first, then continue setup.
 
-The workflows can be upgraded independently: project setup only checks that Matt setup completed;
-it does not copy, generate, or record ownership for Matt's context files. In `AGENTS.md`, it updates
-only its Project Rules section and preserves Matt's Agent Skills section and other project-owned
-content.
+One maintainer runs setup, reviews the changes, and commits them. Teammates receive the configuration
+through Git. Run setup again when you want to synchronize plugin changes.
 
-One maintainer runs setup for a new repository, reviews the result, and commits the managed project
-snapshot. Other developers receive it through clone or pull and do not run setup individually. Run
-`setup-project-agents` again only when the project adopts a newer setup-managed snapshot contract.
+You can edit the generated project Rules and Skills directly. When their plugin contracts change,
+setup updates or removes the corresponding files.
 
-| Capability | Project configuration |
+| Capability | Where to configure it |
 | --- | --- |
-| Rules | Keep project-owned sources under `.agents/rules/`; setup preserves them and installs requested generated Rules. |
-| Skills | Keep project-owned Skills under `.agents/skills/`, or declare GitHub `source`, optional `ref`, and non-empty `include` entries in `.agents/config.json` `skills`. |
-| Agents | Keep canonical sources under `.agents/agents/` and declare matching `id`, `source`, `description`, and `harnesses` in `.agents/config.json` `agents`; edit these inputs rather than generated adapters. |
-| MCP | Declare each server in `.agents/config.json` `mcp` with a stable ID and exactly one of `url` or `command`; environment variables are referenced by name, never stored as secret values. |
+| Rules | `.agents/rules/` |
+| Skills | `.agents/skills/`; declare external Skills in `.agents/config.json` |
+| Agents | `.agents/agents/`; declare them in `.agents/config.json` |
+| MCP | `.agents/config.json` |
 
-Setup preserves unmanaged host configuration and stops before writes when a setup-managed entry
-conflicts or was modified locally.
+See the [configuration schema](setup-assets/catalog/project-config.schema.json) for supported fields.
 
 ### MCP overrides
 

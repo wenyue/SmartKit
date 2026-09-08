@@ -23,4 +23,4 @@ composition. Retain every independently applicable Rule and Skill; resolving one
 does not substitute for a distinct artifact.
 
 `.agents/rules/01-project-policy.md` remains the sole owner of canonical ownership, contracts and
-exposure, translation, verification, and authoring-Skill exceptions.
+exposure, translation, and verification.

@@ -194,7 +194,16 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertNotIn('models', start)
             self.assertFalse((session / 'models.json').exists())
 
-            self.write_generated_outputs(session)
+            request = json.loads((session / 'request.json').read_bytes())
+            for item in request['generation_requests']:
+                path = session / 'generated' / item['target']
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'generated content\n')
+                with redirect_stdout(StringIO()):
+                    self.assertEqual(workflow.main([
+                        'register', '--session', str(session), '--request-id', item['id'],
+                        '--output', str(path),
+                    ]), 0)
             finish_output = StringIO()
             with redirect_stdout(finish_output):
                 self.assertEqual(
@@ -225,16 +234,14 @@ class SetupWorkflowTest(unittest.TestCase):
             ownership_path = target / '.agents/smartkit.lock.json'
             self.assertTrue(ownership_path.is_file())
             ownership = json.loads(ownership_path.read_text(encoding='utf-8'))
-            self.assertEqual(set(ownership), {'sources', 'assets'})
+            self.assertEqual(set(ownership), {'sources', 'assets', 'contracts'})
             self.assertEqual(ownership['sources'], [])
-            project_rule = next(
-                item
-                for item in ownership['assets']
-                if item.get('path') == '.agents/rules/00-project-tools.md'
+            owned_paths = {item['path'] for item in ownership['assets']}
+            self.assertNotIn('.agents/rules/00-project-tools.md', owned_paths)
+            self.assertNotIn(
+                '.agents/skills/change-set-verification/SKILL.md', owned_paths,
             )
-            self.assertEqual(project_rule['kind'], 'file')
-            self.assertEqual(project_rule['role'], 'rule')
-            self.assertRegex(project_rule['digest'], r'^[0-9a-f]{64}$')
+            self.assertIn('.codex/rules/setup-project-agents.rules', owned_paths)
             self.assertEqual(local_rule.read_bytes(), local_rule_content)
             self.assertEqual(local_skill.read_bytes(), local_skill_content)
             self.assertEqual(
@@ -366,7 +373,7 @@ class SetupWorkflowTest(unittest.TestCase):
                     workflow.main(['finish', '--session', str(session)]), 2
                 )
 
-            self.assertIn('generation manifest must be a regular file', error.getvalue())
+            self.assertIn('generation manifest does not declare every generation request', error.getvalue())
             self.assertFalse(session.exists())
             self.assertEqual(tuple(target.rglob('*')), before)
 

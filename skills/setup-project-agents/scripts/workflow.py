@@ -320,6 +320,7 @@ def _run_pinned(
     target: Path,
     source: Path,
     commit: str,
+    extra_args: Sequence[str] = (),
 ) -> Mapping[str, object]:
     try:
         entrypoint = setup_entrypoint(source)
@@ -334,6 +335,7 @@ def _run_pinned(
         '--source-root', str(source),
         '--source-commit', commit,
         '--no-bootstrap',
+        *extra_args,
     )
     try:
         completed = subprocess.run(
@@ -356,6 +358,8 @@ def _run_pinned(
     if not isinstance(result, Mapping) or result.get('phase') != phase:
         raise WorkflowError(f'pinned {phase} returned an invalid result')
     normalized = dict(result)
+    if phase == 'register':
+        return normalized
     try:
         external_sources = list(normalize_external_sources(
             result.get('external_sources'),
@@ -378,6 +382,36 @@ def _run_pinned(
     normalized['external_skills'] = list(external_skills)
     normalized['external_sources'] = external_sources
     return normalized
+
+
+def _register(args: argparse.Namespace) -> int:
+    try:
+        session = _claim_session(args.session)
+    except WorkflowError as error:
+        print(f'ERROR: {error}', file=sys.stderr)
+        return 2
+    result = None
+    status = 0
+    try:
+        _, target, source, commit = _request_context(session)
+        outputs = tuple(value for path in args.output for value in ('--output', path))
+        result = _run_pinned(
+            'register', session=session, target=target, source=source, commit=commit,
+            extra_args=('--request-id', args.request_id, *outputs),
+        )
+    except (OSError, WorkflowError) as error:
+        print(f'ERROR: {error}', file=sys.stderr)
+        status = 2
+    finally:
+        try:
+            (session / _SESSION_CLAIM).unlink()
+        except OSError as error:
+            print(f'ERROR: cannot release registration claim in {session}: {error}', file=sys.stderr)
+            status = 2
+    if status == 0:
+        assert result is not None
+        _emit(result)
+    return status
 
 
 def _finish(args: argparse.Namespace) -> int:
@@ -443,6 +477,10 @@ def build_parser() -> argparse.ArgumentParser:
     phases = parser.add_subparsers(dest='phase', required=True)
     start = phases.add_parser('start', allow_abbrev=False)
     start.add_argument('--target', type=Path, required=True)
+    register = phases.add_parser('register', allow_abbrev=False)
+    register.add_argument('--session', type=Path, required=True)
+    register.add_argument('--request-id', required=True)
+    register.add_argument('--output', action='append', required=True)
     finish = phases.add_parser('finish', allow_abbrev=False)
     finish.add_argument('--session', type=Path, required=True)
     cancel = phases.add_parser('cancel', allow_abbrev=False)
@@ -457,6 +495,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return int(error.code)
     if args.phase == 'start':
         return _start(args)
+    if args.phase == 'register':
+        return _register(args)
     if args.phase == 'finish':
         return _finish(args)
     return _cancel(args)

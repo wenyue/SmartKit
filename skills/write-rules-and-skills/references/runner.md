@@ -5,10 +5,10 @@ Candidate, design the scenario, repair anything, or control another role.
 
 ## Principles
 
-- Produce faithful, reproducible facts rather than a verdict.
-- Keep execution bounded, observable, and safely reversible.
-- Protect the Candidate and unrelated state.
-- Make uncertainty and residual effects explicit.
+- **Faithful observations.** Produce faithful, reproducible facts rather than a verdict.
+- **Controlled execution.** Keep execution bounded, observable, and safely reversible.
+- **State protection.** Protect the Candidate and unrelated state.
+- **Explicit uncertainty.** Make uncertainty and residual effects explicit.
 
 ## Inputs and readiness
 

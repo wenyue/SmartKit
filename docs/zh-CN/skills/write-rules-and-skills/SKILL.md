@@ -5,40 +5,29 @@ description: 编写或修订一个英文 Rule 或 Agent Skill。
 
 # 编写 Rule 与 Skill
 
-当前 Agent 是 Controller。它管理一次编写任务及其边界；Author 负责 Candidate，Reviewer 负责各自的判断，需要时由 Runner 提供运行时事实。Controller 不参与编写、审查，也不解释这些角色的语义工作。
+当前 Agent 是 Controller。对齐任务之前，阅读 [Controller 角色](references/controller.md)，并在整个工作流中遵循该契约。
+
+## 原则
+
+- **独立判断。**Author 负责 Candidate，Reviewer 负责各自的判断，需要时由 Runner 提供运行时事实。Controller 负责理解任务、分配职责和编制 Author brief；它不编写 Candidate，也不替代专业结论。
+- **权限有界。**在仓库中可见不代表拥有含义或权限。除非用户另行授权，否则本工作流不授予发布、安装、commit、push、release、翻译、网络访问或任何其他下游操作的权限。
+- **同一指纹上验收。**只有三个专业视角在同一指纹上全部返回 `PASS`，并且自动验证也在该指纹上通过时，才能成功结束。
 
 ## 1. 对齐任务
 
-根据请求的结果和治理证据，准确识别一个 Rule 或 Skill。Rule 是在触发的工作中持续生效的政策；Skill 是一项有明确结果和边界的触发式任务。如果请求混合了多个所有者，先拆分再继续。如果请求的事实已经由代码、配置、schema 或其他现有所有者负责，则把工作交给该所有者。
-
-查明能够从权威来源确定的事实。解决预期结果、当前行为、非目标、保留与兼容性、依赖、权限、验证、安全、分发和交接方面的实质性选择。现有 Candidate 文本是回归证据，不是设计权威；在仓库中可见不代表它拥有含义或权限。
-
-将确立本任务意图的用户对话保存为权威的用户意图证据：原始请求；会影响含义、范围或非目标的后续修正、确认和决策；以及这些回复所指向的提案、问题或选项。该证据应与 Controller 的解释分开保留；不得用 Author brief 替代或缩减这些证据。
-
-准备一份自包含的 Author brief，其中包括：
-
-- 目标和要求的变更；
-- 准确的 Candidate 路径，以及允许的创建、编辑、移动或删除操作；
-- 已接受的约束和权威证据路径；
-- 必需的自动验证；以及
-- 可观察的完成条件。
-
-如果缺少的用户决策、事实、访问授权或权限可能实质性改变任务，则返回 `NEEDS_INPUT`。当一个 Candidate 和一份 brief 足以表达已接受的结果，并且没有尚未解决的实质性选择时，继续执行。
+遵循 Controller 契约完成任务对齐。只有当一个 Candidate 和一份自包含的 Author brief 能够表达已接受的结果、所有者依赖的状态明确，并且不再缺少任何实质性选择、事实、访问条件或权限时，才进入冻结阶段。否则返回 `NEEDS_INPUT`，准确指出尚未解决的输入。
 
 ## 2. 冻结 Candidate 和审查范围
 
 将当前已加载 Skill 的目录解析为 `<skill-root>`，并调用 `python "<skill-root>/scripts/candidate_evidence.py" --help`。
 
-首次写入之前，使用该 Python CLI 捕获完整 Candidate 基线和指纹。快照应保存在 Candidate 之外。分别冻结写入范围、验证命令和权限；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
+首次写入之前，使用该 Python CLI 捕获完整 Candidate 基线和指纹。基线快照、审查记录和验证日志等临时工作流证据应保存在 Candidate 文件范围之外，使其与交付物分离，并且不影响 Candidate 指纹。分别冻结写入范围、验证命令和权限；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
 
 如果 Candidate 包含本 Skill 或其他治理指令，还要冻结其完整的写前文本，并在本次运行余下阶段以该副本为权威。新编写的文本在下一次调用前仍只是 Candidate 证据，不能支配对自身的审查。
 
-为整项任务分配同一个常驻 Author。两种审查拓扑都覆盖 Quality、Change 和 Correctness；根据任务所需的独立程度进行选择：
+为整项任务分配同一个常驻 Author。依据 Controller 的[审查独立程度标准](references/controller.md#choose-review-independence)选择审查拓扑。
 
-- **Integrated Review**：把三个视角全部分配给一个 Integrated Reviewer。适用于受影响的义务、路径和集成上下文已经封闭，不存在实质性不确定因素，并且风险有限的任务。
-- **Independent Review**：把 Quality、Change 和 Correctness 分配给三个不同的 Reviewer。自托管变更、影响广泛、风险较高，或者所有权、安全、权限、外部影响、恢复、验证或关键路径存在不确定性时，应采用这种方式。
-
-在选择和执行审查时，Controller 只管理拓扑，不参与语义判断。采用 Integrated Review 时，启动一个身份，并向其提供 Reviewer 公共合同和全部三个专业合同。采用 Independent Review 时，启动三个身份，每个身份都获得公共合同，但只获得自己的专业合同。各身份自行打开分配给自己的文件；Controller 不打开这些文件。
+Controller 管理这一拓扑，但不代替专业判断。采用 Integrated Review 时，启动一个身份，并向其提供 Reviewer 公共合同和全部三个专业合同。采用 Independent Review 时，启动三个身份，每个身份都获得公共合同，但只获得自己的专业合同。各身份自行打开分配给自己的文件；Controller 不打开这些文件。
 
 ## 3. 编写并验证
 
@@ -62,7 +51,7 @@ Author 返回后，再次捕获完整 Candidate。只有经过身份确认、由
 
 只传递 Reviewer 无法从这些来源恢复的会话上下文：
 
-- Quality 接收已接受的目标，以及仅存在于会话中的质量或表达约束。
+- 无论审查 Rule 还是 Skill，Quality 都接收已接受的目标、仅存在于会话中的质量或表达约束，以及职责分配及其证据位置、受支持加载方式的假设、所有者依赖状态和调用方提供的职责分配规划（如有）。这些内容独立于 Author brief 提供；Quality 不依赖于收到该 brief。
 - Change 接收要求的变更、保留与兼容性决策，以及 Author 的语义变更摘要。
 - Correctness 接收完整的权威用户意图证据和 Author brief，并将二者作为不同输入；同时接收仅存在于会话中的关键行为与安全决策，以及自动验证结果。
 
@@ -72,9 +61,9 @@ Independent Reviewer 只接收其专业视角所需的上下文；Integrated Rev
 
 只要拓扑不变，最多三轮审查都沿用相同身份。Reviewer 的证据、沟通和结果遵循公共合同与专业合同。Author 等待所有身份返回后，再进行一次连贯修复。Controller 只跟踪角色是否完成和审查轮次；它不转述，也不判断语义内容。
 
-每次修复后都应用 Author 返回门槛，并在进入下一轮审查前运行自动验证。修复会产生新指纹，因此当前拓扑中的每个身份都要重新检查其完整证据。只有三个专业视角在同一指纹上全部返回 `PASS`，并且自动验证也在该指纹上通过时，才能成功结束。最多允许三轮；第三轮后仍有阻塞性 finding 时，返回 `BLOCKED`。
+每次修复后都应用 Author 返回门槛，并在进入下一轮审查前运行自动验证。修复会产生新指纹，因此当前拓扑中的每个身份都要重新检查其完整证据。最多允许三轮；第三轮后仍有阻塞性 finding 时，返回 `BLOCKED`。
 
-当 Reviewer 返回 `INDEPENDENT_REVIEW_REQUIRED`、Correctness 证明 Author brief 遗漏或曲解了用户意图、因实质性的意图歧义需要返回 `NEEDS_INPUT`，或 Correctness 返回 `RUNTIME_REQUIRED` 时，加载 [Controller 的条件审查编排](references/controller-review.md)中相应的分支。
+当 Reviewer 返回 `INDEPENDENT_REVIEW_REQUIRED`、Correctness 证明 Author brief 遗漏或曲解了用户意图、因实质性的意图歧义需要返回 `NEEDS_INPUT`，或 Correctness 返回 `RUNTIME_REQUIRED` 时，加载 [审查升级](references/review-escalation.md)中相应的分支。
 
 每个 Reviewer 和 Runner 返回后，都要确认 Candidate 指纹没有变化。
 
@@ -93,5 +82,3 @@ Independent Reviewer 只接收其专业视角所需的上下文；Integrated Rev
 - 剩余风险和残留状态；
 - 最终指纹；以及
 - `COMPLETE`、`NEEDS_INPUT` 或 `BLOCKED`。
-
-除非用户另行授权，否则本工作流不授予发布、安装、commit、push、release、翻译、网络访问或任何其他下游操作的权限。临时工作流证据应保存在 Candidate 之外。

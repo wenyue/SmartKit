@@ -27,6 +27,7 @@ from .models import (
     ProjectConfig,
 )
 from .project import ProjectError, confined_target
+from .generation import reconcile_contracts
 from .ownership import (
     OWNERSHIP_PATH,
     OwnershipError,
@@ -620,7 +621,7 @@ def render_desired_state(
 ) -> RenderedState:
     """Render only catalog-owned project assets without mutating the target."""
     try:
-        previous_ownership = load_ownership(target_root)
+        previous_ownership = load_ownership(target_root, catalog=catalog)
         verify_ownership(target_root, previous_ownership)
     except OwnershipError as error:
         raise RenderError(str(error)) from error
@@ -646,6 +647,18 @@ def render_desired_state(
         asset.path if asset.kind == 'tree' else asset.path.parent
         for asset in (previous_ownership.assets if previous_ownership else ())
         if asset.role == 'skill' and asset.path.parts[:2] == ('.agents', 'skills')
+    )
+    recorded_outputs = {
+        path for contract in (previous_ownership.contracts if previous_ownership else ())
+        for path in contract.outputs
+    }
+    previous_rule_paths |= frozenset(
+        path for path in recorded_outputs if path.parts[:2] == ('.agents', 'rules')
+    )
+    previous_skill_roots |= frozenset(
+        contract.target.parent
+        for contract in (previous_ownership.contracts if previous_ownership else ())
+        if contract.target.parts[:2] == ('.agents', 'skills')
     )
     previous_owned_fields = frozenset(
         (asset.path, asset.key)
@@ -774,6 +787,7 @@ def render_desired_state(
         and not asset.control_plane
         and asset.target is not None
     }
+    written_generated_targets: set[PurePosixPath] = set()
     for path in sorted(
         (
             item
@@ -788,6 +802,23 @@ def render_desired_state(
         if relative not in generated_targets:
             raise RenderError(f'undeclared generated path: {relative.as_posix()}')
         files[relative] = path.read_bytes()
+        written_generated_targets.add(relative)
+
+    contracts, retired_outputs, retained_outputs = reconcile_contracts(
+        source_root, catalog, previous_ownership, tuple(written_generated_targets),
+    )
+    for output in retired_outputs:
+        try:
+            target = confined_target(target_root, output)
+        except ProjectError as error:
+            raise RenderError(str(error)) from error
+        if target.exists() and not target.is_file():
+            raise RenderError(f'contract output is not a regular file: {output.as_posix()}')
+    delete_paths.update(retired_outputs)
+    generated_skill_resources = tuple(
+        path for path in generated_skill_resources
+        if path not in retired_outputs and path not in written_generated_targets
+    )
 
     if config.external_skills:
         if external_root is None or not external_root.is_dir() or external_root.is_symlink():
@@ -845,8 +876,9 @@ def render_desired_state(
             sources=sources,
             external_sources=external_assets,
             structured_paths=tuple(native_documents),
-            unmanaged_paths=(_ENTRY_AGENTS,),
+            unmanaged_paths=(_ENTRY_AGENTS, *generated_targets),
             previous=previous_ownership,
+            contracts=contracts,
         )
     except OwnershipError as error:
         raise RenderError(str(error)) from error
@@ -875,12 +907,13 @@ def render_desired_state(
         tuple(sorted(replace_roots, key=lambda item: item.as_posix())),
         tuple(
             sorted(
-                (
+                {
                     *(item.path for item in project_rules),
                     *(item.path / 'SKILL.md' for item in project_skills),
                     *project_agent_sources,
                     *generated_skill_resources,
-                ),
+                    *retained_outputs,
+                },
                 key=lambda item: item.as_posix(),
             )
         ),

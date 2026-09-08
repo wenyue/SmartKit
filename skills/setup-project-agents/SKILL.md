@@ -29,25 +29,33 @@ The shipped catalog always enables Codex, Cursor, Copilot, and Qoder. It install
 and Skills, the Codex Plugin Agent defaults, and every catalog-declared project blueprint. Optional
 project configuration can add external Skills, project Agents, and MCP servers.
 
-If `.agents/config.json` exists, or accepted intent requires any non-default input, resolve the
-[shipped schema](../../setup-assets/catalog/project-config.schema.json) from this loaded Skill
-directory and use it to reconcile or create that target-owned file before `start`. Its absence means
-shipped defaults. In the schema, `skills` identifies GitHub sources and included Skill directories;
-`agents` maps project-owned `.agents/agents/<id>.md` sources to host adapters; and `mcp` declares
-exactly one of `url` or `command`, with optional ordered host/OS overrides and readiness metadata.
+If `.agents/config.json` exists or accepted intent requires non-default inputs, use the
+[shipped schema](../../setup-assets/catalog/project-config.schema.json) to reconcile or create this
+project-owned file before `start`. Its absence means shipped defaults. Resolve external Skill sources,
+project Agent mappings, and MCP declarations through that schema.
 
-Setup discovers and preserves additional project-owned Rules and Skills under `.agents/rules/` and
-`.agents/skills/`. Project Agent sources also remain project-owned. Catalog-declared Codex Plugin
-Agent defaults are fallbacks, not project Agent declarations. Native Cursor, Copilot, and Qoder Plugin
-Agents, and native plugin Rules, Skills, and MCP, are outside this workflow.
+The contents of project-local Rules and Skills under `.agents/rules/` and `.agents/skills/`, including
+blueprint-generated sources and their supporting files, are project-owned and editable between
+sessions. Setup discovers and preserves additional project-owned Rules and Skills. Project Agent sources also remain project-owned.
+Catalog-declared Codex Plugin Agent defaults are fallbacks, not project Agent declarations. Native
+Cursor, Copilot, and Qoder Plugin Agents, and native plugin Rules, Skills, and MCP, are outside this
+workflow.
 
-SmartKit owns only the files and structured fields recorded in `.agents/smartkit.lock.json`, plus one
-authenticated `AGENTS.md` unit bounded by its ownership markers and containing `## Project rules`.
-It appends the unit when no such section exists, and may adopt an unmarked legacy section only when
-the whole section exactly equals the current generated content. A conflicting section, malformed or
-duplicate markers, ambiguous ownership, or any other ownership or digest conflict stops setup before
-replacement. Preserve every byte outside the marked unit and every undeclared file, field,
-directory, and secret value.
+For each generated project Rule or Skill, SmartKit records the contract fingerprint and exact output
+paths, including supporting files, in `.agents/smartkit.lock.json`; it stores no persistent digests of
+those files' contents. An unchanged contract with all recorded outputs present preserves project edits
+without regeneration. A new or changed contract, or any missing recorded output, selects a generation
+request. Removing a contract deletes its recorded outputs; renaming its catalog target retires the old
+recorded paths and generates the current destination. Current project content remains input when
+regeneration is selected.
+
+Managed rendered, shared, and external assets retain digest protection. Frozen-session target drift
+checks still apply to the setup-relevant surface described below.
+
+SmartKit owns the managed files and structured fields recorded in `.agents/smartkit.lock.json` and
+the authenticated, marker-bounded `AGENTS.md` unit containing `## Project rules`. Scripts enforce
+adoption, marker, ownership, and digest checks before replacement and preserve content outside that
+unit and every undeclared file, field, directory, and secret value.
 
 MCP environment fields name environment variables; URL, command, argument, and override literals
 remain project input. Do not infer that an arbitrary string is sensitive. If qualified repository
@@ -65,12 +73,9 @@ Setup success and `check: clean` therefore prove configuration convergence, not 
 Resolve only material choices that affect shipped defaults, project-owned inputs, or authorized
 effects. Prefer qualified repository evidence and ask only about genuinely unresolved choices.
 
-First require `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, and
-`docs/agents/domain.md`, together with a real `## Agent skills` section in `AGENTS.md` or `CLAUDE.md`
-that references all three. This Matt context is project-owned: setup neither creates nor owns those
-files or the entry block. If it is incomplete, end this invocation and ask the user to invoke
-`setup-matt-pocock-skills` in the target. Begin a fresh `setup-project-agents` invocation only after
-that workflow finishes.
+`start` checks the project-owned Matt context. If it reports incomplete setup, end this invocation
+and ask the user to invoke `setup-matt-pocock-skills` in the target; begin a fresh invocation after
+that workflow finishes. Setup neither creates nor owns that context.
 
 Before `start`, obtain accepted project intent and separate authority for the private
 system-temporary session, one read-only Git fetch of canonical SmartKit `master`, and every fetch
@@ -84,15 +89,9 @@ Git-history changes, or any other target write. Stop before an unauthorized effe
 fetch is unavailable, `start` may use the validated installed plugin root and reports
 `source_commit: null`; configured external sources still require their own network authority.
 
-For each configured external source, `source` must identify its GitHub `owner/repository`; `ref` may
-be an existing safe branch, tag, or full commit, and omission selects the remote default branch.
-The repository root must contain one unambiguous full recognized MIT, Apache-2.0, BSD-2-Clause,
-BSD-3-Clause, MPL-2.0, or ISC license. Every included path must be a safe regular tree whose UTF-8
-`SKILL.md` has one exact marker-bounded frontmatter `name` equal to its destination basename; links,
-malformed or duplicate frontmatter, contradictory license text, non-regular entries,
-destination collisions, and shared-Skill name collisions are rejected. A previously recorded tag
-may not resolve to a different commit. Any rejection stops `start` before target mutation and
-removes its private checkout. Correct the declaration or source, then begin a fresh invocation.
+Scripts validate configured external sources, licenses, Skill trees, names, destination collisions,
+and recorded tag stability before target mutation. If `start` rejects a declaration or source,
+correct the reported cause and begin a fresh invocation.
 
 ## Start a frozen session
 
@@ -103,8 +102,7 @@ Identify this loaded Skill directory as `<skill-root>` and the target repository
 python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 
-`workflow.py` owns public `start`, `finish`, and `cancel`; `setup_project_agents.py` remains an
-internal implementation CLI.
+`workflow.py` is the public entry for `start`, `register`, `finish`, and `cancel`.
 
 Stop on a nonzero result. Record `session` as `SESSION`, `generated` as `GENERATED`, and the returned
 `request`, `source_root`, `source_commit`, and `source_fingerprint`. The request freezes setup
@@ -117,41 +115,95 @@ Confirm it matches accepted intent before authoring. A canonical run is pinned t
 fingerprint; an installed fallback is identified by its root, null commit, and fingerprint.
 
 Keep exactly this private session until one `finish` or `cancel`. Treat the request and source as
-immutable. `finish` and `cancel` each claim the session atomically; an existing claim means another
-terminal operation started, so preserve the session and stop. Any target change after
-`start` within the frozen setup-relevant surface—including a downstream authoring Acceptance effect
+immutable. If another operation holds the session claim, preserve the session and stop. Any target change after
+`start` within the frozen setup-relevant surface—including a separately authorized authoring effect
 on that surface—ends this session: cancel it and restart from the resulting accepted target state.
 Changes outside that surface do not restart generation; preserve them as unrelated state. This
 keeps authoring effects under their own grant instead of silently incorporating them into setup.
 
 ## Fulfil generation requests
 
-For every request, resolve its immutable Setup Authoring Contract from `source_root`, then load and
-invoke the public workflow at `source_root/skills/write-rules-and-skills/SKILL.md`, including the
-same-source references and `writing-for-agents` dependency it requires. Run that workflow in the
-target-repository context with the Setup Authoring Contract as accepted task/spec input and
-`GENERATED` as its request root. An ambient or target-checkout writer is not this session's
-authority. The authoring workflow independently owns its Candidate, proportionate evidence and
-proof, Acceptance effects, and result; setup supplies no target-effect authority. Continue only
-from its ready handoff, whose exact Candidate paths must already be beneath `GENERATED`. Preserve
-complete project-owned content unless accepted reconfiguration says otherwise.
+With no generation requests, go directly to `finish`. Otherwise, complete the following workflow
+before registering any request.
 
-After every frozen request is ready, create `GENERATED/.setup-generation.json` with this exact shape:
+### Plan the resulting set
 
-```json
-{
-  "version": 1,
-  "requests": [
-    {"id": "<generation request id>", "outputs": ["<exact target-relative path>"]}
-  ]
-}
+Resolve every requested immutable Setup Authoring Contract from `source_root`. Load the public
+writer at `source_root/skills/write-rules-and-skills/SKILL.md`, including its same-source references
+and `writing-for-agents` dependency. An ambient or target-checkout writer is not this session's
+authority. Apply that writer's **Allocate responsibility** criteria to establish one common plan
+before any Rule authoring begins.
+
+Plan the whole resulting project Rule set, including retained Rules outside the generation
+requests. Derive its membership from the frozen requests, catalog, contracts, and complete current
+project inputs; assume no fixed count. For each Rule, identify its responsibility, main content,
+boundaries with neighboring owners, and necessary references. Include Skills wherever their
+responsibilities affect this allocation. Supply applicable always-loaded project Rules and
+SmartKit global Rules, plus evidence of conditional Rules that can load together in supported
+usage. Establish this context through supported discovery and loading routes, not merely the
+instructions visible in the current session.
+
+The plan records ownership and loading evidence and unresolved owner dependencies. Setup owns
+this batch plan and session coordination; the public writer owns each Rule or Skill's allocation
+and single-definition judgment. The catalog, schema, contracts, and scripts retain their facts and
+bounds. A plan cannot add a generation request, override a contract, or authorize another owner.
+
+### Author and reconcile before registration
+
+Invoke the pinned public writer in the target-repository context for each request, using its
+Setup Authoring Contract as accepted task/spec input and `GENERATED` as the request root. Supply
+the common plan, ownership and loading evidence, owner dependency state, and complete current
+project content to every job, including Skill jobs. Each invocation owns exactly one Candidate
+and its own frozen scope, evidence, validation, review, and result. Jobs may run sequentially.
+
+Accept only a public-writer `COMPLETE` handoff whose exact Candidate paths already lie beneath
+`GENERATED` and satisfy the request's contract. Preserve any contract-required evidence in that
+handoff; a contract's readiness terminology does not replace the public writer's result. Setup
+supplies no authority for downstream effects: obtain a separate grant before any such effect,
+and apply the frozen-target drift rule if it changes setup-relevant target state.
+
+Use discoveries from authoring to update the common plan. Before registration, review all
+generated outputs together with the retained Rules and relevant Skill and global Rule context
+against the plan and accepted contracts. Resolve coverage omissions, responsibility overlap, and
+semantic duplication using the pinned writer's allocation criteria. Individual `COMPLETE`
+handoffs do not establish whole-set coherence.
+
+Route every necessary generated correction through a distinct valid invocation of the public
+writer with the updated plan and a newly frozen single-Candidate scope. Reauthor affected earlier
+outputs as well as later ones, obtaining fresh `COMPLETE` handoffs for every changed Candidate.
+Repeat the whole-set check until all requested outputs and their current handoffs agree with the
+resolved plan. Keep this reconciliation before registration; do not edit an accepted Candidate
+behind its handoff or use registration to replace it.
+
+If a required correction belongs outside the frozen generation requests, including a retained
+project Rule or SmartKit global Rule, stop and cancel the session. Follow the public writer's
+owner-dependency and user-assistance path to obtain the separately authorized canonical-owner
+correction, then restart from the accepted state. Preserve the pinned source and installation
+caches; neither is a substitute correction target. An ownership discovery never widens this
+session or a writer job's frozen scope.
+
+A writer `NEEDS_INPUT` or `BLOCKED`, or unavailable required authority, dependency, access, or role,
+stops generation. Preserve and report its exact blocker and evidence, cancel through **Stop and
+recover**, and begin a fresh session only after resolution. Do not register partial work.
+
+### Register the complete handoffs
+
+Once whole-set review and every correction are complete, register each request once using its ID
+and the exact paths from its current `COMPLETE` handoff:
+
+```text
+python "<skill-root>/scripts/workflow.py" register --session "<SESSION>" --request-id "<ID>" --output "<PATH>"
 ```
 
-Include every request and returned Candidate path exactly once. Each request's primary `target` is
-mandatory. A Rule request declares only its primary target. A Skill request may also declare exact
-supporting paths returned under that Skill directory by its Authoring Contract; a directory, glob,
-inferred path, or resource from a non-ready handoff is not a declaration. The manifest is private
-session control data and is not installed.
+Repeat `--output` for supporting files in that handoff. Paths may be absolute beneath `GENERATED`
+or target-relative beneath `.agents/`. The command validates and records one request's outputs;
+it does not certify the writer's semantic handoff. Duplicate request registration is rejected
+without replacing the earlier registration. Correct a registration input error and retry in the
+same session only if that request remains unregistered and its claim was released. A claim cleanup
+failure requires inspection of the reported session before retrying; target drift requires
+cancellation and restart. If a semantic correction becomes necessary after registration begins,
+cancel and restart rather than changing registered outputs. After all requests are registered,
+continue to `finish`.
 
 ## Finish once
 
@@ -161,15 +213,11 @@ Run `finish` exactly once:
 python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
-Finish revalidates the request, setup-relevant target fingerprint, source and external snapshots,
-exact generated manifest, ownership, rendered state, and plan before mutation. It applies the plan
-and its clean postcondition within one rollback boundary. Give `finish` exclusive access to every
-planned target path until it returns. Before each mutation it rechecks the observed pre-finish
-content, mode, and identity, but supported host filesystems do not provide a portable atomic
-compare-and-swap replacement or deletion by prior identity. An uncooperative writer in the narrow
-interval between that check and the filesystem mutation can therefore be overwritten. Success
-requires zero exit plus JSON with `phase: finish` and `check: clean`; only then is the session removed
-as a completed transaction.
+Finish validates the complete outputs, frozen evidence, ownership, and plan, then applies the plan
+and clean postcondition within one rollback boundary. Give it exclusive access to every planned
+target path through completion or failure handling: filesystem checks cannot prevent an uncooperative
+writer from being overwritten between a check and mutation. Success requires zero exit and JSON with
+`phase: finish` and `check: clean`; only then is the session removed as a completed transaction.
 
 ## Stop and recover
 
@@ -179,9 +227,9 @@ If work must stop after `start` and before any `finish` attempt, cancel the sess
 python "<skill-root>/scripts/workflow.py" cancel --session "<SESSION>"
 ```
 
-Before finish, unresolved declarations, ownership or digest conflicts, setup-relevant target drift,
-or generated path mismatches require cancellation and a fresh session after correction. A cancel
-failure is terminal and is reported unchanged.
+Before finish, unresolved declarations, ownership or digest conflicts, or setup-relevant target
+drift require cancellation and a fresh session after correction. A cancel failure is terminal and
+is reported unchanged.
 
 After a pinned finish or transaction failure, preserve its exact error. The transaction attempts to
 restore the pre-finish setup state and refuses a rollback mutation when its checks detect a
@@ -193,7 +241,7 @@ and must report the exact session path if cleanup fails.
 A cleanup failure can occur after the target already reached clean desired state or after a failed
 transaction, so neither a zero-exit success nor rollback may be inferred. Never reuse, finish, or
 cancel that residual session. Treat any remaining claim or partial session contents as
-terminal-operation evidence. Inspect the reported target and session, remove only the verified
+failure evidence. Inspect the reported target and session, remove only the verified
 workflow-owned residue, resolve the original cause when present, and start a fresh session if setup
 is still required.
 

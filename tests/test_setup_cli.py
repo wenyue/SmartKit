@@ -259,16 +259,17 @@ class SetupCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
-            managed = target / '.agents/rules/managed.md'
+            managed = target / '.codex/rules/managed.rules'
             managed.parent.mkdir(parents=True)
             managed.write_text('changed\n', encoding='utf-8')
             lock = target / '.agents/smartkit.lock.json'
+            lock.parent.mkdir(parents=True, exist_ok=True)
             lock.write_text(json.dumps({
                 'sources': [],
                 'assets': [{
                     'kind': 'file',
                     'role': 'rule',
-                    'path': '.agents/rules/managed.md',
+                    'path': '.codex/rules/managed.rules',
                     'digest': hashlib.sha256(b'original\n').hexdigest(),
                 }],
             }), encoding='utf-8')
@@ -285,6 +286,86 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(result, 2)
             self.assertFalse((session / 'generated').exists())
             self.assertFalse((session / 'request.json').exists())
+
+    def test_project_source_edits_are_allowed_before_prepare_but_frozen_after_it(self):
+        for relative in (
+            '.agents/rules/01-project-contracts.md',
+            '.agents/skills/change-set-verification/SKILL.md',
+            '.agents/skills/change-set-verification/references/checks.md',
+        ):
+            with self.subTest(path=relative), tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                target = root / 'target'
+                source = target / relative
+                source.parent.mkdir(parents=True)
+                source.write_bytes(b'project edit before setup\n')
+                (target / '.agents/smartkit.lock.json').write_text(json.dumps({
+                    'sources': [],
+                    'assets': [{
+                        'kind': 'file',
+                        'role': 'rule' if '/rules/' in relative else 'skill',
+                        'path': relative,
+                        'digest': hashlib.sha256(b'old generated content\n').hexdigest(),
+                    }],
+                }), encoding='utf-8')
+                session = self.private_session(root)
+                self.assertEqual(self.prepare(target, session), 0)
+                self.write_generated_outputs(session)
+                source.write_bytes(b'project edit during setup\n')
+                before = self.snapshot_tree(target)
+                error = StringIO()
+                with redirect_stderr(error):
+                    result = setup_project_agents.main([
+                        'finish', '--target', str(target), '--session', str(session),
+                        *self.source_args(),
+                    ])
+                self.assertEqual(result, 2)
+                self.assertIn('target changed', error.getvalue())
+                self.assertEqual(self.snapshot_tree(target), before)
+
+    def test_finish_preserves_edits_then_deletes_outputs_of_removed_contracts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / 'source'
+            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns(
+                '.git', '.worktrees', '__pycache__', '*.pyc',
+            ))
+            target = root / 'target'
+            target.mkdir()
+            source_args = [
+                '--source-root', str(source), '--source-commit', self.source_commit,
+                '--no-bootstrap',
+            ]
+
+            def sync():
+                session = self.private_session(root)
+                arguments = ['--target', str(target), '--session', str(session), *source_args]
+                self.assertEqual(setup_project_agents.main(['prepare', *arguments]), 0)
+                request = json.loads((session / 'request.json').read_bytes())
+                self.write_generated_outputs(session)
+                with redirect_stdout(StringIO()):
+                    self.assertEqual(setup_project_agents.main(['finish', *arguments]), 0)
+                return request['generation_requests']
+
+            self.assertEqual(len(sync()), 5)
+            rule = target / '.agents/rules/00-project-tools.md'
+            skill = target / '.agents/skills/change-set-verification/SKILL.md'
+            rule.write_bytes(b'project rule edit\n')
+            skill.write_bytes(b'project skill edit\n')
+            self.assertEqual(sync(), [])
+            self.assertEqual(rule.read_bytes(), b'project rule edit\n')
+            self.assertEqual(skill.read_bytes(), b'project skill edit\n')
+            catalog_path = source / 'setup-assets/catalog/assets.json'
+            catalog = json.loads(catalog_path.read_bytes())
+            catalog['assets'] = [
+                item for item in catalog['assets'] if item['id'] not in {
+                    'blueprint-project-tools', 'blueprint-change-set-verification',
+                }
+            ]
+            catalog_path.write_text(json.dumps(catalog), encoding='utf-8')
+            self.assertEqual(sync(), [])
+            self.assertFalse(rule.exists())
+            self.assertFalse(skill.exists())
 
     def test_prepare_rejects_config_changed_before_first_fingerprint(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -433,8 +514,8 @@ class SetupCliTest(unittest.TestCase):
                 (target / '.agents/smartkit.lock.json').read_text(encoding='utf-8')
             )
             owned_paths = {item['path'] for item in ownership['assets']}
-            self.assertIn(helper, owned_paths)
-            self.assertIn(exact_cache_path, owned_paths)
+            self.assertNotIn(helper, owned_paths)
+            self.assertNotIn(exact_cache_path, owned_paths)
 
     def test_finish_rejects_generated_output_omitted_from_exact_manifest(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1301,7 +1382,7 @@ class SetupEndToEndTest(unittest.TestCase):
             original = self.snapshot_tree(target)
             collision_target = root / 'collision-target'
             collision_target.mkdir()
-            collision = collision_target / '.agents/rules/00-project-tools.md'
+            collision = collision_target / '.codex/rules/setup-project-agents.rules'
             collision.parent.mkdir(parents=True)
             collision.write_text('user collision\n', encoding='utf-8')
             collision_content = collision.read_bytes()

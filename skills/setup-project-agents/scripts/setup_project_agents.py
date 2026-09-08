@@ -7,6 +7,7 @@ import os
 import re
 import stat
 import sys
+import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
 
@@ -19,6 +20,7 @@ from agents_setup.catalog import (
     safe_relative,
 )
 from agents_setup.discovery import DiscoveryError
+from agents_setup.generation import generation_requests
 from agents_setup.external import ExternalSkillError, snapshot_external_skills
 from agents_setup.external_contract import (
     is_link_like as _is_link_like,
@@ -43,13 +45,6 @@ _PROJECT_RULE = re.compile(r'^\d{2}-[a-z0-9][a-z0-9-]*\.md$')
 _REQUEST_NAME = 'request.json'
 _GENERATED_NAME = 'generated'
 _GENERATION_MANIFEST = '.setup-generation.json'
-_BLUEPRINT_TARGETS = (
-    PurePosixPath('.agents/rules/00-project-tools.md'),
-    PurePosixPath('.agents/rules/01-project-contracts.md'),
-    PurePosixPath('.agents/rules/02-project-structure.md'),
-    PurePosixPath('.agents/skills/change-set-verification/SKILL.md'),
-    PurePosixPath('.agents/skills/worktree-environment-setup/SKILL.md'),
-)
 _HARNESSES = tuple(Harness)
 
 
@@ -128,21 +123,9 @@ def _request(
     external_snapshot_sha256: str | None,
     target_fingerprint: str,
 ) -> dict[str, object]:
-    blueprint_assets = {
-        asset.target: asset
-        for asset in catalog.assets
-        if asset.kind == 'blueprint' and asset.target is not None
-    }
-    if set(blueprint_assets) != set(_BLUEPRINT_TARGETS):
-        raise SetupError('catalog does not declare the required generation targets')
-    generation_requests = [
-        {
-            'id': blueprint_assets[path].id,
-            'source': blueprint_assets[path].source.as_posix(),
-            'target': path.as_posix(),
-        }
-        for path in _BLUEPRINT_TARGETS
-    ]
+    requests = generation_requests(
+        source_root, target, catalog, load_ownership(target, catalog=catalog),
+    )
     return {
         'target': str(target),
         'source_root': str(source_root),
@@ -255,7 +238,7 @@ def _request(
             }
             for agent in config.agents
         ],
-        'generation_requests': generation_requests,
+        'generation_requests': requests,
     }
 
 
@@ -342,10 +325,10 @@ def _request_config(
         }
         if (
             not isinstance(generation, list)
-            or len(generation) != len(_BLUEPRINT_TARGETS)
             or {
                 item.get('target') for item in generation if isinstance(item, Mapping)
-            } != set(expected_generation)
+            } - set(expected_generation)
+            or len(generation) != len({item.get('id') for item in generation if isinstance(item, Mapping)})
             or any(
                 not isinstance(item, Mapping)
                 or dict(item) != expected_generation.get(item.get('target'))
@@ -364,17 +347,9 @@ def _request_config(
     return config
 
 
-def _generated_outputs(
-    session: Path,
-    generation_requests: object,
-) -> tuple[Path, tuple[PurePosixPath, ...]]:
-    root = session / _GENERATED_NAME
-    try:
-        status = root.lstat()
-    except OSError as error:
-        raise SetupError('generated output directory is missing') from error
-    if _is_link_like(root) or not stat.S_ISDIR(status.st_mode):
-        raise SetupError('generated output directory is not a safe directory')
+def _manifest_outputs(
+    manifest: Mapping[str, object], generation_requests: object, *, complete: bool,
+) -> set[PurePosixPath]:
     if not isinstance(generation_requests, list) or not all(
         isinstance(item, Mapping) for item in generation_requests
     ):
@@ -383,7 +358,6 @@ def _generated_outputs(
         str(item['id']): PurePosixPath(str(item['target']))
         for item in generation_requests
     }
-    manifest = _read_json(root / _GENERATION_MANIFEST, 'generation manifest')
     if set(manifest) != {'version', 'requests'} or manifest.get('version') != 1:
         raise SetupError('generation manifest has an invalid shape')
     declarations = manifest.get('requests')
@@ -424,10 +398,29 @@ def _generated_outputs(
         if declared.intersection(paths):
             raise SetupError('generation manifest declares one output more than once')
         declared.update(paths)
-    if seen_ids != set(expected_requests):
+    if complete and seen_ids != set(expected_requests):
         raise SetupError('generation manifest does not declare every generation request')
+    return declared
+
+
+def _generated_outputs(
+    session: Path,
+    generation_requests: object,
+) -> tuple[Path, tuple[PurePosixPath, ...]]:
+    root = session / _GENERATED_NAME
+    try:
+        status = root.lstat()
+    except OSError as error:
+        raise SetupError('generated output directory is missing') from error
+    if _is_link_like(root) or not stat.S_ISDIR(status.st_mode):
+        raise SetupError('generated output directory is not a safe directory')
+    manifest = _read_json(root / _GENERATION_MANIFEST, 'generation manifest')
+    declared = _manifest_outputs(manifest, generation_requests, complete=True)
     files: set[str] = set()
-    expected_directories = {PurePosixPath('.')}
+    expected_directories = {
+        PurePosixPath('.'), PurePosixPath('.agents'),
+        PurePosixPath('.agents/rules'), PurePosixPath('.agents/skills'),
+    }
     for expected_path in declared:
         parent = expected_path.parent
         while parent != PurePosixPath('.'):
@@ -536,10 +529,13 @@ def _target_evidence_paths(
     add(PurePosixPath('.agents/config.json'))
     add(OWNERSHIP_PATH)
     try:
-        previous = load_ownership(root)
+        previous = load_ownership(root, catalog=catalog)
     except OwnershipError as error:
         raise SetupError(str(error)) from error
     if previous is not None:
+        for contract in previous.contracts:
+            for output in contract.outputs:
+                add(output)
         for asset in previous.assets:
             if asset.kind == 'tree':
                 _add_target_tree(root, asset.path, paths)
@@ -646,6 +642,7 @@ def _target_fingerprint(
     catalog: Catalog,
     config: ProjectConfig,
     excluded_paths: frozenset[PurePosixPath] = frozenset(),
+    baseline_paths: Mapping[PurePosixPath, bool] | None = None,
 ) -> str:
     """Fingerprint only target evidence consumed by the frozen setup request."""
     root = Path(root).absolute()
@@ -655,6 +652,8 @@ def _target_fingerprint(
         catalog=catalog,
         config=config,
     )
+    for relative, include_content in (baseline_paths or {}).items():
+        paths[relative] = paths.get(relative, False) or include_content
     digest = hashlib.sha256()
     digest.update(b'smartkit-setup-target\0v2\0')
     link_roots: list[PurePosixPath] = []
@@ -834,13 +833,16 @@ def build_parser() -> argparse.ArgumentParser:
         allow_abbrev=False,
     )
     phases = parser.add_subparsers(dest='phase', required=True)
-    for phase in ('prepare', 'finish'):
+    for phase in ('prepare', 'register', 'finish'):
         command = phases.add_parser(phase, allow_abbrev=False)
         command.add_argument('--target', type=Path, required=True)
         command.add_argument('--session', type=Path, required=True)
         command.add_argument('--source-root', type=Path, required=True)
         command.add_argument('--source-commit', required=True)
         command.add_argument('--no-bootstrap', action='store_true', required=True)
+        if phase == 'register':
+            command.add_argument('--request-id', required=True)
+            command.add_argument('--output', action='append', required=True)
     return parser
 
 
@@ -854,7 +856,7 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
     )
     config = project.config
     try:
-        verify_ownership(project.root, load_ownership(project.root))
+        verify_ownership(project.root, load_ownership(project.root, catalog=catalog))
     except OwnershipError as error:
         raise SetupError(str(error)) from error
     generated = session / _GENERATED_NAME
@@ -900,9 +902,10 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
             target_fingerprint=target_fingerprint,
         ),
     )
+    _write_json(generated / _GENERATION_MANIFEST, {'version': 1, 'requests': []})
 
 
-def _plan(
+def _session_inputs(
     args: argparse.Namespace,
     session: Path,
     source_commit: str | None,
@@ -931,6 +934,64 @@ def _plan(
         raise SetupError('target changed after start; cancel and restart from current state')
     if request['source_fingerprint'] != _source_fingerprint(args.source_root, catalog):
         raise SetupError('setup source changed after start; cancel and restart')
+    return catalog, project, request, config
+
+
+def _register(args: argparse.Namespace, session: Path, source_commit: str | None) -> None:
+    _, _, request, _ = _session_inputs(
+        args, session, source_commit, verify_target_fingerprint=True,
+    )
+    root = session / _GENERATED_NAME
+    if _is_link_like(root) or not root.is_dir():
+        raise SetupError('generated output directory is missing or unsafe')
+    manifest_path = root / _GENERATION_MANIFEST
+    manifest = _read_json(manifest_path, 'generation manifest')
+    _manifest_outputs(manifest, request['generation_requests'], complete=False)
+    outputs: list[str] = []
+    for value in args.output:
+        supplied = Path(value)
+        if supplied.is_absolute():
+            try:
+                supplied = supplied.relative_to(root)
+            except ValueError as error:
+                raise SetupError('registered output must be beneath generated directory') from error
+        relative = safe_relative(supplied.as_posix(), 'registered output')
+        if _target_link_boundary(root, relative) is not None or not (root / relative).is_file():
+            raise SetupError('registered output must be a safe regular file')
+        outputs.append(relative.as_posix())
+    declaration = {'id': args.request_id, 'outputs': outputs}
+    updated = {'version': 1, 'requests': [*manifest['requests'], declaration]}
+    _manifest_outputs(updated, request['generation_requests'], complete=False)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=session, delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump(updated, stream, indent=2)
+            stream.write('\n')
+        os.replace(temporary, manifest_path)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
+    remaining = sorted(
+        item['id'] for item in request['generation_requests']
+        if item['id'] not in {entry['id'] for entry in updated['requests']}
+    )
+    print(json.dumps({
+        'phase': 'register', 'request_id': args.request_id,
+        'outputs': outputs, 'remaining_requests': remaining, 'ready': not remaining,
+    }))
+
+
+def _plan(
+    args: argparse.Namespace,
+    session: Path,
+    source_commit: str | None,
+    *,
+    verify_target_fingerprint: bool,
+):
+    catalog, project, request, config = _session_inputs(
+        args, session, source_commit, verify_target_fingerprint=verify_target_fingerprint,
+    )
     external_root = session / 'external-skills'
     expected_snapshot_digest = request['external_snapshot_sha256']
     if bool(config.external_sources) != (expected_snapshot_digest is not None):
@@ -944,6 +1005,11 @@ def _plan(
             raise SetupError('external Skill source metadata is missing') from error
         if actual_snapshot_digest != expected_snapshot_digest:
             raise SetupError('external Skill source metadata changed after prepare')
+    if verify_target_fingerprint and request['generation_requests'] != generation_requests(
+        args.source_root, project.root, catalog,
+        load_ownership(project.root, catalog=catalog),
+    ):
+        raise SetupError('session generation requests do not match contract changes')
     generated, generated_outputs = _generated_outputs(
         session, request['generation_requests']
     )
@@ -980,6 +1046,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.phase == 'prepare':
             _prepare(args, session, source_commit)
             return 0
+        if args.phase == 'register':
+            _register(args, session, source_commit)
+            return 0
         plan, target, config, rendered = _plan(
             args,
             session,
@@ -1015,12 +1084,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 'target changed after planning; cancel and restart from current state'
             )
         postcondition_exclusions = _postcondition_exclusions(target, plan)
+        protected_paths = _target_evidence_paths(
+            target, source_root=args.source_root, catalog=catalog, config=config,
+        )
         protected_target_fingerprint = _target_fingerprint(
             target,
             source_root=args.source_root,
             catalog=catalog,
             config=config,
             excluded_paths=postcondition_exclusions,
+            baseline_paths=protected_paths,
         )
 
         def postcondition() -> None:
@@ -1045,6 +1118,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 catalog=catalog,
                 config=config,
                 excluded_paths=postcondition_exclusions,
+                baseline_paths=protected_paths,
             ):
                 raise SetupError('target changed during finish')
 

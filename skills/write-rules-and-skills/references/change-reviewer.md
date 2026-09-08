@@ -6,11 +6,12 @@ general style. Apply it together with the common Reviewer contract.
 
 ## Principles
 
-- Treat the baseline as regression evidence and accepted authority as the source of intended
-  meaning.
-- Follow consequences through the whole Candidate, including unchanged context needed to judge a
-  change.
-- Report real semantic loss, unintended change, or regression; ignore difference without impact.
+- **Intended meaning.** Treat the baseline as regression evidence and accepted authority as the
+  source of intended meaning.
+- **Whole-Candidate consequences.** Follow consequences through the whole Candidate, including
+  unchanged context needed to judge a change.
+- **Material impact.** Report real semantic loss, unintended change, or regression; ignore
+  difference without impact.
 
 ## Evidence
 

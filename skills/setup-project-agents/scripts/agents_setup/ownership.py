@@ -14,7 +14,7 @@ from .external_contract import (
     validate_ref,
     validate_source_identity,
 )
-from .models import ContractError, DesiredField, DesiredFile
+from .models import Catalog, ContractError, DesiredField, DesiredFile
 from .project import ProjectError, confined_target
 from .structured import (
     StructuredConfigError,
@@ -55,9 +55,19 @@ class OwnedAsset:
 
 
 @dataclass(frozen=True)
+class GeneratedContract:
+    id: str
+    source: PurePosixPath
+    target: PurePosixPath
+    fingerprint: str
+    outputs: tuple[PurePosixPath, ...]
+
+
+@dataclass(frozen=True)
 class OwnershipState:
     sources: tuple[Mapping[str, object], ...]
     assets: tuple[OwnedAsset, ...]
+    contracts: tuple[GeneratedContract, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -322,8 +332,42 @@ def normalize_external_sources(
     return sources
 
 
+def _parse_contract(raw: object) -> GeneratedContract:
+    if not isinstance(raw, Mapping) or set(raw) != {
+        'id', 'source', 'target', 'fingerprint', 'outputs',
+    }:
+        raise OwnershipError('SmartKit contract record is invalid')
+    if not isinstance(raw['id'], str) or not raw['id'] or not _is_digest(raw['fingerprint']):
+        raise OwnershipError('SmartKit contract identity or fingerprint is invalid')
+    try:
+        source = safe_relative(raw['source'], 'contract source')
+        target = safe_relative(raw['target'], 'contract target')
+        if not isinstance(raw['outputs'], list) or not raw['outputs']:
+            raise OwnershipError('SmartKit contract outputs are invalid')
+        outputs = tuple(safe_relative(item, 'contract output') for item in raw['outputs'])
+    except ContractError as error:
+        raise OwnershipError(str(error)) from error
+    is_rule = target.parts[:2] == ('.agents', 'rules') and len(target.parts) == 3
+    is_skill = (
+        target.parts[:2] == ('.agents', 'skills')
+        and len(target.parts) == 4 and target.name == 'SKILL.md'
+    )
+    if (
+        not (is_rule or is_skill)
+        or target not in outputs or len(outputs) != len(set(outputs))
+        or (is_rule and outputs != (target,))
+        or (is_skill and any(target.parent not in output.parents for output in outputs))
+    ):
+        raise OwnershipError('SmartKit contract outputs are outside their declared source')
+    return GeneratedContract(raw['id'], source, target, raw['fingerprint'], outputs)
+
+
 def _parse_ownership_document(document: object) -> OwnershipState:
-    if not isinstance(document, Mapping) or set(document) != {'sources', 'assets'}:
+    if (
+        not isinstance(document, Mapping)
+        or not {'sources', 'assets'} <= set(document)
+        or set(document) - {'sources', 'assets', 'contracts'}
+    ):
         raise OwnershipError('SmartKit ownership manifest is invalid')
     if not isinstance(document.get('sources'), list):
         raise OwnershipError('SmartKit ownership manifest is invalid')
@@ -346,7 +390,20 @@ def _parse_ownership_document(document: object) -> OwnershipState:
     }
     if declared_provenance != actual_provenance:
         raise OwnershipError('SmartKit ownership manifest Skill provenance is invalid')
-    return OwnershipState(sources, assets)
+    raw_contracts = document.get('contracts', [])
+    if not isinstance(raw_contracts, list):
+        raise OwnershipError('SmartKit contract records must be an array')
+    contracts = tuple(_parse_contract(item) for item in raw_contracts)
+    ids = [item.id for item in contracts]
+    outputs = [path for item in contracts for path in item.outputs]
+    if len(ids) != len(set(ids)) or len(outputs) != len(set(outputs)):
+        raise OwnershipError('SmartKit contract records overlap')
+    if any(
+        asset.path == output or (asset.kind == 'tree' and asset.path in output.parents)
+        for asset in assets for output in outputs
+    ):
+        raise OwnershipError('SmartKit contract outputs overlap managed assets')
+    return OwnershipState(sources, assets, contracts)
 
 
 def load_ownership_file(path: Path) -> OwnershipState | None:
@@ -361,8 +418,30 @@ def load_ownership_file(path: Path) -> OwnershipState | None:
     return _parse_ownership_document(document)
 
 
-def load_ownership(target_root: Path) -> OwnershipState | None:
-    return load_ownership_file(_target(target_root, OWNERSHIP_PATH))
+def load_ownership(
+    target_root: Path, *, catalog: Catalog | None = None,
+) -> OwnershipState | None:
+    state = load_ownership_file(_target(target_root, OWNERSHIP_PATH))
+    if state is None or catalog is None:
+        return state
+    managed_sources = tuple(
+        asset.target for asset in catalog.assets
+        if asset.kind in {'rule', 'skill'}
+        and not asset.control_plane and asset.target is not None
+    )
+    assets = tuple(
+        asset for asset in state.assets
+        if not (
+            asset.kind == 'file'
+            and asset.role in {'rule', 'skill'}
+            and asset.path.parts[:2] == ('.agents', f'{asset.role}s')
+            and not any(
+                source == asset.path or source in asset.path.parents
+                for source in managed_sources
+            )
+        )
+    )
+    return OwnershipState(state.sources, assets, state.contracts)
 
 
 def verify_ownership(target_root: Path, state: OwnershipState | None) -> None:
@@ -435,6 +514,7 @@ def reconcile_ownership(
     structured_paths: Sequence[PurePosixPath] = (),
     unmanaged_paths: Sequence[PurePosixPath] = (),
     previous: OwnershipState | None = None,
+    contracts: Sequence[GeneratedContract] = (),
 ) -> OwnershipResult:
     previous = previous if previous is not None else load_ownership(target_root)
     verify_ownership(target_root, previous)
@@ -490,6 +570,16 @@ def reconcile_ownership(
     next_document = {
         'sources': [dict(item) for item in sources],
         'assets': manifest_assets,
+        'contracts': [
+            {
+                'id': item.id,
+                'source': item.source.as_posix(),
+                'target': item.target.as_posix(),
+                'fingerprint': item.fingerprint,
+                'outputs': [path.as_posix() for path in item.outputs],
+            }
+            for item in sorted(contracts, key=lambda item: item.id)
+        ],
     }
     _parse_ownership_document(next_document)
     manifest = (json.dumps(

@@ -20,5 +20,4 @@ checkout 的 Skill，必须从同一 checkout 来源树中读取其完整的 `SK
 副本解析保留通常的适用性、Rule 的强度与优先级，以及 Skill 的组合关系。必须保留每个独立适用的
 Rule 和 Skill；解析一个制品的副本不能替代另一个不同的制品。
 
-`.agents/rules/01-project-policy.md` 仍是规范所有权、契约与暴露、翻译、验证以及 authoring-Skill
-例外的唯一所有者。
+`.agents/rules/01-project-policy.md` 仍是规范所有权、契约与暴露、翻译及验证的唯一所有者。
