@@ -22,6 +22,12 @@ Scope: All tasks.
 
 ## Prepare to Change State
 
+- Before changing code that affects a durable or externally consumed contract, such as a database
+  schema, external API, or Proto contract, ask the user whether compatibility with the prior
+  contract is required and wait for their decision. Present the choice neutrally, without labeling
+  non-compatibility as recommended or default. When the user explicitly requires compatibility,
+  add or retain the behavior or layers needed to preserve it; otherwise, add or retain no
+  compatibility behavior or layers.
 - Before the first authorized state change, ensure the outcome and scope are actionable; evidence
   covers the mechanism, constraints, ownership boundaries, invariants, dependencies, risks, and
   affected areas well enough to choose a safe approach; and the change and verification are defined
