@@ -52,10 +52,12 @@ regeneration is selected.
 Managed rendered, shared, and external assets retain digest protection. Frozen-session target drift
 checks still apply to the setup-relevant surface described below.
 
-SmartKit owns the managed files and structured fields recorded in `.agents/smartkit.lock.json` and
-the authenticated, marker-bounded `AGENTS.md` unit containing `## Project rules`. Scripts enforce
-adoption, marker, ownership, and digest checks before replacement and preserve content outside that
-unit and every undeclared file, field, directory, and secret value.
+SmartKit owns only the files and structured fields recorded in `.agents/smartkit.lock.json`, plus
+one `## Project rules` section in `AGENTS.md`. Setup replaces that section through the next heading
+of level one or two, or the end of the file, and appends it when absent. Headings inside fenced code
+blocks do not define section boundaries. Duplicate Project rules sections or any ownership or
+digest conflict stop setup before replacement. Preserve every byte outside the section and every
+undeclared file, field, directory, and secret value.
 
 MCP environment fields name environment variables; URL, command, argument, and override literals
 remain project input. Do not infer that an arbitrary string is sensitive. If qualified repository

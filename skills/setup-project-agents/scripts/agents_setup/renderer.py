@@ -133,8 +133,6 @@ _MCP_NATIVE = {
 }
 _ENTRY_AGENTS = PurePosixPath('AGENTS.md')
 _PROJECT_RULES_TITLE = 'Project rules'
-_PROJECT_RULES_START = '<!-- smartkit:project-rules:start -->'
-_PROJECT_RULES_END = '<!-- smartkit:project-rules:end -->'
 _MARKDOWN_HEADING = re.compile(r'^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$')
 _MARKDOWN_FENCE = re.compile(r'^ {0,3}(`{3,}|~{3,})')
 
@@ -236,41 +234,6 @@ def _level_two_section_bounds(content: str, title: str) -> tuple[int, int] | Non
     return start, end
 
 
-def _marker_lines(content: str, marker: str) -> list[tuple[int, int, int]]:
-    return [
-        (start, content_end, line_end)
-        for start, content_end, line_end, line in _live_markdown_lines(content)
-        if line == marker
-    ]
-
-
-def _marked_project_rules_bounds(content: str) -> tuple[int, int] | None:
-    starts = _marker_lines(content, _PROJECT_RULES_START)
-    ends = _marker_lines(content, _PROJECT_RULES_END)
-    if not starts and not ends:
-        return None
-    if len(starts) != 1 or len(ends) != 1:
-        raise RenderError('project AGENTS.md has ambiguous Project rules ownership markers')
-    start_line, _, content_start = starts[0]
-    end_line, end_marker, _ = ends[0]
-    if content_start > end_line:
-        raise RenderError('project AGENTS.md has invalid Project rules ownership markers')
-    inner = content[content_start:end_line]
-    bounds = _level_two_section_bounds(inner, _PROJECT_RULES_TITLE)
-    if bounds is None or inner[:bounds[0]].strip() or inner[bounds[1]:].strip():
-        raise RenderError('project AGENTS.md has invalid Project rules generated unit')
-    return start_line, end_marker
-
-
-def _marked_project_rules(rendered: str) -> str:
-    body = rendered.rstrip('\r\n')
-    return (
-        f'{_PROJECT_RULES_START}\n'
-        f'{body}\n'
-        f'{_PROJECT_RULES_END}'
-    )
-
-
 def _render_entry_agents(target_root: Path, block: bytes) -> bytes:
     try:
         rendered = block.decode('utf-8')
@@ -279,29 +242,20 @@ def _render_entry_agents(target_root: Path, block: bytes) -> bytes:
     rendered_bounds = _level_two_section_bounds(rendered, _PROJECT_RULES_TITLE)
     if rendered_bounds is None or rendered[:rendered_bounds[0]].strip() or rendered[rendered_bounds[1]:].strip():
         raise RenderError('entry AGENTS template must contain only one Project rules section')
-    marked = _marked_project_rules(rendered)
+    body = rendered.rstrip('\r\n')
     try:
         target = confined_target(target_root, _ENTRY_AGENTS)
     except ProjectError as error:
         raise RenderError(str(error)) from error
     if not target.exists():
-        return marked.encode('utf-8') + b'\n'
+        return body.encode('utf-8') + b'\n'
     if target.is_symlink() or not target.is_file():
         raise RenderError('project AGENTS.md is unsafe')
     try:
         current = target.read_bytes().decode('utf-8')
     except (OSError, UnicodeDecodeError) as error:
         raise RenderError('project AGENTS.md is not readable UTF-8') from error
-    marked_bounds = _marked_project_rules_bounds(current)
     bounds = _level_two_section_bounds(current, _PROJECT_RULES_TITLE)
-    if marked_bounds is not None:
-        if bounds is None or not (
-            marked_bounds[0] < bounds[0] < marked_bounds[1]
-        ):
-            raise RenderError('project AGENTS.md has ambiguous Project rules generated unit')
-        return (
-            current[:marked_bounds[0]] + marked + current[marked_bounds[1]:]
-        ).encode('utf-8')
     if bounds is None:
         if not current:
             separator = ''
@@ -311,13 +265,11 @@ def _render_entry_agents(target_root: Path, block: bytes) -> bytes:
             separator = '\n'
         else:
             separator = '\n\n'
-        return (current + separator + marked + '\n').encode('utf-8')
+        return (current + separator + body + '\n').encode('utf-8')
     start, end = bounds
-    if current[start:end].rstrip('\r\n') != rendered.rstrip('\r\n'):
-        raise RenderError('project AGENTS.md Project rules section is project-owned')
     suffix = current[end:]
     separator = '\n\n' if suffix else '\n'
-    return (current[:start] + marked + separator + suffix).encode('utf-8')
+    return (current[:start] + body + separator + suffix).encode('utf-8')
 
 
 def _quoted(value: str) -> str:

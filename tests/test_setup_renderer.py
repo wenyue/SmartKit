@@ -1429,8 +1429,7 @@ class SetupRendererTest(unittest.TestCase):
             agents = first.files_by_path['AGENTS.md'].decode()
             self.assertIn('## Agent skills', agents)
             self.assertEqual(agents.count('## Project rules'), 2)
-            self.assertEqual(agents.count('<!-- smartkit:project-rules:start -->'), 1)
-            self.assertEqual(agents.count('<!-- smartkit:project-rules:end -->'), 1)
+            self.assertNotIn('<!--', agents)
             manifest = json.loads(first.files_by_path['.agents/smartkit.lock.json'])
             self.assertFalse(any(
                 asset['path'] == 'AGENTS.md' for asset in manifest['assets']
@@ -1452,107 +1451,44 @@ class SetupRendererTest(unittest.TestCase):
             self.assertEqual(updated.count('## Project rules'), 2)
             self.assertTrue(updated.startswith(outside.replace('GitHub Issues', 'Local issues')))
 
-    def test_project_rules_rejects_an_unowned_existing_section(self):
+    def test_project_rules_replaces_existing_section_and_preserves_adjacent_sections(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            generated = self.generated_tree(root)
+            prefix = '# Repository\n\nKeep this introduction.\n\n'
+            suffix = '## Agent skills\n\nKeep this exact block.\n'
+            entry = target / 'AGENTS.md'
+            entry.write_bytes(
+                (prefix + '## Project rules\n\nOutdated rules.\n'
+                 '### Details\n\nOutdated details.\n\n' + suffix).encode('utf-8')
+            )
+
+            first = self.render(target, generated)
+            updated = first.files_by_path['AGENTS.md'].decode()
+
+            self.assertTrue(updated.startswith(prefix + '## Project rules\n'))
+            self.assertTrue(updated.endswith(suffix))
+            self.assertNotIn('Outdated', updated)
+            self.assertNotIn('<!--', updated)
+            self.materialize(target, first.files)
+            second = self.render(target, generated)
+            self.assertEqual(second.files_by_path['AGENTS.md'].decode(), updated)
+
+    def test_project_rules_rejects_duplicate_sections(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
             target.mkdir()
             (target / 'AGENTS.md').write_text(
-                '# Repository\n\n## Project rules\n\nKeep this project policy.\n',
+                '## Project rules\n\nFirst.\n\n'
+                '## Project rules\n\nSecond.\n',
                 encoding='utf-8',
             )
 
-            with self.assertRaisesRegex(RenderError, 'project-owned'):
+            with self.assertRaisesRegex(RenderError, 'duplicate ## Project rules'):
                 self.render(target, self.generated_tree(root))
-
-    def test_project_rules_adopts_only_an_exact_legacy_generated_section(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            target = root / 'target'
-            target.mkdir()
-            generated = self.generated_tree(root)
-            first = self.render(target, generated)
-            marked = first.files_by_path['AGENTS.md'].decode()
-            legacy = '\n'.join(
-                line for line in marked.splitlines()
-                if line not in {
-                    '<!-- smartkit:project-rules:start -->',
-                    '<!-- smartkit:project-rules:end -->',
-                }
-            )
-            outside = '## Agent skills\n\nKeep this exact block.\n'
-            (target / 'AGENTS.md').write_bytes(
-                ('# Repository\n\n' + legacy.rstrip() + '\n\n' + outside).encode('utf-8')
-            )
-
-            adopted = self.render(target, generated).files_by_path['AGENTS.md'].decode()
-
-            self.assertIn('<!-- smartkit:project-rules:start -->', adopted)
-            self.assertIn('<!-- smartkit:project-rules:end -->', adopted)
-            self.assertTrue(adopted.endswith(outside))
-
-    def test_project_rules_rejects_ambiguous_or_incomplete_markers(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            generated = self.generated_tree(root)
-            cases = (
-                '<!-- smartkit:project-rules:start -->\n## Project rules\n',
-                '<!-- smartkit:project-rules:end -->\n## Project rules\n',
-                '<!-- smartkit:project-rules:start -->\n'
-                '<!-- smartkit:project-rules:start -->\n## Project rules\n'
-                '<!-- smartkit:project-rules:end -->\n',
-                '<!-- smartkit:project-rules:start -->\n## Project rules\n'
-                '<!-- smartkit:project-rules:end -->\n'
-                '<!-- smartkit:project-rules:start -->\n## Project rules\n'
-                '<!-- smartkit:project-rules:end -->\n',
-            )
-            for index, content in enumerate(cases):
-                with self.subTest(index=index):
-                    target = root / f'target-{index}'
-                    target.mkdir()
-                    (target / 'AGENTS.md').write_text(content, encoding='utf-8')
-                    with self.assertRaisesRegex(RenderError, 'ownership markers'):
-                        self.render(target, generated)
-
-    def test_project_rules_ignore_exact_marker_examples_inside_fences(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            target = root / 'target'
-            target.mkdir()
-            generated = self.generated_tree(root)
-            example = (
-                '# Marker documentation\n\n```md\n'
-                '<!-- smartkit:project-rules:start -->\n'
-                '## Project rules\n'
-                '<!-- smartkit:project-rules:end -->\n'
-                '```\n\nKeep this project-owned text byte-for-byte.\n'
-            )
-            entry = target / 'AGENTS.md'
-            entry.write_bytes(example.encode('utf-8'))
-
-            first = self.render(target, generated)
-            first_content = first.files_by_path['AGENTS.md'].decode()
-            self.assertTrue(first_content.startswith(example))
-            self.assertEqual(
-                first_content.count('<!-- smartkit:project-rules:start -->'),
-                2,
-            )
-            self.materialize(target, first.files)
-            entry.write_bytes(
-                entry.read_bytes().replace(
-                    b'Read every project Rule',
-                    b'Stale generated unit.\n\nRead every project Rule',
-                )
-            )
-
-            second = self.render(target, generated)
-            second_content = second.files_by_path['AGENTS.md'].decode()
-            self.assertTrue(second_content.startswith(example))
-            self.assertNotIn('Stale generated unit.', second_content)
-            self.assertEqual(
-                second_content.count('<!-- smartkit:project-rules:start -->'),
-                2,
-            )
 
     def test_generated_blueprint_skills_are_not_rediscovered_as_project_owned(self):
         with tempfile.TemporaryDirectory() as temp_dir:
