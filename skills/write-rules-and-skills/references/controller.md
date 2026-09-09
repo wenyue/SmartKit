@@ -5,58 +5,31 @@ Author brief. Exercise substantive judgment about responsibility, owners, depend
 and evidence throughout the job. The Author independently checks the allocation and owns the
 Candidate's meaning, structure, and expression; Reviewers own their professional verdicts.
 
+Before aligning either artifact type, read the [shared judgment basis](artifact-standard.md) and
+the checkout-authoritative `writing-for-agents` Skill. Apply their guidance to understanding,
+allocation, and the Author brief within this Controller contract.
+
 ## Understand the request
 
 Derive the intended outcome from authoritative user-intent evidence and inspect the sources needed
 to understand the request. Determine which owners must change and which dependencies must be
 resolved so that the bounded job serves the overall request.
 
-Existing Candidate text is regression evidence, not design authority. Preserve authoritative
-user-intent evidence separately from your interpretation and from the Author brief.
+Preserve authoritative user-intent evidence separately from your interpretation and from the
+Author brief.
 
 ## Allocate responsibility
 
-The Author and Quality Reviewer reuse these criteria under their own role contracts.
-
-Give each policy one complete definition across the relevant Rules and Skills. Rules may reference
-other Rules and Skills; Skills may reference other Skills, but must not directly reference Rules.
-Use short owner pointers within these reference boundaries and local context needed for a task
-decision, keeping the policy definition with its owner.
-
-Before choosing a Candidate, inspect suitable existing owners for the requested outcome, whether
-creating or revising a Rule or a Skill. Include related Rules and Skills, applicable always-loaded
-project Rules and SmartKit global Rules, and conditional Rules that can load together in supported
-usage. Use the environment's supported discovery and loading routes to establish their meaning,
-scope, triggers, and canonical sources; the current authoring session alone does not establish
-their availability to future users.
-
-A Rule owns a clearly bounded area of persistent policy across triggered work; a Skill owns a
-triggered job with a bounded outcome and the constraints necessary to that job. Allocate shared
-persistent policy to the best existing Rule by meaning and scope, improving that Rule when needed.
-Always-loaded status is evidence of availability, not a reason to promote project- or Skill-specific
-obligations to global policy. If code, configuration, a schema, or another active owner already owns a fact, route its
-change there instead.
-
-Compare meaning, including conditions, exceptions, and configuration, rather than matching
-phrases. A Skill cannot make a Rule applicable or activate it. It may rely on specific constraints
-of an independently applicable Rule only with supported loading guarantees wherever the Skill
-supports that behavior. Independent Rule loading supplies those constraints; the Skill retains
-only the local context needed for its task decision. Preserve the Rule's scope, conditions, and
-exceptions in that reliance. Before removing a Skill obligation, resolve any gap in allocation or
-loading; a pointer alone does not establish applicability or availability.
-
-Choose the best owner before checking whether it can be changed. Establish canonical-source
-access and write authorization separately from readability. When the owner is editable and its
-change authorized, route the work there. When source, access, or permission is unavailable, return
-`NEEDS_INPUT` naming the exact Rule or other owner, why it owns the behavior, the required change,
-the actual restriction, and the user assistance that would unblock it: a source location, access
-grant, or owner-side change. Use working access as evidence; do not infer a privilege requirement
-from location alone. An editable installation cache or a duplicate in the Skill cannot substitute
-for the canonical owner.
+Before choosing a Candidate, inspect suitable existing owners and establish the allocation using
+the shared [responsibility and loading criteria](artifact-standard.md#responsibility-and-loading).
+When the owner is editable and its change authorized, route the work there. When source, access,
+or permission is unavailable, return `NEEDS_INPUT` naming the exact Rule or other owner, why it owns
+the behavior, the required change, the actual restriction, and the user assistance that would
+unblock it: a source location, access grant, or owner-side change.
 
 ## Bound the job and prepare the brief
 
-Select exactly one Rule or Skill after allocation. Split changes to multiple owners into separate,
+Select exactly one artifact after allocation. Split changes to multiple owners into separate,
 dependency-ordered jobs. If allocation conflicts with an explicit user file restriction, return
 `NEEDS_INPUT` to resolve that conflict before writing. A caller such as project setup may supply
 a common allocation plan and evidence for several artifacts; each remains a separate authoring

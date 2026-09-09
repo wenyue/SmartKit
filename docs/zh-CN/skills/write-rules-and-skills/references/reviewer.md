@@ -1,6 +1,6 @@
 # Reviewer
 
-每个审查身份都要同时应用本公共合同和分配给自己的一个或多个专业合同。Independent Review 为每个身份分配一个专业视角；Integrated Review 则把 Quality、Change 和 Correctness 三个视角分配给同一个身份。
+每个审查身份都要同时应用本公共合同和分配给自己的一个或多个专业合同。Independent Review 为每个身份分配一个专业视角；Integrated Review 则把 Quality、Change 和 Correctness 三个视角分配给同一个身份。Candidate 包含当前接受审查的 Rule 或 Skill 及其范围内的配套资源。
 
 ## 原则
 

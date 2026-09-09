@@ -5,6 +5,9 @@ description: Author or revise one English Rule or Agent Skill.
 
 # Write Rules and Skills
 
+An **artifact** is one Rule or Skill. The **Candidate** is the current artifact and its scoped
+supporting resources under authoring and review.
+
 The active Agent is the Controller. Before aligning the job, read
 [the Controller role](references/controller.md) and apply it throughout the workflow.
 
@@ -92,7 +95,7 @@ Route only session context that a Reviewer cannot recover from those sources:
 
 - Quality receives the accepted objective, session-only quality or expression constraints, and the
   responsibility allocation with its evidence locators, supported-loading assumptions, owner
-  dependency state, and any caller-supplied allocation plan, for either a Rule or a Skill. Supply
+  dependency state, and any caller-supplied allocation plan, for either artifact type. Supply
   these independently of the Author brief; Quality does not depend on receiving that brief.
 - Change receives the requested change, preservation and compatibility decisions, and the Author's
   semantic change summary.

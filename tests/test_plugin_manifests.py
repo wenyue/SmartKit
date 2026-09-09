@@ -261,6 +261,7 @@ class PluginManifestTest(unittest.TestCase):
         authoring_roots = (public_root, *(private_root / name for name in private_names))
         expected_references = {
             'write-rules-and-skills': {
+                'artifact-standard.md',
                 'author.md',
                 'change-reviewer.md',
                 'controller.md',

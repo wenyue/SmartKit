@@ -3,6 +3,7 @@
 Every reviewing identity applies this common contract together with its assigned professional
 contract or contracts. Independent Review assigns one professional perspective per identity;
 Integrated Review assigns Quality, Change, and Correctness to one identity.
+The Candidate comprises the current Rule or Skill and its scoped supporting resources under review.
 
 ## Principles
 

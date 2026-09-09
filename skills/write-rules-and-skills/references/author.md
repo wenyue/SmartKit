@@ -12,27 +12,29 @@ job so that initial writing, review responses, and repairs remain coherent.
 - **Holistic coherence.** Reconsider the complete Candidate on every change. Give each meaning one
   clear home; integrate, replace, move, or remove existing content instead of accumulating patches.
 - **Minimal completeness.** Preserve every consequential obligation, boundary, and exception.
-  Include explicit content for its material contribution to understanding, execution, or acceptance
-  in the full context, including explanations that clarify relationships or prevent real ambiguity.
-  Leave reliably inferable method and immaterial detail to the Agent; apparent completeness alone
-  does not justify retaining them.
+  Include content for its material contribution to understanding, execution, or acceptance in the
+  full context, including explanations that clarify relationships or prevent real ambiguity.
+  Leave reliably inferable method and immaterial detail to the Agent; correctness, harmlessness,
+  possible usefulness, or apparent completeness alone does not justify retention.
+  Preserve consequential complexity and judge completeness in the whole context rather than by a
+  unique-fact requirement for each sentence or mechanical length and formatting preferences.
 - **Elegant and human-readable.** Write natural, precise, coherent English that both people and
   Agents can understand.
-- **Operational closure.** Make the trigger, responsible actor, required behavior, completion, and
-  necessary stop conditions usable in practice.
+- **Operational closure.** Make the trigger, responsible actor, required behavior, observable
+  outcome or completion, and necessary stop conditions usable in practice for either artifact type.
 
 ## Inputs and authority
 
-Before writing, read the checkout-authoritative `writing-for-agents` Skill and, for a Skill,
-`SKILL-MECHANICS.md`. Then inspect the self-contained Author brief, authoritative evidence,
-complete baseline, current Candidate and fingerprint, exact write scope, and validation
-requirements.
+Before writing either artifact type, read and apply the checkout-authoritative `writing-for-agents`
+Skill and the [shared judgment basis](artifact-standard.md). For a Skill, also read
+`SKILL-MECHANICS.md`. Then inspect the self-contained Author brief, authoritative evidence, complete
+baseline, current Candidate and fingerprint, exact write scope, and validation requirements.
 
-For either a Rule or a Skill, use the brief's responsibility allocation, ownership and
-supported-loading evidence, caller plan when present, and owner dependency state to apply the
-criteria in [Allocate responsibility](controller.md#allocate-responsibility) under this Author
-contract. Inspect the named owners and evidence yourself; an allocation is a decision to substantiate,
-not authority to bypass a missing source, loading guarantee, or permission.
+For either artifact type, use the brief's responsibility allocation, ownership and
+supported-loading evidence, caller plan when present, and owner dependency state to apply the shared
+judgments under this Author contract. Inspect the named owners and evidence yourself; an allocation
+is a decision to substantiate, not authority to bypass a missing source, loading guarantee, or
+permission.
 
 Only the Author may modify Candidate paths. Work within the allowed operations and preserve
 unaffected behavior, loading, metadata, dependencies, permissions, validation, safety, exits, and
@@ -44,7 +46,9 @@ material fact, decision, access grant, or permission is missing.
 For initial authoring and every repair, reason from the complete Candidate rather than the textual
 patch. Trace every inherited and requested obligation to a deliberate preserve, change, add, move,
 or retire decision. Co-locate related meaning, disclose information when first needed, remove stale
-or duplicated instructions, and use common terms unless a distinct concept genuinely needs a name.
+or duplicated instructions, and use common terms unless a distinct concept needs a name. Keep
+conditions beside their outcomes and exceptions. Address material over-application and
+under-application using the shared positive-target and guardrail criteria.
 
 Treat the examples below as conditional, non-normative calibration. When creating a new artifact or
 materially reshaping one, read only the exemplar or exemplars named for its shape below. Keep
@@ -52,21 +56,20 @@ ordinary local edits outside the example branch. Examples demonstrate proportion
 required headings, wording, or a template.
 
 For a Rule, lead with the governing policy and make its owner, strength, scope, observable
-conditions and outcomes, exceptions, precedence, and boundaries reconstructable. Keep each
-condition beside its outcome and exception, and rule out the nearest material over-application and
-under-application. See the [Rule exemplar](examples/elegant-rule.md).
+conditions and outcomes, exceptions, precedence, and boundaries reconstructable. See the
+[Rule exemplar](examples/elegant-rule.md).
 
-Choose the Skill shape that fits the work:
+For a Skill, apply `SKILL-MECHANICS.md` to invocation and packaging, and choose the shape that fits
+the work:
 
 - A **principle-led Skill** states the outcome, governing principles, consequential constraints,
   and completion conditions while leaving method to the Agent. See the
   [principle-led Skill exemplar](examples/elegant-principle-led-skill.md).
-- A **procedure-led Skill** fixes steps and order when sequence or protocol affects the result,
+- A **procedure-led Skill** fixes steps and order where sequence or protocol affects the result,
   correctness, safety, ownership, coordination, recovery, or external effects. See the
   [procedure-led Skill exemplar](examples/elegant-procedure-led-skill.md).
-- A **Hybrid Skill** is principle-led overall and uses procedure only for those consequential
-  parts. Read the one or two base-shape exemplars relevant to those parts; a Hybrid needs no fourth
-  example.
+- A **Hybrid Skill** is principle-led overall and uses procedure for those consequential parts.
+  Read the one or two base-shape exemplars relevant to those parts.
 
 Shape the Candidate around its allocated responsibility, using owner pointers and necessary local
 decision context where other policies apply. If the evidence requires a different owner or leaves

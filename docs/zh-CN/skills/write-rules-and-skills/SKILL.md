@@ -5,6 +5,8 @@ description: 编写或修订一个英文 Rule 或 Agent Skill。
 
 # 编写 Rule 与 Skill
 
+**制品**指一个 Rule 或 Skill。**Candidate**指当前正在编写和审查的制品及其范围内的配套资源。
+
 当前 Agent 是 Controller。对齐任务之前，阅读 [Controller 角色](references/controller.md)，并在整个工作流中遵循该契约。
 
 ## 原则
@@ -51,7 +53,7 @@ Author 返回后，再次捕获完整 Candidate。只有经过身份确认、由
 
 只传递 Reviewer 无法从这些来源恢复的会话上下文：
 
-- 无论审查 Rule 还是 Skill，Quality 都接收已接受的目标、仅存在于会话中的质量或表达约束，以及职责分配及其证据位置、受支持加载方式的假设、所有者依赖状态和调用方提供的职责分配规划（如有）。这些内容独立于 Author brief 提供；Quality 不依赖于收到该 brief。
+- 对两种制品类型，Quality 都接收已接受的目标、仅存在于会话中的质量或表达约束，以及职责分配及其证据位置、受支持加载方式的假设、所有者依赖状态和调用方提供的职责分配规划（如有）。这些内容独立于 Author brief 提供；Quality 不依赖于收到该 brief。
 - Change 接收要求的变更、保留与兼容性决策，以及 Author 的语义变更摘要。
 - Correctness 接收完整的权威用户意图证据和 Author brief，并将二者作为不同输入；同时接收仅存在于会话中的关键行为与安全决策，以及自动验证结果。
 
