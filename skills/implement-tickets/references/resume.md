@@ -1,105 +1,110 @@
 # Pause and Resume
 
-Read this reference at a material blocker, interrupted control, missing evidence, possible prior
-attempt, or retained handoff. Pause the whole batch at the first unproved boundary. Keep the
-worktree, partial files, current candidate, accepted ticket/repair commits, claims, and recovery
-state; later tickets remain untouched. Ordinary supported repairs may continue while they make
-progress. Otherwise report the exact blocker and next owner/action.
+Read at a material blocker, interrupted control, missing evidence, possible prior attempt or retained
+handoff. Pause the whole batch at the first unproved boundary. Preserve the worktree, partial files,
+candidate, accepted commits, claims and recovery state; later tickets remain untouched. Continue
+only the original attributable unfinished phase or unused allowance under [Review and repair](review.md).
+If acceptance cannot be established, report the exact blocker and next owner/action. A pause grants
+no automatic revert, reset, clean, discard, claim abandonment or queue change.
 
-Use `stopped` for an unproved prerequisite before its effect, retain an owner's returned `failed`
-result after an attempted effect, and use `in-flight` while the original attempt may run or its
-effect is unresolved. Preserve the owner's more specific result vocabulary and strongest proven
-facts. No automatic revert, reset, clean, discard, claim abandonment or queue change follows a stop.
+Use `stopped` for an unproved prerequisite before its effect, preserve an owner's returned `failed`
+result after an attempt, and use `in-flight` while the original attempt may run or its effect is
+unresolved. Retain more specific owner vocabulary and strongest proven facts.
 
-## Retain a useful handoff
+## Retain the facts needed to continue
 
-Keep no batch journal. Recover from Git history, the frozen selection and accepted source revisions,
-current tracker observations, retained check/review reports and public dependency handoffs, and
-observable live Agent state. Retain the identities and causal boundaries needed to distinguish
-completed, pending and ambiguous work. The finalizer still owns its own external effect receipts.
+Keep no batch journal. Use Git history, frozen selection and accepted source revisions, tracker
+observations, check/review reports, public dependency handoffs and observable Agent state. Retain
+applicable facts material to attribution, safety, acceptance and effect recovery:
 
-A handoff identifies the scope and exclusions; dependency order and claim plan; exact worktree,
-branch, immutable batch/ticket or repair bases, HEAD/tree and complete owned local state; accepted
-commit prefix and current candidate; check/review provenance and acceptance bindings; raw tracker,
-Worker, Create and finalizer results; observed effects and residuals; and one exact next owner/action.
-Include only applicable evidence, but account for every item material to attribution, safety,
-acceptance or effect recovery. Before any effect has occurred, report that proof and the missing
-prerequisite without claiming a batch exists.
+- scope, exclusions, dependency order, claim plan and exact worktree/branch binding;
+- immutable batch and current unit bases, HEAD/tree, complete owned local state, accepted prefix and
+  current candidate;
+- check provenance and acceptance bindings, and the original review/repair state defined in
+  `review.md`;
+- raw tracker, Worker, Create and finalizer results, effects/residuals, whether a finalizer response
+  was consumed, and the next owner/action.
 
-## Establish the original phase
+When proof establishes that no batch effect has occurred, report that effect-free state and the
+missing prerequisite without claiming a batch exists. The finalizer owns its external operation
+receipts; they are compatible with this handoff.
 
-Identify the original scope and attempts from whichever retained evidence exists: selection and
-claim results may precede worktree creation, while finalizer receipts may outlive removal. Ambiguous
-scope, ownership, base, liveness or external-effect state stops before another mutation. Choose the
-furthest attributable phase; once a finalizer attempt exists or cannot be excluded, never resume an
-earlier implementation phase until that owner's recovery hands it back:
+## Recover the furthest attributable phase
 
-- **Before readiness:** recover the frozen selection and independent claim/Create states below.
-- **Before finalization:** recover an accepted commit prefix and at most one current ticket or
-  repair candidate plus its complete owned local tail. Revalidate tracker/source facts and recover
-  Worker control before returning to the current ticket or whole-batch barrier.
-- **Raw finalizer result retained:** pass it once to [Consume the result](complete-run.md#consume-the-result),
-  including delivery with incomplete tracker closure.
-- **Finalizer response missing or possibly live:** recover the original attempt as described below.
-- **Terminal result already consumed:** resume only the named tracker, lifecycle, classification or
-  other dependency-owner action. Preserve the existing result; do not consume it or finalize again.
+Selection and claims may precede a worktree; finalizer receipts may outlive its removal. Recover the
+original scope and attempts from the available evidence. Ambiguous scope, ownership, base, liveness
+or external effects stop mutation. A finalizer attempt that exists or cannot be excluded takes
+precedence until its owner returns control:
 
-Where a worktree exists, recheck its physical path, registration, Git common identity, branch,
-immutable base relationship, HEAD/tree, index and staged/unstaged/untracked state against the
-identified phase. Account for ignored state where it affects ownership, pending writes,
-verification, finalization or cleanup; retain bounded noncritical residuals with their owner.
-If the phase needs an existing worktree but its identity or presence is unproved, stop with that
-boundary's owner. A proven pre-creation phase needs no worktree to resume its claim/Create gates.
+- For a missing or possibly live finalizer response, use the finalizer recovery boundary below.
+- For an unconsumed raw result, enter [Consume the result](../SKILL.md#consume-the-result) once,
+  including delivery whose tracker closure is incomplete.
+- For an already consumed result, continue only its named tracker, lifecycle, classification or
+  other owner action. Preserve proven effects; do not finalize or consume the result again.
+- Before readiness, recover claims and creation independently below.
+- Before finalization, recover the accepted commit prefix, at most one current ticket or repair
+  candidate and its complete owned local tail. Revalidate tracker/source facts and Worker control
+  before returning to that ticket or the batch barrier.
+
+Where a worktree exists, check physical path, registration, Git common identity, branch, immutable
+base relationship, HEAD/tree, index and staged/unstaged/untracked state against that phase. Account
+for ignored state affecting ownership, writes, verification, finalization or cleanup; retain bounded
+noncritical residuals with an owner. Missing required worktree identity/presence stops at that owner.
+A proven pre-creation phase can resume claim/Create gates without a worktree.
 
 After a gap in control at an implementation frontier, ask public `create-worktree` to re-evaluate
-that exact existing worktree with retained state protected. Consume a fresh `ready` result only for
-the same candidate; this is readiness re-evaluation, not another creation. A non-ready or unresolved
-result remains with its owner. Under continuous attributable control, current identity/state checks
-suffice unless drift invalidates readiness.
+that exact existing worktree with retained state protected. Consume fresh `ready` evidence only for
+the same candidate; reuse does not authorize replacement creation. Under continuous attributable
+control, current identity/state checks suffice unless material drift invalidates readiness. Non-ready
+or unresolved evidence remains with its owner.
 
 ## Recover claims and creation independently
 
-Retain the frozen claim plan, proven initial-claim prefix with raw responses and current proof,
-optional failed/in-flight current claim with before-state and intended delta, untouched suffix,
-and every deferred/no-claim route. The unresolved current claim belongs to neither prefix nor suffix.
-Recover it through the tracker owner's original operation; Create cannot follow an unresolved claim.
+Recover the frozen claim plan, proven initial-claim prefix with raw responses and current proof,
+optional failed/in-flight current claim with before-state and intended delta, untouched suffix and
+all deferred/no-claim routes. The unresolved claim belongs to neither prefix nor suffix. Use the
+tracker owner's original-operation recovery; Create cannot follow an unresolved claim.
 
-Retain Create separately as `never-started` with proof of no attempt/worktree,
-`non-ready-or-in-flight` with its original effects, artifacts and owner/action, or attributable
-`ready` with its recorded snapshot. Only `never-started`, after all required initial claims pass,
-may start initial clean creation. A partial or interrupted Create returns to its owner; an existing
-candidate needing refreshed readiness is reused, never silently replaced. Consume claims and
-readiness only from current attributable proof, without repeating successful effects.
+Establish Create independently as `never-started` with proof of no attempt/worktree,
+`non-ready-or-in-flight` with original effects and recovery owner, or attributable `ready` with its
+snapshot. Only proven `never-started` after all required initial claims may start clean creation.
+Partial/interrupted creation returns to its owner; refresh an existing candidate instead of silently
+replacing it. Consume only current attributable claims/readiness, preserving successful effects.
 
-## Recover a Worker and its candidate
+## Recover original roles and acceptance
 
-A missing response is neither failure nor quiescence. Observe the original Agent through the host
-control interface. While it may write, preserve its exclusive ownership and permit no replacement,
-review of a mutable candidate, or overlapping implementation. Prove it stopped before resuming it
-or assigning a replacement. A replacement receives the exact attributable inherited candidate and
-local tail under the original unit scope; it never restarts the ticket blindly.
+Observe the original Worker through the host interface. A missing response proves neither failure
+nor quiescence. While it may write, preserve exclusive ownership: no replacement, mutable-candidate
+review or overlapping implementation. Prove it stopped before resuming it or assigning a replacement.
+A replacement inherits the exact attributable candidate and local tail under the original unit
+scope; replacement never grants another repair allowance.
 
-After quiescence, compare Git history and complete local state with the accepted boundaries. An
-accepted ticket requires its Controller acceptance evidence, not just a commit or completion
-trailer. Recover immutable checks/review reports and their original input bindings when available;
-otherwise repeat missing checks and both independent judgments against the attributable candidate.
-A marker written just before interruption remains unaccepted until every acceptance predicate is
-re-established. Preserve proven earlier boundaries. Mixed or unexplained changes remain blocked
-rather than being attributed to the current ticket by position alone.
+After quiescence, compare history and complete local state with accepted boundaries. Acceptance
+requires Controller evidence, not merely a commit or trailer. Recover immutable check/review inputs
+and reports; repeat missing checks as necessary. Recover original reviewing roles through the host
+interface. A proven never-started axis may run within its original round on unchanged frozen inputs;
+a completed axis never repeats. Missing reports after an attempt, or uncertain attempt state,
+require recovery or pause rather than replacement review.
 
-An attributable incomplete candidate returns to its Worker for the normal repair/acceptance loop.
-A recovered complete result may enter Controller acceptance only after all required proofs hold;
-preserve the original attempt's raw failure or interruption alongside its supported recovery.
+A marker written just before interruption remains unaccepted until all ticket predicates hold.
+Preserve earlier accepted boundaries; mixed or unexplained changes cannot be attributed to the
+current ticket merely by position.
 
-## Recover the finalizer's original effect
+Before review freezes, incomplete attributable implementation may continue with its Worker. During
+repair, recover only the unfinished original phase and its work, including through a replacement
+proved safe above. A returned phase needing correction remains paused with its failure. A recovered
+complete result can enter focused closure only with required proofs. Preserve raw failure/interruption
+alongside recovery and the same review/repair state across marker operations, source reconciliation
+and finalizer returns.
 
-Retain the original invocation identity when exposed, frozen input, expected pre-state, accepted
-base/HEAD/tree, raw handoffs and observed effects. Use the original host/session and public
-`finish-worktree` recovery route to establish liveness and recover its attributable result. Preserve
-source and target state, publication, branches/refs, receipts and other recovery objects meanwhile.
-Current target contents or tracker status cannot independently classify delivery or authorize retry.
+## Recover the finalizer boundary
 
-If the invocation may still run or its effects remain ambiguous, return that same `in-flight`
-attempt with the missing fact and next owner observation/recovery action. If the owner recovers a
-raw response, pass it unchanged to `complete-run.md`. Never repeat a possibly completed tracker or
-finalizer effect just to obtain a new receipt.
+Give the original host/session and public `finish-worktree` recovery route its invocation identity
+when exposed, frozen input and expected pre-state, accepted base/HEAD/tree, raw handoffs and observed
+effects. That owner establishes liveness and recovers its original effect/result. Preserve source,
+target, publication, refs, receipts and recovery objects meanwhile; target contents or tracker status
+alone cannot classify delivery or authorize retry.
+
+While execution or effects remain ambiguous, retain that same `in-flight` attempt and the missing
+fact/next owner observation. Pass a recovered raw result unchanged to the main Skill's consumption
+step. Never repeat a possibly completed tracker or finalizer effect to obtain a receipt.

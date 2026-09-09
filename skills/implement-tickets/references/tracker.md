@@ -33,11 +33,19 @@ work the batch will complete.
 
 ## Claim and revalidate
 
-Before an initial or just-in-time claim, use [Worker boundary](worker-transaction.md)'s read-only
-qualification only if dispatch failure could strand it under the tracker lifecycle. Complete all
-required initial claims in stable dependency order before `create-worktree` or another batch write.
-Prove each after-state before the next claim. Defer just-in-time claims to their ticket frontier;
-consume proven initial claims without repeating them, and re-establish current no-claim eligibility.
+Before an initial or just-in-time claim, qualify dispatch read-only only when release, reassignment
+or expiry semantics mean a later dispatch failure could strand it. Establish runtime availability,
+observation/control routes, scoped authority and absence of a possibly live competing attempt.
+Verify exclusive attribution of an existing worktree; before creation, retain the readiness gate
+before dispatch. Reuse current shared facts and add only ticket-specific feasibility constraints.
+This qualification dispatches no Worker, reserves no capacity and creates no persistent state. A
+material unresolved dispatch risk stops the claim with its fact and next owner. Actual dispatch
+follows [Worker protocol](process-one-ticket.md#worker-protocol).
+
+Complete required initial claims in stable dependency order before `create-worktree` or another
+batch write. Prove each after-state before the next claim. Defer just-in-time claims to their ticket
+frontier; consume proven initial claims without repeating them, and re-establish current no-claim
+eligibility.
 
 At each claim, ticket acceptance, and finalization boundary, re-observe the relevant tickets and
 blockers and revalidate accepted requirements through authoritative revisions, digests or change
@@ -49,8 +57,10 @@ later in-batch readiness.
 Compare with the frozen selection. Exempt only exact claim/owner deltas already proved for this
 batch's consumed tracker operations. Any other material requirement, status, owner, claim or edge
 change pauses the whole batch for reconciliation. Preserve membership and requirements; current
-observations never silently revise them. Refresh checks and review whose inputs changed before
-accepting the reconciled result.
+observations never silently revise them. Refresh affected checks and establish whether original
+review coverage and focused closure under [Review and repair](review.md) can support the
+reconciled result within its original allowance. Insufficient coverage or a correction beyond that
+allowance pauses the batch.
 
 ## Perform one documented effect
 

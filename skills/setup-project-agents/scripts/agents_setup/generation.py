@@ -7,7 +7,6 @@ from pathlib import Path, PurePosixPath
 
 from .models import Catalog, ContractError
 from .ownership import GeneratedContract, OwnershipState
-from .project import confined_target
 
 
 def current_contracts(source_root: Path, catalog: Catalog) -> tuple[GeneratedContract, ...]:
@@ -32,16 +31,8 @@ def current_contracts(source_root: Path, catalog: Catalog) -> tuple[GeneratedCon
 def generation_requests(
     source_root: Path, target_root: Path, catalog: Catalog, previous: OwnershipState | None,
 ) -> list[dict[str, str]]:
-    recorded = {item.id: item for item in previous.contracts} if previous else {}
     requests: list[dict[str, str]] = []
     for contract in current_contracts(source_root, catalog):
-        old = recorded.get(contract.id)
-        if (
-            old is not None and old.fingerprint == contract.fingerprint
-            and old.source == contract.source and old.target == contract.target
-            and all(confined_target(target_root, path).is_file() for path in old.outputs)
-        ):
-            continue
         requests.append({
             'id': contract.id,
             'source': contract.source.as_posix(),

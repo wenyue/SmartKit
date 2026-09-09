@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 
 from .catalog import safe_field_key, safe_relative
@@ -68,6 +68,7 @@ class OwnershipState:
     sources: tuple[Mapping[str, object], ...]
     assets: tuple[OwnedAsset, ...]
     contracts: tuple[GeneratedContract, ...] = ()
+    project_sync: bool = False
 
 
 @dataclass(frozen=True)
@@ -366,7 +367,7 @@ def _parse_ownership_document(document: object) -> OwnershipState:
     if (
         not isinstance(document, Mapping)
         or not {'sources', 'assets'} <= set(document)
-        or set(document) - {'sources', 'assets', 'contracts'}
+        or set(document) - {'sources', 'assets', 'contracts', 'project_sync'}
     ):
         raise OwnershipError('SmartKit ownership manifest is invalid')
     if not isinstance(document.get('sources'), list):
@@ -403,7 +404,9 @@ def _parse_ownership_document(document: object) -> OwnershipState:
         for asset in assets for output in outputs
     ):
         raise OwnershipError('SmartKit contract outputs overlap managed assets')
-    return OwnershipState(sources, assets, contracts)
+    if 'project_sync' in document and (type(document['project_sync']) is not int or document['project_sync'] != 1):
+        raise OwnershipError('SmartKit project synchronization ownership version is invalid')
+    return OwnershipState(sources, assets, contracts, 'project_sync' in document)
 
 
 def load_ownership_file(path: Path) -> OwnershipState | None:
@@ -441,7 +444,7 @@ def load_ownership(
             )
         )
     )
-    return OwnershipState(state.sources, assets, state.contracts)
+    return OwnershipState(state.sources, assets, state.contracts, state.project_sync)
 
 
 def verify_ownership(target_root: Path, state: OwnershipState | None) -> None:
@@ -515,6 +518,8 @@ def reconcile_ownership(
     unmanaged_paths: Sequence[PurePosixPath] = (),
     previous: OwnershipState | None = None,
     contracts: Sequence[GeneratedContract] = (),
+    project_files: Sequence[PurePosixPath] = (),
+    project_fields: Sequence[tuple[PurePosixPath, str]] = (),
 ) -> OwnershipResult:
     previous = previous if previous is not None else load_ownership(target_root)
     verify_ownership(target_root, previous)
@@ -526,6 +531,12 @@ def reconcile_ownership(
         external_sources or {},
         frozenset(structured_paths) | frozenset(item.path for item in desired_fields),
         frozenset(unmanaged_paths),
+    )
+    desired_assets = tuple(
+        replace(asset, role='project-agent') if asset.path in project_files
+        else replace(asset, role='project-mcp')
+        if (asset.path, asset.key) in project_fields else asset
+        for asset in desired_assets
     )
     previous_by_id = {
         item.identity: item for item in previous.assets
@@ -552,8 +563,19 @@ def reconcile_ownership(
         for asset in removed
         if asset.kind == 'field' and asset.key is not None
     )
+    manifest = serialize_ownership(OwnershipState(tuple(sources), desired_assets, tuple(contracts), True))
+    return OwnershipResult(
+        tuple(DesiredFile(path, content) for path, content in sorted(files.items())),
+        manifest,
+        tuple(sorted(set(delete_paths), key=lambda item: item.as_posix())),
+        tuple(sorted(remove_fields, key=lambda item: (item[0].as_posix(), item[1]))),
+    )
+
+
+def serialize_ownership(state: OwnershipState) -> bytes:
+    """Validate and serialize recorded ownership without consulting current source assets."""
     manifest_assets = []
-    for asset in desired_assets:
+    for asset in state.assets:
         item: dict[str, object] = {
             'kind': asset.kind,
             'role': asset.role,
@@ -568,7 +590,7 @@ def reconcile_ownership(
             item['source_path'] = asset.source_path.as_posix()
         manifest_assets.append(item)
     next_document = {
-        'sources': [dict(item) for item in sources],
+        'sources': [dict(item) for item in state.sources],
         'assets': manifest_assets,
         'contracts': [
             {
@@ -578,16 +600,10 @@ def reconcile_ownership(
                 'fingerprint': item.fingerprint,
                 'outputs': [path.as_posix() for path in item.outputs],
             }
-            for item in sorted(contracts, key=lambda item: item.id)
+            for item in sorted(state.contracts, key=lambda item: item.id)
         ],
     }
+    if state.project_sync:
+        next_document['project_sync'] = 1
     _parse_ownership_document(next_document)
-    manifest = (json.dumps(
-        next_document, ensure_ascii=False, indent=2,
-    ) + '\n').encode('utf-8')
-    return OwnershipResult(
-        tuple(DesiredFile(path, content) for path, content in sorted(files.items())),
-        manifest,
-        tuple(sorted(set(delete_paths), key=lambda item: item.as_posix())),
-        tuple(sorted(remove_fields, key=lambda item: (item[0].as_posix(), item[1]))),
-    )
+    return (json.dumps(next_document, ensure_ascii=False, indent=2) + '\n').encode('utf-8')

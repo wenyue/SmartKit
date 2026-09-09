@@ -88,6 +88,36 @@ class SetupWorkflowTest(unittest.TestCase):
             encoding='utf-8',
         )
 
+    def test_public_start_refuses_incomplete_generation_from_pinned_implementation(self):
+        import setup_project_agents as setup
+        for count in (0, 1):
+            with self.subTest(count=count), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory) / 'target'
+                self.write_matt_context(target)
+                sessions = []
+
+                def incompatible_prepare(arguments):
+                    session = Path(arguments[arguments.index('--session') + 1])
+                    sessions.append(session)
+                    status = setup.main([
+                        *arguments, '--source-root', str(REPO_ROOT),
+                        '--source-commit', 'offline', '--no-bootstrap',
+                    ])
+                    self.assertEqual(status, 0)
+                    path = session / 'request.json'
+                    request = json.loads(path.read_bytes())
+                    request['generation_requests'] = request['generation_requests'][:count]
+                    path.write_text(json.dumps(request), encoding='utf-8')
+                    return 0
+
+                error = StringIO()
+                with mock.patch.object(bootstrap, 'main', side_effect=incompatible_prepare), \
+                     redirect_stdout(StringIO()), redirect_stderr(error):
+                    self.assertEqual(workflow.main(['start', '--target', str(target)]), 2)
+                self.assertIn('did not request the complete current generated set', error.getvalue())
+                self.assertTrue(all(not session.exists() for session in sessions))
+                self.assertFalse((target / '.agents/smartkit.lock.json').exists())
+
     def test_start_rejects_removed_platform_option(self):
         with redirect_stderr(StringIO()):
             result = workflow.main([
@@ -234,7 +264,7 @@ class SetupWorkflowTest(unittest.TestCase):
             ownership_path = target / '.agents/smartkit.lock.json'
             self.assertTrue(ownership_path.is_file())
             ownership = json.loads(ownership_path.read_text(encoding='utf-8'))
-            self.assertEqual(set(ownership), {'sources', 'assets', 'contracts'})
+            self.assertEqual(set(ownership), {'sources', 'assets', 'contracts', 'project_sync'})
             self.assertEqual(ownership['sources'], [])
             owned_paths = {item['path'] for item in ownership['assets']}
             self.assertNotIn('.agents/rules/00-project-tools.md', owned_paths)

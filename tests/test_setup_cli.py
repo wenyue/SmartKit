@@ -323,7 +323,7 @@ class SetupCliTest(unittest.TestCase):
                 self.assertIn('target changed', error.getvalue())
                 self.assertEqual(self.snapshot_tree(target), before)
 
-    def test_finish_preserves_edits_then_deletes_outputs_of_removed_contracts(self):
+    def test_full_setup_reauthors_current_outputs_and_deletes_removed_contract_outputs(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source = root / 'source'
@@ -352,9 +352,9 @@ class SetupCliTest(unittest.TestCase):
             skill = target / '.agents/skills/change-set-verification/SKILL.md'
             rule.write_bytes(b'project rule edit\n')
             skill.write_bytes(b'project skill edit\n')
-            self.assertEqual(sync(), [])
-            self.assertEqual(rule.read_bytes(), b'project rule edit\n')
-            self.assertEqual(skill.read_bytes(), b'project skill edit\n')
+            self.assertEqual(len(sync()), 5)
+            self.assertNotEqual(rule.read_bytes(), b'project rule edit\n')
+            self.assertNotEqual(skill.read_bytes(), b'project skill edit\n')
             catalog_path = source / 'setup-assets/catalog/assets.json'
             catalog = json.loads(catalog_path.read_bytes())
             catalog['assets'] = [
@@ -363,7 +363,7 @@ class SetupCliTest(unittest.TestCase):
                 }
             ]
             catalog_path.write_text(json.dumps(catalog), encoding='utf-8')
-            self.assertEqual(sync(), [])
+            self.assertEqual(len(sync()), 3)
             self.assertFalse(rule.exists())
             self.assertFalse(skill.exists())
 
@@ -716,7 +716,7 @@ class SetupCliTest(unittest.TestCase):
                 (target / '.agents/smartkit.lock.json').read_text()
             )
             keys = {
-                asset['key'] for asset in lock['assets'] if asset['role'] == 'mcp'
+                asset['key'] for asset in lock['assets'] if asset['role'] == 'project-mcp'
             }
             self.assertTrue(any(key.startswith('mcp_servers.sentry.') for key in keys))
             self.assertTrue(any(key.startswith('mcpServers.sentry.') for key in keys))

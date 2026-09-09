@@ -1,82 +1,106 @@
 # Process One Ticket
 
-Enter with one frozen dependency-ready ticket in the attributable batch worktree. Read
-[Worker boundary](worker-transaction.md) before dispatch. The Worker produces a candidate; the
-Controller alone accepts `completed-in-batch`.
+Enter with one frozen dependency-ready ticket and the attributable batch worktree. The Worker
+produces the candidate; the Controller alone accepts `completed-in-batch`. Read
+[Review and repair](review.md) before freezing review, and [Pause and resume](resume.md) when
+recovering an existing phase.
 
-## Establish the ticket and choose its review route
+## Worker protocol
 
-Use [Tracker boundary](tracker.md) to revalidate the ticket, complete accepted sources, blockers,
-status and claim. Consume its proven initial claim, perform its supported just-in-time claim, or
-establish its current no-claim eligibility. Freeze `ticket_base` and its tree at the preceding
-accepted HEAD. On resume recover that boundary and the owned current state through
-[Pause and resume](resume.md), rather than choosing a new base.
+This protocol applies to each ticket and the batch repair. Use a fresh Worker for each new unit;
+keep a ticket's implementation and consolidated repair with that Worker. The host runtime must
+provide supported dispatch, identity, observation, interruption and quiescence interfaces. An
+unavailable or ambiguous runtime stops before dispatch.
 
-Give a fresh Worker the canonical ticket ID, complete requirements and source revisions,
-applicable project rules, dependency results, relevant research pointers, exact worktree and
-batch/ticket bases, accepted previous commit identities, targeted checks, and scoped write/commit
-authority. Require all intended changes to belong to this ticket. Run checks needed for ticket
-acceptance and safe subsequent work; disclose genuinely noncritical deferred coverage for the
-whole-batch barrier.
+Immediately before dispatch, prove the exact worktree and unit base, current HEAD/tree, local-state
+ownership and scoped authority, with every prior writer quiescent. At most one Worker may write.
+Read-only independent review roles may run in parallel while implementation is paused. Reuse the
+established environment, with each Worker bounded to its current unit.
 
-Establish whether fulfilling the ticket requires a code change before choosing the commit and
-review sequence. If no change is needed, use [independent empty-diff acceptance](review.md#independently-accept-an-empty-difference)
-to prove existing fulfillment and create its authorized empty ticket commit, then join **Accept the
-ticket commit** below. A nonempty result follows **Review and mark a nonempty candidate** first.
-Neither branch may omit intended changes to manufacture an empty result.
+Give the Worker its canonical ticket identity or batch-repair scope, complete requirements and
+source revisions, project rules, dependency results and relevant research pointers. Include exact
+worktree and batch/unit bases, previous accepted commits, required targeted checks, and scoped
+write/normal-hook commit authority. Repairs also receive frozen review evidence, consolidated
+findings and remaining allowance from `review.md`. The Worker may change only its unit's candidate;
+it cannot amend accepted commits, act on the tracker, finalize the batch or authorize its own
+completion marker.
 
-## Review and mark a nonempty candidate
+Require a return identifying the Agent and raw status, candidate and final HEAD/tree, complete owned
+local state, checks with their inputs, whether the phase returned or remains interrupted, and
+unresolved work/next action. For a repair, include finding dispositions and the exact delta. Preserve
+failures as failed attempts even when files look complete; recover original phase facts through
+`resume.md`.
+Prove writes paused before review and quiescence before acceptance. A missing response or elapsed
+time alone establishes neither failure nor quiescence.
 
-The Worker creates one normal-hook candidate whose sole parent is `ticket_base`. Its message
-identifies the ticket using the configured tracker's discoverable reference syntax, but contains no
-`SmartKit-Ticket` trailer. Pause Worker writes and independently verify HEAD contains the entire
-intended result, the index and working tree are clean under the project predicate, and all material
-untracked or ignored state has a known owner. An omitted change or failed check returns to the same
-Worker before review.
+## Establish the candidate
 
-Invoke public `code-review` from exact `ticket_base` against the frozen candidate. Give it the
-complete accepted ticket/spec input, preserving each source's identity and revision even when
-commit-message discovery finds only one component. Require both its independent Standards and Spec
-subagents to cover that exact base, HEAD/tree and diff. Standards retains the dependency's complete
-standards and smell-baseline contract; a heuristic smell is advisory unless project authority makes
-it blocking. A skipped or incomplete Spec axis cannot pass this workflow.
+Use [Tracker boundary](tracker.md) to revalidate complete accepted sources, blockers, status and
+claim. Consume the proven initial claim, perform the supported just-in-time claim, or establish
+current no-claim eligibility. Freeze `ticket_base` and its tree at the preceding accepted HEAD;
+recovery retains that boundary instead of choosing a new base.
 
-Keep the full reports and their original reviewed commit identities. Blocking findings return to
-the same Worker, which repairs and amends only the current unpublished, unaccepted candidate through
-normal hooks. Pause writes again, repeat applicable checks, and rerun both public review axes on
-the resulting immutable state. Prior reports may inform the new reviewers but cannot supply a
-passing verdict for changed code. If repair yields a genuinely empty result, switch to independent
-empty-diff acceptance before marking it. Missing capability, ambiguous evidence, or a repair that
-can make no progress enters `resume.md`.
+Dispatch the ticket Worker under the protocol above. Require the complete intended ticket result
+and checks needed for acceptance and safe subsequent work. Disclose any genuinely noncritical
+coverage deferred to the whole-batch barrier. Ordinary implementation, testing and debugging
+continue until the review freeze.
 
-After required checks and both axes pass, the Controller authorizes one bounded normal-hook
-message amendment of the current candidate to add its sole completion trailer:
+For a nonempty result, the Worker creates one normal-hook candidate whose sole parent is
+`ticket_base`. Its message uses the configured tracker's discoverable ticket reference syntax and
+has no `SmartKit-Ticket` trailer. If no change is needed, retain the base state for requirement-based
+review; intended changes cannot be omitted to manufacture emptiness.
+
+Pause writes and independently verify the entire intended result, passing ticket checks, a clean
+index/worktree under the project predicate, and known ownership of material untracked or ignored
+state. Return omitted changes or failed checks to the same Worker before freezing review.
+
+## Review and close
+
+Apply `review.md`'s one-round contract from exact `ticket_base`: use public `code-review` for a
+nonempty diff and independent existing-fulfillment review for an empty diff. After complete reports,
+the Controller disposes of findings and sends any consolidated repair to the same Worker within the
+unit's allowance. Amend only its current unpublished, unaccepted candidate; create the ticket's
+one candidate if repair changes the base state. Use normal hooks.
+
+Enter Controller closure on the resulting state under `review.md`. A changed diff shape keeps the
+original round. Proceed to marking only when that contract's acceptance evidence holds; unresolved
+findings, inadequate coverage or further required repair pause the batch.
+
+## Mark the accepted candidate
+
+After closure, the Controller authorizes one bounded normal-hook operation on this exact candidate,
+with the canonical ticket reference and sole trailer:
 
 ```text
 SmartKit-Ticket: <canonical-id>
 ```
 
-This authorization covers that exact candidate and message change. The Worker receives no
-authority to mark another ticket or amend accepted history. A metadata-only amendment may reuse
-review evidence only when all its reviewed inputs remain equivalent. Keep the original report's
-reviewed commit and an explicit binding to the new commit; do not relabel its provenance. Rerun
-commit-identity and hook-sensitive checks. Hook-created content changes invalidate the pass: retain
-the candidate as incomplete, remove its premature completion marker during the supported repair,
-and repeat this candidate/check/review sequence before marking it again.
+Amend an existing candidate's message. For a no-change ticket without a candidate, create one empty
+commit with `ticket_base` as sole parent. If repair left an existing candidate empty, amend that same
+candidate into the empty ticket commit; never append another ticket commit.
+
+Recheck the resulting tree, diff and commit. Bind metadata-only equivalents explicitly to the
+original reports without changing their provenance, and rerun commit-identity and hook-sensitive
+checks. A no-change result must equal the base tree and retain affirmative fulfillment evidence.
+
+Hook-created content leaves the ticket incomplete. Only an unused ticket repair allowance with
+adequate original coverage may remove the premature marker and resolve the hook delta through
+focused closure. Reauthorize the marker after closure. Spent allowance, inadequate evidence or
+another content change needing repair pauses with state retained. A marker or successful hook alone
+never establishes acceptance.
 
 ## Accept the ticket commit
 
-After either review route and its authorized commit operation, the Controller pauses writes and
-independently proves:
+After the marker operation, pause writes. The Controller independently proves:
 
-- the first-parent range from `ticket_base` contains exactly one commit, its sole parent is
-  `ticket_base`, and its sole ticket trailer is the canonical ID;
-- the entire accepted result belongs to this ticket, earlier accepted commits are unchanged,
-  and the final tree and accepted diff match the complete review or empty-acceptance inputs;
-- required checks pass for the resulting state, full Standards and Spec evidence remains valid,
-  the worktree is clean, and the Worker is quiescent; and
-- the worktree/target binding and frozen sources, blockers, status and claim are still current.
+- exactly one commit in the first-parent range from `ticket_base`, with that sole parent and one
+  ticket trailer containing the canonical ID;
+- the whole result belongs to this ticket, earlier accepted commits are unchanged, and the final
+  tree/diff is bound to original review and any Controller repair closure;
+- required checks and all `review.md` acceptance predicates hold on the resulting state, the
+  worktree is clean and the Worker quiescent; and
+- the worktree/target binding and frozen sources, blockers, status and claim remain current.
 
-A trailer, even after a successful hook, is never acceptance evidence by itself. Return the
-independently accepted commit as `completed-in-batch`. It satisfies this selected dependency for
-later tickets, but proves neither tracker completion nor delivery.
+Return that commit as `completed-in-batch`. It satisfies the selected dependency for later tickets,
+but establishes neither tracker completion nor delivery. Acceptance fixes the commit; any later
+correction belongs to the whole-batch barrier and its allowance.

@@ -15,7 +15,12 @@ from pathlib import Path
 
 import bootstrap
 from agents_setup.external_contract import is_link_like as _is_link_like
+from agents_setup.markdown import live_headings
+from agents_setup.catalog import load_catalog
+from agents_setup.generation import generation_requests
+from agents_setup.project_sync import ProjectSyncError, synchronize_project
 from agents_setup.ownership import OwnershipError, normalize_external_sources
+from agents_setup.project_rules import ProjectRuleSyncError, synchronize_project_rules
 from agents_setup.source import InvalidFetchedSource, setup_entrypoint
 
 
@@ -32,8 +37,6 @@ _MATT_CONTEXT_PATHS = (
     Path('docs/agents/domain.md'),
 )
 _MATT_ENTRY_PATHS = (Path('AGENTS.md'), Path('CLAUDE.md'))
-_MARKDOWN_HEADING = re.compile(r'^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$')
-_MARKDOWN_FENCE = re.compile(r'^ {0,3}(`{3,}|~{3,})')
 
 
 class WorkflowError(ValueError):
@@ -164,44 +167,20 @@ def _emit(document: Mapping[str, object]) -> None:
 
 
 def _agent_skills_section(content: str) -> str | None:
-    body: list[str] | None = None
-    fence_character: str | None = None
-    fence_length = 0
-    for line in content.splitlines():
-        fence = _MARKDOWN_FENCE.match(line)
-        if fence is not None:
-            marker = fence.group(1)
-            remainder = line[fence.end():]
-            if fence_character is None:
-                if marker[0] != '`' or '`' not in remainder:
-                    fence_character = marker[0]
-                    fence_length = len(marker)
-            elif (
-                marker[0] == fence_character
-                and len(marker) >= fence_length
-                and not remainder.strip()
-            ):
-                fence_character = None
-                fence_length = 0
-            if body is not None:
-                body.append(line)
+    headings = live_headings(content)
+    for index, heading in enumerate(headings):
+        if heading.level != 2 or heading.title != 'Agent skills':
             continue
-        if fence_character is not None:
-            if body is not None:
-                body.append(line)
-            continue
-        heading = _MARKDOWN_HEADING.match(line)
-        if heading is not None:
-            level = len(heading.group(1))
-            title = re.sub(r'[ \t]+#+[ \t]*$', '', heading.group(2)).strip()
-            if body is not None and level <= 2:
-                return '\n'.join(body)
-            if level == 2 and title == 'Agent skills':
-                body = []
-                continue
-        if body is not None:
-            body.append(line)
-    return '\n'.join(body) if body is not None else None
+        end = next(
+            (
+                item.start
+                for item in headings[index + 1:]
+                if item.level <= heading.level
+            ),
+            len(content),
+        )
+        return content[heading.body_start:end]
+    return None
 
 
 def _require_matt_context(target: Path) -> None:
@@ -249,6 +228,13 @@ def _start(args: argparse.Namespace) -> int:
         request_path = session / 'request.json'
         request = _read_json(request_path, 'session request')
         _write_workflow_context(session, request_path, request)
+        _, _, source, _ = _request_context(session)
+        expected = generation_requests(source, target, load_catalog(source), None)
+        if request.get('generation_requests') != expected:
+            raise WorkflowError(
+                'pinned setup source did not request the complete current generated set; '
+                'update the source implementation before full setup'
+            )
         _emit({
             'phase': 'start',
             'session': str(session),
@@ -268,7 +254,7 @@ def _start(args: argparse.Namespace) -> int:
         except BaseException as cleanup_error:
             print(f'ERROR: {error}; session cleanup failed: {cleanup_error}', file=sys.stderr)
             return 2
-        if isinstance(error, (OSError, WorkflowError)):
+        if isinstance(error, (OSError, ValueError)):
             print(f'ERROR: {error}', file=sys.stderr)
             return 2
         raise
@@ -452,7 +438,7 @@ def _finish(args: argparse.Namespace) -> int:
         except BaseException as cleanup_error:
             print(f'ERROR: {error}; session cleanup failed: {cleanup_error}', file=sys.stderr)
             return 2
-        if isinstance(error, (OSError, WorkflowError)):
+        if isinstance(error, (OSError, ValueError)):
             print(f'ERROR: {error}', file=sys.stderr)
             return 2
         raise
@@ -469,13 +455,48 @@ def _cancel(args: argparse.Namespace) -> int:
         return 2
 
 
+def _sync_project_rules(args: argparse.Namespace) -> int:
+    source = Path(__file__).resolve().parents[3]
+    target = Path(args.target).absolute()
+    try:
+        result = synchronize_project_rules(
+            source,
+            target,
+            check_only=args.check,
+        )
+    except ProjectRuleSyncError as error:
+        print(f'ERROR: {error}', file=sys.stderr)
+        return 2
+    _emit({
+        'phase': 'sync-project-rules',
+        'check': result.check,
+        'changed_paths': result.changed_paths,
+    })
+    return 1 if result.check == 'drift' else 0
+
+
+def _sync_project(args: argparse.Namespace) -> int:
+    try:
+        result = synchronize_project(
+            Path(__file__).resolve().parents[3], Path(args.target).absolute(), check_only=args.check,
+        )
+    except ProjectSyncError as error:
+        print(f'ERROR: {error}', file=sys.stderr)
+        return 2
+    _emit({
+        'phase': 'sync-project', 'check': result.check,
+        'changed_paths': result.changed_paths, 'preserved_paths': result.preserved_paths,
+    })
+    return 1 if result.check == 'drift' else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description='Run the public two-stage project-agent setup workflow.',
+        description='Run full setup (start/register/finish/cancel), or explicit local synchronization.',
         allow_abbrev=False,
     )
     phases = parser.add_subparsers(dest='phase', required=True)
-    start = phases.add_parser('start', allow_abbrev=False)
+    start = phases.add_parser('start', help='Start full setup; request every current generated contract', allow_abbrev=False)
     start.add_argument('--target', type=Path, required=True)
     register = phases.add_parser('register', allow_abbrev=False)
     register.add_argument('--session', type=Path, required=True)
@@ -485,6 +506,12 @@ def build_parser() -> argparse.ArgumentParser:
     finish.add_argument('--session', type=Path, required=True)
     cancel = phases.add_parser('cancel', allow_abbrev=False)
     cancel.add_argument('--session', type=Path, required=True)
+    sync_project = phases.add_parser('sync-project', help='Synchronize only local project discovery and Agent/MCP mappings; no fetch or generation', allow_abbrev=False)
+    sync_project.add_argument('--target', type=Path, required=True)
+    sync_project.add_argument('--check', action='store_true', help='Report drift without writing (exit 1); clean exits 0, errors exit 2')
+    sync_project_rules = phases.add_parser('sync-project-rules', help='Synchronize only AGENTS.md Project rules; no setup ownership required', allow_abbrev=False)
+    sync_project_rules.add_argument('--target', type=Path, required=True)
+    sync_project_rules.add_argument('--check', action='store_true')
     return parser
 
 
@@ -499,6 +526,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _register(args)
     if args.phase == 'finish':
         return _finish(args)
+    if args.phase == 'sync-project':
+        return _sync_project(args)
+    if args.phase == 'sync-project-rules':
+        return _sync_project_rules(args)
     return _cancel(args)
 
 

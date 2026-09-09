@@ -219,7 +219,7 @@ class SetupRendererTest(unittest.TestCase):
                 linux_cursor['mcpServers']['inspector']['command'],
                 'cache/inspector.exe',
             )
-            mcp_assets = [asset for asset in lock['assets'] if asset['role'] == 'mcp']
+            mcp_assets = [asset for asset in lock['assets'] if asset['role'] == 'project-mcp']
             for path, prefix in (
                 ('.codex/config.toml', 'mcp_servers'),
                 ('.cursor/mcp.json', 'mcpServers'),
@@ -1322,7 +1322,7 @@ class SetupRendererTest(unittest.TestCase):
             )
             lock = json.loads(rendered.files_by_path['.agents/smartkit.lock.json'])
             agent_assets = {
-                item['path'] for item in lock['assets'] if item['role'] == 'agent'
+                item['path'] for item in lock['assets'] if item['role'] in {'agent', 'project-agent'}
             }
             self.assertEqual(agent_assets, {
                 '.codex/agents/change-set-verifier.toml',

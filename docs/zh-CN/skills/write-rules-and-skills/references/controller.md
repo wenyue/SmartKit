@@ -31,7 +31,7 @@ Controller 负责理解整体请求，并将其转化为忠实且有明确边界
 - 必需的自动验证；以及
 - 可观察的完成条件。
 
-## 选择审查独立程度
+## 选择审查独立程度 <a id="choose-review-independence"></a>
 
 两种审查拓扑都覆盖 Quality、Change 和 Correctness。根据任务所需的独立程度进行选择：
 

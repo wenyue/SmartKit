@@ -1,65 +1,124 @@
-# Empty Differences and Batch Repairs
+# Review and Repair
 
-Use these branches when a ticket requires no code change, the final batch diff is empty, or final
-verification/review requires repair. All other nonempty candidates use public `code-review` as
-specified in the main workflow. Its empty-diff rejection is not a review pass.
+This reference owns review depth, allowances and Controller closure for every ticket and the whole
+batch. Public `code-review` owns generic independent Standards/Spec mechanics and its advisory smell
+baseline. [Process one ticket](process-one-ticket.md) owns ticket sequencing and the shared Worker
+protocol; this reference owns the final batch barrier.
 
-## Independently accept an empty difference
+## One round and at most one repair
 
-Freeze the exact implementation state, comparison base and complete accepted requirements with
-source provenance. Prove there is no omitted task change in the index or working tree. Supply two
-independent read-only reviewing roles, **Standards** and **Spec**, with the relevant existing
-implementation, all accepted requirements, applicable standards (including the public review
-owner's smell-baseline treatment), and verification evidence. They must be independent of the
-implementation Worker and each other and may run in parallel in the same environment.
+Each ticket and the whole batch receives exactly one formal round on one immutable state. Both
+independent axes collect all findings before repair; together they constitute one round. A
+one-ticket batch still receives separate ticket and batch rounds.
 
-Require affirmative evidence of fulfillment for every requirement, Standards coverage of the
-relevant implementation, and explicit results from both roles bound to that exact state. Absence
-of edits, a skipped axis, unsupported assumptions, or earlier Worker claims cannot establish
-acceptance. Missing inputs or unavailable independent roles stop. Ordinary findings return to the
-implementation owner for repair; a resulting nonempty diff requires public `code-review`.
+After complete review evidence, combine repair-worthy findings and required-check failures into at
+most one consolidated repair per unit. No repair is needed when neither exists. A repair is one
+attributable dispatch/return phase, including implementation, debugging, normal-hook operations and
+checks. An interrupted phase may resume unfinished work; a returned phase needing further correction
+pauses the batch. Ordinary ticket implementation/testing before review freezes does not consume
+repair, but corrections after the freeze do. Batch acceptance never reopens ordinary implementation.
 
-For **one ticket**, prove its accepted behavior was already satisfied at `ticket_base`. After both
-roles pass, the Controller authorizes the Worker to create one normal-hook empty commit with the
-canonical ticket reference and sole `SmartKit-Ticket: <canonical-id>` trailer. If repair already
-produced an unaccepted candidate for this ticket, amend that same unpublished candidate into the
-empty ticket commit instead of appending a second commit. Verify its sole parent is `ticket_base`,
-its tree equals that base, relevant evidence/checks still apply, and all
-remaining [ticket acceptance predicates](process-one-ticket.md#accept-the-ticket-commit) hold.
-Rerun commit/hook-sensitive checks. Hook-created content changes exit this branch: keep the ticket
-incomplete, remove the premature completion marker in the supported repair, and use the normal
-candidate/check/public-review/marker sequence. The empty commit alone never closes the ticket.
+Changing Worker, commit, diff shape, source facts or route, resuming control, or returning from
+finalization preserves the original round and remaining allowance. There is no formal re-review or
+new unit that resets them.
 
-For **the final batch**, apply the same independent requirement-based acceptance to the final
-implementation and all selected requirements after whole-batch verification. This covers both
-all-no-change tickets and changed tickets whose combined diff is empty. Preserve individual ticket
-commits and examine conflicting requirements, interactions and regressions; cancellation of changes
-is not fulfillment evidence. The resulting full reports are the final review evidence for
-`complete-run.md`, subject to the finalizer's independent authoritative-target delivery proof.
+Retain the immutable review inputs, role identities and each axis's `never-started`, `in-flight`,
+`complete` or unresolved state, with full original reports or recovery locations. Retain check
+failures, finding dispositions, repair `unused`, `in-flight` or `returned` state and Worker identity,
+exact delta, focused closure and remaining allowance. Keep these in the existing handoff described
+in [Pause and resume](resume.md); unknown attempt state remains unresolved, not unused.
 
-## Repair the whole batch
+## Brief the deep review
 
-Retain the failed immutable state, all blocking required-check or review findings, and accepted
-ticket commits. Freeze `repair_base` at the current accepted HEAD and dispatch a fresh batch-repair
-Worker through [Worker boundary](worker-transaction.md) with the complete batch scope, sources,
-findings, prior evidence, and exact repair authority. This Worker owns only the current repair.
+Freeze comparison base, HEAD/tree, complete intended diff and accepted requirements with source
+identities/revisions. Prove writers paused and no intended task change omitted from the reviewed
+state. For a nonempty diff invoke public `code-review` with those exact inputs and every accepted
+source, even if commit discovery finds only one. For an empty diff use the independent route below.
+A missing or skipped Spec axis cannot satisfy acceptance.
 
-After targeted checks, create one separate normal-hook repair candidate with `repair_base` as sole
-parent and no ticket completion trailer. Pause writes, verify its entire intended result is
-committed and the worktree is clean, then replay required whole-batch verification and both
-independent review axes from immutable `batch_base`. Use public `code-review` for a nonempty batch
-diff and the empty-diff branch above otherwise. Prior reports provide context, never a substitute
-for full coverage of the repaired batch.
+Give both axes this brief for the applicable ticket or complete batch:
 
-Return ordinary findings to this same Worker. It amends only its current unpublished, unaccepted
-repair candidate through normal hooks, then pauses for renewed verification and both review axes.
-Only a complete passing barrier resolves the findings. The Controller independently verifies the
-repair's parent and sole-commit range, scope, unchanged accepted ticket boundaries, absent ticket
-trailer, clean state, Worker quiescence, source freshness, and exact evidence binding before
-accepting the repaired batch.
+- Trace every accepted requirement to implementation and verification evidence, identifying missing,
+  partial, incorrect or unsupported fulfillment and unintended scope.
+- Inspect relevant callers, callees and affected contracts beyond changed lines. Challenge edge,
+  error and recovery paths, compatibility and regressions. Batch coverage also includes shared
+  constraints, conflicting requirements and interactions, without narrowing to interactions alone.
+- Collect all useful evidence-backed findings. Cite concrete source locations, the requirement or
+  standard, behavior and supporting evidence. Distinguish severity, advisory smells, coverage gaps
+  and uncertainty; prioritize consequences over speculative cosmetic objections.
+- Keep independent axes and findings separate. If compact public summaries cannot hold all findings
+  and coverage, retain full supporting reports linked from them. State limits explicitly; a short
+  summary must not omit findings.
 
-Keep all previously accepted ticket and repair commits unchanged. A later repair after batch
-acceptance appends a new repair candidate with a fresh Worker and its own acceptance cycle. A
-material blocker or no-progress repair pauses through [Pause and resume](resume.md), retaining the
-current candidate and partial files; never roll back accepted history or run a later phase to bypass
-the failed barrier.
+Each role's complete report identifies immutable inputs, coverage, findings and uncertainty.
+Recover incomplete or missing reports through `resume.md` before dispatching repair; incomplete
+coverage cannot become a clean verdict.
+
+### Empty differences
+
+Public `code-review` rejects an empty diff. Use the unit's same sole round for two independent
+read-only **Standards** and **Spec** roles, independent of the Worker and each other. Supply the frozen
+implementation and base, accepted requirements, applicable standards, public smell-baseline
+treatment, checks and the deep brief above. They may run in parallel in the established environment.
+Missing roles or required inputs stop.
+
+Require affirmative evidence for every requirement and Standards coverage of relevant implementation.
+For a ticket, prove existing fulfillment at `ticket_base`; for the final batch, prove all selected
+requirements, including when changed tickets cancel one another. Preserve individual ticket commits.
+Absence of edits, cancellation or Worker claims alone is insufficient evidence.
+
+If repair changes an empty diff to nonempty or the reverse, use original coverage and focused closure
+below to establish fulfillment. Do not switch to a second formal-review route. Inadequate evidence
+pauses; ticket marking stays with the ticket procedure and delivery proof with the finalizer.
+
+## Close findings
+
+The Controller judges every finding against accepted requirements and standards, recording a
+reasoned disposition for each, including advisory or declined findings. Give the implementation
+owner the consolidated repair set and check failures. Preserve original reports and reviewed
+identities unchanged.
+
+After any repair returns, pause writes, repeat required checks on the resulting state, including
+normal-hook/commit-identity effects, and record the exact delta from review. Perform focused
+verification: prove each accepted finding resolved, inspect repair impact on directly affected
+behavior/contracts for regressions, and explain how complete original coverage plus closure supports
+the final state. This is finding resolution and repair-impact verification, not an open-ended new
+Standards/Spec review.
+
+Acceptance requires complete original coverage, justified dispositions for every finding, no
+unresolved blocker or required-check failure, an attributable authorized repair delta when present,
+and Controller verification bound to exact final HEAD/tree and accepted scope. Unchanged state uses
+original reports; metadata-only changes need explicit equivalence and refreshed dependent checks.
+For repaired code, report Controller acceptance with repair closure, never a passing reviewer verdict
+on a state the roles did not review.
+
+Further required repair, insufficient coverage or material uncertainty pauses the whole batch with
+work retained and an exact next owner/action. Subsequent content changes may use only the applicable
+unit's still-unused repair with adequate original evidence. Accepted ticket commits stay fixed;
+after batch review, correction belongs to the batch allowance.
+
+## Accept the whole batch
+
+With all tickets accepted and Workers quiescent, freeze the final HEAD/tree. Run required whole-batch
+checks and obtain both full independent reports against immutable `batch_base` and all accepted
+requirements using the contracts above. Ticket reports are context for reviewing the entire combined
+result, including interactions and regressions.
+
+Collect check failures and findings before choosing repair. Ordinary check failures need not prevent
+review of a meaningfully reviewable frozen state; a missing prerequisite or incomplete evidence
+pauses the barrier. If repair is needed, freeze `repair_base` at accepted HEAD and preserve that
+failed state, complete reports and every accepted ticket commit. Dispatch a fresh batch-repair
+Worker under [Worker protocol](process-one-ticket.md#worker-protocol) with those inputs and the
+consolidated findings, scope and remaining authority.
+
+Within that phase, run targeted checks and create at most one separate normal-hook repair candidate
+if content changes, with `repair_base` as sole parent and no ticket trailer. Amend only this
+unpublished, unaccepted candidate before the phase returns. If content need not change, retain HEAD
+and evidence resolving the failure.
+
+Apply Controller closure and required whole-batch checks to exact final state within `batch_base`.
+Prove scope, unchanged accepted ticket history, clean local state, Worker quiescence, source
+freshness and complete acceptance evidence. For a repair candidate, also prove the sole parent,
+one-commit range and absent ticket trailer; otherwise prove unchanged HEAD. Failed closure retains
+the candidate and pauses. Acceptance fixes any repair commit; finalization or drift cannot create
+another repair commit or acceptance cycle after that allowance is consumed.

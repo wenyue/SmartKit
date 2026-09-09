@@ -28,9 +28,10 @@ Identify the accepted scope and its `scope_owner`, the source and primary projec
 the physical Git common directory.
 
 When continuing an exact attributable linked worktree, check its physical root, registration,
-branch/ref, `HEAD`, base relationship, and local state against the retained task context. Reuse that target when they agree; no exhaustive search of unrelated candidates or path
-migration is needed. Preserve its existing inherited and task state without applying fresh source
-changes over it. Ambiguous ownership or identity returns `non-ready`.
+branch/ref, `HEAD`, base relationship, and local state against the retained task context. Reuse that
+target when they agree; no exhaustive search of unrelated candidates or path migration is needed.
+Preserve its existing inherited and task state without applying fresh source changes over it.
+Ambiguous ownership or identity returns `non-ready`.
 
 For a new worktree, freeze the immutable base and creation mode. Default to **carry**: the source's
 current frozen `HEAD` plus its staged, unstaged, and untracked nonignored state. **Clean** creates
@@ -124,9 +125,8 @@ Verify the registered physical target, named branch, and `HEAD` at the selected 
 index and working tree with the expected clean or carry state, including contents, file types/modes,
 and staged versus unstaged semantics. Index verification compares content and semantics, not
 binary-identical index extension metadata. For both modes, verify that the source remained unchanged
-through capture and establishment, and
-account for authorized container, exclusion, and creation effects. Source drift or an incomplete
-comparison returns `non-ready`.
+through capture and establishment, and account for authorized container, exclusion, and creation
+effects. Source drift or an incomplete comparison returns `non-ready`.
 
 After a failed or interrupted attempt, inspect the actual effects and retain partial paths, refs,
 registrations, copied state, and evidence with their recovery owner. Remove an artifact only when

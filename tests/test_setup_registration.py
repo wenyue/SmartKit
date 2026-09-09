@@ -121,7 +121,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(self.finish(), 2)
         self.assertEqual(list(self.target.iterdir()), [])
 
-    def test_registered_finish_then_empty_generation_needs_no_manual_manifest(self):
+    def test_registered_finish_then_full_regeneration_requires_new_complete_registration(self):
         for item in self.request['generation_requests']:
             path = self.output(item['target'])
             status, output, _ = self.register(item['id'], path)
@@ -131,10 +131,14 @@ class SetupRegistrationTest(unittest.TestCase):
         rule = self.target / '.agents/rules/00-project-tools.md'
         rule.write_bytes(b'project edit\n')
         self.prepare()
-        self.assertEqual(self.request['generation_requests'], [])
+        self.assertTrue(self.request['generation_requests'])
         self.assertEqual(json.loads(self.manifest.read_bytes()), {'version': 1, 'requests': []})
-        self.assertEqual(self.finish(), 0)
         self.assertEqual(rule.read_bytes(), b'project edit\n')
+        for item in self.request['generation_requests']:
+            path = self.output(item['target'])
+            self.assertEqual(self.register(item['id'], path)[0], 0)
+        self.assertEqual(self.finish(), 0)
+        self.assertNotEqual(rule.read_bytes(), b'project edit\n')
 
     def test_target_drift_rejects_registration(self):
         rule = self.output('.agents/rules/00-project-tools.md')

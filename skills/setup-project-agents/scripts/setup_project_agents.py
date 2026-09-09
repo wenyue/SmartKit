@@ -327,7 +327,7 @@ def _request_config(
             not isinstance(generation, list)
             or {
                 item.get('target') for item in generation if isinstance(item, Mapping)
-            } - set(expected_generation)
+            } != set(expected_generation)
             or len(generation) != len({item.get('id') for item in generation if isinstance(item, Mapping)})
             or any(
                 not isinstance(item, Mapping)

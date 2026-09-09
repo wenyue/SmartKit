@@ -77,27 +77,25 @@ class SetupGenerationTest(unittest.TestCase):
         apply_plan(self.target, plan)
         return requests, rendered
 
-    def test_contract_change_regenerates_only_affected_outputs(self):
-        self.sync(helper=True)
-        self.assertEqual(self.requests(), [])
+    def test_every_full_setup_regenerates_the_complete_set_with_current_project_evidence(self):
+        first, _ = self.sync(helper=True)
+        self.assertTrue(first)
+        self.assertEqual(self.requests(), first)
         rule = self.target / '.agents/rules/01-project-contracts.md'
         skill = self.target / '.agents/skills/change-set-verification/SKILL.md'
         helper = skill.parent / 'references/checks.md'
         for path in (rule, skill, helper):
             path.write_bytes(b'project edit\n')
-        lock = (self.target / '.agents/smartkit.lock.json').read_bytes()
-        requests, _ = self.sync()
-        self.assertEqual(requests, [])
-        self.assertEqual((self.target / '.agents/smartkit.lock.json').read_bytes(), lock)
+        self.assertEqual(self.requests(), first)
         self.assertEqual(helper.read_bytes(), b'project edit\n')
+        requests, _ = self.sync()
+        self.assertEqual(requests, first)
+        self.assertEqual(rule.read_bytes(), b'generated content\n')
+        self.assertEqual(skill.read_bytes(), b'generated content\n')
+        self.assertFalse(helper.exists())
         contract = self.source / 'setup-assets/blueprints/rules/01-project-contracts.md'
         contract.write_bytes(contract.read_bytes() + b'\nChanged contract.\n')
-        requests, _ = self.sync()
-        self.assertEqual([item['id'] for item in requests], ['blueprint-project-contracts'])
-        self.assertEqual(rule.read_bytes(), b'generated content\n')
-        self.assertEqual(skill.read_bytes(), b'project edit\n')
-        self.assertEqual(helper.read_bytes(), b'project edit\n')
-        self.assertEqual(self.requests(), [])
+        self.assertEqual(self.requests(), first)
 
     def test_removed_contract_deletes_edited_outputs_but_preserves_unrecorded_files(self):
         self.sync(helper=True)
@@ -113,7 +111,7 @@ class SetupGenerationTest(unittest.TestCase):
             asset for asset in self.catalog.assets if asset.id not in retired
         ))
         requests, rendered = self.sync()
-        self.assertEqual(requests, [])
+        self.assertTrue(retired.isdisjoint(item['id'] for item in requests))
         for path in (rule, skill, helper):
             self.assertFalse(path.exists())
         self.assertEqual(local.read_bytes(), b'project notes\n')
@@ -127,7 +125,7 @@ class SetupGenerationTest(unittest.TestCase):
         helper = self.target / '.agents/skills/change-set-verification/references/checks.md'
         helper.unlink()
         requests, _ = self.sync(helper=True)
-        self.assertEqual([item['id'] for item in requests], ['blueprint-change-set-verification'])
+        self.assertIn('blueprint-change-set-verification', [item['id'] for item in requests])
         self.assertTrue(helper.is_file())
 
     def test_changed_skill_contract_retires_omitted_supporting_output(self):
@@ -139,6 +137,20 @@ class SetupGenerationTest(unittest.TestCase):
         contract.write_bytes(contract.read_bytes() + b'\nChanged checks.\n')
         self.sync()
         self.assertFalse(helper.exists())
+
+    def test_renamed_contract_destination_retires_old_recorded_path(self):
+        self.sync()
+        old = self.target / '.agents/rules/01-project-contracts.md'
+        old.write_bytes(b'project intent before rename\n')
+        self.catalog = replace(self.catalog, assets=tuple(
+            replace(asset, target=PurePosixPath('.agents/rules/03-renamed-contracts.md'))
+            if asset.id == 'blueprint-project-contracts' else asset
+            for asset in self.catalog.assets
+        ))
+        requests, _ = self.sync()
+        self.assertFalse(old.exists())
+        self.assertTrue((self.target / '.agents/rules/03-renamed-contracts.md').is_file())
+        self.assertEqual(len(requests), len(self.requests()))
 
     def test_removal_rejects_a_recorded_file_replaced_by_a_directory(self):
         self.sync(helper=True)

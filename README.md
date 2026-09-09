@@ -86,10 +86,16 @@ In the target repository, ask the Agent to use `setup-project-agents` to configu
 Copilot, and Qoder. If prompted, complete `setup-matt-pocock-skills` first, then continue setup.
 
 One maintainer runs setup, reviews the changes, and commits them. Teammates receive the configuration
-through Git. Run setup again when you want to synchronize plugin changes.
+through Git. Every unqualified setup or update is a full setup: it reauthors all current generated
+project Rules and Skills, including supporting resources, using current project evidence and the
+plugin’s immutable authoring contracts. You can edit generated sources directly; those edits inform
+the next full setup even when upstream contracts have not changed.
 
-You can edit the generated project Rules and Skills directly. When their plugin contracts change,
-setup updates or removes the corresponding files.
+Explicitly request project-only synchronization to refresh local Rule/Skill discovery and project
+Agent/MCP mappings without fetching, generating, or upgrading shared/external assets. This requires
+ownership recorded by full setup; external Skill declaration changes require full setup. For changes
+limited to the `AGENTS.md` Rule index, request Rule-index synchronization, which also works before
+full setup. Both local operations support a read-only check.
 
 | Capability | Where to configure it |
 | --- | --- |
