@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -9,853 +11,315 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+HARNESSES = ('codex', 'copilot', 'cursor', 'qoder')
 
 
 class PluginRuleContractTest(unittest.TestCase):
-    def run_adapter_sync(self, root: Path, action: str) -> subprocess.CompletedProcess[bytes]:
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix='rule delivery ')
+        self.addCleanup(self.temporary.cleanup)
+        self.state_root = Path(self.temporary.name) / 'state'
+
+    def run_raw_dispatch(self, harness, event, payload, *, root=ROOT, cwd=ROOT):
+        environment = dict(os.environ)
+        environment['PLUGIN_DATA'] = str(self.state_root)
+        environment['PLUGIN_ROOT'] = str(root)
         return subprocess.run(
             [
-                sys.executable,
-                str(ROOT / 'scripts/sync_cursor_rule_adapters.py'),
-                action,
-                '--root',
-                str(root),
+                sys.executable, str(ROOT / 'runtime/rules/dispatch.py'),
+                '--harness', harness, '--event', event,
             ],
-            capture_output=True,
-            cwd=ROOT,
-            check=False,
+            input=payload, capture_output=True, cwd=cwd, env=environment, check=False,
         )
 
-    def run_dispatch(
-        self,
-        harness: str,
-        event: str,
-        payload: dict[str, object],
-        *,
-        plugin_data: Path,
-    ) -> dict[str, object]:
-        environment = dict(os.environ)
-        environment['PLUGIN_DATA'] = str(plugin_data)
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(ROOT / 'runtime/rules/dispatch.py'),
-                '--harness',
-                harness,
-                '--event',
-                event,
-            ],
-            input=json.dumps(payload).encode(),
-            capture_output=True,
-            cwd=ROOT,
-            env=environment,
-            check=False,
-        )
+    def run_dispatch(self, harness, event, payload, **kwargs):
+        result = self.run_raw_dispatch(harness, event, json.dumps(payload).encode(), **kwargs)
         self.assertEqual(result.returncode, 0, result.stderr.decode())
         return json.loads(result.stdout)
 
-    def run_raw_dispatch(
-        self,
-        harness: str,
-        event: str,
-        payload: bytes,
-        *,
-        plugin_data: Path,
-    ) -> subprocess.CompletedProcess[bytes]:
-        environment = dict(os.environ)
-        environment['PLUGIN_DATA'] = str(plugin_data)
-        return subprocess.run(
-            [
-                sys.executable,
-                str(ROOT / 'runtime/rules/dispatch.py'),
-                '--harness',
-                harness,
-                '--event',
-                event,
-            ],
-            input=payload,
-            capture_output=True,
-            cwd=ROOT,
-            env=environment,
-            check=False,
-        )
+    def session_context(self, harness, payload=None, **kwargs):
+        result = self.run_dispatch(harness, 'session', payload or {}, **kwargs)
+        if harness == 'cursor':
+            self.assertEqual(set(result), {'additional_context'})
+            return result['additional_context']
+        if harness == 'copilot':
+            self.assertEqual(set(result), {'additionalContext'})
+            return result['additionalContext']
+        self.assertEqual(set(result), {'hookSpecificOutput'})
+        self.assertEqual(result['hookSpecificOutput']['hookEventName'], 'SessionStart')
+        return result['hookSpecificOutput']['additionalContext']
 
-    def test_registry_order_and_harness_delivery_contract(self):
-        registry = json.loads((ROOT / 'rules/registry.json').read_text(encoding='utf-8'))
-        rules = registry['rules']
+    def assert_core_and_index(self, context, root=ROOT):
+        registry = json.loads((root / 'rules/registry.json').read_text(encoding='utf-8'))
+        self.assertTrue(context.startswith('<!-- Rule-ID: smartkit/core-instruction-governance;'))
+        self.assertIn('## SmartKit Rule index', context)
+        for rule in registry['rules']:
+            if rule['id'].startswith('smartkit/core-'):
+                body = (root / 'rules' / rule['source']).read_text(encoding='utf-8').strip()
+                self.assertIn(body, context)
+                self.assertEqual(context.count(f'Rule-ID: {rule["id"]};'), 1)
+            else:
+                self.assertIn(rule['description'], context)
+                self.assertIn(rule['id'], context)
+                self.assertIn(str((root / 'rules' / rule['source']).resolve()), context)
+                self.assertNotIn(f'Rule-ID: {rule["id"]};', context)
+                body = (root / 'rules' / rule['source']).read_text(encoding='utf-8').strip()
+                self.assertNotIn(body, context)
+
+    def fixture_root(self):
+        root = Path(self.temporary.name) / 'plugin with spaces'
+        shutil.copytree(ROOT / 'rules', root / 'rules')
+        return root
+
+    def test_registry_and_retired_adapter_contract(self):
+        rules = json.loads((ROOT / 'rules/registry.json').read_text(encoding='utf-8'))['rules']
         self.assertEqual(rules[0]['id'], 'smartkit/core-instruction-governance')
         self.assertEqual(rules[0]['strength'], 'Mandatory')
-        self.assertEqual(rules[0]['trigger'], {'type': 'always'})
-        rule_ids = [item['id'] for item in rules]
-        self.assertIn('smartkit/core-third-party-skill-policy', rule_ids)
-        self.assertIn('smartkit/core-workspace-policy', rule_ids)
-        self.assertNotIn('smartkit/core-rule-config', rule_ids)
-        self.assertNotIn('smartkit/core-skill-governance', rule_ids)
-        self.assertNotIn('smartkit/core-skill-config', rule_ids)
+        self.assertTrue(rules[0]['description'])
         self.assertEqual(len({item['id'] for item in rules}), len(rules))
-        self.assertTrue(all((ROOT / 'rules' / item['source']).is_file() for item in rules))
-        self.assertEqual(
-            json.loads((ROOT / '.cursor-plugin/plugin.json').read_text())['rules'],
-            './rules/cursor/',
-        )
-        adapter_check = subprocess.run(
-            [sys.executable, str(ROOT / 'scripts/sync_cursor_rule_adapters.py'), '--check'],
-            capture_output=True, cwd=ROOT, check=False,
-        )
-        self.assertEqual(adapter_check.returncode, 0, adapter_check.stderr.decode())
-        self.assertFalse((ROOT / 'rules/cursor/harness-codex.mdc').exists())
+        for rule in rules:
+            self.assertEqual(set(rule), {'id', 'source', 'strength', 'description'})
+            self.assertEqual(Path(rule['source']).name, rule['source'])
+            self.assertTrue((ROOT / 'rules' / rule['source']).is_file())
+        self.assertFalse((ROOT / 'rules/source').exists())
+        self.assertFalse((ROOT / 'rules/cursor').exists())
+        self.assertFalse((ROOT / 'scripts/sync_cursor_rule_adapters.py').exists())
+        self.assertNotIn('rules', json.loads((ROOT / '.cursor-plugin/plugin.json').read_text()))
 
-    def test_codex_harness_rule_is_session_scoped_and_ordered(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
+    def test_every_host_gets_core_bodies_and_semantic_index_without_a_filename(self):
+        for harness in HARNESSES:
+            with self.subTest(harness=harness):
+                context = self.session_context(harness, {'prompt': 'Discuss Python error handling'})
+                self.assert_core_and_index(context)
+                self.assertIn('Codex subagent tools', context)
+                self.assertLess(len(context.encode()), 50000)
+        self.assertFalse(self.state_root.exists())
+
+    def test_context_does_not_change_when_a_file_is_mentioned(self):
+        for harness in HARNESSES:
+            with self.subTest(harness=harness):
+                plain = self.session_context(harness)
+                named = self.session_context(harness, {'prompt': 'Edit src/main.py and lib/app.dart'})
+                self.assertEqual(plain, named)
+
+    def test_absolute_index_paths_work_outside_plugin_directory(self):
+        root = self.fixture_root()
+        context = self.session_context('cursor', root=root, cwd=Path(self.temporary.name))
+        self.assert_core_and_index(context, root)
+        self.assertIn(str(root / 'rules' / 'file-python.md'), context)
+
+    def test_descriptions_are_opaque_text_and_do_not_select_bodies(self):
+        root = self.fixture_root()
+        path = root / 'rules/registry.json'
+        document = json.loads(path.read_text(encoding='utf-8'))
+        document['rules'][0]['description'] = 'Governance overview.'
+        document['rules'][-1]['description'] = 'A | B comparison.'
+        path.write_text(json.dumps(document), encoding='utf-8')
+        context = self.session_context('codex', root=root)
+        self.assertIn('A \\| B comparison.', context)
+        self.assertIn('# Instruction Governance', context)
+        self.assertNotIn('# Python Guidelines', context)
+        document['rules'][-1]['description'] = 'Always'
+        path.write_text(json.dumps(document), encoding='utf-8')
+        self.assertNotIn('# Python Guidelines', self.session_context('codex', root=root))
+
+    def test_session_reentry_restores_core_and_index_without_activation_history(self):
+        for harness in ('codex', 'qoder'):
             for source in ('startup', 'resume', 'clear', 'compact'):
-                with self.subTest(source=source):
-                    session = self.run_dispatch(
-                        'codex',
-                        'session',
-                        {'session_id': f'harness-{source}', 'source': source},
-                        plugin_data=plugin_data,
-                    )
-                    context = session['hookSpecificOutput']['additionalContext']
-                    self.assertEqual(context.count('Rule-ID: smartkit/harness-codex;'), 1)
-                    self.assertLess(
-                        context.index('Rule-ID: smartkit/core-instruction-governance;'),
-                        context.index('Rule-ID: smartkit/harness-codex;'),
-                    )
-                    self.assertLess(
-                        context.index('Rule-ID: smartkit/harness-codex;'),
-                        context.index('Rule-ID: smartkit/core-personality;'),
-                    )
-                    self.assertLess(len(context.encode()), 50000)
+                with self.subTest(harness=harness, source=source):
+                    self.assert_core_and_index(self.session_context(harness, {'source': source}))
+        self.assertFalse(self.state_root.exists())
 
-            prompt = self.run_dispatch(
-                'codex',
-                'prompt',
-                {'session_id': 'harness-prompt', 'prompt': 'hello'},
-                plugin_data=plugin_data,
-            )
-            self.assertNotIn(
-                'smartkit/harness-codex',
-                prompt['hookSpecificOutput']['additionalContext'],
-            )
-            copilot = self.run_dispatch(
-                'copilot',
-                'session',
-                {'sessionId': 'harness-copilot'},
-                plugin_data=plugin_data,
-            )
-            self.assertNotIn('smartkit/harness-codex', copilot['additionalContext'])
-
-    def test_codex_compact_session_restores_harness_and_activated_file_rules(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            payload = {
-                'session_id': 'codex-compact',
-                'prompt': 'Edit src/main.go',
-            }
-            prompt = self.run_dispatch(
-                'codex', 'prompt', payload, plugin_data=plugin_data
-            )
-            self.assertIn(
-                'smartkit/file-go',
-                prompt['hookSpecificOutput']['additionalContext'],
-            )
-
-            compact = self.run_dispatch(
-                'codex',
-                'session',
-                {'session_id': 'codex-compact', 'source': 'compact'},
-                plugin_data=plugin_data,
-            )['hookSpecificOutput']['additionalContext']
-            self.assertEqual(compact.count('Rule-ID: smartkit/harness-codex;'), 1)
-            self.assertIn('smartkit/core-instruction-governance', compact)
-            self.assertIn('smartkit/file-go', compact)
-
-            retry = self.run_dispatch(
-                'codex',
-                'tool',
-                {
-                    'session_id': 'codex-compact',
-                    'tool_name': 'view_file',
-                    'tool_input': {'path': 'src/main.go'},
-                },
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(retry, {})
-
-    def test_registry_rejects_invalid_harness_trigger(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = root / 'rules/source'
-            source.mkdir(parents=True)
-            (source / 'core-instruction-governance.md').write_text(
-                'core\n', encoding='utf-8'
-            )
-            (source / 'harness-bad.md').write_text('bad\n', encoding='utf-8')
-            for invalid in ('cursor', 'vscode'):
-                with self.subTest(invalid=invalid):
-                    (root / 'rules/registry.json').write_text(json.dumps({'rules': [
-                        {
-                            'id': 'smartkit/core-instruction-governance',
-                            'source': 'source/core-instruction-governance.md',
-                            'strength': 'Mandatory',
-                            'trigger': {'type': 'always'},
-                        },
-                        {
-                            'id': 'smartkit/harness-bad',
-                            'source': 'source/harness-bad.md',
-                            'strength': 'Default',
-                            'trigger': {'type': 'harness', 'harnesses': [invalid]},
-                        },
-                    ]}), encoding='utf-8')
-                    environment = dict(os.environ)
-                    environment['PLUGIN_ROOT'] = str(root)
-                    environment['PLUGIN_DATA'] = str(root / 'data')
-                    result = subprocess.run(
-                        [
-                            sys.executable,
-                            str(ROOT / 'runtime/rules/dispatch.py'),
-                            '--harness', 'codex', '--event', 'session',
-                        ],
-                        input=b'{}',
-                        capture_output=True,
-                        cwd=ROOT,
-                        env=environment,
-                        check=False,
-                    )
-                    self.assertEqual(result.returncode, 1)
-                    self.assertIn('invalid harnesses', result.stderr.decode())
-
-    def test_dispatch_rejects_retired_platform_option(self):
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(ROOT / 'runtime/rules/dispatch.py'),
-                '--platform', 'codex', '--event', 'session',
-            ],
-            input=b'{}',
-            capture_output=True,
-            cwd=ROOT,
-            check=False,
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('required: --harness', result.stderr.decode())
-
-    def test_codex_rule_hooks_allow_large_additional_context(self):
-        hooks = json.loads((ROOT / 'hooks/codex.json').read_text(encoding='utf-8'))['hooks']
-
-        for event in ('SessionStart', 'UserPromptSubmit', 'PreToolUse'):
-            with self.subTest(event=event):
-                handlers = [
-                    handler
-                    for group in hooks[event]
-                    for handler in group['hooks']
-                    if 'runtime/rules/dispatch.' in handler['command']
-                ]
-                self.assertEqual(len(handlers), 1)
-                self.assertEqual(handlers[0]['additionalContextLimit'], 50000)
-
-    def test_registry_rejects_removed_exclusion_globs(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            registry = root / 'rules/registry.json'
-            registry.parent.mkdir(parents=True)
-            source = root / 'rules/source'
-            source.mkdir()
-            (source / 'core-instruction-governance.md').write_text(
-                'core\n', encoding='utf-8'
-            )
-            (source / 'file-example.md').write_text('example\n', encoding='utf-8')
-            registry.write_text(json.dumps({
-                'rules': [
-                    {
-                        'id': 'smartkit/core-instruction-governance',
-                        'source': 'source/core-instruction-governance.md',
-                        'strength': 'Mandatory',
-                        'trigger': {'type': 'always'},
-                    },
-                    {
-                        'id': 'smartkit/file-example',
-                        'source': 'source/file-example.md',
-                        'strength': 'Default',
-                        'trigger': {
-                            'type': 'file',
-                            'include_globs': ['**/*.example'],
-                            'exclude_globs': ['vendor/**'],
-                        },
-                    },
-                ],
-            }), encoding='utf-8')
-            environment = dict(os.environ)
-            environment['PLUGIN_ROOT'] = str(root)
-            environment['PLUGIN_DATA'] = str(root / 'data')
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / 'runtime/rules/dispatch.py'),
-                    '--harness', 'codex', '--event', 'session',
-                ],
-                input=b'{}',
-                capture_output=True,
-                cwd=ROOT,
-                env=environment,
-                check=False,
-            )
-            self.assertEqual(result.returncode, 1)
-            self.assertIn('invalid file trigger', result.stderr.decode())
-
-    def test_runtime_and_cursor_sync_share_missing_source_validation(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            registry = root / 'rules/registry.json'
-            registry.parent.mkdir(parents=True)
-            registry.write_text(json.dumps({
-                'rules': [{
-                    'id': 'smartkit/core-instruction-governance',
-                    'source': 'source/core-instruction-governance.md',
-                    'strength': 'Mandatory',
-                    'trigger': {'type': 'always'},
-                }],
-            }), encoding='utf-8')
-
-            environment = dict(os.environ)
-            environment['PLUGIN_ROOT'] = str(root)
-            environment['PLUGIN_DATA'] = str(root / 'data')
-            runtime = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / 'runtime/rules/dispatch.py'),
-                    '--harness', 'codex', '--event', 'session',
-                ],
-                input=b'{}',
-                capture_output=True,
-                cwd=ROOT,
-                env=environment,
-                check=False,
-            )
-            adapter = self.run_adapter_sync(root, '--check')
-
-            self.assertEqual(runtime.returncode, 1)
-            self.assertEqual(adapter.returncode, 2)
-            expected = 'missing source for smartkit/core-instruction-governance'
-            self.assertIn(expected, runtime.stderr.decode())
-            self.assertIn(expected, adapter.stderr.decode())
-
-    def test_cursor_rule_adapter_sync_tracks_rename_and_delete_from_registry(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = root / 'rules/source'
-            source.mkdir(parents=True)
-            (source / 'core-instruction-governance.md').write_text(
-                'core\n', encoding='utf-8'
-            )
-            (source / 'file-old.md').write_text('old\n', encoding='utf-8')
-            registry = root / 'rules/registry.json'
-
-            def write_registry(rule_id: str | None, filename: str | None) -> None:
-                rules = [{
-                    'id': 'smartkit/core-instruction-governance',
-                    'source': 'source/core-instruction-governance.md',
-                    'strength': 'Mandatory',
-                    'trigger': {'type': 'always'},
-                }]
-                if rule_id is not None and filename is not None:
-                    rules.append({
-                        'id': rule_id,
-                        'source': f'source/{filename}',
-                        'strength': 'Default',
-                        'trigger': {'type': 'file', 'include_globs': ['**/*.txt']},
-                    })
-                registry.write_text(
-                    json.dumps({'rules': rules}),
-                    encoding='utf-8',
-                )
-
-            write_registry('smartkit/file-old', 'file-old.md')
-            first = self.run_adapter_sync(root, '--update')
-            self.assertEqual(first.returncode, 0, first.stderr.decode())
-            self.assertTrue((root / 'rules/cursor/file-old.mdc').is_file())
-
-            (source / 'file-old.md').rename(source / 'file-new.md')
-            write_registry('smartkit/file-new', 'file-new.md')
-            renamed = self.run_adapter_sync(root, '--update')
-            self.assertEqual(renamed.returncode, 0, renamed.stderr.decode())
-            self.assertFalse((root / 'rules/cursor/file-old.mdc').exists())
-            self.assertTrue((root / 'rules/cursor/file-new.mdc').is_file())
-
-            write_registry(None, None)
-            deleted = self.run_adapter_sync(root, '--update')
-            self.assertEqual(deleted.returncode, 0, deleted.stderr.decode())
-            self.assertFalse((root / 'rules/cursor/file-new.mdc').exists())
-            self.assertEqual(self.run_adapter_sync(root, '--check').returncode, 0)
-
-    def test_code_rule_is_available_before_filename_independent_code_work(self):
-        source = (ROOT / 'rules/source/file-code.md').read_text(encoding='utf-8').strip()
-        prompts = (
-            'Review the comments in src/Service.java',
-            'Update the API documentation in src/Service.kt',
-            'Edit the extensionless script bin/launch',
-            'Review this inline code: return value + 1',
-        )
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for harness in ('codex', 'copilot', 'qoder'):
-                with self.subTest(harness=harness):
-                    session = self.run_dispatch(
-                        harness, 'session', {'session_id': harness},
-                        plugin_data=Path(temp_dir),
-                    )
-                    context = (
-                        session['additionalContext'] if harness == 'copilot'
-                        else session['hookSpecificOutput']['additionalContext']
-                    )
-                    self.assertEqual(context.count('Rule-ID: smartkit/file-code;'), 1)
-                    self.assertIn(source, context)
-                    for rule in ('file-cpp', 'file-flutter', 'file-go', 'file-python'):
-                        self.assertNotIn(f'Rule-ID: smartkit/{rule};', context)
-
-                    for prompt in prompts:
-                        delivered = self.run_dispatch(
-                            harness, 'prompt',
-                            {'session_id': harness, 'prompt': prompt},
-                            plugin_data=Path(temp_dir),
-                        )
-                        if harness == 'copilot':
-                            self.assertEqual(delivered['modifiedTransformedPrompt'], prompt)
-                        else:
-                            self.assertEqual(
-                                delivered['hookSpecificOutput']['additionalContext'], ''
-                            )
-
-    def test_code_rule_restores_without_prior_file_activation(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            for source in ('resume', 'compact'):
-                with self.subTest(harness='codex', source=source):
-                    restored = self.run_dispatch(
-                        'codex', 'session',
-                        {'session_id': 'code-restoration', 'source': source},
-                        plugin_data=plugin_data,
-                    )['hookSpecificOutput']['additionalContext']
-                    self.assertEqual(restored.count('Rule-ID: smartkit/file-code;'), 1)
-                    self.assertNotIn('Rule-ID: smartkit/file-python;', restored)
-
-            self.run_dispatch(
-                'copilot', 'session', {'sessionId': 'code-restoration'},
-                plugin_data=plugin_data,
-            )
-            self.run_dispatch(
-                'copilot', 'compact', {'sessionId': 'code-restoration'},
-                plugin_data=plugin_data,
-            )
-            restored = self.run_dispatch(
-                'copilot', 'prompt',
-                {'sessionId': 'code-restoration', 'transformedPrompt': 'Continue'},
-                plugin_data=plugin_data,
-            )['modifiedTransformedPrompt']
-            self.assertEqual(restored.count('Rule-ID: smartkit/file-code;'), 1)
-            self.assertNotIn('Rule-ID: smartkit/file-python;', restored)
-
-    def test_cursor_code_rule_loads_without_filename_matching(self):
-        adapter = (ROOT / 'rules/cursor/file-code.mdc').read_text(encoding='utf-8')
-        self.assertEqual(
-            adapter,
-            '---\nalwaysApply: true\n---\n\nApply @../source/file-code.md\n',
-        )
-
-    def test_router_loads_always_then_matching_file_rules(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            session = self.run_dispatch(
-                'codex', 'session', {'session_id': 'router'}, plugin_data=plugin_data
-            )
-            always = session['hookSpecificOutput']['additionalContext']
-            self.assertIn('smartkit/core-instruction-governance', always)
-            self.assertNotIn('smartkit/file-flutter', always)
-
-            prompt = self.run_dispatch(
-                'codex',
-                'prompt',
-                {'session_id': 'router', 'prompt': 'Please edit src/widget.dart'},
-                plugin_data=plugin_data,
-            )
-            context = prompt['hookSpecificOutput']['additionalContext']
-            self.assertIn('smartkit/file-flutter', context)
-            self.assertNotIn('smartkit/core-instruction-governance', context)
-            self.assertNotIn('smartkit/file-cpp', context)
-
-            root_file = self.run_dispatch(
-                'codex',
-                'prompt',
-                {'session_id': 'root-file', 'prompt': 'Edit widget.dart'},
-                plugin_data=plugin_data,
-            )
-            self.assertIn(
-                'smartkit/file-flutter',
-                root_file['hookSpecificOutput']['additionalContext'],
-            )
-
-    def test_copilot_uses_native_output_shapes(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            session = self.run_dispatch(
-                'copilot', 'session', {'sessionId': 'native'}, plugin_data=plugin_data
-            )
-            self.assertEqual(set(session), {'additionalContext'})
-            prompt = self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'native', 'transformedPrompt': 'Edit src/main.go'},
-                plugin_data=plugin_data,
-            )
-            self.assertIn('smartkit/file-go', prompt['modifiedTransformedPrompt'])
-
-    def test_python_rule_activates_for_python_paths(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for extension in ('py', 'pyi'):
-                with self.subTest(extension=extension):
-                    prompt = self.run_dispatch(
-                        'codex',
-                        'prompt',
-                        {
-                            'session_id': f'python-{extension}',
-                            'prompt': f'Edit src/service.{extension}',
-                        },
-                        plugin_data=Path(temp_dir),
-                    )
-
-                    context = prompt['hookSpecificOutput']['additionalContext']
-                    self.assertIn('smartkit/file-python', context)
-                    self.assertNotIn('smartkit/file-go', context)
-
-    def test_hook_delivery_emits_a_visible_host_boundary_diagnostic(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            environment = dict(os.environ)
-            environment['PLUGIN_DATA'] = temp_dir
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / 'runtime/rules/dispatch.py'),
-                    '--harness',
-                    'codex',
-                    '--event',
-                    'session',
-                ],
-                input=json.dumps({'session_id': 'diagnostic'}).encode(),
-                capture_output=True,
-                cwd=ROOT,
-                env=environment,
-                check=False,
-            )
-            self.assertEqual(result.returncode, 0)
-            diagnostic = result.stderr.decode()
-            self.assertIn('Rule delivery attempted', diagnostic)
-            self.assertIn('spill', diagnostic)
-            self.assertIn('host-owned', diagnostic)
-
-    def test_first_structured_write_loads_file_rules_and_requires_retry(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            payload = {
-                'sessionId': 'gate-session',
-                'toolName': 'write_file',
-                'toolInput': {'file_path': 'src/main.go', 'content': 'package main'},
-            }
-
-            first = self.run_dispatch(
-                'codex', 'tool', payload, plugin_data=plugin_data
-            )
-            decision = first['hookSpecificOutput']
-            self.assertEqual(decision['permissionDecision'], 'deny')
-            self.assertIn('smartkit/file-go', decision['additionalContext'])
-
-            second = self.run_dispatch(
-                'codex', 'tool', payload, plugin_data=plugin_data
-            )
-            self.assertEqual(second, {})
-
-    def test_tool_without_file_path_skips_rule_and_state_loading(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            environment = dict(os.environ)
-            environment['PLUGIN_ROOT'] = str(root)
-            environment['PLUGIN_DATA'] = str(root / 'data')
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / 'runtime/rules/dispatch.py'),
-                    '--harness',
-                    'codex',
-                    '--event',
-                    'tool',
-                ],
-                input=json.dumps({
-                    'session_id': 'no-path',
-                    'tool_name': 'list_agents',
-                    'tool_input': {},
-                }).encode(),
-                capture_output=True,
-                cwd=ROOT,
-                env=environment,
-                check=False,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr.decode())
-            self.assertEqual(json.loads(result.stdout), {})
-            self.assertFalse((root / 'data').exists())
-
-    def test_prompt_activation_avoids_the_first_write_gate(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            prompt = self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'prompt-session', 'transformedPrompt': 'Edit src/main.go'},
-                plugin_data=plugin_data,
-            )
-            self.assertIn('smartkit/file-go', prompt['modifiedTransformedPrompt'])
-
-            tool = self.run_dispatch(
-                'copilot',
-                'tool',
-                {
-                    'sessionId': 'prompt-session',
-                    'toolName': 'write_file',
-                    'toolInput': {'path': 'src/main.go'},
-                },
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(tool, {})
-
-            repeated = self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'prompt-session', 'transformedPrompt': 'Again src/main.go'},
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(repeated['modifiedTransformedPrompt'], 'Again src/main.go')
-
-            state_files = list((plugin_data / 'rule-sessions').iterdir())
-            self.assertEqual(len(state_files), 1)
-            self.assertRegex(state_files[0].name, r'^[0-9a-f]{64}\.json$')
-            self.assertEqual(
-                set(json.loads(state_files[0].read_text(encoding='utf-8'))),
-                {
-                    'activated_file_rule_ids',
-                    'context_generation',
-                    'restored_generation',
-                },
-            )
-
-    def test_invalid_session_state_fails_closed(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            payload = {
-                'sessionId': 'invalid-state',
-                'transformedPrompt': 'Edit src/main.go',
-            }
-            self.run_dispatch('copilot', 'prompt', payload, plugin_data=plugin_data)
-            state_file, = (plugin_data / 'rule-sessions').iterdir()
-
-            valid_state = json.loads(state_file.read_text(encoding='utf-8'))
-            versioned_state = dict(valid_state, version=1)
-            boolean_context_generation = dict(valid_state, context_generation=True)
-            boolean_restored_generation = dict(valid_state, restored_generation=False)
-
-            for invalid_state in (
-                '["smartkit/file-go"]\n',
-                '{invalid json',
-                json.dumps(versioned_state),
-                json.dumps(boolean_context_generation),
-                json.dumps(boolean_restored_generation),
+    def test_normal_tools_and_prompts_do_not_activate_rules_or_write_state(self):
+        for harness in ('copilot', 'cursor'):
+            for tool_input in (
+                {'path': 'src/main.py', 'content': 'print(1)'},
+                {'command': 'pwd'},
             ):
-                with self.subTest(invalid_state=invalid_state):
-                    state_file.write_text(invalid_state, encoding='utf-8')
-                    result = self.run_raw_dispatch(
-                        'copilot',
-                        'prompt',
-                        json.dumps({
-                            'sessionId': 'invalid-state',
-                            'transformedPrompt': 'Continue',
-                        }).encode(),
-                        plugin_data=plugin_data,
+                with self.subTest(harness=harness, tool_input=tool_input):
+                    result = self.run_dispatch(
+                        harness, 'tool',
+                        {'session_id': 'normal', 'tool_name': 'Write', 'tool_input': tool_input},
                     )
+                    self.assertEqual(result, {})
+        self.assertEqual(self.run_dispatch(
+            'copilot', 'prompt', {'transformedPrompt': 'Edit src/main.go'},
+        ), {})
+        self.assertFalse(self.state_root.exists())
 
-                    self.assertEqual(result.returncode, 1)
-                    self.assertEqual(result.stdout, b'')
-                    self.assertIn(b'invalid Rule activation state', result.stderr)
+    def test_compaction_restores_before_a_tool_once_without_file_matching(self):
+        for harness in ('copilot', 'cursor'):
+            with self.subTest(harness=harness):
+                session = {'conversation_id': harness} if harness == 'cursor' else {'sessionId': harness}
+                self.session_context(harness, session)
+                self.assertEqual(self.run_dispatch(harness, 'compact', session), {})
+                payload = dict(session, tool_name='Shell', tool_input={'command': 'pwd'})
+                restored = self.run_dispatch(harness, 'tool', payload)
+                if harness == 'cursor':
+                    self.assertEqual(set(restored), {'permission', 'agent_message'})
+                    self.assertEqual(restored['permission'], 'deny')
+                    context = restored['agent_message']
+                else:
+                    self.assertEqual(restored['permissionDecision'], 'deny')
+                    context = restored['permissionDecisionReason']
+                self.assert_core_and_index(context)
+                self.assertEqual(self.run_dispatch(harness, 'tool', payload), {})
+                self.assertEqual(self.run_dispatch(harness, 'stop', dict(session, status='completed')), {})
+
+    def test_copilot_prompt_restores_context_and_preserves_transformed_prompt(self):
+        session = {'sessionId': 'prompt'}
+        self.run_dispatch('copilot', 'compact', session)
+        original = 'Continue with 日本語 and a literal dollar: $HOME'
+        restored = self.run_dispatch(
+            'copilot', 'prompt', dict(session, transformedPrompt=original),
+        )
+        self.assertEqual(set(restored), {'modifiedTransformedPrompt'})
+        self.assert_core_and_index(restored['modifiedTransformedPrompt'])
+        self.assertTrue(restored['modifiedTransformedPrompt'].endswith('\n' + original))
+        self.assertEqual(self.run_dispatch(
+            'copilot', 'prompt', dict(session, transformedPrompt=original),
+        ), {})
+
+    def test_compaction_before_final_answer_restores_once(self):
+        for harness in ('copilot', 'cursor'):
+            with self.subTest(harness=harness):
+                session = {'session_id': harness}
+                self.run_dispatch(harness, 'compact', session)
+                payload = dict(session, status='completed')
+                restored = self.run_dispatch(harness, 'stop', payload)
+                if harness == 'cursor':
+                    self.assertEqual(set(restored), {'followup_message'})
+                    context = restored['followup_message']
+                else:
+                    self.assertEqual(restored['decision'], 'block')
+                    context = restored['reason']
+                self.assert_core_and_index(context)
+                self.assertEqual(self.run_dispatch(harness, 'stop', payload), {})
+
+    def test_cursor_does_not_resume_an_aborted_or_failed_run(self):
+        session = {'conversation_id': 'abort'}
+        self.run_dispatch('cursor', 'compact', session)
+        for status in ('aborted', 'error'):
+            self.assertEqual(self.run_dispatch('cursor', 'stop', dict(session, status=status)), {})
+        resumed = self.run_dispatch('cursor', 'tool', session)
+        self.assertEqual(resumed['permission'], 'deny')
+
+    def test_compaction_state_is_session_scoped_and_contains_no_rule_activation(self):
+        self.run_dispatch('cursor', 'compact', {'conversation_id': 'one'})
+        self.assertEqual(self.run_dispatch('cursor', 'tool', {'conversation_id': 'two'}), {})
+        restored = self.run_dispatch('cursor', 'tool', {'session_id': 'one'})
+        self.assertEqual(restored['permission'], 'deny')
+        state_file, = (self.state_root / 'rule-compaction').iterdir()
+        self.assertEqual(json.loads(state_file.read_text()), {
+            'context_generation': 1, 'restored_generation': 1,
+        })
+        self.run_dispatch('cursor', 'compact', {'conversation_id': 'one'})
+        self.assertEqual(self.run_dispatch('cursor', 'tool', {'conversation_id': 'one'})['permission'], 'deny')
+        self.assertEqual(json.loads(state_file.read_text())['restored_generation'], 2)
+
+    def test_failed_restoration_keeps_pending_compaction(self):
+        root = self.fixture_root()
+        session = {'conversation_id': 'failure'}
+        self.run_dispatch('cursor', 'compact', session, root=root)
+        source = root / 'rules/core-personality.md'
+        body = source.read_bytes()
+        source.write_bytes(b'\xff')
+        failed = self.run_raw_dispatch('cursor', 'tool', json.dumps(session).encode(), root=root)
+        self.assertEqual(failed.returncode, 1)
+        self.assertEqual(failed.stdout, b'')
+        source.write_bytes(body)
+        restored = self.run_dispatch('cursor', 'tool', session, root=root)
+        self.assert_core_and_index(restored['agent_message'], root)
+
+    def test_registry_rejects_invalid_fields_and_retired_triggers(self):
+        root = self.fixture_root()
+        path = root / 'rules/registry.json'
+        baseline = path.read_text(encoding='utf-8')
+        invalid_values = (
+            ('description', ''), ('description', True), ('description', 'When\nediting'),
+            ('source', '../file.md'), ('source', '/file.md'), ('source', 'source/file.md'),
+            ('source', 'C:\\file.md'), ('source', 'file.txt'),
+            ('strength', 'Sometimes'), ('id', 'smartkit/core-instruction-governance'),
+            ('trigger', {'type': 'file', 'include_globs': ['**/*.py']}),
+            ('read_when', 'Always'),
+        )
+        for field, value in invalid_values:
+            with self.subTest(field=field, value=value):
+                document = json.loads(baseline)
+                document['rules'][-1][field] = value
+                path.write_text(json.dumps(document), encoding='utf-8')
+                result = self.run_raw_dispatch('codex', 'session', b'{}', root=root)
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(result.stdout, b'')
+                self.assertIn(b'SmartKit Rule delivery skipped', result.stderr)
+
+    def test_missing_conditional_source_and_invalid_core_rule_fail_closed(self):
+        root = self.fixture_root()
+        path = root / 'rules/registry.json'
+        document = json.loads(path.read_text(encoding='utf-8'))
+        (root / 'rules/file-python.md').unlink()
+        result = self.run_raw_dispatch('cursor', 'session', b'{}', root=root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(b'missing source', result.stderr)
+        document['rules'].pop()
+        document['rules'][0]['strength'] = 'Default'
+        path.write_text(json.dumps(document), encoding='utf-8')
+        result = self.run_raw_dispatch('cursor', 'session', b'{}', root=root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(b'the first Rule must be', result.stderr)
+
+    def test_invalid_compaction_state_fails_closed(self):
+        session = {'sessionId': 'invalid-state'}
+        self.run_dispatch('copilot', 'compact', session)
+        state_file, = (self.state_root / 'rule-compaction').iterdir()
+        for invalid in (
+            '[]', '{invalid json',
+            '{"context_generation": true, "restored_generation": 0}',
+            '{"context_generation": 0, "restored_generation": 1}',
+            '{"context_generation": -1, "restored_generation": 0}',
+            '{"context_generation": 1, "restored_generation": 0, "extra": []}',
+        ):
+            with self.subTest(invalid=invalid):
+                state_file.write_text(invalid, encoding='utf-8')
+                result = self.run_raw_dispatch('copilot', 'tool', json.dumps(session).encode())
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(result.stdout, b'')
+                self.assertIn(b'invalid Rule compaction state', result.stderr)
 
     def test_invalid_hook_payload_fails_closed(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            for payload in (b'{invalid json', b'[]'):
-                with self.subTest(payload=payload):
-                    result = self.run_raw_dispatch(
-                        'codex', 'tool', payload, plugin_data=plugin_data
-                    )
+        for payload in (b'{invalid json', b'[]', b'null'):
+            result = self.run_raw_dispatch('codex', 'session', payload)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, b'')
+            self.assertIn(b'invalid Hook payload', result.stderr)
 
-                    self.assertEqual(result.returncode, 1)
-                    self.assertEqual(result.stdout, b'')
-                    self.assertIn(b'invalid Hook payload', result.stderr)
+    def test_unsupported_host_events_are_rejected(self):
+        for harness, event in (('codex', 'tool'), ('qoder', 'prompt'), ('cursor', 'prompt')):
+            result = self.run_raw_dispatch(harness, event, b'{}')
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(b'unsupported Rule delivery event', result.stderr)
 
-    def test_copilot_pre_compact_restores_rules_before_next_tool(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'compact-tool', 'transformedPrompt': 'Edit src/main.go'},
-                plugin_data=plugin_data,
-            )
+    def test_hook_delivery_emits_host_boundary_diagnostic(self):
+        result = self.run_raw_dispatch('cursor', 'session', b'{}')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(b'Host trust, acceptance, spill, and truncation remain host-owned', result.stderr)
 
-            compact = self.run_dispatch(
-                'copilot',
-                'compact',
-                {'sessionId': 'compact-tool', 'trigger': 'auto'},
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(compact, {})
-
-            payload = {
-                'sessionId': 'compact-tool',
-                'toolName': 'view',
-                'toolArgs': {'path': 'src/main.py'},
-            }
-            blocked = self.run_dispatch(
-                'copilot', 'tool', payload, plugin_data=plugin_data
-            )
-            self.assertEqual(blocked['permissionDecision'], 'deny')
-            reason = blocked['permissionDecisionReason']
-            self.assertIn('smartkit/core-instruction-governance', reason)
-            self.assertIn('smartkit/file-go', reason)
-            self.assertIn('smartkit/file-python', reason)
-            self.assertNotIn('smartkit/harness-codex', reason)
-
-            retry = self.run_dispatch(
-                'copilot', 'tool', payload, plugin_data=plugin_data
-            )
-            self.assertEqual(retry, {})
-
-    def test_copilot_prompt_after_compaction_restores_rules_without_retry(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'compact-prompt', 'transformedPrompt': 'Edit src/main.go'},
-                plugin_data=plugin_data,
-            )
-            self.run_dispatch(
-                'copilot',
-                'compact',
-                {'sessionId': 'compact-prompt', 'trigger': 'manual'},
-                plugin_data=plugin_data,
-            )
-
-            restored = self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'compact-prompt', 'transformedPrompt': 'Continue'},
-                plugin_data=plugin_data,
-            )['modifiedTransformedPrompt']
-            self.assertIn('smartkit/core-instruction-governance', restored)
-            self.assertIn('smartkit/file-go', restored)
-            self.assertNotIn('smartkit/harness-codex', restored)
-            self.assertTrue(restored.endswith('Continue'))
-
-            tool = self.run_dispatch(
-                'copilot',
-                'tool',
-                {
-                    'sessionId': 'compact-prompt',
-                    'toolName': 'bash',
-                    'toolArgs': {'command': 'pwd'},
-                },
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(tool, {})
-
-    def test_copilot_stop_after_compaction_forces_rule_aware_review_once(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            self.run_dispatch(
-                'copilot',
-                'prompt',
-                {'sessionId': 'compact-stop', 'transformedPrompt': 'Edit src/main.go'},
-                plugin_data=plugin_data,
-            )
-            self.run_dispatch(
-                'copilot',
-                'compact',
-                {'sessionId': 'compact-stop', 'trigger': 'auto'},
-                plugin_data=plugin_data,
-            )
-
-            blocked = self.run_dispatch(
-                'copilot',
-                'stop',
-                {'sessionId': 'compact-stop', 'stop_hook_active': False},
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(blocked['decision'], 'block')
-            self.assertIn('smartkit/core-instruction-governance', blocked['reason'])
-            self.assertIn('smartkit/file-go', blocked['reason'])
-            self.assertNotIn('smartkit/harness-codex', blocked['reason'])
-
-            repeated = self.run_dispatch(
-                'copilot',
-                'stop',
-                {'sessionId': 'compact-stop', 'stop_hook_active': True},
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(repeated, {})
-
-    def test_read_discovery_activates_rules_without_blocking(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            read = self.run_dispatch(
-                'codex',
-                'tool',
-                {
-                    'session_id': 'read-session',
-                    'tool_name': 'Read',
-                    'tool_input': {'file_path': 'src/main.go'},
-                },
-                plugin_data=plugin_data,
-            )
-            decision = read['hookSpecificOutput']
-            self.assertNotIn('permissionDecision', decision)
-            self.assertIn('smartkit/file-go', decision['additionalContext'])
-
-            write = self.run_dispatch(
-                'codex',
-                'tool',
-                {
-                    'session_id': 'read-session',
-                    'tool_name': 'Write',
-                    'tool_input': {'file_path': 'src/main.go', 'content': 'package main'},
-                },
-                plugin_data=plugin_data,
-            )
-            self.assertEqual(write, {})
-
-    def test_copilot_tool_discovery_blocks_once_to_deliver_file_rules(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            plugin_data = Path(temp_dir)
-            payload = {
-                'sessionId': 'copilot-tool-discovery',
-                'toolName': 'view',
-                'toolArgs': {'path': 'src/main.go'},
-            }
-
-            blocked = self.run_dispatch(
-                'copilot', 'tool', payload, plugin_data=plugin_data
-            )
-            self.assertEqual(blocked['permissionDecision'], 'deny')
-            self.assertIn('smartkit/file-go', blocked['permissionDecisionReason'])
-
-            retry = self.run_dispatch(
-                'copilot', 'tool', payload, plugin_data=plugin_data
-            )
-            self.assertEqual(retry, {})
+    def test_cursor_cross_platform_launcher_preserves_protocol(self):
+        launcher = ROOT / 'runtime/rules/dispatch.cmd'
+        if os.name == 'nt':
+            invocation = ['cmd.exe', '/d', '/c', str(launcher)]
+        else:
+            self.assertTrue(os.access(launcher, os.X_OK))
+            invocation = ['sh', '-c', '"$1" --harness cursor --event session', 'rule-hook', str(launcher)]
+        if os.name == 'nt':
+            invocation += ['--harness', 'cursor', '--event', 'session']
+        environment = dict(os.environ, PLUGIN_ROOT=str(ROOT), PLUGIN_DATA=str(self.state_root))
+        result = subprocess.run(
+            invocation, input=b'{}', capture_output=True, cwd=self.temporary.name,
+            env=environment, timeout=15, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assert_core_and_index(json.loads(result.stdout)['additional_context'])
 
 
 if __name__ == '__main__':

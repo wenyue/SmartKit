@@ -138,7 +138,7 @@ class ExternalSourceSpec:
 class ProjectRuleSpec:
     path: PurePosixPath
     section: str
-    read_when: str
+    description: str
     strength: str
 
 

@@ -25,7 +25,7 @@ from .transaction import TransactionError, apply_plan
 ENTRY_PATH = PurePosixPath('AGENTS.md')
 PROJECT_RULES_TITLE = 'Project rules'
 _RULE_PATH = re.compile(r'\.agents/rules/(\d{2}-[a-z0-9][a-z0-9-]*\.md)')
-_TABLE_HEADER = '| Read when | Rule | Strength |'
+_TABLE_HEADER = re.compile(r'^\|[^|]*\|\s*Rule\s*\|\s*Strength\s*\|$')
 _TABLE_ROW = re.compile(r'^\|.*\|\s*$')
 
 
@@ -40,12 +40,13 @@ class ProjectRuleSyncResult:
 
 
 def _rule_row(
-    read_when: str,
+    description: str,
     rule_path: PurePosixPath | None,
     strength: str,
 ) -> str:
     path = '' if rule_path is None else rule_path.as_posix()
-    return f'| {read_when} | `{path}` | {strength} |'
+    description = description.replace('|', '\\|')
+    return f'| {description} | `{path}` | {strength} |'
 
 
 def render_rule_rows(
@@ -64,12 +65,12 @@ def render_rule_rows(
             and (asset.kind != 'rule' or asset.id in config.selected_rules)
         ):
             rows.append(_rule_row(
-                str(metadata.get('read_when', '')),
+                str(metadata.get('description', '')),
                 asset.target,
                 str(metadata.get('strength', '')),
             ))
     rows.extend(
-        _rule_row(rule.read_when, rule.path, rule.strength)
+        _rule_row(rule.description, rule.path, rule.strength)
         for rule in project_rules
         if rule.section == section
     )
@@ -202,7 +203,7 @@ def _preserved_rows(
         return []
     rows = []
     for line in content[bounds[0]:bounds[1]].splitlines():
-        if not _TABLE_ROW.fullmatch(line) or line == _TABLE_HEADER:
+        if not _TABLE_ROW.fullmatch(line) or _TABLE_HEADER.fullmatch(line):
             continue
         if set(line.replace('|', '').strip()) <= {'-', ' '}:
             continue
@@ -242,7 +243,7 @@ def _plan_project_rule_sync(source_root: Path, target_root: Path) -> Plan:
     rows = _sort_rows(
         _preserved_rows(current, managed)
         + [
-            _rule_row(rule.read_when, rule.path, rule.strength)
+            _rule_row(rule.description, rule.path, rule.strength)
             for rule in project_rules
             if rule.section == 'project'
         ]

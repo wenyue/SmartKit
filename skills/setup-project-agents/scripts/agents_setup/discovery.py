@@ -53,13 +53,13 @@ def _rule_metadata(path: Path, relative: PurePosixPath) -> ProjectRuleSpec:
         )
     match = _RULE_NAME.fullmatch(path.name)
     assert match is not None
-    read_when = ' '.join(line.strip() for line in scope.group(1).splitlines()).strip()
-    if not read_when:
+    description = ' '.join(line.strip() for line in scope.group(1).splitlines()).strip()
+    if not description:
         raise DiscoveryError(f'project Rule Scope is empty: {relative.as_posix()}')
     return ProjectRuleSpec(
         relative,
         _rule_section(int(match.group(1))),
-        read_when,
+        description,
         strength.group(1),
     )
 

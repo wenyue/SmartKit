@@ -56,14 +56,29 @@ qoder plugin install smartkit@wenyue
 
 | Capability | What SmartKit provides |
 | --- | --- |
-| Rules | Always-on, file-scoped, and Harness-scoped instructions. Strength wins first (`Mandatory` > `Default` > `Advisory`), followed by project ownership and narrower file scope. Harness scope controls activation and shares the always-on precedence tier. |
+| Rules | Core instructions and Rules that the Agent chooses to read using their content descriptions and the current task. Strength wins first (`Mandatory` > `Default` > `Advisory`), followed by project ownership and narrower applicable scope. Descriptions do not change precedence. |
 | Skills | SmartKit workflows plus reviewed, licensed, version-pinned third-party workflows. |
 | Agents | `change-set-verifier` on all four hosts. It uses the project's change-set-verification Skill, reports `inconclusive` when setup has not installed that Skill, and inherits the host-selected model. Cursor, Copilot, and Qoder receive it from the plugin; Codex receives it through setup-managed default delivery. |
 | MCP | Playwright in isolated headless mode on all four hosts, subject to normal host approval. |
 
-Codex, Copilot CLI, and Qoder receive Rules through Hooks; Cursor uses native plugin Rules. Inspect the
-host's Hook diagnostics when an expected Rule is absent. Copilot cloud agents are outside this
-plugin-Rule contract.
+All four hosts receive core Rules and a Rule index through Hooks. Rule bodies live
+directly under `rules/`; `rules/registry.json` contains only `id`, `source`, `strength`, and
+`description` for each Rule. Rules whose IDs begin with `smartkit/core-` deliver their bodies
+immediately; every other Rule appears in the index with a content description and resolved source
+path. The Agent uses the descriptions and current task to decide what to read, including reading to
+check relevance or re-reading whenever useful. Descriptions are not programmatic loading conditions.
+Loading requires read access to the plugin's Rule directory. Paths locate bodies; they do not trigger
+loading.
+
+Codex and Qoder restore this context through their session lifecycle. Copilot CLI and Cursor track
+context compaction and restore core Rules and the index before the next supported continuation.
+This may require one tool retry or answer review after compaction; ordinary file operations do not
+activate Rules or cause retries. Indexed Rule bodies are re-read by the Agent when needed.
+
+Inspect the host's Hook diagnostics and verify Agent-visible context when an expected Rule is
+absent. Cursor uses the documented `sessionStart.additional_context` interface, whose delivery is
+asynchronous; script success alone does not prove the host injected it. Cursor cloud agents and
+Copilot cloud agents are outside this plugin-Rule contract.
 
 Codex plugin packages do not load custom Agents. Run `setup-project-agents` in each maintained
 project snapshot to install SmartKit's Codex Agent adapter under `.codex/agents/`. The adapter
@@ -75,10 +90,10 @@ All four hosts support Windows and Linux.
 
 | Host | Rules | Skills | Agents | MCP |
 | --- | --- | --- | --- | --- |
-| Codex | Session, prompt, and structured-tool Hooks | Plugin Skill catalog | Setup-managed `change-set-verifier` | Playwright |
-| Cursor | Native plugin Rules | Plugin Skill catalog | `change-set-verifier` | Playwright |
-| GitHub Copilot CLI | Session, transformed-prompt, and structured-tool Hooks | Plugin Skill catalog | `change-set-verifier` | Playwright |
-| Qoder | Session, prompt, and structured-tool Hooks | Plugin Skill catalog | `change-set-verifier` | Playwright |
+| Codex | Session Hooks | Plugin Skill catalog | Setup-managed `change-set-verifier` | Playwright |
+| Cursor | Session Hooks and compaction recovery | Plugin Skill catalog | `change-set-verifier` | Playwright |
+| GitHub Copilot CLI | Session Hooks and compaction recovery | Plugin Skill catalog | `change-set-verifier` | Playwright |
+| Qoder | Session Hooks | Plugin Skill catalog | `change-set-verifier` | Playwright |
 
 ## Set up each project
 
@@ -103,6 +118,10 @@ full setup. Both local operations support a read-only check.
 | Skills | `.agents/skills/`; declare external Skills in `.agents/config.json` |
 | Agents | `.agents/agents/`; declare them in `.agents/config.json` |
 | MCP | `.agents/config.json` |
+
+The project `AGENTS.md` Rule index also uses content descriptions. Setup renders catalog descriptions
+for declared Rules and uses `Scope` metadata to describe additional project Rules. The Agent decides
+which Rules to read from the descriptions and current task, and may re-read them whenever useful.
 
 See the [configuration schema](setup-assets/catalog/project-config.schema.json) for supported fields.
 

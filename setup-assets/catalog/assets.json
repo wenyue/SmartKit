@@ -19,7 +19,7 @@
       "target": ".agents/rules/00-project-tools.md",
       "metadata": {
         "section": "project",
-        "read_when": "Always",
+        "description": "Project tooling, synchronization, mutation authority, and change verification.",
         "strength": "Mandatory",
         "cursor": {
           "alwaysApply": true
@@ -36,7 +36,7 @@
       "target": ".agents/rules/01-project-contracts.md",
       "metadata": {
         "section": "project",
-        "read_when": "Always",
+        "description": "Project APIs, ownership, contract evolution, dependencies, and delivery.",
         "strength": "Mandatory",
         "cursor": {
           "alwaysApply": true
@@ -53,7 +53,7 @@
       "target": ".agents/rules/02-project-structure.md",
       "metadata": {
         "section": "project",
-        "read_when": "Always",
+        "description": "Project structure, placement, responsibility boundaries, and navigation.",
         "strength": "Advisory",
         "cursor": {
           "alwaysApply": true

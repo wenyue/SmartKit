@@ -52,13 +52,24 @@ qoder plugin install smartkit@wenyue
 
 | 能力 | SmartKit 提供的内容 |
 | --- | --- |
-| Rules | Always-on、file-scoped 和 Harness-scoped 指令。优先比较强度（`Mandatory` > `Default` > `Advisory`），再比较项目归属和更窄的文件范围。Harness 范围只控制激活，并与 always-on 处于同一优先级层级。 |
+| Rules | 核心指令，以及由 Agent 根据内容描述和当前任务自主读取的 Rules。优先比较强度（`Mandatory` > `Default` > `Advisory`），再比较项目归属和更窄的适用范围。描述不改变优先级。 |
 | Skills | SmartKit 工作流，以及经过审查、许可证校验和版本固定的第三方工作流。 |
 | Agents | 四个宿主上的 `change-set-verifier`。它使用项目的 change-set-verification Skill；setup 未安装该 Skill 时报告 `inconclusive`，并继承宿主选择的模型。Cursor、Copilot 和 Qoder 从插件获取它；Codex 通过 setup-managed 默认交付获取它。 |
 | MCP | 四个宿主上隔离、无界面模式的 Playwright，并继续遵守宿主正常的审批行为。 |
 
-Codex、Copilot CLI 和 Qoder 通过 Hook 接收 Rules；Cursor 使用原生插件 Rules。预期 Rule 未生效时，请检查
-宿主 Hook 诊断。Copilot cloud agent 不在此插件 Rule 契约范围内。
+四个宿主都通过 Hook 接收核心 Rules 和 Rule 索引。规则正文直接放在 `rules/` 下；
+`rules/registry.json` 的每条 Rule 只包含 `id`、`source`、`strength` 和 `description`。
+ID 以 `smartkit/core-` 开头的规则立即交付正文；其他规则的内容描述和解析后的源文件路径出现在索引中。
+Agent 根据描述和当前任务决定读取哪些规则，也可以先读取确认相关性，或在有需要时重新读取。
+描述不是由程序判断的加载条件。加载需要对插件 Rule 目录具有读取权限。路径用于定位正文，不用于触发加载。
+
+Codex 和 Qoder 通过会话生命周期恢复这些上下文。Copilot CLI 和 Cursor 跟踪上下文压缩，
+在下一个受支持的继续执行节点前恢复核心 Rules 和索引。因此，压缩后可能需要重试一次工具调用
+或重新检查答案；普通文件操作不会激活 Rules，也不会引发重试。索引中的规则正文由 Agent 按需重新读取。
+
+预期 Rule 未生效时，请检查宿主 Hook 诊断，并验证 Agent 实际可见的上下文。Cursor 使用文档规定的
+`sessionStart.additional_context` 接口，其交付是异步的；脚本成功本身不能证明宿主完成了注入。
+Cursor cloud agent 和 Copilot cloud agent 不在此插件 Rule 契约范围内。
 
 Codex 插件包不会加载自定义 Agents。请在每个受维护的项目快照中运行 `setup-project-agents`，将
 SmartKit 的 Codex Agent adapter 安装到 `.codex/agents/`。该 adapter 仍归插件所有，不需要在
@@ -70,10 +81,10 @@ SmartKit 的 Codex Agent adapter 安装到 `.codex/agents/`。该 adapter 仍归
 
 | 宿主 | Rules | Skills | Agents | MCP |
 | --- | --- | --- | --- | --- |
-| Codex | 会话、提示词和结构化工具 Hook | 插件 Skill catalog | Setup-managed `change-set-verifier` | Playwright |
-| Cursor | 原生插件 Rules | 插件 Skill catalog | `change-set-verifier` | Playwright |
-| GitHub Copilot CLI | 会话、转换提示词和结构化工具 Hook | 插件 Skill catalog | `change-set-verifier` | Playwright |
-| Qoder | 会话、提示词和结构化工具 Hook | 插件 Skill catalog | `change-set-verifier` | Playwright |
+| Codex | 会话 Hook | 插件 Skill catalog | Setup-managed `change-set-verifier` | Playwright |
+| Cursor | 会话 Hook 与压缩后恢复 | 插件 Skill catalog | `change-set-verifier` | Playwright |
+| GitHub Copilot CLI | 会话 Hook 与压缩后恢复 | 插件 Skill catalog | `change-set-verifier` | Playwright |
+| Qoder | 会话 Hook | 插件 Skill catalog | `change-set-verifier` | Playwright |
 
 ## 为每个项目执行设置
 
@@ -90,6 +101,10 @@ SmartKit 的 Codex Agent adapter 安装到 `.codex/agents/`。该 adapter 仍归
 | Skills | `.agents/skills/`；外部 Skills 在 `.agents/config.json` 中声明 |
 | Agents | `.agents/agents/`；在 `.agents/config.json` 中声明 |
 | MCP | `.agents/config.json` |
+
+项目 `AGENTS.md` 的 Rule 索引同样使用内容描述。setup 为目录声明的 Rules 渲染目录中的描述，
+并使用额外项目 Rule 的 `Scope` 元数据作为描述。Agent 根据描述和当前任务决定读取哪些规则，
+并可按需重新读取。
 
 支持的字段见[配置 schema](setup-assets/catalog/project-config.schema.json)。
 

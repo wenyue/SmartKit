@@ -1,17 +1,17 @@
 {
   "rules": [
-    {"id": "smartkit/core-instruction-governance", "source": "source/core-instruction-governance.md", "strength": "Mandatory", "trigger": {"type": "always"}},
-    {"id": "smartkit/harness-codex", "source": "source/harness-codex.md", "strength": "Default", "trigger": {"type": "harness", "harnesses": ["codex"]}},
-    {"id": "smartkit/core-personality", "source": "source/core-personality.md", "strength": "Default", "trigger": {"type": "always"}},
-    {"id": "smartkit/core-communication", "source": "source/core-communication.md", "strength": "Mandatory", "trigger": {"type": "always"}},
-    {"id": "smartkit/core-response-format", "source": "source/core-response-format.md", "strength": "Default", "trigger": {"type": "always"}},
-    {"id": "smartkit/core-reasoning-workflow", "source": "source/core-reasoning-workflow.md", "strength": "Mandatory", "trigger": {"type": "always"}},
-    {"id": "smartkit/core-third-party-skill-policy", "source": "source/core-third-party-skill-policy.md", "strength": "Mandatory", "trigger": {"type": "always"}},
-    {"id": "smartkit/core-workspace-policy", "source": "source/core-workspace-policy.md", "strength": "Mandatory", "trigger": {"type": "always"}},
-    {"id": "smartkit/file-code", "source": "source/file-code.md", "strength": "Default", "trigger": {"type": "always"}},
-    {"id": "smartkit/file-cpp", "source": "source/file-cpp.md", "strength": "Default", "trigger": {"type": "file", "include_globs": ["**/*.c", "**/*.cc", "**/*.cpp", "**/*.cxx", "**/*.h", "**/*.hh", "**/*.hpp"]}},
-    {"id": "smartkit/file-flutter", "source": "source/file-flutter.md", "strength": "Default", "trigger": {"type": "file", "include_globs": ["**/*.dart", "pubspec.yaml", "**/pubspec.yaml"]}},
-    {"id": "smartkit/file-go", "source": "source/file-go.md", "strength": "Default", "trigger": {"type": "file", "include_globs": ["**/*.go", "go.mod", "go.work", "**/go.mod"]}},
-    {"id": "smartkit/file-python", "source": "source/file-python.md", "strength": "Default", "trigger": {"type": "file", "include_globs": ["**/*.py", "**/*.pyi"]}}
+    {"id": "smartkit/core-instruction-governance", "source": "core-instruction-governance.md", "strength": "Mandatory", "description": "Instruction authority, Rule and Skill precedence, and conflict handling."},
+    {"id": "smartkit/harness-codex", "source": "harness-codex.md", "strength": "Default", "description": "Codex subagent tools, JavaScript orchestration, and Agent waits."},
+    {"id": "smartkit/core-personality", "source": "core-personality.md", "strength": "Default", "description": "Agent reasoning posture, judgment priorities, collaboration, and temperament."},
+    {"id": "smartkit/core-communication", "source": "core-communication.md", "strength": "Mandatory", "description": "Communication accuracy, clarity, and audience routing."},
+    {"id": "smartkit/core-response-format", "source": "core-response-format.md", "strength": "Default", "description": "Response language, formatting, tags, and work reports."},
+    {"id": "smartkit/core-reasoning-workflow", "source": "core-reasoning-workflow.md", "strength": "Mandatory", "description": "Task understanding, change readiness, execution, and verification."},
+    {"id": "smartkit/core-third-party-skill-policy", "source": "core-third-party-skill-policy.md", "strength": "Mandatory", "description": "SmartKit policy for third-party Skill artifacts and workflows."},
+    {"id": "smartkit/core-workspace-policy", "source": "core-workspace-policy.md", "strength": "Mandatory", "description": "Workspace selection, existing work preservation, commits, and remote actions."},
+    {"id": "smartkit/file-code", "source": "file-code.md", "strength": "Default", "description": "Code ownership, APIs, abstraction, state, dependencies, diagnostics, and documentation."},
+    {"id": "smartkit/file-cpp", "source": "file-cpp.md", "strength": "Default", "description": "C++ ownership, interfaces, resource lifetimes, failures, and concurrency."},
+    {"id": "smartkit/file-flutter", "source": "file-flutter.md", "strength": "Default", "description": "Dart and Flutter ownership, data models, state, lifecycle, UI, and routing."},
+    {"id": "smartkit/file-go", "source": "file-go.md", "strength": "Default", "description": "Go packages, APIs, errors, context, concurrency, and logging."},
+    {"id": "smartkit/file-python", "source": "file-python.md", "strength": "Default", "description": "Python APIs, typing, data boundaries, failures, and resource management."}
   ]
 }

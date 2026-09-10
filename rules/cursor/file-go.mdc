@@ -1,6 +1,0 @@
----
-globs: "**/*.go,go.mod,go.work,**/go.mod"
-alwaysApply: false
----
-
-Apply @../source/file-go.md

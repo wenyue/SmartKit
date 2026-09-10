@@ -56,7 +56,6 @@ _MANIFESTS = (
         {
             'agents': './agents/cursor/',
             'skills': './skills/',
-            'rules': './rules/cursor/',
         },
     ),
     (

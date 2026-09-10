@@ -356,8 +356,8 @@ def parse_mcp_servers(value: object) -> tuple[McpServerSpec, ...]:
 
 def _rule_metadata(value: object, *, project_blueprint: bool) -> Mapping[str, object]:
     metadata = _object(value, 'asset metadata')
-    _fields(metadata, frozenset({'section', 'read_when', 'strength', 'cursor', 'github'}), 'rule metadata')
-    for field in ('section', 'read_when', 'strength', 'cursor', 'github'):
+    _fields(metadata, frozenset({'section', 'description', 'strength', 'cursor', 'github'}), 'rule metadata')
+    for field in ('section', 'description', 'strength', 'cursor', 'github'):
         _required(metadata, field, 'rule metadata')
     section = _nonempty_string(metadata['section'], 'rule metadata section')
     if section not in {'global', 'base', 'project'} or (project_blueprint and section != 'project'):
@@ -365,7 +365,7 @@ def _rule_metadata(value: object, *, project_blueprint: bool) -> Mapping[str, ob
     strength = _nonempty_string(metadata['strength'], 'rule metadata strength')
     if strength not in {'Mandatory', 'Default', 'Advisory'}:
         raise ContractError('rule metadata strength is unsupported')
-    _nonempty_string(metadata['read_when'], 'rule metadata read_when')
+    _nonempty_string(metadata['description'], 'rule metadata description')
     cursor = _object(metadata['cursor'], 'rule metadata cursor')
     allowed_cursor = {'alwaysApply'} if project_blueprint else {'description', 'globs', 'alwaysApply'}
     _fields(cursor, frozenset(allowed_cursor), 'rule metadata cursor')

@@ -5,6 +5,28 @@
       {
         "name": "smartkit Python and daily project readiness check",
         "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/recommended-tools/run_recommended_tools.cmd\" hook --harness cursor --delivery context"
+      },
+      {
+        "name": "smartkit core Rules and Rule index",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/rules/dispatch.cmd\" --harness cursor --event session"
+      }
+    ],
+    "preCompact": [
+      {
+        "name": "smartkit Rule context compaction",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/rules/dispatch.cmd\" --harness cursor --event compact"
+      }
+    ],
+    "preToolUse": [
+      {
+        "name": "smartkit Rule context restoration",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/rules/dispatch.cmd\" --harness cursor --event tool"
+      }
+    ],
+    "stop": [
+      {
+        "name": "smartkit Rule context restoration before completion",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/rules/dispatch.cmd\" --harness cursor --event stop"
       }
     ]
   }

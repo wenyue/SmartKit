@@ -7,6 +7,12 @@
 
 Status: Accepted
 
+> **Rule delivery superseded (2026-09-11):** The trigger selectors, Cursor adapters, and file-Rule
+> activation described below are historical. The current delivery contract uses `description`,
+> core-body injection, and a descriptive Rule index on all four hosts, as described in
+> [the README](../../README.md#plugin-rules-skills-agents-and-mcp). The terminology and
+> plugin-version decisions remain accepted.
+
 Date: 2026-08-15
 
 ## Context

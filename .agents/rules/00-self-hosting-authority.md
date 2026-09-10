@@ -6,7 +6,7 @@
 This Rule owns only self-hosting copy authority. For every independently applicable SmartKit or
 project Rule or Skill, use its corresponding current-checkout source when it exists:
 
-- SmartKit Rules: `rules/source/**`
+- SmartKit Rules: `rules/*.md`
 - project Rules: `.agents/rules/**`
 - SmartKit Skills exposed by plugin manifests: `skills/<name>/**`
 - project Skills: `.agents/skills/**`

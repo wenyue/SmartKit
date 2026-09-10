@@ -21,34 +21,6 @@
           }
         ]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event prompt",
-            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event prompt",
-            "timeout": 30,
-            "additionalContextLimit": 50000,
-            "statusMessage": "Loading SmartKit prompt rules"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"${PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness codex --event tool",
-            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness codex --event tool",
-            "timeout": 30,
-            "additionalContextLimit": 50000,
-            "statusMessage": "Loading SmartKit tool rules"
-          }
-        ]
-      }
     ]
   }
 }

@@ -19,7 +19,6 @@ ENTRY_POINTS = (
     'skills/finish-worktree/scripts/consolidate_worktree_history.py',
     'skills/setup-project-agents/scripts/workflow.py',
     'scripts/sync_agent_adapters.py',
-    'scripts/sync_cursor_rule_adapters.py',
     'scripts/sync_mcp_adapters.py',
     'scripts/sync_plugin_version.py',
     'scripts/update_external_skills.py',

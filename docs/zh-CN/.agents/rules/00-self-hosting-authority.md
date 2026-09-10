@@ -6,7 +6,7 @@
 本 Rule 仅负责自举副本的权威。对于每个独立适用的 SmartKit 或项目 Rule 或 Skill，只要当前
 checkout 中存在对应来源，就必须使用该来源：
 
-- SmartKit Rules：`rules/source/**`
+- SmartKit Rules：`rules/*.md`
 - 项目 Rules：`.agents/rules/**`
 - 插件清单暴露的 SmartKit Skills：`skills/<name>/**`
 - 项目 Skills：`.agents/skills/**`

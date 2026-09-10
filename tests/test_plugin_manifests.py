@@ -144,7 +144,7 @@ class PluginManifestTest(unittest.TestCase):
         for root_name in (
             '.agents',
             'agents/source',
-            'rules/source',
+            'rules',
             'setup-assets/blueprints',
             'skills/setup-project-agents',
         ):
@@ -399,7 +399,7 @@ class PluginManifestTest(unittest.TestCase):
 
         self.assertEqual(codex['hooks'], './hooks/codex.json')
         self.assertEqual(cursor['hooks'], './hooks/cursor.json')
-        self.assertEqual(cursor['rules'], './rules/cursor/')
+        self.assertNotIn('rules', cursor)
         self.assertEqual(copilot['hooks'], './hooks/copilot.json')
         self.assertEqual(qoder['hooks'], './hooks/qoder.json')
         self.assertEqual(codex['mcpServers'], './mcp/codex.json')
@@ -508,11 +508,11 @@ class PluginManifestTest(unittest.TestCase):
 
         self.assertEqual(
             set(load_json('hooks/codex.json')['hooks']),
-            {'SessionStart', 'UserPromptSubmit', 'PreToolUse'},
+            {'SessionStart'},
         )
         self.assertEqual(
             set(load_json('hooks/cursor.json')['hooks']),
-            {'sessionStart'},
+            {'sessionStart', 'preCompact', 'preToolUse', 'stop'},
         )
         cursor_hooks = load_json('hooks/cursor.json')['hooks']
         self.assertIn(
@@ -531,7 +531,7 @@ class PluginManifestTest(unittest.TestCase):
         )
         self.assertEqual(
             set(load_json('hooks/qoder.json')['hooks']),
-            {'SessionStart', 'UserPromptSubmit', 'PreToolUse'},
+            {'SessionStart'},
         )
 
     def test_cursor_hook_uses_cross_platform_dispatcher(self):

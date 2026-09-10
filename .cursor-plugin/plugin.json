@@ -16,7 +16,6 @@
   "category": "developer-tools",
   "agents": "./agents/cursor/",
   "skills": "./skills/",
-  "rules": "./rules/cursor/",
   "hooks": "./hooks/cursor.json",
   "mcpServers": "./mcp/cursor.json"
 }

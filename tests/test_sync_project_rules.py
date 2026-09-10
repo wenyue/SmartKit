@@ -35,8 +35,9 @@ class SyncProjectRulesTest(unittest.TestCase):
             original = (
                 '# Repository\n\n'
                 '## Project rules\n\n'
-                'Read every project Rule whose `Read when` condition matches the current task.\n\n'
-                '| Read when | Rule | Strength |\n'
+                'Use the descriptions and current task to decide which project Rules to read before related work.\n'
+                'Read a Rule to check its relevance when uncertain, and re-read it whenever useful.\n\n'
+                '| Description | Rule | Strength |\n'
                 '| --- | --- | --- |\n'
                 '| Managed tools | `.agents/rules/00-project-tools.md` | Mandatory |\n'
                 '| Old scope | `.agents/rules/20-local.md` | Default |\n\n'
@@ -124,7 +125,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.write_rule(
                 target,
                 '30-testing.md',
-                scope='Current test ownership.',
+                scope='Current test ownership: unit | integration.',
                 strength='Mandatory',
             )
             self.write_rule(
@@ -166,9 +167,11 @@ class SyncProjectRulesTest(unittest.TestCase):
                 updated,
             )
             self.assertIn(
-                b'| Current test ownership. | `.agents/rules/30-testing.md` | Mandatory |',
+                b'| Current test ownership: unit \\| integration. | `.agents/rules/30-testing.md` | Mandatory |',
                 updated,
             )
+            self.assertIn(b'| Description | Rule | Strength |', updated)
+            self.assertNotIn(b'Read when', updated)
             self.assertIn(
                 b'| Newly added checks. | `.agents/rules/50-added.md` | Default |',
                 updated,

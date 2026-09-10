@@ -1,8 +1,9 @@
 ## Project rules
 
-Read every project Rule whose `Read when` condition matches the current task.
+Use the descriptions and current task to decide which project Rules to read before related work.
+Read a Rule to check its relevance when uncertain, and re-read it whenever useful.
 
-| Read when | Rule | Strength |
+| Description | Rule | Strength |
 | --- | --- | --- |
 {{project_rule_rows}}
 
