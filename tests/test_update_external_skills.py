@@ -12,6 +12,9 @@ from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / 'scripts' / 'update_external_skills.py'
+MIT_LICENSE = (
+    REPO_ROOT / 'skills/setup-project-agents/scripts/_vendor/tomli/LICENSE'
+).read_text(encoding='utf-8')
 
 
 def load_module():
@@ -66,7 +69,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         for upstream, name in ((alpha, 'alpha'), (beta, 'beta')):
             write_skill(upstream, f'skills/{name}', name, 'version one')
             (upstream / 'LICENSE').write_text(
-                'MIT License\n\nPermission is hereby granted, free of charge.\n',
+                MIT_LICENSE,
                 encoding='utf-8',
             )
         registry = self.registry([
@@ -95,8 +98,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         write_skill(project, 'skills/setup-project-agents', 'setup-project-agents', 'custom')
         write_skill(upstream, 'skills/alpha', 'alpha', 'external')
         (upstream / 'LICENSE').write_text(
-            'MIT License\n\nPermission is hereby granted, free of charge, to any person '
-            'obtaining a copy of this software.\n',
+            MIT_LICENSE,
             encoding='utf-8',
         )
         registry = {
@@ -167,7 +169,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         write_skill(project, 'skills/custom', 'custom', 'custom')
         write_skill(upstream, 'skills/alpha', 'alpha', 'external')
         (upstream / 'LICENSE').write_text(
-            'MIT License\n\nPermission is hereby granted, free of charge.\n',
+            MIT_LICENSE,
             encoding='utf-8',
         )
         (project / 'skills/registry.json').write_text(
@@ -222,7 +224,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         write_skill(upstream, 'skills/alpha', 'alpha', 'version one')
         write_skill(upstream, 'skills/beta', 'beta', 'version one')
         (upstream / 'LICENSE').write_text(
-            'MIT License\n\nPermission is hereby granted, free of charge.\n',
+            MIT_LICENSE,
             encoding='utf-8',
         )
         (project / 'skills/registry.json').write_text(
@@ -383,7 +385,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         write_skill(project, 'skills/custom', 'custom', 'custom')
         write_skill(upstream, 'skills/alpha', 'alpha', 'external')
         (upstream / 'LICENSE').write_text(
-            'MIT License\nPermission is hereby granted, free of charge.\n',
+            MIT_LICENSE,
             encoding='utf-8',
         )
         (project / 'skills/registry.json').write_text(
@@ -448,7 +450,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         upstream.mkdir()
         (upstream / 'skills').symlink_to(outside, target_is_directory=True)
         (upstream / 'LICENSE').write_text(
-            'MIT License\nPermission is hereby granted, free of charge.\n',
+            MIT_LICENSE,
             encoding='utf-8',
         )
         source = self.module.ExternalSource(

@@ -342,7 +342,14 @@ class TransferTests(unittest.TestCase):
     @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
     def test_canonical_path_alias_rejection_precedes_mutation(self):
         plan = self.plan({"a.txt": b"accepted\n"})
-        with patch.object(transfer.os, "readlink", return_value="/different/physical/path"):
+        readlink = transfer.os.readlink
+
+        def canonical_alias(path, *args, **kwargs):
+            if str(path).startswith("/proc/self/fd/"):
+                return "/different/physical/path"
+            return readlink(path, *args, **kwargs)
+
+        with patch.object(transfer.os, "readlink", side_effect=canonical_alias):
             with self.assertRaisesRegex(transfer.TransferError, "physical path alias"):
                 transfer.prepare(plan, self.operation)
         self.assertFalse(self.operation.exists())

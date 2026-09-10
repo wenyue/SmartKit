@@ -2,8 +2,9 @@
 
 Strength: `Default`
 
-Scope: Cross-language ownership, boundaries, clarity, local consistency, state integrity,
-dependencies, abstractions, diagnostics, and documentation.
+Scope: Writing, modifying, and reviewing code across languages, covering ownership, boundaries,
+clarity, local consistency, state integrity, dependencies, abstractions, diagnostics, and
+documentation.
 
 ## Ownership And APIs
 
@@ -16,7 +17,7 @@ dependencies, abstractions, diagnostics, and documentation.
 ## Clarity And Abstraction
 
 - Before editing code, inspect the target file and nearby implementations for comparable work.
-  Follow their established naming, structure, control flow, API, and comment patterns unless a more
+  Follow their established naming, structure, control flow, and API patterns unless a more
   specific rule or an explicitly approved design requires a deliberate departure.
 - Use names, types, and structure to make responsibilities, valid states, and the main decision path
   understandable locally.
@@ -45,7 +46,25 @@ dependencies, abstractions, diagnostics, and documentation.
 
 ## Documentation
 
-- Use comments to preserve rationale, invariants, lifecycle constraints, external requirements, and
-  non-obvious edge cases.
-- Keep code narration, repeated names, and edit history out of comments; when design is unclear,
-  improve the design instead of explaining around it.
+- Decide whether to comment, what kind of comment to use, and how much detail to include by jointly
+  weighing its purpose, the code's actual sharing and use boundaries, behavioral or contract
+  complexity, information value, and comparable nearby code. Give local comment presence or
+  absence, style, detail, and visual coherence real weight without making any factor the fixed
+  priority or local practice the default answer. A well-grounded judgment may favor adding or
+  omitting a comment without proving neighboring code wrong.
+- Follow applicable explicit documentation syntax and formatting requirements; distinguish these
+  requirements from observed habits, which inform the judgment above.
+- Give shared and externally consumed interfaces deliberate documentation attention. Assess the
+  actual contract: one caller can still consume a shared contract, language-level public visibility
+  alone does not require documentation, and simple local functions need no blanket coverage.
+  Document important caller constraints and behavior that names, types, and signatures do not make
+  clear, including relevant invariants, lifecycle obligations, external requirements, and edge cases.
+- Distinguish API documentation, which explains the caller's contract, from internal comments,
+  which help readers understand the implementation, by purpose rather than placement. Keep internal
+  comments concise, adding detail when understanding requires it. They may explain rationale,
+  constraints, or tradeoffs, or briefly label logical sections when that improves reading and visual
+  organization, inside or outside functions. A useful section label need not reveal hidden knowledge.
+- Keep comments accurate and useful as code changes; update or remove stale or redundant text.
+  Use section labels sparingly enough to preserve the flow of the code. Avoid line-by-line
+  narration, repeated names, and edit history; when design is unclear, improve the design instead
+  of explaining around it.

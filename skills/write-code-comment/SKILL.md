@@ -1,89 +1,78 @@
 ---
 name: write-code-comment
-description: Use when deciding whether code needs a comment, or when adding, editing, or reviewing code comments or documentation comments, so they follow the target project's conventions and explain non-obvious intent, constraints, or behavior.
+description: Use for dedicated code-comment or documentation-comment assessment, review, completion, cleanup, or migration. Incidental commenting during feature work does not trigger this Skill; explicit invocation remains available.
 ---
 
 # Write Code Comment
 
-Decide whether a code or documentation comment is necessary, then review or edit the authorized
-surface. A useful comment preserves consequential meaning that the owning code, name, type,
-structure, or documentation cannot express clearly enough.
+Complete a dedicated comment assessment, review, completion, cleanup, or migration within the
+requested scope. Use this workflow when comment work is the task or the user explicitly invokes it;
+ordinary incidental commenting during feature work stays within that work's workflow.
 
 ## Principles
 
-- **Meaning over narration.** Preserve non-obvious rationale, invariants, trade-offs, behavior, and
-  constraints. Omit prose that merely restates the code, repeats names, or records edit history.
-- **Semantic ownership.** Put each fact where it belongs: caller-visible contracts in the required
-  API-documentation surface, broader concepts in their owning documentation, and local rationale or
-  constraints beside the implementation.
-- **Grounded judgment.** Judge comments against the current implementation, contracts, project
-  conventions, and owner-supported language or toolchain mechanisms. Nearby comments are evidence
-  only when their ownership and applicability are credible.
-- **Exact authority.** Distinguish review-only work, comment edits, and independently authorized
-  changes to code, names, types, or structure. The need for a comment grants no structural
-  authority.
-- **Durable truth.** Keep comments aligned with owned behavior and preserve required directives,
-  generated markers, protocol tokens, machine-readable forms, and externally defined wording.
+- **Evidence-based judgment.** Ground decisions in the implementation, contracts, applicable target
+  requirements, and comparable local evidence. Distinguish explicit requirements from observed
+  habits, which inform judgment without binding it.
+- **Information ownership.** Route caller contracts to API documentation, local reasons to the
+  implementation, and broader concepts to their owning documentation. Routing identifies the right
+  destination; it grants no authority to change it.
+- **Proportionate changes.** Make the coherent changes needed for the authorized outcome. Comment
+  work alone does not authorize changes to code, names, types, or structure; recommend those
+  corrections when they fall outside scope.
 
 ## Establish the decision
 
-Inspect the implementation, contracts, project conventions, owner documentation, and native
-comment mechanisms needed for the requested surface. Expand the evidence only when a remaining
-uncertainty could change the comment's need, owner, form, routing, validation, or truth. If the
-project has no applicable comment convention, use a reliably established native mechanism; that
-absence alone is not a blocker. State any evidence boundary that limits the resulting claim.
+Establish whether the request authorizes review only or edits, and identify the target locations and
+owners. Inspect the implementation, contracts, applicable documentation requirements, comparable
+nearby code and comments, and native comment mechanisms needed to decide the comment's need, form,
+content, and destination. Expand the evidence when a remaining uncertainty could change the action
+or its validation. If no applicable convention exists, use a reliably established native mechanism;
+that absence alone is not a blocker.
 
-Confirm the authorized mode and target owner before acting. For a generated or otherwise managed
-surface, follow its canonical edit and generation route only when those effects are authorized. If
-the selected action requires ownership, a mandatory convention, or write authority that cannot be
-established, stop and report the exact missing fact or access.
+For generated or otherwise managed surfaces, establish the canonical edit route and the authority
+for its required effects before editing. If material ownership, a required convention, or necessary
+access or authorization cannot be established, stop the dependent action and report exactly what
+is missing. Continue independent authorized work, keeping claims within the available evidence.
 
-## Judge and act
-
-A comment earns its place when an applicable convention requires it or a future maintainer or
-caller would otherwise miss consequential rationale, an invariant, a trade-off, caller-visible
-behavior, or a lifecycle, failure, ordering, concurrency, security, compatibility, or protocol
-constraint.
-
-Prefer an independently authorized name, type, signature, or structural correction when it makes
-the fact enforceable or self-evident. Without that authority, preserve the structure and hand off
-the exact correction and owner rather than explaining around the defect.
-
-Stale, misleading, redundant, or purely narrative prose does not earn its place; still-valid
-non-obvious facts and protected forms do.
+## Review or edit
 
 ### Review only
 
 Leave files and structures unchanged. Cover the requested locations and the implementation or
-contract paths materially needed to judge them. Report each actionable missing, misleading, stale,
-or redundant comment at a precise location, with the consequential meaning or conflict and its
-governing evidence.
+contract paths materially needed to judge them. Report actionable missing, misleading, stale, or
+redundant comments at precise locations, with their consequential meaning or conflict and governing
+evidence. Include recommended moves or structural corrections with their owners when relevant.
 
-When the available evidence cannot support exhaustive coverage, state the covered boundary and
-untested remainder; make no broader no-finding claim. If nothing is actionable within that boundary,
-say so.
+If nothing is actionable, say so within the reviewed boundary. Identify incomplete coverage and
+untested paths rather than extending a no-finding claim beyond the evidence.
 
 ### Authorized edits
 
-Change only the selected comment surface or independently authorized code, name, type, or structure,
-plus required owner-managed outputs within scope. Remove or update prose that does not earn its
-place while preserving its still-valid meaning and protected forms. Express missing meaning at its
-narrowest truthful scope in the target's established terminology and form. Keep related in-scope
-comments aligned with any code change.
+Apply the target's documentation requirements and the established evidence to add, revise, remove,
+or relocate comments within scope. Express meaning truthfully in the target's terminology and form.
+Preserve still-valid meaning during cleanup or migration, including when removing prose whose
+meaning is already clear in code or another owning surface. For relocation, remove the original
+content only once it is safely represented at the authorized destination. Recommend out-of-scope
+moves while retaining information that cannot yet be safely relocated.
 
-When the implementation or owning contract appears wrong but lies outside scope, preserve it and
-hand off the exact conflict and owner rather than making the comment present intended behavior as
-fact.
+Preserve required machine directives, generated markers, protocol tokens, machine-readable forms,
+and externally defined wording. Follow the authorized canonical route for managed surfaces and
+include required outputs only within that authority. Keep related in-scope comments aligned with
+independently authorized code changes.
+
+When implementation and the owning contract conflict, resolve the conflict only within authorized
+scope. Otherwise, report the conflict and owner without presenting intended behavior as implemented.
 
 ## Validate and hand off
 
-Run every owner-required check for the authorized targets and their required owner-managed outputs.
-Add the least burdensome owner-supported checks that materially increase confidence in changed
-behavior or a likely regression. Report each check, covered target, and result. Mark a selected
-target untested when no relevant check exists; if a required check is unavailable or fails, report
-the blocker or failure without claiming completion.
+Run relevant available owner-supported checks, including every required check for authorized targets
+and required managed outputs. Add proportionate checks only when they materially improve confidence
+in the change or a likely regression. Record what was checked and the result; identify untested
+targets when no relevant check exists. If a required check is unavailable or fails, report the
+blocker or failure and keep the work incomplete.
 
-Complete the requested review or edits only after owned requirements are preserved and required
-validation succeeds. Hand off the changed or reviewed locations, consequential no-comment
-decisions, non-obvious meaning preserved, governing evidence, validation status, and every remaining
-uncertainty, ownership conflict, blocked action, or out-of-scope correction.
+Complete the authorized review or edits with owned requirements preserved and required validation
+successful. Give a concise handoff of reviewed or changed locations, consequential decisions and
+supporting evidence, validation status, and any incomplete coverage, uncertainty, blocked action,
+ownership conflict, or recommended out-of-scope correction.

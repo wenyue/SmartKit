@@ -1,7 +1,7 @@
 {
   "plugin": {
     "id": "smartkit",
-    "version": "1.2.8",
+    "version": "1.2.9",
     "repository": "https://github.com/wenyue/SmartKit.git",
     "ref": "master"
   },
@@ -19,7 +19,7 @@
       "target": ".agents/rules/00-project-tools.md",
       "metadata": {
         "section": "project",
-        "read_when": "Project tooling, MCP, runtime, or verification",
+        "read_when": "Always",
         "strength": "Mandatory",
         "cursor": {
           "alwaysApply": true
@@ -36,7 +36,7 @@
       "target": ".agents/rules/01-project-contracts.md",
       "metadata": {
         "section": "project",
-        "read_when": "APIs, capability ownership, installation, documentation, evaluation, contract evolution, distribution, hard dependencies, or exposure",
+        "read_when": "Always",
         "strength": "Mandatory",
         "cursor": {
           "alwaysApply": true
@@ -53,7 +53,7 @@
       "target": ".agents/rules/02-project-structure.md",
       "metadata": {
         "section": "project",
-        "read_when": "Making structure, module, or dependency-boundary decisions",
+        "read_when": "Always",
         "strength": "Advisory",
         "cursor": {
           "alwaysApply": true

@@ -389,6 +389,79 @@ class PluginRuleContractTest(unittest.TestCase):
             self.assertFalse((root / 'rules/cursor/file-new.mdc').exists())
             self.assertEqual(self.run_adapter_sync(root, '--check').returncode, 0)
 
+    def test_code_rule_is_available_before_filename_independent_code_work(self):
+        source = (ROOT / 'rules/source/file-code.md').read_text(encoding='utf-8').strip()
+        prompts = (
+            'Review the comments in src/Service.java',
+            'Update the API documentation in src/Service.kt',
+            'Edit the extensionless script bin/launch',
+            'Review this inline code: return value + 1',
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for harness in ('codex', 'copilot', 'qoder'):
+                with self.subTest(harness=harness):
+                    session = self.run_dispatch(
+                        harness, 'session', {'session_id': harness},
+                        plugin_data=Path(temp_dir),
+                    )
+                    context = (
+                        session['additionalContext'] if harness == 'copilot'
+                        else session['hookSpecificOutput']['additionalContext']
+                    )
+                    self.assertEqual(context.count('Rule-ID: smartkit/file-code;'), 1)
+                    self.assertIn(source, context)
+                    for rule in ('file-cpp', 'file-flutter', 'file-go', 'file-python'):
+                        self.assertNotIn(f'Rule-ID: smartkit/{rule};', context)
+
+                    for prompt in prompts:
+                        delivered = self.run_dispatch(
+                            harness, 'prompt',
+                            {'session_id': harness, 'prompt': prompt},
+                            plugin_data=Path(temp_dir),
+                        )
+                        if harness == 'copilot':
+                            self.assertEqual(delivered['modifiedTransformedPrompt'], prompt)
+                        else:
+                            self.assertEqual(
+                                delivered['hookSpecificOutput']['additionalContext'], ''
+                            )
+
+    def test_code_rule_restores_without_prior_file_activation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            plugin_data = Path(temp_dir)
+            for source in ('resume', 'compact'):
+                with self.subTest(harness='codex', source=source):
+                    restored = self.run_dispatch(
+                        'codex', 'session',
+                        {'session_id': 'code-restoration', 'source': source},
+                        plugin_data=plugin_data,
+                    )['hookSpecificOutput']['additionalContext']
+                    self.assertEqual(restored.count('Rule-ID: smartkit/file-code;'), 1)
+                    self.assertNotIn('Rule-ID: smartkit/file-python;', restored)
+
+            self.run_dispatch(
+                'copilot', 'session', {'sessionId': 'code-restoration'},
+                plugin_data=plugin_data,
+            )
+            self.run_dispatch(
+                'copilot', 'compact', {'sessionId': 'code-restoration'},
+                plugin_data=plugin_data,
+            )
+            restored = self.run_dispatch(
+                'copilot', 'prompt',
+                {'sessionId': 'code-restoration', 'transformedPrompt': 'Continue'},
+                plugin_data=plugin_data,
+            )['modifiedTransformedPrompt']
+            self.assertEqual(restored.count('Rule-ID: smartkit/file-code;'), 1)
+            self.assertNotIn('Rule-ID: smartkit/file-python;', restored)
+
+    def test_cursor_code_rule_loads_without_filename_matching(self):
+        adapter = (ROOT / 'rules/cursor/file-code.mdc').read_text(encoding='utf-8')
+        self.assertEqual(
+            adapter,
+            '---\nalwaysApply: true\n---\n\nApply @../source/file-code.md\n',
+        )
+
     def test_router_loads_always_then_matching_file_rules(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             plugin_data = Path(temp_dir)

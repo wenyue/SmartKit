@@ -1,6 +1,5 @@
 ---
-globs: "**/*.c,**/*.cc,**/*.cpp,**/*.cxx,**/*.h,**/*.hh,**/*.hpp,**/*.dart,**/*.go,**/*.js,**/*.jsx,**/*.py,**/*.rs,**/*.ts,**/*.tsx"
-alwaysApply: false
+alwaysApply: true
 ---
 
 Apply @../source/file-code.md
