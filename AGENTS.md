@@ -2,16 +2,18 @@
 
 ## Project rules
 
-Use the descriptions and current task to decide which project Rules to read before related work.
-Read a Rule to check its relevance when uncertain, and re-read it whenever useful.
-
-| Description | Rule | Strength |
-| --- | --- | --- |
-| Current-checkout authority for SmartKit and project Rules and Skills. | `.agents/rules/00-self-hosting-authority.md` | `Mandatory` |
-| Repository delivery ownership, contract retirement, verification, and Rule/Skill translation. | `.agents/rules/01-project-policy.md` | `Mandatory` |
-
 Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the
-files listed above.
+files listed below.
+
+### Required rules
+
+Read every Rule below before starting a task. After context compaction, re-read any of these Rules
+whose body is no longer available in context.
+
+| Rule | Strength |
+| --- | --- |
+| `.agents/rules/00-self-hosting-authority.md` | Mandatory |
+| `.agents/rules/01-project-policy.md` | Mandatory |
 
 ## Agent skills
 

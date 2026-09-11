@@ -1403,6 +1403,11 @@ class SetupRendererTest(unittest.TestCase):
             rendered = self.render(target, self.generated_tree(root))
             agents = rendered.files_by_path['AGENTS.md'].decode()
             self.assertIn('`.agents/rules/40-domain-testing.md`', agents)
+            required, on_demand = agents.split('### On-demand rules')
+            self.assertIn('| `.agents/rules/00-project-tools.md` | Mandatory |', required)
+            self.assertIn('| `.agents/rules/02-project-structure.md` | Advisory |', required)
+            self.assertNotIn('| Description |', required)
+            self.assertIn('Tests under `test/` and plugin test directories.', on_demand)
             self.assertNotIn('.agents/rules/40-domain-testing.md', rendered.files_by_path)
             self.assertNotIn('.agents/skills/local-check/SKILL.md', rendered.files_by_path)
             self.assertIn(
@@ -1410,6 +1415,15 @@ class SetupRendererTest(unittest.TestCase):
                 rendered.preserved_paths,
             )
             validate_rendered_state(rendered)
+
+            (target / 'AGENTS.md').write_text(
+                '## Project rules\n\n### Required rules\n\n'
+                '| Rule | Strength |\n| --- | --- |\n'
+                '| `.agents/rules/40-domain-testing.md` | Default |\n', encoding='utf-8',
+            )
+            required_only = self.render(target, self.generated_tree(root)).files_by_path['AGENTS.md'].decode()
+            self.assertNotIn('### On-demand rules', required_only)
+            self.assertIn('| `.agents/rules/40-domain-testing.md` | Default |', required_only)
 
     def test_project_rules_section_preserves_other_entry_content_without_locking_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:

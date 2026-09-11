@@ -13,8 +13,8 @@ class DiscoveryError(ValueError):
 
 
 _RULE_NAME = re.compile(r'^(\d{2})-[a-z0-9][a-z0-9-]*\.md$')
-_STRENGTH = re.compile(r'^Strength:\s*`(Mandatory|Default|Advisory)`\s*$', re.MULTILINE)
-_SCOPE = re.compile(r'^Scope:\s*(.+(?:\n(?!\s*$|[A-Za-z][A-Za-z ]+:|#).+)*)', re.MULTILINE)
+_STRENGTH = re.compile(r'^(?:Strength:|\*\*Strength:\*\*)\s*`?(Mandatory|Default|Advisory)`?\s*$', re.MULTILINE)
+_SCOPE = re.compile(r'^(?:Scope:|\*\*Scope:\*\*)\s*(.+(?:\n(?!\s*$|[A-Za-z][A-Za-z ]+:|#).+)*)', re.MULTILINE)
 
 
 def _managed_targets(catalog: Catalog, kind: str) -> set[PurePosixPath]:

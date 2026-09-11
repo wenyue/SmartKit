@@ -28,7 +28,7 @@ from .project_rules import (
     ENTRY_PATH,
     ProjectRuleSyncError,
     render_entry_agents,
-    render_rule_rows,
+    render_project_rule_tables,
 )
 from .generation import reconcile_contracts
 from .ownership import (
@@ -274,12 +274,12 @@ def render_desired_state(
         if asset.kind == 'template':
             content = (source_root / asset.source).read_bytes()
             if asset.id == 'entry-agents':
-                content = _render_text(content.decode(), {
-                    'project_rule_rows': render_rule_rows(
-                        catalog, config, 'project', project_rules,
-                    ),
-                })
                 try:
+                    content = _render_text(content.decode(), {
+                        'project_rule_tables': render_project_rule_tables(
+                            source_root, target_root, catalog, config, 'project', project_rules,
+                        ),
+                    })
                     content = render_entry_agents(target_root, content)
                 except ProjectRuleSyncError as error:
                     raise RenderError(str(error)) from error

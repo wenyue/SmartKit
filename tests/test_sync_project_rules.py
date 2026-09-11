@@ -155,7 +155,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertTrue(updated.startswith(prefix.encode()))
             self.assertTrue(updated.endswith(suffix.encode()))
             self.assertIn(
-                b'| Managed tools | `.agents/rules/00-project-tools.md` | Mandatory? no |',
+                b'| `.agents/rules/00-project-tools.md` | Mandatory? no |',
                 updated,
             )
             self.assertIn(
@@ -196,6 +196,37 @@ class SyncProjectRulesTest(unittest.TestCase):
                 'changed_paths': [],
             })
             self.assertEqual(agents.read_bytes(), updated)
+
+    def test_required_local_rules_keep_loading_policy_independent_of_strength(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            entry = target / 'AGENTS.md'
+            entry.write_text(
+                '# Repository\n\n## Project rules\n\n### Required rules\n\n'
+                '| Rule | Strength |\n| --- | --- |\n'
+                '| `.agents/rules/00-local.md` | Default |\n', encoding='utf-8',
+            )
+            self.write_rule(target, '00-local.md', scope='Local guidance.', strength='Advisory')
+            self.write_rule(target, '20-checks.md', scope='Local checks.', strength='Mandatory')
+            project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            text = entry.read_text(encoding='utf-8')
+            required, on_demand = text.split('### On-demand rules')
+            self.assertIn('| `.agents/rules/00-local.md` | Advisory |', required)
+            self.assertNotIn('Local guidance.', required)
+            self.assertNotIn('| Description |', required)
+            self.assertIn('| Local checks. | `.agents/rules/20-checks.md` | Mandatory |', on_demand)
+            self.assertEqual(
+                project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=True).check,
+                'clean',
+            )
+            (target / '.agents/rules/20-checks.md').unlink()
+            project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            self.assertNotIn('### On-demand rules', entry.read_text(encoding='utf-8'))
+            (target / '.agents/rules/00-local.md').unlink()
+            project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            empty = entry.read_text(encoding='utf-8')
+            self.assertNotIn('### Required rules', empty)
+            self.assertNotIn('| Rule |', empty)
 
     def test_apply_rolls_back_the_index_when_rule_metadata_changes_during_commit(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -441,7 +441,7 @@ class SetupCatalogTest(unittest.TestCase):
                 'target': '.agents/rules/rule.md',
                 'metadata': {
                     'section': 'global',
-                    'description': 'Project tooling and verification.',
+                    'loading': 'on-demand', 'description': 'Project tooling and verification.',
                     'strength': 'Mandatory',
                     'cursor': {
                         'description': 'A rule',
@@ -459,7 +459,7 @@ class SetupCatalogTest(unittest.TestCase):
             ([], 'metadata must be an object'),
             ({'unknown': True}, 'unknown rule metadata fields'),
             ({
-                'section': 'global', 'description': 'Project tooling and verification.',
+                'section': 'global', 'loading': 'on-demand', 'description': 'Project tooling and verification.',
                 'strength': 'Mandatory',
                 'cursor': {'description': 'A rule', 'alwaysApply': 'yes'},
                 'github': {'applyTo': '**'},
@@ -480,7 +480,7 @@ class SetupCatalogTest(unittest.TestCase):
     def test_rule_and_project_rule_blueprint_metadata_are_complete(self):
         rule_metadata = {
             'section': 'global',
-            'description': 'Project tooling and verification.',
+            'loading': 'on-demand', 'description': 'Project tooling and verification.',
             'strength': 'Mandatory',
             'cursor': {'description': 'A rule', 'alwaysApply': True},
             'github': {'applyTo': '**'},
@@ -492,7 +492,7 @@ class SetupCatalogTest(unittest.TestCase):
             'target': '.agents/rules/rule.md',
             'metadata': rule_metadata,
         }
-        for field in ('section', 'description', 'strength', 'cursor', 'github'):
+        for field in ('section', 'loading', 'description', 'strength', 'cursor', 'github'):
             with self.subTest(rule_field=field):
                 candidate = dict(rule)
                 candidate['metadata'] = dict(rule_metadata)
@@ -507,7 +507,8 @@ class SetupCatalogTest(unittest.TestCase):
                 with self.assertRaises(ContractError):
                     parse_asset(candidate)
         for key, value in (
-            ('section', 'unknown'), ('strength', 'Required'),
+            ('section', 'unknown'), ('strength', 'Required'), ('loading', 'sometimes'),
+            ('loading', True),
             ('description', ''), ('description', True), ('read_when', 'Always'),
         ):
             with self.subTest(key=key):
@@ -520,11 +521,14 @@ class SetupCatalogTest(unittest.TestCase):
             'id': 'project-rule', 'kind': 'blueprint', 'source': 'blueprints/rule.md',
             'target': '.agents/rules/project.md',
             'metadata': {
-                'section': 'project', 'description': 'Project work', 'strength': 'Default',
+                'section': 'project', 'loading': 'on-demand', 'description': 'Project work', 'strength': 'Default',
                 'cursor': {'alwaysApply': True}, 'github': {'applyTo': '**'},
             },
         }
         self.assertEqual(parse_asset(blueprint).metadata['section'], 'project')
+        always = {**blueprint, 'metadata': {**blueprint['metadata'], 'loading': 'always'}}
+        del always['metadata']['description']
+        self.assertEqual(parse_asset(always).metadata['loading'], 'always')
         blueprint['metadata']['section'] = 'base'
         with self.assertRaises(ContractError):
             parse_asset(blueprint)

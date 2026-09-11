@@ -119,9 +119,18 @@ full setup. Both local operations support a read-only check.
 | Agents | `.agents/agents/`; declare them in `.agents/config.json` |
 | MCP | `.agents/config.json` |
 
-The project `AGENTS.md` Rule index also uses content descriptions. Setup renders catalog descriptions
-for declared Rules and uses `Scope` metadata to describe additional project Rules. The Agent decides
-which Rules to read from the descriptions and current task, and may re-read them whenever useful.
+The project `AGENTS.md` index separates required and on-demand Rules, omitting empty tables. Required
+Rules list only paths and strengths; the Agent reads all of them before starting a task and re-reads
+any missing bodies after context compaction. On-demand Rules include content descriptions so the
+Agent can decide what to read and re-read for the current task. Loading policy is independent of
+Rule strength.
+
+Catalog Rule metadata declares `loading` as `always` or `on-demand`; only `on-demand` requires a
+`description`. For additional project Rules, place a Rule in the two-column required table to make
+it always-read. Both full setup and project synchronization preserve this choice while refreshing
+its strength and removing deleted entries. Other discovered project Rules use their `Scope` as the
+on-demand description. Narrow synchronization preserves catalog-owned rows and applies their current
+catalog loading policy.
 
 See the [configuration schema](setup-assets/catalog/project-config.schema.json) for supported fields.
 

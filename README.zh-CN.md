@@ -102,9 +102,14 @@ SmartKit 的 Codex Agent adapter 安装到 `.codex/agents/`。该 adapter 仍归
 | Agents | `.agents/agents/`；在 `.agents/config.json` 中声明 |
 | MCP | `.agents/config.json` |
 
-项目 `AGENTS.md` 的 Rule 索引同样使用内容描述。setup 为目录声明的 Rules 渲染目录中的描述，
-并使用额外项目 Rule 的 `Scope` 元数据作为描述。Agent 根据描述和当前任务决定读取哪些规则，
-并可按需重新读取。
+项目 `AGENTS.md` 的索引分为必读表和按需表，空表省略。必读表只列路径和强度；Agent 在开始任务前
+读取其中全部规则，并在上下文压缩后重新读取正文已不在上下文中的规则。按需表包含内容描述，
+由 Agent 根据当前任务决定读取和重读哪些规则。加载策略与规则强度相互独立。
+
+catalog 的 Rule 元数据通过 `loading` 声明 `always` 或 `on-demand`，只有 `on-demand` 要求
+提供 `description`。对于额外的项目 Rule，将它放入两列的必读表即可声明为必读。完整 setup 和项目同步
+都会保留这一选择，同时更新规则强度并移除已删除的条目。其他被发现的项目规则使用 `Scope` 作为按需描述。
+单独同步索引时会保留 catalog 管理的条目，并应用其当前加载策略。
 
 支持的字段见[配置 schema](setup-assets/catalog/project-config.schema.json)。
 
