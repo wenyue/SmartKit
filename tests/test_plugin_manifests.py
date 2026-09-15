@@ -163,6 +163,7 @@ class PluginManifestTest(unittest.TestCase):
         for name in (
             'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
             'finish-worktree', 'implement-tickets', 'write-code-comment',
+            'handle-operation-failure',
             'write-rules-and-skills',
         ):
             source_paths.update(
@@ -441,6 +442,7 @@ class PluginManifestTest(unittest.TestCase):
         custom = {
             'setup-project-agents', 'create-worktree', 'refactor-code', 'rename-code',
             'diagnose-agent-session', 'finish-worktree', 'implement-tickets', 'write-code-comment',
+            'handle-operation-failure',
             'write-rules-and-skills',
         }
         self.assertEqual(plugin_skills, { *custom, *MATT_PROMOTED})

@@ -8,6 +8,7 @@
     {"id": "smartkit/diagnose-agent-session", "path": "diagnose-agent-session"},
     {"id": "smartkit/finish-worktree", "path": "finish-worktree"},
     {"id": "smartkit/write-code-comment", "path": "write-code-comment"},
+    {"id": "smartkit/handle-operation-failure", "path": "handle-operation-failure"},
     {"id": "smartkit/write-rules-and-skills", "path": "write-rules-and-skills"}
   ],
   "external_sources": [

@@ -42,6 +42,12 @@ class SetupGenerationTest(unittest.TestCase):
                 shutil.copytree(source, destination, dirs_exist_ok=True)
             else:
                 shutil.copyfile(source, destination)
+        entry_templates = Path('setup-assets/templates/entry-files')
+        shutil.copytree(
+            REPO_ROOT / entry_templates,
+            self.source / entry_templates,
+            dirs_exist_ok=True,
+        )
 
     def requests(self):
         return generation_requests(
