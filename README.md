@@ -64,11 +64,13 @@ qoder plugin install smartkit@wenyue
 All four hosts receive core Rules and a Rule index through Hooks. Rule bodies live
 directly under `rules/`; `rules/registry.json` contains only `id`, `source`, `strength`, and
 `description` for each Rule. Rules whose IDs begin with `smartkit/core-` deliver their bodies
-immediately; every other Rule appears in the index with a content description and resolved source
-path. The Agent uses the descriptions and current task to decide what to read, including reading to
-check relevance or re-reading whenever useful. Descriptions are not programmatic loading conditions.
-Loading requires read access to the plugin's Rule directory. Paths locate bodies; they do not trigger
-loading.
+immediately. Each delivered body is enclosed in a file wrapper that names its source path and tells
+the Agent to treat it as an independent Rule file; declarations such as Strength and Scope retain
+their file-local meaning, and relative references resolve from that path. Every other Rule appears
+in the index with a content description and resolved source path. The Agent uses the descriptions
+and current task to decide what to read, including reading to check relevance or re-reading whenever
+useful. Descriptions are not programmatic loading conditions. Loading requires read access to the
+plugin's Rule directory. Paths locate bodies; they do not trigger loading.
 
 Codex and Qoder restore this context through their session lifecycle. Copilot CLI and Cursor track
 context compaction and restore core Rules and the index before the next supported continuation.

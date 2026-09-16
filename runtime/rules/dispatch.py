@@ -13,6 +13,10 @@ from pathlib import Path
 from contract import RuleConfigError, load_registry
 
 
+RULE_FILE_START = '<smartkit-rule-file'
+RULE_FILE_END = '</smartkit-rule-file>'
+
+
 def plugin_root() -> Path:
     configured = (
         os.environ.get('PLUGIN_ROOT')
@@ -26,16 +30,28 @@ def plugin_root() -> Path:
 def context_for(root: Path) -> str:
     """Inline core Rules; leave every other loading decision to the Agent."""
     rules = load_registry(root)
-    blocks: list[str] = []
+    blocks = [
+        '## SmartKit Rule files\n\n'
+        'Each `<smartkit-rule-file>` block below represents one independent Rule source file. '
+        'Interpret the enclosed Markdown as the complete contents of the file named by `path`. '
+        'Statements such as Strength and Scope apply only to their containing file. Resolve '
+        'relative file references from that file\'s path. The wrapper is delivery metadata, not '
+        'part of the Rule, and delivery order does not determine Rule precedence.',
+    ]
     indexed: list[dict[str, str]] = []
     for rule in rules:
         if not rule['id'].startswith('smartkit/core-'):
             indexed.append(rule)
             continue
         text = (root / 'rules' / rule['source']).read_text(encoding='utf-8')
+        if RULE_FILE_START in text or RULE_FILE_END in text:
+            raise RuleConfigError(
+                f'reserved Rule file wrapper delimiter in rules/{rule["source"]}'
+            )
+        body = text.rstrip('\r\n')
         blocks.append(
-            f'<!-- Rule-ID: {rule["id"]}; Owner: plugin; Strength: {rule["strength"]}; '
-            f'Source: rules/{rule["source"]} -->\n{text.strip()}'
+            f'{RULE_FILE_START} path="rules/{rule["source"]}">\n'
+            f'{body}\n{RULE_FILE_END}'
         )
     if indexed:
         rows = [

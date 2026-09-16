@@ -2,8 +2,8 @@
 
 Strength: `Default`
 
-Scope: Dart and Flutter ownership, data shape, state, lifecycle, UI, routing, models, generation,
-and analysis boundaries.
+Scope: Dart and Flutter ownership, data shape, state, lifecycle, UI, routing, models, filesystem
+operations, generation, and analysis boundaries.
 
 ## Baseline Applicability
 
@@ -20,6 +20,20 @@ and analysis boundaries.
 ## Data Shape
 
 - Use records only for small local tuple returns where a named type would not add clarity.
+
+## Filesystem Operations
+
+- Where `dart:io` is available, normally perform needed filesystem operations directly, including
+  reads, writes, creation, and deletion. Let operations expose their own failures to the established
+  recovery or reporting owner; a later operation need not reproduce an earlier transient lookup
+  error.
+- Use native `exists`/`existsSync` or `type`/`typeSync` only when a preliminary check offers a concrete
+  benefit. A positive is a valid observation at check time under the queried API's semantics, but
+  guarantees neither permission nor subsequent success; state can change. A negative may reflect
+  absence, a type mismatch, or a lookup failure. Skip or default on a negative only when that remains
+  acceptable if lookup failed rather than the object being absent.
+- Secure initialization and overwrite guarantees through the actual operation's semantics, not an
+  absence check; a default write can truncate existing data.
 
 ## Flutter Hooks
 

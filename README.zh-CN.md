@@ -59,9 +59,11 @@ qoder plugin install smartkit@wenyue
 
 四个宿主都通过 Hook 接收核心 Rules 和 Rule 索引。规则正文直接放在 `rules/` 下；
 `rules/registry.json` 的每条 Rule 只包含 `id`、`source`、`strength` 和 `description`。
-ID 以 `smartkit/core-` 开头的规则立即交付正文；其他规则的内容描述和解析后的源文件路径出现在索引中。
-Agent 根据描述和当前任务决定读取哪些规则，也可以先读取确认相关性，或在有需要时重新读取。
-描述不是由程序判断的加载条件。加载需要对插件 Rule 目录具有读取权限。路径用于定位正文，不用于触发加载。
+ID 以 `smartkit/core-` 开头的规则立即交付正文。每份交付的正文都包含在标明源路径的文件 wrapper
+中，并要求 Agent 将其视为独立的 Rule 文件；Strength、Scope 等声明保留文件内语义，相对引用从该
+路径解析。其他规则的内容描述和解析后的源文件路径出现在索引中。Agent 根据描述和当前任务决定读取
+哪些规则，也可以先读取确认相关性，或在有需要时重新读取。描述不是由程序判断的加载条件。加载需要
+对插件 Rule 目录具有读取权限。路径用于定位正文，不用于触发加载。
 
 Codex 和 Qoder 通过会话生命周期恢复这些上下文。Copilot CLI 和 Cursor 跟踪上下文压缩，
 在下一个受支持的继续执行节点前恢复核心 Rules 和索引。因此，压缩后可能需要重试一次工具调用

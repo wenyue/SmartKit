@@ -51,20 +51,36 @@ class PluginRuleContractTest(unittest.TestCase):
 
     def assert_core_and_index(self, context, root=ROOT):
         registry = json.loads((root / 'rules/registry.json').read_text(encoding='utf-8'))
-        self.assertTrue(context.startswith('<!-- Rule-ID: smartkit/core-instruction-governance;'))
+        self.assertTrue(context.startswith('## SmartKit Rule files\n'))
+        self.assertIn(
+            'Each `<smartkit-rule-file>` block below represents one independent Rule source file.',
+            context,
+        )
         self.assertIn('## SmartKit Rule index', context)
+        core_count = 0
         for rule in registry['rules']:
             if rule['id'].startswith('smartkit/core-'):
-                body = (root / 'rules' / rule['source']).read_text(encoding='utf-8').strip()
-                self.assertIn(body, context)
-                self.assertEqual(context.count(f'Rule-ID: {rule["id"]};'), 1)
+                core_count += 1
+                body = (
+                    root / 'rules' / rule['source']
+                ).read_text(encoding='utf-8').rstrip('\r\n')
+                opening = f'<smartkit-rule-file path="rules/{rule["source"]}">\n'
+                closing = '\n</smartkit-rule-file>'
+                self.assertEqual(context.count(opening), 1)
+                remainder = context.split(opening, 1)[1]
+                enclosed, _ = remainder.split(closing, 1)
+                self.assertEqual(enclosed, body)
             else:
                 self.assertIn(rule['description'], context)
                 self.assertIn(rule['id'], context)
                 self.assertIn(str((root / 'rules' / rule['source']).resolve()), context)
-                self.assertNotIn(f'Rule-ID: {rule["id"]};', context)
+                self.assertNotIn(
+                    f'<smartkit-rule-file path="rules/{rule["source"]}">', context
+                )
                 body = (root / 'rules' / rule['source']).read_text(encoding='utf-8').strip()
                 self.assertNotIn(body, context)
+        self.assertEqual(context.count('<smartkit-rule-file path='), core_count)
+        self.assertEqual(context.count('</smartkit-rule-file>'), core_count)
 
     def fixture_root(self):
         root = Path(self.temporary.name) / 'plugin with spaces'
@@ -86,7 +102,7 @@ class PluginRuleContractTest(unittest.TestCase):
         self.assertFalse((ROOT / 'scripts/sync_cursor_rule_adapters.py').exists())
         self.assertNotIn('rules', json.loads((ROOT / '.cursor-plugin/plugin.json').read_text()))
 
-    def test_every_host_gets_core_bodies_and_semantic_index_without_a_filename(self):
+    def test_every_host_gets_independent_core_rule_files_and_semantic_index(self):
         for harness in HARNESSES:
             with self.subTest(harness=harness):
                 context = self.session_context(harness, {'prompt': 'Discuss Python error handling'})
@@ -267,6 +283,18 @@ class PluginRuleContractTest(unittest.TestCase):
         result = self.run_raw_dispatch('cursor', 'session', b'{}', root=root)
         self.assertEqual(result.returncode, 1)
         self.assertIn(b'the first Rule must be', result.stderr)
+
+    def test_core_rule_rejects_reserved_file_wrapper_delimiters(self):
+        root = self.fixture_root()
+        source = root / 'rules/core-personality.md'
+        body = source.read_text(encoding='utf-8')
+        for delimiter in ('<smartkit-rule-file', '</smartkit-rule-file>'):
+            with self.subTest(delimiter=delimiter):
+                source.write_text(body + f'\n{delimiter}\n', encoding='utf-8')
+                result = self.run_raw_dispatch('codex', 'session', b'{}', root=root)
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(result.stdout, b'')
+                self.assertIn(b'reserved Rule file wrapper delimiter', result.stderr)
 
     def test_invalid_compaction_state_fails_closed(self):
         session = {'sessionId': 'invalid-state'}
