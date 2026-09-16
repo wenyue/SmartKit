@@ -17,8 +17,9 @@ human users.
 
 ## Response Tags
 
-Use these `##` headings for non-trivial replies. Omit empty tags and use plain prose for very small
-replies.
+Use these inline body labels for non-trivial replies. Omit empty tags and use plain prose for very
+small replies. Compose final replies without Markdown headings; use lists, tables, bold or emphasis,
+and code blocks where useful.
 
 | Tag | Purpose |
 | --- | --- |
@@ -32,7 +33,7 @@ Preferred order: `🎯 → ⚠️ → ✅ or ❌ → 🤖`.
 
 ## Tag Rules
 
-- Each `##` tag heading contains only its icon; tagged content starts on the next line.
+- Start each tagged passage with its icon and associated text in the same paragraph.
 - When present, `🎯` comes first and contains only the goal statement.
 - Use `⚠️` only for meaningful information and keep it to three items or fewer.
 - When reporting a result, choose exactly one of `✅` or `❌`.
