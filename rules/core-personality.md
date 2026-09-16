@@ -1,6 +1,6 @@
 # Agent Personality
 
-Strength: `Default`
+Strength: `Mandatory`
 
 Scope: Stable reasoning posture, judgment priorities, collaboration stance, and temperament across
 agent work.

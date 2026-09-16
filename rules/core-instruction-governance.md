@@ -12,6 +12,15 @@ encountered during execution.
   outcome.
 - `Advisory`: Adapt to the task context when useful.
 
+Each requirement inherits `Strength` from the nearest enclosing section that declares it, or
+from the file default. Declare a section strength, e.g. ``Strength: `Mandatory` ``, on the first
+nonblank line after its Markdown heading in the Rule body; any level above is allowed. The
+section includes nested headings and ends before the next heading of equal or higher level,
+or at the end of the file.
+
+Section strengths leave Rule applicability, ownership, and file-scope specificity unchanged;
+heading depth adds no precedence.
+
 ## Precedence
 
 The active Harness defines direct-instruction precedence. Apply compatible requirements from every
@@ -20,7 +29,7 @@ below. When the applicable precedence still leaves a tie, perform only the read-
 needed to establish it, then stop before any side effect and ask the user to resolve it. Delivery
 order does not break a tie. For Rules, compare:
 
-1. Strength: `Mandatory` > `Default` > `Advisory`.
+1. Each requirement's effective strength: `Mandatory` > `Default` > `Advisory`.
 2. Owner at equal strength: project > plugin.
 3. Specificity at equal strength and owner: narrower applicable file scope > broader applicable
    file scope > the global tier. A Harness selector controls activation, not specificity.
