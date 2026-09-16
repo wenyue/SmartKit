@@ -13,8 +13,8 @@ The Candidate comprises the current Rule or Skill and its scoped supporting reso
   allocation, not professional scope or standards.
 - **Direct dialogue.** Send evidence and necessary questions to the responsible recipient; the
   Author owns every Candidate repair.
-- **Immutable review.** Remain read-only and bind every result to the complete Candidate state that
-  was actually reviewed.
+- **Immutable review.** Remain read-only on the Candidate and bind every result to the complete
+  Candidate state that was actually reviewed.
 
 ## Assignment and evidence
 

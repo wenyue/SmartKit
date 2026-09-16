@@ -19,15 +19,15 @@ description: 编写或修订一个英文 Rule 或 Agent Skill。
 
 遵循 Controller 契约完成任务对齐。只有当一个 Candidate 和一份自包含的 Author brief 能够表达已接受的结果、所有者依赖的状态明确，并且不再缺少任何实质性选择、事实、访问条件或权限时，才进入冻结阶段。否则返回 `NEEDS_INPUT`，准确指出尚未解决的输入。
 
-## 2. 冻结 Candidate 和审查范围
+## 2. 冻结 Candidate 和审查范围 <a id="2-freeze-the-candidate-and-review-scope"></a>
 
 将当前已加载 Skill 的目录解析为 `<skill-root>`，并调用 `python "<skill-root>/scripts/candidate_evidence.py" --help`。
 
-首次写入之前，使用该 Python CLI 捕获完整 Candidate 基线和指纹。基线快照、审查记录和验证日志等临时工作流证据应保存在 Candidate 文件范围之外，使其与交付物分离，并且不影响 Candidate 指纹。分别冻结写入范围、验证命令和权限；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
+首次写入之前，使用该 Python CLI 捕获完整 Candidate 基线和指纹。基线快照、审查记录和验证日志等临时工作流证据应保存在 Candidate 文件范围之外，使其与交付物分离，并且不影响 Candidate 指纹。分别冻结写入范围、验证命令和权限，包括 Controller 确定的运行时权限和资源边界；允许新增和删除并不等于允许移动。保留无关的 staged、unstaged 和 untracked 工作。
 
 如果 Candidate 包含本 Skill 或其他治理指令，还要冻结其完整的写前文本，并在本次运行余下阶段以该副本为权威。新编写的文本在下一次调用前仍只是 Candidate 证据，不能支配对自身的审查。
 
-为整项任务分配同一个常驻 Author。依据 Controller 的[审查独立程度标准](references/controller.md#choose-review-independence)选择审查拓扑。
+为整项任务分配同一个常驻 Author。依据 Controller 的[拓扑选择标准](references/controller.md#choose-and-adjust-review-topology)选择审查拓扑。
 
 Controller 管理这一拓扑，但不代替专业判断。采用 Integrated Review 时，启动一个身份，并向其提供 Reviewer 公共合同和全部三个专业合同。采用 Independent Review 时，启动三个身份，每个身份都获得公共合同，但只获得自己的专业合同。各身份自行打开分配给自己的文件；Controller 不打开这些文件。
 
@@ -55,7 +55,7 @@ Author 返回后，再次捕获完整 Candidate。只有经过身份确认、由
 
 - 对两种制品类型，Quality 都接收已接受的目标、仅存在于会话中的质量或表达约束，以及职责分配及其证据位置、受支持加载方式的假设、所有者依赖状态和调用方提供的职责分配规划（如有）。这些内容独立于 Author brief 提供；Quality 不依赖于收到该 brief。
 - Change 接收要求的变更、保留与兼容性决策，以及 Author 的语义变更摘要。
-- Correctness 接收完整的权威用户意图证据和 Author brief，并将二者作为不同输入；同时接收仅存在于会话中的关键行为与安全决策，以及自动验证结果。
+- Correctness 接收完整的权威用户意图证据和 Author brief，并将二者作为不同输入；同时接收仅存在于会话中的关键行为与安全决策、自动验证结果，以及冻结的运行时权限和资源边界。
 
 Independent Reviewer 只接收其专业视角所需的上下文；Integrated Reviewer 接收三个视角所需上下文的并集。
 
@@ -65,9 +65,9 @@ Independent Reviewer 只接收其专业视角所需的上下文；Integrated Rev
 
 每次修复后都应用 Author 返回门槛，并在进入下一轮审查前运行自动验证。修复会产生新指纹，因此当前拓扑中的每个身份都要重新检查其完整证据。最多允许三轮；第三轮后仍有阻塞性 finding 时，返回 `BLOCKED`。
 
-当 Reviewer 返回 `INDEPENDENT_REVIEW_REQUIRED`、Correctness 证明 Author brief 遗漏或曲解了用户意图、因实质性的意图歧义需要返回 `NEEDS_INPUT`，或 Correctness 返回 `RUNTIME_REQUIRED` 时，加载 [审查升级](references/review-escalation.md)中相应的分支。
+需要变更拓扑时，遵循 Controller 的[拓扑调整处理](references/controller.md#choose-and-adjust-review-topology)；出现已证实的 Author brief 遗漏或曲解、尚未解决的实质性意图问题，或边界与输入问题时，遵循其[对齐与阻塞处理](references/controller.md#maintain-alignment-and-handle-blockers)。Correctness 在冻结任务范围内，依据自身专业契约委派运行时证据采集并完成收尾。
 
-每个 Reviewer 和 Runner 返回后，都要确认 Candidate 指纹没有变化。
+每个 Reviewer 返回后，都要确认 Candidate 指纹没有变化。
 
 ## 5. 完成
 

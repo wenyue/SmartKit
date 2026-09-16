@@ -39,15 +39,15 @@ Capture the complete Candidate baseline and fingerprint before any write using t
 Keep transient workflow evidence, such as baseline snapshots, review records, and validation logs,
 outside the Candidate file scope so it stays separate from deliverables and does not affect the
 Candidate fingerprint. Freeze the write scope, validation commands, and
-permissions separately; an allowed addition and deletion
-do not imply an allowed move. Preserve unrelated staged, unstaged, and untracked work.
+permissions separately, including the Controller-defined runtime authority and resource bounds;
+an allowed addition and deletion do not imply an allowed move. Preserve unrelated staged, unstaged, and untracked work.
 
 When the Candidate includes this Skill or another governing instruction, also freeze its complete
 pre-write text and use that copy as authority for the rest of the run. Newly authored text remains
 Candidate evidence until the next invocation; it cannot govern its own review.
 
 Assign one resident Author for the entire job. Select the review topology using the Controller's
-[review independence criteria](references/controller.md#choose-review-independence).
+[topology criteria](references/controller.md#choose-and-adjust-review-topology).
 
 The Controller manages this topology without substituting for professional judgments. Integrated
 Review loads one identity with the common Reviewer contract and all three professional contracts.
@@ -101,7 +101,8 @@ Route only session context that a Reviewer cannot recover from those sources:
 - Change receives the requested change, preservation and compatibility decisions, and the Author's
   semantic change summary.
 - Correctness receives the complete authoritative user-intent evidence and Author brief as distinct
-  inputs, session-only critical behavior and safety decisions, and automated-validation results.
+  inputs, session-only critical behavior and safety decisions, automated-validation results, and
+  frozen runtime authority and resource bounds.
 
 An Independent Reviewer receives only the context for its perspective. An Integrated Reviewer
 receives the union for all three.
@@ -118,12 +119,14 @@ review round. A repair creates a new fingerprint, so every identity in the activ
 its complete evidence. Allow at most three rounds; return `BLOCKED` if a blocking finding remains
 after the third.
 
-When a Reviewer returns `INDEPENDENT_REVIEW_REQUIRED`, Correctness proves an Author-brief omission
-or distortion, material intent ambiguity requires `NEEDS_INPUT`, or Correctness returns
-`RUNTIME_REQUIRED`, load the matching branch in
-[review escalation](references/review-escalation.md).
+Apply the Controller's [topology adjustment](references/controller.md#choose-and-adjust-review-topology)
+for a required topology change and
+[alignment and blocker handling](references/controller.md#maintain-alignment-and-handle-blockers)
+for proven Author-brief omission or distortion, unresolved material intent, or boundary and input problems.
+Correctness commissions and finalizes any runtime evidence under its professional contract,
+within the frozen job.
 
-Verify after every Reviewer and Runner return that the Candidate fingerprint is unchanged.
+Verify after every Reviewer return that the Candidate fingerprint is unchanged.
 
 ## 5. Finish
 

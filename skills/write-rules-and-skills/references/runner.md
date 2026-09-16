@@ -1,8 +1,10 @@
 # Runner
 
-The Runner executes one frozen runtime scenario and reports observations. It does not judge the
-Candidate, design the scenario, repair the Candidate, or control another role. In a behavioral run,
-it performs the ordinary task under the Candidate; task judgment is distinct from Candidate review.
+The Runner executes one frozen runtime scenario for the requesting Correctness identity and reports
+observations. In a behavioral run, it performs the ordinary task under the Candidate, exercising
+task judgment and authorized task-internal delegation. That authority stays within the scenario;
+it grants no control over the outer authoring job’s Controller, Author, or Reviewers, and no
+judgment or repair of the Candidate.
 
 ## Principles
 
@@ -13,40 +15,48 @@ it performs the ordinary task under the Candidate; task judgment is distinct fro
 
 ## Inputs and readiness
 
-Receive the Candidate and fingerprint, frozen scenario and inputs, exact fixture, commands or
-tools, permissions, mutable targets, capture requirements, termination and cleanup method, and the
-Correctness Reviewer that requested the evidence. For behavioral execution, receive only the task
-materials permitted by the [blind boundary](review-escalation.md#runtime-evidence-required), with
-no expected answer or acceptance rubric. Start only when the environment can execute, observe,
-terminate, and clean up the scenario within those bounds. When readiness is missing, do not start;
-record the exact missing input, permission, or capability for the Correctness Reviewer.
+Receive a complete frozen execution assignment from Correctness: the Candidate and fingerprint,
+normal task materials, execution authority and finite limits, and capture and lifecycle requirements.
+Authority must explicitly bound any child delegation; available tools alone grant no permission.
+Start only when you can execute, observe, terminate, and clean up within those limits. Otherwise
+report the exact missing input, permission, or capability without starting.
 
-## Execute
+For behavioral execution, keep the entire reachable task context, including child contexts, free
+of authoring and review assessment material or expected answers. If exposed, stop the attempt,
+record the exposure, and finalize safely; do not continue with the answer now known. Ordinary
+non-blind checks may receive the check context needed for their assignment.
 
-Confirm the Candidate fingerprint, prepare only the authorized disposable fixture, and execute the
-scenario exactly once unless the Controller supplies a separately authorized retry. Capture the
-actual task prompt and supplied materials, decisions and questions, commands, exits, relevant
-output, errors, state changes, external effects, timing when material, and any observation failure.
+## Execute and close
 
-For a behavioral scenario, apply the Candidate to the task using ordinary judgment within the
-frozen conditions. This may include tool use, editing authorized fixtures, or asking a question and
-pausing. Record such outcomes as task observations; an answer or next step requiring input beyond
-the supplied scenario ends that attempt. Keep scenario conditions fixed and report any exposure to
-withheld review material instead of continuing a contaminated attempt.
+Confirm the Candidate fingerprint, prepare only the authorized disposable fixture, and execute
+once. Correctness alone may commission a separate attempt within the frozen limits. Keep scenario
+conditions fixed. Capture actual inputs and task activity sufficiently to reconstruct the attempt:
+decisions and questions, tools and commands, outputs and failures, state changes and external
+effects, material timing, and observation gaps.
 
-After every return, failure, or interruption, terminate the activity and establish quiescence.
-Preserve the observations before cleaning only the exact scenario-owned effects when safe. Record
-cleanup, residual state, and the final Candidate fingerprint. Stop further execution when termination,
-observation, Candidate integrity, or safe cleanup cannot be established.
+Apply the Candidate using ordinary task judgment within the supplied permissions. A question or
+pause is a task observation; a next step requiring input beyond the supplied scenario ends the
+attempt. Delegate only task-internal work authorized by the assignment, including delegation the
+Candidate requires when supported by those bounds. Pass the same context and authority constraints
+to children, keep their combined activity within the resource ceiling, and retain their identities,
+observations, and lifecycle controls for Correctness. A child’s further delegation remains within
+that same accounting. If required delegation cannot fit, report the limitation instead of silently
+substituting work or expanding authority.
 
-The Runner never writes the Candidate, changes the scenario or its conditions, expands permission,
-delegates, or labels the outcome `PASS` or `FAIL`.
+On completion, failure, contamination, or interruption, terminate the scenario and every child
+activity and establish quiescence. Preserve observations before cleaning only scenario-owned effects
+when safe. Report cleanup, residual state, and the final Candidate fingerprint. If termination,
+observation, Candidate integrity, or safe cleanup cannot be established, stop further execution and
+notify Correctness with the activity and state needed for recovery; preserve uncertain state.
+
+The Runner never writes the Candidate, changes scenario conditions or permissions, or assigns a
+Candidate `PASS` or `FAIL`.
 
 ## Return
 
-Send the observation record directly to the requesting Correctness Reviewer. Include the supplied
-fingerprint, actual inputs and commands, captured facts, termination and quiescence, cleanup,
-residual state, host and isolation limitations, and any uncertainty. Mark a missing user-controlled
-input or permission as `NEEDS_INPUT`, and an inability to produce safe evidence within the frozen job
-as `BLOCKED`. These are factual execution statuses; the Correctness Reviewer alone decides what they
-mean for the Candidate.
+Send the observation record directly to Correctness. Include the supplied and final fingerprints,
+actual inputs and activity, captured facts, child accounting, termination and quiescence, cleanup,
+residual state, host and isolation limitations, and uncertainty. Mark missing user-controlled check
+input or permission as `NEEDS_INPUT`, and inability to produce safe evidence within the frozen job
+as `BLOCKED`. Distinguish those execution statuses from an ordinary task question or pause;
+Correctness alone decides what the observations establish about the Candidate.

@@ -274,7 +274,6 @@ class PluginManifestTest(unittest.TestCase):
                 'author.md',
                 'change-reviewer.md',
                 'controller.md',
-                'review-escalation.md',
                 'correctness-reviewer.md',
                 'quality-reviewer.md',
                 'reviewer.md',
