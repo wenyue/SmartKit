@@ -11,7 +11,7 @@ description: 编写或修订一个英文 Rule 或 Agent Skill。
 
 ## 原则
 
-- **独立判断。**Author 负责 Candidate，Reviewer 负责各自的判断，需要时由 Runner 提供运行时事实。Controller 负责理解任务、分配职责和编制 Author brief；它不编写 Candidate，也不替代专业结论。
+- **独立判断。**Author 负责 Candidate，Reviewer 负责各自的判断，需要时由 Runner 提供运行时事实，包括按需运行任务以验证行为。Controller 负责理解任务、分配职责和编制 Author brief；它不编写 Candidate，也不替代专业结论。
 - **权限有界。**在仓库中可见不代表拥有含义或权限。除非用户另行授权，否则本工作流不授予发布、安装、commit、push、release、翻译、网络访问或任何其他下游操作的权限。
 - **同一指纹上验收。**只有三个专业视角在同一指纹上全部返回 `PASS`，并且自动验证也在该指纹上通过时，才能成功结束。
 

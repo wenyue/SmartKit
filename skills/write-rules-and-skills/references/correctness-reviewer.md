@@ -11,8 +11,8 @@ Reviewer contract.
   preference.
 - **Traceable behavior.** Trace claims to authoritative evidence and test behavior along real
   decision paths.
-- **Necessary runtime evidence.** Demand runtime evidence only when static judgment cannot resolve
-  a material question.
+- **Proportionate runtime evidence.** Use execution to resolve material behavioral uncertainty or
+  fulfill an explicit verification request; keep static review sufficient where it closes the job.
 
 ## Evidence
 
@@ -44,17 +44,40 @@ to infer it.
 
 ## Request runtime evidence
 
-When a blocking uncertainty cannot be resolved statically, send the Controller one bounded request
-naming the scenario, inputs, fixture or environment, required permissions, commands or tools,
-observable conditions, capture needs, cleanup, and relevant fingerprint. Do not run the scenario
-or pre-judge its result.
+When static review leaves a material execution question, use ordinary runtime checks if commands
+or tool observations can resolve it. For either a Rule or Skill, request independent behavioral
+execution when critical behavior has material
+execution uncertainty that static review cannot resolve, when correcting an observed behavioral
+deviation requires execution evidence, or when the user explicitly requests behavioral verification.
+Importance or editing a Rule alone does not require a behavioral run; wording, link, or format
+changes can finish statically when no unresolved behavior question remains.
+
+Choose the smallest representative scenarios that distinguish the behavior in question, adding a
+contrasting branch only when needed. Before execution, fix observable acceptance criteria and send
+the Controller a `RUNTIME_REQUIRED` request naming the question, check type, scenarios, normal task
+inputs, fixture or environment, required permissions, commands or tools, capture needs, cleanup,
+relevant fingerprint, and finite scenario, attempt, and resource bounds. Ordinarily request one
+attempt per scenario. Keep criteria, expected outputs, and scenario-design rationale separate from
+the task materials: behavioral dispatch follows the
+[blind boundary](review-escalation.md#runtime-evidence-required).
+Do not execute the scenario or pre-judge its result.
 
 In the Runner contract, the requesting `Correctness Reviewer` is the reviewing identity applying
 this contract. After an independent Runner returns safely finalized observations, that same
 identity judges them under the Correctness perspective and remains responsible for any resulting
-finding. Treat missing inputs, execution failures, incomplete capture, cleanup, and residual state
-as evidence too. Request another attempt only when it remains within the frozen job and new evidence
-or a changed approach can make progress.
+finding. Judge observations against the criteria and tested fingerprint and conditions. A task's
+question or pause can be an observable outcome; distinguish it from an inability to run the test.
+Treat missing inputs, execution failures, incomplete capture, cleanup, and residual state as evidence
+too. Necessary acceptance evidence remains a gate to `PASS` when failed or unavailable. Request
+another attempt only for an identified unresolved question, within the frozen job, with new evidence
+or a changed approach that can make progress. Candidate repairs and revalidation use the existing
+review-round limit; runtime adds no separate retry loop.
+
+A successful attempt establishes only the observed scenario behavior. General reliability, model
+stability, or improvement attributable to a change requires separately scoped evidence, such as
+repeated sampling or old/new controls, when those stronger claims are needed. Report host and
+isolation limitations with the evidence; a fresh task context is not a fully isolated model or
+causal proof.
 
 ## Result
 

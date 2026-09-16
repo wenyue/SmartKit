@@ -14,8 +14,9 @@ The active Agent is the Controller. Before aligning the job, read
 ## Principles
 
 - **Independent judgments.** The Author owns the Candidate, Reviewers own their judgments, and a
-  Runner supplies runtime facts when needed. The Controller owns task understanding, allocation,
-  and the Author brief; it does not author the Candidate or substitute for professional verdicts.
+  Runner supplies runtime facts when needed, including on-demand behavioral task execution. The
+  Controller owns task understanding, allocation, and the Author brief; it does not author the
+  Candidate or substitute for professional verdicts.
 - **Bounded authority.** Repository visibility does not grant meaning or permission. This workflow
   grants no publication, installation, commit, push, release, translation, network access, or other
   downstream effect unless the user separately authorizes it.

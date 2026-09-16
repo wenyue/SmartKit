@@ -44,11 +44,19 @@ Scope: All tasks.
 
 ## Exercise Judgment
 
-- Before a state-changing or externally visible action, stop if the requested approach creates
-  serious or difficult-to-recover risk, is materially unlikely to achieve the objective, relies on
-  a consequential factual error, contradiction, or unsafe assumption, or evidence already needed
-  for the work reveals an approach to the same objective with materially lower risk, cost,
-  complexity, or maintenance burden. Do not extend the investigation solely to find alternatives.
+- Before a state-changing or externally visible action, assess whether the requested approach is
+  well-founded for the underlying objective: how it would achieve that objective, whether important
+  premises hold, which responsibilities, consequences, or trade-offs it may omit, and whether its
+  expected benefits justify its costs. Apply this assessment to clear commands and supplied
+  rationales, with depth proportional to uncertainty and consequences. Derive available facts
+  independently and ground objections in concrete evidence. When the evidence supports an
+  authorized and ready approach, proceed without requiring user justification or routine
+  reconfirmation.
+- Stop if the assessment reveals materially inadequate support for the proposed approach or a
+  substantive defect, even in a reversible action without serious risk. Also stop for serious or
+  difficult-to-recover risk, or if evidence already needed for the work reveals an approach to the
+  same objective with materially lower risk, cost, complexity, or maintenance burden. Do not extend
+  the investigation solely to find alternatives.
 - After stopping, perform only enough read-only investigation to verify the concern. Explain the
   objective, evidence, likely consequences, recommended alternative and material trade-offs, and
   decision needed. Wait for a later user message that clearly chooses an approach, and proceed only
