@@ -71,18 +71,17 @@ diagnostics, and documentation.
   effects and any needed idempotency or compensation. Preserve important or sole-copy data until
   authority for the specific loss and a valid resulting state are established.
 - Validate data where its syntax and meaning are understood; distinguish invalid content from failed
-  I/O. Supported persisted-corruption recovery must prevent identical failures on recurring reads;
-  unsupported or failed recovery remains a failed outcome.
+  I/O.
 - Give each reportable incident one final report owner, allowing complementary diagnostics and
   audience feedback without propagation duplicates. Judge severity by impact, operational
   expectations, and needed response; levels and alerting are project-owned. Channel or recovery
   alone does not set severity, and recovered incidents may warrant investigation. Include useful
   context, impact, and disposition without credentials or needless private data.
 - Assign remediation by actual capability and authority; specialist repair remains with qualified
-  actors. Keep product feedback distinct from maintainer diagnostics, disclose material loss or
-  unavailability even when users cannot repair it, and offer feasible actions or supported escalation
-  when available. Remediation completion, failure, and mid-path stops remain owned and observable
-  through channels appropriate to the audience and environment.
+  actors. The boundary responsible for product feedback distinguishes it from maintainer diagnostics,
+  discloses material loss or unavailability even when users cannot repair it, and offers feasible
+  actions or supported escalation when available. Remediation completion, failure, and mid-path stops
+  remain owned and observable through channels appropriate to the audience and environment.
 - Explain caller obligations and recovery rationale where code, types, and referenced contracts leave
   important meaning unclear, especially data-loss authority and retry safety.
 - Decide whether failure-handling work is needed from these principles and the code and contract

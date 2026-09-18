@@ -297,10 +297,14 @@ def _plan_project_rule_sync(source_root: Path, target_root: Path) -> Plan:
     current = _read_entry(target)
     required, on_demand = _preserved_rows(current, managed, catalog)
     required_paths = required_rule_paths(target)
+    on_demand_paths = {
+        path for row in _index_rows(current)
+        if len(row) == 3 and (path := _row_path('| ' + ' | '.join(row) + ' |')) is not None
+    }
     for rule in project_rules:
         if rule.path in required_paths:
             required.append(f'| `{rule.path}` | {rule.strength} |')
-        elif rule.section == 'project':
+        elif rule.section == 'project' or rule.path in on_demand_paths:
             on_demand.append(_rule_row(rule.description, rule.path, rule.strength))
     template = (
         source / 'setup-assets/templates/entry-files/AGENTS.md'

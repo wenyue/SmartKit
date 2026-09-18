@@ -59,17 +59,19 @@ failures.
 
 ## Follow Feedback To Completion
 
-Inspect who encounters the failure and what that actor can understand and change. Establish
-capability and authority from actual access, callers, and expected use, rather than a module or
-surface name. For each proposed action, identify a feasible action or supported escalation route
-and the impact the audience needs to understand. If no capable, authorized actor is established,
-keep remediation unresolved and return the missing decision to the readiness step.
+Locate the boundary responsible for feedback and inspect what its audience can understand and
+change. For a library or component that transfers handling, follow useful diagnostic, impact, and
+remediation details through its return or failure contract to the caller or established feedback
+owner. Establish capability and authority from actual access, callers, and expected use, rather than
+a module or surface name. For each proposed action, identify a feasible action or supported
+escalation route and the impact the audience needs to understand. If no capable, authorized actor is
+established, keep remediation unresolved and return the missing decision to the readiness step.
 
 A maintainer may need a path and diagnostic evidence to repair storage; an ordinary user may need
-the unavailable capability explained and a supported sign-in or support route. Compare product
-feedback with the resulting state, including material loss or unavailability even when that user
-cannot fix it. Keep specialist repair design with the capable owner; a runtime prompt for a bounded
-product choice cannot settle a missing development-time data contract.
+the unavailable capability explained and a supported sign-in or support route. Where the operation
+has product feedback, compare it with the resulting state, including material loss or unavailability
+even when that user cannot fix it. Keep specialist repair design with the capable owner; a runtime
+prompt for a bounded product choice cannot settle a missing development-time data contract.
 
 Trace a reporter call back to the failed state and forward to each remediation action. For a reset
 action, inspect who owns completion, what feedback changes on success, and how failure or a mid-path

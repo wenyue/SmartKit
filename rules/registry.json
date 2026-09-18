@@ -10,7 +10,7 @@
     {"id": "smartkit/core-workspace-policy", "source": "core-workspace-policy.md", "strength": "Mandatory", "description": "Workspace selection, existing work preservation, commits, and remote actions."},
     {"id": "smartkit/file-code", "source": "file-code.md", "strength": "Default", "description": "Code ownership, APIs, abstraction, state, dependencies, diagnostics, and documentation."},
     {"id": "smartkit/file-cpp", "source": "file-cpp.md", "strength": "Default", "description": "C++ ownership, interfaces, resource lifetimes, failures, and concurrency."},
-    {"id": "smartkit/file-flutter", "source": "file-flutter.md", "strength": "Default", "description": "Dart and Flutter ownership, data models, state, lifecycle, UI, and routing."},
+    {"id": "smartkit/file-flutter", "source": "file-flutter.md", "strength": "Default", "description": "Dart and Flutter public surfaces, records, filesystem operations, lifecycle, asynchronous context use, Navigator routes, and generated sources."},
     {"id": "smartkit/file-go", "source": "file-go.md", "strength": "Default", "description": "Go packages, APIs, errors, context, concurrency, and logging."},
     {"id": "smartkit/file-python", "source": "file-python.md", "strength": "Default", "description": "Python APIs, typing, data boundaries, failures, and resource management."}
   ]
