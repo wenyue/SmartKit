@@ -27,11 +27,12 @@ operations, generation, and analysis boundaries.
   reads, writes, creation, and deletion. Let operations expose their own failures to the established
   recovery or reporting owner; a later operation need not reproduce an earlier transient lookup
   error.
-- Use native `exists`/`existsSync` or `type`/`typeSync` only when a preliminary check offers a concrete
-  benefit. A positive is a valid observation at check time under the queried API's semantics, but
-  guarantees neither permission nor subsequent success; state can change. A negative may reflect
-  absence, a type mismatch, or a lookup failure. Skip or default on a negative only when that remains
-  acceptable if lookup failed rather than the object being absent.
+- Use a preliminary filesystem query (for example, `existsSync` or `typeSync`), directly or through
+  a wrapper, only when it offers a concrete benefit. Treat a negative result (such as `false` or
+  `notFound`) as ambiguous between absence and lookup failure; it may also reflect a type mismatch.
+  Skip or default on such a result only when lookup failure and absence are equivalent for the
+  caller, and any possible type mismatch is acceptable. A positive is an observation at check time,
+  but guarantees neither permission nor subsequent success; state can change.
 - Secure initialization and overwrite guarantees through the actual operation's semantics, not an
   absence check; a default write can truncate existing data.
 
