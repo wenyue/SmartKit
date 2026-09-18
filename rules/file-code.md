@@ -62,6 +62,12 @@ diagnostics, and documentation.
   transfer. Give each independently initiated operation a final owner and every asynchronous or
   detached path owned completion, failure, and lifecycle. Guarantee owned cleanup across all paths,
   including cancellation and interruption.
+- For any such handling, prefer the narrowest failure type that supports the established
+  disposition. A language's broad exception or failure base type is appropriate when every failure
+  in its capture scope can safely receive that same disposition. At every broad capture site in
+  authored code, leave a meaningful maintainer comment nearby explaining why the boundary must be
+  this broad and why the disposition is safe for every captured failure; merely restating that the
+  capture is broad is not an explanation.
 - Consuming failure or delegating reporting retains responsibility for state, cleanup, retry, and
   feedback. Preserve observable unresolved outcomes, remaining effects, and available useful causes
   and diagnostics through final handling, distinguishing primary from recovery, cleanup, or

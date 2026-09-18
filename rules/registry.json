@@ -8,7 +8,7 @@
     {"id": "smartkit/core-reasoning-workflow", "source": "core-reasoning-workflow.md", "strength": "Mandatory", "description": "Task understanding, change readiness, execution, and verification."},
     {"id": "smartkit/core-third-party-skill-policy", "source": "core-third-party-skill-policy.md", "strength": "Mandatory", "description": "SmartKit policy for third-party Skill artifacts and workflows."},
     {"id": "smartkit/core-workspace-policy", "source": "core-workspace-policy.md", "strength": "Mandatory", "description": "Workspace selection, existing work preservation, commits, and remote actions."},
-    {"id": "smartkit/file-code", "source": "file-code.md", "strength": "Default", "description": "Code ownership, APIs, abstraction, state, dependencies, diagnostics, and documentation."},
+    {"id": "smartkit/file-code", "source": "file-code.md", "strength": "Default", "description": "Code ownership, APIs, abstraction, state, dependencies, failure handling, diagnostics, and documentation."},
     {"id": "smartkit/file-cpp", "source": "file-cpp.md", "strength": "Default", "description": "C++ ownership, interfaces, resource lifetimes, failures, and concurrency."},
     {"id": "smartkit/file-flutter", "source": "file-flutter.md", "strength": "Default", "description": "Dart and Flutter public surfaces, records, filesystem operations, lifecycle, asynchronous context use, Navigator routes, and generated sources."},
     {"id": "smartkit/file-go", "source": "file-go.md", "strength": "Default", "description": "Go packages, APIs, errors, context, concurrency, and logging."},
