@@ -16,6 +16,12 @@ history remains evidence for authoring and review; its
 presence there does not earn it a place in the artifact. This governs the artifact's own
 instructions, including instructions for producing outputs that compare alternatives.
 
+Organize around meaningful decisions, co-locating each requirement with the evidence, action, and
+verification needed to apply it. Fix sequence where outcomes depend on it; otherwise leave method
+to the Agent. Disclose real branches through precise pointers, not arbitrary length thresholds.
+Judge coherence and completeness without requiring headings, checklists, word budgets, or a second
+workflow that repeats the policy.
+
 Apply the positive-target guidance from `writing-for-agents`: state the positive target by default.
 Retain a negative boundary only as a necessary hard guardrail when positive wording cannot reliably
 prevent material confusion, misapplication, or a safety risk. Pair that guardrail with the required
@@ -24,17 +30,22 @@ non-goals by expressing the intended scope and behavior positively wherever that
 
 ## Responsibility and loading
 
-A Rule owns a clearly bounded area of persistent policy across triggered work; a Skill owns a
-triggered job with a bounded outcome and the constraints necessary to that job. Allocate shared
-persistent policy to the best existing Rule by meaning and scope, improving that Rule when needed.
+A Rule owns a clearly bounded area of persistent policy across relevant work. A task Skill owns a
+triggered job with a bounded outcome and the constraints necessary to that job; a rule-led Skill
+owns policy applied to existing work. Rule-led Skills are Rules exposed through native Skill
+discovery, not task workflows competing for a separate deliverable. Allocate shared persistent
+policy to the best existing policy owner by meaning and scope, whether a Rule file or a rule-led
+Skill, improving that owner when needed.
 Always-loaded status is evidence of availability, not a reason to promote project- or Skill-specific
 obligations to global policy. If code, configuration, a schema, or another active owner already owns
 a fact, its change belongs there.
 
-Give each policy one complete definition across the relevant Rules and Skills. Rules may reference
-other Rules and Skills; Skills may reference other Skills, but must not directly reference Rules.
-Use short owner pointers within these reference boundaries and local context needed for a task
-decision, keeping the policy definition with its owner.
+Give each policy one complete definition across the relevant Rules and Skills. Match references to
+their supported routes: Rule files may reference Rules and Skills; Skills may invoke or reference
+other Skills, including rule-led Skills, but must not directly reference independently loaded Rule
+files. Use short owner pointers within these boundaries and local context needed for a decision,
+keeping the policy definition with its owner. A Skill route can load a rule-led policy; it cannot
+extend that policy's declared Scope.
 
 Assess suitable existing owners using related Rules and Skills, applicable always-loaded project
 Rules and SmartKit global Rules, and conditional Rules that can load together in supported usage.
@@ -43,15 +54,36 @@ discovery and loading routes. The current authoring session alone does not estab
 to future users.
 
 Compare meaning, including conditions, exceptions, and configuration, rather than matching phrases.
-A Skill cannot make a Rule applicable or activate it. It may rely on specific constraints of an
-independently applicable Rule only with supported loading guarantees wherever the Skill supports
-that behavior. Independent Rule loading supplies those constraints; the Skill retains only the
-local context needed for its task decision. Preserve the Rule's scope, conditions, and exceptions
-in that reliance. Removing a Skill obligation requires resolved allocation and loading; a pointer
-alone does not establish applicability or availability.
+For independently loaded Rule files, a Skill cannot establish applicability or activation. It may
+rely on their specific constraints only with supported independent loading guarantees wherever it
+supports that behavior, retaining only the local context needed for its decision. Preserve the
+policy's scope, conditions, and exceptions under either loading route. Removing a Skill obligation
+requires resolved allocation and loading; a pointer alone does not establish applicability or
+availability.
 
 Choose the best owner before checking whether it can be changed. Establish canonical-source access
 and write authorization separately from readability, using working access as evidence rather than
 inferring privilege requirements from location. An editable installation cache or a duplicate in
 the Skill cannot substitute for the canonical owner. Missing source, access, or permission leaves
 an owner dependency to resolve through the responsible role.
+
+## Rule-led Skills
+
+Reserve `rule-<domain>` names for this writing style, independently of strength. Combine Rule writing
+with Skill mechanics: declare explicit Scope and default Strength in the entry, and use a
+model-facing description that reaches the policy before governed decisions. Include ordinary-work
+conditions and dedicated assessment conditions where supported; keep explicit invocation available
+without enlarging Scope.
+
+Normal activation constrains the current work rather than starting another audit or report. A
+requested assessment has its own stated coverage and outcome, within the policy's Scope and the
+request's authority. Neither route grants additional permission. Requirements may include necessary
+procedures, with the evidence and verification those decisions need, while settled routine cases
+remain light.
+
+Rely on installed SmartKit core governance for applicability, strength, precedence, and conflicts
+with task Skills rather than restating or redefining those contracts. Use its inheritance for owned
+normative resources; distinguish them from illustrative material and independently owned policies,
+which retain their own contracts. Give each required resource a concrete loading condition before
+the decisions that need it. Native Skill discovery and public exposure retain their existing owners;
+writing a rule-led entry neither registers it nor migrates another policy into it.
