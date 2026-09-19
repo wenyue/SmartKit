@@ -23,8 +23,7 @@ evidence separately from your interpretation and from the Author brief.
 
 ## Allocate responsibility and bound the job
 
-Before choosing a Candidate, inspect suitable existing owners and establish the allocation using
-the shared [responsibility and loading criteria](artifact-standard.md#responsibility-and-loading).
+Before choosing a Candidate, inspect suitable existing owners and establish the responsibility allocation.
 Determine which owners must change and which dependencies must be resolved so that the bounded
 job serves the overall request.
 When the owner is editable and its change authorized, route the work there. When source, access,

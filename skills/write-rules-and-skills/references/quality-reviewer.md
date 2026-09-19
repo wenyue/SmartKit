@@ -41,8 +41,7 @@ relationships or prevent real ambiguity. Judge the whole artifact rather than re
 sentence to add a unique fact or imposing mechanical length or formatting preferences.
 
 Assess whether its instructions express the accepted requirements with justified guardrails and
-retained rationale under the shared judgments. When evaluating the chosen form, consult the
-[Author's shaping criteria](author.md#shape-the-artifact); assess the form's fitness and execution
+retained rationale under the shared judgments. Assess the chosen form's fitness and execution
 usability under this Quality contract.
 
 Judge ownership across the Candidate and the related artifacts, including the applicable

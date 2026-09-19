@@ -2,8 +2,8 @@
 
 An artifact is one Rule or Skill; the Candidate is that current artifact and its scoped supporting
 resources under authoring and review. Controller, Author, and Quality apply these judgments to
-both artifact types within their own responsibilities: alignment and allocation, authoring, and
-quality review. Their role contracts retain authority over actions and verdicts.
+both artifact types within their own responsibilities: alignment, allocation, and the Author brief;
+authoring; and quality review. Their role contracts retain authority over actions and verdicts.
 
 ## Operative meaning
 
@@ -67,7 +67,31 @@ inferring privilege requirements from location. An editable installation cache o
 the Skill cannot substitute for the canonical owner. Missing source, access, or permission leaves
 an owner dependency to resolve through the responsible role.
 
-## Rule-led Skills
+## Artifact forms
+
+Choose the form that fits the allocated work. Apply the common judgments above to every form and
+the relevant criteria below when selecting, writing, or evaluating its shape.
+
+### Rules
+
+For a Rule, lead with the governing policy and make its owner, strength, scope, observable
+conditions and outcomes, exceptions, precedence, and boundaries reconstructable.
+
+### Skills
+
+For a Skill, apply `SKILL-MECHANICS.md` to invocation and packaging, and choose the shape that fits
+the work from three parallel writing styles:
+
+- A **principle-led Skill** states the outcome, governing principles, consequential constraints,
+	and completion conditions while leaving method to the Agent.
+- A **procedure-led Skill** fixes steps and order where sequence or protocol affects the result,
+	correctness, safety, ownership, coordination, recovery, or external effects.
+- A **rule-led Skill** governs relevant work with scoped requirements and exceptions.
+
+A **Hybrid Skill** combines these styles where their roles are consequential. Integrate their
+meaning around decisions rather than concatenating a rule narrative and a workflow.
+
+### Rule-led Skills
 
 Reserve `rule-<domain>` names for this writing style, independently of strength. Combine Rule writing
 with Skill mechanics: declare explicit Scope and default Strength in the entry, and use a

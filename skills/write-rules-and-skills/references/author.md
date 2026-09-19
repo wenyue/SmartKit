@@ -55,26 +55,12 @@ materially reshaping one, read only the exemplar or exemplars named for its shap
 ordinary local edits outside the example branch. Examples demonstrate proportion and coherence, not
 required headings, wording, or a template.
 
-For a Rule, lead with the governing policy and make its owner, strength, scope, observable
-conditions and outcomes, exceptions, precedence, and boundaries reconstructable. See the
-[Rule exemplar](examples/elegant-rule.md).
+- Rule: [Rule exemplar](examples/elegant-rule.md).
+- Principle-led Skill: [principle-led Skill exemplar](examples/elegant-principle-led-skill.md).
+- Procedure-led Skill: [procedure-led Skill exemplar](examples/elegant-procedure-led-skill.md).
+- Rule-led Skill: [rule-led Skill exemplar](examples/elegant-rule-led-skill.md).
 
-For a Skill, apply `SKILL-MECHANICS.md` to invocation and packaging, and choose the shape that fits
-the work from three parallel writing styles:
-
-- A **principle-led Skill** states the outcome, governing principles, consequential constraints,
-  and completion conditions while leaving method to the Agent. See the
-  [principle-led Skill exemplar](examples/elegant-principle-led-skill.md).
-- A **procedure-led Skill** fixes steps and order where sequence or protocol affects the result,
-  correctness, safety, ownership, coordination, recovery, or external effects. See the
-  [procedure-led Skill exemplar](examples/elegant-procedure-led-skill.md).
-- A **rule-led Skill** governs relevant work with scoped requirements and exceptions. Apply the
-  [rule-led writing guidance](artifact-standard.md#rule-led-skills) and see the
-  [rule-led Skill exemplar](examples/elegant-rule-led-skill.md).
-
-A **Hybrid Skill** combines these styles where their roles are consequential. Read the base-shape
-exemplars relevant to those parts, and integrate their meaning around decisions rather than
-concatenating a rule narrative and a workflow.
+For a Hybrid Skill, read the base-shape exemplars relevant to its consequential parts.
 
 Shape the Candidate around its allocated responsibility, using owner pointers and necessary local
 decision context where other policies apply. If the evidence requires a different owner or leaves
