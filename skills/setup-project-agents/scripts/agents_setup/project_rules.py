@@ -26,7 +26,6 @@ from .rule_metadata import RuleMetadataError, policy_metadata, read_policy
 ENTRY_PATH = PurePosixPath('AGENTS.md')
 PROJECT_RULES_TITLE = 'Project rules'
 _RULE_PATH = re.compile(r'\.agents/rules/([^`|/\r\n]+\.md)(?=[`)\s]|$)')
-_TABLE_ROW = re.compile(r'^\|.*\|\s*$')
 
 
 class ProjectRuleSyncError(ValueError):
@@ -189,6 +188,26 @@ def _row_path(row: str) -> PurePosixPath | None:
     return PurePosixPath('.agents/rules') / match.group(1)
 
 
+def _table_cells(line: str) -> list[str] | None:
+    """Split unescaped Markdown pipes, with either outer delimiter optional."""
+    cells = []
+    start = 0
+    backslashes = 0
+    for index, character in enumerate(line):
+        if character == '|' and backslashes % 2 == 0:
+            cells.append(line[start:index].strip())
+            start = index + 1
+        backslashes = backslashes + 1 if character == '\\' else 0
+    if not cells:
+        return None
+    cells.append(line[start:].strip())
+    if not cells[0]:
+        cells.pop(0)
+    if cells and not cells[-1]:
+        cells.pop()
+    return cells
+
+
 def _index_rows(current: bytes | None) -> list[list[str]]:
     if current is None:
         return []
@@ -198,29 +217,39 @@ def _index_rows(current: bytes | None) -> list[list[str]]:
         return []
     section = live_text(content[bounds[0]:bounds[1]])
     rows = []
+    in_table = False
+    table_columns: int | None = None
     for line in section.splitlines():
-        if not _TABLE_ROW.fullmatch(line):
-            if line.lstrip().startswith('|'):
-                raise ProjectRuleSyncError(f'malformed Rule table in AGENTS.md: {line.strip()}')
+        cells = _table_cells(line)
+        if cells is None or line.startswith(('    ', '\t')):
+            in_table = False
+            table_columns = None
             continue
-        cells = [cell.strip() for cell in re.split(r'(?<!\\)\|', line)[1:-1]]
-        if cells in (['Rule', 'Strength'], ['Description', 'Rule', 'Strength']):
+        header = len(cells) >= 2 and cells[-2:] == ['Rule', 'Strength']
+        separator = bool(cells) and all(re.fullmatch(r':?-+:?', cell) for cell in cells)
+        if not (in_table or header or separator or line.lstrip().startswith('|') or '.agents/rules/' in line):
             continue
-        if len(cells) == 3 and cells[1:] == ['Rule', 'Strength']:
+        in_table = True
+        if header and len(cells) == 2:
+            table_columns = 2
             continue
-        if set(line.replace('|', '').strip()) <= {'-', ':', ' '}:
-            continue
-        if len(cells) == 3:
+        if (header and len(cells) == 3) or (not separator and len(cells) == 3):
             raise ProjectRuleSyncError(
                 f'legacy conditional project Rule declaration in AGENTS.md: {line.strip()}; '
                 'separately authorize source authoring into a rule-led Skill before setup'
             )
-        if len(cells) != 2:
+        if separator:
+            if table_columns is not None and len(cells) != table_columns:
+                raise ProjectRuleSyncError(f'ambiguous Rule table columns in AGENTS.md: {line.strip()}')
+            table_columns = len(cells)
+            continue
+        if len(cells) != 2 or (table_columns is not None and len(cells) != table_columns):
             raise ProjectRuleSyncError(f'ambiguous Rule table in AGENTS.md: {line.strip()}')
         if '.agents/rules/' in line and _row_path(line) is None:
             raise ProjectRuleSyncError(f'ambiguous Rule path in AGENTS.md: {line.strip()}')
         rows.append(cells)
-    if re.search(r'^#{1,6}\s+.*(?:on-demand|conditional)', section, re.IGNORECASE | re.MULTILINE) and rows:
+    if rows and any(re.search(r'\b(?:on[- ]demand|conditional)\b', heading.title, re.IGNORECASE)
+                    for heading in live_headings(section)):
         raise ProjectRuleSyncError(
             'legacy conditional project Rule declaration in AGENTS.md; '
             'separately authorize source authoring into a rule-led Skill before setup'

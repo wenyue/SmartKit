@@ -318,6 +318,47 @@ class SetupCliTest(unittest.TestCase):
             self.assertFalse((session / 'generated').exists())
             snapshot.assert_not_called()
 
+    def test_prepare_refuses_alternate_conditional_declarations_before_effects(self):
+        cases = (
+            ('.agents/rules/library.md',
+             '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+             '## Project rules\n\n### On-demand rules\n\n'
+             'Description | Rule | Strength\n--- | --- | ---\n'
+             'Library work | `.agents/rules/library.md` | Default\n'),
+            ('.agents/rules/library.md',
+             '---\n  loading: on-demand\n---\n'
+             '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+             '## Project rules\n'),
+            ('.agents/skills/rule-library/SKILL.md',
+             '---\nname: rule-library\ndescription: Use for library work.\n'
+             '"disable-model-invocation": true\n---\n'
+             '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+             '## Project rules\n'),
+        )
+        for relative, content, entry in cases:
+            with self.subTest(path=relative, content=content), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                target = root / 'target'
+                policy = target / relative
+                policy.parent.mkdir(parents=True)
+                policy.write_text(content, encoding='utf-8')
+                (target / 'AGENTS.md').write_text(entry, encoding='utf-8')
+                session = self.private_session(root)
+                before = self.snapshot_tree(target)
+                with redirect_stderr(StringIO()), mock.patch.object(
+                    setup_project_agents, 'snapshot_external_skills',
+                    side_effect=AssertionError('invalid policy must refuse before external snapshot'),
+                ) as snapshot:
+                    result = setup_project_agents.main([
+                        'prepare', '--target', str(target), '--session', str(session),
+                        *self.source_args(),
+                    ])
+                self.assertEqual(result, 2)
+                self.assertEqual(self.snapshot_tree(target), before)
+                self.assertFalse((session / 'request.json').exists())
+                self.assertFalse((session / 'generated').exists())
+                snapshot.assert_not_called()
+
     def test_local_rule_and_rule_skill_body_changes_invalidate_prepared_request(self):
         for relative, content in (
             ('.agents/rules/local-policy.md',

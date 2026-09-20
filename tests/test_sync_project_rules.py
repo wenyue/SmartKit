@@ -250,11 +250,120 @@ class SyncProjectRulesTest(unittest.TestCase):
                         ])
                     self.assertEqual(status, 2)
                     self.assertIn('rule-', error.getvalue())
-                    self.assertIn(name, error.getvalue())
+                    self.assertIn('AGENTS.md', error.getvalue())
                     self.assertEqual(
                         {path.relative_to(target): path.read_bytes()
                          for path in target.rglob('*') if path.is_file()}, before,
                     )
+
+    def test_unconditional_tables_accept_optional_outer_pipes(self):
+        for heading in ('Required rules', 'Unconditional rules'):
+            for left, right in (('| ', ' |'), ('', ''), ('| ', ''), ('', ' |')):
+                with self.subTest(heading=heading, edges=(left, right)), \
+                     tempfile.TemporaryDirectory() as directory:
+                    target = Path(directory)
+                    self.write_rule(target, 'local.md', scope='Local work.', strength='Default')
+                    entry = target / 'AGENTS.md'
+                    rows = ('Rule | Strength', '--- | ---',
+                            '`docs/policy.md` | Mandatory', '`.agents/rules/local.md` | Default')
+                    entry.write_text(
+                        '# Repository\n\n## Project rules\n\n### ' + heading + '\n\n' +
+                        ''.join(left + row + right + '\n' for row in rows) +
+                        '\n## Agent skills\n\nPreserve this.\n', encoding='utf-8',
+                    )
+                    original = entry.read_bytes()
+                    self.assertEqual(project_rules.synchronize_project_rules(
+                        REPO_ROOT, target, check_only=True,
+                    ).check, 'drift')
+                    self.assertEqual(entry.read_bytes(), original)
+                    self.assertEqual(project_rules.synchronize_project_rules(
+                        REPO_ROOT, target, check_only=False,
+                    ).check, 'clean')
+                    updated = entry.read_text(encoding='utf-8')
+                    self.assertIn('| `docs/policy.md` | Mandatory |', updated)
+                    self.assertIn('| `.agents/rules/local.md` | Default |', updated)
+                    self.assertTrue(updated.endswith('## Agent skills\n\nPreserve this.\n'))
+                    self.assertEqual(project_rules.synchronize_project_rules(
+                        REPO_ROOT, target, check_only=True,
+                    ).changed_paths, ())
+
+    def test_conditional_tables_refuse_with_optional_outer_pipes(self):
+        for left, right in (('| ', ' |'), ('', ''), ('| ', ''), ('', ' |')):
+            with self.subTest(edges=(left, right)), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                self.write_rule(target, 'local.md', scope='Local work.', strength='Default')
+                rows = ('Description | Rule | Strength', '--- | --- | ---',
+                        'Library work | `.agents/rules/local.md` | Default')
+                (target / 'AGENTS.md').write_text(
+                    '## Project rules\n\n### On-demand rules\n\n' +
+                    ''.join(left + row + right + '\n' for row in rows), encoding='utf-8',
+                )
+                before = {p.relative_to(target): p.read_bytes()
+                          for p in target.rglob('*') if p.is_file()}
+                for check in (False, True):
+                    with self.subTest(check=check):
+                        with self.assertRaisesRegex(project_rules.ProjectRuleSyncError, 'rule-'):
+                            project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=check)
+                        self.assertEqual({p.relative_to(target): p.read_bytes()
+                                          for p in target.rglob('*') if p.is_file()}, before)
+
+    def test_conditional_table_schema_cannot_be_bypassed_by_short_rows(self):
+        for left, right in (('| ', ' |'), ('', ''), ('| ', ''), ('', ' |')):
+            for row in ('When editing tests | `.agents/rules/local.md`',
+                        'When editing tests | `.agents/rules/local.md` | '):
+                with self.subTest(edges=(left, right), row=row), \
+                     tempfile.TemporaryDirectory() as directory:
+                    target = Path(directory)
+                    self.write_rule(target, 'local.md', scope='Local work.', strength='Default')
+                    (target / 'AGENTS.md').write_text(
+                        '## Project rules\n\n' + ''.join(
+                            left + content + right + '\n' for content in
+                            ('Description | Rule | Strength', '--- | --- | ---', row)
+                        ), encoding='utf-8',
+                    )
+                    before = {p.relative_to(target): p.read_bytes()
+                              for p in target.rglob('*') if p.is_file()}
+                    for check in (False, True):
+                        with self.subTest(check=check):
+                            with self.assertRaises(project_rules.ProjectRuleSyncError):
+                                project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=check)
+                            self.assertEqual({p.relative_to(target): p.read_bytes()
+                                              for p in target.rglob('*') if p.is_file()}, before)
+
+    def test_conditional_rule_metadata_refuses_yaml_key_variants(self):
+        for declaration in ('  loading: on-demand', 'loading : on-demand',
+                            '"loading": on-demand', "'loading': on-demand",
+                            '  alwaysApply: false', '  globs: "*.py"', '  applyTo: "*.py"'):
+            with self.subTest(declaration=declaration), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                self.write_rule(target, 'local.md', scope='Local work.', strength='Default')
+                rule = target / '.agents/rules/local.md'
+                rule.write_text('---\n' + declaration + '\n---\n' +
+                                rule.read_text(encoding='utf-8'), encoding='utf-8')
+                (target / 'AGENTS.md').write_text('## Project rules\n', encoding='utf-8')
+                before = {p.relative_to(target): p.read_bytes()
+                          for p in target.rglob('*') if p.is_file()}
+                for check in (False, True):
+                    with self.subTest(check=check):
+                        with self.assertRaisesRegex(project_rules.ProjectRuleSyncError, 'rule-'):
+                            project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=check)
+                        self.assertEqual({p.relative_to(target): p.read_bytes()
+                                          for p in target.rglob('*') if p.is_file()}, before)
+
+    def test_invalid_rule_loading_diagnostic_identifies_the_control(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_rule(target, 'local.md', scope='Local work.', strength='Default')
+            rule = target / '.agents/rules/local.md'
+            rule.write_text('---\nloading: >\n    first\n  second\n---\n' +
+                            rule.read_text(encoding='utf-8'), encoding='utf-8')
+            before = rule.read_bytes()
+            with self.assertRaises(project_rules.ProjectRuleSyncError) as caught:
+                project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            self.assertIn('loading', str(caught.exception))
+            self.assertNotIn('description', str(caught.exception))
+            self.assertEqual(rule.read_bytes(), before)
+            self.assertFalse((target / 'AGENTS.md').exists())
 
     def test_names_have_no_loading_semantics_and_skills_need_no_rule_index(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -296,6 +405,23 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertEqual(skill.read_bytes(), original)
             self.assertNotIn('On-demand', entry.read_text(encoding='utf-8'))
             self.assertTrue(entry.read_text(encoding='utf-8').endswith('## Agent skills\n\nKeep this.\n'))
+
+    def test_existing_rule_metadata_section_and_section_strength_remain_supported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            rule = target / '.agents/rules/20-existing.md'
+            rule.parent.mkdir(parents=True)
+            rule.write_text(
+                '# Policy\n\n## Metadata\n\nStrength: `Default`\n\nScope: Project work.\n'
+                '\n## Special cases\n\nStrength: `Mandatory`\n\nKeep required evidence.\n',
+                encoding='utf-8',
+            )
+            original = rule.read_bytes()
+            result = project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            self.assertEqual(result.check, 'clean')
+            self.assertEqual(rule.read_bytes(), original)
+            self.assertIn('| `.agents/rules/20-existing.md` | Default |',
+                          (target / 'AGENTS.md').read_text(encoding='utf-8'))
 
     def test_apply_rolls_back_the_index_when_rule_metadata_changes_during_commit(self):
         with tempfile.TemporaryDirectory() as directory:

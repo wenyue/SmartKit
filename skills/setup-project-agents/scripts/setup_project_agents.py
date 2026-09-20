@@ -518,7 +518,9 @@ def _target_evidence_paths(
     """Return the closed target surface consumed by setup after prepare.
 
     The boolean records whether file bytes, rather than only entry presence and type, are
-    setup evidence. Project Skill bodies are project-owned and are not consumed by setup.
+    setup evidence. Native rule-led Skill entries are validated and frozen as content.
+    Ordinary project Skill bodies remain project-owned and unconsumed unless another
+    declared setup input, such as a managed asset, includes them.
     """
     root = Path(root).absolute()
     source_root = Path(source_root).absolute()

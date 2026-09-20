@@ -211,6 +211,67 @@ class SyncProjectTest(unittest.TestCase):
                         self.sync(check)
                     self.assertEqual(self.snapshot(), before)
 
+    def test_rule_skill_invocation_controls_cannot_use_yaml_key_variants_to_bypass_validation(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        for declaration in ('"disable-model-invocation": true',
+                            "'disable-model-invocation': true",
+                            'disable-model-invocation : true',
+                            'disable-model-invocation: false\n"disable-model-invocation": true'):
+            with self.subTest(declaration=declaration):
+                self.write(relative,
+                           '---\nname: rule-testing\ndescription: Use when writing tests.\n' +
+                           declaration + '\n---\n'
+                           '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+                before = self.snapshot()
+                for check in (False, True):
+                    with self.subTest(check=check):
+                        with self.assertRaises(project_sync.ProjectSyncError):
+                            self.sync(check)
+                        self.assertEqual(self.snapshot(), before)
+
+    def test_rule_skill_invocation_validation_preserves_false_controls_and_description_text(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        for fields in (
+            'description: Use when writing tests.\n"disable-model-invocation": false\n',
+            'description: Use when writing tests.\ndisable-model-invocation : false\n',
+            'description: |-\n  Use when reviewing this literal:\n  disable-model-invocation: true\n',
+        ):
+            with self.subTest(fields=fields):
+                self.write(relative, '---\nname: rule-testing\n' + fields + '---\n'
+                           '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+                original = (self.target / relative).read_bytes()
+                self.assertEqual(self.sync().check, 'clean')
+                self.assertEqual((self.target / relative).read_bytes(), original)
+                self.assertIn(relative, self.sync(True).preserved_paths)
+
+    def test_rule_skill_name_rejects_block_and_nonstring_values_with_name_diagnostics(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        for name in ('>\n  rule-testing', '|\n  rule-testing', '123', 'null', '""'):
+            with self.subTest(name=name):
+                self.write(relative, '---\nname: ' + name + '\n'
+                           'description: Use when writing tests.\n---\n'
+                           '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+                before = self.snapshot()
+                for check in (False, True):
+                    with self.subTest(check=check):
+                        with self.assertRaises(project_sync.ProjectSyncError) as caught:
+                            self.sync(check)
+                        self.assertIn('name', str(caught.exception))
+                        self.assertNotIn('description', str(caught.exception))
+                        self.assertEqual(self.snapshot(), before)
+
+    def test_rule_skill_name_preserves_supported_string_forms(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        for name in ('rule-testing', 'rule-testing # name',
+                     '"rule-testing" # name', "'rule-testing' # name"):
+            with self.subTest(name=name):
+                self.write(relative, '---\nname: ' + name + '\n'
+                           'description: Use when writing tests.\n---\n'
+                           '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+                original = (self.target / relative).read_bytes()
+                self.assertEqual(self.sync().check, 'clean')
+                self.assertEqual((self.target / relative).read_bytes(), original)
+
     def test_legacy_conditional_rule_requires_source_migration_before_sync(self):
         self.write('.agents/rules/library.md',
                    '# Library\n\nStrength: `Default`\n\nScope: Library work.\n')
@@ -226,6 +287,41 @@ class SyncProjectTest(unittest.TestCase):
                 with self.assertRaisesRegex(project_sync.ProjectSyncError, 'rule-'):
                     self.sync(check)
                 self.assertEqual(self.snapshot(), before)
+
+    def test_rule_skill_description_requires_a_nonempty_native_string(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        for description in (
+            '# comment only', 'null', '~', '"" # TODO', "'' # TODO",
+            '[] # TODO', '[tests, lint]', '{}', '{test: lint}',
+            '123', '1.5', 'true # TODO', 'false',
+            '> # empty block', '|-\n  ',
+        ):
+            with self.subTest(description=description):
+                self.write(relative,
+                           '---\nname: rule-testing\ndescription: ' + description + '\n---\n'
+                           '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+                before = self.snapshot()
+                with self.assertRaisesRegex(project_sync.ProjectSyncError, 'description'):
+                    self.sync()
+                self.assertEqual(self.snapshot(), before)
+
+    def test_rule_skill_descriptions_preserve_native_string_forms(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        for description in (
+            'Apply when writing tests. # comment',
+            '"Apply when writing tests." # comment',
+            "'Apply when writing tests.' # comment",
+            '"123"', "'false'", '"# Apply to tests"',
+            '>\n  Apply when writing tests.\n  Include integration tests.',
+            '|- # description\n  Apply when writing tests.',
+        ):
+            with self.subTest(description=description):
+                self.write(relative,
+                           '---\nname: rule-testing\ndescription: ' + description + '\n---\n'
+                           '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+                original = (self.target / relative).read_bytes()
+                self.assertEqual(self.sync().check, 'clean')
+                self.assertEqual((self.target / relative).read_bytes(), original)
 
     def test_rule_skill_change_during_sync_rolls_back_adapters_and_preserves_source_edit(self):
         relative = '.agents/skills/rule-testing/SKILL.md'
