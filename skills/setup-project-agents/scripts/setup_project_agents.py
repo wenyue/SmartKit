@@ -19,7 +19,7 @@ from agents_setup.catalog import (
     parse_project_agents,
     safe_relative,
 )
-from agents_setup.discovery import DiscoveryError
+from agents_setup.discovery import DiscoveryError, discover_project_rules, discover_project_skills
 from agents_setup.generation import generation_requests
 from agents_setup.external import ExternalSkillError, snapshot_external_skills
 from agents_setup.external_contract import (
@@ -35,13 +35,14 @@ from agents_setup.ownership import (
 from agents_setup.planner import PlanningError, build_plan
 from agents_setup.project import ProjectError, inspect_project
 from agents_setup.renderer import RenderError, render_desired_state
+from agents_setup.project_rules import validate_project_rule_index
+from agents_setup.skill_registry import load_skill_registry
 from agents_setup.source import InvalidFetchedSource, validate_source
 from agents_setup.transaction import TransactionError, apply_plan
 from agents_setup.validation import validate_rendered_state
 
 
 _COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
-_PROJECT_RULE = re.compile(r'^\d{2}-[a-z0-9][a-z0-9-]*\.md$')
 _REQUEST_NAME = 'request.json'
 _GENERATED_NAME = 'generated'
 _GENERATION_MANIFEST = '.setup-generation.json'
@@ -581,7 +582,7 @@ def _target_evidence_paths(
     ):
         for child in rules_root.iterdir():
             if _is_link_like(child) or (
-                child.is_file() and _PROJECT_RULE.fullmatch(child.name) is not None
+                child.is_file() and child.suffix == '.md'
             ):
                 add(PurePosixPath(child.relative_to(root).as_posix()))
 
@@ -601,7 +602,7 @@ def _target_evidence_paths(
                 _is_link_like(child / 'SKILL.md') or (child / 'SKILL.md').is_file()
             ):
                 add(relative, content=False)
-                add(relative / 'SKILL.md', content=False)
+                add(relative / 'SKILL.md', content=child.name.startswith('rule-'))
 
     for agent in config.agents:
         add(agent.source)
@@ -743,6 +744,10 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
             'setup-assets/catalog/project-config.schema.json',
         )
     }
+    paths.update(
+        root / 'skills' / skill.path / 'SKILL.md'
+        for skill in load_skill_registry(root).custom if skill.name.startswith('rule-')
+    )
     sources = [root / asset.source.as_posix() for asset in catalog.assets]
     sources.extend((
         root / 'skills/setup-project-agents',
@@ -855,10 +860,18 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
         catalog=catalog,
     )
     config = project.config
+    validate_project_rule_index(project.root)
+    discover_project_skills(project.root, catalog)
     try:
-        verify_ownership(project.root, load_ownership(project.root, catalog=catalog))
+        previous = load_ownership(project.root, catalog=catalog)
+        verify_ownership(project.root, previous)
     except OwnershipError as error:
         raise SetupError(str(error)) from error
+    previous_rules = frozenset(
+        [asset.path for asset in (previous.assets if previous else ()) if asset.role == 'rule']
+        + [output for contract in (previous.contracts if previous else ()) for output in contract.outputs]
+    )
+    discover_project_rules(project.root, catalog, previous_managed=previous_rules)
     generated = session / _GENERATED_NAME
     generated_rules = generated / '.agents' / 'rules'
     generated_skills = generated / '.agents' / 'skills'

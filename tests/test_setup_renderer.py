@@ -58,7 +58,7 @@ class SetupRendererTest(unittest.TestCase):
 
     def generated_tree(self, root: Path) -> Path:
         generated = root / 'generated'
-        rule = generated / '.agents/rules/00-project-tools.md'
+        rule = generated / '.agents/rules/tools.md'
         rule.parent.mkdir(parents=True, exist_ok=True)
         rule.write_text(
             '# generated tooling rule\n\nStrength: `Mandatory`\n\nScope: Project tooling\n',
@@ -690,7 +690,7 @@ class SetupRendererTest(unittest.TestCase):
             first = self.render(target, generated)
             self.materialize(target, first.files)
             paths = (
-                '.agents/rules/00-project-tools.md',
+                '.agents/rules/tools.md',
                 '.agents/skills/change-set-verification/SKILL.md',
             )
             for relative in paths:
@@ -717,7 +717,7 @@ class SetupRendererTest(unittest.TestCase):
             target.mkdir()
             first = self.render(target, self.generated_tree(root))
             self.materialize(target, first.files)
-            old = PurePosixPath('.agents/rules/00-project-tools.md')
+            old = PurePosixPath('.agents/rules/tools.md')
             new = PurePosixPath('.agents/rules/05-project-tools.md')
             assets = tuple(
                 replace(asset, target=new)
@@ -1386,32 +1386,33 @@ class SetupRendererTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             target = root / 'target'
-            rule = target / '.agents/rules/40-domain-testing.md'
+            rule = target / '.agents/rules/local-policy.md'
             rule.parent.mkdir(parents=True)
             rule.write_text(
                 '# Testing\n\nStrength: `Default`\n\n'
                 'Scope: Tests under `test/` and plugin test directories.\n',
                 encoding='utf-8',
             )
-            skill = target / '.agents/skills/local-check/SKILL.md'
+            skill = target / '.agents/skills/rule-testing/SKILL.md'
             skill.parent.mkdir(parents=True)
             skill.write_text(
-                '---\nname: local-check\ndescription: Use for local checks.\n---\n',
+                '---\nname: rule-testing\ndescription: Apply when writing tests.\n---\n'
+                '# Testing\n\nStrength: `Default`\n\nScope: Writing tests.\n',
                 encoding='utf-8',
             )
 
             rendered = self.render(target, self.generated_tree(root))
             agents = rendered.files_by_path['AGENTS.md'].decode()
-            self.assertIn('`.agents/rules/40-domain-testing.md`', agents)
-            required, on_demand = agents.split('### On-demand rules')
-            self.assertIn('| `.agents/rules/00-project-tools.md` | Mandatory |', required)
-            self.assertIn('| `.agents/rules/02-project-structure.md` | Advisory |', required)
-            self.assertNotIn('| Description |', required)
-            self.assertIn('Tests under `test/` and plugin test directories.', on_demand)
-            self.assertNotIn('.agents/rules/40-domain-testing.md', rendered.files_by_path)
-            self.assertNotIn('.agents/skills/local-check/SKILL.md', rendered.files_by_path)
+            self.assertIn('| `.agents/rules/local-policy.md` | Default |', agents)
+            self.assertIn('| `.agents/rules/tools.md` | Mandatory |', agents)
+            self.assertIn('| `.agents/rules/structure.md` | Advisory |', agents)
+            self.assertNotIn('| Description |', agents)
+            self.assertNotIn('### On-demand rules', agents)
+            self.assertNotIn('rule-testing', agents)
+            self.assertNotIn('.agents/rules/local-policy.md', rendered.files_by_path)
+            self.assertNotIn('.agents/skills/rule-testing/SKILL.md', rendered.files_by_path)
             self.assertIn(
-                PurePosixPath('.agents/skills/local-check/SKILL.md'),
+                PurePosixPath('.agents/skills/rule-testing/SKILL.md'),
                 rendered.preserved_paths,
             )
             validate_rendered_state(rendered)
@@ -1419,11 +1420,41 @@ class SetupRendererTest(unittest.TestCase):
             (target / 'AGENTS.md').write_text(
                 '## Project rules\n\n### Required rules\n\n'
                 '| Rule | Strength |\n| --- | --- |\n'
-                '| `.agents/rules/40-domain-testing.md` | Default |\n', encoding='utf-8',
+                '| `.agents/rules/local-policy.md` | Default |\n', encoding='utf-8',
             )
             required_only = self.render(target, self.generated_tree(root)).files_by_path['AGENTS.md'].decode()
             self.assertNotIn('### On-demand rules', required_only)
-            self.assertIn('| `.agents/rules/40-domain-testing.md` | Default |', required_only)
+            self.assertIn('| `.agents/rules/local-policy.md` | Default |', required_only)
+
+    def test_shared_rule_wrappers_remain_unconditional(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            asset = AssetSpec(
+                'shared-policy', 'rule', PurePosixPath('rules/core-personality.md'),
+                PurePosixPath('.agents/rules/shared-policy.md'), tuple(Harness),
+                metadata={
+                    'section': 'global', 'loading': 'always', 'strength': 'Mandatory',
+                    'cursor': {'description': 'Shared policy', 'alwaysApply': True},
+                    'github': {'applyTo': '**'},
+                },
+            )
+            rendered = render_desired_state(
+                REPO_ROOT, root / 'target',
+                replace(self.catalog, assets=(*self.catalog.assets, asset)),
+                ProjectConfig(('shared-policy',), ()), self.generated_tree(root),
+            )
+            cursor = rendered.files_by_path['.cursor/rules/core-personality.mdc'].decode()
+            copilot = rendered.files_by_path[
+                '.github/instructions/core-personality.instructions.md'
+            ].decode()
+            self.assertIn('alwaysApply: true', cursor)
+            self.assertNotIn('globs:', cursor)
+            self.assertIn('applyTo: "**"', copilot)
+            for wrapper in (cursor, copilot):
+                self.assertIn('Apply @.agents/rules/shared-policy.md', wrapper)
+            self.assertIn(b'| `.agents/rules/shared-policy.md` | Mandatory |',
+                          rendered.files_by_path['AGENTS.md'])
+            validate_rendered_state(rendered)
 
     def test_project_rules_section_preserves_other_entry_content_without_locking_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:

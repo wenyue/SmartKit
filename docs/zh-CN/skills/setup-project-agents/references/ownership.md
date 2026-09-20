@@ -8,6 +8,10 @@
 
 `.agents/rules/` 和 `.agents/skills/` 下的项目本地 Rules 与 Skills，包括 blueprint 生成的源文件及配套文件，都归项目所有，可以在会话之间编辑。设置流程发现并保留其他归项目所有的 Rules 和 Skills。项目 Agent 源文件也仍归项目所有。catalog 声明的 Codex Plugin Agent 默认配置属于后备配置，不是项目 Agent 声明。Cursor、Copilot 和 Qoder 的原生 Plugin Agents，以及原生插件的 Rules、Skills 和 MCP，不属于此工作流。
 
+每个直接位于 `.agents/rules/*.md` 的文件都是无条件加载的必读 Rule，并明确声明 Strength 和 Scope。数字前缀仍可用作文件名，但不表示类别或优先级。所负责的 `AGENTS.md` 节将所有发现的 Rules 列入同一张必读表。条件策略应放在原生 `.agents/skills/rule-<domain>/SKILL.md` 中：frontmatter 中的 name 与目录名一致，面向模型的非空 description 支持原生发现，入口声明默认 Strength 和非空 Scope。普通项目 Skills 沿用既有发现方式。
+
+设置流程和两个同步操作都会拒绝显式的旧条件 Rule 声明，包括旧条件索引行。重试前，需另行授权将源内容改写为规则主导型 Skills，并在该授权迁移中更新或删除相应的旧 `AGENTS.md` 声明；设置流程不会悄悄改变策略的加载含义。围栏中的示例不算有效索引行。特定 Harness 的原生插件 Rules 保留各自的加载策略。
+
 对于每个生成的项目 Rule 或 Skill，SmartKit 在 `.agents/smartkit.lock.json` 中记录契约指纹和准确的输出路径，包括配套文件；不持久保存这些文件的内容摘要。每次全量会话都会请求当前的完整契约集合。重新编写时，应读取当前项目证据和已有输出内容，保留有合格证据支持的意图。移除契约时，删除其记录的输出；重命名 catalog 目标时，退役原先记录的路径，并生成当前目标。新的完整交接中未再列出的配套输出会被退役；未记录的配套文件仍归项目所有。
 
 项目同步保留生成的源文件和契约记录。全量设置会将项目 Agent 适配器、MCP 字段与共享及默认配置的所有权分开记录。完整的本地同步需要已建立的这类记录；所有权记录较旧或缺失时，必须先执行全量设置。删除或重命名本地声明时，它只移除记录中的项目映射。共享、默认和外部资产及其来源信息保持完整。外部 Skill 声明变化时，必须执行全量设置。

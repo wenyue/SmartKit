@@ -145,8 +145,8 @@ class SetupExternalSkillTest(unittest.TestCase):
         self.assertNotIn('GIT_INDEX_FILE', environment)
         self.assertNotIn('HTTPS_PROXY', environment)
         self.assertNotIn('SSH_AUTH_SOCK', environment)
-        self.assertEqual(environment['HOME'], str(checkout))
-        self.assertEqual(environment['USERPROFILE'], str(checkout))
+        self.assertEqual(environment['HOME'], str(checkout.absolute()))
+        self.assertEqual(environment['USERPROFILE'], str(checkout.absolute()))
         self.assertEqual(environment['GIT_TERMINAL_PROMPT'], '0')
         self.assertEqual(environment['GIT_CONFIG_NOSYSTEM'], '1')
         self.assertEqual(environment['GIT_CONFIG_GLOBAL'], os.devnull)
@@ -351,8 +351,11 @@ class SetupExternalSkillTest(unittest.TestCase):
             )
             session = root / 'session'
             session.mkdir()
-            with self.assertRaisesRegex(ExternalSkillError, 'contains a symlink'):
+            # Git may materialize a tracked symlink as a plain file on Windows;
+            # either checkout form must be rejected before copying the Skill.
+            with self.assertRaisesRegex(ExternalSkillError, 'contains a symlink|not a regular directory'):
                 snapshot_external_skills((spec,), session=session)
+            self.assertFalse((session / 'external-skills/external-check').exists())
 
     def test_rejects_a_tag_that_moved_since_a_case_variant_existing_ref(self):
         with tempfile.TemporaryDirectory() as temp_dir:

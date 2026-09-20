@@ -189,9 +189,9 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(
                 {item['target'] for item in request['generation_requests']},
                 {
-                    '.agents/rules/00-project-tools.md',
-                    '.agents/rules/01-project-contracts.md',
-                    '.agents/rules/02-project-structure.md',
+                    '.agents/rules/tools.md',
+                    '.agents/rules/contracts.md',
+                    '.agents/rules/structure.md',
                     '.agents/skills/change-set-verification/SKILL.md',
                     '.agents/skills/worktree-environment-setup/SKILL.md',
                 },
@@ -287,9 +287,69 @@ class SetupCliTest(unittest.TestCase):
             self.assertFalse((session / 'generated').exists())
             self.assertFalse((session / 'request.json').exists())
 
+    def test_prepare_refuses_conditional_rule_index_before_generation_or_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            rule = target / '.agents/rules/library.md'
+            rule.parent.mkdir(parents=True)
+            rule.write_text('# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+                            encoding='utf-8')
+            (target / 'AGENTS.md').write_text(
+                '## Project rules\n\n### On-demand rules\n\n'
+                '| Description | Rule | Strength |\n| --- | --- | --- |\n'
+                '| Library work | `.agents/rules/library.md` | Default |\n',
+                encoding='utf-8',
+            )
+            session = self.private_session(root)
+            before = self.snapshot_tree(target)
+            error = StringIO()
+            with redirect_stderr(error), mock.patch.object(
+                setup_project_agents, 'snapshot_external_skills',
+            ) as snapshot:
+                result = setup_project_agents.main([
+                    'prepare', '--target', str(target), '--session', str(session),
+                    *self.source_args(),
+                ])
+            self.assertEqual(result, 2)
+            self.assertIn('rule-', error.getvalue())
+            self.assertEqual(self.snapshot_tree(target), before)
+            self.assertFalse((session / 'request.json').exists())
+            self.assertFalse((session / 'generated').exists())
+            snapshot.assert_not_called()
+
+    def test_local_rule_and_rule_skill_body_changes_invalidate_prepared_request(self):
+        for relative, content in (
+            ('.agents/rules/local-policy.md',
+             '# Local\n\nStrength: `Default`\n\nScope: Project work.\n'),
+            ('.agents/skills/rule-testing/SKILL.md',
+             '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
+             '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n'),
+        ):
+            with self.subTest(path=relative), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                target = root / 'target'
+                source = target / relative
+                source.parent.mkdir(parents=True)
+                source.write_text(content, encoding='utf-8')
+                session = self.private_session(root)
+                self.assertEqual(self.prepare(target, session), 0)
+                self.write_generated_outputs(session)
+                source.write_text(content.replace('Default', 'Mandatory'), encoding='utf-8')
+                before = self.snapshot_tree(target)
+                error = StringIO()
+                with redirect_stderr(error):
+                    result = setup_project_agents.main([
+                        'finish', '--target', str(target), '--session', str(session),
+                        *self.source_args(),
+                    ])
+                self.assertEqual(result, 2)
+                self.assertIn('target changed', error.getvalue())
+                self.assertEqual(self.snapshot_tree(target), before)
+
     def test_project_source_edits_are_allowed_before_prepare_but_frozen_after_it(self):
         for relative in (
-            '.agents/rules/01-project-contracts.md',
+            '.agents/rules/contracts.md',
             '.agents/skills/change-set-verification/SKILL.md',
             '.agents/skills/change-set-verification/references/checks.md',
         ):
@@ -348,7 +408,7 @@ class SetupCliTest(unittest.TestCase):
                 return request['generation_requests']
 
             self.assertEqual(len(sync()), 5)
-            rule = target / '.agents/rules/00-project-tools.md'
+            rule = target / '.agents/rules/tools.md'
             skill = target / '.agents/skills/change-set-verification/SKILL.md'
             rule.write_bytes(b'project rule edit\n')
             skill.write_bytes(b'project skill edit\n')
@@ -767,8 +827,8 @@ class SetupCliTest(unittest.TestCase):
                 ),
                 0,
             )
-            self.assertTrue((target / '.agents/rules/00-project-tools.md').is_file())
-            self.assertTrue((target / '.agents/rules/00-project-tools.md').is_file())
+            self.assertTrue((target / '.agents/rules/tools.md').is_file())
+            self.assertTrue((target / '.agents/rules/tools.md').is_file())
             self.assertTrue((target / '.agents/skills/change-set-verification/SKILL.md').is_file())
             self.assertFalse((target / '.agents/lock.json').exists())
 
@@ -932,7 +992,7 @@ class SetupCliTest(unittest.TestCase):
             session = self.private_session(root)
             self.assertEqual(self.prepare(target, session), 0)
             self.write_generated_outputs(session)
-            collision = target / '.agents/rules/00-project-tools.md'
+            collision = target / '.agents/rules/tools.md'
             collision.parent.mkdir(parents=True)
             collision.write_text('user-owned\n', encoding='utf-8')
             before = self.snapshot_tree(target)
@@ -992,7 +1052,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(finish_result['phase'], 'finish')
             self.assertEqual(finish_result['source_commit'], self.source_commit)
             self.assertEqual(finish_result['changed_paths'], sorted(finish_result['changed_paths']))
-            self.assertIn('.agents/rules/00-project-tools.md', finish_result['changed_paths'])
+            self.assertIn('.agents/rules/tools.md', finish_result['changed_paths'])
             self.assertEqual(
                 finish_result['harnesses'], ['codex', 'cursor', 'copilot', 'qoder']
             )

@@ -41,7 +41,7 @@ Stop on a nonzero result. Record `session` as `SESSION`, `generated` as `GENERAT
 `request`, `source_root`, `source_commit`, and `source_fingerprint`. The request freezes setup
 inputs, external snapshots, the generation requests, and source and setup-relevant target
 fingerprints. The target fingerprint covers only evidence setup consumes: project setup config,
-ownership and managed assets, generated destinations, project Rule metadata, project Agent sources,
+ownership and managed assets, generated destinations, project Rule and rule-led Skill metadata, project Agent sources,
 and touched native host configuration. Git history and index state, caches, logs, and other
 project-owned work remain outside it.
 The public launcher rejects a pinned source that does not request every current catalog contract.

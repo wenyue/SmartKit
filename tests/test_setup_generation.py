@@ -87,7 +87,7 @@ class SetupGenerationTest(unittest.TestCase):
         first, _ = self.sync(helper=True)
         self.assertTrue(first)
         self.assertEqual(self.requests(), first)
-        rule = self.target / '.agents/rules/01-project-contracts.md'
+        rule = self.target / '.agents/rules/contracts.md'
         skill = self.target / '.agents/skills/change-set-verification/SKILL.md'
         helper = skill.parent / 'references/checks.md'
         for path in (rule, skill, helper):
@@ -99,13 +99,13 @@ class SetupGenerationTest(unittest.TestCase):
         self.assertEqual(rule.read_bytes(), b'generated content\n')
         self.assertEqual(skill.read_bytes(), b'generated content\n')
         self.assertFalse(helper.exists())
-        contract = self.source / 'setup-assets/blueprints/rules/01-project-contracts.md'
+        contract = self.source / 'setup-assets/blueprints/rules/contracts.md'
         contract.write_bytes(contract.read_bytes() + b'\nChanged contract.\n')
         self.assertEqual(self.requests(), first)
 
     def test_removed_contract_deletes_edited_outputs_but_preserves_unrecorded_files(self):
         self.sync(helper=True)
-        rule = self.target / '.agents/rules/00-project-tools.md'
+        rule = self.target / '.agents/rules/tools.md'
         skill = self.target / '.agents/skills/change-set-verification/SKILL.md'
         helper = skill.parent / 'references/checks.md'
         local = skill.parent / 'notes.md'
@@ -121,7 +121,7 @@ class SetupGenerationTest(unittest.TestCase):
         for path in (rule, skill, helper):
             self.assertFalse(path.exists())
         self.assertEqual(local.read_bytes(), b'project notes\n')
-        self.assertNotIn(b'.agents/rules/00-project-tools.md', rendered.files_by_path['AGENTS.md'])
+        self.assertNotIn(b'.agents/rules/tools.md', rendered.files_by_path['AGENTS.md'])
         self.assertTrue(retired.isdisjoint(
             item.id for item in load_ownership(self.target).contracts
         ))
@@ -146,7 +146,7 @@ class SetupGenerationTest(unittest.TestCase):
 
     def test_renamed_contract_destination_retires_old_recorded_path(self):
         self.sync()
-        old = self.target / '.agents/rules/01-project-contracts.md'
+        old = self.target / '.agents/rules/contracts.md'
         old.write_bytes(b'project intent before rename\n')
         self.catalog = replace(self.catalog, assets=tuple(
             replace(asset, target=PurePosixPath('.agents/rules/03-renamed-contracts.md'))
@@ -157,6 +157,47 @@ class SetupGenerationTest(unittest.TestCase):
         self.assertFalse(old.exists())
         self.assertTrue((self.target / '.agents/rules/03-renamed-contracts.md').is_file())
         self.assertEqual(len(requests), len(self.requests()))
+
+    def test_numbered_contract_targets_migrate_with_stable_ownership_ids(self):
+        current = self.catalog
+        old_names = {
+            'blueprint-project-tools': '00-project-tools.md',
+            'blueprint-project-contracts': '01-project-contracts.md',
+            'blueprint-project-structure': '02-project-structure.md',
+        }
+        self.catalog = replace(current, assets=tuple(
+            replace(asset, target=PurePosixPath('.agents/rules') / old_names[asset.id])
+            if asset.id in old_names else asset for asset in current.assets
+        ))
+        self.sync()
+        for name in old_names.values():
+            (self.target / '.agents/rules' / name).write_bytes(b'project intent\n')
+        self.catalog = current
+        requests, rendered = self.sync()
+        self.assertTrue(set(old_names).issubset(item['id'] for item in requests))
+        for name in old_names.values():
+            self.assertFalse((self.target / '.agents/rules' / name).exists())
+            self.assertNotIn(name.encode(), rendered.files_by_path['AGENTS.md'])
+        for name in ('tools.md', 'contracts.md', 'structure.md'):
+            self.assertTrue((self.target / '.agents/rules' / name).is_file())
+
+    def test_full_setup_refuses_legacy_conditional_policy_before_target_mutation(self):
+        self.sync()
+        rule = self.target / '.agents/rules/library.md'
+        rule.write_text('# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+                        encoding='utf-8')
+        entry = self.target / 'AGENTS.md'
+        entry.write_text(entry.read_text(encoding='utf-8') +
+                         '\n### On-demand rules\n\n'
+                         '| Description | Rule | Strength |\n| --- | --- | --- |\n'
+                         '| Library work | `.agents/rules/library.md` | Default |\n',
+                         encoding='utf-8')
+        before = {p.relative_to(self.target): p.read_bytes()
+                  for p in self.target.rglob('*') if p.is_file()}
+        with self.assertRaisesRegex(RenderError, 'rule-'):
+            self.sync()
+        self.assertEqual({p.relative_to(self.target): p.read_bytes()
+                          for p in self.target.rglob('*') if p.is_file()}, before)
 
     def test_removal_rejects_a_recorded_file_replaced_by_a_directory(self):
         self.sync(helper=True)

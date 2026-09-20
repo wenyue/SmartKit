@@ -17,7 +17,7 @@ presence there does not earn it a place in the artifact. This governs the artifa
 instructions, including instructions for producing outputs that compare alternatives.
 
 Organize around meaningful decisions, co-locating each requirement with the evidence, action, and
-verification needed to apply it. Fix sequence where outcomes depend on it; otherwise leave method
+verification needed to apply it within the appropriate loading boundary. Fix sequence where outcomes depend on it; otherwise leave method
 to the Agent. Disclose real branches through precise pointers, not arbitrary length thresholds.
 Judge coherence and completeness without requiring headings, checklists, word budgets, or a second
 workflow that repeats the policy.
@@ -44,8 +44,9 @@ Give each policy one complete definition across the relevant Rules and Skills. M
 their supported routes: Rule files may reference Rules and Skills; Skills may invoke or reference
 other Skills, including rule-led Skills, but must not directly reference independently loaded Rule
 files. Use short owner pointers within these boundaries and local context needed for a decision,
-keeping the policy definition with its owner. A Skill route can load a rule-led policy; it cannot
-extend that policy's declared Scope.
+keeping the policy definition with its owner. Consolidating ownership preserves useful conditional
+loading boundaries inside that owner; one public Skill need not have one monolithic entry. A Skill
+route can load a rule-led policy; it cannot extend that policy's declared Scope.
 
 Assess suitable existing owners using related Rules and Skills, applicable always-loaded project
 Rules and SmartKit global Rules, and conditional Rules that can load together in supported usage.
@@ -88,26 +89,72 @@ the work from three parallel writing styles:
 	correctness, safety, ownership, coordination, recovery, or external effects.
 - A **rule-led Skill** governs relevant work with scoped requirements and exceptions.
 
-A **Hybrid Skill** combines these styles where their roles are consequential. Integrate their
-meaning around decisions rather than concatenating a rule narrative and a workflow.
+Principle-led and procedure-led task Skills are reached for a concrete job. Prioritize accurate
+task matching, complete needed context, and coherent execution. Keep universally needed methods
+or steps accessible together when that best serves the task; splitting mandatory method solely to
+shorten the entry adds indirection without avoiding needed context. General economy, relevance,
+and reliable progressive disclosure still apply.
+
+A **Hybrid Skill** combines these styles where their roles are consequential. Apply policy-loading
+and task-execution considerations to the respective parts, rather than one whole-artifact size
+target. Integrate their meaning around decisions rather than concatenating a rule narrative and a
+workflow.
 
 ### Rule-led Skills
 
-Reserve `rule-<domain>` names for this writing style, independently of strength. Combine Rule writing
-with Skill mechanics: declare explicit Scope and default Strength in the entry, and use a
-model-facing description that reaches the policy before governed decisions. Include ordinary-work
-conditions and dedicated assessment conditions where supported; keep explicit invocation available
-without enlarging Scope.
+Reserve `rule-<domain>` names for this writing style, independently of strength. These Skills are
+conditionally loaded Rules for broad relevant work. Use a model-facing description that triggers
+on relevance to the governed domain before governed decisions, rather than restricting discovery
+to a list of coding actions or policy topics. Declare explicit Scope and default Strength in the
+entry; Scope and individual conditions determine which requirements apply after loading. Keep
+explicit invocation and supported dedicated assessment discoverable without enlarging Scope.
 
 Normal activation constrains the current work rather than starting another audit or report. A
 requested assessment has its own stated coverage and outcome, within the policy's Scope and the
-request's authority. Neither route grants additional permission. Requirements may include necessary
-procedures, with the evidence and verification those decisions need, while settled routine cases
-remain light.
+request's authority. Neither route grants additional permission.
+
+Low first-activation token cost is an authoring and acceptance requirement for these broadly
+triggered policy Skills, subject to complete obligations, correct decisions, and reliable loading.
+Distinguish the costs that matter to their design:
+
+- **Discovery:** the description and other always-present pointers. Economize wording while
+  preserving broad domain reach.
+- **First activation:** the entry and all required reads reached unconditionally, including
+  transitive dependencies. Branch-only instructions still cost upfront when they are in the entry;
+  an unconditional resource chain merely relocates that cost.
+- **Later branches:** additional content reached only when its condition holds, before dependent
+  decisions or actions.
+
+Keep fundamental policy, Scope and Strength, and decision-sufficient evidence, conditions, and
+boundaries in the entry. It should support ordinary substantive work, including simple, clear
+modifications and routine review, through the resulting action and completion judgment. An entry
+that supports only abstention, unchanged propagation, or routing has not met this requirement.
+Co-locate the common policy and context needed to apply it; keep content needed across all or
+nearly all supported work inline, or reconsider the loading boundary that makes it unavoidable.
+
+Defer content to an owned resource when a branch needs additional knowledge or constraints to make
+its decision correctly. Writing, reviewing, diagnosis, or assessment alone does not establish that
+need. Name the facts that distinguish the branch, recognizable before reading the resource,
+rather than relying on subjective complexity or a general instruction to read it when needed.
+Each precise pointer names what to read and when, reaching every obligation before the dependent
+decision or action, including review judgments. Establish availability through supported routes;
+if a required resource is unavailable or unreadable, pause dependent decisions and resolve the
+dependency through the owning workflow. Unrelated authorized work may continue where that workflow
+permits it. Loading grants no additional permission.
+
+For authoring and acceptance, trace representative ordinary substantive work and deeper paths
+through the actual reachable files and transitive resource chains. Check what each decision needs
+and whether the entry lets ordinary modifications and routine review finish without unnecessary
+reads, while deeper branches reach their complete obligations in time. A nominally conditional
+chain that ordinary work must effectively always traverse defeats low first-activation cost.
+In a revision or ownership merge, preserve required meaning and use prior loading boundaries as
+regression evidence so consolidation does not silently make conditional methods unconditional.
+Judge clarity, completeness, and the whole reading path without arbitrary token or line budgets,
+quotas, mechanical scoring, or forced fragmentation. Static source traces suffice without empirical
+task-frequency claims, a separate report, or runtime experiments.
 
 Rely on installed SmartKit core governance for applicability, strength, precedence, and conflicts
 with task Skills rather than restating or redefining those contracts. Use its inheritance for owned
 normative resources; distinguish them from illustrative material and independently owned policies,
-which retain their own contracts. Give each required resource a concrete loading condition before
-the decisions that need it. Native Skill discovery and public exposure retain their existing owners;
-writing a rule-led entry neither registers it nor migrates another policy into it.
+which retain their own contracts. Native Skill discovery and public exposure retain their existing
+owners; writing a rule-led entry neither registers it nor migrates another policy into it.

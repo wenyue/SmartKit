@@ -35,12 +35,11 @@ class SyncProjectRulesTest(unittest.TestCase):
             original = (
                 '# Repository\n\n'
                 '## Project rules\n\n'
-                'Use the descriptions and current task to decide which project Rules to read before related work.\n'
-                'Read a Rule to check its relevance when uncertain, and re-read it whenever useful.\n\n'
-                '| Description | Rule | Strength |\n'
-                '| --- | --- | --- |\n'
-                '| Managed tools | `.agents/rules/00-project-tools.md` | Mandatory |\n'
-                '| Old scope | `.agents/rules/20-local.md` | Default |\n\n'
+                '### Required rules\n\n'
+                '| Rule | Strength |\n'
+                '| --- | --- |\n'
+                '| `.agents/rules/tools.md` | Mandatory |\n'
+                '| `.agents/rules/20-local.md` | Default |\n\n'
                 'Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the\n'
                 'files listed above.\n\n'
                 '## Agent skills\n\nKeep this exact content.\n'
@@ -104,14 +103,14 @@ class SyncProjectRulesTest(unittest.TestCase):
             agents.write_bytes((
                 prefix
                 + '## Project rules\n\n'
-                + 'Read every project Rule whose `Read when` condition matches the current task.\n\n'
-                + '| Read when | Rule | Strength |\n'
-                + '| --- | --- | --- |\n'
-                + '| Managed tools | `.agents/rules/00-project-tools.md` | Mandatory? no |\n'
-                + '| Keep this custom row | `docs/rules.md` | Local |\n'
-                + '| Former common scope. | `.agents/rules/20-old-common.md` | Advisory |\n'
-                + '| Former testing scope. | `.agents/rules/30-testing.md` | Default |\n'
-                + '| Removed scope. | `.agents/rules/40-removed.md` | Mandatory |\n\n'
+                + '### Required rules\n\n'
+                + '| Rule | Strength |\n'
+                + '| --- | --- |\n'
+                + '| `.agents/rules/tools.md` | Mandatory? no |\n'
+                + '| `docs/rules.md` | Local |\n'
+                + '| `.agents/rules/20-old-common.md` | Advisory |\n'
+                + '| `.agents/rules/30-testing.md` | Default |\n'
+                + '| `.agents/rules/40-removed.md` | Mandatory |\n\n'
                 + 'Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the\n'
                 + 'files listed above.\n\n'
                 + suffix
@@ -155,25 +154,25 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertTrue(updated.startswith(prefix.encode()))
             self.assertTrue(updated.endswith(suffix.encode()))
             self.assertIn(
-                b'| `.agents/rules/00-project-tools.md` | Mandatory? no |',
+                b'| `.agents/rules/tools.md` | Mandatory? no |',
                 updated,
             )
             self.assertIn(
-                b'| Keep this custom row | `docs/rules.md` | Local |',
+                b'| `docs/rules.md` | Local |',
                 updated,
             )
             self.assertIn(
-                b'| Shared module ownership. | `.agents/rules/20-common.md` | Advisory |',
+                b'| `.agents/rules/20-common.md` | Advisory |',
                 updated,
             )
             self.assertIn(
-                b'| Current test ownership: unit \\| integration. | `.agents/rules/30-testing.md` | Mandatory |',
+                b'| `.agents/rules/30-testing.md` | Mandatory |',
                 updated,
             )
-            self.assertIn(b'| Description | Rule | Strength |', updated)
+            self.assertIn(b'| Rule | Strength |', updated)
             self.assertNotIn(b'Read when', updated)
             self.assertIn(
-                b'| Newly added checks. | `.agents/rules/50-added.md` | Default |',
+                b'| `.agents/rules/50-added.md` | Default |',
                 updated,
             )
             self.assertNotIn(b'10-base.md', updated)
@@ -210,11 +209,11 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.write_rule(target, '20-checks.md', scope='Local checks.', strength='Mandatory')
             project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
             text = entry.read_text(encoding='utf-8')
-            required, on_demand = text.split('### On-demand rules')
-            self.assertIn('| `.agents/rules/00-local.md` | Advisory |', required)
-            self.assertNotIn('Local guidance.', required)
-            self.assertNotIn('| Description |', required)
-            self.assertIn('| Local checks. | `.agents/rules/20-checks.md` | Mandatory |', on_demand)
+            self.assertNotIn('### On-demand rules', text)
+            self.assertIn('| `.agents/rules/00-local.md` | Advisory |', text)
+            self.assertNotIn('Local guidance.', text)
+            self.assertNotIn('| Description |', text)
+            self.assertIn('| `.agents/rules/20-checks.md` | Mandatory |', text)
             self.assertEqual(
                 project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=True).check,
                 'clean',
@@ -228,40 +227,75 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertNotIn('### Required rules', empty)
             self.assertNotIn('| Rule |', empty)
 
-    def test_explicit_on_demand_rules_keep_loading_policy_with_early_prefixes(self):
-        for name in ('03-project-flutter.md', '10-local.md'):
-            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
-                target = Path(directory)
-                entry = target / 'AGENTS.md'
-                entry.write_text(
-                    '# Repository\n\n## Project rules\n\n### Required rules\n\n'
-                    '| Rule | Strength |\n| --- | --- |\n'
-                    '| `.agents/rules/00-local.md` | Mandatory |\n\n'
-                    '### On-demand rules\n\n'
-                    '| Description | Rule | Strength |\n| --- | --- | --- |\n'
-                    f'| Old scope. | `.agents/rules/{name}` | Advisory |\n',
-                    encoding='utf-8',
-                )
-                self.write_rule(target, '00-local.md', scope='Always read.', strength='Mandatory')
-                self.write_rule(target, name, scope='Current library usage.', strength='Default')
-                self.write_rule(target, '04-unlisted.md', scope='Unlisted.', strength='Default')
-                project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
-                text = entry.read_text(encoding='utf-8')
-                required, on_demand = text.split('### On-demand rules')
-                self.assertIn('`.agents/rules/00-local.md` | Mandatory |', required)
-                self.assertNotIn(name, required)
-                self.assertIn(
-                    f'| Current library usage. | `.agents/rules/{name}` | Default |',
-                    on_demand,
-                )
-                self.assertNotIn('04-unlisted.md', text)
-                self.assertEqual(
-                    project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=True).check,
-                    'clean',
-                )
-                (target / '.agents/rules' / name).unlink()
-                project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
-                self.assertNotIn(name, entry.read_text(encoding='utf-8'))
+    def test_legacy_conditional_rules_refuse_without_writing(self):
+        for name in ('03-project-flutter.md', '10-local.md', 'local-policy.md'):
+            for check in (False, True):
+                with self.subTest(name=name, check=check), tempfile.TemporaryDirectory() as directory:
+                    target = Path(directory)
+                    entry = target / 'AGENTS.md'
+                    entry.write_text(
+                        '## Project rules\n\n### On-demand rules\n\n'
+                        '| Description | Rule | Strength |\n| --- | --- | --- |\n'
+                        f'| Library usage. | `.agents/rules/{name}` | Advisory |\n',
+                        encoding='utf-8',
+                    )
+                    self.write_rule(target, name, scope='Library usage.', strength='Default')
+                    before = {path.relative_to(target): path.read_bytes()
+                              for path in target.rglob('*') if path.is_file()}
+                    error = StringIO()
+                    with redirect_stderr(error):
+                        status = workflow.main([
+                            'sync-project-rules', '--target', str(target),
+                            *(['--check'] if check else []),
+                        ])
+                    self.assertEqual(status, 2)
+                    self.assertIn('rule-', error.getvalue())
+                    self.assertIn(name, error.getvalue())
+                    self.assertEqual(
+                        {path.relative_to(target): path.read_bytes()
+                         for path in target.rglob('*') if path.is_file()}, before,
+                    )
+
+    def test_names_have_no_loading_semantics_and_skills_need_no_rule_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            for name in ('plain.md', '01-old.md', '99-later.md'):
+                self.write_rule(target, name, scope='Project work.', strength='Default')
+            skill = target / '.agents/skills/rule-testing/SKILL.md'
+            skill.parent.mkdir(parents=True)
+            skill.write_text(
+                '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
+                '# Tests\n\nStrength: `Default`\n\nScope: Test authoring.\n',
+                encoding='utf-8',
+            )
+            original_skill = skill.read_bytes()
+            project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            text = (target / 'AGENTS.md').read_text(encoding='utf-8')
+            for name in ('plain.md', '01-old.md', '99-later.md'):
+                self.assertIn(f'| `.agents/rules/{name}` | Default |', text)
+            self.assertNotIn('On-demand', text)
+            self.assertNotIn('rule-testing', text)
+            self.assertEqual(skill.read_bytes(), original_skill)
+
+    def test_sync_accepts_completed_source_and_index_migration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            entry = target / 'AGENTS.md'
+            entry.write_text('## Project rules\n\n## Agent skills\n\nKeep this.\n',
+                             encoding='utf-8')
+            skill = target / '.agents/skills/rule-library/SKILL.md'
+            skill.parent.mkdir(parents=True)
+            skill.write_text(
+                '---\nname: rule-library\ndescription: Use for library work.\n---\n'
+                '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+                encoding='utf-8',
+            )
+            original = skill.read_bytes()
+            result = project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+            self.assertEqual(result.check, 'clean')
+            self.assertEqual(skill.read_bytes(), original)
+            self.assertNotIn('On-demand', entry.read_text(encoding='utf-8'))
+            self.assertTrue(entry.read_text(encoding='utf-8').endswith('## Agent skills\n\nKeep this.\n'))
 
     def test_apply_rolls_back_the_index_when_rule_metadata_changes_during_commit(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -313,7 +347,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 'missing metadata',
                 b'# Repository\n\n## Agent skills\n\nKeep this.\n',
                 '# Invalid\n\nStrength: `Default`\n',
-                'requires Strength and Scope metadata',
+                'requires valid Strength and nonempty Scope metadata',
             ),
         )
         for label, agents_content, rule_content, message in invalid_cases:

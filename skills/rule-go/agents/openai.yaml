@@ -1,0 +1,3 @@
+interface:
+  display_name: "Go Policy"
+  short_description: "Apply Go package, API, error, context, and concurrency policy"

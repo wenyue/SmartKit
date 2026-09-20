@@ -1,0 +1,3 @@
+interface:
+  display_name: "C++ Policy"
+  short_description: "Apply C++ ownership, interface, failure, and concurrency policy"

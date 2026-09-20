@@ -257,7 +257,7 @@ class SetupWorkflowTest(unittest.TestCase):
                 ],
             )
             self.assertIn(
-                '.agents/rules/00-project-tools.md', finish['changed_paths']
+                '.agents/rules/tools.md', finish['changed_paths']
             )
             self.assertFalse(session.exists())
             self.assertTrue((target / 'AGENTS.md').is_file())
@@ -267,7 +267,7 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(set(ownership), {'sources', 'assets', 'contracts', 'project_sync'})
             self.assertEqual(ownership['sources'], [])
             owned_paths = {item['path'] for item in ownership['assets']}
-            self.assertNotIn('.agents/rules/00-project-tools.md', owned_paths)
+            self.assertNotIn('.agents/rules/tools.md', owned_paths)
             self.assertNotIn(
                 '.agents/skills/change-set-verification/SKILL.md', owned_paths,
             )
@@ -431,7 +431,7 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(finish['phase'], 'finish')
             self.assertEqual(finish['check'], 'clean')
             for relative in (
-                '.agents/rules/00-project-tools.md',
+                '.agents/rules/tools.md',
                 '.agents/skills/change-set-verification/SKILL.md',
             ):
                 self.assertTrue((target / relative).is_file())

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -31,6 +30,7 @@ from .project_rules import (
     render_project_rule_tables,
 )
 from .generation import reconcile_contracts
+from .rule_metadata import RuleMetadataError, reject_conditional_rule, validate_rule_skill
 from .ownership import (
     OWNERSHIP_PATH,
     OwnershipError,
@@ -277,7 +277,7 @@ def render_desired_state(
                 try:
                     content = _render_text(content.decode(), {
                         'project_rule_tables': render_project_rule_tables(
-                            source_root, target_root, catalog, config, 'project', project_rules,
+                            source_root, target_root, catalog, config, project_rules,
                         ),
                     })
                     content = render_entry_agents(target_root, content)
@@ -292,17 +292,13 @@ def render_desired_state(
                 assert source.target is not None
                 item = source.metadata
                 cursor = item['cursor']
-                github = item['github']
-                if not isinstance(cursor, Mapping) or not isinstance(github, Mapping):
+                if not isinstance(cursor, Mapping):
                     raise RenderError(f'rule metadata is invalid: {rule_id}')
                 name = source.source.stem
                 path = PurePosixPath(asset.target.as_posix().replace('{rule-name}', name))
                 _copy_file(files, path, _render_text(template, {
                     'rule.apply_ref': source.target.as_posix(),
                     'rule.cursor_description': cursor['description'],
-                    'rule.cursor_globs': json.dumps(cursor.get('globs', '**')),
-                    'rule.cursor_always_apply': cursor['alwaysApply'],
-                    'rule.github_apply_to': github['applyTo'],
                 }))
 
     before_project_agents = set(files)
@@ -394,6 +390,16 @@ def render_desired_state(
         _copy_file(files, path, _dump_structured(document, format_name))
         for key, value in _safe_leaves(native_templates.get(path, {})):
             fields.append(DesiredField(path, key, value, format_name))
+    try:
+        for relative, content in files.items():
+            if relative.parts[:2] == ('.agents', 'skills') and relative.name == 'SKILL.md':
+                if relative.parent.name.startswith('rule-'):
+                    validate_rule_skill(content.decode('utf-8'), relative.parent.name, str(relative))
+            elif relative.parts[:2] == ('.agents', 'rules') and relative.suffix == '.md':
+                reject_conditional_rule(content.decode('utf-8'), str(relative))
+    except (RuleMetadataError, UnicodeDecodeError) as error:
+        raise RenderError(str(error)) from error
+
     desired_files = tuple(DesiredFile(path, content) for path, content in sorted(files.items(), key=lambda item: item[0].as_posix()))
     desired_fields = tuple(sorted(fields, key=lambda item: (item.path.as_posix(), item.key)))
     try:

@@ -42,7 +42,11 @@ sentence to add a unique fact or imposing mechanical length or formatting prefer
 
 Assess whether its instructions express the accepted requirements with justified guardrails and
 retained rationale under the shared judgments. Assess the chosen form's fitness and execution
-usability under this Quality contract.
+usability under this Quality contract. Apply the shared loading distinctions by purpose: assess
+rule-led policy's broad discovery and ordinary/deeper reading paths, task Skills' accurate matching
+and coherent needed context, and each consequential part of a Hybrid accordingly. Trace ordinary
+substantive modifications and routine review through the actual files, assessing whether each
+required read supplies knowledge or constraints that the decision needs under the shared judgments.
 
 Judge ownership across the Candidate and the related artifacts, including the applicable
 always-loaded and potentially co-loaded Rules identified by the evidence. Trace each policy to

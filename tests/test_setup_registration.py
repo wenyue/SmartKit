@@ -59,7 +59,7 @@ class SetupRegistrationTest(unittest.TestCase):
             return workflow.main(['finish', '--session', str(self.session)])
 
     def test_register_aggregates_exact_rule_and_skill_outputs(self):
-        rule = '.agents/rules/00-project-tools.md'
+        rule = '.agents/rules/tools.md'
         self.output(rule)
         self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
         skill = self.output('.agents/skills/change-set-verification/SKILL.md')
@@ -81,7 +81,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertFalse((self.session / workflow._SESSION_CLAIM).exists())
 
     def test_invalid_registration_preserves_manifest_target_and_retryable_session(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         extra_rule = self.output('.agents/rules/extra.md')
         skill = self.output('.agents/skills/change-set-verification/SKILL.md')
         helper = self.output('.agents/skills/change-set-verification/checks.md')
@@ -109,14 +109,14 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
 
     def test_duplicate_request_is_rejected_without_replacing_registration(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
         original = self.manifest.read_bytes()
         self.assertEqual(self.register('blueprint-project-tools', rule)[0], 2)
         self.assertEqual(self.manifest.read_bytes(), original)
 
     def test_incomplete_registration_cannot_mutate_target(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
         self.assertEqual(self.finish(), 2)
         self.assertEqual(list(self.target.iterdir()), [])
@@ -128,7 +128,7 @@ class SetupRegistrationTest(unittest.TestCase):
             self.assertEqual(status, 0)
         self.assertTrue(json.loads(output)['ready'])
         self.assertEqual(self.finish(), 0)
-        rule = self.target / '.agents/rules/00-project-tools.md'
+        rule = self.target / '.agents/rules/tools.md'
         rule.write_bytes(b'project edit\n')
         self.prepare()
         self.assertTrue(self.request['generation_requests'])
@@ -141,7 +141,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertNotEqual(rule.read_bytes(), b'project edit\n')
 
     def test_target_drift_rejects_registration(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         original = self.manifest.read_bytes()
         config = self.target / '.agents/config.json'
         config.parent.mkdir(parents=True)
@@ -153,7 +153,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(config.read_bytes(), b'{}\n')
 
     def test_claimed_session_cannot_register(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         original = self.manifest.read_bytes()
         workflow._claim_session(self.session)
         self.assertEqual(self.register('blueprint-project-tools', rule)[0], 2)
@@ -163,7 +163,7 @@ class SetupRegistrationTest(unittest.TestCase):
         )
 
     def test_failed_manifest_replacement_keeps_previous_state(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         original = self.manifest.read_bytes()
         entries = set(self.session.iterdir())
         with mock.patch.object(setup.os, 'replace', side_effect=OSError('injected failure')), redirect_stderr(StringIO()):
@@ -177,7 +177,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(list(self.target.iterdir()), [])
 
     def test_claim_cleanup_failure_does_not_report_success(self):
-        rule = self.output('.agents/rules/00-project-tools.md')
+        rule = self.output('.agents/rules/tools.md')
         with mock.patch.object(Path, 'unlink', side_effect=OSError('injected cleanup failure')):
             status, output, error = self.register('blueprint-project-tools', rule)
         self.assertEqual(status, 2)
@@ -187,7 +187,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(list(self.target.iterdir()), [])
 
     def test_linked_output_is_rejected(self):
-        rule = self.generated / '.agents/rules/00-project-tools.md'
+        rule = self.generated / '.agents/rules/tools.md'
         outside = Path(self.temp.name) / 'outside.md'
         outside.write_bytes(b'outside')
         try:

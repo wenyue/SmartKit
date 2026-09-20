@@ -1,22 +1,23 @@
-# Dependency Lockfile Policy
+# Generated Files
 
 **Strength:** Mandatory
-**Scope:** Repositories that adopt this Rule, when a change alters declared dependencies.
+**Scope:** Changes affecting generated files in repositories that adopt this Rule.
 
-The repository's configured package manager owns each dependency lockfile. Regenerate the lockfile
-with that package manager after an in-scope manifest change, and deliver the manifest and lockfile
-together.
+Maintain generated files through their canonical sources and owning generator. Establish that
+ownership from the repository's configuration or documentation before editing. When a source,
+generator, or configured input changes the expected output, regenerate the affected files using
+the repository's declared tool and settings. Hand edits to generated output cannot substitute for
+generation.
 
-Use the package-manager version and options declared by the repository. Accept resolution changes
-that follow from the requested manifest change; investigate unrelated dependency or metadata churn
-before retaining it. A frozen or clean install must accept the resulting lockfile before the change
-is complete.
+Review the generated differences against the authorized change. Resolve unrelated output changes
+before retaining them, and preserve existing work. The change is complete when the affected
+sources and outputs agree under the repository's verification method and every required generated
+file is included with its source change.
 
-When the declared package manager is unavailable, its version cannot be established, or
-regeneration would require unapproved network access, leave the lockfile unchanged and stop with
-the exact missing prerequisite. A lockfile is never repaired by hand.
+If ownership, the generation method, required tools, verification, or permission is missing, stop
+dependent work and identify the prerequisite. If generation or verification fails, report the
+failure and any resulting file changes; completion remains blocked until agreement is verified.
 
-This Rule governs lockfile consistency, not dependency selection, upgrade policy, credential use,
-or permission to access a registry. A more specific repository instruction may override the
-regeneration command or validation, but must preserve package-manager ownership and manifest-to-
-lockfile agreement.
+The repository owns the sources, tool configuration, and verification requirements. This Rule
+governs their consistency within the authorized task; it grants no additional write, installation,
+or network authority.

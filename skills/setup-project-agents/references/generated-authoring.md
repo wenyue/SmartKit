@@ -18,7 +18,7 @@ requests. Derive its membership from the frozen requests, catalog, contracts, an
 project inputs; assume no fixed count. For each Rule, identify its responsibility, main content,
 boundaries with neighboring owners, and necessary references. Include Skills wherever their
 responsibilities affect this allocation. Supply applicable always-loaded project Rules and
-SmartKit global Rules, plus evidence of conditional Rules that can load together in supported
+SmartKit global Rules, plus relevant rule-led Skills that can load together in supported
 usage. Establish this context through supported discovery and loading routes, not merely the
 instructions visible in the current session.
 

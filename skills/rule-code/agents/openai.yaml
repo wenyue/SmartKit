@@ -1,0 +1,3 @@
+interface:
+  display_name: "Code Policy"
+  short_description: "Apply shared ownership, code design, state, and diagnostic policy"

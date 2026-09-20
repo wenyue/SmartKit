@@ -23,6 +23,19 @@ sources also remain project-owned. Catalog-declared Codex Plugin Agent defaults 
 project Agent declarations. Native Cursor, Copilot, and Qoder Plugin Agents, and native plugin
 Rules, Skills, and MCP, are outside this workflow.
 
+Every direct `.agents/rules/*.md` file is an unconditional required Rule, with explicit Strength
+and Scope. Numeric prefixes remain valid filenames and carry no category or precedence meaning.
+The owned `AGENTS.md` section lists all discovered Rules in one required table. Conditional policy
+belongs in a native `.agents/skills/rule-<domain>/SKILL.md`: its frontmatter name matches its folder,
+its nonempty model-facing description supports native discovery, and its entry declares default
+Strength and nonempty Scope. Ordinary project Skills keep their existing discovery behavior.
+
+Setup and both synchronization operations refuse explicit legacy conditional Rule declarations,
+including old conditional index rows. Separately authorize source authoring into rule-led Skills
+and update or remove their legacy `AGENTS.md` declarations in that authorized migration before
+retrying; setup does not silently change a policy's loading meaning. Fenced examples do not
+count as operative index rows. Harness-specific native plugin Rules retain their own loading policy.
+
 For each generated project Rule or Skill, SmartKit records the contract fingerprint and exact output
 paths, including supporting files, in `.agents/smartkit.lock.json`; it stores no persistent digests of
 those files' contents. Every full session requests the complete current contract set. Read current

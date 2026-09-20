@@ -1,0 +1,3 @@
+interface:
+  display_name: "Python Policy"
+  short_description: "Apply Python API, typing, data, failure, and resource policy"

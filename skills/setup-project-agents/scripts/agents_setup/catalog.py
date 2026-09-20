@@ -365,25 +365,25 @@ def _rule_metadata(value: object, *, project_blueprint: bool) -> Mapping[str, ob
     strength = _nonempty_string(metadata['strength'], 'rule metadata strength')
     if strength not in {'Mandatory', 'Default', 'Advisory'}:
         raise ContractError('rule metadata strength is unsupported')
-    if metadata['loading'] not in ('always', 'on-demand'):
-        raise ContractError('rule metadata loading must be always or on-demand')
-    if metadata['loading'] == 'on-demand' or 'description' in metadata:
+    if metadata['loading'] != 'always':
+        raise ContractError('rule metadata loading must be always')
+    if 'description' in metadata:
         _nonempty_string(_required(metadata, 'description', 'rule metadata'), 'rule metadata description')
     cursor = _object(metadata['cursor'], 'rule metadata cursor')
-    allowed_cursor = {'alwaysApply'} if project_blueprint else {'description', 'globs', 'alwaysApply'}
+    allowed_cursor = {'alwaysApply'} if project_blueprint else {'description', 'alwaysApply'}
     _fields(cursor, frozenset(allowed_cursor), 'rule metadata cursor')
     _required(cursor, 'alwaysApply', 'rule metadata cursor')
-    if type(cursor['alwaysApply']) is not bool:
-        raise ContractError('rule metadata cursor alwaysApply must be a boolean')
+    if cursor['alwaysApply'] is not True:
+        raise ContractError('rule metadata cursor alwaysApply must be true')
     if not project_blueprint:
         _nonempty_string(_required(cursor, 'description', 'rule metadata cursor'), 'rule metadata cursor description')
-        if not cursor['alwaysApply']:
-            _nonempty_string(_required(cursor, 'globs', 'rule metadata cursor'), 'rule metadata cursor globs')
-        elif 'globs' in cursor:
-            _nonempty_string(cursor['globs'], 'rule metadata cursor globs')
     github = _object(metadata['github'], 'rule metadata github')
     _fields(github, frozenset({'applyTo'}), 'rule metadata github')
-    _nonempty_string(_required(github, 'applyTo', 'rule metadata github'), 'rule metadata github applyTo')
+    if _required(github, 'applyTo', 'rule metadata github') != '**':
+        raise ContractError('rule metadata github applyTo must be **')
+    for label, text in (('description', metadata.get('description')), ('cursor description', cursor.get('description'))):
+        if isinstance(text, str) and not text.strip():
+            raise ContractError(f'rule metadata {label} must be a non-empty string')
     return dict(metadata)
 
 

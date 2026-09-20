@@ -162,9 +162,10 @@ class PluginManifestTest(unittest.TestCase):
             )
         for name in (
             'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
-            'finish-worktree', 'implement-tickets', 'write-code-comment',
-            'handle-operation-failure',
+            'finish-worktree', 'implement-tickets',
             'write-rules-and-skills',
+            'rule-code', 'rule-error-handling', 'rule-code-comment',
+            'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
         ):
             source_paths.update(
                 path.relative_to(REPO_ROOT)
@@ -440,9 +441,10 @@ class PluginManifestTest(unittest.TestCase):
         }
         custom = {
             'setup-project-agents', 'create-worktree', 'refactor-code', 'rename-code',
-            'diagnose-agent-session', 'finish-worktree', 'implement-tickets', 'write-code-comment',
-            'handle-operation-failure',
+            'diagnose-agent-session', 'finish-worktree', 'implement-tickets',
             'write-rules-and-skills',
+            'rule-code', 'rule-error-handling', 'rule-code-comment',
+            'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
         }
         self.assertEqual(plugin_skills, { *custom, *MATT_PROMOTED})
         lock = load_json('vendor/external-skills.lock.json')

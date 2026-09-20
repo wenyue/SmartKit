@@ -15,8 +15,8 @@
     {
       "id": "blueprint-project-tools",
       "kind": "blueprint",
-      "source": "setup-assets/blueprints/rules/00-project-tools.md",
-      "target": ".agents/rules/00-project-tools.md",
+      "source": "setup-assets/blueprints/rules/tools.md",
+      "target": ".agents/rules/tools.md",
       "metadata": {
         "section": "project",
         "loading": "always",
@@ -32,8 +32,8 @@
     {
       "id": "blueprint-project-contracts",
       "kind": "blueprint",
-      "source": "setup-assets/blueprints/rules/01-project-contracts.md",
-      "target": ".agents/rules/01-project-contracts.md",
+      "source": "setup-assets/blueprints/rules/contracts.md",
+      "target": ".agents/rules/contracts.md",
       "metadata": {
         "section": "project",
         "loading": "always",
@@ -49,8 +49,8 @@
     {
       "id": "blueprint-project-structure",
       "kind": "blueprint",
-      "source": "setup-assets/blueprints/rules/02-project-structure.md",
-      "target": ".agents/rules/02-project-structure.md",
+      "source": "setup-assets/blueprints/rules/structure.md",
+      "target": ".agents/rules/structure.md",
       "metadata": {
         "section": "project",
         "loading": "always",

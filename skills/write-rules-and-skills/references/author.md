@@ -50,15 +50,16 @@ or duplicated instructions, and use common terms unless a distinct concept needs
 conditions beside their outcomes and exceptions. Address material over-application and
 under-application using the shared positive-target and guardrail criteria.
 
-Treat the examples below as conditional, non-normative calibration. When creating a new artifact or
-materially reshaping one, read only the exemplar or exemplars named for its shape below. Keep
-ordinary local edits outside the example branch. Examples demonstrate proportion and coherence, not
-required headings, wording, or a template.
+Use the non-normative examples below to learn judgment about proportion, organization, and coherence.
+When creating a new artifact or materially reshaping one, read only the exemplars named for its
+shape; ordinary local edits do not require them. Derive the Candidate's meaning and structure from
+its own accepted objective and evidence. Examples are references for that judgment, not templates:
+they prescribe no headings, wording, length, resource layout, or domain policy.
 
 - Rule: [Rule exemplar](examples/elegant-rule.md).
 - Principle-led Skill: [principle-led Skill exemplar](examples/elegant-principle-led-skill.md).
 - Procedure-led Skill: [procedure-led Skill exemplar](examples/elegant-procedure-led-skill.md).
-- Rule-led Skill: [rule-led Skill exemplar](examples/elegant-rule-led-skill.md).
+- Rule-led Skill: [rule-led Skill exemplar](examples/elegant-rule-led-skill/SKILL.md).
 
 For a Hybrid Skill, read the base-shape exemplars relevant to its consequential parts.
 

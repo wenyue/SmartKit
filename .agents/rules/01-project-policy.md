@@ -19,6 +19,13 @@ Changes to setup must preserve the ownership and conflict boundaries defined in
 When retiring a current contract, remove its implementation, documentation, tests, and handling
 together. Retain or add compatibility only when an accepted current contract requires it.
 
+## Root READMEs
+
+Keep `README.md` and `README.zh-CN.md` aligned as concise, human-facing plugin documentation:
+a brief introduction and actionable installation instructions, including necessary prerequisites
+and activation steps. Keep internal workings, architecture, Rule delivery, discovery and precedence,
+implementation details, and maintainer or configuration reference material outside these READMEs.
+
 ## Verification
 
 For actual changes and affected integrations, required owner checks must pass in non-fixing mode

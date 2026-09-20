@@ -51,3 +51,25 @@ def live_headings(content: str) -> tuple[MarkdownHeading, ...]:
                 ))
         offset += len(raw_line)
     return tuple(headings)
+
+
+def live_text(content: str) -> str:
+    """Mask fenced examples while preserving line boundaries and offsets."""
+    result: list[str] = []
+    character: str | None = None
+    length = 0
+    for raw in content.splitlines(keepends=True):
+        line = raw.rstrip('\r\n')
+        fence = _FENCE.match(line)
+        hidden = character is not None
+        if fence is not None:
+            marker = fence.group(1)
+            remainder = line[fence.end():]
+            if character is None:
+                if marker[0] != '`' or '`' not in remainder:
+                    character, length = marker[0], len(marker)
+                    hidden = True
+            elif marker[0] == character and len(marker) >= length and not remainder.strip():
+                character, length = None, 0
+        result.append(''.join(c if c in '\r\n' else ' ' for c in raw) if hidden else raw)
+    return ''.join(result)

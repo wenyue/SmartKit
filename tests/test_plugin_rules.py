@@ -118,26 +118,68 @@ class PluginRuleContractTest(unittest.TestCase):
                 named = self.session_context(harness, {'prompt': 'Edit src/main.py and lib/app.dart'})
                 self.assertEqual(plain, named)
 
+    def test_code_policies_use_skill_discovery_and_leave_harness_delivery_intact(self):
+        expected = {
+            'rule-code', 'rule-error-handling', 'rule-code-comment',
+            'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
+        }
+        skills = json.loads((ROOT / 'skills/registry.json').read_text(encoding='utf-8'))
+        registered = {
+            item['path'] for item in skills['custom']
+            if item['id'].startswith('smartkit/rule-')
+        }
+        self.assertEqual(registered, expected)
+        public_ids = {item['id'] for item in skills['custom']}
+        for retired in ('handle-operation-failure', 'write-code-comment', 'rule-operation-failure'):
+            self.assertNotIn(f'smartkit/{retired}', public_ids)
+            self.assertFalse((ROOT / 'skills' / retired).exists())
+        owned_references = {
+            'rule-error-handling': ('recovery-and-effects.md', 'persisted-data.md', 'remediation.md'),
+            'rule-code-comment': ('examples.md',),
+        }
+        for owner, resources in owned_references.items():
+            for resource in resources:
+                with self.subTest(owner=owner, resource=resource):
+                    self.assertTrue((ROOT / 'skills' / owner / 'references' / resource).is_file())
+        for name in expected:
+            with self.subTest(skill=name):
+                body = (ROOT / 'skills' / name / 'SKILL.md').read_text(encoding='utf-8')
+                self.assertRegex(body, rf'(?m)^name: {name}$')
+                self.assertRegex(body, r'(?m)^description: .+$')
+                self.assertIn('Strength: `Default`', body)
+                self.assertRegex(body, r'(?m)^Scope: .+$')
+                self.assertNotIn('disable-model-invocation: true', body)
+        for name in ('code', 'cpp', 'flutter', 'go', 'python'):
+            self.assertFalse((ROOT / 'rules' / f'file-{name}.md').exists())
+        for harness in HARNESSES:
+            with self.subTest(harness=harness):
+                context = self.session_context(harness)
+                self.assert_core_and_index(context)
+                self.assertIn('smartkit/harness-codex', context)
+                self.assertNotIn('smartkit/file-', context)
+                self.assertNotIn('skills/rule-', context)
+
     def test_absolute_index_paths_work_outside_plugin_directory(self):
         root = self.fixture_root()
         context = self.session_context('cursor', root=root, cwd=Path(self.temporary.name))
         self.assert_core_and_index(context, root)
-        self.assertIn(str(root / 'rules' / 'file-python.md'), context)
+        self.assertIn(str(root / 'rules' / 'harness-codex.md'), context)
 
     def test_descriptions_are_opaque_text_and_do_not_select_bodies(self):
         root = self.fixture_root()
         path = root / 'rules/registry.json'
         document = json.loads(path.read_text(encoding='utf-8'))
         document['rules'][0]['description'] = 'Governance overview.'
-        document['rules'][-1]['description'] = 'A | B comparison.'
+        indexed = next(rule for rule in document['rules'] if rule['id'] == 'smartkit/harness-codex')
+        indexed['description'] = 'A | B comparison.'
         path.write_text(json.dumps(document), encoding='utf-8')
         context = self.session_context('codex', root=root)
         self.assertIn('A \\| B comparison.', context)
         self.assertIn('# Instruction Governance', context)
-        self.assertNotIn('# Python Guidelines', context)
-        document['rules'][-1]['description'] = 'Always'
+        self.assertNotIn('# Codex Harness Adaptation', context)
+        indexed['description'] = 'Always'
         path.write_text(json.dumps(document), encoding='utf-8')
-        self.assertNotIn('# Python Guidelines', self.session_context('codex', root=root))
+        self.assertNotIn('# Codex Harness Adaptation', self.session_context('codex', root=root))
 
     def test_session_reentry_restores_core_and_index_without_activation_history(self):
         for harness in ('codex', 'qoder'):
@@ -269,15 +311,17 @@ class PluginRuleContractTest(unittest.TestCase):
                 self.assertEqual(result.stdout, b'')
                 self.assertIn(b'SmartKit Rule delivery skipped', result.stderr)
 
-    def test_missing_conditional_source_and_invalid_core_rule_fail_closed(self):
+    def test_missing_indexed_source_and_invalid_core_rule_fail_closed(self):
         root = self.fixture_root()
         path = root / 'rules/registry.json'
         document = json.loads(path.read_text(encoding='utf-8'))
-        (root / 'rules/file-python.md').unlink()
+        (root / 'rules/harness-codex.md').unlink()
         result = self.run_raw_dispatch('cursor', 'session', b'{}', root=root)
         self.assertEqual(result.returncode, 1)
         self.assertIn(b'missing source', result.stderr)
-        document['rules'].pop()
+        document['rules'] = [
+            rule for rule in document['rules'] if rule['id'] != 'smartkit/harness-codex'
+        ]
         document['rules'][0]['strength'] = 'Default'
         path.write_text(json.dumps(document), encoding='utf-8')
         result = self.run_raw_dispatch('cursor', 'session', b'{}', root=root)

@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path, PurePosixPath
 
 from .external_contract import is_link_like as _is_link_like
 from .models import Catalog, ProjectRuleSpec, ProjectSkillSpec
 from .project import ProjectError, confined_target
+from .rule_metadata import (
+    RuleMetadataError, policy_metadata, read_policy, reject_conditional_rule,
+    validate_rule_skill,
+)
 
 
 class DiscoveryError(ValueError):
     """Raised when project-owned Rule or Skill discovery is ambiguous or unsafe."""
-
-
-_RULE_NAME = re.compile(r'^(\d{2})-[a-z0-9][a-z0-9-]*\.md$')
-_STRENGTH = re.compile(r'^(?:Strength:|\*\*Strength:\*\*)\s*`?(Mandatory|Default|Advisory)`?\s*$', re.MULTILINE)
-_SCOPE = re.compile(r'^(?:Scope:|\*\*Scope:\*\*)\s*(.+(?:\n(?!\s*$|[A-Za-z][A-Za-z ]+:|#).+)*)', re.MULTILINE)
 
 
 def _managed_targets(catalog: Catalog, kind: str) -> set[PurePosixPath]:
@@ -32,36 +30,12 @@ def _managed_targets(catalog: Catalog, kind: str) -> set[PurePosixPath]:
     }
 
 
-def _rule_section(number: int) -> str:
-    if number < 10:
-        return 'global'
-    if number < 20:
-        return 'base'
-    return 'project'
-
-
-def _rule_metadata(path: Path, relative: PurePosixPath) -> ProjectRuleSpec:
+def _rule_metadata(text: str, relative: PurePosixPath) -> ProjectRuleSpec:
     try:
-        text = path.read_text(encoding='utf-8')
-    except (OSError, UnicodeDecodeError) as error:
-        raise DiscoveryError(f'cannot read project Rule: {relative.as_posix()}') from error
-    strength = _STRENGTH.search(text)
-    scope = _SCOPE.search(text)
-    if strength is None or scope is None:
-        raise DiscoveryError(
-            f'project Rule requires Strength and Scope metadata: {relative.as_posix()}'
-        )
-    match = _RULE_NAME.fullmatch(path.name)
-    assert match is not None
-    description = ' '.join(line.strip() for line in scope.group(1).splitlines()).strip()
-    if not description:
-        raise DiscoveryError(f'project Rule Scope is empty: {relative.as_posix()}')
-    return ProjectRuleSpec(
-        relative,
-        _rule_section(int(match.group(1))),
-        description,
-        strength.group(1),
-    )
+        strength, _ = policy_metadata(text, relative.as_posix())
+    except RuleMetadataError as error:
+        raise DiscoveryError(str(error)) from error
+    return ProjectRuleSpec(relative, strength)
 
 
 def discover_project_rules(
@@ -84,12 +58,17 @@ def discover_project_rules(
     for path in sorted(root.iterdir(), key=lambda item: item.name):
         if _is_link_like(path):
             raise DiscoveryError(f'project Rule path is a symlink: {path.name}')
-        if not path.is_file() or _RULE_NAME.fullmatch(path.name) is None:
+        if not path.is_file() or path.suffix != '.md':
             continue
         relative = root_relative / path.name
+        try:
+            text = read_policy(path)
+            reject_conditional_rule(text, relative.as_posix())
+        except RuleMetadataError as error:
+            raise DiscoveryError(str(error)) from error
         if relative in managed or relative in previous_managed:
             continue
-        result.append(_rule_metadata(path, relative))
+        result.append(_rule_metadata(text, relative))
     return tuple(result)
 
 
@@ -127,10 +106,15 @@ def discover_project_skills(
         if not path.is_dir():
             continue
         relative = root_relative / path.name
-        if relative in managed_roots or relative in previous_managed:
-            continue
         skill = path / 'SKILL.md'
         if _is_link_like(skill) or not skill.is_file():
+            continue
+        if path.name.startswith('rule-'):
+            try:
+                validate_rule_skill(read_policy(skill), path.name, str(skill))
+            except RuleMetadataError as error:
+                raise DiscoveryError(str(error)) from error
+        if relative in managed_roots or relative in previous_managed:
             continue
         result.append(ProjectSkillSpec(path.name, relative))
     return tuple(result)

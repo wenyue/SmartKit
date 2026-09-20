@@ -1,35 +1,30 @@
 ---
-name: migrate-versioned-data
-description: Migrate one set of versioned local data with a verified recovery path.
+name: replace-file
+description: Validate a replacement for one existing file and confirm the saved result.
 disable-model-invocation: true
 ---
 
-# Migrate Versioned Data
+# Replace One File
 
-Use this procedure when ordering matters because a failed conversion could strand or corrupt local
-data.
+Replace one existing file while retaining a usable recovery copy until the result is confirmed.
 
-1. Establish the source and target formats, the data in scope, required compatibility, invariants,
-   recovery point, and authority to write, recover, and control consumers. Stop before mutation if
-   any is unknown or exclusive access cannot be obtained.
-2. Prepare a converter that transforms the declared source version, returns an already-target version
-   unchanged, rejects every other version, preserves each invariant, and leaves its input unchanged
-   on failure. Keep readers compatible with both formats until retirement is authorized.
-3. Run the converter on a copy of representative data. Compare semantic contents, exercise malformed
-   input, and convert the result again to verify that a retry leaves it unchanged. Repair the
-   converter and repeat this step until every check passes.
-4. Stop readers and writers through the authorized control, then prove access is exclusive. Capture
-   an immutable backup, record its checksum and record count, and verify that it can be read
-   independently. If any check fails, resume consumers and stop without mutating the live data.
-5. Convert the scoped live data once. While ordinary access remains blocked, immediately verify its
-   target version, record count, and invariants, and exercise a target read with every supported
-   consumer. If any check fails, retain exclusive access and restore the backup. Resume consumers
-   only after the restored source verifies; otherwise keep access blocked and request recovery
-   direction. Report the failed check.
-6. After every target check passes, resume consumers.
-7. Retire the backup or old-format reader only when the retention and compatibility requirements
-   permit it. Otherwise, hand them off with their owner and expiry condition recorded.
+1. Establish the exact file, intended change, required checks, and authority to replace and recover
+   it from the task and target's own instructions. Choose a supported replacement method that
+   protects intervening edits. Stop before writing if these prerequisites cannot be established.
+2. Prepare the replacement separately. Preserve a readable recovery copy of the original, including
+   properties the target requires, and confirm that it matches the original. Keep the original
+   file unchanged while preparing and validating the candidate.
+3. Validate the candidate against the intended change and required checks. A failed check leaves the
+   original in place: correct the candidate and validate again, or stop with the failed check.
+   Proceed only with a candidate that passes every required check.
+4. Confirm the original still matches the recovery copy, then replace it using the established
+   method. If it has changed, stop and resolve that change before attempting replacement.
+5. Read the destination and confirm that it matches the validated candidate and passes the target's
+   required checks. If replacement or this verification fails, inspect the resulting state and
+   restore the original only where the established authority and method protect intervening work.
+   Verify any restoration. If safe recovery or its verification is unavailable, preserve the
+   recovery copy, stop, and report the known state and the assistance needed.
 
-The migration is complete when all scoped data verifies in the target format, supported consumers
-can read it, no partial conversion remains, and every retained recovery or compatibility measure has
-an explicit owner and removal condition.
+Replacement is complete only when the destination verifies as the accepted candidate. Report a
+failed replacement even if recovery succeeds. Retain or remove the recovery copy according to the
+target's retention requirements and the task's authority; identify any retained copy in the handoff.

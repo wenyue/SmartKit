@@ -1,0 +1,3 @@
+interface:
+  display_name: "Error Handling Policy"
+  short_description: "Apply error contracts, propagation, recovery, and feedback"

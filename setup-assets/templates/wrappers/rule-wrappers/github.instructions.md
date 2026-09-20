@@ -1,5 +1,5 @@
 ---
-applyTo: "{{rule.github_apply_to}}"
+applyTo: "**"
 ---
 
 Apply @{{rule.apply_ref}}

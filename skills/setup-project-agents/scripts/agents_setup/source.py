@@ -28,6 +28,7 @@ from .external_contract import (
     is_link_like as _is_link_like,
 )
 from .models import AssetSpec, Catalog
+from .rule_metadata import RuleMetadataError, read_policy, validate_rule_skill
 
 
 CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
@@ -208,6 +209,11 @@ def _validate_catalog_sources(root: Path, catalog_assets: tuple[AssetSpec, ...])
                 raise
         else:
             current = _safe_required(root, relative)
+        if asset.kind == 'skill' and current.name.startswith('rule-'):
+            try:
+                validate_rule_skill(read_policy(current / 'SKILL.md'), current.name, str(current))
+            except RuleMetadataError as error:
+                raise InvalidFetchedSource(str(error)) from error
         if asset.kind == 'agent':
             children = tuple(current.iterdir())
             if not children or any(

@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 from .catalog import ContractError, load_catalog
 from .discovery import DiscoveryError, discover_project_rules
 from .external_contract import is_link_like as _is_link_like
-from .markdown import live_headings
+from .markdown import live_headings, live_text
 from .models import (
     Catalog,
     ChangeKind,
@@ -20,11 +20,12 @@ from .ownership import OwnershipError, load_ownership
 from .planner import PlanningError, build_plan
 from .project import ProjectError, confined_target
 from .transaction import TransactionError, apply_plan
+from .rule_metadata import RuleMetadataError, policy_metadata, read_policy
 
 
 ENTRY_PATH = PurePosixPath('AGENTS.md')
 PROJECT_RULES_TITLE = 'Project rules'
-_RULE_PATH = re.compile(r'\.agents/rules/(\d{2}-[a-z0-9][a-z0-9-]*\.md)')
+_RULE_PATH = re.compile(r'\.agents/rules/([^`|/\r\n]+\.md)(?=[`)\s]|$)')
 _TABLE_ROW = re.compile(r'^\|.*\|\s*$')
 
 
@@ -38,34 +39,19 @@ class ProjectRuleSyncResult:
     changed_paths: tuple[str, ...]
 
 
-def _rule_row(
-    description: str,
-    rule_path: PurePosixPath | None,
-    strength: str,
-) -> str:
-    path = '' if rule_path is None else rule_path.as_posix()
-    description = description.replace('|', '\\|')
-    return f'| {description} | `{path}` | {strength} |'
+def render_rule_tables(source_root: Path, required: list[str]) -> str:
+    """Render the single unconditional Rule table when it has entries."""
+    if not required:
+        return ''
+    template = (
+        source_root / 'setup-assets/templates/entry-files/required-rules.md'
+    ).read_text(encoding='utf-8')
+    return template.replace('{{rule_rows}}', '\n'.join(_sort_rows(required))).strip()
 
 
-def render_rule_tables(source_root: Path, required: list[str], on_demand: list[str]) -> str:
-    """Render only non-empty tables, including their loading instructions."""
-    blocks = []
-    for name, rows in (('required-rules', required), ('on-demand-rules', on_demand)):
-        if rows:
-            template = (
-                source_root / f'setup-assets/templates/entry-files/{name}.md'
-            ).read_text(encoding='utf-8')
-            blocks.append(template.replace('{{rule_rows}}', '\n'.join(_sort_rows(rows))).strip())
-    return '\n\n'.join(blocks)
-
-
-def required_rule_paths(target_root: Path) -> frozenset[PurePosixPath]:
-    """Read the project's explicit choices for additional always-read Rules."""
-    return frozenset(
-        path for row in _index_rows(_read_entry(target_root))
-        if len(row) == 2 and (path := _row_path('| ' + ' | '.join(row) + ' |')) is not None
-    )
+def validate_project_rule_index(target_root: Path) -> None:
+    """Refuse legacy conditional or ambiguous declarations before target effects."""
+    _index_rows(_read_entry(target_root))
 
 
 def render_project_rule_tables(
@@ -73,31 +59,20 @@ def render_project_rule_tables(
     target_root: Path,
     catalog: Catalog,
     config: ProjectConfig,
-    section: str,
     project_rules: tuple[ProjectRuleSpec, ...],
 ) -> str:
-    """Combine catalog loading policy with the project's explicit required rows."""
-    required, on_demand = [], []
-    required_paths = required_rule_paths(target_root)
+    validate_project_rule_index(target_root)
+    required = []
     for asset in catalog.assets:
-        metadata = asset.metadata
         if (
             asset.kind in {'rule', 'blueprint'}
-            and metadata.get('section') == section
+            and asset.target is not None
+            and asset.target.parts[:2] == ('.agents', 'rules')
             and (asset.kind != 'rule' or asset.id in config.selected_rules)
         ):
-            if metadata['loading'] == 'always':
-                required.append(f'| `{asset.target}` | {metadata["strength"]} |')
-            else:
-                on_demand.append(_rule_row(
-                    str(metadata['description']), asset.target, str(metadata['strength']),
-                ))
-    for rule in project_rules:
-        if rule.path in required_paths:
-            required.append(f'| `{rule.path}` | {rule.strength} |')
-        elif rule.section == section:
-            on_demand.append(_rule_row(rule.description, rule.path, rule.strength))
-    return render_rule_tables(source_root, required, on_demand)
+            required.append(f'| `{asset.target}` | {asset.metadata["strength"]} |')
+    required.extend(f'| `{rule.path}` | {rule.strength} |' for rule in project_rules)
+    return render_rule_tables(source_root, required)
 
 
 def project_rules_section_bounds(content: str) -> tuple[int, int] | None:
@@ -221,9 +196,12 @@ def _index_rows(current: bytes | None) -> list[list[str]]:
     bounds = project_rules_section_bounds(content)
     if bounds is None:
         return []
+    section = live_text(content[bounds[0]:bounds[1]])
     rows = []
-    for line in content[bounds[0]:bounds[1]].splitlines():
+    for line in section.splitlines():
         if not _TABLE_ROW.fullmatch(line):
+            if line.lstrip().startswith('|'):
+                raise ProjectRuleSyncError(f'malformed Rule table in AGENTS.md: {line.strip()}')
             continue
         cells = [cell.strip() for cell in re.split(r'(?<!\\)\|', line)[1:-1]]
         if cells in (['Rule', 'Strength'], ['Description', 'Rule', 'Strength']):
@@ -232,40 +210,35 @@ def _index_rows(current: bytes | None) -> list[list[str]]:
             continue
         if set(line.replace('|', '').strip()) <= {'-', ':', ' '}:
             continue
-        if len(cells) in {2, 3}:
-            rows.append(cells)
+        if len(cells) == 3:
+            raise ProjectRuleSyncError(
+                f'legacy conditional project Rule declaration in AGENTS.md: {line.strip()}; '
+                'separately authorize source authoring into a rule-led Skill before setup'
+            )
+        if len(cells) != 2:
+            raise ProjectRuleSyncError(f'ambiguous Rule table in AGENTS.md: {line.strip()}')
+        if '.agents/rules/' in line and _row_path(line) is None:
+            raise ProjectRuleSyncError(f'ambiguous Rule path in AGENTS.md: {line.strip()}')
+        rows.append(cells)
+    if re.search(r'^#{1,6}\s+.*(?:on-demand|conditional)', section, re.IGNORECASE | re.MULTILINE) and rows:
+        raise ProjectRuleSyncError(
+            'legacy conditional project Rule declaration in AGENTS.md; '
+            'separately authorize source authoring into a rule-led Skill before setup'
+        )
     return rows
 
 
 def _preserved_rows(
     current: bytes | None,
     managed: frozenset[PurePosixPath],
-    catalog: Catalog,
-) -> tuple[list[str], list[str]]:
-    required, on_demand = [], []
-    declared = {
-        asset.target: asset.metadata
-        for asset in catalog.assets
-        if asset.kind in {'rule', 'blueprint'} and 'loading' in asset.metadata
-    }
+) -> list[str]:
+    required = []
     for cells in _index_rows(current):
         row = '| ' + ' | '.join(cells) + ' |'
         path = _row_path(row)
-        if path is not None and path not in managed:
-            continue
-        metadata = declared.get(path)
-        if metadata is not None and metadata['loading'] == 'always':
-            required.append('| ' + ' | '.join(cells[-2:]) + ' |')
-        elif len(cells) == 2:
-            if metadata is not None:
-                on_demand.append(_rule_row(
-                    str(metadata['description']), path, cells[-1],
-                ))
-            else:
-                required.append(row)
-        else:
-            on_demand.append(row)
-    return required, on_demand
+        if path is None or path in managed:
+            required.append(row)
+    return required
 
 
 def _sort_rows(rows: list[str]) -> list[str]:
@@ -295,21 +268,24 @@ def _plan_project_rule_sync(source_root: Path, target_root: Path) -> Plan:
         previous_managed=managed,
     )
     current = _read_entry(target)
-    required, on_demand = _preserved_rows(current, managed, catalog)
-    required_paths = required_rule_paths(target)
-    on_demand_paths = {
-        path for row in _index_rows(current)
-        if len(row) == 3 and (path := _row_path('| ' + ' | '.join(row) + ' |')) is not None
-    }
-    for rule in project_rules:
-        if rule.path in required_paths:
-            required.append(f'| `{rule.path}` | {rule.strength} |')
-        elif rule.section == 'project' or rule.path in on_demand_paths:
-            on_demand.append(_rule_row(rule.description, rule.path, rule.strength))
+    required = _preserved_rows(current, managed)
+    indexed = {_row_path(row) for row in required}
+    metadata = {asset.target: asset.metadata for asset in catalog.assets}
+    for relative in sorted(managed, key=lambda path: path.as_posix()):
+        if relative in indexed or relative.parent != PurePosixPath('.agents/rules') or relative.suffix != '.md':
+            continue
+        path = confined_target(target, relative)
+        if not path.is_file():
+            continue
+        strength = metadata.get(relative, {}).get('strength')
+        if strength is None:
+            strength, _ = policy_metadata(read_policy(path), relative.as_posix())
+        required.append(f'| `{relative}` | {strength} |')
+    required.extend(f'| `{rule.path}` | {rule.strength} |' for rule in project_rules)
     template = (
         source / 'setup-assets/templates/entry-files/AGENTS.md'
     ).read_text(encoding='utf-8')
-    tables = render_rule_tables(source, required, on_demand)
+    tables = render_rule_tables(source, required)
     block = template.replace('{{project_rule_tables}}', tables).encode()
     desired = _replace_project_rules_section(current, block)
     plan = build_plan(target, (DesiredFile(ENTRY_PATH, desired),))
@@ -352,6 +328,7 @@ def synchronize_project_rules(
         OwnershipError,
         PlanningError,
         ProjectError,
+        RuleMetadataError,
         TransactionError,
     ) as error:
         raise ProjectRuleSyncError(str(error)) from error

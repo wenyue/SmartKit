@@ -172,9 +172,81 @@ class SyncProjectTest(unittest.TestCase):
         self.assertEqual(document['mcp_servers']['local']['env_vars'], ['LOCAL_TOKEN'])
         entry = (self.target / 'AGENTS.md').read_bytes()
         self.assertNotIn(b'30-before.md', entry)
-        self.assertIn(b'New scope.', entry)
+        self.assertIn(b'| `.agents/rules/31-after.md` | Mandatory |', entry)
         self.assertEqual(load_ownership(self.target).contracts, contracts)
         self.assertEqual(self.sync().changed_paths, ())
+
+    def test_rule_skill_uses_native_discovery_without_adapter_or_index_rows(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        self.write(relative, '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
+                   '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n'
+                   '\n## Integration tests\n\nStrength: `Mandatory`\n\nPreserve isolation.\n')
+        original = (self.target / relative).read_bytes()
+        result = self.sync()
+        self.assertIn(relative, result.preserved_paths)
+        self.assertEqual((self.target / relative).read_bytes(), original)
+        self.assertNotIn(b'rule-testing', (self.target / 'AGENTS.md').read_bytes())
+        for path in self.target.rglob('*rule-testing*'):
+            self.assertEqual(path, self.target / '.agents/skills/rule-testing')
+        self.assertEqual(self.sync(True).check, 'clean')
+
+    def test_invalid_rule_skill_refuses_sync_without_writing(self):
+        valid = ('---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
+                 '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+        for content in (
+            valid.replace('name: rule-testing', 'name: another-name'),
+            valid.replace('description: Use when writing tests.\n', ''),
+            valid.replace('Strength: `Default`\n', ''),
+            valid.replace('Scope: Test authoring.\n', ''),
+            valid.replace('Strength: `Default`\n', '') +
+            '\n## A section\n\nStrength: `Mandatory`\n',
+            valid.replace('description:', 'disable-model-invocation: true\ndescription:'),
+            valid.replace('description:', 'disable-model-invocation: true # manual only\ndescription:'),
+        ):
+            for check in (False, True):
+                with self.subTest(content=content, check=check):
+                    self.write('.agents/skills/rule-testing/SKILL.md', content)
+                    before = self.snapshot()
+                    with self.assertRaises(project_sync.ProjectSyncError):
+                        self.sync(check)
+                    self.assertEqual(self.snapshot(), before)
+
+    def test_legacy_conditional_rule_requires_source_migration_before_sync(self):
+        self.write('.agents/rules/library.md',
+                   '# Library\n\nStrength: `Default`\n\nScope: Library work.\n')
+        entry = self.target / 'AGENTS.md'
+        entry.write_bytes(entry.read_bytes() +
+            b'\n### On-demand rules\n\n'
+            b'| Description | Rule | Strength |\n| --- | --- | --- |\n'
+            b'| Library work | `.agents/rules/library.md` | Default |\n'
+        )
+        before = self.snapshot()
+        for check in (False, True):
+            with self.subTest(check=check):
+                with self.assertRaisesRegex(project_sync.ProjectSyncError, 'rule-'):
+                    self.sync(check)
+                self.assertEqual(self.snapshot(), before)
+
+    def test_rule_skill_change_during_sync_rolls_back_adapters_and_preserves_source_edit(self):
+        relative = '.agents/skills/rule-testing/SKILL.md'
+        self.write(relative, '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
+                   '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n')
+        self.config['agents'] = [self.agent('renamed')]
+        self.save_config()
+        before = self.snapshot()
+        original_apply = project_sync.apply_plan
+
+        def change_source_then_apply(target, plan, *, postcondition):
+            self.write(relative, before[relative].decode().replace('Default', 'Mandatory'))
+            return original_apply(target, plan, postcondition=postcondition)
+
+        with mock.patch.object(project_sync, 'apply_plan', side_effect=change_source_then_apply):
+            with self.assertRaisesRegex(project_sync.ProjectSyncError, 'inputs changed'):
+                self.sync()
+        after = self.snapshot()
+        self.assertIn(b'Strength: `Mandatory`', after.pop(relative))
+        before.pop(relative)
+        self.assertEqual(after, before)
 
     def test_native_drift_during_planning_refuses_to_overwrite_observed_document(self):
         self.config['mcp'][0]['command'] = 'updated-runtime'
@@ -201,8 +273,8 @@ class SyncProjectTest(unittest.TestCase):
         self.assertFalse((self.target / '.qoder/agents/local.md').exists())
         self.assertEqual((self.target / '.codex/agents/change-set-verifier.toml').read_bytes(),
                          before['.codex/agents/change-set-verifier.toml'])
-        self.assertEqual((self.target / '.agents/rules/00-project-tools.md').read_bytes(),
-                         before['.agents/rules/00-project-tools.md'])
+        self.assertEqual((self.target / '.agents/rules/tools.md').read_bytes(),
+                         before['.agents/rules/tools.md'])
         self.assertEqual(self.sync().changed_paths, ())
 
     def test_external_declaration_changes_require_full_setup_without_writing(self):

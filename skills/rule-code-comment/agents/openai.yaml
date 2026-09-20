@@ -1,0 +1,3 @@
+interface:
+  display_name: "Code Comment Policy"
+  short_description: "Judge comment coverage and write, assess, or maintain comments"

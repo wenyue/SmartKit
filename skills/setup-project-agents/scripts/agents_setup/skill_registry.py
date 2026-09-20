@@ -6,6 +6,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from .external_contract import is_link_like
+from .rule_metadata import RuleMetadataError, read_policy, validate_rule_skill
+
 
 _STABLE_ID = re.compile(r'^[A-Za-z0-9_.-]+/[a-z0-9][a-z0-9-]*$')
 _NAME = re.compile(r'^[a-z0-9][a-z0-9-]*$')
@@ -97,6 +100,14 @@ def load_skill_registry(root: Path) -> SkillRegistry:
         name = skill_id.rsplit('/', 1)[1]
         if name != skill_path.name:
             raise SkillRegistryError('custom Skill id name and path basename must match')
+        if name.startswith('rule-'):
+            entry = root / 'skills' / skill_path / 'SKILL.md'
+            try:
+                if is_link_like(root / 'skills') or is_link_like(entry.parent):
+                    raise RuleMetadataError(f'rule-led Skill source is unsafe: {entry}')
+                validate_rule_skill(read_policy(entry), name, str(entry))
+            except RuleMetadataError as error:
+                raise SkillRegistryError(str(error)) from error
         custom.append(CustomSkill(skill_id, name, skill_path))
 
     ids = [item.id for item in custom]
