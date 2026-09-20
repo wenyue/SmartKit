@@ -33,13 +33,13 @@ GitHub 的 `branches/master` 返回永久迁移，目标是 `branches/main`。�
 | 完成语义 | 文本以全票完成、整批审查、ready PR 收尾 | 只有 finalizer 证明权威交付后才进入 tracker closure，保留已完成前缀与原失败状态 |
 | 恢复 | 核心文件未展开 | Git、tracker、依赖回执与原 worker/finalizer 身份恢复；不维护 Batch journal，不因响应缺失重试效果 |
 
-本地来源：[SKILL.md](../../skills/implement-tickets/SKILL.md) L8–L40、[tracker.md](../../skills/implement-tickets/references/tracker.md) L18–L57 与 L148–L161、[worker-transaction.md](../../skills/implement-tickets/references/worker-transaction.md)、[complete-run.md](../../skills/implement-tickets/references/complete-run.md) L49–L92 与 L115–L168。本地已经有依赖图、frontier 和一次整批审查，不能把它们描述为上游首次带来的新能力。
+本地来源：[SKILL.md](../../skills/implement-tickets/SKILL.md) L8–L40、`skills/implement-tickets/references/tracker.md`（历史位置，现已移除） L18–L57 与 L148–L161、[worker-transaction.md](../../skills/implement-tickets/references/worker-transaction.md)、[complete-run.md](../../skills/implement-tickets/references/complete-run.md) L49–L92 与 L115–L168。本地已经有依赖图、frontier 和一次整批审查，不能把它们描述为上游首次带来的新能力。
 
 [ADR-0007](../adr/0007-use-one-worktree-per-ticket-batch.md) 已接受单批单 worktree、串行、票据提交边界和不单独建 Batch journal；它替代 ADR-0005 与 ADR-0003 的相关旧设计。直接采用上游并行每票 worktree 会改变这项决策，而非普通文字精简。
 
 当前工作区 [finish-worktree](../../skills/finish-worktree/SKILL.md) 已按所选 outcome 判断前置条件，支持保留未完成工作与转移变更，复用仍有效的证据，并引入外部操作回执。[implement-tickets 的统一 finalizer 入口](../../skills/implement-tickets/references/complete-run.md) L115–L138 仍要求整批验证和双轴审查通过，存在值得单独讨论的接口差异。
 
-本地“空选择”和“选中票据全部无需修改”不同：前者已经是成功无效果结果；后者可以产生空 Ticket Commit，但整批 diff 为空仍不能进入现有 code-review，进入保留状态的 stop。这不是查询不到工作的问题。[主技能](../../skills/implement-tickets/SKILL.md) L8–L9、[单票证明](../../skills/implement-tickets/references/process-one-ticket.md) L40–L60、[最终审查入口](../../skills/implement-tickets/references/complete-run.md) L49–L55。
+本地“空选择”和“选中票据全部无需修改”不同：前者已经是成功无效果结果；后者可以产生空 Ticket Commit，但整批 diff 为空仍不能进入现有 code-review，进入保留状态的 stop。这不是查询不到工作的问题。[主技能](../../skills/implement-tickets/SKILL.md) L8–L9、单票证明 `skills/implement-tickets/references/process-one-ticket.md`（历史位置，现已移除） L40–L60、[最终审查入口](../../skills/implement-tickets/references/complete-run.md) L49–L55。
 
 ## 可借鉴的方向：分析而非已接受设计
 
