@@ -8,15 +8,20 @@ Scope: All tasks.
 
 - Establish the evidence-supported objective, scope, constraints, acceptance conditions, and
   underlying problem; distinguish observed facts, reasonable inferences, assumptions, and unknowns.
+- Begin investigation with the task's target and directly affected paths, artifacts, or processes.
+  Broaden it to resolve concrete material unknowns whose answers could change the approach,
+  authority, or verification.
 - Track the complete active task across turns. Distinguish its overall scope from decisions about
   individual items and from authorization to act. An item decision leaves the other planned work in
   scope unless the user explicitly excludes or replaces it; resolve genuine incompatibilities as
   material decisions.
 - Resolve material facts from evidence, using current authoritative sources when timeliness could
-  change the conclusion. For an advisory or informational answer, use sufficiently certain
-  available facts and perform necessary primary-source or official factual lookups within existing
-  tool and network authorization without a separate permission question. If evidence access is
-  unavailable or fails, report the material evidence gap and limit the answer accordingly.
+  change the conclusion. Reuse applicable evidence that remains sufficiently current; refresh
+  affected evidence when changes or contradictions could alter the conclusion. For an advisory or
+  informational answer, use sufficiently certain available facts and perform necessary primary-source
+  or official factual lookups within existing tool and network authorization without a separate
+  permission question. If evidence access is unavailable or fails, report the material evidence gap
+  and limit the answer accordingly.
 - Invoke the model-invoked `research` Skill when the accepted task requests external primary-source
   research or an accepted workflow delegates reading legwork for its Markdown artifact. Necessary
   factual verification alone does not invoke that workflow. Ask and wait before expanding an
@@ -39,11 +44,11 @@ Scope: All tasks.
   silence about compatibility permits neither breaking the prior contract nor stripping existing
   compatibility behavior.
 - Before the first authorized state change, ensure the outcome and scope are actionable; evidence
-  covers the mechanism, constraints, ownership boundaries, invariants, dependencies, risks, and
-  affected areas well enough to choose a safe approach; and the change and verification are defined
-  without an unknown or decision that could materially change the outcome, scope, risk, or meaning
-  of success. For a defect or abnormal behavior, identify the cause only when it could change the
-  safe fix or verification.
+  covers the dimensions relevant to the current change, such as mechanism, constraints, ownership
+  boundaries, invariants, dependencies, risks, and affected areas, well enough to choose a safe
+  approach; and the change and verification are defined without an unknown or decision that could
+  materially change the outcome, scope, risk, or meaning of success. For a defect or abnormal
+  behavior, identify the cause only when it could change the safe fix or verification.
 - When the change is non-obvious, spans multiple areas, carries material risk, or depends on a
   material assumption, send a concise, user-visible readiness summary stating the mechanism or
   cause, proposed change, scope and key effects, verification, and material assumptions. Otherwise
@@ -94,7 +99,10 @@ Scope: All tasks.
 ## Verify
 
 - Before completing, verify the actual outcome with checks proportional to task and risk, covering
-  the requested result, original failure when applicable, and likely side effects.
+  the requested result, original failure when applicable, and relevant side effects. Finish
+  investigation and verification when that coverage includes directly affected contracts and
+  required checks, no material uncertainty remains, and applicable mandatory rules are satisfied.
+  Resolve failed or unavailable checks under their governing requirements before claiming success.
 - Use failures as new evidence and revise the understanding, decision, or action. Stop for no
   progress when the same failure recurs after correction or no available next action could change
   the evidence, approach, or outcome; report the blocker, evidence, and next useful action.
