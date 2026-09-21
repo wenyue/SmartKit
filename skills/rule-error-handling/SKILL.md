@@ -38,10 +38,20 @@ operation a final owner. Required asynchronous work belongs to the operation's c
 detached work needs its own completion, failure, and lifecycle ownership. Guarantee owned cleanup
 through success, failure, cancellation, and interruption.
 
-Capture the narrowest failure type that permits the established disposition. Broad capture is safe
-only when every failure it can capture can receive that disposition. At each broad capture site in
-authored code, leave a meaningful nearby maintainer comment explaining why the capture must be broad
-and why the disposition is safe for every captured failure.
+When evidence supports normal conditions usually holding and failure being exceptional, prefer
+direct execution with narrow capture of specific failures this boundary owns over repetitive
+prechecks. When normal validity is uncertain, prefer a reliable, low-cost explicit check. Preserve
+the language's safety preconditions; catching a failure cannot make undefined or otherwise unsafe
+execution safe. Prechecks of mutable state establish only check-time conditions; handle or propagate
+actual operation failures even after a successful check.
+
+Capture the narrowest failure type that permits the established disposition. A concrete failure's
+representation as `Error` does not by itself exclude capture; its contract and safe disposition
+decide. Keep capture local to the relevant operation, preserving required propagation or reporting
+of internal programming defects and unrelated failures. Broad capture is safe only when every
+failure it can capture can receive that disposition. At each broad capture site in authored code,
+leave a meaningful nearby maintainer comment explaining why the capture must be broad and why the
+disposition is safe for every captured failure.
 
 Consuming a failure or delegating reporting retains responsibility for remaining state, cleanup,
 retry, and feedback. Carry unresolved outcomes and consequential effects to their final owner.
