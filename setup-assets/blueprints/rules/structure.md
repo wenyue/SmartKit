@@ -1,6 +1,6 @@
 # Structure
 
-Strength: `Advisory`
+Strength: `Default`
 
 Scope: Setup Authoring Contract for target-repository structure, placement, responsibility, and
 navigation recommendations.
@@ -8,7 +8,7 @@ navigation recommendations.
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/structure.md`, the Author
-produces one target-owned Advisory Rule titled `Structure`. It ranks valid choices of
+produces one target-owned Default Rule titled `Structure`. It ranks valid choices of
 location, responsibility seam, or navigation entry after narrower or Mandatory policy. Ownership,
 dependency permission, delivery, installation, and exposure remain with their policy owners.
 

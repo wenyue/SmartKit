@@ -172,7 +172,8 @@ class SyncProjectTest(unittest.TestCase):
         self.assertEqual(document['mcp_servers']['local']['env_vars'], ['LOCAL_TOKEN'])
         entry = (self.target / 'AGENTS.md').read_bytes()
         self.assertNotIn(b'30-before.md', entry)
-        self.assertIn(b'| `.agents/rules/31-after.md` | Mandatory |', entry)
+        self.assertIn(b'- `.agents/rules/31-after.md`', entry)
+        self.assertNotIn(b'| Rule | Strength |', entry)
         self.assertEqual(load_ownership(self.target).contracts, contracts)
         self.assertEqual(self.sync().changed_paths, ())
 

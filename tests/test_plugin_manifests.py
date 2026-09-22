@@ -98,28 +98,28 @@ def markdown_link_targets(text: str) -> Counter[str]:
 
 
 class PluginManifestTest(unittest.TestCase):
-    def test_repository_agents_entry_matches_public_template_around_rule_rows(self):
+    def test_repository_agents_entry_matches_public_template_around_rule_items(self):
         template = (
             REPO_ROOT / 'setup-assets/templates/entry-files/AGENTS.md'
         ).read_text(encoding='utf-8')
         entry = (REPO_ROOT / 'AGENTS.md').read_text(encoding='utf-8')
-        prefix, suffix = template.split('{{project_rule_tables}}')
+        prefix, suffix = template.split('{{project_rule_index}}')
         start = entry.index('## Project rules')
         end = entry.index('## Agent skills', start)
         project_rules = entry[start:end].rstrip() + '\n'
 
         self.assertTrue(project_rules.startswith(prefix))
         self.assertTrue(project_rules.endswith(suffix))
-        tables = project_rules[len(prefix) : len(project_rules) - len(suffix)]
+        index = project_rules[len(prefix) : len(project_rules) - len(suffix)]
         required_template = (
             REPO_ROOT / 'setup-assets/templates/entry-files/required-rules.md'
         ).read_text(encoding='utf-8')
-        required_prefix, _ = required_template.split('{{rule_rows}}')
-        self.assertTrue(tables.startswith(required_prefix))
-        self.assertNotIn('### On-demand rules', tables)
-        self.assertNotIn('| Description |', tables)
-        self.assertIn('`.agents/rules/00-self-hosting-authority.md`', tables)
-        self.assertIn('`.agents/rules/01-project-policy.md`', tables)
+        required_prefix, _ = required_template.split('{{rule_items}}')
+        self.assertTrue(index.startswith(required_prefix))
+        self.assertNotIn('### On-demand rules', index)
+        self.assertNotIn('| Rule | Strength |', index)
+        self.assertIn('- `.agents/rules/00-self-hosting-authority.md`', index)
+        self.assertIn('- `.agents/rules/01-project-policy.md`', index)
 
     def test_repository_local_rules_use_only_the_project_numbering_contract(self):
         self.assertEqual(

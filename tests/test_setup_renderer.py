@@ -1403,9 +1403,10 @@ class SetupRendererTest(unittest.TestCase):
 
             rendered = self.render(target, self.generated_tree(root))
             agents = rendered.files_by_path['AGENTS.md'].decode()
-            self.assertIn('| `.agents/rules/local-policy.md` | Default |', agents)
-            self.assertIn('| `.agents/rules/tools.md` | Mandatory |', agents)
-            self.assertIn('| `.agents/rules/structure.md` | Advisory |', agents)
+            self.assertIn('- `.agents/rules/local-policy.md`', agents)
+            self.assertIn('- `.agents/rules/tools.md`', agents)
+            self.assertIn('- `.agents/rules/structure.md`', agents)
+            self.assertNotIn('| Rule | Strength |', agents)
             self.assertNotIn('| Description |', agents)
             self.assertNotIn('### On-demand rules', agents)
             self.assertNotIn('rule-testing', agents)
@@ -1424,7 +1425,7 @@ class SetupRendererTest(unittest.TestCase):
             )
             required_only = self.render(target, self.generated_tree(root)).files_by_path['AGENTS.md'].decode()
             self.assertNotIn('### On-demand rules', required_only)
-            self.assertIn('| `.agents/rules/local-policy.md` | Default |', required_only)
+            self.assertIn('- `.agents/rules/local-policy.md`', required_only)
 
     def test_shared_rule_wrappers_remain_unconditional(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1452,7 +1453,7 @@ class SetupRendererTest(unittest.TestCase):
             self.assertIn('applyTo: "**"', copilot)
             for wrapper in (cursor, copilot):
                 self.assertIn('Apply @.agents/rules/shared-policy.md', wrapper)
-            self.assertIn(b'| `.agents/rules/shared-policy.md` | Mandatory |',
+            self.assertIn(b'- `.agents/rules/shared-policy.md`',
                           rendered.files_by_path['AGENTS.md'])
             validate_rendered_state(rendered)
 

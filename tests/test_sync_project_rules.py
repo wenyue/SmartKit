@@ -154,25 +154,25 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertTrue(updated.startswith(prefix.encode()))
             self.assertTrue(updated.endswith(suffix.encode()))
             self.assertIn(
-                b'| `.agents/rules/tools.md` | Mandatory? no |',
+                b'- `.agents/rules/tools.md`',
                 updated,
             )
             self.assertIn(
-                b'| `docs/rules.md` | Local |',
+                b'- `docs/rules.md`',
                 updated,
             )
             self.assertIn(
-                b'| `.agents/rules/20-common.md` | Advisory |',
+                b'- `.agents/rules/20-common.md`',
                 updated,
             )
             self.assertIn(
-                b'| `.agents/rules/30-testing.md` | Mandatory |',
+                b'- `.agents/rules/30-testing.md`',
                 updated,
             )
-            self.assertIn(b'| Rule | Strength |', updated)
+            self.assertNotIn(b'| Rule | Strength |', updated)
             self.assertNotIn(b'Read when', updated)
             self.assertIn(
-                b'| `.agents/rules/50-added.md` | Default |',
+                b'- `.agents/rules/50-added.md`',
                 updated,
             )
             self.assertNotIn(b'10-base.md', updated)
@@ -210,10 +210,10 @@ class SyncProjectRulesTest(unittest.TestCase):
             project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
             text = entry.read_text(encoding='utf-8')
             self.assertNotIn('### On-demand rules', text)
-            self.assertIn('| `.agents/rules/00-local.md` | Advisory |', text)
+            self.assertIn('- `.agents/rules/00-local.md`', text)
             self.assertNotIn('Local guidance.', text)
             self.assertNotIn('| Description |', text)
-            self.assertIn('| `.agents/rules/20-checks.md` | Mandatory |', text)
+            self.assertIn('- `.agents/rules/20-checks.md`', text)
             self.assertEqual(
                 project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=True).check,
                 'clean',
@@ -280,8 +280,9 @@ class SyncProjectRulesTest(unittest.TestCase):
                         REPO_ROOT, target, check_only=False,
                     ).check, 'clean')
                     updated = entry.read_text(encoding='utf-8')
-                    self.assertIn('| `docs/policy.md` | Mandatory |', updated)
-                    self.assertIn('| `.agents/rules/local.md` | Default |', updated)
+                    self.assertIn('- `docs/policy.md`', updated)
+                    self.assertIn('- `.agents/rules/local.md`', updated)
+                    self.assertNotIn('| Rule | Strength |', updated)
                     self.assertTrue(updated.endswith('## Agent skills\n\nPreserve this.\n'))
                     self.assertEqual(project_rules.synchronize_project_rules(
                         REPO_ROOT, target, check_only=True,
@@ -306,6 +307,41 @@ class SyncProjectRulesTest(unittest.TestCase):
                             project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=check)
                         self.assertEqual({p.relative_to(target): p.read_bytes()
                                           for p in target.rglob('*') if p.is_file()}, before)
+
+    def test_ambiguous_rule_list_item_refuses_without_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_rule(target, 'local.md', scope='Local work.', strength='Default')
+            entry = target / 'AGENTS.md'
+            entry.write_text(
+                '## Project rules\n\n### Required rules\n\n'
+                '- load `.agents/rules/local.md` when needed\n',
+                encoding='utf-8',
+            )
+            before = {
+                path.relative_to(target): path.read_bytes()
+                for path in target.rglob('*')
+                if path.is_file()
+            }
+
+            with self.assertRaisesRegex(
+                project_rules.ProjectRuleSyncError,
+                'ambiguous Rule list item',
+            ):
+                project_rules.synchronize_project_rules(
+                    REPO_ROOT,
+                    target,
+                    check_only=False,
+                )
+
+            self.assertEqual(
+                {
+                    path.relative_to(target): path.read_bytes()
+                    for path in target.rglob('*')
+                    if path.is_file()
+                },
+                before,
+            )
 
     def test_conditional_table_schema_cannot_be_bypassed_by_short_rows(self):
         for left, right in (('| ', ' |'), ('', ''), ('| ', ''), ('', ' |')):
@@ -381,7 +417,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
             text = (target / 'AGENTS.md').read_text(encoding='utf-8')
             for name in ('plain.md', '01-old.md', '99-later.md'):
-                self.assertIn(f'| `.agents/rules/{name}` | Default |', text)
+                self.assertIn(f'- `.agents/rules/{name}`', text)
             self.assertNotIn('On-demand', text)
             self.assertNotIn('rule-testing', text)
             self.assertEqual(skill.read_bytes(), original_skill)
@@ -420,10 +456,10 @@ class SyncProjectRulesTest(unittest.TestCase):
             result = project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
             self.assertEqual(result.check, 'clean')
             self.assertEqual(rule.read_bytes(), original)
-            self.assertIn('| `.agents/rules/20-existing.md` | Default |',
+            self.assertIn('- `.agents/rules/20-existing.md`',
                           (target / 'AGENTS.md').read_text(encoding='utf-8'))
 
-    def test_apply_rolls_back_the_index_when_rule_metadata_changes_during_commit(self):
+    def test_apply_rolls_back_the_index_when_rule_set_changes_during_commit(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             agents = target / 'AGENTS.md'
@@ -435,13 +471,14 @@ class SyncProjectRulesTest(unittest.TestCase):
                 scope='Original test scope.',
                 strength='Default',
             )
-            rule = target / '.agents/rules/20-testing.md'
             real_apply = project_rules.apply_plan
 
             def drift_then_apply(target_root, plan, *, postcondition):
-                rule.write_text(
-                    '# Testing\n\nStrength: `Mandatory`\n\nScope: Concurrent scope.\n',
-                    encoding='utf-8',
+                self.write_rule(
+                    target,
+                    '30-concurrent.md',
+                    scope='Concurrent scope.',
+                    strength='Mandatory',
                 )
                 return real_apply(target_root, plan, postcondition=postcondition)
 
@@ -459,7 +496,10 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertEqual(status, 2)
             self.assertIn('project Rule index did not converge', error.getvalue())
             self.assertEqual(agents.read_bytes(), original)
-            self.assertIn('Concurrent scope.', rule.read_text(encoding='utf-8'))
+            self.assertIn(
+                'Concurrent scope.',
+                (target / '.agents/rules/30-concurrent.md').read_text(encoding='utf-8'),
+            )
 
     def test_refuses_ambiguous_sections_and_invalid_rule_metadata_without_writing(self):
         invalid_cases = (

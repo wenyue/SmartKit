@@ -1,12 +1,12 @@
 # 结构
 
-强度：`Advisory`
+强度：`Default`
 
 范围：目标仓库的结构、放置、职责和导航建议所对应的 Setup Authoring Contract。
 
 ## 目的与证据
 
-当 `setup-project-agents` 请求生成 `.agents/rules/structure.md` 时，Author 编写一份归目标仓库所有、标题为 `Structure` 的 Advisory Rule。它在更窄范围策略或 Mandatory 策略之后，对位置、职责边界或导航入口的有效选择排序。所有权、依赖许可、交付、安装和暴露仍归相应策略所有者负责。
+当 `setup-project-agents` 请求生成 `.agents/rules/structure.md` 时，Author 编写一份归目标仓库所有、标题为 `Structure` 的 Default Rule。它在更窄范围策略或 Mandatory 策略之后，对位置、职责边界或导航入口的有效选择排序。所有权、依赖许可、交付、安装和暴露仍归相应策略所有者负责。
 
 Setup 必须提供相关目标证据：入口指引和更窄范围的 Rules；已接受的 Issues、Specs 和 ADRs；调用方、导入、消费者、测试、模式、注册表、生成器、运行时入口和规范文档路径。按所有者和来源评定资料。名称、共同放置、目录与包边界和机器本地状态只是线索，不是权威；既有 Rule 文本是回归证据，不是设计权威。
 

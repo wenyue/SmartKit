@@ -46,9 +46,12 @@ python "<skill-root>/scripts/workflow.py" --help
    scope remains an owner dependency and ends this session.
 4. Finish the registered session through the protocol’s transaction and clean postcondition. Follow
    its stop/recovery branch on any failure; scripts own safe rollback and session cleanup.
-5. Report source mode, root, fingerprint and commit when present; enabled hosts; changed and preserved
-   paths; external provenance; clean-check status; and any recovery evidence. Hand the snapshot to
-   the maintainer for review and commit.
+5. Review the complete direct project Rule set for always-loaded context cost. When material volume
+   comes from branches that apply only under identifiable conditions, recommend the exact branches
+   to migrate into native `rule-<domain>` Skills; file size alone and unconditional baseline policy
+   do not justify migration. Report source mode, root, fingerprint and commit when present; enabled
+   hosts; changed and preserved paths; external provenance; clean-check status; the context-load
+   assessment; and any recovery evidence. Hand the snapshot to the maintainer for review and commit.
 
 ## Explicit project synchronization
 

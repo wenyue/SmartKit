@@ -20,12 +20,13 @@ from .ownership import OwnershipError, load_ownership
 from .planner import PlanningError, build_plan
 from .project import ProjectError, confined_target
 from .transaction import TransactionError, apply_plan
-from .rule_metadata import RuleMetadataError, policy_metadata, read_policy
+from .rule_metadata import RuleMetadataError
 
 
 ENTRY_PATH = PurePosixPath('AGENTS.md')
 PROJECT_RULES_TITLE = 'Project rules'
 _RULE_PATH = re.compile(r'\.agents/rules/([^`|/\r\n]+\.md)(?=[`)\s]|$)')
+_INDEX_REFERENCE = re.compile(r'`[^`\r\n]+\.md`')
 
 
 class ProjectRuleSyncError(ValueError):
@@ -38,22 +39,23 @@ class ProjectRuleSyncResult:
     changed_paths: tuple[str, ...]
 
 
-def render_rule_tables(source_root: Path, required: list[str]) -> str:
-    """Render the single unconditional Rule table when it has entries."""
+def render_rule_index(source_root: Path, required: list[str]) -> str:
+    """Render the unconditional Rule path list when it has entries."""
     if not required:
         return ''
     template = (
         source_root / 'setup-assets/templates/entry-files/required-rules.md'
     ).read_text(encoding='utf-8')
-    return template.replace('{{rule_rows}}', '\n'.join(_sort_rows(required))).strip()
+    items = (f'- {reference}' for reference in _sort_references(required))
+    return template.replace('{{rule_items}}', '\n'.join(items)).strip()
 
 
 def validate_project_rule_index(target_root: Path) -> None:
     """Refuse legacy conditional or ambiguous declarations before target effects."""
-    _index_rows(_read_entry(target_root))
+    _index_references(_read_entry(target_root))
 
 
-def render_project_rule_tables(
+def render_project_rule_index(
     source_root: Path,
     target_root: Path,
     catalog: Catalog,
@@ -69,9 +71,9 @@ def render_project_rule_tables(
             and asset.target.parts[:2] == ('.agents', 'rules')
             and (asset.kind != 'rule' or asset.id in config.selected_rules)
         ):
-            required.append(f'| `{asset.target}` | {asset.metadata["strength"]} |')
-    required.extend(f'| `{rule.path}` | {rule.strength} |' for rule in project_rules)
-    return render_rule_tables(source_root, required)
+            required.append(f'`{asset.target}`')
+    required.extend(f'`{rule.path}`' for rule in project_rules)
+    return render_rule_index(source_root, required)
 
 
 def project_rules_section_bounds(content: str) -> tuple[int, int] | None:
@@ -208,7 +210,7 @@ def _table_cells(line: str) -> list[str] | None:
     return cells
 
 
-def _index_rows(current: bytes | None) -> list[list[str]]:
+def _index_references(current: bytes | None) -> list[str]:
     if current is None:
         return []
     content = current.decode('utf-8')
@@ -216,7 +218,7 @@ def _index_rows(current: bytes | None) -> list[list[str]]:
     if bounds is None:
         return []
     section = live_text(content[bounds[0]:bounds[1]])
-    rows = []
+    references = []
     in_table = False
     table_columns: int | None = None
     for line in section.splitlines():
@@ -224,6 +226,15 @@ def _index_rows(current: bytes | None) -> list[list[str]]:
         if cells is None or line.startswith(('    ', '\t')):
             in_table = False
             table_columns = None
+            item = re.fullmatch(r' {0,3}[-*+]\s+(.+?)\s*', line)
+            if item is not None:
+                reference = item.group(1)
+                if _INDEX_REFERENCE.fullmatch(reference):
+                    references.append(reference)
+                elif '.agents/rules/' in reference:
+                    raise ProjectRuleSyncError(
+                        f'ambiguous Rule list item in AGENTS.md: {line.strip()}'
+                    )
             continue
         header = len(cells) >= 2 and cells[-2:] == ['Rule', 'Strength']
         separator = bool(cells) and all(re.fullmatch(r':?-+:?', cell) for cell in cells)
@@ -247,35 +258,34 @@ def _index_rows(current: bytes | None) -> list[list[str]]:
             raise ProjectRuleSyncError(f'ambiguous Rule table in AGENTS.md: {line.strip()}')
         if '.agents/rules/' in line and _row_path(line) is None:
             raise ProjectRuleSyncError(f'ambiguous Rule path in AGENTS.md: {line.strip()}')
-        rows.append(cells)
-    if rows and any(re.search(r'\b(?:on[- ]demand|conditional)\b', heading.title, re.IGNORECASE)
+        references.append(cells[0])
+    if references and any(re.search(r'\b(?:on[- ]demand|conditional)\b', heading.title, re.IGNORECASE)
                     for heading in live_headings(section)):
         raise ProjectRuleSyncError(
             'legacy conditional project Rule declaration in AGENTS.md; '
             'separately authorize source authoring into a rule-led Skill before setup'
         )
-    return rows
+    return references
 
 
-def _preserved_rows(
+def _preserved_references(
     current: bytes | None,
     managed: frozenset[PurePosixPath],
 ) -> list[str]:
     required = []
-    for cells in _index_rows(current):
-        row = '| ' + ' | '.join(cells) + ' |'
-        path = _row_path(row)
+    for reference in _index_references(current):
+        path = _row_path(reference)
         if path is None or path in managed:
-            required.append(row)
+            required.append(reference)
     return required
 
 
-def _sort_rows(rows: list[str]) -> list[str]:
-    def key(row: str) -> tuple[bool, str]:
-        path = _row_path(row)
-        return path is None, row if path is None else path.as_posix()
+def _sort_references(references: list[str]) -> list[str]:
+    def key(reference: str) -> tuple[bool, str]:
+        path = _row_path(reference)
+        return path is None, reference if path is None else path.as_posix()
 
-    return sorted(rows, key=key)
+    return sorted(references, key=key)
 
 
 def _changed_paths(plan: Plan) -> tuple[str, ...]:
@@ -297,25 +307,21 @@ def _plan_project_rule_sync(source_root: Path, target_root: Path) -> Plan:
         previous_managed=managed,
     )
     current = _read_entry(target)
-    required = _preserved_rows(current, managed)
-    indexed = {_row_path(row) for row in required}
-    metadata = {asset.target: asset.metadata for asset in catalog.assets}
+    required = _preserved_references(current, managed)
+    indexed = {_row_path(reference) for reference in required}
     for relative in sorted(managed, key=lambda path: path.as_posix()):
         if relative in indexed or relative.parent != PurePosixPath('.agents/rules') or relative.suffix != '.md':
             continue
         path = confined_target(target, relative)
         if not path.is_file():
             continue
-        strength = metadata.get(relative, {}).get('strength')
-        if strength is None:
-            strength, _ = policy_metadata(read_policy(path), relative.as_posix())
-        required.append(f'| `{relative}` | {strength} |')
-    required.extend(f'| `{rule.path}` | {rule.strength} |' for rule in project_rules)
+        required.append(f'`{relative}`')
+    required.extend(f'`{rule.path}`' for rule in project_rules)
     template = (
         source / 'setup-assets/templates/entry-files/AGENTS.md'
     ).read_text(encoding='utf-8')
-    tables = render_rule_tables(source, required)
-    block = template.replace('{{project_rule_tables}}', tables).encode()
+    index = render_rule_index(source, required)
+    block = template.replace('{{project_rule_index}}', index).encode()
     desired = _replace_project_rules_section(current, block)
     plan = build_plan(target, (DesiredFile(ENTRY_PATH, desired),))
     change = plan.changes[0]
