@@ -20,13 +20,19 @@ def load_registry(root: Path) -> list[dict[str, str]]:
         raise RuleConfigError('Rule registry requires a non-empty rules array')
     ids: set[str] = set()
     for index, rule in enumerate(rules):
-        if not isinstance(rule, dict) or set(rule) != {'id', 'source', 'strength', 'description'}:
+        if (
+            not isinstance(rule, dict)
+            or not {'id', 'source', 'strength', 'description'} <= set(rule)
+            or set(rule) - {'id', 'source', 'strength', 'description', 'delivery'}
+        ):
             raise RuleConfigError(f'invalid Rule at index {index}')
         if not all(
             isinstance(value, str) and value.strip() and '\n' not in value and '\r' not in value
             for value in rule.values()
         ):
             raise RuleConfigError(f'invalid Rule field at index {index}')
+        if 'delivery' in rule and rule['delivery'] not in {'inline', 'indexed'}:
+            raise RuleConfigError(f'invalid delivery for Rule at index {index}')
         rule_id = rule['id']
         if not rule_id.startswith('smartkit/') or rule_id in ids:
             raise RuleConfigError(f'duplicate or invalid Rule id at index {index}')
@@ -46,6 +52,7 @@ def load_registry(root: Path) -> list[dict[str, str]]:
     if (
         first['id'] != 'smartkit/core-instruction-governance'
         or first['strength'] != 'Mandatory'
+        or first.get('delivery', 'inline') != 'inline'
     ):
         raise RuleConfigError(
             'the first Rule must be mandatory core-instruction-governance'

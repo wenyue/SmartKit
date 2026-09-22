@@ -17,6 +17,11 @@ its declared Scope, including on explicit invocation; invocation does not extend
 Loading is required regardless of strength and does not itself start a separate task or deliverable
 or expand authority.
 
+Loading and reading requirements may be satisfied by complete applicable Rule or reference content
+already available in context when there is no evidence of a change or staleness that could affect
+the decision. Load missing content, including after compaction, and refresh affected content when
+such evidence appears. Follow explicit requirements for a fresh read or check.
+
 Load required owned references before decisions that depend on them. If a required Rule or reference
 is unavailable, report the missing content and stop dependent work; unrelated work may continue
 under the available instructions.

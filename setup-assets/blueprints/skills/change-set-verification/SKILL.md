@@ -14,8 +14,12 @@ It owns mechanical normalization, sufficient verification, and an evidence-backe
 Implementation and debugging stay with their current owner until a new completed checkpoint exists.
 
 Use `name: change-set-verification`, omit `disable-model-invocation`, and express the completed
-checkpoint trigger and verification outcome in `description`. Keep the complete runtime contract
-in `SKILL.md`; repository owners retain deterministic commands and mappings.
+checkpoint trigger and verification outcome in `description`. Keep shared authority, branch
+selection, result semantics, and content needed on every path in `SKILL.md`. Split branch-specific
+contracts or mappings into supporting references only when selective loading improves clarity or
+avoids loading substantial unrelated content. Each reference has an explicit loading condition,
+and each selected path reaches its complete contract. Repository owners retain deterministic
+commands and mappings.
 
 Setup must supply relevant target evidence: Rules and Skills, accepted task and comparison point,
 Git state, manifests, lock files, toolchains, scripts and current help, tests and CI, and owners of
@@ -60,8 +64,9 @@ Require the order that protects state and keeps evidence current:
   checkpoint on its minimum supported scope; required reformatting and every tool-modified file
   become part of the selected change.
 - The resulting state receives minimum supported non-mutating static checks, then directly owned
-  tests, then broader surfaces justified by risk or ownership. Each unique surface runs once unless
-  a later mutation invalidates its evidence.
+  tests, then broader surfaces justified by risk or ownership. Run each selected surface once.
+  Repeat it only when a relevant change invalidates its evidence or the cause of a previous failure
+  has been resolved.
 - Remaining semantic diagnostics return with exact evidence to the implementation owner. Its next
   change establishes a new checkpoint and restarts verification from current repository state.
 
@@ -72,9 +77,13 @@ with no broader baseline work than classification needs.
 
 ### Results and handoff
 
-Report each selected surface's owner-backed invocation, scope, selection reason, result (`passed`,
-`failed`, `inconclusive`, or `not applicable`), and gaps. Include normalization invocations and
-mutations, repeats and their causes, semantic diagnostics, and untested surfaces.
+Retain complete command output in accessible, scoped, owner-supported locations within the runtime
+grant. Record each selected surface's invocation, scope, selection reason, exit status, result
+(`passed`, `failed`, `inconclusive`, or `not applicable`), and evidence gaps, including normalization
+effects and repeats with their causes. Summarize successful checks by scope, result, and test counts
+where available; report failed checks with actionable diagnostics and the complete-output location.
+The final handoff reports the overall result, changed behavior, material gaps, and evidence
+locations without replaying command output.
 
 After the safety-breach guard, the first applicable condition selects the sole overall result:
 
@@ -93,9 +102,16 @@ delivery, and destructive cleanup remain outside this Skill's ownership and runt
 
 The Author may inspect qualified target evidence, run owner-supported read-only or non-fixing
 checks, and create or replace `GENERATED/.agents/skills/change-set-verification/SKILL.md` under
-setup's request root. The only supporting-file exception is the deterministic selector below.
-Deletion, moves, live-target writes, and unrelated mutation are excluded; external effects are
-limited to the Acceptance grant. Author permissions do not become runtime permissions.
+setup's request root. Qualified target evidence determines whether supporting Markdown references
+are needed and how their contents and names are organized. Each holds only this Skill's necessary
+contract or mappings reached by its entry pointer, preserving their meaning and force. Before any
+Candidate write, accepted input must establish each supporting file's exact Candidate-relative
+path, target owner, and permitted create or replace operation, frozen in the public writer's scope.
+Missing, ambiguous, or owner-mismatched authority requires `HUMAN_DECISION_REQUIRED`; a directory or
+glob grant is insufficient. All Candidate files remain beneath `GENERATED`. The deterministic
+selector below is the only permitted executable supporting file. Deletion, moves, live-target
+writes, and unrelated mutation are excluded; external effects are limited to the Acceptance grant.
+Author permissions do not become runtime permissions.
 
 A single helper script is admissible only when qualified evidence proves owner tools cannot express
 a required repeated deterministic selection or aggregation, and accepted input from an authorized
@@ -107,8 +123,8 @@ runtime-selected path is insufficient.
 The script contract establishes input and output schemas, permitted filesystem and process effects,
 failure behavior, owner-supported runtime, representative and boundary validation, and removal when
 an owner tool supersedes it. It implements established mappings; policy, scope, ownership,
-permissions, broadening, and verdicts remain in `SKILL.md`. A script failure stops with its exact
-invocation and error; correction requires a new reviewed Candidate.
+permissions, broadening, and verdicts remain in the Skill's Markdown contract. A script failure
+stops with its exact invocation and error; correction requires a new reviewed Candidate.
 
 ## Authoring evidence and result
 

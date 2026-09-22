@@ -28,7 +28,7 @@ def plugin_root() -> Path:
 
 
 def context_for(root: Path) -> str:
-    """Inline core Rules; leave every other loading decision to the Agent."""
+    """Deliver registered inline bodies and precise pointers for indexed Rules."""
     rules = load_registry(root)
     blocks = [
         '## SmartKit Rule files\n\n'
@@ -40,7 +40,10 @@ def context_for(root: Path) -> str:
     ]
     indexed: list[dict[str, str]] = []
     for rule in rules:
-        if not rule['id'].startswith('smartkit/core-'):
+        delivery = rule.get(
+            'delivery', 'inline' if rule['id'].startswith('smartkit/core-') else 'indexed',
+        )
+        if delivery == 'indexed':
             indexed.append(rule)
             continue
         text = (root / 'rules' / rule['source']).read_text(encoding='utf-8')
@@ -57,7 +60,7 @@ def context_for(root: Path) -> str:
         rows = [
             '## SmartKit Rule index',
             '',
-            'The core Rules are included above. The indexed Rules are plugin-owned. '
+            'The inline Rules are included above. The indexed Rules are plugin-owned. '
             'Use the descriptions and current task to decide which Rules to read before '
             'related work. Read a Rule to check its relevance when uncertain, and re-read '
             'it whenever useful, including after context compaction. Apply the Rule '

@@ -59,7 +59,7 @@ class PluginRuleContractTest(unittest.TestCase):
         self.assertIn('## SmartKit Rule index', context)
         core_count = 0
         for rule in registry['rules']:
-            if rule['id'].startswith('smartkit/core-'):
+            if rule.get('delivery', 'inline' if rule['id'].startswith('smartkit/core-') else 'indexed') == 'inline':
                 core_count += 1
                 body = (
                     root / 'rules' / rule['source']
@@ -94,7 +94,8 @@ class PluginRuleContractTest(unittest.TestCase):
         self.assertTrue(rules[0]['description'])
         self.assertEqual(len({item['id'] for item in rules}), len(rules))
         for rule in rules:
-            self.assertEqual(set(rule), {'id', 'source', 'strength', 'description'})
+            self.assertTrue({'id', 'source', 'strength', 'description'} <= set(rule))
+            self.assertFalse(set(rule) - {'id', 'source', 'strength', 'description', 'delivery'})
             self.assertEqual(Path(rule['source']).name, rule['source'])
             self.assertTrue((ROOT / 'rules' / rule['source']).is_file())
         self.assertFalse((ROOT / 'rules/source').exists())
@@ -110,6 +111,35 @@ class PluginRuleContractTest(unittest.TestCase):
                 self.assertIn('Codex subagent tools', context)
                 self.assertLess(len(context.encode()), 50000)
         self.assertFalse(self.state_root.exists())
+
+    def test_explicit_indexed_delivery_preserves_core_identity_and_loading_pointer(self):
+        root = self.fixture_root()
+        path = root / 'rules/registry.json'
+        document = json.loads(path.read_text(encoding='utf-8'))
+        rule = next(item for item in document['rules']
+                    if item['id'] == 'smartkit/core-third-party-skill-policy')
+        rule['delivery'] = 'indexed'
+        path.write_text(json.dumps(document), encoding='utf-8')
+        for harness in HARNESSES:
+            with self.subTest(harness=harness):
+                context = self.session_context(harness, root=root)
+                self.assertNotIn('# Third-Party Skill Policy', context)
+                self.assertIn(rule['id'], context)
+                self.assertIn(rule['description'], context)
+                self.assertIn(str(root / 'rules' / rule['source']), context)
+                self.assertIn('# Instruction Governance', context)
+
+    def test_invalid_delivery_and_indexed_governance_are_rejected(self):
+        for delivery in ('unknown', 'indexed'):
+            with self.subTest(delivery=delivery):
+                root = Path(self.temporary.name) / delivery
+                shutil.copytree(ROOT / 'rules', root / 'rules')
+                path = root / 'rules/registry.json'
+                document = json.loads(path.read_text(encoding='utf-8'))
+                document['rules'][0]['delivery'] = delivery
+                path.write_text(json.dumps(document), encoding='utf-8')
+                result = self.run_raw_dispatch('codex', 'session', b'{}', root=root)
+                self.assertNotEqual(result.returncode, 0)
 
     def test_context_does_not_change_when_a_file_is_mentioned(self):
         for harness in HARNESSES:
