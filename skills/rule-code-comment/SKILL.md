@@ -1,6 +1,6 @@
 ---
 name: rule-code-comment
-description: Use for work involving code or documentation comments, including their need, meaning, and coverage, and for requested comment assessment or maintenance.
+description: Use for work involving code or documentation comments, including coverage decisions and requested assessment.
 ---
 
 # Code Comments

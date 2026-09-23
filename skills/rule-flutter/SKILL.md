@@ -1,6 +1,6 @@
 ---
 name: rule-flutter
-description: Apply Dart and Flutter policy when writing, modifying, or reviewing Dart or Flutter code, including public surfaces, records, filesystem operations, widget lifecycle, asynchronous context, Navigator routes, and generated sources, or when assessing that code against these policies.
+description: Use for Dart or Flutter work, including requested code-policy assessment.
 ---
 
 # Dart And Flutter Guidelines

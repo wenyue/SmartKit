@@ -14,7 +14,6 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | Skill | 用途与使用时机 |
 | --- | --- |
 | `setup-project-agents` | 配置或更新仓库中的编程助手；接入 SmartKit 或更新项目 Agent 配置时使用。 |
-| `what-changes` | 在实现前梳理累积目标、待确认事项和计划修改的文件，然后等待用户回应；经过较长讨论、想在编码前核对范围时调用。 |
 | `implement-tickets` | 按依赖顺序实现并审查一批符合条件的工单；多个已就绪工单适合成批处理时使用。 |
 
 ### 可以自动调用
@@ -23,6 +22,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 | Skill | 用途与使用时机 |
 | --- | --- |
+| `what-changes` | 用户要求执行累积较多或跨度较大的修改时，先核对范围，再询问是否开始实施；也可以明确指定调用。 |
 | `refactor-code` | 在保持行为不变的前提下改善一个具体代码目标的结构；该目标存在明确结构问题时使用。 |
 | `rename-code` | 重命名一个符号或受 Git 跟踪的路径，并更新其实际引用；需要精确完成仓库内的重命名时使用。 |
 | `create-worktree` | 准备隔离的 Git worktree；并行工作或需要保护当前检出目录中的改动时使用。 |

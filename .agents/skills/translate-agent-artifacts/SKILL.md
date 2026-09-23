@@ -1,6 +1,6 @@
 ---
 name: translate-agent-artifacts
-description: Translate and apply caller-specified Simplified-Chinese mirror create, update, move, or delete operations for final English first-party Rule or Skill additions, changes, moves, or retirements.
+description: Translate final English first-party Rules and Skills into caller-specified Simplified-Chinese mirrors, including mirror moves and deletions.
 ---
 
 # Translate Agent Artifacts

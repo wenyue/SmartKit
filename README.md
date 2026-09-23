@@ -15,7 +15,6 @@ Ask for these skills by name; the assistant does not select them automatically.
 | Skill | What it does and when to use it |
 | --- | --- |
 | `setup-project-agents` | Sets up or updates a repository's coding assistants; use when adopting SmartKit or refreshing project agent setup. |
-| `what-changes` | Reviews accumulated goals, open questions, and planned file changes before implementation, then waits for your response; invoke after a long discussion to check scope before coding. |
 | `implement-tickets` | Implements and reviews a batch of eligible tracker tickets in dependency order; use when several ready tickets belong in one batch. |
 
 ### Can be invoked automatically
@@ -24,6 +23,7 @@ The assistant can select these skills when a task fits. You can also ask for the
 
 | Skill | What it does and when to use it |
 | --- | --- |
+| `what-changes` | When you ask to execute many accumulated edits or broad changes, reviews the intended scope and asks whether to begin implementation; you can also invoke it by name. |
 | `refactor-code` | Improves the structure of one concrete code target while preserving behavior; use when that target has a specific structural problem. |
 | `rename-code` | Renames one symbol or tracked path and its real references; use for a precise rename across a repository. |
 | `create-worktree` | Prepares an isolated Git worktree; use when parallel work or existing checkout changes need protection. |

@@ -1,6 +1,6 @@
 ---
 name: refactor-code
-description: Refactor one concrete code target while preserving supported caller-visible behavior and external contracts; also route pure renames, open-ended architecture searches, material interface or seam choices, and non-rename observable changes before writing.
+description: Refactor one concrete code target while preserving supported caller-visible behavior and external contracts, or route open-ended searches for architectural opportunities.
 ---
 
 # Refactor Code

@@ -1,6 +1,6 @@
 ---
 name: write-shared-rules-and-skills
-description: Author or revise a portable cross-project SmartKit Rule or Skill; excludes project-local artifacts and Setup Authoring Contracts.
+description: Author or revise one portable cross-project SmartKit Rule or Skill.
 ---
 
 # Write Shared Rules and Skills

@@ -1,6 +1,6 @@
 ---
 name: translate-agent-artifacts
-description: 对最终英文第一方 Rule 或 Skill 的新增、变更、移动或退役，按照调用方指定的创建、更新、移动或删除操作维护简体中文镜像。
+description: 将最终英文第一方 Rule 和 Skill 翻译为调用方指定的简体中文镜像，包括镜像的移动和删除。
 ---
 
 # 翻译 Agent 制品

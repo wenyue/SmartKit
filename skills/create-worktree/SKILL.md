@@ -1,6 +1,6 @@
 ---
 name: create-worktree
-description: Use when state-changing repository work requires an isolated linked Git worktree for parallel execution, workflow isolation, or protection of the current checkout.
+description: Use when state-changing repository work needs an isolated linked Git worktree.
 ---
 
 # Create Worktree

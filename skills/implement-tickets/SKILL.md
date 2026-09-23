@@ -1,6 +1,6 @@
 ---
 name: implement-tickets
-description: Implement or resume a dependency-ordered batch of eligible tracker tickets in one isolated worktree, or prove that the bounded scope has no eligible work; independently accept each ticket, then review and finalize the batch.
+description: Implement or resume a dependency-ordered batch of tracker tickets in one isolated worktree.
 disable-model-invocation: true
 ---
 

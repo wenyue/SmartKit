@@ -1,6 +1,6 @@
 ---
 name: rule-flutter
-description: 在编写、修改或审查 Dart 或 Flutter 代码时应用 Dart 与 Flutter 政策，涵盖公共接口、records、文件系统操作、组件生命周期、异步上下文、Navigator 路由和生成源文件；依据这些政策评估相关代码时也使用此 Skill。
+description: 用于 Dart 或 Flutter 相关工作，包括用户要求的代码政策评估。
 ---
 
 # Dart 与 Flutter 指引

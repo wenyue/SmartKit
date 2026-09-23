@@ -1,6 +1,6 @@
 ---
 name: diagnose-agent-session
-description: 诊断一个当前或已完成的 Agent 会话中疑似异常的 token 或 API 等价成本消耗、模型或工具活动、子 Agent 协作、等待或未完成调用。
+description: 诊断一个当前或已完成的 Agent 会话中疑似异常的 token 使用、成本或执行情况。
 ---
 
 # 诊断 Agent 会话

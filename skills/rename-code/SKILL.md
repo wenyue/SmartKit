@@ -1,6 +1,6 @@
 ---
 name: rename-code
-description: Rename exactly one established code symbol or tracked repository path, including a public name, and update every real in-scope reference without changing unrelated identities or behavior.
+description: Rename one established code symbol or tracked repository path, including public names.
 ---
 
 # Rename Code

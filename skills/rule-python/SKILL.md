@@ -1,6 +1,6 @@
 ---
 name: rule-python
-description: Apply Python policy when writing, modifying, or reviewing Python code, including APIs, typing, data boundaries, failures, asynchronous dependencies, and resource ownership, or when assessing that code against these policies.
+description: Use for Python work, including requested code-policy assessment.
 ---
 
 # Python Guidelines

@@ -80,8 +80,14 @@ conditions and outcomes, exceptions, precedence, and boundaries reconstructable.
 
 ### Skills
 
-For a Skill, apply `SKILL-MECHANICS.md` to invocation and packaging, and choose the shape that fits
-the work from three parallel writing styles:
+For a Skill, apply `SKILL-MECHANICS.md` to invocation and packaging. A description should supply
+only what is needed to choose the Skill from its name and the task and context normally visible
+before loading; body instructions cannot repair a missed entrance. For model discovery, minimize
+fixed context cost while preserving reliable choice; user-invoked descriptions support human
+selection. Check representative intended uses, nearby nonmatches, and easily missed necessary uses.
+Static traces suffice for this judgment, without measuring loading accuracy.
+
+Choose the shape that fits the work from three parallel writing styles:
 
 - A **principle-led Skill** states the outcome, governing principles, consequential constraints,
 	and completion conditions while leaving method to the Agent.

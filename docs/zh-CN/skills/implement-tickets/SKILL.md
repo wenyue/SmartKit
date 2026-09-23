@@ -1,6 +1,6 @@
 ---
 name: implement-tickets
-description: 在一个隔离工作树中实施或恢复一批按依赖顺序排列的合格工单，或证明有界范围内没有合格工作；逐票独立验收，再审查并完成整批收尾。
+description: 在一个隔离工作树中，按依赖顺序实施或恢复问题跟踪器中的一批工单。
 disable-model-invocation: true
 ---
 
