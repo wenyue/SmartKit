@@ -1,11 +1,11 @@
 ---
 name: what-changes
-description: Review accumulated intended changes in a read-only scope report when the user asks to execute many edits or changes across a broad scope.
+description: Review accumulated intended changes in a read-only scope report when the user asks to execute many edits or edits discussed far apart in the active conversation.
 ---
 
 # What Changes
 
-Review the active conversation's accumulated intended changes immediately before implementation. Run this workflow when the user invokes it explicitly, or when the user asks to execute changes after many intended edits or edits across a broad scope have accumulated. Judge autonomous invocation by the intended changes, not conversation length alone; carry out small, clear requests normally. Produce a read-only scope report. Invocation authorizes inspection needed for the report, not implementation or other changes.
+Review the active conversation's accumulated intended changes immediately before implementation. Run this workflow when the user invokes it explicitly, or when the user asks to execute changes after many intended edits have accumulated or intended edits have been discussed far apart in the active conversation. Judge autonomous invocation by the intended changes, not conversation length alone; carry out small, clear requests normally. Produce a read-only scope report. Invocation authorizes inspection needed for the report, not implementation or other changes.
 
 1. Reconstruct the current scope from the conversation and any explicitly referenced source artifacts needed to understand it. Inspect repository paths read-only when that helps identify affected files or modules. Reconcile later decisions with earlier suggestions, rejected ideas, superseded plans, and completed work. State any gap in accessible history or evidence instead of inventing a decision or path.
 2. Classify discussion items by their current status. Put active goals in the goals section, including still-active Agent suggestions that the user has not explicitly endorsed. Put relevant rejected or superseded suggestions in the excluded ideas section. Use pending confirmation only when available evidence cannot settle the classification or a material detail. An older unfinished, uncanceled goal whose active status remains unclear belongs in pending confirmation. If inaccessible conversation history prevents a reliable scope review, explain the coverage gap there.
