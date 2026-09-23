@@ -1,6 +1,7 @@
 ---
 name: setup-project-agents
-description: 在 Codex、Cursor、Copilot 和 Qoder 之间设置或更新仓库的 Rules、Skills、Agents 和 MCP；未要求完整设置时，按明确意图同步项目自身的变化。
+description: 在 Codex、Cursor、Copilot 和 Qoder 中设置或更新项目的 Rules、Skills、Agents 和 MCP。
+disable-model-invocation: true
 ---
 
 # 设置项目 Agent

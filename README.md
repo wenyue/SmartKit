@@ -6,6 +6,31 @@ WenYue SmartKit is a plugin for Codex, Cursor, GitHub Copilot, and Qoder. It pro
 AI coding workflows and shared project guidelines to help teams set up and maintain their coding
 assistants. It supports Windows and Linux.
 
+## Skills beyond Matt Pocock's set
+
+### Requires manual invocation
+
+Ask for these skills by name; the assistant does not select them automatically.
+
+| Skill | What it does and when to use it |
+| --- | --- |
+| `setup-project-agents` | Sets up or updates a repository's coding assistants; use when adopting SmartKit or refreshing project agent setup. |
+| `what-changes` | Reviews accumulated goals, open questions, and planned file changes before implementation, then waits for your response; invoke after a long discussion to check scope before coding. |
+| `implement-tickets` | Implements and reviews a batch of eligible tracker tickets in dependency order; use when several ready tickets belong in one batch. |
+
+### Can be invoked automatically
+
+The assistant can select these skills when a task fits. You can also ask for them by name.
+
+| Skill | What it does and when to use it |
+| --- | --- |
+| `refactor-code` | Improves the structure of one concrete code target while preserving behavior; use when that target has a specific structural problem. |
+| `rename-code` | Renames one symbol or tracked path and its real references; use for a precise rename across a repository. |
+| `create-worktree` | Prepares an isolated Git worktree; use when parallel work or existing checkout changes need protection. |
+| `finish-worktree` | Completes an isolated worktree through a handoff, pull request, local merge, retention, or explicit discard; use when an isolated worktree needs a chosen outcome. |
+| `diagnose-agent-session` | Investigates one agent session's token cost, tool activity, waits, or incomplete calls; use when session behavior looks abnormal. |
+| `write-rules-and-skills` | Authors or revises one agent Rule or Skill; use when creating or changing reusable agent instructions. |
+
 ## Install the plugin
 
 Install your preferred coding assistant first, then follow its instructions below.

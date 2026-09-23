@@ -118,18 +118,18 @@ class PluginManifestTest(unittest.TestCase):
         self.assertTrue(index.startswith(required_prefix))
         self.assertNotIn('### On-demand rules', index)
         self.assertNotIn('| Rule | Strength |', index)
-        self.assertIn('- `.agents/rules/00-self-hosting-authority.md`', index)
-        self.assertIn('- `.agents/rules/01-project-policy.md`', index)
+        self.assertIn('- `.agents/rules/self-hosting-authority.md`', index)
+        self.assertIn('- `.agents/rules/project-policy.md`', index)
 
-    def test_repository_local_rules_use_only_the_project_numbering_contract(self):
+    def test_repository_local_rules_match_required_paths(self):
         self.assertEqual(
             {
                 path.name
                 for path in (REPO_ROOT / '.agents/rules').glob('*.md')
             },
             {
-                '00-self-hosting-authority.md',
-                '01-project-policy.md',
+                'self-hosting-authority.md',
+                'project-policy.md',
             },
         )
 
@@ -162,6 +162,7 @@ class PluginManifestTest(unittest.TestCase):
             )
         for name in (
             'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
+            'what-changes',
             'finish-worktree', 'implement-tickets',
             'write-rules-and-skills',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
@@ -441,7 +442,7 @@ class PluginManifestTest(unittest.TestCase):
         }
         custom = {
             'setup-project-agents', 'create-worktree', 'refactor-code', 'rename-code',
-            'diagnose-agent-session', 'finish-worktree', 'implement-tickets',
+            'diagnose-agent-session', 'what-changes', 'finish-worktree', 'implement-tickets',
             'write-rules-and-skills',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',

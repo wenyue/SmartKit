@@ -11,8 +11,8 @@ Before starting a task, ensure the complete applicable content of every Rule bel
 Reuse content already in context while it remains current. Read missing content, including after
 compaction, and refresh affected content when there is evidence of a change.
 
-- `.agents/rules/00-self-hosting-authority.md`
-- `.agents/rules/01-project-policy.md`
+- `.agents/rules/self-hosting-authority.md`
+- `.agents/rules/project-policy.md`
 
 ## Agent skills
 

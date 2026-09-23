@@ -6,6 +6,7 @@
     {"id": "smartkit/refactor-code", "path": "refactor-code"},
     {"id": "smartkit/rename-code", "path": "rename-code"},
     {"id": "smartkit/diagnose-agent-session", "path": "diagnose-agent-session"},
+    {"id": "smartkit/what-changes", "path": "what-changes"},
     {"id": "smartkit/finish-worktree", "path": "finish-worktree"},
     {"id": "smartkit/write-rules-and-skills", "path": "write-rules-and-skills"},
     {"id": "smartkit/rule-code", "path": "rule-code"},

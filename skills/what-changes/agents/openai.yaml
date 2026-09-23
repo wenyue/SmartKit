@@ -1,0 +1,5 @@
+interface:
+  display_name: "What Changes"
+  short_description: "Review intended changes before implementation"
+policy:
+  allow_implicit_invocation: false

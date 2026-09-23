@@ -1,6 +1,7 @@
 ---
 name: setup-project-agents
-description: Set up or update a repository’s Rules, Skills, Agents, and MCP across Codex, Cursor, Copilot, and Qoder; explicitly synchronize project-owned changes when broader setup is not requested.
+description: Set up or update project Rules, Skills, Agents, and MCP across Codex, Cursor, Copilot, and Qoder.
+disable-model-invocation: true
 ---
 
 # Setup Project Agents
