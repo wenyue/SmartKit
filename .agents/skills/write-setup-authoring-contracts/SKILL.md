@@ -1,6 +1,6 @@
 ---
 name: write-setup-authoring-contracts
-description: Author or revise a judgment-only Setup Authoring Contract under setup-assets/blueprints; excludes generated targets and shared SmartKit artifacts.
+description: Author or revise judgment-only Setup Authoring Contracts under setup-assets/blueprints.
 ---
 
 # Write Setup Authoring Contracts

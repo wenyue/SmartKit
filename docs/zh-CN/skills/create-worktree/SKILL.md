@@ -1,6 +1,6 @@
 ---
 name: create-worktree
-description: 当会改变仓库状态的工作因并行执行、工作流隔离或保护当前检出区而需要独立的 Git 关联工作树时使用。
+description: 当会改变仓库状态的工作需要隔离的 Git 关联工作树时使用。
 ---
 
 # 创建工作树

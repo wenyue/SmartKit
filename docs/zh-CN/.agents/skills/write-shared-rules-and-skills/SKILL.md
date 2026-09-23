@@ -1,6 +1,6 @@
 ---
 name: write-shared-rules-and-skills
-description: 编写或修订可移植的跨项目 SmartKit Rule 或 Skill；不包括项目本地制品和 Setup Authoring Contract。
+description: 编写或修订一个可移植的跨项目 SmartKit Rule 或 Skill。
 ---
 
 # 编写共享 Rule 与 Skill

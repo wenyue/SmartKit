@@ -5,6 +5,13 @@ Strength: `Mandatory`
 Scope: SmartKit-owned behavioral constraints for Skills supplied by third-party plugins or external
 sources.
 
+## Grilling Interviews
+
+When running the third-party `/grilling` interview, directly or through another Skill, ask each
+round in an ordinary user-facing message and wait for the user's explicit answers to that round
+before asking the next. Do not use a Harness question or elicitation tool to present interview
+questions or collect answers.
+
 ## Ticket Granularity
 
 When `$smartkit:to-tickets` drafts tickets:

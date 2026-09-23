@@ -1,6 +1,6 @@
 ---
 name: rule-go
-description: Apply Go policy when writing, modifying, or reviewing Go code, including package ownership, APIs, errors, context, concurrency, and logging, or when assessing that code against these policies.
+description: Use for Go work, including requested code-policy assessment.
 ---
 
 # Go Guidelines

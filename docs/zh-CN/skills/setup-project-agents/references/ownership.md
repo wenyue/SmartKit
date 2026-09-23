@@ -8,7 +8,7 @@
 
 `.agents/rules/` 和 `.agents/skills/` 下的项目本地 Rules 与 Skills，包括 blueprint 生成的源文件及配套文件，都归项目所有，可以在会话之间编辑。设置流程发现并保留其他归项目所有的 Rules 和 Skills。项目 Agent 源文件也仍归项目所有。catalog 声明的 Codex Plugin Agent 默认配置属于后备配置，不是项目 Agent 声明。Cursor、Copilot 和 Qoder 的原生 Plugin Agents，以及原生插件的 Rules、Skills 和 MCP，不属于此工作流。
 
-每个直接位于 `.agents/rules/*.md` 的文件都是无条件加载的必读 Rule，并明确声明 Strength 和 Scope。数字前缀仍可用作文件名，但不表示类别或优先级。所负责的 `AGENTS.md` 节将所有发现的 Rules 列入同一张必读表。条件策略应放在原生 `.agents/skills/rule-<domain>/SKILL.md` 中：frontmatter 中的 name 与目录名一致，面向模型的非空 description 支持原生发现，入口声明默认 Strength 和非空 Scope。普通项目 Skills 沿用既有发现方式。
+每个直接位于 `.agents/rules/*.md` 的文件都是无条件加载的必读 Rule，并明确声明 Strength 和 Scope。数字前缀仍可用作文件名，但不表示类别或优先级。所负责的 `AGENTS.md` 节在同一个必读列表中列出所有发现的 Rule 路径。Strength 仍由各 Rule 负责，不在索引中重复。条件策略应放在原生 `.agents/skills/rule-<domain>/SKILL.md` 中：frontmatter 中的 name 与目录名一致，面向模型的非空 description 支持原生发现，入口声明默认 Strength 和非空 Scope。普通项目 Skills 沿用既有发现方式。
 
 设置流程和两个同步操作都会拒绝显式的旧条件 Rule 声明，包括旧条件索引行。重试前，需另行授权将源内容改写为规则主导型 Skills，并在该授权迁移中更新或删除相应的旧 `AGENTS.md` 声明；设置流程不会悄悄改变策略的加载含义。围栏中的示例不算有效索引行。特定 Harness 的原生插件 Rules 保留各自的加载策略。
 

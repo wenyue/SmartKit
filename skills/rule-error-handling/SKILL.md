@@ -1,6 +1,6 @@
 ---
 name: rule-error-handling
-description: Use for work involving operation outcomes or error behavior, including contracts, propagation, translation, recovery, feedback, and requested assessment or design.
+description: Use for work involving operation outcomes or error behavior, including requested assessment.
 ---
 
 # Error Handling

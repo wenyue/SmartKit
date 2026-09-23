@@ -1,7 +1,7 @@
 {
   "plugin": {
     "id": "smartkit",
-    "version": "1.2.12",
+    "version": "1.2.14",
     "repository": "https://github.com/wenyue/SmartKit.git",
     "ref": "master"
   },
@@ -54,7 +54,7 @@
       "metadata": {
         "section": "project",
         "loading": "always",
-        "strength": "Advisory",
+        "strength": "Default",
         "cursor": {
           "alwaysApply": true
         },

@@ -22,5 +22,5 @@ Copy resolution preserves ordinary applicability, Rule strength and precedence, 
 composition. Retain every independently applicable Rule and Skill; resolving one artifact's copy
 does not substitute for a distinct artifact.
 
-`.agents/rules/01-project-policy.md` remains the sole owner of canonical ownership, contracts and
+`.agents/rules/project-policy.md` remains the sole owner of canonical ownership, contracts and
 exposure, translation, and verification.

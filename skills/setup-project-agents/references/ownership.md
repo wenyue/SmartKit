@@ -25,8 +25,9 @@ Rules, Skills, and MCP, are outside this workflow.
 
 Every direct `.agents/rules/*.md` file is an unconditional required Rule, with explicit Strength
 and Scope. Numeric prefixes remain valid filenames and carry no category or precedence meaning.
-The owned `AGENTS.md` section lists all discovered Rules in one required table. Conditional policy
-belongs in a native `.agents/skills/rule-<domain>/SKILL.md`: its frontmatter name matches its folder,
+The owned `AGENTS.md` section lists all discovered Rule paths in one required list. Strength remains
+owned by each Rule and is not repeated in the index. Conditional policy belongs in a native
+`.agents/skills/rule-<domain>/SKILL.md`: its frontmatter name matches its folder,
 its nonempty model-facing description supports native discovery, and its entry declares default
 Strength and nonempty Scope. Ordinary project Skills keep their existing discovery behavior.
 

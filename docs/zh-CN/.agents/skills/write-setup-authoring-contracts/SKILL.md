@@ -1,6 +1,6 @@
 ---
 name: write-setup-authoring-contracts
-description: 在 setup-assets/blueprints 下编写或修订仅用于判断的 Setup Authoring Contract；不包括生成目标和共享 SmartKit 工件。
+description: 编写或修订 setup-assets/blueprints 下仅用于判断的 Setup Authoring Contract。
 ---
 
 # 编写 Setup Authoring Contract

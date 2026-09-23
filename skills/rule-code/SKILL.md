@@ -1,6 +1,6 @@
 ---
 name: rule-code
-description: Apply shared code policy when writing, modifying, or reviewing code in any language, including ownership, APIs, local patterns, abstractions, diagnostics, state, dependencies, failure outcomes, and comment decisions; also use for requested code-policy assessment.
+description: Use for work involving code in any language, including requested code-policy assessment.
 ---
 
 # Code Design Goals

@@ -1,6 +1,6 @@
 ---
 name: rule-cpp
-description: Apply C++ policy when writing, modifying, or reviewing C++ code, including ownership, interfaces, failure contracts, concurrency, and native boundaries, or when assessing that code against these policies.
+description: Use for C++ work, including requested code-policy assessment.
 ---
 
 # C++ Guidelines

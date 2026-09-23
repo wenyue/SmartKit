@@ -2,7 +2,7 @@
 
 Strength: `Mandatory`
 
-Scope: Workspace selection, local Git state, commit authority, and remote action authorization.
+Scope: Workspace selection, local Git state, commit authority, and Git remote write authorization.
 
 ## Preserve Existing Work
 
@@ -24,6 +24,8 @@ Scope: Workspace selection, local Git state, commit authority, and remote action
   identifies the exact worktree and base and current Git evidence proves every intervening commit
   and local change belongs to the same scope; ambiguity stops new commits.
 
-## Remote Actions
+## Git Remote Writes
 
-- Perform each remote action only when the user explicitly requests that outcome.
+- Perform a Git operation that changes remote state only when the user explicitly requests that
+  outcome. Read-only Git remote queries remain subject to ordinary tool and network authorization;
+  this Rule adds no explicit-request condition for them.

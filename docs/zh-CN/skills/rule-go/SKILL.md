@@ -1,6 +1,6 @@
 ---
 name: rule-go
-description: 在编写、修改或审查 Go 代码时应用 Go 政策，涵盖包归属、API、错误、上下文、并发和日志；依据这些政策评估相关代码时也使用此 Skill。
+description: 用于 Go 相关工作，包括用户要求的代码政策评估。
 ---
 
 # Go 指引

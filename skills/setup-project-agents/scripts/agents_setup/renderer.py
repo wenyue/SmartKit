@@ -27,7 +27,7 @@ from .project_rules import (
     ENTRY_PATH,
     ProjectRuleSyncError,
     render_entry_agents,
-    render_project_rule_tables,
+    render_project_rule_index,
 )
 from .generation import reconcile_contracts
 from .rule_metadata import RuleMetadataError, reject_conditional_rule, validate_rule_skill
@@ -276,7 +276,7 @@ def render_desired_state(
             if asset.id == 'entry-agents':
                 try:
                     content = _render_text(content.decode(), {
-                        'project_rule_tables': render_project_rule_tables(
+                        'project_rule_index': render_project_rule_index(
                             source_root, target_root, catalog, config, project_rules,
                         ),
                     })

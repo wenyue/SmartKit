@@ -1,6 +1,6 @@
 ---
 name: diagnose-agent-session
-description: Diagnose suspected abnormal token or API-equivalent cost consumption, model or tool activity, subagent coordination, waits, or incomplete calls in one current or completed agent session.
+description: Diagnose suspected abnormal token use, cost, or execution in one current or completed agent session.
 ---
 
 # Diagnose Agent Session

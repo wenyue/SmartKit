@@ -1,6 +1,6 @@
 ---
 name: rule-python
-description: 在编写、修改或审查 Python 代码时应用 Python 政策，涵盖 API、类型、数据边界、失败、异步依赖和资源归属；依据这些政策评估相关代码时也使用此 Skill。
+description: 用于 Python 相关工作，包括用户要求的代码政策评估。
 ---
 
 # Python 指引
