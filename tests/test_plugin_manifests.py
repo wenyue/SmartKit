@@ -283,9 +283,7 @@ class PluginManifestTest(unittest.TestCase):
                 'reviewer.md',
                 'runner.md',
             },
-            'write-shared-rules-and-skills': {
-                'portability.md',
-            },
+            'write-shared-rules-and-skills': set(),
             'write-setup-authoring-contracts': set(),
             'translate-agent-artifacts': set(),
         }

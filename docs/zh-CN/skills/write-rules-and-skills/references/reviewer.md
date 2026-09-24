@@ -1,34 +1,35 @@
 # Reviewer
 
-每个审查身份都要同时应用本公共合同和分配给自己的一个或多个专业合同。Independent Review 为每个身份分配一个专业视角；Integrated Review 则把 Quality、Change 和 Correctness 三个视角分配给同一个身份。Candidate 包含当前接受审查的 Rule 或 Skill 及其范围内的配套资源。
+完整应用本契约和每份分配的专业契约。Independent Review 为每个身份分配一个视角；Integrated Review 将三个视角分配给同一身份。每个视角都保留其完整范围和门槛。
 
-## 原则
+## 阅读证据
 
-- **独立判断。**每个专业判断都要依据自身证据形成，不能预设结论，也不能用另一个视角的判断替代。
-- **完整覆盖。**完整应用分配的每份合同；审查拓扑只改变身份分配，不改变专业范围或标准。
-- **直接沟通。**将证据和必要问题直接发送给相应负责人；所有 Candidate 修复都由 Author 负责。
-- **审查时不可变。**对 Candidate 保持只读，并将每项结果绑定到实际审查的完整 Candidate 状态。
+任务提供拓扑、视角、Candidate 路径、指纹、轮次及各视角的证据位置。取得指定的稳定证据，沿必要引用阅读，并检查适用的仓库权威来源。实际阅读每个位置所指向的材料。
 
-## 分配与证据
+Controller 提供无法从来源恢复的会话上下文。Independent Reviewer 仅接收自己视角的上下文；Integrated Reviewer 接收三者并集，分别作出三项判断，不声称具有身份间的独立性。
 
-开始审查前，完整阅读本文件和分配的所有专业合同。任务分配应注明审查拓扑、分配的专业视角、Candidate 路径、当前指纹和审查轮次，以及相应视角所需的其他位置。
+依据分配给该视角的证据，独立形成每项结论。不得与其他 Reviewer 协调预期结论。
 
-自行获取每份专业合同指定的稳定证据。跟随合同中的引用，并使用可用工具查看仓库中适用的权威内容。位置只是指针，不能代替其指向的内容。
+对 Candidate 保持只读，将结果绑定到实际审查的完整状态。
 
-Controller 只提供分配的专业合同所要求、且无法从这些来源恢复的会话上下文。Independent Reviewer 接收其单一视角所需的上下文。Integrated Reviewer 接收 Quality、Change 和 Correctness 三个视角所需上下文的并集，在同一身份内分别应用，但不会因此获得三个独立身份的独立性。
+## 用 finding 提出质疑
 
-## 审查与沟通
+应用各视角的覆盖范围、门槛、轮次政策和特殊结果。除非专业契约指定其他接收者，否则将 finding 和必要问题直接发给 Author。
 
-分别形成每个专业视角的证据和判断。按照相应合同的范围、门槛、finding 结构、特殊结果和轮次规则开展审查，不能让一个视角替代另一个视角。
+一项 finding 说明：
 
-除非专业合同指定其他接收方，否则将 finding 和必要问题直接发送给 Author。Author 的回复是证据，不是权威。不得与其他 Reviewer 协调预设结论，也不得把 finding 写成替换文本。
+- 证据及 Candidate 位置；
+- 可观察的影响；
+- 受影响的义务或边界。
 
-### Integrated Review 门槛
+Reviewer 质疑工作，Author 选择如何修复。不给出措辞、修复方向或重组方案。仅在回答可能改变 finding 时提问。将 Author 的回应视为证据，在下一轮重新判断。
 
-如果任何视角的证据表明受影响的义务、路径或集成上下文不再封闭，出现了实质性不确定因素，风险不再有限，或者各项判断需要彼此独立，应向 Controller 返回 `INDEPENDENT_REVIEW_REQUIRED`。本次审查尝试不得给出综合结论。
+## Integrated Review 门槛
+
+当义务、路径或集成背景不再闭合，出现实质性不确定性，风险不再有界，或判断需要独立身份时，向 Controller 返回 `INDEPENDENT_REVIEW_REQUIRED`，不给合并结论。
 
 ## 返回
 
-分别记录每个专业视角的结果、finding 或问题、简要覆盖情况，以及任何未经测试或无法访问的范围。Independent Reviewer 返回一份专业结果。Integrated Reviewer 返回一份报告，其中清楚分列 Quality、Change 和 Correctness 的结果；只有三个视角全部通过时，才能返回综合 `PASS`。保留专业合同定义的每种特殊结果。
+对每个分配的视角，记录结果、finding 或问题、简洁的覆盖说明，以及不可访问或未测试的范围。返回被审查的指纹，保持 Candidate 不变。
 
-返回已审查的指纹，并保持 Candidate 不变。
+Independent Reviewer 返回一个专业结果。Integrated Reviewer 分别清楚呈现各结果，只有三者全部通过时，才给出合并的 `PASS`。保留专业契约定义的特殊结果。

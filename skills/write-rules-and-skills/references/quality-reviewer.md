@@ -1,75 +1,41 @@
 # Quality Reviewer
 
-This contract defines the Quality perspective: current-artifact quality, information design,
-economy, elegance, and human and Agent readability—not fidelity to the baseline or final
-correctness. Apply it together with the common Reviewer contract.
-
-## Principles
-
-- **Holistic judgment.** Review the whole experience, not isolated sentences.
-- **Coherent structure.** Prefer coherent restructuring over additive patching when the existing
-  shape is the problem.
-- **Economy with meaning.** Protect meaning while seeking the smallest clear and maintainable
-  expression.
-- **Evidence-led findings.** Report evidence-based quality defects, not personal style preferences.
+Judge the **current artifact** for information design, economy, elegance, readability, and execution usability. Change owns baseline fidelity; Correctness owns final semantic correctness. Apply the [common Reviewer contract](reviewer.md).
 
 ## Evidence
 
-Read the current Candidate and applicable repository authority yourself. For either artifact type,
-read and apply the checkout-authoritative `writing-for-agents` Skill and the
-[shared judgment basis](artifact-standard.md) independently. For a Skill, also read
-`SKILL-MECHANICS.md`. Use the accepted objective and any session-only quality or expression
-constraints routed by the Controller.
+Read the complete current Candidate and applicable repository authority. Independently read the authoritative `writing-for-agents` Skill and [shared judgment basis](artifact-standard.md); for a Skill, also read `SKILL-MECHANICS.md`.
 
-For either artifact type, receive the responsibility allocation, ownership and supported-loading
-evidence locators, owner dependency state, and any caller-supplied allocation plan directly in the
-assignment. Inspect the relevant owners and evidence yourself to assess the allocation against the
-shared judgments under this Quality contract. The Author brief is not a required input to Quality.
-Identify missing evidence and ask the responsible role for it rather than treating an unverified
-allocation as established.
+Receive these inputs independently of the Author brief:
 
-## Review
+- accepted objective and session-only expression constraints;
+- responsibility allocation, ownership and supported-loading evidence locators;
+- dependency state and caller plan, if any.
 
-Judge the Candidate's overall structure, progressive disclosure, co-location, semantic ownership,
-terminology, economy, elegance, human readability, and execution usability. Look for ambiguity,
-scattering, duplication, stale explanation, hidden branches, missing completion or stop conditions,
-and artifacts that grew by addition rather than coherent revision. Assess economy by whether
-removing content leaves a material gap in understanding, execution, or acceptance in the full
-context; correctness, harmlessness, possible usefulness, or apparent completeness alone does not
-justify retention. Preserve consequential complexity and explanations that materially clarify
-relationships or prevent real ambiguity. Judge the whole artifact rather than requiring each
-sentence to add a unique fact or imposing mechanical length or formatting preferences.
+Inspect relevant owners yourself. Ask the responsible role for missing evidence; establish the allocation before relying on it. The Author brief is optional for this perspective.
 
-Assess whether its instructions express the accepted requirements with justified guardrails and
-retained rationale under the shared judgments. Assess the chosen form's fitness and execution
-usability, judging Skill descriptions by the minimum context needed for reliable selection. Apply
-the shared loading distinctions by purpose: assess
-rule-led policy's broad discovery and ordinary/deeper reading paths, task Skills' accurate matching
-and coherent needed context, and each consequential part of a Hybrid accordingly. Trace ordinary
-substantive modifications and routine review through the actual files, assessing whether each
-required read supplies knowledge or constraints that the decision needs under the shared judgments.
+## Judge the whole reading path
 
-Judge ownership across the Candidate and the related artifacts, including the applicable
-always-loaded and potentially co-loaded Rules identified by the evidence. Trace each policy to
-its complete definition and assess whether retained local context helps a decision or repeats
-the owner's meaning. Check that the allocation rationale supports the artifact's scope and that
-its pointers and loading assumptions leave the supported workflow usable. Report an allocation
-or unresolved dependency that prevents coherent delivery within the frozen job as a finding;
-review does not authorize another owner's edit.
+Start with how the Candidate organizes decisions and responsibilities, then examine sections and expression. Assess disclosure, co-location, ownership, terms, economy, human readability, and Agent usability. Look for ambiguity, scattered or duplicate meaning, stale rationale, hidden branches, missing completion or stops, and accumulated patches that obscure decisions.
 
-In the first round, report every quality problem worth repairing. When the artifact's overall
-quality is poor, say so and give a bounded restructuring direction instead of producing a long list
-of local edits. In the second round, report unresolved major problems, repair regressions, and newly
-discovered major problems. In the third, report only problems that still materially impair
-understanding, maintenance, or use.
+Challenge verbosity and comprehension cost when they materially slow accurate understanding or execution, even where every clause is semantically complete. Preserve consequential complexity and explanations that clarify real relationships. Harmlessness, possible usefulness, and apparent completeness alone do not justify text; word quotas and sentence-by-sentence unique-fact tests cannot judge the reading path.
 
-A finding states its Candidate location, observable impact, supporting evidence, and repair
-boundary. It may recommend a restructuring direction but never supplies replacement prose. Ask the
-Author directly only when its answer could change the finding; the Author's response is evidence,
-not authority.
+Trace the form's actual use under the shared basis:
 
-## Result
+- **Task Skill:** accurate selection from minimum visible context and coherent access to needed method.
+- **Rule-led policy:** broad discovery, ordinary substantive changes, routine review, and deeper branches through actual files and transitive reads.
+- **Hybrid:** the applicable criteria for each part.
 
-Return Quality `FINDINGS` when the Candidate misses the round's threshold, or Quality `PASS` when it
-meets it. Cover the complete current artifact and identify any surface this perspective could not
-assess.
+Check accepted requirements, justified guardrails, and useful rationale. Follow each policy to its complete definition across the Candidate and related Rules and Skills, including applicable always-loaded and potentially co-loaded Rules. Confirm that local context supports a decision, that each required read supplies needed knowledge in time, and that pointers and loading assumptions are usable.
+
+An allocation or open dependency that prevents coherent delivery within frozen scope is a finding. Review grants no edit to another owner.
+
+## Round threshold and result
+
+| Round | Report |
+| --- | --- |
+| 1 | Every quality defect worth repairing; a whole-artifact problem may be one bounded finding. |
+| 2 | Unresolved or newly discovered major problems and repair regressions. |
+| 3 | Only problems still materially impairing understanding, maintenance, or use. |
+
+Use the common finding format without prescribed wording or restructuring. Return Quality `FINDINGS` when the round's threshold is missed, otherwise `PASS`. Cover the complete current artifact and identify any unassessed surface.

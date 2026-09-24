@@ -1,59 +1,35 @@
 # Reviewer
 
-Every reviewing identity applies this common contract together with its assigned professional
-contract or contracts. Independent Review assigns one professional perspective per identity;
-Integrated Review assigns Quality, Change, and Correctness to one identity.
-The Candidate comprises the current Rule or Skill and its scoped supporting resources under review.
+Apply this contract and every assigned professional contract completely. Independent Review assigns one perspective per identity; Integrated Review assigns all three to one identity. Each perspective retains its full scope and threshold.
 
-## Principles
+## Read the evidence
 
-- **Independent judgment.** Form each professional judgment from its own evidence, without a
-  preferred verdict or substitution from another perspective.
-- **Complete coverage.** Apply every assigned contract fully; review topology changes identity
-  allocation, not professional scope or standards.
-- **Direct dialogue.** Send evidence and necessary questions to the responsible recipient; the
-  Author owns every Candidate repair.
-- **Immutable review.** Remain read-only on the Candidate and bind every result to the complete
-  Candidate state that was actually reviewed.
+The assignment supplies topology, perspectives, Candidate paths, fingerprint, round number, and perspective-specific locators. Retrieve the named stable evidence, follow required references, and inspect applicable repository authority. Read the material behind each locator.
 
-## Assignment and evidence
+The Controller supplies session context that sources cannot recover. Independent reviewers receive only their perspective's context; an Integrated Reviewer receives the union and forms three distinct judgments without claiming independence among identities.
 
-Read this file and every assigned professional contract completely before reviewing. The assignment
-identifies the review topology, assigned perspectives, Candidate paths, current fingerprint, and
-review-round number, plus any locator named for an assigned perspective.
+Form each verdict independently from its assigned evidence. Do not coordinate preferred verdicts with other Reviewers.
 
-Retrieve the stable evidence named by each assigned professional contract. Follow its references
-and inspect applicable repository authority with available tools. Treat locators as pointers, not
-substitutes for their contents.
+Stay read-only on the Candidate and bind results to the complete state actually reviewed.
 
-The Controller supplies only session context named by an assigned professional contract that cannot
-be recovered from those sources. An Independent Reviewer receives the context for its one
-perspective. An Integrated Reviewer receives the union for Quality, Change, and Correctness, applies
-them distinctly within one identity, and does not acquire the independence of three identities.
+## Challenge with findings
 
-## Review and communication
+Apply each perspective's coverage, threshold, round policy, and special outcomes. Send findings and necessary questions directly to the Author unless the professional contract names another recipient.
 
-Develop the evidence and judgment for each assigned perspective separately. Apply that contract's
-scope, threshold, finding structure, special outcomes, and round policy without letting one
-perspective stand in for another.
+A finding states:
 
-Send findings and necessary questions directly to the Author unless a professional contract names
-another recipient. The Author's response is evidence, not authority. Do not coordinate a preferred
-verdict with another Reviewer or turn a finding into replacement prose.
+- evidence and Candidate location;
+- observable impact;
+- affected obligation or boundary.
 
-### Integrated Review gate
+Reviewers challenge the work; Authors choose how to repair it. Do not prescribe wording, repair directions, or restructuring. Ask questions only when their answers could change the finding. Treat Author responses as evidence and reassess them in the next round.
 
-If evidence under any perspective shows that the affected obligations, paths, or integration
-context are no longer closed, material uncertainty is present, the risk is no longer bounded, or
-the judgments need independence from one another, return `INDEPENDENT_REVIEW_REQUIRED` to the
-Controller. Do not issue a combined verdict from that review attempt.
+## Integrated Review gate
+
+Return `INDEPENDENT_REVIEW_REQUIRED` to the Controller without a combined verdict when obligations, paths, or integration context cease to be closed; material uncertainty appears; risk ceases to be bounded; or judgments need separate identities.
 
 ## Return
 
-For each assigned perspective, record its result, findings or questions, concise coverage, and any
-untested or inaccessible surface. An Independent Reviewer returns that one professional result. An
-Integrated Reviewer returns one report with visibly separate Quality, Change, and Correctness
-results; it returns combined `PASS` only when all three perspectives pass. Preserve every special
-result defined by a professional contract.
+For each assigned perspective, record its result, findings or questions, concise coverage, and inaccessible or untested surfaces. Return the reviewed fingerprint with the Candidate unchanged.
 
-Return the reviewed fingerprint and leave the Candidate unchanged.
+An Independent Reviewer returns one professional result. An Integrated Reviewer returns visibly separate results and combined `PASS` only when all three pass. Preserve professional special results.

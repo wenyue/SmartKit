@@ -1,105 +1,59 @@
 # Controller
 
-The Controller owns understanding the overall request and turning it into a faithful, bounded
-Author brief. Exercise substantive judgment about responsibility, owners, dependencies, scope,
-and evidence throughout the job. The Author independently checks the allocation and owns the
-Candidate's meaning, structure, and expression; Reviewers own their professional verdicts.
-Correctness owns runtime verification within the job’s authority and resource boundaries; the
-Controller retains review topology, rounds, and global finalization.
+Turn the request into one faithful, bounded Author brief and manage the workflow through finalization. The Author owns Candidate writing, Reviewers own verdicts, and Correctness owns runtime verification within frozen authority.
 
-Before aligning either artifact type, read the [shared judgment basis](artifact-standard.md) and
-the checkout-authoritative `writing-for-agents` Skill. Apply their guidance to understanding,
-allocation, and the Author brief within this Controller contract.
+Before alignment, read the [shared judgment basis](artifact-standard.md) and authoritative `writing-for-agents` Skill. Use them to allocate responsibility and prepare the brief.
 
-## Understand the request
+## Establish intent and owners
 
-Derive the intended outcome from authoritative user-intent evidence and inspect the sources needed
-to understand the request.
+Keep a complete **user-intent record**, distinct from your interpretation and the Author brief. Retain the original request, later corrections and decisions about meaning, scope, and non-goals, and the proposals, questions, or options those responses answer.
 
-Retain the complete user exchanges that establish the job's intent: the original request; later
-corrections, confirmations, and decisions that affect meaning, scope, or non-goals; and the
-proposals, questions, or options those responses refer to. Preserve this authoritative user-intent
-evidence separately from your interpretation and from the Author brief.
+Inspect suitable existing owners before choosing the Candidate. Determine the changes and dependencies required for the overall outcome. Establish canonical source access and write authorization separately: working access is evidence; location alone cannot establish privilege.
 
-## Allocate responsibility and bound the job
+| Owner state | Route |
+| --- | --- |
+| Editable and authorized | Assign the change to that owner. |
+| Missing source, access, or permission | Return `NEEDS_INPUT`: name the owner, its responsibility, needed change, actual restriction, and source, grant, or owner action that resolves it. |
+| Several owners need changes | Split into dependency-ordered jobs, each with exactly one artifact. A caller may supply the allocation plan. |
+| Needed owner change conflicts with a user file restriction | Return `NEEDS_INPUT` before writing. |
 
-Before choosing a Candidate, inspect suitable existing owners and establish the responsibility allocation.
-Choose the best owner before checking whether it can be changed. Establish canonical-source access
-and write authorization separately from readability, using working access as evidence rather than
-inferring privilege requirements from location.
-Determine which owners must change and which dependencies must be resolved so that the bounded
-job serves the overall request.
-When the owner is editable and its change authorized, route the work there. When source, access,
-or permission is unavailable, return `NEEDS_INPUT` naming the exact Rule or other owner, why it owns
-the behavior, the required change, the actual restriction, and the user assistance that would
-unblock it: a source location, access grant, or owner-side change.
-
-Select exactly one artifact after allocation. Split changes to multiple owners into separate,
-dependency-ordered jobs. If allocation conflicts with an explicit user file restriction, return
-`NEEDS_INPUT` to resolve that conflict before writing. A caller such as project setup may supply
-a common allocation plan and evidence for several artifacts; each remains a separate authoring
-job. An unresolved owner dependency prevents the dependent job from reaching `COMPLETE`.
-
-Discover facts that can be established from authoritative sources. Resolve material choices about
-the intended outcome, current behavior, non-goals, preservation and compatibility, dependencies,
-permissions, validation, safety, distribution, and handoff.
-
-Define execution authority and finite scenario, attempt, and resource bounds for runtime evidence,
-including any task-internal delegation and its aggregate resource ceiling. The
-[main workflow](../SKILL.md#2-freeze-the-candidate-and-review-scope) freezes them before authoring.
-Distinguish available host capabilities from granted permissions. Give Correctness those bounds
-and enough lifecycle access to account for and safely close its Runners and their child activity;
-retain oversight sufficient to finalize the whole job. Ordinary runtime decisions within these
-bounds belong to Correctness and need no Controller forwarding.
+A dependent job can reach `COMPLETE` only after its owner dependencies close. Research recoverable facts from authoritative sources and resolve material choices about outcome, existing behavior, non-goals, preservation, compatibility, dependencies, permissions, validation, safety, distribution, and handoff.
 
 ## Prepare the Author brief
 
-Prepare a self-contained Author brief containing:
+Give the Author one self-contained brief containing:
 
-- the objective and requested change;
-- the exact Candidate paths and allowed create, edit, move, or delete operations;
+- objective and requested change;
+- exact Candidate paths and allowed create, edit, move, and delete operations;
 - accepted constraints and authoritative evidence paths;
-- the responsibility allocation, its ownership and supported-loading evidence, any caller-supplied
-  allocation plan, and the state of owner dependencies;
-- required automated validation; and
-- the observable completion conditions.
+- allocation, owner and supported-loading evidence, caller plan if any, and dependency state;
+- frozen non-fixing validation and observable completion conditions.
+
+### Bound runtime authority
+
+Freeze finite scenario and attempt limits and an aggregate resource ceiling, including task-internal delegation. Distinguish host capability from granted authority. Give Correctness lifecycle access to account for and safely close Runners and children, while retaining oversight for global finalization. Correctness makes ordinary runtime decisions directly within these bounds.
 
 ## Choose and adjust review topology
 
-Both review topologies cover Quality, Change, and Correctness. Select between them by the
-independence the job needs:
+Both topologies apply all three perspectives in full:
 
-- **Integrated Review** assigns all three perspectives to one Integrated Reviewer. Use it when the
-  affected obligations, paths, and integration context are closed, material uncertainty is absent,
-  and the risk is bounded.
-- **Independent Review** assigns Quality, Change, and Correctness to three separate Reviewers. Use
-  it for self-hosting, broad impact, high risk, or uncertainty about ownership, safety, permissions,
-  external effects, recovery, validation, or critical paths.
+| Topology | Use when |
+| --- | --- |
+| **Integrated Review:** one identity applies Quality, Change, and Correctness | Obligations, paths, and integration context are closed, material uncertainty is absent, and risk is bounded. |
+| **Independent Review:** one identity per perspective | The job is self-hosting, broadly consequential, high risk, or uncertain about ownership, safety, permissions, external effects, recovery, validation, or critical paths. |
 
-When an Integrated Reviewer returns `INDEPENDENT_REVIEW_REQUIRED`, safely end that review and any
-active runtime work, then start three fresh Independent Reviewers on the current fingerprint. The
-Integrated verdict cannot substitute for or bias their judgments. The switch replaces the
-Integrated attempt in the current round; it does not create a repair round. Return `NEEDS_INPUT`
-if the switch or its cause requires broader write scope, access, or permission.
+On `INDEPENDENT_REVIEW_REQUIRED`, safely end the Integrated attempt and active runtime work. Start three fresh Independent Reviewers on the current fingerprint, replacing the Integrated attempt within the same round. Keep that attempt from substituting for or biasing the independent judgments. Return `NEEDS_INPUT` if the switch or its cause needs broader scope, access, or permission.
 
 ## Maintain alignment and handle blockers
 
-Throughout the job, keep the request, allocation, owner dependencies, and brief aligned as evidence
-arrives. Use that understanding to identify boundary and input problems while preserving the
-Author's ownership of Candidate repairs and the Reviewers' ownership of findings and verdicts.
+Keep the request, allocation, dependencies, and brief aligned as evidence arrives. A newly discovered owner requires `NEEDS_INPUT` before crossing frozen scope.
 
-If later evidence changes the allocation, stop for `NEEDS_INPUT` before crossing the frozen write
-scope; a newly discovered owner does not widen this job.
+If Correctness proves a brief omission or distortion against user intent, correct only the supported part of the brief. After all reviewers return, give it to the same Author for one coherent repair. Apply the normal return gate, fingerprint capture, validation, and next round within the original three-round limit. The Controller corrects the brief; Correctness retains the semantic verdict.
 
-When Correctness proves that the Author brief omitted or distorted user intent, correct the brief
-only within the finding and cited evidence. Once every reviewing identity has returned, give it
-to the same Author for one coherent Candidate repair. The Controller owns the brief, not the
-semantic verdict. The repair consumes the next round under the normal Author-return gate,
-fingerprint, validation, and review cycle; it does not reset the three-round limit.
+| Blocker | Result |
+| --- | --- |
+| Material intent ambiguity unresolved by authoritative context | Present the Reviewer's exact question to the user, without added interpretation, and return `NEEDS_INPUT`. |
+| Missing user-controlled runtime input or permission, or a request beyond the frozen job | Return `NEEDS_INPUT`. |
+| Necessary evidence unavailable because bounds are exhausted or safe execution is unsupported | Return `BLOCKED`; preserve the frozen runtime authority. |
 
-When authoritative context cannot resolve material intent ambiguity, present the Reviewer's exact
-question to the user without supplying an interpretation and return `NEEDS_INPUT`. Route missing
-user-controlled runtime inputs or permissions in the same way. Requests beyond the frozen job
-require `NEEDS_INPUT`. When necessary evidence remains unavailable because bounds are exhausted
-or safe execution is unsupported, return `BLOCKED` rather than extending runtime authority.
-Finalize active roles and residual state through the main workflow.
+Finalize roles and residual state under the main workflow on every exit.

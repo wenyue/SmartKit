@@ -5,143 +5,73 @@ description: Author or revise one English Rule or Agent Skill.
 
 # Write Rules and Skills
 
-An **artifact** is one Rule or Skill. The **Candidate** is the current artifact and its scoped
-supporting resources under authoring and review.
+Deliver one **Candidate**: a Rule or Skill and its scoped supporting resources. The active Agent is the Controller; read the [Controller contract](references/controller.md) before alignment and apply it throughout.
 
-The active Agent is the Controller. Before aligning the job, read
-[the Controller role](references/controller.md) and apply it throughout the workflow.
+The Author alone writes. Quality, Change, and Correctness judge the result; Correctness may commission a Runner for bounded observations. The Controller manages alignment, evidence, roles, rounds, and finalization while each role owns its judgments.
 
-## Principles
+Work within established user authority. Repository visibility grants no permission, and this workflow grants no publication, installation, commit, push, release, translation, network access, or other downstream effect without separate user authorization.
 
-- **Independent judgments.** The Author owns the Candidate, Reviewers own their judgments, and a
-  Runner supplies runtime facts when needed, including on-demand behavioral task execution. The
-  Controller owns task understanding, allocation, and the Author brief; it does not author the
-  Candidate or substitute for professional verdicts.
-- **Bounded authority.** Repository visibility does not grant meaning or permission. This workflow
-  grants no publication, installation, commit, push, release, translation, network access, or other
-  downstream effect unless the user separately authorizes it.
-- **Acceptance on one fingerprint.** End successfully only when all three professional
-  perspectives return `PASS` on the same fingerprint and automated validation also passes there.
+## 1. Align
 
-## 1. Align the job
+Establish the Candidate, owners, dependencies, and self-contained Author brief under the Controller contract. Resolve material choices, facts, access, and permissions before writing. If alignment cannot close, return `NEEDS_INPUT` with the exact gap.
 
-Apply the Controller contract to align the job. Advance to freezing only when one Candidate and
-one self-contained Author brief express the accepted outcome, the state of owner dependencies is
-explicit, and no material choice, fact, access, or permission remains missing.
-Otherwise return `NEEDS_INPUT` with the exact unresolved input.
+## 2. Freeze the job
 
-## 2. Freeze the Candidate and review scope
+Resolve `<skill-root>` to this loaded Skill directory and inspect `python "<skill-root>/scripts/candidate_evidence.py" --help`. Before any Candidate write, freeze:
 
-Resolve `<skill-root>` as this loaded Skill directory and invoke
-`python "<skill-root>/scripts/candidate_evidence.py" --help`.
+- **Baseline:** capture the complete Candidate and fingerprint with that CLI. Keep snapshots, review records, and validation logs outside Candidate scope.
+- **Authority:** record exact allowed operations and permissions, non-fixing validation commands, and finite runtime and resource bounds. Authorize moves explicitly; permission to add and delete does not imply permission to move. Preserve unrelated staged, unstaged, and untracked work.
+- **Governing text:** retain the complete pre-write copy of any governing instruction in the Candidate, including this Skill. It governs this invocation; edited text becomes governing only on a later invocation.
 
-Capture the complete Candidate baseline and fingerprint before any write using that Python CLI.
-Keep transient workflow evidence, such as baseline snapshots, review records, and validation logs,
-outside the Candidate file scope so it stays separate from deliverables and does not affect the
-Candidate fingerprint. Freeze the write scope, validation commands, and
-permissions separately, including the Controller-defined runtime authority and resource bounds;
-an allowed addition and deletion do not imply an allowed move. Preserve unrelated staged, unstaged, and untracked work.
-
-When the Candidate includes this Skill or another governing instruction, also freeze its complete
-pre-write text and use that copy as authority for the rest of the run. Newly authored text remains
-Candidate evidence until the next invocation; it cannot govern its own review.
-
-Assign one resident Author for the entire job. Select the review topology using the Controller's
-[topology criteria](references/controller.md#choose-and-adjust-review-topology).
-
-The Controller manages this topology without substituting for professional judgments. Integrated
-Review loads one identity with the common Reviewer contract and all three professional contracts.
-Independent Review loads three identities with the common contract and one professional contract
-each. The identities read their assigned files; the Controller does not.
+Assign one resident Author for writing and repairs. Choose [Integrated or Independent Review](references/controller.md#choose-and-adjust-review-topology) and have each identity read its assigned contracts.
 
 ## 3. Author and validate
 
-Confirm the Candidate still matches the baseline, then start the Author with the Author brief as its
-only session context. Also supply the baseline locator, current fingerprint, and a pointer to
-[the Author role](references/author.md); do not supply the full user-intent evidence. Only that
-Author may write the Candidate.
+Confirm the Candidate still matches the baseline. Start the Author with the brief as its only session context, plus the baseline locator, fingerprint, and [Author contract](references/author.md). Retain the full user-intent record with the Controller and Correctness.
 
-After the Author returns, capture the complete Candidate again. Advance only from an authenticated
-Author `COMPLETE` whose changes are attributable to that Author and fit the frozen write scope. An
-Author `NEEDS_INPUT` or `BLOCKED` ends the job with that result after boundary checks and cleanup;
-preserve any partial changes as evidence but do not adopt them for validation or review. Treat an
-out-of-scope or indeterminate change as `BLOCKED` and do not revert uncertain state.
+After **every Author return**, capture the complete Candidate and apply this gate:
 
-Run the frozen, owner-supported, non-fixing automated validation before review. Every applicable
-command must succeed on the current fingerprint before review begins and before final `COMPLETE`.
-Record each command and exit. If a failure is caused by the Candidate, give its evidence to the
-same Author for one coherent repair, then apply the Author-return gate, fingerprint, and validate
-again. Return `NEEDS_INPUT` for a missing user-controlled fact, access, or permission; return
-`BLOCKED` for another unresolved failure or repeated correction without new evidence or progress.
-Neither case authorizes a Candidate write or permits review to continue.
+| Return or evidence | Action |
+| --- | --- |
+| Authenticated `COMPLETE`, with attributable changes inside frozen scope | Run validation. |
+| `NEEDS_INPUT` or `BLOCKED` | Check boundaries, preserve partial changes as evidence, clean up, and return that result. |
+| Out-of-scope or indeterminate change | Preserve uncertain state and return `BLOCKED`. |
+
+Run every frozen owner-supported validation command without fixing. Record commands, exits, and the current fingerprint; review starts only when all pass.
+
+- **Candidate-caused failure:** send the evidence to the same Author for one coherent repair, then repeat the return gate and validation.
+- **Missing user-controlled input or permission:** return `NEEDS_INPUT`.
+- **Other unresolved failure, or correction without new evidence or progress:** return `BLOCKED`.
 
 ## 4. Review and correct
 
-### Start the review
+Start all reviewers on the same fingerprint with the [common Reviewer contract](references/reviewer.md), their professional contracts, and each contract's evidence inputs:
 
-Start the selected topology on one fingerprint. Give every reviewing identity a pointer to the
-[common Reviewer contract](references/reviewer.md) and the professional contracts assigned by the
-topology:
+| Perspective | Judgment |
+| --- | --- |
+| [Quality](references/quality-reviewer.md) | Is the current artifact clear, economical, and usable? |
+| [Change](references/change-reviewer.md) | Does the change preserve and realize the accepted meaning? |
+| [Correctness](references/correctness-reviewer.md) | Does the result faithfully and safely deliver user intent? |
 
-- [Quality Reviewer](references/quality-reviewer.md)
-- [Change Reviewer](references/change-reviewer.md)
-- [Correctness Reviewer](references/correctness-reviewer.md)
+Supply topology, Candidate paths, fingerprint, round number, stable file-backed evidence, and the baseline locator for Change and Correctness. Independent identities receive only their perspective's context; an Integrated identity receives the union. Keep identities while topology stays unchanged, for at most **three rounds**.
 
-Give every identity its assigned perspectives, review topology, Candidate paths, current
-fingerprint, and review-round number. Add the baseline locator for Change and Correctness. Point to
-file-backed evidence instead of copying it; each professional contract determines which stable
-evidence its perspective reads.
+Each round has three steps:
 
-Route only session context that a Reviewer cannot recover from those sources:
+1. **Review.** Reviewers send findings and necessary questions directly to the responsible role. Track returns without judging or relaying findings; verify an unchanged Candidate fingerprint after every Reviewer return.
+2. **Repair.** If findings remain, the Author waits for every applicable return, then makes one coherent repair.
+3. **Revalidate.** Apply the Author-return gate and all frozen checks. In the next round, every reviewing identity rechecks the complete new fingerprint.
 
-- Quality receives the accepted objective, session-only quality or expression constraints, and the
-  responsibility allocation with its evidence locators, supported-loading assumptions, owner
-  dependency state, and any caller-supplied allocation plan, for either artifact type. Supply
-  these independently of the Author brief; Quality does not depend on receiving that brief.
-- Change receives the requested change, preservation and compatibility decisions, and the Author's
-  semantic change summary.
-- Correctness receives the complete authoritative user-intent evidence and Author brief as distinct
-  inputs, session-only critical behavior and safety decisions, automated-validation results, and
-  frozen runtime authority and resource bounds.
+A blocking finding after round three yields `BLOCKED`. Use the Controller contract for a required [topology switch](references/controller.md#choose-and-adjust-review-topology) or [alignment problem](references/controller.md#maintain-alignment-and-handle-blockers). Correctness owns runtime evidence within the frozen bounds.
 
-An Independent Reviewer receives only the context for its perspective. An Integrated Reviewer
-receives the union for all three.
+## 5. Finalize and hand off
 
-### Run review rounds
+Finalize on every exit. Stop safely if a required role is unavailable, a boundary is crossed, Candidate state becomes untrustworthy, or runtime work cannot be terminated or cleaned up. End active roles, record residual state, and check the final Candidate boundary.
 
-Keep the same identities for at most three review rounds while the topology is unchanged. Reviewer
-evidence, communication, and results follow the common and professional contracts. The Author waits
-for every identity before making one coherent repair; the Controller tracks completion and rounds
-without relaying findings or deciding their merits.
+Return:
 
-Apply the Author-return gate after every repair, then run automated validation before the next
-review round. A repair creates a new fingerprint, so every identity in the active topology rechecks
-its complete evidence. Allow at most three rounds; return `BLOCKED` if a blocking finding remains
-after the third.
+- Candidate type, exact paths, final fingerprint, and the Author's semantic summary bound to it;
+- topology and separate Quality, Change, and Correctness results, including Correctness's intent-fidelity coverage;
+- validation commands and results, plus Runner scenarios and observations when used;
+- remaining risks, residual state, and `COMPLETE`, `NEEDS_INPUT`, or `BLOCKED`.
 
-Apply the Controller's [topology adjustment](references/controller.md#choose-and-adjust-review-topology)
-for a required topology change and
-[alignment and blocker handling](references/controller.md#maintain-alignment-and-handle-blockers)
-for proven Author-brief omission or distortion, unresolved material intent, or boundary and input problems.
-Correctness commissions and finalizes any runtime evidence under its professional contract,
-within the frozen job.
-
-Verify after every Reviewer return that the Candidate fingerprint is unchanged.
-
-## 5. Finish
-
-Stop safely when a required role is unavailable, a role crosses its boundary, the Candidate state
-is untrustworthy, or a started runtime check cannot be terminated or cleaned up. End all active
-roles, record any residual state, and perform the final Candidate boundary check.
-
-Return only the useful handoff:
-
-- Candidate type and exact paths;
-- Integrated or Independent Review and each professional perspective's final result;
-- automated validation commands and results;
-- Runner scenarios and observations, when used;
-- the Correctness perspective's user-intent coverage and fidelity result;
-- the Author's final semantic change summary, bound unchanged to the final fingerprint;
-- remaining risks and residual state;
-- final fingerprint; and
-- `COMPLETE`, `NEEDS_INPUT`, or `BLOCKED`.
+`COMPLETE` requires all three perspectives to `PASS` and every validation command to pass on the same final fingerprint.

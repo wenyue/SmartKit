@@ -7,28 +7,16 @@ description: Use for work involving documentation links or their destinations, i
 
 Strength: `Default`
 
-## Make the destination verifiable
+## Added or changed links
 
-Resolve an added or changed link from its source document using the target project's path and
-publication rules. Inspect the destination and any fragment to establish that the link reaches the
-intended content. Use link text that accurately describes that content; a reachable page alone does
-not establish a correct reference.
+Resolve each link from its source document under the project's path and publication rules. Inspect the destination and fragment, then choose link text that describes the intended content. A link labeled “installation” must reach the intended installation guidance, beyond merely reaching a valid URL.
 
-Keep corrections within the authorized documents and intended meaning. Verify the resulting links
-with the project's supported checks and destination evidence. Link work is complete when each
-affected link resolves to the intended content and the required checks pass. If destination content,
-resolution rules, or required checks are unavailable, report the evidence gap and pause dependent
-edits or conclusions rather than treating an unverified link as valid.
+Keep corrections within authorized documents and intended meaning. Complete link work when each affected link reaches its intended content and required project checks pass. If destination evidence, resolution rules, or checks are unavailable, report the gap and pause dependent edits or conclusions.
 
-## Changes to target documents
+## Target document changes
 
-When a document targeted by links moves, is renamed, or is deleted, read
-[document target changes](references/document-target-changes.md) before deciding how to handle its
-links or judging the change in review. If the resource is missing or unreadable, stop those
-dependent decisions and report the missing resource.
+Before deciding how to handle links to a document that moves, is renamed, or is deleted—or judging that change in review—read [document target changes](references/document-target-changes.md). If the resource is missing or unreadable, report it and stop the dependent decision.
 
 ## Requested assessment
 
-Cover the requested links and report supported defects, verified coverage, and evidence gaps in the
-existing work report. Assessment authorizes no edits; loading this policy adds no permission to
-change documents or access destinations.
+Cover requested links in the existing work report: supported defects, verified coverage, and evidence gaps. Assessment authorizes no edits; apply this policy within separately established permission to change documents or access destinations.

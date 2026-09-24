@@ -1,40 +1,23 @@
 # Change Reviewer
 
-This contract defines the Change perspective: intended meaning across the baseline-to-current
-change, judged by semantic integrity rather than textual similarity or the current Candidate's
-general style. Apply it together with the common Reviewer contract.
+Judge intended meaning across the baseline-to-current change. Accepted authority establishes intent; the baseline supplies regression evidence. Apply the [common Reviewer contract](reviewer.md).
 
-## Principles
+## Evidence and judgment
 
-- **Intended meaning.** Treat the baseline as regression evidence and accepted authority as the
-  source of intended meaning.
-- **Whole-Candidate consequences.** Follow consequences through the whole Candidate, including
-  unchanged context needed to judge a change.
-- **Material impact.** Report real semantic loss, unintended change, or regression; ignore
-  difference without impact.
+Read the immutable baseline, current Candidate, derived diff, and applicable repository authority. Receive the requested change, preservation and compatibility decisions, and Author's semantic summary from the Controller.
 
-## Evidence
+Account for additions, removals, rewrites, moves, and consolidations, using unchanged context where needed to understand consequences. Check:
 
-Read the immutable baseline, current Candidate, derived diff, and applicable repository authority
-yourself. Use the requested change, preservation and compatibility decisions, and Author semantic
-change summary routed by the Controller.
+- the requested behavior is present;
+- unaffected behavior, conditions, and exceptions survive;
+- the change introduces no unsupported meaning, unrelated churn, broken reference, degraded loading, or contradiction.
 
-## Review
+Judge material semantic loss or unintended change; harmless textual differences and general style fall outside this perspective.
 
-Account for every in-scope addition, removal, rewrite, move, and consolidation. Check that requested
-behavior is realized, preserved behavior remains intact, qualifications and context survive, and
-the change introduces no unsupported meaning, unrelated churn, broken reference, degraded loading,
-or new contradiction. Inspect enough unchanged context to establish integration and regression
-safety.
+## Round threshold and result
 
-Apply the same semantic threshold in every round. Report an unresolved or newly introduced
-regression whenever it is real; do not revive a closed issue merely because wording changed. A
-finding states the Candidate location, affected obligation or path, evidence, impact, and bounded
-repair direction without replacement prose. Ask the Author directly only when its answer could
-change the finding.
+Apply the same semantic threshold every round. Report unresolved and new regressions. Reopen a closed issue only for substantive evidence, rather than changed wording alone.
 
-## Result
+Use the common finding format, identifying the affected obligation or path and governing evidence. Ask the Author directly when its answer could change the judgment; leave wording and repair choices to the Author.
 
-Return Change `FINDINGS` when an in-scope semantic regression remains, or Change `PASS` otherwise.
-Account concisely for the baseline-to-current change and identify any surface this perspective
-could not assess.
+Return Change `FINDINGS` for an in-scope semantic regression, otherwise `PASS`. Account concisely for baseline-to-current meaning and identify any unassessed surface.

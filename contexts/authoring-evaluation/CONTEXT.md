@@ -80,7 +80,8 @@ unexpected writes without serving as semantic evidence.
 _Avoid_: Change summary, review verdict, persisted report
 
 **Alignment intensity（对齐力度）**:
-The amount of explicit guidance used to steer an Agent at a decision, scaled to the consequences of misunderstanding rather than the length of the text.
+The amount of explicit guidance used to steer an Agent at a decision, scaled to the
+consequences of misunderstanding rather than the length of the text.
 _Avoid_: Word count, exhaustive specification
 
 **Principle-led Skill（原则导向型技能）**:

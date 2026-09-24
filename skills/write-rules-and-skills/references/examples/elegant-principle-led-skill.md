@@ -5,25 +5,22 @@ description: Produce a decision memo when one option must be chosen among docume
 
 # Decision Memo
 
-Produce one concise memo that lets the accountable decision-maker understand the choice, challenge
-its basis, and act on it without reconstructing the investigation.
+Produce one concise memo that lets the accountable decision-maker understand the choice, challenge its basis, and act without reconstructing the investigation.
 
 ## Principles
 
-- **Decision first.** State the recommendation and its status before the supporting detail.
-- **Material comparison.** Compare viable alternatives against the criteria that could change the
-  choice; omit differences that do not bear on it.
-- **Traceable confidence.** Separate established facts, reasoned inferences, and unresolved
-  assumptions. Link evidence where the reader can inspect it.
-- **Consequences over advocacy.** Make costs, risks, reversibility, and operational effects as clear
-  as the benefits.
-- **Proportion.** Spend detail on contested or irreversible parts of the decision and compress
-  settled context.
+- **Decision first.** State the recommendation and its status before supporting detail.
+- **Material comparison.** Compare viable alternatives on criteria that could change the choice; compress differences that do not bear on it.
+- **Traceable confidence.** Distinguish evidence, inference, and unresolved assumption, linking inspectable sources. A quoted price is evidence; projected savings are an inference; an unknown renewal rate is an assumption.
+- **Consequences.** Show costs, risks, reversibility, and operational effects as clearly as benefits.
+- **Proportion.** Expand contested or irreversible parts and compress settled context.
 
-Stay within the decision presented. Research recoverable facts, but do not invent missing business
-criteria, choose an accountable owner, or implement the recommendation. If a material criterion or
-decision-maker is missing, request that exact input and pause the memo.
+## Scope and completion
 
-The memo is complete when it names the decision and owner, recommends one option, records the
-material alternatives and criteria, explains the evidence and trade-offs, exposes consequential
-assumptions and risks, and identifies any approval or follow-up required.
+Stay within the presented decision and research recoverable facts. If a material criterion or decision-maker is missing, request that exact input and pause the memo. Accountable-owner selection and implementation retain their own authorities.
+
+The completed memo identifies:
+
+- the decision, owner, recommended option, and material alternatives;
+- criteria, evidence, trade-offs, consequential assumptions, and risks;
+- required approval or follow-up.
