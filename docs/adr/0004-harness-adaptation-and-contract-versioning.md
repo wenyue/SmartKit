@@ -2,10 +2,15 @@
 
 > **Historical terminology:** This ADR records `core-rule-config` and
 > `core-skill-governance` as the names introduced by its original decision. The current contract
-> uses `core-instruction-governance` and `core-third-party-skill-policy`; the historical names below
-> are not current Rule IDs or entry points.
+> uses `core-instruction-governance`. The later `core-third-party-skill-policy` was retired under
+> [ADR 0015](0015-patch-external-skill-snapshots.md); the historical names below are not current
+> Rule IDs or entry points.
 
 Status: Accepted
+
+> **External snapshot wording superseded (2026-09-23):**
+> [ADR 0015](0015-patch-external-skill-snapshots.md) permits version-controlled patches through
+> the owning updater. Other decisions below retain their stated status.
 
 > **Rule delivery superseded (2026-09-11):** The trigger selectors, Cursor adapters, and file-Rule
 > activation described below are historical. The current delivery contract uses `description`,

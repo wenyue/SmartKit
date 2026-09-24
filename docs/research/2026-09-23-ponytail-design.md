@@ -2,6 +2,10 @@
 
 日期：2026-09-23。性质：面向维护者的非规范研究笔记，不改变 SmartKit 的规则、技能或授权边界。
 
+后续采纳方案以 [规格 #5](https://github.com/wenyue/SmartKit/issues/5) 和
+[ADR 0015](../adr/0015-patch-external-skill-snapshots.md) 为准；下文建议保留为早期分析，
+不代表最终选择。后续核验已固定上游提交为 `e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156`。
+
 ## 来源与范围
 
 本次阅读 DietrichGebert/ponytail 的 `main` 分支第一方源码；读取时

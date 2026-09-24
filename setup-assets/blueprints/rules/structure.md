@@ -2,17 +2,15 @@
 
 Strength: `Default`
 
-Scope: Setup Authoring Contract for target-repository structure, placement, responsibility, and
-navigation recommendations.
-
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/structure.md`, the Author
 produces one target-owned Default Rule titled `Structure`. It ranks valid choices of
-location, responsibility seam, or navigation entry after narrower or Mandatory policy. Ownership,
-dependency permission, delivery, installation, and exposure remain with their policy owners.
+location, responsibility seam, or navigation entry under applicable policy and installed SmartKit
+governance. Ownership, dependency permission, delivery, installation, and exposure remain with
+their policy owners.
 
-Setup must supply relevant target evidence: entry guidance and narrower Rules; accepted Issues,
+Setup must supply relevant target evidence: entry guidance and applicable Rules; accepted Issues,
 Specs, and ADRs; callers, imports, consumers, tests, schemas, registries, generators, runtime
 entries, and canonical documentation routes. Qualify sources by owner and provenance. Names,
 co-location, directory and package boundaries, and machine-local state are clues, not authority;

@@ -35,9 +35,8 @@ fulfillment of the overall accepted requirements.
 _Avoid_: Repeated Ticket Review, Batch Delivery
 
 **Ticket Commit（工单提交）**:
-The commit that marks one completed ticket's boundary in a Batch Worktree with exactly one
-`SmartKit-Ticket` trailer. It may follow that ticket's Checkpoint Commits and may be consolidated
-during finalization.
+The commit that marks one completed ticket's boundary in a Batch Worktree. It may follow that
+ticket's Checkpoint Commits and may be consolidated during finalization.
 _Avoid_: Delivery Commit, completion record, tracker transition
 
 **Batch Commit（批次提交）**:

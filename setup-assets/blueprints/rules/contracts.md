@@ -2,17 +2,12 @@
 
 Strength: `Mandatory`
 
-Scope: Setup Authoring Contract for persistent change-validity policy across APIs, capability
-ownership, installation, documentation, evaluation, contract evolution, distribution, hard
-dependencies, and exposure.
-
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/contracts.md`, the Author
-produces one target-owned Mandatory Rule titled `Contracts`. It defines what makes a
-change valid whenever the change touches a concern in this Scope.
+produces one target-owned Mandatory Rule titled `Contracts` that defines what makes a change valid.
 
-Setup must supply relevant target evidence: entry guidance and narrower Rules; accepted Issues,
+Setup must supply relevant target evidence: entry guidance and applicable Rules; accepted Issues,
 Specs, and ADRs; APIs, schemas, events, domain models, implementation, and behavioral tests; and
 ownership and delivery relationships in registries, synchronizers, manifests, packages, loaders,
 and documentation routes. Qualify sources by owner and provenance. Existing Rule text is
@@ -43,7 +38,7 @@ precedence, and decision owner clear, including the nearest included and exclude
   requires them.
 - **Distribution:** direction of delivery, hard dependencies, visibility, and public/private exposure.
 
-The narrowest current authority governs a supported conflict. Material alternatives in activation,
+Installed SmartKit governance determines Rule precedence. Material alternatives in activation,
 applicability, outcomes, exceptions, precedence, ownership, preservation, or retirement require a
 decision; unsupported facts cannot select or silently omit policy.
 

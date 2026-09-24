@@ -3,10 +3,6 @@
 Authoring Evaluation describes the language used to discuss how SmartKit writes and reviews Rules,
 Skills, and Setup Authoring Contracts.
 
-This glossary is unstable, non-normative conversational guidance. Operative requirements remain in
-the applicable Rules, Skills, accepted specifications, and ADRs; no runtime artifact may depend on
-this file.
-
 ## Language
 
 **Candidate（候选工件）**:
@@ -35,9 +31,8 @@ alongside its assigned professional contract or contracts.
 _Avoid_: General review method, fourth review perspective, Controller instructions
 
 **Quality Reviewer（质量审查者）**:
-The professional perspective that judges the current Candidate's overall quality, information
-design, economy, elegance, and human and Agent readability. It may recommend holistic restructuring
-when the artifact has grown through additive patches.
+The professional perspective that challenges the current Candidate's quality, information
+design, economy, elegance, and human and Agent readability without prescribing its repair.
 _Avoid_: Copy editor, correctness backstop, prose generator
 
 **Change Reviewer（变更审查者）**:
@@ -83,6 +78,10 @@ _Avoid_: One finding conversation, one file review, unlimited correction loop
 A deterministic identity for the complete Candidate state, used to bind review results and detect
 unexpected writes without serving as semantic evidence.
 _Avoid_: Change summary, review verdict, persisted report
+
+**Alignment intensity（对齐力度）**:
+The amount of explicit guidance used to steer an Agent at a decision, scaled to the consequences of misunderstanding rather than the length of the text.
+_Avoid_: Word count, exhaustive specification
 
 **Principle-led Skill（原则导向型技能）**:
 A Skill that states its outcome, governing principles, consequential constraints, and completion

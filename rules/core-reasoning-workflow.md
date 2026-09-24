@@ -2,8 +2,6 @@
 
 Strength: `Mandatory`
 
-Scope: All tasks.
-
 ## Understand
 
 - Establish the evidence-supported objective, scope, constraints, acceptance conditions, and

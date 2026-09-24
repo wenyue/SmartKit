@@ -1,6 +1,7 @@
 from __future__ import annotations
 import importlib.util
 import io
+import difflib
 import json
 import os
 import tempfile
@@ -162,6 +163,95 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
             ),
             1,
         )
+
+    def test_update_applies_recorded_patch_without_changing_upstream(self):
+        project, alpha, _, registry, checkouts = self.prepare_two_source_project()
+        original = (alpha / 'skills/alpha/SKILL.md').read_text(encoding='utf-8')
+        adapted = original.replace('version one', 'SmartKit adaptation')
+        patch = project / 'vendor/patches/alpha.patch'
+        patch.parent.mkdir(parents=True)
+        patch.write_text(''.join(difflib.unified_diff(
+            original.splitlines(keepends=True), adapted.splitlines(keepends=True),
+            fromfile='a/SKILL.md', tofile='b/SKILL.md',
+        )), encoding='utf-8')
+        registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
+        (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
+        resolve = lambda source: checkouts[source.id]
+        self.assertEqual(self.module.main(
+            ['--update', '--root', str(project)], resolver=resolve,
+        ), 0)
+        self.assertEqual((project / 'skills/alpha/SKILL.md').read_text(), adapted)
+        self.assertEqual((alpha / 'skills/alpha/SKILL.md').read_text(), original)
+        lock = json.loads((project / 'vendor/external-skills.lock.json').read_text())
+        self.assertEqual(lock['sources'][0]['skills'][0]['patches'][0]['path'],
+                         'vendor/patches/alpha.patch')
+        self.assertEqual(self.module.main(
+            ['--check', '--root', str(project)], resolver=resolve,
+        ), 0)
+        beta_record = lock['sources'][1]
+        upstream_file = alpha / 'skills/alpha/SKILL.md'
+        upstream_file.write_text(original.replace('Test fixture.', 'Updated upstream guidance.'),
+                                 encoding='utf-8')
+        checkouts['acme/alpha-source'] = self.module.ResolvedCheckout(alpha, 'main', '3' * 40)
+        self.assertEqual(self.module.main(
+            ['--update', '--source', 'acme/alpha-source', '--root', str(project)],
+            resolver=resolve,
+        ), 0)
+        self.assertEqual((project / 'skills/alpha/SKILL.md').read_text(),
+                         adapted.replace('Test fixture.', 'Updated upstream guidance.'))
+        updated_lock = (project / 'vendor/external-skills.lock.json').read_bytes()
+        self.assertEqual(json.loads(updated_lock)['sources'][1], beta_record)
+        self.assertEqual(self.module.main(
+            ['--update', '--root', str(project)], resolver=resolve,
+        ), 0)
+        self.assertEqual((project / 'vendor/external-skills.lock.json').read_bytes(), updated_lock)
+        (project / 'skills/alpha/SKILL.md').write_text('derived drift\n', encoding='utf-8')
+        self.assertEqual(self.module.main(
+            ['--check', '--root', str(project)], resolver=resolve,
+        ), 1)
+
+    def test_update_preserves_unrecorded_local_skill_changes(self):
+        project, _, _, _, checkouts = self.prepare_two_source_project()
+        local = project / 'skills/alpha/SKILL.md'
+        local.write_text('unrecorded local work\n', encoding='utf-8')
+        lock = (project / 'vendor/external-skills.lock.json').read_bytes()
+        self.assertEqual(self.module.main(
+            ['--update', '--root', str(project)],
+            resolver=lambda source: checkouts[source.id],
+        ), 2)
+        self.assertEqual(local.read_text(), 'unrecorded local work\n')
+        self.assertEqual((project / 'vendor/external-skills.lock.json').read_bytes(), lock)
+
+    def test_patch_conflict_preserves_all_installed_sources_and_lock(self):
+        project, alpha, _, registry, checkouts = self.prepare_two_source_project()
+        patch = project / 'vendor/patches/alpha.patch'
+        patch.parent.mkdir(parents=True)
+        patch.write_text('--- a/SKILL.md\n+++ b/SKILL.md\n@@ -1 +1 @@\n'
+                         '-missing upstream text\n+adapted\n', encoding='utf-8')
+        registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
+        (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
+        paths = ['skills/alpha/SKILL.md', 'skills/beta/SKILL.md', 'vendor/external-skills.lock.json']
+        before = {path: (project / path).read_bytes() for path in paths}
+        self.assertEqual(self.module.main(
+            ['--update', '--root', str(project)], resolver=lambda source: checkouts[source.id],
+        ), 2)
+        self.assertEqual({path: (project / path).read_bytes() for path in paths}, before)
+        self.assertIn('version one', (alpha / 'skills/alpha/SKILL.md').read_text())
+
+    def test_patch_cannot_write_outside_its_skill(self):
+        project, _, _, registry, checkouts = self.prepare_two_source_project()
+        patch = project / 'vendor/patches/alpha.patch'
+        patch.parent.mkdir(parents=True)
+        patch.write_text('--- /dev/null\n+++ b/../escaped.md\n@@ -0,0 +1 @@\n+escaped\n',
+                         encoding='utf-8')
+        registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
+        (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
+        lock = (project / 'vendor/external-skills.lock.json').read_bytes()
+        self.assertEqual(self.module.main(
+            ['--update', '--root', str(project)], resolver=lambda source: checkouts[source.id],
+        ), 2)
+        self.assertEqual((project / 'vendor/external-skills.lock.json').read_bytes(), lock)
+        self.assertFalse((project / 'skills/escaped.md').exists())
 
     def test_update_rolls_back_every_touched_path(self):
         project = self.root / 'project'

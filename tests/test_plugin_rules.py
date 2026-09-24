@@ -24,6 +24,10 @@ class PluginRuleContractTest(unittest.TestCase):
         environment = dict(os.environ)
         environment['PLUGIN_DATA'] = str(self.state_root)
         environment['PLUGIN_ROOT'] = str(root)
+        environment['XDG_CONFIG_HOME'] = str(self.state_root / 'config')
+        environment['APPDATA'] = str(self.state_root / 'config')
+        environment['XDG_STATE_HOME'] = str(self.state_root / 'sessions')
+        environment.pop('PONYTAIL_DEFAULT_MODE', None)
         return subprocess.run(
             [
                 sys.executable, str(ROOT / 'runtime/rules/dispatch.py'),
@@ -117,13 +121,13 @@ class PluginRuleContractTest(unittest.TestCase):
         path = root / 'rules/registry.json'
         document = json.loads(path.read_text(encoding='utf-8'))
         rule = next(item for item in document['rules']
-                    if item['id'] == 'smartkit/core-third-party-skill-policy')
+                    if item['id'] == 'smartkit/core-communication')
         rule['delivery'] = 'indexed'
         path.write_text(json.dumps(document), encoding='utf-8')
         for harness in HARNESSES:
             with self.subTest(harness=harness):
                 context = self.session_context(harness, root=root)
-                self.assertNotIn('# Third-Party Skill Policy', context)
+                self.assertNotIn('# Communication Quality', context)
                 self.assertIn(rule['id'], context)
                 self.assertIn(rule['description'], context)
                 self.assertIn(str(root / 'rules' / rule['source']), context)
@@ -177,7 +181,6 @@ class PluginRuleContractTest(unittest.TestCase):
                 self.assertRegex(body, rf'(?m)^name: {name}$')
                 self.assertRegex(body, r'(?m)^description: .+$')
                 self.assertIn('Strength: `Default`', body)
-                self.assertRegex(body, r'(?m)^Scope: .+$')
                 self.assertNotIn('disable-model-invocation: true', body)
         for name in ('code', 'cpp', 'flutter', 'go', 'python'):
             self.assertFalse((ROOT / 'rules' / f'file-{name}.md').exists())

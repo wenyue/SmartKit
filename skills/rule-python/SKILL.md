@@ -7,12 +7,6 @@ description: Use for Python work, including requested code-policy assessment.
 
 Strength: `Default`
 
-Scope: Cross-project Python API, typing, data-boundary, failure, and resource contracts beyond
-repository-owned formatting, linting, and type-checking policy.
-
-Apply this policy within the current Python work. For a requested assessment, cover the requested
-code and report supported findings and material evidence gaps within that request.
-
 ## API And Type Contracts
 
 - Keep annotation-only changes behavior-preserving. When typing exposes an ambiguous runtime case,
@@ -63,6 +57,10 @@ code and report supported findings and material evidence gaps within that reques
 - Give every acquired resource one cleanup owner and make ownership transfer explicit. On every
   path that retains ownership, guarantee cleanup with a context manager, `try/finally`, or an owner
   lifecycle method.
+
+## Tool Ownership
+
+- Let the repository formatter, linter, and type-checker configuration own their mechanical policy.
 
 ## Typing Changes
 

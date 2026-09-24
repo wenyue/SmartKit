@@ -7,39 +7,40 @@ description: Use for work involving code in any language, including requested co
 
 Strength: `Default`
 
-Scope: Writing, modifying, and reviewing code across languages, covering ownership, boundaries,
-clarity, local consistency, state integrity, dependencies, abstractions, and diagnostics, and
-requested assessment of those concerns.
-
-Apply this policy within the current code task. For a requested assessment, cover the requested
-code and report supported findings and material evidence gaps within that request.
-
 Before deciding comment coverage or whether a comment is needed, read
 [rule-code-comment](../rule-code-comment/SKILL.md), including when omission may be appropriate.
 Before deciding operation outcomes, failure propagation, or handling, read
 [rule-error-handling](../rule-error-handling/SKILL.md), including routine existing propagation.
 Those Skills own their policies and the conditions for loading their supporting resources.
 
+## Ponytail Loading
+
+Strength: `Mandatory`
+
+Before governed decisions in each coding task, load the native
+[ponytail](../ponytail/SKILL.md) Skill, including when its mode is `off`. Complete, current
+content already in context can satisfy reading; Ponytail's required fresh state checks still
+apply. If the Skill is unavailable, report the missing content and stop dependent work;
+unrelated authorized work may continue.
+
+Ponytail remains a task Skill and owns its simplification, mode, state, and failure boundaries.
+Loading it grants no additional authority or deliverable and preserves its `off` behavior.
+
 ## Ownership And APIs
 
 - Give every behavior, state, invariant, and lifecycle one clear owner.
-- Keep owner-local logic cohesive with its owner; move logic only when its reuse or boundary is real.
-- Keep public interfaces minimal and aligned with stable product or domain capabilities.
+- Keep owner-local logic with its owner; move logic only when its reuse or boundary is real.
+- Keep public interfaces aligned with stable product or domain capabilities.
 - Meet test and call-site needs through the owning contract rather than widening APIs, moving
   owner-local logic, or adding indirection solely for convenience.
 
-## Clarity And Abstraction
+## Local Structure And Control Flow
 
 - Before editing code, inspect the target file and nearby implementations for comparable work.
   Follow their established naming, structure, control flow, and API patterns unless a more
   specific rule or an explicitly approved design requires a deliberate departure.
-- Use names, types, and structure to make responsibilities, valid states, and the main decision path
-  understandable locally.
 - Keep side effects, failure modes, retries, fallbacks, and lifecycle transitions visible in the
   contract or control flow.
-- Introduce an abstraction only when it represents a real concept, protects an invariant, or removes
-  meaningful duplication while reducing maintenance cost.
-- Avoid helpers, adapters, and generic layers that obscure ownership or serve only one trivial use.
 
 ## Diagnostics And Suppressions
 

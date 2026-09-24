@@ -2,8 +2,6 @@
 
 Strength: `Mandatory`
 
-Scope: All communication.
-
 ## Shared Standard
 
 - Preserve factual, logical, domain, and contractual accuracy.

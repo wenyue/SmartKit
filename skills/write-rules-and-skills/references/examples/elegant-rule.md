@@ -1,7 +1,6 @@
 # Generated Files
 
 **Strength:** Mandatory
-**Scope:** Changes affecting generated files in repositories that adopt this Rule.
 
 Maintain generated files through their canonical sources and owning generator. Establish that
 ownership from the repository's configuration or documentation before editing. When a source,

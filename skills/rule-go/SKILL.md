@@ -7,19 +7,10 @@ description: Use for Go work, including requested code-policy assessment.
 
 Strength: `Default`
 
-Scope: Go package ownership, API shape, errors, context, concurrency, and logging beyond configured
-tooling.
-
-Apply this policy within the current Go work. For a requested assessment, cover the requested
-code and report supported findings and material evidence gaps within that request.
-
 ## Code Shape
 
-- Keep code direct, scopes narrow, and the success path shallow.
 - Keep public APIs product-driven; meet test needs without exporting names, adding interfaces, or
   introducing seams solely for tests or speculative reuse.
-- Extract a helper or private type only when it names a real concept, clarifies data flow, or removes
-  meaningful complexity.
 - Initialize explicitly from constructors, `main`, or package-owned setup functions instead of
   adding `init()` functions.
 

@@ -32,23 +32,35 @@
         {"id": "mattpocock/setup-matt-pocock-skills", "path": "skills/engineering/setup-matt-pocock-skills"},
         {"id": "mattpocock/tdd", "path": "skills/engineering/tdd"},
         {"id": "mattpocock/to-spec", "path": "skills/engineering/to-spec"},
-        {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets"},
+        {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.patch"]},
         {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder"},
         {"id": "mattpocock/implement", "path": "skills/engineering/implement"},
         {"id": "mattpocock/prototype", "path": "skills/engineering/prototype"},
         {"id": "mattpocock/research", "path": "skills/engineering/research"},
-        {"id": "mattpocock/domain-modeling", "path": "skills/engineering/domain-modeling"},
+        {"id": "mattpocock/domain-modeling", "path": "skills/engineering/domain-modeling", "patches": ["vendor/patches/mattpocock/domain-modeling.patch"]},
         {"id": "mattpocock/codebase-design", "path": "skills/engineering/codebase-design"},
         {"id": "mattpocock/code-review", "path": "skills/engineering/code-review"},
         {"id": "mattpocock/resolving-merge-conflicts", "path": "skills/engineering/resolving-merge-conflicts"},
         {"id": "mattpocock/wizard", "path": "skills/engineering/wizard"},
         {"id": "mattpocock/grill-me", "path": "skills/productivity/grill-me"},
-        {"id": "mattpocock/grilling", "path": "skills/productivity/grilling"},
+        {"id": "mattpocock/grilling", "path": "skills/productivity/grilling", "patches": ["vendor/patches/mattpocock/grilling.patch"]},
         {"id": "mattpocock/handoff", "path": "skills/productivity/handoff"},
         {"id": "mattpocock/teach", "path": "skills/productivity/teach"},
         {"id": "mattpocock/to-questionnaire", "path": "skills/productivity/to-questionnaire"},
-        {"id": "mattpocock/wait-what", "path": "skills/productivity/wait-what"},
+        {"id": "mattpocock/wait-what", "path": "skills/productivity/wait-what", "patches": ["vendor/patches/mattpocock/wait-what.patch"]},
         {"id": "mattpocock/writing-for-agents", "path": "skills/productivity/writing-for-agents"}
+      ]
+    },
+    {
+      "id": "DietrichGebert/ponytail",
+      "url": "https://github.com/DietrichGebert/ponytail",
+      "ref": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "license": {"spdx": "MIT", "path": "LICENSE"},
+      "skills": [
+        {"id": "DietrichGebert/ponytail", "path": "skills/ponytail", "patches": ["vendor/patches/ponytail/ponytail.patch"]},
+        {"id": "DietrichGebert/ponytail-review", "path": "skills/ponytail-review", "patches": ["vendor/patches/ponytail/ponytail-review.patch"]},
+        {"id": "DietrichGebert/ponytail-audit", "path": "skills/ponytail-audit", "patches": ["vendor/patches/ponytail/ponytail-audit.patch"]},
+        {"id": "DietrichGebert/ponytail-debt", "path": "skills/ponytail-debt", "patches": ["vendor/patches/ponytail/ponytail-debt.patch"]}
       ]
     }
   ]

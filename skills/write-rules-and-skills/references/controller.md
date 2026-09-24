@@ -24,6 +24,9 @@ evidence separately from your interpretation and from the Author brief.
 ## Allocate responsibility and bound the job
 
 Before choosing a Candidate, inspect suitable existing owners and establish the responsibility allocation.
+Choose the best owner before checking whether it can be changed. Establish canonical-source access
+and write authorization separately from readability, using working access as evidence rather than
+inferring privilege requirements from location.
 Determine which owners must change and which dependencies must be resolved so that the bounded
 job serves the overall request.
 When the owner is editable and its change authorized, route the work there. When source, access,

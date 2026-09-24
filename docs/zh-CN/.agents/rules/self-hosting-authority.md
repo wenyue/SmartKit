@@ -1,10 +1,9 @@
 # 自举来源权威
 
 **强度：** Mandatory
-**适用范围：**此 SmartKit 仓库中的每项任务。
 
-本 Rule 仅负责自举副本的权威。对于每个独立适用的 SmartKit 或项目 Rule 或 Skill，只要当前
-checkout 中存在对应来源，就必须使用该来源：
+对于每个独立适用的 SmartKit 或项目 Rule 或 Skill，只要当前 checkout 中存在对应来源，
+就必须使用该来源：
 
 - SmartKit Rules：`rules/*.md`
 - 项目 Rules：`.agents/rules/**`

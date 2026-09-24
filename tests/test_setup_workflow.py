@@ -187,8 +187,7 @@ class SetupWorkflowTest(unittest.TestCase):
             local_rule = target / '.agents/rules/40-local-testing.md'
             local_rule.parent.mkdir(parents=True)
             local_rule.write_text(
-                '# Local Testing\n\nStrength: `Default`\n\n'
-                'Scope: Local repository tests.\n',
+                '# Local Testing\n\nStrength: `Default`\n\n',
                 encoding='utf-8',
             )
             local_skill = target / '.agents/skills/local-check/SKILL.md'

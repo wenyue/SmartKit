@@ -14,7 +14,7 @@ class RuleMetadataError(ValueError):
     """Raised when policy metadata is missing, ambiguous, or conditional."""
 
 
-_FIELD = re.compile(r'^(?:\*\*)?(Strength|Scope|Loading):(?:\*\*)?[ \t]*(.*)$', re.IGNORECASE)
+_STRENGTH = re.compile(r'^(?:\*\*)?Strength:(?:\*\*)?[ \t]*(.*)$', re.IGNORECASE)
 _YAML_FIELD = re.compile(r"(?P<key>'(?:[^']|'')*'|\"(?:[^\"\\]|\\.)*\"|[A-Za-z_][A-Za-z0-9_-]*)[ \t]*:[ \t]*(?P<value>.*)")
 _BLOCK_STRING = re.compile(r'[|>](?:[1-9][+-]?|[+-][1-9]?)?')
 
@@ -153,30 +153,17 @@ def reject_conditional_rule(text: str, label: str) -> None:
             )
 
 
-def policy_metadata(text: str, label: str) -> tuple[str, str]:
-    """Read the first declared defaults, leaving later section overrides intact."""
-    lines = live_text(text).splitlines()
-    values: dict[str, str] = {}
-    for index, line in enumerate(lines):
-        match = _FIELD.fullmatch(line)
-        if match is None or match.group(1).lower() == 'loading':
+def policy_metadata(text: str, label: str) -> str:
+    """Read the first declared strength, leaving later section overrides intact."""
+    for line in live_text(text).splitlines():
+        match = _STRENGTH.fullmatch(line)
+        if match is None:
             continue
-        key, value = match.group(1).lower(), match.group(2).strip()
-        if key in values:
-            continue
-        if key == 'scope':
-            continuation = []
-            for following in lines[index + 1:]:
-                if not following.strip() or following.lstrip().startswith('#') or _FIELD.match(following):
-                    break
-                continuation.append(following.strip())
-            value = ' '.join([value, *continuation]).strip()
-        values[key] = value.strip('`')
-        if len(values) == 2:
-            break
-    if values.get('strength') not in {'Mandatory', 'Default', 'Advisory'} or not values.get('scope'):
-        raise RuleMetadataError(f'policy requires valid Strength and nonempty Scope metadata: {label}')
-    return values['strength'], values['scope']
+        strength = match.group(1).strip().strip('`')
+        if strength in {'Mandatory', 'Default', 'Advisory'}:
+            return strength
+        break
+    raise RuleMetadataError(f'policy requires valid Strength metadata: {label}')
 
 
 def _string_scalar(lines: Sequence[str], index: int, end: int, label: str) -> str:

@@ -1,7 +1,5 @@
 # Document Target Changes
 
-**Scope and Strength:** Inherited from [Documentation Links](../SKILL.md).
-
 Before a target document moves, is renamed, or is deleted, inspect incoming links across the
 documentation scope established by the task and project. Include links to its fragments and use
 the project's resolution rules to find equivalent path forms. In review, inspect that same impact

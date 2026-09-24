@@ -7,12 +7,6 @@ description: Use for Dart or Flutter work, including requested code-policy asses
 
 Strength: `Default`
 
-Scope: Dart and Flutter public surfaces, records, filesystem operations, widget lifecycle,
-asynchronous context use, Navigator-owned routes, and generated sources.
-
-Apply this policy within the current Dart or Flutter work. For a requested assessment, cover the
-requested code and report supported findings and material evidence gaps within that request.
-
 ## Public Surface And Ownership
 
 - Keep owner-local behavior as instance members by default.

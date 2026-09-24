@@ -2,13 +2,7 @@
 
 Strength: `Default`
 
-Scope: Language, tag protocol, formatting, and work reporting in final responses presented to
-human users.
-
-## Applicability
-
-- Apply this Rule only while composing the final response presented to a human user. Internal
-  reasoning and all intermediate or non-final work are outside its scope.
+Apply this Rule only while composing the final response presented to a human user.
 
 ## Language
 

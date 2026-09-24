@@ -61,7 +61,7 @@ class SetupRendererTest(unittest.TestCase):
         rule = generated / '.agents/rules/tools.md'
         rule.parent.mkdir(parents=True, exist_ok=True)
         rule.write_text(
-            '# generated tooling rule\n\nStrength: `Mandatory`\n\nScope: Project tooling\n',
+            '# generated tooling rule\n\nStrength: `Mandatory`\n\n',
             encoding='utf-8',
         )
         skill = generated / '.agents/skills/change-set-verification/SKILL.md'
@@ -1389,15 +1389,14 @@ class SetupRendererTest(unittest.TestCase):
             rule = target / '.agents/rules/local-policy.md'
             rule.parent.mkdir(parents=True)
             rule.write_text(
-                '# Testing\n\nStrength: `Default`\n\n'
-                'Scope: Tests under `test/` and plugin test directories.\n',
+                '# Testing\n\nStrength: `Default`\n\n',
                 encoding='utf-8',
             )
             skill = target / '.agents/skills/rule-testing/SKILL.md'
             skill.parent.mkdir(parents=True)
             skill.write_text(
                 '---\nname: rule-testing\ndescription: Apply when writing tests.\n---\n'
-                '# Testing\n\nStrength: `Default`\n\nScope: Writing tests.\n',
+                '# Testing\n\nStrength: `Default`\n\n',
                 encoding='utf-8',
             )
 

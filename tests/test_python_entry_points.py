@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY_POINTS = (
     'runtime/rules/dispatch.py',
+    'runtime/ponytail/state.py',
     'runtime/recommended-tools/check_recommended_tools.py',
     'runtime/recommended-tools/maintain_recommended_tools.py',
     'skills/write-rules-and-skills/scripts/candidate_evidence.py',

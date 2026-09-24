@@ -7,9 +7,6 @@ description: Use for work involving code or documentation comments, including co
 
 Strength: `Default`
 
-Scope: Code and documentation comments affected by development or review across languages, and
-requested assessment or maintenance of those comments.
-
 ## Select useful information
 
 Meet explicit coverage requirements; otherwise judge coverage from purpose, actual use and sharing

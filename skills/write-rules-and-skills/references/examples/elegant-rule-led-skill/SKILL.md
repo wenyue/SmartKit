@@ -7,8 +7,6 @@ description: Use for work involving documentation links or their destinations, i
 
 Strength: `Default`
 
-Scope: Documentation links affected by current work and requested assessment of documentation links.
-
 ## Make the destination verifiable
 
 Resolve an added or changed link from its source document using the target project's path and

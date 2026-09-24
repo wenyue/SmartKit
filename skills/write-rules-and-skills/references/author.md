@@ -47,8 +47,18 @@ For initial authoring and every repair, reason from the complete Candidate rathe
 patch. Trace every inherited and requested obligation to a deliberate preserve, change, add, move,
 or retire decision. Co-locate related meaning, disclose information when first needed, remove stale
 or duplicated instructions, and use common terms unless a distinct concept needs a name. Keep
-conditions beside their outcomes and exceptions. Address material over-application and
-under-application using the shared positive-target and guardrail criteria.
+conditions beside their outcomes and exceptions.
+
+Apply the positive-target guidance from `writing-for-agents`: state the positive target by default.
+Address material over-application and under-application by expressing the intended scope and behavior
+positively wherever that is sufficient, preserving accepted constraints and non-goals. Pair a
+negative guardrail justified by the shared criterion with the required positive behavior.
+
+Prefer a short representative example over descriptive prose when it makes a principle or decision
+boundary clearer without increasing the overall length of the explanation. Replace the corresponding
+prose instead of adding a redundant example. Preserve necessary constraints and exceptions while
+leaving reliably inferable detail to the Agent; incidental example details are illustrative, not
+additional requirements.
 
 Use the non-normative examples below to learn judgment about proportion, organization, and coherence.
 When creating a new artifact or materially reshaping one, read only the exemplars named for its

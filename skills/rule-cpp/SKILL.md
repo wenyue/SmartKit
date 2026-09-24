@@ -7,11 +7,6 @@ description: Use for C++ work, including requested code-policy assessment.
 
 Strength: `Default`
 
-Scope: C++ ownership, interfaces, failure contracts, and concurrency beyond configured tooling.
-
-Apply this policy within the current C++ work. For a requested assessment, cover the requested
-code and report supported findings and material evidence gaps within that request.
-
 ## Interfaces And Ownership
 
 - Keep public interfaces narrow and preserve existing ABI, FFI, and platform boundaries.

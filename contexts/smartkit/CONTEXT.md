@@ -24,11 +24,6 @@ The shared policy that defines Rule strength and precedence, Skill authority and
 semantic conflict resolution.
 _Avoid_: Rule configuration, Skill Governance, workflow routing
 
-**Third-Party Skill Policy（第三方技能管理规范）**:
-SmartKit-owned behavioral constraints applied to Skills supplied by third-party plugins or external
-sources without modifying their upstream content.
-_Avoid_: Upstream Skill patch, project Skill policy, Skill Governance
-
 **Workspace Policy（工作区管理规则）**:
 The shared policy that selects the current checkout or an isolated linked worktree and governs local Git state,
 commit authority, and remote actions independently of any Skill workflow.

@@ -23,8 +23,9 @@ Translate the final English sources and mirror operations supplied by the caller
 ## Section anchors and links
 
 In requested mirror files, add or retain explicit heading anchors only for sections targeted by
-links in the supplied sources or relevant available repository documents, or by caller-specified
-planned references. Leave unreferenced headings as plain Markdown. Format each required anchor as
+links in the supplied English Rule/Skill sources, other relevant available Rule/Skill documents,
+or caller-specified planned Rule/Skill references. Links from ordinary repository documents alone
+do not qualify. Leave unreferenced headings as plain Markdown. Format each required anchor as
 `<a id="source-section-id"></a>` at the end of the translated heading on the same line, separated
 by one space, with double quotes and the explicit closing tag. Preserve referenced source
 identifiers verbatim, including generated heading identifiers, and normalize existing anchors on

@@ -2,8 +2,6 @@
 
 Strength: `Mandatory`
 
-Scope: Workspace selection, local Git state, commit authority, and Git remote write authorization.
-
 ## Preserve Existing Work
 
 - Preserve pre-existing staged, unstaged, and untracked work in the current checkout and every

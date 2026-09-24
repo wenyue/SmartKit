@@ -250,7 +250,7 @@ class SetupCliTest(unittest.TestCase):
             project_rule = target / '.agents/rules/30-local.md'
             project_rule.parent.mkdir(parents=True)
             project_rule.write_text(
-                '# Local\n\nStrength: `Default`\n\nScope: Local changes\n',
+                '# Local\n\nStrength: `Default`\n\n',
                 encoding='utf-8',
             )
             self.assertNotEqual(fingerprint(), baseline)
@@ -293,7 +293,7 @@ class SetupCliTest(unittest.TestCase):
             target = root / 'target'
             rule = target / '.agents/rules/library.md'
             rule.parent.mkdir(parents=True)
-            rule.write_text('# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+            rule.write_text('# Library\n\nStrength: `Default`\n\n',
                             encoding='utf-8')
             (target / 'AGENTS.md').write_text(
                 '## Project rules\n\n### On-demand rules\n\n'
@@ -321,18 +321,18 @@ class SetupCliTest(unittest.TestCase):
     def test_prepare_refuses_alternate_conditional_declarations_before_effects(self):
         cases = (
             ('.agents/rules/library.md',
-             '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+             '# Library\n\nStrength: `Default`\n\n',
              '## Project rules\n\n### On-demand rules\n\n'
              'Description | Rule | Strength\n--- | --- | ---\n'
              'Library work | `.agents/rules/library.md` | Default\n'),
             ('.agents/rules/library.md',
              '---\n  loading: on-demand\n---\n'
-             '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+             '# Library\n\nStrength: `Default`\n\n',
              '## Project rules\n'),
             ('.agents/skills/rule-library/SKILL.md',
              '---\nname: rule-library\ndescription: Use for library work.\n'
              '"disable-model-invocation": true\n---\n'
-             '# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+             '# Library\n\nStrength: `Default`\n\n',
              '## Project rules\n'),
         )
         for relative, content, entry in cases:
@@ -362,10 +362,10 @@ class SetupCliTest(unittest.TestCase):
     def test_local_rule_and_rule_skill_body_changes_invalidate_prepared_request(self):
         for relative, content in (
             ('.agents/rules/local-policy.md',
-             '# Local\n\nStrength: `Default`\n\nScope: Project work.\n'),
+             '# Local\n\nStrength: `Default`\n\n'),
             ('.agents/skills/rule-testing/SKILL.md',
              '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
-             '# Testing\n\nStrength: `Default`\n\nScope: Test authoring.\n'),
+             '# Testing\n\nStrength: `Default`\n\n'),
         ):
             with self.subTest(path=relative), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)

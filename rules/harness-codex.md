@@ -2,9 +2,6 @@
 
 Strength: `Default`
 
-Scope: Codex-specific mechanics for Subagent tools, `functions.exec` orchestration, and bounded
-waits with live Agents.
-
 ## Authority
 
 - The active Skill or task owns why an Agent is delegated and what result it must produce; this Rule

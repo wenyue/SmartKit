@@ -2,18 +2,16 @@
 
 Strength: `Mandatory`
 
-Scope: Rule applicability and loading, direct-instruction authority, Rule and Skill precedence,
-and warnings for conflicts encountered during execution.
-
 All SmartKit Skills operate under installed SmartKit core governance. Rule-led Skills named
-`rule-<domain>` are Rules exposed through native Skill discovery, with declared `Scope` and default
-`Strength` in their entries. They govern relevant work rather than compete as task workflows.
+`rule-<domain>` are Rules exposed through native Skill discovery, with default `Strength`
+in their entries. Rule files and rule-led Skills form one policy category; they govern relevant
+work rather than compete as task workflows.
 
 ## Rule Applicability and Loading
 
 Use native discovery descriptions and the current task to load relevant Rules before the decisions
-they govern. Read a Rule when its applicability is uncertain. Apply every relevant policy within
-its declared Scope, including on explicit invocation; invocation does not extend that Scope.
+they govern. Read a Rule when its applicability is uncertain. Apply each requirement when its stated
+conditions hold, including on explicit invocation; invocation does not change those conditions.
 Loading is required regardless of strength and does not itself start a separate task or deliverable
 or expand authority.
 
@@ -29,14 +27,14 @@ under the available instructions.
 ## Strength Levels
 
 - `Mandatory`: Follow unless a higher-priority instruction overrides it.
-- `Default`: Follow unless a higher-priority direct instruction or Rule requires a different
-  outcome.
+- `Default`: Follow unless a controlling direct instruction or policy requires a different
+  outcome, or an explicit task alternative wins under Task Skill Composition below.
 - `Advisory`: Adapt to the task context when useful.
 
-Owned normative references inherit their Rule entry's default strength and scope, independent of
-the referencing section. They may explicitly override strength and narrow scope. Independently
-owned policies retain their own contracts; linking illustrative material does not make it
-normative policy.
+Owned normative references inherit their Rule entry's default strength, independent of the
+referencing section, and may explicitly override it. Apply their requirements together with the
+entry's relevant conditions and exceptions. Independently owned policies retain their own
+contracts; linking illustrative material does not make it normative policy.
 
 Within a Rule entry or owned normative reference, each requirement inherits `Strength` from the
 nearest enclosing section that declares it, or from that document's default. Declare a section
@@ -44,30 +42,60 @@ strength, e.g. ``Strength: `Mandatory` ``, on the first nonblank line after its 
 any level above is allowed. The section includes nested headings and ends before the next heading
 of equal or higher level, or at the end of the file.
 
-Section strengths leave Rule applicability, ownership, and file-scope specificity unchanged;
-heading depth adds no precedence.
+Section strengths leave Rule applicability and ownership unchanged; heading depth adds no
+precedence.
 
 ## Precedence
 
-The active Harness defines direct-instruction precedence. Apply compatible requirements from every
-applicable Rule and Skill. Resolve incompatible requirements by the Rule and Skill precedence
-below. When the applicable precedence still leaves a tie, perform only the read-only investigation
-needed to establish it, then stop before any side effect and ask the user to resolve it. Delivery
-or loading order and naming confer no precedence. For Rules, compare:
+The active Harness defines direct-instruction authority. Apply compatible requirements from every
+applicable Rule and Skill. Resolve only incompatible clauses through the comparisons below; the
+winner leaves all other applicable requirements in force. If a genuine conflict remains tied,
+perform only the read-only investigation needed to establish it, then stop affected side effects
+and ask the user to resolve it. Every result remains subject to independent permission gates.
 
-1. Each requirement's effective strength: `Mandatory` > `Default` > `Advisory`.
+Packaging, names, always or conditional loading, delivery order, and explicit invocation confer no
+precedence. A Harness selector controls activation, not rank.
+
+Establish project or plugin ownership from the canonical source and who owns its meaning, for
+Rules, rule-led Skills, and task Skills alike. Installing or copying a plugin artifact into a
+project does not by itself make it project-owned. External provenance adds no precedence tier.
+
+For conflicting policy requirements, compare in order:
+
+1. Effective strength: `Mandatory` > `Default` > `Advisory`.
 2. Owner at equal strength: project > plugin.
-3. Specificity at equal strength and owner: narrower applicable file scope > broader applicable
-   file scope > the global tier. A Harness selector controls activation, not specificity.
+3. Requirement specificity at equal strength and owner, for the same decision.
+
+A requirement is more specific only when evidence establishes that its applicable cases form a
+strict subset of the other's, through their conditions or governed objects. A path restriction can
+establish such a case; file size, heading depth, or a specialist label cannot. Cross-cutting or
+merely overlapping cases do not establish specificity. Compare the conflicting requirements,
+not whole files or a global tier.
 
 ## Task Skill Composition
 
-- Apply every task Skill within direct instructions and applicable Rules.
-- For conflicting task Skill requirements, one Skill is more specific only when its declared
-  trigger and owned outcome form a strict subset of the other's for the current task. The
-  more-specific Skill controls only the conflict.
-- When specificity does not resolve a task Skill conflict, a project-local Skill takes precedence
-  over a plugin-distributed Skill. External provenance adds no precedence tier.
+Apply task Skills within direct instructions and the applicable policy requirements resolved above.
+Task Skills do not acquire Rule Strength declarations through these comparisons.
+
+- Obey `Mandatory` policy. Task ownership or specificity cannot override it.
+- Follow `Default` policy unless a task Skill explicitly prescribes an intentional alternative for
+  the decision it governs in this task. Such an alternative is eligible for comparison without any
+  special override metadata. Compare its owner, then its requirement specificity for that decision,
+  against the Default requirement using the rules above. Only a winning alternative displaces the
+  conflicting Default clause; a genuine unresolved tie uses the same stop-and-ask handling.
+  Omission, examples, incidental tool choices, convenience, discovery, and invocation do not
+  establish an alternative. An override must also satisfy Mandatory and every other
+  still-controlling requirement.
+- Adapt `Advisory` guidance to the task context rather than treating it as an absolute workflow veto.
+
+For conflicting task methods, project-owned Skills take precedence over plugin-owned Skills. At
+equal ownership, a task Skill is more specific only when its supported task cases, established by its
+trigger and owned outcome, form a strict subset of the other's. Names, longer text, or specialist
+labels do not establish that relation. The winner controls only the conflicting method; use the
+same safe handling for unresolved ties.
+
+Explicit project delegation may select a plugin specialist within the delegated outcome. Retain
+project constraints and the delegation's permission limits.
 
 ## Conflict Warnings
 

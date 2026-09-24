@@ -6,7 +6,6 @@
     {"id": "smartkit/core-communication", "source": "core-communication.md", "strength": "Mandatory", "description": "Communication accuracy, clarity, and audience routing."},
     {"id": "smartkit/core-response-format", "source": "core-response-format.md", "strength": "Default", "description": "Response language, formatting, tags, and work reports."},
     {"id": "smartkit/core-reasoning-workflow", "source": "core-reasoning-workflow.md", "strength": "Mandatory", "description": "Task understanding, change readiness, execution, and verification."},
-    {"id": "smartkit/core-third-party-skill-policy", "source": "core-third-party-skill-policy.md", "strength": "Mandatory", "description": "Use when running third-party /grilling interviews directly or through another Skill, drafting tickets with to-tickets, re-pitching with wait-what, creating CONTEXT.md or ADRs through third-party Skills, or interpreting or reusing context-document terminology.", "delivery": "indexed"},
     {"id": "smartkit/core-workspace-policy", "source": "core-workspace-policy.md", "strength": "Mandatory", "description": "Workspace selection, existing work preservation, commits, and remote actions."}
   ]
 }

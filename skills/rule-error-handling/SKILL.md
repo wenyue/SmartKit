@@ -7,10 +7,6 @@ description: Use for work involving operation outcomes or error behavior, includ
 
 Strength: `Default`
 
-Scope: Operation outcomes, failure contracts, propagation, handling, recovery, and final feedback
-in development and review across languages, and requested assessment, diagnosis, or design of that
-behavior.
-
 ## Preserve the promised outcome
 
 Classify success, ordinary refusal or absence, contracted failure, and programming violations by

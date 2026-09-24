@@ -11,8 +11,8 @@ Before starting a task, ensure the complete applicable content of every Rule bel
 Reuse content already in context while it remains current. Read missing content, including after
 compaction, and refresh affected content when there is evidence of a change.
 
-- `.agents/rules/self-hosting-authority.md`
 - `.agents/rules/project-policy.md`
+- `.agents/rules/self-hosting-authority.md`
 
 ## Agent skills
 
@@ -25,10 +25,7 @@ Issues and specifications are tracked in this repository's GitHub Issues. See
 
 Use the five default canonical triage labels. See `docs/agents/triage-labels.md`.
 
-### Domain context
+### Domain docs
 
-`docs/agents/domain.md` is a nonnormative explanatory guide to repository domain context, while
-accepted ADRs retain their separate decision authority.
-
-For unfamiliar repository language in direct user communication only, optionally consult
-`CONTEXT-MAP.md` as a nonnormative wording aid.
+This repository uses a multi-context layout: `CONTEXT-MAP.md` points to glossaries under `contexts/`,
+and shared architectural decisions live in `docs/adr/`. See `docs/agents/domain.md`.

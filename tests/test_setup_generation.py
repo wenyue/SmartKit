@@ -184,7 +184,7 @@ class SetupGenerationTest(unittest.TestCase):
     def test_full_setup_refuses_legacy_conditional_policy_before_target_mutation(self):
         self.sync()
         rule = self.target / '.agents/rules/library.md'
-        rule.write_text('# Library\n\nStrength: `Default`\n\nScope: Library work.\n',
+        rule.write_text('# Library\n\nStrength: `Default`\n\n',
                         encoding='utf-8')
         entry = self.target / 'AGENTS.md'
         entry.write_text(entry.read_text(encoding='utf-8') +

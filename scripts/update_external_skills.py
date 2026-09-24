@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Mapping
+from contextlib import ExitStack
 from pathlib import Path, PurePosixPath
 from typing import Callable, NamedTuple, Optional
 
@@ -52,6 +53,7 @@ class ExternalSkill(NamedTuple):
     id: str
     name: str
     path: PurePosixPath
+    patches: tuple[PurePosixPath, ...] = ()
 
 
 class LicenseSpec(NamedTuple):
@@ -84,6 +86,7 @@ class SourceSnapshot(NamedTuple):
     checkout: ResolvedCheckout
     license_bytes: bytes
     lock: dict[str, object]
+    tree_root: Path | None = None
 
 
 class UpdateResult(NamedTuple):
@@ -202,7 +205,7 @@ def load_registry(root: Path) -> Registry:
             skill_item = _object(
                 raw_skill, f'external_sources[{source_index}].skills[{skill_index}]'
             )
-            _fields(skill_item, {'id', 'path'}, 'external Skill')
+            _fields(skill_item, {'id', 'path', 'patches'}, 'external Skill')
             skill_id = _stable_id(
                 _required(skill_item, 'id', 'external Skill'), 'external Skill id'
             )
@@ -210,7 +213,11 @@ def load_registry(root: Path) -> Registry:
                 _required(skill_item, 'path', 'external Skill'), 'external Skill path'
             )
             skills.append(
-                ExternalSkill(skill_id, _skill_name(skill_id, path, 'external Skill'), path)
+                ExternalSkill(
+                    skill_id, _skill_name(skill_id, path, 'external Skill'), path,
+                    tuple(_safe_relative(value, 'Skill patch') for value in
+                          _array(skill_item.get('patches', []), 'Skill patches')),
+                )
             )
         if not skills:
             raise UpdateError(f'external source has no selected Skills: {source_id}')
@@ -298,7 +305,10 @@ def _license_destination(source_id: str) -> PurePosixPath:
     return PurePosixPath('licenses') / f'{source_id.replace("/", "-")}-LICENSE.txt'
 
 
-def load_source_snapshot(source: ExternalSource, checkout: ResolvedCheckout) -> SourceSnapshot:
+def load_source_snapshot(
+    source: ExternalSource, checkout: ResolvedCheckout, *,
+    patch_root: Path | None = None, staging_root: Path | None = None,
+) -> SourceSnapshot:
     root = checkout.root
     if COMMIT.fullmatch(checkout.commit) is None:
         raise UpdateError(f'external source returned an invalid commit: {source.id}')
@@ -318,6 +328,11 @@ def load_source_snapshot(source: ExternalSource, checkout: ResolvedCheckout) -> 
         )
 
     skill_records: list[dict[str, object]] = []
+    tree_root = root
+    if any(skill.patches for skill in source.skills):
+        if patch_root is None or staging_root is None:
+            raise UpdateError('patched Skills require an owned staging directory and patch root')
+        tree_root = staging_root.joinpath(*source.id.split('/'))
     for skill in source.skills:
         try:
             tree = snapshot_skill_tree(
@@ -325,6 +340,27 @@ def load_source_snapshot(source: ExternalSource, checkout: ResolvedCheckout) -> 
             )
         except ExternalContractError as error:
             raise UpdateError(str(error)) from error
+        patches: list[dict[str, str]] = []
+        if tree_root != root:
+            destination = tree_root.joinpath(*skill.path.parts)
+            shutil.copytree(root.joinpath(*skill.path.parts), destination)
+            for relative in skill.patches:
+                try:
+                    patch = source_path(patch_root, relative, f'Skill patch {skill.id}')
+                    digest = _sha256(patch)
+                    _run_git(('-C', str(destination), 'apply', '--no-index', '--', str(patch)))
+                    # Revalidate each step, so a later patch cannot traverse a link created
+                    # by an earlier one. Only regular Skill resources may leave staging.
+                    _regular_files(destination, f'patched Skill {skill.id}')
+                except (ExternalContractError, OSError, UpdateError) as error:
+                    raise UpdateError(f'cannot apply {relative} to {skill.id}: {error}') from error
+                patches.append({'path': relative.as_posix(), 'sha256': digest})
+            try:
+                tree = snapshot_skill_tree(
+                    tree_root, skill.path, skill.name, f'patched Skill {skill.id}',
+                )
+            except ExternalContractError as error:
+                raise UpdateError(str(error)) from error
         skill_records.append(
             {
                 'id': skill.id,
@@ -333,6 +369,8 @@ def load_source_snapshot(source: ExternalSource, checkout: ResolvedCheckout) -> 
                 'files': dict(sorted(tree.files.items())),
             }
         )
+        if patches:
+            skill_records[-1]['patches'] = patches
     lock = {
         'id': source.id,
         'url': source.url,
@@ -348,7 +386,7 @@ def load_source_snapshot(source: ExternalSource, checkout: ResolvedCheckout) -> 
         },
         'skills': skill_records,
     }
-    return SourceSnapshot(source, checkout, license_bytes, lock)
+    return SourceSnapshot(source, checkout, license_bytes, lock, tree_root)
 
 
 def _git_environment() -> dict[str, str]:
@@ -389,7 +427,8 @@ def resolve_source(source: ExternalSource) -> ResolvedCheckout:
             '-C', str(checkout), 'fetch', '--quiet', '--depth=1',
             'origin', resolution.fetch_ref,
         ))
-        _run_git(('-C', str(checkout), 'checkout', '--quiet', '--detach', 'FETCH_HEAD'))
+        _run_git(('-C', str(checkout), '-c', 'core.autocrlf=false',
+                  'checkout', '--quiet', '--detach', 'FETCH_HEAD'))
         commit = _run_git(('-C', str(checkout), 'rev-parse', 'HEAD'), timeout=30)
         resolved = ResolvedCheckout(
             checkout, resolution.resolved_ref, commit, resolution.ref_kind
@@ -492,18 +531,27 @@ def _snapshot_map(
     *,
     resolver: Resolver,
     selected_source: str | None,
+    patch_root: Path | None = None,
+    staging_root: Path | None = None,
 ) -> dict[str, SourceSnapshot]:
     snapshots: dict[str, SourceSnapshot] = {}
-    for source in registry.external_sources:
-        if selected_source is not None and source.id != selected_source:
-            continue
-        checkout = resolver(source)
-        try:
-            snapshots[source.id] = load_source_snapshot(source, checkout)
-        except Exception:
+    owned_checkouts: list[ResolvedCheckout] = []
+    try:
+        for source in registry.external_sources:
+            if selected_source is not None and source.id != selected_source:
+                continue
+            checkout = resolver(source)
             if resolver is resolve_source:
-                _cleanup_checkout(checkout)
-            raise
+                owned_checkouts.append(checkout)
+            snapshots[source.id] = load_source_snapshot(
+                source, checkout, patch_root=patch_root, staging_root=staging_root,
+            )
+    except Exception:
+        # No snapshots transfer to main on failure, so this boundary retains cleanup
+        # ownership of every checkout it acquired, regardless of the failure's cause.
+        for checkout in owned_checkouts:
+            _cleanup_checkout(checkout)
+        raise
     return snapshots
 
 
@@ -572,6 +620,10 @@ def update_repository(
     touched_source_ids = (
         {selected_source} if selected_source is not None else set(old_sources) | set(desired_sources)
     )
+    previous = {'sources': [old_sources[item] for item in touched_source_ids if item in old_sources]}
+    drift = tuple(path for path in check_repository(root, previous) if path != LOCK_PATH.as_posix())
+    if drift:
+        raise UpdateError(f'refusing to overwrite unrecorded external Skill changes: {", ".join(drift)}')
     touched_old_names = _managed_names({
         'sources': [old_sources[item] for item in touched_source_ids if item in old_sources],
     })
@@ -608,7 +660,7 @@ def update_repository(
             if snapshot is None:
                 continue
             for skill in snapshot.source.skills:
-                source_root = snapshot.checkout.root.joinpath(*skill.path.parts)
+                source_root = (snapshot.tree_root or snapshot.checkout.root).joinpath(*skill.path.parts)
                 staged = staging / 'skills' / skill.name
                 shutil.copytree(source_root, staged)
                 operations.append((staged, root / 'skills' / skill.name, f'skills/{skill.name}'))
@@ -709,6 +761,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None, *, resolver: Resolver = resolve_source) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     snapshots: dict[str, SourceSnapshot] = {}
+    staging = ExitStack()
     try:
         root = args.root.resolve()
         registry = load_registry(root)
@@ -717,7 +770,13 @@ def main(argv: list[str] | None = None, *, resolver: Resolver = resolve_source) 
         source_ids = {item.id for item in registry.external_sources}
         if args.source is not None and args.source not in source_ids:
             raise UpdateError(f'unknown external source: {args.source}')
-        snapshots = _snapshot_map(registry, resolver=resolver, selected_source=args.source)
+        staging_root = Path(staging.enter_context(tempfile.TemporaryDirectory(
+            prefix='smartkit-external-derived-',
+        )))
+        snapshots = _snapshot_map(
+            registry, resolver=resolver, selected_source=args.source,
+            patch_root=root, staging_root=staging_root,
+        )
         desired_lock = _desired_lock(
             registry, snapshots, old_lock, selected_source=args.source
         )
@@ -748,6 +807,7 @@ def main(argv: list[str] | None = None, *, resolver: Resolver = resolve_source) 
         print(f'error: {error}', file=sys.stderr)
         return 2
     finally:
+        staging.close()
         if resolver is resolve_source:
             for snapshot in snapshots.values():
                 _cleanup_checkout(snapshot.checkout)

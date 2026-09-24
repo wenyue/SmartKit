@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-09-04
 
-Amended: 2026-09-16
+Amended: 2026-09-24
 
 ## Context
 
@@ -25,6 +25,14 @@ stays separated. Reviewers follow locators to stable evidence; the Controller ro
 irrecoverable session context to the perspective that needs it. Role principles precede execution
 details, common terminology is preferred, and concise concepts such as `elegant` are left to a
 frontier Agent's trained judgment.
+
+The shared judgment basis, `skills/write-rules-and-skills/references/artifact-standard.md`, owns
+only judgments needed in common by Controller, Author, and Quality in their respective
+responsibilities; role-specific methods, duties, and instructions belong in their role contracts.
+This defines common standards once while keeping role-only methods out of other roles' context and
+obligations. The conditional preference for a short representative example is
+an Author writing method; Quality independently judges the resulting artifact's economy, clarity,
+and completeness.
 
 Keep three professional review perspectives: Quality, Change, and Correctness. Integrated Review
 assigns one Integrated Reviewer the common contract and all three professional contracts, reporting

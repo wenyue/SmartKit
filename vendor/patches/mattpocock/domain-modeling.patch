@@ -1,0 +1,37 @@
+--- a/CONTEXT-FORMAT.md
++++ b/CONTEXT-FORMAT.md
+@@ -9,21 +9,22 @@
+
+ ## Language
+
+-**Order**:
++**Order（订单）**:
+ {A one or two sentence description of the term}
+ _Avoid_: Purchase, transaction
+
+-**Invoice**:
++**Invoice（发票）**:
+ A request for payment sent to a customer after delivery.
+ _Avoid_: Bill, payment request
+
+-**Customer**:
++**Customer（客户）**:
+ A person or organization that places orders.
+ _Avoid_: Client, buyer, account
+ ```
+
+ ## Rules
+
++- Write every canonical term as `**{English term}（{Simplified Chinese term}）**:`. Add or rename both canonical names together.
+ - **Be opinionated.** When multiple words exist for the same concept, pick the best one and list the others under `_Avoid_`.
+ - **Keep definitions tight.** One or two sentences max. Define what it IS, not what it does.
+ - **Only include terms specific to this project's context.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them extensively. Before adding a term, ask: is this a concept unique to this context, or a general programming concept? Only the former belongs.
+--- a/ADR-FORMAT.md
++++ b/ADR-FORMAT.md
+@@ -1,5 +1,5 @@
+ # ADR Format
+
+-ADRs live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
++Write ADRs in English. They live in `docs/adr/` and use sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
+
+ Create the `docs/adr/` directory lazily — only when the first ADR is needed.

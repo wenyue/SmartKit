@@ -32,7 +32,7 @@ def _managed_targets(catalog: Catalog, kind: str) -> set[PurePosixPath]:
 
 def _rule_metadata(text: str, relative: PurePosixPath) -> ProjectRuleSpec:
     try:
-        strength, _ = policy_metadata(text, relative.as_posix())
+        strength = policy_metadata(text, relative.as_posix())
     except RuleMetadataError as error:
         raise DiscoveryError(str(error)) from error
     return ProjectRuleSpec(relative, strength)

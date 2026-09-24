@@ -103,9 +103,15 @@
           "source_path": "skills/engineering/to-tickets",
           "destination": "skills/to-tickets",
           "files": {
-            "SKILL.md": "5ecdf1d4df8a360ed39df21a2347f97ba177afd449a577da4f6b6ea8e1ebb808",
+            "SKILL.md": "5117805114ffe8b02987155ec848adbd9e94f7d95eeafa53bd612ae49b59be29",
             "agents/openai.yaml": "21bc6215fffcd7614e9f772bb1760e87cc5fc7dcc707e7d282bc9414267a6090"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/to-tickets.patch",
+              "sha256": "89883379da115ee4efabf6b5b88d37d43cf67bcbc2d0299a43950fb7651d5429"
+            }
+          ]
         },
         {
           "id": "mattpocock/wayfinder",
@@ -150,11 +156,17 @@
           "source_path": "skills/engineering/domain-modeling",
           "destination": "skills/domain-modeling",
           "files": {
-            "ADR-FORMAT.md": "f1f36cd3f8d3b6474ddd5855da4e233bfc4ae1a1c5024909ccf11871819a41b2",
-            "CONTEXT-FORMAT.md": "b8cc318f2a4285b530e908b6bc43901c3c5cd11100362636bbc4216639bef597",
+            "ADR-FORMAT.md": "3e030f51db41d04bb2f4c34ea1a9b9a8bf026b971262fc3cbea0e87308268037",
+            "CONTEXT-FORMAT.md": "6690b35bcd6f5d98863baa9c00d940c00f70165bd0a66916d13a6eabc8c37fcf",
             "SKILL.md": "152e2c97239affb12a60c5f4a7e74ab546a49ae169688c81f4e2ccc42dafa579",
             "agents/openai.yaml": "f6bf2aa996c6e6f53fdd0708e18a0d16a56aed8322cca59fedbe3c0d2c75f06b"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/domain-modeling.patch",
+              "sha256": "c53b2a46a56aa11661f0b9ea1db231c5f1f67d79b78f3ffabdc51c3b419f6dde"
+            }
+          ]
         },
         {
           "id": "mattpocock/codebase-design",
@@ -209,9 +221,15 @@
           "source_path": "skills/productivity/grilling",
           "destination": "skills/grilling",
           "files": {
-            "SKILL.md": "fa5c1e5ee76b1c8f1ae56101f52c9e239de75d5c578adc61227b92d10b7e52ef",
+            "SKILL.md": "85f1ef2858cbe31d577364fbd288e2f69cce68f1413e5a92d0004f37327893ee",
             "agents/openai.yaml": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/grilling.patch",
+              "sha256": "3c646754a7837ca96698d1d7b327bb0a62884f150716ed8a91ea4862f51558a4"
+            }
+          ]
         },
         {
           "id": "mattpocock/handoff",
@@ -249,9 +267,15 @@
           "source_path": "skills/productivity/wait-what",
           "destination": "skills/wait-what",
           "files": {
-            "SKILL.md": "8923f7df1a0d1b138281658e134caa4bf1c618d2876a2323b19acdfdffebc024",
+            "SKILL.md": "995ccf3c6e20ae29f5a81074e293dc4f2806c3be782162d227d9d362f57f70f2",
             "agents/openai.yaml": "3ec661af8fc7063b650518c95ab775bbeabaefce38b89acaf6da2f749168f37e"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/wait-what.patch",
+              "sha256": "358983232f14cc9907ce9abb1c9dae961ad6f0e203aab76e9afc490cbbdcb89d"
+            }
+          ]
         },
         {
           "id": "mattpocock/writing-for-agents",
@@ -262,6 +286,78 @@
             "SKILL.md": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
             "agents/openai.yaml": "eacb24b2a618cfb81dacb0416f4fdd75ddf3a8060f8ddb99aae1b1e301907e4b"
           }
+        }
+      ]
+    },
+    {
+      "id": "DietrichGebert/ponytail",
+      "url": "https://github.com/DietrichGebert/ponytail",
+      "requested_ref": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "resolved_ref": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "ref_kind": "commit",
+      "commit": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "license": {
+        "spdx": "MIT",
+        "source_path": "LICENSE",
+        "destination": "licenses/DietrichGebert-ponytail-LICENSE.txt",
+        "sha256": "fb1bc6909ac3ef82d5c22106e32ef682b0cff66788fa915fb9b53b15c9d2f3ab"
+      },
+      "skills": [
+        {
+          "id": "DietrichGebert/ponytail",
+          "source_path": "skills/ponytail",
+          "destination": "skills/ponytail",
+          "files": {
+            "SKILL.md": "214eb5e71dbf26754c612ac688ceef6786399f9da8b43e450fcbf16f2be01126"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/ponytail/ponytail.patch",
+              "sha256": "a87b5707508451c87d616f6773004c03d9f0fc2d00bd60069e07069f61c53eba"
+            }
+          ]
+        },
+        {
+          "id": "DietrichGebert/ponytail-review",
+          "source_path": "skills/ponytail-review",
+          "destination": "skills/ponytail-review",
+          "files": {
+            "SKILL.md": "86af876037cd83c3630fc771b40b4a3d684541abcb653058040f619c9132f43a"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/ponytail/ponytail-review.patch",
+              "sha256": "c2075918ff8ac8c2335fe1a85afdb67f4fd35bc1d7e4de9939ce811f8a883958"
+            }
+          ]
+        },
+        {
+          "id": "DietrichGebert/ponytail-audit",
+          "source_path": "skills/ponytail-audit",
+          "destination": "skills/ponytail-audit",
+          "files": {
+            "SKILL.md": "74f8bc05af20c8e53a8e5380b85b77db187bb0a6bccd64a6e48af39172354393"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/ponytail/ponytail-audit.patch",
+              "sha256": "adca743bcc6b370e6354318a2026d346ef26622737df6821dac8173389059bd6"
+            }
+          ]
+        },
+        {
+          "id": "DietrichGebert/ponytail-debt",
+          "source_path": "skills/ponytail-debt",
+          "destination": "skills/ponytail-debt",
+          "files": {
+            "SKILL.md": "ba845b06e817d1e3699a19db499c62e1f101bbca742e28e4435f843ba447d8da"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/ponytail/ponytail-debt.patch",
+              "sha256": "3e29a7032bd5808bab19c07ae84d2626e5220cf3b9c5e96454e64c98be873338"
+            }
+          ]
         }
       ]
     }

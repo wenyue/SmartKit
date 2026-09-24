@@ -2,14 +2,10 @@
 
 Strength: `Mandatory`
 
-Scope: Setup Authoring Contract for the target repository's tooling, MCP, runtime,
-synchronization, mutation, and complete-change verification policy.
-
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/tools.md`, the Author
-produces one target-owned Mandatory Rule titled `Tools`. It governs tool selection, canonical-source
-synchronization, mutation authority, complete-change verification, and handoff to existing Skills.
+produces one target-owned Mandatory Rule titled `Tools`.
 
 Setup must make the relevant target evidence available: entry guidance, manifests and runtime
 requirements, repository scripts and current help, task runners and CI, Git state, existing Rules

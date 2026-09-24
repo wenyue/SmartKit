@@ -1,9 +1,6 @@
 # Project Policy
 
-**Strength:** Mandatory  
-**Scope:** SmartKit repository source changes, delivery, setup ownership, contract retirement,
-verification, and Rule/Skill translation. These constraints govern repository operations; they do
-not establish the meaning of portable authored artifacts.
+**Strength:** Mandatory
 
 ## Delivery authority
 

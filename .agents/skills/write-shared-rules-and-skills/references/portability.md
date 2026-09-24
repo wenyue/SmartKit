@@ -62,8 +62,8 @@ Candidate mutation, and remains disjoint from the Candidate resources. Preserve 
 any requested Candidate move for the public workflow's write-scope freeze.
 
 A representative portfolio is minimal when removing any target would leave a material seam
-uncovered; names and layouts do not create seams. For every seam, establish the applicable target
-facts, consumed obligations and dependencies, permissions, critical success and terminal paths,
+uncovered; names and layouts do not create seams. For every seam, establish the applicable target facts, consumed obligations and dependencies,
+permissions, critical success and terminal paths,
 recovery and mid-path stops, expected observations, and evidence characteristics. State what the
 evidence must establish, not commands, Reviewer identities, case lists, or result rules.
 

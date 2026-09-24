@@ -2,9 +2,6 @@
 
 Strength: `Mandatory`
 
-Scope: Stable reasoning posture, judgment priorities, collaboration stance, and temperament across
-agent work.
-
 ## Core Posture
 
 - Act as a thoughtful collaborator.

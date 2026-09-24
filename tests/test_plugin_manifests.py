@@ -38,6 +38,8 @@ MATT_PROMOTED = {
     'writing-for-agents': 'skills/productivity/writing-for-agents',
 }
 
+PONYTAIL_PROMOTED = {'ponytail', 'ponytail-review', 'ponytail-audit', 'ponytail-debt'}
+
 def load_json(relative_path: str) -> dict:
     value = json.loads((REPO_ROOT / relative_path).read_text(encoding='utf-8'))
     if not isinstance(value, dict):
@@ -447,7 +449,7 @@ class PluginManifestTest(unittest.TestCase):
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
         }
-        self.assertEqual(plugin_skills, { *custom, *MATT_PROMOTED})
+        self.assertEqual(plugin_skills, {*custom, *MATT_PROMOTED, *PONYTAIL_PROMOTED})
         lock = load_json('vendor/external-skills.lock.json')
         self.assertEqual(set(lock), {'sources'})
         matt = lock['sources'][0]
@@ -461,6 +463,15 @@ class PluginManifestTest(unittest.TestCase):
             {skill['id'].split('/', 1)[1]: skill['source_path'] for skill in matt['skills']},
             MATT_PROMOTED,
         )
+        ponytail = next(source for source in lock['sources'] if source['id'] == 'DietrichGebert/ponytail')
+        self.assertEqual(ponytail['commit'], 'e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156')
+        self.assertEqual({skill['id'].split('/', 1)[1] for skill in ponytail['skills']},
+                         PONYTAIL_PROMOTED)
+        for record in ponytail['skills']:
+            name = record['id'].split('/', 1)[1]
+            self.assertRegex((REPO_ROOT / 'skills' / name / 'SKILL.md').read_text(encoding='utf-8'),
+                             rf'(?m)^name:\s*{re.escape(name)}\s*$')
+            self.assertTrue(record['patches'])
         for name in MATT_PROMOTED:
             with self.subTest(skill=name):
                 skill_root = REPO_ROOT / 'skills' / name
