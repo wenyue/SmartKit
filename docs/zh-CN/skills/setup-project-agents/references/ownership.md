@@ -1,25 +1,39 @@
 # 所有权
 
-随附的 catalog 始终启用 Codex、Cursor、Copilot 和 Qoder。它安装所声明的共享 Rules 和 Skills、Codex Plugin Agent 默认配置，以及 catalog 声明的全部项目 blueprint。可选的项目配置可以增加外部 Skills、项目 Agents 和 MCP servers。
+完整设置或任一本地同步操作之前阅读本文。目录和项目 schema 定义受支持输入；已记录所有权决定 Setup 可以替换或退役哪些现有表面。即使独立所有者的内容位于邻近路径，也要保护它。
 
-若 `.agents/config.json` 已存在，或已接受的意图需要非默认输入，应使用当前已加载插件随附的 `<skill-root>/../../setup-assets/catalog/project-config.schema.json` 中的 schema，在 `start` 前协调或创建这个归项目所有的文件。文件不存在时，使用随附默认值。该 schema 也适用于本地同步。外部 Skill 来源、项目 Agent 映射和 MCP 声明都通过它解析。
+## 确定项目输入
 
-对于全量设置，`start` 会先依据所选的规范来源或已安装后备来源验证项目输入，再冻结请求。如果该来源拒绝按已加载 schema 准备的输入，应遵循[会话协议](session-protocol.md#preflight)：在已接受的权限内修正所报告的原因，并开始新的调用。返回的会话来源和请求保持不可变。
+随附目录启用 Codex、Cursor、Copilot 和 Qoder。它安装声明的共享 Rule 和 Skill、Codex Plugin Agent 默认项，以及每个目录声明的项目蓝图。可选项目配置添加外部 Skill、项目 Agent 和 MCP 服务器。
 
-`.agents/rules/` 和 `.agents/skills/` 下的项目本地 Rules 与 Skills，包括 blueprint 生成的源文件及配套文件，都归项目所有，可以在会话之间编辑。设置流程发现并保留其他归项目所有的 Rules 和 Skills。项目 Agent 源文件也仍归项目所有。catalog 声明的 Codex Plugin Agent 默认配置属于后备配置，不是项目 Agent 声明。Cursor、Copilot 和 Qoder 的原生 Plugin Agents，以及原生插件的 Rules、Skills 和 MCP，不属于此工作流。
+当 `.agents/config.json` 存在，或已接受意图需要非默认输入时，在 `start` 前使用已加载插件的 schema 协调或创建该项目自有文件：`<skill-root>/../../setup-assets/catalog/project-config.schema.json`。缺失意味着使用随附默认值。同一 schema 约束本地同步，并定义外部 Skill 来源、项目 Agent 映射和 MCP 声明。
 
-每个直接位于 `.agents/rules/*.md` 的文件都是无条件加载的必读 Rule，并明确声明 Strength。数字前缀仍可用作文件名，但不表示类别或优先级。所负责的 `AGENTS.md` 节在同一个必读列表中列出所有发现的 Rule 路径。Strength 仍由各 Rule 负责，不在索引中重复。条件策略应放在原生 `.agents/skills/rule-<domain>/SKILL.md` 中：frontmatter 中的 name 与目录名一致，面向模型的非空 description 支持原生发现，入口声明默认 Strength。普通项目 Skills 沿用既有发现方式。
+完整设置中，`start` 在冻结请求前，根据选定规范来源或已安装回退来源验证输入。如果该来源拒绝按已加载 schema 准备的输入，遵循[预检](session-protocol.md#preflight)：在已接受权限内修正报告的原因，并启动新调用。返回来源和请求保持不可变。
 
-设置流程和两个同步操作都会拒绝显式的旧条件 Rule 声明，包括旧条件索引行。重试前，需另行授权将源内容改写为规则主导型 Skills，并在该授权迁移中更新或删除相应的旧 `AGENTS.md` 声明；设置流程不会悄悄改变策略的加载含义。围栏中的示例不算有效索引行。特定 Harness 的原生插件 Rules 保留各自的加载策略。
+`.agents/rules/` 和 `.agents/skills/` 下的项目本地 Rule、Skill 内容，包括生成源及其支持文件，属于项目，可在会话之间编辑。Setup 发现并保护额外项目自有 Rule 和 Skill。项目 Agent 源也保持项目所有。Codex Plugin Agent 默认项是回退项，不是项目 Agent 声明。原生 Cursor、Copilot 和 Qoder Plugin Agent，以及原生插件 Rule、Skill 和 MCP，都在本工作流之外。
 
-对于每个生成的项目 Rule 或 Skill，SmartKit 在 `.agents/smartkit.lock.json` 中记录契约指纹和准确的输出路径，包括配套文件；不持久保存这些文件的内容摘要。每次全量会话都会请求当前的完整契约集合。重新编写时，应读取当前项目证据和已有输出内容，保留有合格证据支持的意图。移除契约时，删除其记录的输出；重命名 catalog 目标时，退役原先记录的路径，并生成当前目标。新的完整交接中未再列出的配套输出会被退役；未记录的配套文件仍归项目所有。
+## 保留策略的加载含义
 
-项目同步保留生成的源文件和契约记录。全量设置会将项目 Agent 适配器、MCP 字段与共享及默认配置的所有权分开记录。完整的本地同步需要已建立的这类记录；所有权记录较旧或缺失时，必须先执行全量设置。删除或重命名本地声明时，它只移除记录中的项目映射。共享、默认和外部资产及其来源信息保持完整。外部 Skill 声明变化时，必须执行全量设置。
+每个直接 `.agents/rules/*.md` 文件都是无条件必需 Rule。数字文件名前缀不代表类别或优先级。自有 `AGENTS.md` 章节把所有发现路径放在一个必需列表中。
 
-托管的渲染资产、共享资产和外部资产继续受到摘要保护。冻结会话的目标漂移检查适用于[会话协议](session-protocol.md)定义的目标输入范围。
+条件策略属于原生 `.agents/skills/rule-<domain>/SKILL.md`。其 frontmatter 名称与文件夹一致，非空模型侧 description 支持发现。普通项目 Skill 保持既有发现行为。Harness 原生插件 Rule 保留自己的加载策略。
 
-SmartKit 只负责 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及 `AGENTS.md` 中的一个 `## Project rules` 节。全量设置会渲染该节，范围截至下一个一级或二级标题，或文件末尾；该节不存在时则追加。围栏代码块中的标题不构成章节边界。重复的 Project rules 节、任何所有权冲突或摘要冲突，都会使设置流程在替换前停止。保留该节之外的每个字节，以及每个未声明的文件、字段、目录和秘密值。
+完整设置和两种本地操作都会拒绝显式旧式条件 Rule 声明，包括旧条件索引行。重试之前，单独授权向 rule-led Skill 的源迁移，以及旧 `AGENTS.md` 声明的更新或删除。Setup 不暗中改变策略何时加载。围栏示例不属于操作性索引行。
 
-MCP 环境字段填写环境变量名；URL、命令、参数和 override 中的字面量仍属于项目输入。不要推断任意字符串都是敏感信息。如果合格的仓库证据确认某个字面量确实敏感，应在渲染前停止，并请项目所有者改用受支持的间接引用。
+## 区分重新编写与按记录退役
 
-设置流程将 MCP 就绪声明作为项目配置保留和验证。执行这些检查由就绪检查运行时负责。设置流程和项目同步都不运行就绪检查，也不安装依赖；干净结果仅证明配置已经收敛。
+对于每个生成 Rule 或 Skill，`.agents/smartkit.lock.json` 记录其蓝图指纹和确切输出路径，包括支持文件，不持久存储内容摘要。每个完整会话请求当前完整蓝图集；重新编写时使用现有内容和当前项目证据，保留合格意图。
+
+移除蓝图会退役其已记录输出。目录目标改名会退役旧记录路径，并生成当前目的地。新完整交接省略的支持输出会退役；未记录支持文件仍属于项目。确切记录限定退役范围，因此邻近或看似过时文件不会因关联而获得删除授权。
+
+项目同步保留生成源和蓝图记录。完整设置将项目 Agent 适配器、MCP 字段与共享/默认所有权分别记录。较广本地同步需要这一已建立记录；记录过旧或缺失时必须先完整设置。声明删除或改名时，它只退役已记录项目映射，保护共享/默认/外部资产及出处。外部 Skill 声明变化需要完整设置。
+
+托管的渲染、共享及外部资产保留摘要保护。冻结会话中，与设置相关的目标漂移由[完整会话协议](session-protocol.md)约束。
+
+## 保留非自有字节和结构化字段
+
+SmartKit 只拥有 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及 `AGENTS.md` 中一个 `## Project rules` 章节。完整设置将该章节渲染到下一个一级或二级标题之前，或文件末尾；缺失时追加。围栏内标题不定义章节边界。重复 Project rules 章节、所有权冲突或摘要冲突会在替换前停止设置。
+
+保留自有章节之外的每个字节，以及每个未声明文件、字段、目录和秘密值。MCP 环境字段命名环境变量；URL、命令、参数和覆盖字面量仍是项目输入。任意字符串不是秘密的证据。合格仓库证据识别出真实敏感字面量时，在渲染前停止，请其项目所有者替换为受支持的间接引用。
+
+MCP 就绪声明是需要保护和验证的项目配置。其运行时所有者执行检查。Setup 和同步不运行就绪检查，也不安装依赖：`clean` 仅证明配置收敛。

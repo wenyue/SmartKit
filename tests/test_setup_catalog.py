@@ -442,7 +442,6 @@ class SetupCatalogTest(unittest.TestCase):
                 'metadata': {
                     'section': 'global',
                     'loading': 'always', 'description': 'Project tooling and verification.',
-                    'strength': 'Mandatory',
                     'cursor': {
                         'description': 'A rule',
                         'alwaysApply': True,
@@ -459,7 +458,6 @@ class SetupCatalogTest(unittest.TestCase):
             ({'unknown': True}, 'unknown rule metadata fields'),
             ({
                 'section': 'global', 'loading': 'always', 'description': 'Project tooling and verification.',
-                'strength': 'Mandatory',
                 'cursor': {'description': 'A rule', 'alwaysApply': 'yes'},
                 'github': {'applyTo': '**'},
             }, 'alwaysApply must be true'),
@@ -480,7 +478,6 @@ class SetupCatalogTest(unittest.TestCase):
         rule_metadata = {
             'section': 'global',
             'loading': 'always', 'description': 'Project tooling and verification.',
-            'strength': 'Mandatory',
             'cursor': {'description': 'A rule', 'alwaysApply': True},
             'github': {'applyTo': '**'},
         }
@@ -491,7 +488,7 @@ class SetupCatalogTest(unittest.TestCase):
             'target': '.agents/rules/rule.md',
             'metadata': rule_metadata,
         }
-        for field in ('section', 'loading', 'strength', 'cursor', 'github'):
+        for field in ('section', 'loading', 'cursor', 'github'):
             with self.subTest(rule_field=field):
                 candidate = dict(rule)
                 candidate['metadata'] = dict(rule_metadata)
@@ -506,7 +503,7 @@ class SetupCatalogTest(unittest.TestCase):
                 with self.assertRaises(ContractError):
                     parse_asset(candidate)
         for key, value in (
-            ('section', 'unknown'), ('strength', 'Required'), ('loading', 'sometimes'),
+            ('section', 'unknown'), ('strength', 'Mandatory'), ('loading', 'sometimes'),
             ('loading', True), ('loading', 'on-demand'),
             ('description', ''), ('description', True), ('read_when', 'Always'),
         ):
@@ -520,7 +517,7 @@ class SetupCatalogTest(unittest.TestCase):
             'id': 'project-rule', 'kind': 'blueprint', 'source': 'blueprints/rule.md',
             'target': '.agents/rules/project.md',
             'metadata': {
-                'section': 'project', 'loading': 'always', 'description': 'Project work', 'strength': 'Default',
+                'section': 'project', 'loading': 'always', 'description': 'Project work',
                 'cursor': {'alwaysApply': True}, 'github': {'applyTo': '**'},
             },
         }

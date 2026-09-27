@@ -6,96 +6,115 @@ disable-model-invocation: true
 
 # Setup Project Agents
 
-Full setup is the default for first setup and every unqualified setup or update. It reauthors every
-current catalog-declared project Rule and Skill, including supporting resources, from immutable
-Setup Authoring Contracts and current project evidence. Unchanged upstream fingerprints and existing
-outputs do not skip authoring.
+Bring the project's declared agent configuration to a clean, owned state. Choose the operation from
+the caller's intent before changing inputs or acquiring a source:
 
-Use project-only synchronization when the caller explicitly limits intent to local Rule/Skill
-discovery and project Agent/MCP mappings. A request limited to the `AGENTS.md` Rule index stays within
-that smaller operation. Infer neither narrow intent from an unchanged upstream nor full-setup
-authority from a local synchronization request.
+| Intent | Operation |
+| --- | --- |
+| First setup or an unqualified setup/update | Full setup: reauthor every current catalog-declared project Rule and Skill, including supporting resources, from immutable Setup Authoring Blueprints and current project evidence. |
+| Explicitly limited to local Rule/Skill discovery and project Agent/MCP mappings | Project-only synchronization. |
+| Explicitly limited to the `AGENTS.md` Rule index | Standalone Rule-index synchronization. |
+
+Unchanged upstream fingerprints or existing outputs do not skip full authoring and do not imply
+local-only intent. Conversely, a local synchronization request does not authorize full setup.
 
 ## Inputs and ownership
 
-Identify this loaded Skill directory as `<skill-root>` and the repository as `<target-root>`.
-Read [ownership](references/ownership.md) before either workflow. It defines project inputs,
-recorded ownership, generated-output retirement, native-field preservation, and readiness boundaries.
-For local synchronization, `source_root` is the plugin root containing this loaded Skill; full setup
-uses the source root returned by its frozen session.
+Resolve the loaded Skill directory as `<skill-root>` and the repository as `<target-root>`. Read
+[Ownership](references/ownership.md) before either workflow. It defines project inputs, recorded
+ownership, generated-output retirement, native-field preservation and the limits of readiness.
+Local synchronization uses the plugin root containing this loaded Skill as `source_root`; full
+setup uses the source root returned by its frozen session.
 
-The Skill owns intent routing, project evidence, whole-set coherence, pinned writer coordination,
-and handoff. Scripts own selection, validation, mappings, transaction, recovery evidence, and command
-status. Use their help and returned paths rather than reconstructing protocol state:
+Setup owns intent routing, qualified project evidence, whole-set coherence, pinned writer
+coordination and the handoff. Scripts own source selection, validation, mappings, transactions,
+recovery evidence and command status. Inspect their interface and consume returned paths instead
+of reconstructing session state:
 
 ```text
 python "<skill-root>/scripts/workflow.py" --help
 ```
 
-## Full setup
+## Carry out full setup
 
-1. Read the [full session protocol](references/session-protocol.md). Resolve material project-input
-   choices and any missing effect grants. Accepted setup intent can already authorize those effects.
-   If `start` reports missing Matt context, end this invocation and have the user invoke
-   `setup-matt-pocock-skills`; resume through a fresh setup invocation after it completes.
-2. Start one frozen session and retain its returned request, source provenance, and generated root.
-   Confirm its complete generated set and project inputs match accepted intent before authoring.
-3. Read and execute [generated authoring](references/generated-authoring.md). Load the public writer
-   and its dependencies from the pinned source, plan generated and retained Rules and related Skills
-   together, and obtain an individual `COMPLETE` for every request. Reconcile whole-set coverage and
-   overlap before registering only the final complete handoffs. A correction outside generation
-   scope remains an owner dependency and ends this session.
-4. Finish the registered session through the protocol’s transaction and clean postcondition. Follow
-   its stop/recovery branch on any failure; scripts own safe rollback and session cleanup.
-5. Review the complete direct project Rule set for always-loaded context cost. When material volume
-   comes from branches that apply only under identifiable conditions, recommend the exact branches
-   to migrate into native `rule-<domain>` Skills; file size alone and unconditional baseline policy
-   do not justify migration. Report source mode, root, fingerprint and commit when present; enabled
-   hosts; changed and preserved paths; external provenance; clean-check status; the context-load
-   assessment; and any recovery evidence. Hand the snapshot to the maintainer for review and commit.
+Read the complete [Full Session Protocol](references/session-protocol.md) before starting. Resolve
+material project-input choices and missing effect grants; accepted setup intent may already supply
+them. If `start` reports missing Matt context, end this invocation and have the user invoke
+`setup-matt-pocock-skills` in the target. Continue only through a fresh setup invocation after that
+workflow completes.
 
-## Explicit project synchronization
+Start one frozen session. Retain the returned request, source provenance and generated root, and
+confirm that the complete requested generated set and project inputs match accepted intent.
 
-Use the local operation after editing supported project sources or `.agents/config.json`:
+Before authoring, read [Generated Authoring](references/generated-authoring.md). Setup plans the
+resulting set of generated and retained Rules with relevant Skills and global policy, then supplies
+qualified single-Candidate work to the public writer and dependencies from the pinned source. Obtain
+an individual `COMPLETE` for every request. Reconcile the whole set's coverage, responsibility and
+loading before registering only the final complete handoffs. A required correction outside the
+frozen generation scope ends this session and goes to its owner.
+
+Finish the registered session under the protocol's transaction and clean postcondition. On failure,
+follow its original-attempt recovery branch; scripts own guarded rollback and private-session
+cleanup. A clean target alone does not prove that failed cleanup completed the transaction.
+
+After successful full setup, assess the complete direct project Rule set's always-loaded context
+cost. Recommend specific branches for migration to native `rule-<domain>` Skills only when material
+volume comes from policy needed under identifiable conditions. File size alone, or unconditional
+baseline policy, does not justify migration.
+
+Report source mode, root, fingerprint and commit when present; enabled hosts; changed and preserved
+paths; external provenance; clean-check status; the context-load assessment; and any recovery
+evidence. Hand the resulting snapshot to the maintainer for review and commit.
+
+## Carry out explicit local synchronization
+
+### Project discovery and Agent/MCP mappings
+
+After supported local source or `.agents/config.json` edits, check the proposed operation:
 
 ```text
 python "<skill-root>/scripts/workflow.py" sync-project --target "<target-root>" --check
 ```
 
-It validates current project discovery, updates the owned Rule index and declared Agent/MCP mappings,
-and retires only recorded project mappings for deleted or renamed declarations. Project Skills use
-the existing direct discovery route; validation/preservation may require no adapter change. This
-operation performs no fetch, authoring, contract regeneration, or shared/plugin/external upgrade,
-and requires no Matt preflight or generation session. An absent or older project-mapping ownership
-record requires full setup first. A changed external Skill declaration also requires full setup.
-Report that requirement without silently widening local intent.
+This validates current project discovery and synchronizes the owned Rule index and declared
+Agent/MCP mappings. It retires only recorded project mappings whose declarations were deleted or
+renamed. Project Skills keep their direct discovery route, so validation and preservation may need
+no adapter change.
 
-Apply with authority for these project mappings:
+No fetch, authoring, blueprint regeneration or shared/plugin/external upgrade belongs to this
+operation. It needs neither Matt preflight nor a generation session. An absent or older
+project-mapping ownership record requires full setup first; changed external Skill declarations
+also require full setup. Report that dependency without widening the local request.
+
+Apply only with authority for these project mappings:
 
 ```text
 python "<skill-root>/scripts/workflow.py" sync-project --target "<target-root>"
 ```
 
-For an intent limited to `AGENTS.md`, use the standalone Rule-index operation. It retains its
-no-session, no-fetch usability even before full setup:
+### The Rule index alone
+
+For intent limited to `AGENTS.md`, use the standalone operation. It remains usable before full setup
+and needs no session or fetch:
 
 ```text
 python "<skill-root>/scripts/workflow.py" sync-project-rules --target "<target-root>" --check
-```
-
-```text
 python "<skill-root>/scripts/workflow.py" sync-project-rules --target "<target-root>"
 ```
 
-Both local operations preserve every byte in `AGENTS.md` outside its owned `## Project rules`
-section and apply atomically with an idempotent clean postcondition. Check mode never mutates the target. Exit 0 with
-`check: clean` proves convergence; exit 1 with `check: drift` reports proposed changed paths; exit 2
-reports a refusal or failure. Preserve the exact evidence for malformed inputs, ambiguous ownership,
-unmanaged collisions, relevant concurrent drift, or rollback failure. Resolve the cause within the
-accepted scope before retrying. Keep exclusive access to planned paths through apply and rollback;
-filesystem checks cannot protect against an uncooperative writer between a check and mutation.
+### Interpret and preserve the local result
 
-Report the selected operation, status, changed paths, preserved sources where reported, and any
-refusal or recovery evidence. Hand successful changes to the maintainer for review and commit. This
-Skill grants no commit, push, publication, release, dependency installation, or installation outside
-the target repository.
+Both operations preserve every byte outside the owned `## Project rules` section in `AGENTS.md`.
+Apply is atomic with an idempotent clean postcondition; check mode never mutates the target. Exit 0
+with `check: clean` proves convergence. Exit 1 with `check: drift` reports proposed changed paths.
+Exit 2 reports refusal or failure.
+
+Retain exact evidence for malformed inputs, ambiguous ownership, unmanaged collisions, relevant
+concurrent drift or rollback failure. Resolve the cause within accepted scope before retrying. Keep
+exclusive access to planned paths through apply and rollback: filesystem checks cannot protect
+against an uncooperative writer between a check and mutation.
+
+Report operation, status, changed paths, preserved sources where supplied, and any refusal or
+recovery evidence. Give successful changes to the maintainer for review and commit. Neither full
+setup nor local synchronization grants commit, push, publication, release, dependency installation
+or installation outside the target repository.

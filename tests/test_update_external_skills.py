@@ -177,26 +177,38 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
         (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
         resolve = lambda source: checkouts[source.id]
-        self.assertEqual(self.module.main(
-            ['--update', '--root', str(project)], resolver=resolve,
-        ), 0)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.module.main(
+                ['--update', '--root', str(project)], resolver=resolve,
+            ), 0)
+        self.assertIn('acme/alpha | 11 -> 11 | +2 | -2 | 18.2%', output.getvalue())
+        self.assertIn('example/beta | 11 -> 11 | +0 | -0 | 0.0%', output.getvalue())
         self.assertEqual((project / 'skills/alpha/SKILL.md').read_text(), adapted)
         self.assertEqual((alpha / 'skills/alpha/SKILL.md').read_text(), original)
         lock = json.loads((project / 'vendor/external-skills.lock.json').read_text())
         self.assertEqual(lock['sources'][0]['skills'][0]['patches'][0]['path'],
                          'vendor/patches/alpha.patch')
-        self.assertEqual(self.module.main(
-            ['--check', '--root', str(project)], resolver=resolve,
-        ), 0)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.module.main(
+                ['--check', '--root', str(project)], resolver=resolve,
+            ), 0)
+        self.assertIn('acme/alpha | 11 -> 11 | +2 | -2 | 18.2%', output.getvalue())
         beta_record = lock['sources'][1]
         upstream_file = alpha / 'skills/alpha/SKILL.md'
         upstream_file.write_text(original.replace('Test fixture.', 'Updated upstream guidance.'),
                                  encoding='utf-8')
         checkouts['acme/alpha-source'] = self.module.ResolvedCheckout(alpha, 'main', '3' * 40)
-        self.assertEqual(self.module.main(
-            ['--update', '--source', 'acme/alpha-source', '--root', str(project)],
-            resolver=resolve,
-        ), 0)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.module.main(
+                ['--update', '--source', 'acme/alpha-source', '--root', str(project)],
+                resolver=resolve,
+            ), 0)
+        self.assertIn('acme/alpha | 12 -> 12 | +2 | -2 | 16.7%', output.getvalue())
+        self.assertIn('TOTAL (selected sources) | 12 -> 12 | +2 | -2 | 16.7%', output.getvalue())
+        self.assertNotIn('example/beta', output.getvalue())
         self.assertEqual((project / 'skills/alpha/SKILL.md').read_text(),
                          adapted.replace('Test fixture.', 'Updated upstream guidance.'))
         updated_lock = (project / 'vendor/external-skills.lock.json').read_bytes()
@@ -209,6 +221,37 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         self.assertEqual(self.module.main(
             ['--check', '--root', str(project)], resolver=resolve,
         ), 1)
+
+    def test_patch_stats_cover_replacements_deletions_new_files_and_binary_resources(self):
+        before, after = self.root / 'before', self.root / 'after'
+        before.mkdir()
+        after.mkdir()
+        (before / 'SKILL.md').write_text('keep old end', encoding='utf-8')
+        (after / 'SKILL.md').write_text('keep new words end', encoding='utf-8')
+        (before / 'retired.md').write_text('delete these', encoding='utf-8')
+        (after / 'added.md').write_text('fresh', encoding='utf-8')
+        for directory in (before, after):
+            (directory / 'spacing.md').write_text('same  words\n', encoding='utf-8')
+            (directory / 'unchanged.bin').write_bytes(b'\xff')
+        (after / 'spacing.md').write_text('same\twords', encoding='utf-8')
+        (before / 'changed.bin').write_bytes(b'\x00old')
+        (after / 'changed.bin').write_bytes(b'\x00new')
+        self.assertEqual(self.module.patch_stats(before, after),
+                         self.module.PatchStats(7, 7, 3, 3, 1))
+
+    def test_patch_stats_exclude_pure_deletion_from_modification_percentage(self):
+        before, after = self.root / 'before', self.root / 'after'
+        before.mkdir()
+        after.mkdir()
+        (before / 'retired.md').write_text('delete all words', encoding='utf-8')
+        stats = self.module.patch_stats(before, after)
+        self.assertEqual(stats, self.module.PatchStats(3, 0, 0, 3, 0))
+        self.assertIn('| +0 | -3 | 0.0%', self.module._patch_report_row('skill', stats))
+        (before / 'retired.md').unlink()
+        (after / 'added.md').write_text('new', encoding='utf-8')
+        stats = self.module.patch_stats(before, after)
+        self.assertEqual(stats, self.module.PatchStats(0, 1, 1, 0, 0))
+        self.assertIn('n/a (empty upstream)', self.module._patch_report_row('skill', stats))
 
     def test_update_preserves_unrecorded_local_skill_changes(self):
         project, _, _, _, checkouts = self.prepare_two_source_project()

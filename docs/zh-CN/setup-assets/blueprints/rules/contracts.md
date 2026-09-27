@@ -1,10 +1,8 @@
 # 契约
 
-强度：`Mandatory`
-
 ## 目的与证据
 
-当 `setup-project-agents` 请求生成 `.agents/rules/contracts.md` 时，Author 编写一份归目标仓库所有、标题为 `Contracts` 的 Mandatory Rule，规定什么样的变更才有效。
+当 `setup-project-agents` 请求生成 `.agents/rules/contracts.md` 时，Author 编写一份归目标仓库所有、标题为 `Contracts` 的 Rule，规定什么样的变更才有效。
 
 Setup 必须提供相关目标证据：入口指引和适用 Rules；已接受的 Issues、Specs 和 ADRs；API、模式、事件、领域模型、实现和行为测试；以及注册表、同步器、清单、包、加载器和文档路径中的所有权与交付关系。按所有者和来源评定资料。既有 Rule 文本是保留和回归证据，不是设计权威；可见性、历史文本、机器本地状态和写入访问权限不授予权威。
 

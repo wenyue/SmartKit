@@ -257,24 +257,23 @@ class PluginManifestTest(unittest.TestCase):
             {path.name for path in private_root.iterdir() if path.is_dir()},
             {
                 'translate-agent-artifacts',
-                'write-setup-authoring-contracts',
+                'write-setup-authoring-blueprints',
                 'write-shared-rules-and-skills',
             },
         )
         public_ids = {item['id'] for item in custom}
-        self.assertNotIn('smartkit/write-setup-authoring-contracts', public_ids)
+        self.assertNotIn('smartkit/write-setup-authoring-blueprints', public_ids)
         self.assertNotIn('smartkit/write-shared-rules-and-skills', public_ids)
         self.assertNotIn('smartkit/translate-agent-artifacts', public_ids)
 
         private_names = (
             'translate-agent-artifacts',
-            'write-setup-authoring-contracts',
+            'write-setup-authoring-blueprints',
             'write-shared-rules-and-skills',
         )
         authoring_roots = (public_root, *(private_root / name for name in private_names))
         expected_references = {
             'write-rules-and-skills': {
-                'artifact-standard.md',
                 'author.md',
                 'change-reviewer.md',
                 'controller.md',
@@ -282,9 +281,10 @@ class PluginManifestTest(unittest.TestCase):
                 'quality-reviewer.md',
                 'reviewer.md',
                 'runner.md',
+                'shared-terms.md',
             },
             'write-shared-rules-and-skills': set(),
-            'write-setup-authoring-contracts': set(),
+            'write-setup-authoring-blueprints': set(),
             'translate-agent-artifacts': set(),
         }
         for skill_root in authoring_roots:
@@ -317,6 +317,21 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertRegex(metadata, r'(?m)^\s+short_description:\s+.+$')
                 self.assertRegex(metadata, r'(?m)^\s+default_prompt:\s+.+$')
                 self.assertIn(f'${name}', metadata)
+
+    def test_custom_skill_entry_inventory_matches_registry(self):
+        custom = load_json('skills/registry.json')['custom']
+        skill_roots = [REPO_ROOT / 'skills' / item['path'] for item in custom]
+        declared_entries = {
+            (root / 'SKILL.md').relative_to(REPO_ROOT).as_posix()
+            for root in skill_roots
+        }
+        observed_entries = {
+            entry.relative_to(REPO_ROOT).as_posix()
+            for root in skill_roots
+            for entry in root.rglob('SKILL.md')
+            if entry.is_file()
+        }
+        self.assertEqual(observed_entries, declared_entries)
 
     def test_custom_skills_keep_invocation_metadata_aligned(self):
         custom = load_json('skills/registry.json')['custom']

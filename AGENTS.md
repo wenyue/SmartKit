@@ -2,7 +2,7 @@
 
 ## Project rules
 
-Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the
+Apply SmartKit plugin Rules for shared precedence. Keep project Rule policy in the
 files listed below.
 
 ### Required rules

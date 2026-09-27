@@ -5,65 +5,77 @@ description: Use for work involving operation outcomes or error behavior, includ
 
 # Error Handling
 
-Strength: `Default`
-
-## Preserve the promised outcome
+## Preserve the Promised Outcome
 
 Classify success, ordinary refusal or absence, contracted failure, and programming violations by
-the operation's promise, independently of their representation, frequency, or retryability. Keep
-failed outcomes and partial effects visible. Catching an error, supplying a default, or restoring
-future usability does not establish success: the current operation must fulfill its promise or an
-accepted degraded or partial outcome.
+the operation's promise, independently of their representation, frequency, or retryability.
+
+Keep failed outcomes and partial effects visible. Catching an error, supplying a default, or
+restoring future usability does not establish success: the current operation must fulfill its
+promise or an accepted degraded or partial outcome.
 
 Keep infallible operations direct. Use the language's native mechanisms and the project's actual
 contracts, introducing stable distinctions where callers need different decisions. Translate at
 the boundary that owns the contract. Cover a closed business vocabulary exhaustively; for an open
 protocol, preserve an explicit unknown-failure path and useful causes rather than converting
-incidental failures into ordinary refusal. Keep programming violations distinct from ordinary
-negatives. Production-required validation, control flow, side effects, and invariants must remain
-enforced when optional checks are disabled. Validate data where its syntax and meaning are
-understood, distinguishing invalid content from failed I/O. Explain important caller obligations
-where code, types, and referenced contracts leave them unclear.
+incidental failures into ordinary refusal.
 
-## Place handling with its owner
+Keep programming violations distinct from ordinary negatives. Production-required validation,
+control flow, side effects, and invariants must remain enforced when optional checks are disabled.
+
+Validate data where its syntax and meaning are understood, distinguishing invalid content from
+failed I/O. Explain important caller obligations where code, types, and referenced contracts leave
+them unclear.
+
+## Assign Ownership Through Completion
 
 Handle failures for owned recovery, cleanup, compensation, required contract translation, or final
 handling; otherwise propagate faithfully through the accepted contract. A library may fulfill its
-responsibility by transferring the failed outcome to its caller. Give each independently initiated
-operation a final owner. Required asynchronous work belongs to the operation's completion promise;
-detached work needs its own completion, failure, and lifecycle ownership. Guarantee owned cleanup
-through success, failure, cancellation, and interruption.
+responsibility by transferring the failed outcome to its caller.
+
+Give each independently initiated operation a final owner. Required asynchronous work belongs to
+the operation's completion promise; detached work needs its own completion, failure, and lifecycle
+ownership. Guarantee owned cleanup through success, failure, cancellation, and interruption.
+
+Consuming a failure or delegating reporting retains responsibility for remaining state, cleanup,
+retry, and feedback. Carry unresolved outcomes and consequential effects to their final owner.
+
+## Capture for an Established Disposition
 
 When evidence supports normal conditions usually holding and failure being exceptional, prefer
 direct execution with narrow capture of specific failures this boundary owns over repetitive
-prechecks. When normal validity is uncertain, prefer a reliable, low-cost explicit check. Preserve
-the language's safety preconditions; catching a failure cannot make undefined or otherwise unsafe
-execution safe. Prechecks of mutable state establish only check-time conditions; handle or propagate
-actual operation failures even after a successful check.
+prechecks. When normal validity is uncertain, prefer a reliable, low-cost explicit check.
+
+Preserve the language's safety preconditions; catching a failure cannot make undefined or otherwise
+unsafe execution safe. Prechecks of mutable state establish only check-time conditions. Handle or
+propagate actual operation failures even after a successful check.
 
 Capture the narrowest failure type that permits the established disposition. A concrete failure's
 representation as `Error` does not by itself exclude capture; its contract and safe disposition
 decide. Keep capture local to the relevant operation, preserving required propagation or reporting
-of internal programming defects and unrelated failures. Broad capture is safe only when every
-failure it can capture can receive that disposition. At each broad capture site in authored code,
-leave a meaningful nearby maintainer comment explaining why the capture must be broad and why the
-disposition is safe for every captured failure.
+of internal programming defects and unrelated failures.
 
-Consuming a failure or delegating reporting retains responsibility for remaining state, cleanup,
-retry, and feedback. Carry unresolved outcomes and consequential effects to their final owner.
-Distinguish primary failures from failures of recovery, cleanup, or compensation; preserve available
+Broad capture is safe only when every failure it can capture can receive that disposition. At each
+broad capture site in authored code, leave a meaningful nearby maintainer comment explaining why
+the capture must be broad and why the disposition is safe for every captured failure.
+
+## Preserve Evidence and Feedback
+
+Distinguish primary failures from failures of recovery, cleanup, or compensation. Preserve available
 originating errors, cause chains, stacks, and useful context through translation and final handling.
 Filter sensitive data, including credentials and needless private information. Human explanations
 supplement this evidence rather than replacing it.
 
 Give each reportable incident one final report owner. Complementary diagnostics and audience
-feedback may coexist; propagation should not create duplicate incident reports. Use project-owned
-severity and alerting according to impact, operational expectations, and needed response, rather
-than channel or recovery alone. Successful recovery may still warrant investigation. Final feedback
-must convey useful context, impact, and disposition through the owning boundary, including material
-loss or unavailability even when its audience cannot repair it.
+feedback may coexist; propagation should not create duplicate incident reports.
 
-## Load constraints for the decision
+Use project-owned severity and alerting according to impact, operational expectations, and needed
+response, rather than channel or recovery alone. Successful recovery may still warrant investigation.
+
+Final feedback must convey useful context, impact, and disposition through the owning boundary,
+including material loss or unavailability even when its audience cannot repair it.
+
+## Load the Relevant Branch
 
 Ordinary propagation, clear translation or capture, routine review, I/O failure transfer, and
 asynchronous ownership use the policy above. Read the following resources before choosing, changing,
@@ -78,7 +90,7 @@ or reviewing the corresponding behavior:
   feedback responsibilities require decisions about capability, authority, or reasonable effort.
   An ordinary diagnostic or feedback change alone does not trigger this branch.
 
-## Resolve and verify within the task
+## Resolve and Verify Within the Task
 
 Scale investigation to affected outcomes, following implementation, caller, and contract evidence
 from origin through translation to final ownership and production enforcement. Distinguish observed

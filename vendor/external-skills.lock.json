@@ -103,13 +103,13 @@
           "source_path": "skills/engineering/to-tickets",
           "destination": "skills/to-tickets",
           "files": {
-            "SKILL.md": "5117805114ffe8b02987155ec848adbd9e94f7d95eeafa53bd612ae49b59be29",
+            "SKILL.md": "99d1f56bd9eddd1f73729edf4d5a121a38589089b8d977514704a8ac9ac44e38",
             "agents/openai.yaml": "21bc6215fffcd7614e9f772bb1760e87cc5fc7dcc707e7d282bc9414267a6090"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/to-tickets.patch",
-              "sha256": "89883379da115ee4efabf6b5b88d37d43cf67bcbc2d0299a43950fb7651d5429"
+              "sha256": "403c7cdc4702979c33ba9ed36de208e338077d02e395385a432001989d503362"
             }
           ]
         },
@@ -308,12 +308,12 @@
           "source_path": "skills/ponytail",
           "destination": "skills/ponytail",
           "files": {
-            "SKILL.md": "214eb5e71dbf26754c612ac688ceef6786399f9da8b43e450fcbf16f2be01126"
+            "SKILL.md": "ee832ffc2e2530df353312d95a911dda1b3989f5a4bef5dec07777797ccfeeef"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail.patch",
-              "sha256": "a87b5707508451c87d616f6773004c03d9f0fc2d00bd60069e07069f61c53eba"
+              "sha256": "4c4c53ff88fc84ee3aba02b3f636e6da991d237458b423dced5be91923e59fd6"
             }
           ]
         },
@@ -322,12 +322,12 @@
           "source_path": "skills/ponytail-review",
           "destination": "skills/ponytail-review",
           "files": {
-            "SKILL.md": "86af876037cd83c3630fc771b40b4a3d684541abcb653058040f619c9132f43a"
+            "SKILL.md": "aeca3321ab0f79abe971776f405518afdce46d3bd026062d19a0dfbc3217af8b"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-review.patch",
-              "sha256": "c2075918ff8ac8c2335fe1a85afdb67f4fd35bc1d7e4de9939ce811f8a883958"
+              "sha256": "76c6c091720d1283f127a29e50d1fca8f7a69f18f57382d26ea36fde2ee4bc1d"
             }
           ]
         },
@@ -336,12 +336,12 @@
           "source_path": "skills/ponytail-audit",
           "destination": "skills/ponytail-audit",
           "files": {
-            "SKILL.md": "74f8bc05af20c8e53a8e5380b85b77db187bb0a6bccd64a6e48af39172354393"
+            "SKILL.md": "bea2b4786d4c24a7169cdebfc921374ea9e9cbbbe7989c07732564a0eae47e77"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-audit.patch",
-              "sha256": "adca743bcc6b370e6354318a2026d346ef26622737df6821dac8173389059bd6"
+              "sha256": "0b4215dc1c280dc0941243f4d8cae313dd740f8e66b3969af13aa2e0c7e8bcbb"
             }
           ]
         },
@@ -350,12 +350,12 @@
           "source_path": "skills/ponytail-debt",
           "destination": "skills/ponytail-debt",
           "files": {
-            "SKILL.md": "ba845b06e817d1e3699a19db499c62e1f101bbca742e28e4435f843ba447d8da"
+            "SKILL.md": "54513c0df089511732d7ac4d69b458feff5618b86bb2127ec8d3bc14b349ce23"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-debt.patch",
-              "sha256": "3e29a7032bd5808bab19c07ae84d2626e5220cf3b9c5e96454e64c98be873338"
+              "sha256": "3f2c784cb4f0a15843efb6c75794010240bf222b71bc7daaff4aec0eb4683760"
             }
           ]
         }

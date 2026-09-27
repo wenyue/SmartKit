@@ -1,34 +1,38 @@
 # Codex Harness Adaptation
 
-Strength: `Default`
+Use Codex operations to carry out the active task or Skill's decisions. That workflow owns why an
+Agent is delegated and what result it must produce. This Rule supplies tool adaptation; it changes
+neither user authorization, Rule precedence, nor completion criteria.
 
-## Authority
+## Coordinate Delegated Work
 
-- The active Skill or task owns why an Agent is delegated and what result it must produce; this Rule
-  does not change user authorization, Rule precedence, or completion criteria.
+Choose the operation for the work the Agent now needs:
 
-## Subagent Tool Mapping
+| Need | Operation |
+| --- | --- |
+| Start one concrete, independently useful task | `spawn_agent` |
+| Add context without starting another turn | `send_message` |
+| Give an idle Agent a new bounded task | `followup_task` |
+| Stop an Agent's current work | Use `interrupt_agent` only when that work should stop. |
+| Inspect current status | Use `list_agents` for an intentional inspection, not a polling loop. |
 
-- Use `spawn_agent` to start one concrete, independently useful task. Use the returned task name or
-  agent identifier with the other Subagent tools.
-- Use `send_message` to add context without starting another turn. Use `followup_task` when an idle
-  Subagent must perform a new bounded task.
-- Use `interrupt_agent` only when its current work should stop. Use `list_agents` for an intentional
-  status inspection, not as a polling loop.
+Use the task name or agent identifier returned by `spawn_agent` with subsequent Subagent operations.
 
-## JavaScript Orchestration
+### Wait when no useful parent work remains
 
-- Within `functions.exec`, map independent calls already selected for concurrent execution to
-  `Promise.allSettled` when partial results remain useful and to `Promise.all` when every result is
-  required. Keep calls sequential when the current tool schema or an applicable Skill prohibits
-  parallel execution.
+Continue useful parent work while it is available; a completed Agent's mailbox update arrives on
+the parent's next turn. When genuinely idle with live Agents, use `wait_agent` as an event
+subscription. A long subscription wakes on mailbox activity with the same latency as a short one,
+so shorter polling adds calls without reducing response time.
 
-## Waiting on Agents
+Use bounded stretches of 300000–600000 ms where the active Harness and runtime allow. When their
+current limits require a shorter stretch, use a supported duration within those limits. A timeout
+means only that no mailbox update arrived during the stretch; do not shorten the next stretch
+merely because the previous one timed out.
 
-- Treat `wait_agent` as an event subscription, not a poll. Continue useful parent work while it is
-  available; a completed Agent's mailbox update arrives on the parent's next turn.
-- When genuinely idle with live Agents, use `wait_agent` in bounded stretches of 300000–600000 ms
-  where the active Harness and runtime allow. A long subscription wakes on mailbox activity with
-  the same latency as a short one, so shorter polling adds calls without reducing response time.
-- A `wait_agent` timeout means only that no mailbox update arrived during that stretch. Do not
-  shorten the next stretch merely because the previous one timed out.
+## Compose Concurrent Tool Calls
+
+Within `functions.exec`, choose how to collect results from independent calls already selected for
+concurrent execution: use `Promise.allSettled` when partial results remain useful, or `Promise.all`
+when every result is required. Keep calls sequential when the current tool schema or an applicable
+Skill prohibits parallel execution.

@@ -5,25 +5,27 @@ description: Use for C++ work, including requested code-policy assessment.
 
 # C++ Guidelines
 
-Strength: `Default`
+## Keep Interfaces and Ownership Clear
 
-## Interfaces And Ownership
+Keep public interfaces narrow and preserve existing ABI, FFI, and platform boundaries. Keep
+behavior with its owner; introduce an options type only when related inputs form a stable concept.
 
-- Keep public interfaces narrow and preserve existing ABI, FFI, and platform boundaries.
-- Keep behavior with its owner and introduce an options type only when related inputs form a stable
-  concept.
-- Prefer RAII and value semantics.
-- Prefer smart pointers over raw owning pointers.
+Prefer RAII and value semantics. Where a pointer owns its resource, prefer a smart pointer over a
+raw owning pointer.
 
-## Failure And Concurrency
+## Express Failure Through the Boundary's Contract
 
-- Make expected failure part of the return contract; reserve exceptions for failures the surrounding
-  boundary treats as exceptional.
-- Synchronize shared mutable state through one clear owner and the narrowest suitable primitive.
-- Preserve cleanup, cancellation, and thread-affinity requirements across native callbacks.
+Make expected failure part of the return contract. Reserve exceptions for failures the surrounding
+boundary treats as exceptional.
 
-## Tool Ownership
+## Own Shared State and Native Callbacks
 
-- Let the repository formatter, compiler, and static-analysis configuration own mechanical style and
-  naming.
-- Test behavior boundaries where native ownership, failure handling, or ABI behavior can regress.
+Synchronize shared mutable state through one clear owner and the narrowest suitable primitive.
+Preserve cleanup, cancellation, and thread-affinity requirements across native callbacks.
+
+## Follow Repository Tools and Verify Boundaries
+
+Let the repository formatter, compiler, and static-analysis configuration own mechanical style and
+naming.
+
+Test behavior boundaries where native ownership, failure handling, or ABI behavior can regress.

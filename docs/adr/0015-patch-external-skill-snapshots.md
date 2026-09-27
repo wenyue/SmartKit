@@ -13,7 +13,7 @@ concise rationale.
 
 On 2026-09-24, this ownership decision was extended to both Matt and Ponytail Skills:
 Skill-specific SmartKit adaptations belong in patches to the relevant Skill or its owned
-resources, including Ponytail's configuration-reading instructions. This keeps the adapted
+resources. This keeps the adapted
 behavior with the workflow that uses it and makes the local delta reviewable during upgrades.
 Shared constraints retain one common policy owner. Migrating an override preserves its accepted
 meaning and coverage; retiring a constraint requires a separate user decision.
@@ -34,16 +34,13 @@ its intended result.
 
 Required per-task Ponytail loading belongs to
 [rule-code](../../skills/rule-code/SKILL.md#ponytail-loading), matching the coding scope of
-[Ponytail](../../skills/ponytail/SKILL.md). Ponytail remains a task Skill for coding simplification;
+[Ponytail](../../skills/ponytail/SKILL.md). Ponytail is a Rule Skill for coding simplification,
+retaining its upstream `ponytail` name under that specific naming exception;
 it does not replace the cross-task principles in
 [Reasoning Workflow](../../rules/core-reasoning-workflow.md) and
-[Agent Personality](../../rules/core-personality.md). Off disables Ponytail's continuous
-simplification while those general principles remain applicable.
-
-The unchanged state Hook separately reaches Ponytail's
-[inheritance protocol](../../skills/ponytail/SKILL.md#persistence) before every delegation,
-including noncoding work and off mode. This independent route preserves delegation state without
-requiring per-task Ponytail loading for ordinary noncoding work.
+[Agent Personality](../../rules/core-personality.md). Ponytail uses fixed full behavior;
+its former mode configuration, state, and delegation protocol are retired. Ordinary noncoding
+work needs no per-task Ponytail loading.
 
 This decision replaces only the requirement in
 [ADR 0004](0004-harness-adaptation-and-contract-versioning.md) that external snapshots retain

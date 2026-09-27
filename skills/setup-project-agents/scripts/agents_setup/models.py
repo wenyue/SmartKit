@@ -137,7 +137,6 @@ class ExternalSourceSpec:
 @dataclass(frozen=True)
 class ProjectRuleSpec:
     path: PurePosixPath
-    strength: str
 
 
 @dataclass(frozen=True)

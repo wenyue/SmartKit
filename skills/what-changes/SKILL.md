@@ -5,17 +5,67 @@ description: Review accumulated intended changes in a read-only scope report whe
 
 # What Changes
 
-Review the active conversation's accumulated intended changes immediately before implementation. Run this workflow when the user invokes it explicitly, or when the user asks to execute changes after many intended edits have accumulated or intended edits have been discussed far apart in the active conversation. Judge autonomous invocation by the intended changes, not conversation length alone; carry out small, clear requests normally. Produce a read-only scope report. Invocation authorizes inspection needed for the report, not implementation or other changes.
+Turn the active conversation's accumulated intended changes into a scope the user can review
+immediately before implementation. Reconcile what is still intended, what has been set aside, and
+what remains unclear; show how the proposed file changes serve that scope.
 
-1. Reconstruct the current scope from the conversation and any explicitly referenced source artifacts needed to understand it. Inspect repository paths read-only when that helps identify affected files or modules. Reconcile later decisions with earlier suggestions, rejected ideas, superseded plans, and completed work. State any gap in accessible history or evidence instead of inventing a decision or path.
-2. Classify discussion items by their current status. Put active goals in the goals section, including still-active Agent suggestions that the user has not explicitly endorsed. Put relevant rejected or superseded suggestions in the excluded ideas section. Use pending confirmation only when available evidence cannot settle the classification or a material detail. An older unfinished, uncanceled goal whose active status remains unclear belongs in pending confirmation. If inaccessible conversation history prevents a reliable scope review, explain the coverage gap there.
-3. Report in four semantic sections, in this order: ❓ **Pending confirmation**, 🎯 **Goals**, 🚫 **Excluded ideas**, 📝 **Planned file changes**. Use these emoji-prefixed bold labels, translating the section names into the response language, and omit empty sections. Keep relevant verification plans and evidence limits with the items they qualify.
-4. In planned file changes, list only changes that serve the goals. For each file or module, combine the planned change and its reason in one explanation, and make its relationship to the applicable goal or goals clear. Name exact paths when the expected affected set is modest and evidence supports them. At roughly 30 or more files, group by module where that makes the scope readable, while still naming consequential individual files. Mention possible file scope for an unresolved item only within pending confirmation, not as a decided change.
-5. End the report by asking the user to resolve pending items or, if none remain, whether to begin implementation. After each pending answer, update and recheck the report, asking about implementation only when no items remain. Implement only on an affirmative answer to that question; an earlier execution request does not count.
+Run this workflow on explicit invocation, or when the user asks to execute many accumulated edits
+or edits discussed far apart in the active conversation. Judge autonomous invocation by the intended
+changes, not conversation length alone. Carry out small, clear requests normally.
 
-## Example report
+The review is read-only. Invocation authorizes the inspection needed for the report, not
+implementation or other changes.
 
-The placeholders represent conversation-supported goals, decisions, and paths. This example shows all four sections; omit empty sections in an actual report.
+## Reconstruct the Current Intent
+
+Use the conversation and explicitly referenced source artifacts needed to understand its intended
+changes. Inspect repository paths read-only when that helps identify affected files or modules.
+Reconcile later decisions with earlier suggestions, rejected ideas, superseded plans, and completed
+work so the report describes what remains to be done.
+
+Distinguish an item's status from its age or origin. A still-active Agent suggestion belongs among
+the goals even if the user has not explicitly endorsed it; identify it as a suggestion rather than
+an agreed user requirement. An older unfinished, uncanceled goal belongs in pending confirmation
+when its active status remains unclear. Put items there only when available evidence cannot settle
+their status or a material detail.
+
+State gaps in accessible history or evidence rather than inventing a decision or path. If missing
+conversation history prevents a reliable scope review, carry that coverage gap into pending
+confirmation.
+
+## Present a Reviewable Scope
+
+Use four semantic sections in this order, with these emoji-prefixed bold labels. Translate the
+section names into the response language and omit empty sections:
+
+1. ❓ **Pending confirmation** — Unsettled status, material details, or coverage gaps. Keep any
+   possible file scope for an unresolved item here, rather than presenting it as a decided change.
+2. 🎯 **Goals** — The active outcomes under review, including still-active Agent suggestions.
+3. 🚫 **Excluded ideas** — Relevant rejected or superseded suggestions and the decisions that
+   displaced them.
+4. 📝 **Planned file changes** — Only changes that serve the listed goals.
+
+Keep relevant verification plans and evidence limits beside the items they qualify.
+
+For each planned file or module, combine what will change and why in one explanation, making its
+relationship to the applicable goal or goals clear. Name exact paths when the expected affected
+set is modest and evidence supports them. At roughly 30 or more files, group by module where that
+makes the scope readable, while still naming consequential individual files. Grouping should help
+the user judge the changes, not hide their reach.
+
+## Resolve Scope Before Asking to Implement
+
+End the report by asking the user to resolve pending items. After each answer, update and recheck
+the report. Ask whether to begin implementation only when no pending items remain; if the initial
+report has none, end with that implementation question.
+
+Implement only on an affirmative answer to that question. An earlier execution request does not
+count as the answer. Resolving a pending item alone is not implementation confirmation.
+
+## Example Report
+
+These placeholders stand for conversation-supported goals, decisions, and paths. The example shows
+all four sections and an unresolved goal; omit empty sections in an actual report.
 
 ❓ **Pending confirmation**
 
@@ -24,7 +74,7 @@ The placeholders represent conversation-supported goals, decisions, and paths. T
 🎯 **Goals**
 
 - **G1**: Deliver outcome A.
-- **G2**: Keep outcome B consistent with outcome A.
+- **G2** (still-active Agent suggestion): Keep outcome B consistent with outcome A.
 
 🚫 **Excluded ideas**
 

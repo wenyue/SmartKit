@@ -1,11 +1,11 @@
 ---
-name: elegant-rule-led-skill
+name: rule-documentation-links
 description: Use for work involving documentation links or their destinations, including requested link assessment.
 ---
 
 # Documentation Links
 
-Strength: `Default`
+Apply this policy within separately established permission to change documents or access destinations.
 
 ## Added or changed links
 
@@ -19,4 +19,4 @@ Before deciding how to handle links to a document that moves, is renamed, or is 
 
 ## Requested assessment
 
-Cover requested links in the existing work report: supported defects, verified coverage, and evidence gaps. Assessment authorizes no edits; apply this policy within separately established permission to change documents or access destinations.
+Cover requested links in the existing work report: supported defects, verified coverage, and evidence gaps. Assessment authorizes no edits.

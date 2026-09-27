@@ -36,11 +36,11 @@ single-writer lock, later fingerprints, and Role Boundary Audit after every role
 allowlist is a behavioral prompt contract, not a hard sandbox. Context-document use and its narrow
 translation exception remain owned by the project Rule.
 
-Generic output alone does not require Soft Isolation. `write-setup-authoring-contracts` legitimately
+Generic output alone does not require Soft Isolation. `write-setup-authoring-blueprints` legitimately
 uses this repository's setup catalog, blueprint owner, and representative target evidence, so it
 uses the Default Fresh Role Adapter with one persistent Author, applicable machine validation, and
 one persistent Static Reviewer; it starts no Quality pair, Correctness pair, or Acceptance Runner.
-Its Setup Authoring Contract is always a judgment-only description of target meaning, evidence,
+Its Setup Authoring Blueprint is always a judgment-only description of target meaning, evidence,
 ownership, writes, validation, handoff, and ambiguity stops; it does not prescribe generation steps,
 ordering, or tools. Soft Isolation remains specific to shared Rule and Skill portability
 qualification.

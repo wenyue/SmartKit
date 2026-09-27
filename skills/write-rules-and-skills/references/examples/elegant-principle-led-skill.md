@@ -5,22 +5,46 @@ description: Produce a decision memo when one option must be chosen among docume
 
 # Decision Memo
 
-Produce one concise memo that lets the accountable decision-maker understand the choice, challenge its basis, and act without reconstructing the investigation.
+Write a memo that lets the accountable decision-maker understand the choice, challenge its basis,
+and act without reconstructing the investigation. Put the decision in focus; background earns
+space when it changes how that decision should be made.
 
-## Principles
+## Find what could change the choice
 
-- **Decision first.** State the recommendation and its status before supporting detail.
-- **Material comparison.** Compare viable alternatives on criteria that could change the choice; compress differences that do not bear on it.
-- **Traceable confidence.** Distinguish evidence, inference, and unresolved assumption, linking inspectable sources. A quoted price is evidence; projected savings are an inference; an unknown renewal rate is an assumption.
-- **Consequences.** Show costs, risks, reversibility, and operational effects as clearly as benefits.
-- **Proportion.** Expand contested or irreversible parts and compress settled context.
+Start from the decision, its owner, and the outcome they care about. Use the supplied context and
+recoverable facts to identify viable options and the differences that matter. If a material goal,
+criterion, or decision-maker remains unknown, request that exact input before recommending an option
+that depends on it. Keep independently useful comparisons available.
 
-## Scope and completion
+Compare options on the same basis. A cheaper service may move work onto the user's team; include
+that work when it could reverse the apparent saving. An option that fails a firm requirement is not
+competitive merely because it wins on other criteria. Explain that exclusion, then spend the memo
+on the choices still available.
 
-Stay within the presented decision and research recoverable facts. If a material criterion or decision-maker is missing, request that exact input and pause the memo. Accountable-owner selection and implementation retain their own authorities.
+Look for the hinge: the fact or judgment on which the recommendation turns. If one service is
+cheaper only at expected traffic, show how plausible traffic changes affect the choice. If switching
+back would be costly, the uncertainty deserves more attention than an easily reversible detail.
+Use calculations, a small comparison table, or prose according to the question; a scoring matrix
+is useful only when its scales and weights have a defensible meaning.
 
-The completed memo identifies:
+## Make confidence inspectable
 
-- the decision, owner, recommended option, and material alternatives;
-- criteria, evidence, trade-offs, consequential assumptions, and risks;
-- required approval or follow-up.
+Keep evidence, inference, and assumption distinguishable. A vendor's dated quotation is evidence.
+Annual savings calculated from it and forecast usage are an inference. A renewal rate the vendor
+has not committed to is an assumption. Link inspectable sources for consequential claims and show
+the assumptions behind comparisons, rather than giving every sentence the same tone of certainty.
+
+Research what can be established within the task. When uncertainty remains, explain whether it
+changes the recommendation, makes it conditional, or prevents a decision. Do not turn an unsupported
+estimate into a fact to finish the memo.
+
+## Write toward the decision
+
+Lead with the recommendation and its status. Explain why it wins, including the strongest reason
+to choose the closest alternative. Give consequential costs, risks, reversibility, and operational
+effects the same attention as benefits. Expand contested points; compress settled context.
+
+The memo is ready when its reader can identify the decision and owner, understand the material
+alternatives and trade-offs, inspect the basis for the recommendation, and see what approval or
+follow-up is needed. Choose a length and structure that support that reading. Producing the memo
+does not select an accountable owner, approve the recommendation, or authorize implementation.

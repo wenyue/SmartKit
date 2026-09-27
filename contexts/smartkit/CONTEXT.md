@@ -20,7 +20,7 @@ tools, capabilities, lifecycle semantics, constraints, and missing-capability fa
 _Avoid_: Platform adaptation, duplicated workflow policy
 
 **Instruction Governance（指令治理）**:
-The shared policy that defines Rule strength and precedence, Skill authority and overlap, and
+The shared policy that defines Rule precedence, Skill authority and overlap, and
 semantic conflict resolution.
 _Avoid_: Rule configuration, Skill Governance, workflow routing
 

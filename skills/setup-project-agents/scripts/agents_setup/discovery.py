@@ -6,7 +6,7 @@ from .external_contract import is_link_like as _is_link_like
 from .models import Catalog, ProjectRuleSpec, ProjectSkillSpec
 from .project import ProjectError, confined_target
 from .rule_metadata import (
-    RuleMetadataError, policy_metadata, read_policy, reject_conditional_rule,
+    RuleMetadataError, read_policy, reject_conditional_rule,
     validate_rule_skill,
 )
 
@@ -28,14 +28,6 @@ def _managed_targets(catalog: Catalog, kind: str) -> set[PurePosixPath]:
             )
         )
     }
-
-
-def _rule_metadata(text: str, relative: PurePosixPath) -> ProjectRuleSpec:
-    try:
-        strength = policy_metadata(text, relative.as_posix())
-    except RuleMetadataError as error:
-        raise DiscoveryError(str(error)) from error
-    return ProjectRuleSpec(relative, strength)
 
 
 def discover_project_rules(
@@ -68,7 +60,7 @@ def discover_project_rules(
             raise DiscoveryError(str(error)) from error
         if relative in managed or relative in previous_managed:
             continue
-        result.append(_rule_metadata(text, relative))
+        result.append(ProjectRuleSpec(relative))
     return tuple(result)
 
 

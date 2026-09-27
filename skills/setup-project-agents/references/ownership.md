@@ -1,71 +1,84 @@
 # Ownership
 
-The shipped catalog always enables Codex, Cursor, Copilot, and Qoder. It installs its declared shared
-Rules and Skills, the Codex Plugin Agent defaults, and every catalog-declared project blueprint.
-Optional project configuration can add external Skills, project Agents, and MCP servers.
+Read this before full setup or either local synchronization operation. The catalog and project
+schema define supported inputs; recorded ownership determines which existing surfaces setup can
+replace or retire. Preserve independently owned content even when it occupies a nearby path.
 
-If `.agents/config.json` exists or accepted intent requires non-default inputs, use the schema
-shipped with this loaded plugin at `<skill-root>/../../setup-assets/catalog/project-config.schema.json`
-to reconcile or create this project-owned file before `start`. Its absence means shipped defaults.
-This schema also governs local synchronization. Resolve external Skill sources, project Agent
-mappings, and MCP declarations through it.
+## Establish project inputs
 
-For full setup, `start` validates the project input against the selected canonical or installed
-fallback source before freezing the request. If that source rejects input prepared under the loaded
-schema, follow the [session protocol](session-protocol.md#preflight): correct the reported cause
-within accepted authority and begin a fresh invocation. The returned session source and request
-remain immutable.
+The shipped catalog enables Codex, Cursor, Copilot and Qoder. It installs declared shared Rules and
+Skills, Codex Plugin Agent defaults and every catalog-declared project blueprint. Optional project
+configuration adds external Skills, project Agents and MCP servers.
 
-The contents of project-local Rules and Skills under `.agents/rules/` and `.agents/skills/`, including
-blueprint-generated sources and their supporting files, are project-owned and editable between
-sessions. Setup discovers and preserves additional project-owned Rules and Skills. Project Agent
-sources also remain project-owned. Catalog-declared Codex Plugin Agent defaults are fallbacks, not
-project Agent declarations. Native Cursor, Copilot, and Qoder Plugin Agents, and native plugin
-Rules, Skills, and MCP, are outside this workflow.
+When `.agents/config.json` exists or accepted intent needs non-default inputs, reconcile or create
+that project-owned file before `start` using the loaded plugin's schema:
+`<skill-root>/../../setup-assets/catalog/project-config.schema.json`. Absence means shipped defaults.
+The same schema governs local synchronization and defines external Skill sources, project Agent
+mappings and MCP declarations.
 
-Every direct `.agents/rules/*.md` file is an unconditional required Rule, with explicit Strength.
-Numeric prefixes remain valid filenames and carry no category or precedence meaning.
-The owned `AGENTS.md` section lists all discovered Rule paths in one required list. Strength remains
-owned by each Rule and is not repeated in the index. Conditional policy belongs in a native
-`.agents/skills/rule-<domain>/SKILL.md`: its frontmatter name matches its folder,
-its nonempty model-facing description supports native discovery, and its entry declares default
-Strength. Ordinary project Skills keep their existing discovery behavior.
+For full setup, `start` validates input against its selected canonical or installed-fallback source
+before freezing the request. If that source rejects input prepared under the loaded schema, follow
+[Preflight](session-protocol.md#preflight): correct the reported cause within accepted authority and
+start a fresh invocation. The returned source and request stay immutable.
 
-Setup and both synchronization operations refuse explicit legacy conditional Rule declarations,
-including old conditional index rows. Separately authorize source authoring into rule-led Skills
-and update or remove their legacy `AGENTS.md` declarations in that authorized migration before
-retrying; setup does not silently change a policy's loading meaning. Fenced examples do not
-count as operative index rows. Harness-specific native plugin Rules retain their own loading policy.
+Project-local Rule and Skill contents under `.agents/rules/` and `.agents/skills/`, including generated
+sources and their supporting files, belong to the project and can be edited between sessions.
+Setup discovers and preserves additional project-owned Rules and Skills. Project Agent sources also
+stay project-owned. Codex Plugin Agent defaults are fallbacks, not project Agent declarations.
+Native Cursor, Copilot and Qoder Plugin Agents, and native plugin Rules, Skills and MCP, are outside
+this workflow.
 
-For each generated project Rule or Skill, SmartKit records the contract fingerprint and exact output
-paths, including supporting files, in `.agents/smartkit.lock.json`; it stores no persistent digests of
-those files' contents. Every full session requests the complete current contract set. Read current
-project evidence and existing output content to preserve qualified intent during reauthoring. Removing a contract deletes
-its recorded outputs; renaming its catalog target retires the old recorded paths and generates the
-current destination. Supporting outputs omitted from a new complete handoff are retired; unrecorded
-supporting files remain project-owned.
+## Preserve the policy's loading meaning
 
-Project synchronization preserves generated sources and contract records. Full setup records project
-Agent adapters and MCP fields separately from shared/default ownership. Broad local synchronization
-requires this established record; older or absent ownership requires full setup first. It retires
-only recorded project mappings on local declaration deletion or rename. Shared/default/external
-assets and their provenance remain intact. External Skill declaration changes require full setup.
+Every direct `.agents/rules/*.md` file is an unconditional required Rule.
+Numeric filename prefixes carry no category or precedence. The owned `AGENTS.md` section lists all
+discovered paths in one required list.
 
-Managed rendered, shared, and external assets retain digest protection. Frozen-session target drift
-checks apply to the consumed target surface defined by the [session protocol](session-protocol.md).
+Conditional policy belongs in a native `.agents/skills/rule-<domain>/SKILL.md`. Its frontmatter name
+matches its folder, and its nonempty model-facing description supports discovery.
+Ordinary project Skills keep their existing discovery behavior. Harness-native
+plugin Rules retain their own loading policy.
 
-SmartKit owns only the files and structured fields recorded in `.agents/smartkit.lock.json`, plus
-one `## Project rules` section in `AGENTS.md`. Complete setup renders that section through the next
-heading of level one or two, or the end of the file, and appends it when absent. Headings inside
-fenced code blocks do not define section boundaries. Duplicate Project rules sections or any
-ownership or digest conflict stop setup before replacement. Preserve every byte outside the section
-and every undeclared file, field, directory, and secret value.
+Full setup and both local operations refuse explicit legacy conditional Rule declarations,
+including old conditional index rows. Before retrying, separately authorize the source migration to
+rule-led Skills and the update or removal of legacy `AGENTS.md` declarations. Setup does not silently
+change when policy loads. Fenced examples are not operative index rows.
 
-MCP environment fields name environment variables; URL, command, argument, and override literals
-remain project input. Do not infer that an arbitrary string is sensitive. If qualified repository
-evidence identifies a real sensitive literal, stop before rendering and ask the project owner to
-replace it with supported indirection.
+## Distinguish reauthoring from recorded retirement
 
-Setup preserves and validates MCP readiness declarations as project configuration. Readiness runtime
-owns execution of those checks. Setup and project synchronization neither run readiness checks nor
-install dependencies; a clean result proves configuration convergence only.
+For each generated Rule or Skill, `.agents/smartkit.lock.json` records its blueprint fingerprint and
+exact output paths, including supporting files. It stores no persistent digests of their contents.
+Every full session requests the complete current blueprint set; use existing content and current
+project evidence to preserve qualified intent during reauthoring.
+
+Blueprint removal retires its recorded outputs. A renamed catalog target retires old recorded paths
+and generates the current destination. A supporting output omitted from a new complete handoff is
+retired; unrecorded supporting files remain project-owned. Exact records bound retirement, so nearby
+or apparently obsolete files do not acquire removal authority by association.
+
+Project synchronization preserves generated sources and blueprint records. Full setup separately
+records project Agent adapters and MCP fields from shared/default ownership. Broad local sync needs
+that established record; an older or absent record requires full setup first. It retires only
+recorded project mappings on declaration deletion or rename, keeping shared/default/external assets
+and provenance intact. Changed external Skill declarations require full setup.
+
+Managed rendered, shared and external assets retain digest protection. Within a frozen session,
+setup-relevant target drift is governed by the [Full Session Protocol](session-protocol.md).
+
+## Preserve unowned bytes and structured fields
+
+SmartKit owns only files and structured fields recorded in `.agents/smartkit.lock.json`, plus one
+`## Project rules` section in `AGENTS.md`. Full setup renders that section through the next level-one
+or level-two heading, or file end, and appends it when absent. Fenced headings do not define section
+boundaries. Duplicate Project rules sections, ownership conflicts or digest conflicts stop setup
+before replacement.
+
+Preserve every byte outside the owned section and every undeclared file, field, directory and secret
+value. MCP environment fields name environment variables; URL, command, argument and override
+literals remain project input. An arbitrary string is not evidence of a secret. When qualified
+repository evidence identifies a real sensitive literal, stop before rendering and ask its project
+owner to replace it with supported indirection.
+
+MCP readiness declarations are project configuration to preserve and validate. Their runtime owner
+executes checks. Setup and synchronization run no readiness checks and install no dependencies:
+`clean` proves configuration convergence only.

@@ -101,7 +101,7 @@ class SyncProjectTest(unittest.TestCase):
 
     def test_local_sync_converges_all_supported_routes_and_preserves_other_owners(self):
         self.add_external()
-        self.write('.agents/rules/30-local.md', '# Local\n\nStrength: `Default`\n\n')
+        self.write('.agents/rules/30-local.md', '# Local\n\n')
         self.write('.agents/skills/local-check/SKILL.md', '# Local skill\n')
         self.config['agents'] = [self.agent('renamed')]
         self.config['mcp'] = [self.server('renamed')]
@@ -153,10 +153,10 @@ class SyncProjectTest(unittest.TestCase):
         self.assertEqual(self.snapshot(), after)
 
     def test_local_edits_update_mappings_and_rule_metadata_without_regeneration(self):
-        self.write('.agents/rules/30-before.md', '# Local\n\nStrength: `Default`\n\n')
+        self.write('.agents/rules/30-before.md', '# Local\n\n')
         self.sync()
         (self.target / '.agents/rules/30-before.md').unlink()
-        self.write('.agents/rules/31-after.md', '# Local\n\nStrength: `Mandatory`\n\n')
+        self.write('.agents/rules/31-after.md', '# Local\n\n')
         self.config['agents'][0]['description'] = 'Updated project responsibility'
         self.config['agents'][0]['harnesses'].pop('cursor')
         self.config['mcp'][0]['command'] = 'updated-runtime'
@@ -180,8 +180,8 @@ class SyncProjectTest(unittest.TestCase):
     def test_rule_skill_uses_native_discovery_without_adapter_or_index_rows(self):
         relative = '.agents/skills/rule-testing/SKILL.md'
         self.write(relative, '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
-                   '# Testing\n\nStrength: `Default`\n\n'
-                   '\n## Integration tests\n\nStrength: `Mandatory`\n\nPreserve isolation.\n')
+                   '# Testing\n\n'
+                   '\n## Integration tests\n\nPreserve isolation.\n')
         original = (self.target / relative).read_bytes()
         result = self.sync()
         self.assertIn(relative, result.preserved_paths)
@@ -193,14 +193,10 @@ class SyncProjectTest(unittest.TestCase):
 
     def test_invalid_rule_skill_refuses_sync_without_writing(self):
         valid = ('---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
-                 '# Testing\n\nStrength: `Default`\n\n')
+                 '# Testing\n\n')
         for content in (
             valid.replace('name: rule-testing', 'name: another-name'),
             valid.replace('description: Use when writing tests.\n', ''),
-            valid.replace('Strength: `Default`\n', ''),
-            valid.replace('Strength: `Default`', 'Strength: `Sometimes`'),
-            valid.replace('Strength: `Default`\n', '') +
-            '\n## A section\n\nStrength: `Mandatory`\n',
             valid.replace('description:', 'disable-model-invocation: true\ndescription:'),
             valid.replace('description:', 'disable-model-invocation: true # manual only\ndescription:'),
         ):
@@ -222,7 +218,7 @@ class SyncProjectTest(unittest.TestCase):
                 self.write(relative,
                            '---\nname: rule-testing\ndescription: Use when writing tests.\n' +
                            declaration + '\n---\n'
-                           '# Testing\n\nStrength: `Default`\n\n')
+                           '# Testing\n\n')
                 before = self.snapshot()
                 for check in (False, True):
                     with self.subTest(check=check):
@@ -239,7 +235,7 @@ class SyncProjectTest(unittest.TestCase):
         ):
             with self.subTest(fields=fields):
                 self.write(relative, '---\nname: rule-testing\n' + fields + '---\n'
-                           '# Testing\n\nStrength: `Default`\n\n')
+                           '# Testing\n\n')
                 original = (self.target / relative).read_bytes()
                 self.assertEqual(self.sync().check, 'clean')
                 self.assertEqual((self.target / relative).read_bytes(), original)
@@ -251,7 +247,7 @@ class SyncProjectTest(unittest.TestCase):
             with self.subTest(name=name):
                 self.write(relative, '---\nname: ' + name + '\n'
                            'description: Use when writing tests.\n---\n'
-                           '# Testing\n\nStrength: `Default`\n\n')
+                           '# Testing\n\n')
                 before = self.snapshot()
                 for check in (False, True):
                     with self.subTest(check=check):
@@ -268,14 +264,14 @@ class SyncProjectTest(unittest.TestCase):
             with self.subTest(name=name):
                 self.write(relative, '---\nname: ' + name + '\n'
                            'description: Use when writing tests.\n---\n'
-                           '# Testing\n\nStrength: `Default`\n\n')
+                           '# Testing\n\n')
                 original = (self.target / relative).read_bytes()
                 self.assertEqual(self.sync().check, 'clean')
                 self.assertEqual((self.target / relative).read_bytes(), original)
 
     def test_legacy_conditional_rule_requires_source_migration_before_sync(self):
         self.write('.agents/rules/library.md',
-                   '# Library\n\nStrength: `Default`\n\n')
+                   '# Library\n\n')
         entry = self.target / 'AGENTS.md'
         entry.write_bytes(entry.read_bytes() +
             b'\n### On-demand rules\n\n'
@@ -300,7 +296,7 @@ class SyncProjectTest(unittest.TestCase):
             with self.subTest(description=description):
                 self.write(relative,
                            '---\nname: rule-testing\ndescription: ' + description + '\n---\n'
-                           '# Testing\n\nStrength: `Default`\n\n')
+                           '# Testing\n\n')
                 before = self.snapshot()
                 with self.assertRaisesRegex(project_sync.ProjectSyncError, 'description'):
                     self.sync()
@@ -319,7 +315,7 @@ class SyncProjectTest(unittest.TestCase):
             with self.subTest(description=description):
                 self.write(relative,
                            '---\nname: rule-testing\ndescription: ' + description + '\n---\n'
-                           '# Testing\n\nStrength: `Default`\n\n')
+                           '# Testing\n\n')
                 original = (self.target / relative).read_bytes()
                 self.assertEqual(self.sync().check, 'clean')
                 self.assertEqual((self.target / relative).read_bytes(), original)
@@ -327,21 +323,21 @@ class SyncProjectTest(unittest.TestCase):
     def test_rule_skill_change_during_sync_rolls_back_adapters_and_preserves_source_edit(self):
         relative = '.agents/skills/rule-testing/SKILL.md'
         self.write(relative, '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
-                   '# Testing\n\nStrength: `Default`\n\n')
+                   '# Testing\n\n')
         self.config['agents'] = [self.agent('renamed')]
         self.save_config()
         before = self.snapshot()
         original_apply = project_sync.apply_plan
 
         def change_source_then_apply(target, plan, *, postcondition):
-            self.write(relative, before[relative].decode().replace('Default', 'Mandatory'))
+            self.write(relative, before[relative].decode() + '\nPreserve isolation.\n')
             return original_apply(target, plan, postcondition=postcondition)
 
         with mock.patch.object(project_sync, 'apply_plan', side_effect=change_source_then_apply):
             with self.assertRaisesRegex(project_sync.ProjectSyncError, 'inputs changed'):
                 self.sync()
         after = self.snapshot()
-        self.assertIn(b'Strength: `Mandatory`', after.pop(relative))
+        self.assertIn(b'Preserve isolation.', after.pop(relative))
         before.pop(relative)
         self.assertEqual(after, before)
 

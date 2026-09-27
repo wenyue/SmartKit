@@ -1,11 +1,9 @@
 # Tools
 
-Strength: `Mandatory`
-
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/tools.md`, the Author
-produces one target-owned Mandatory Rule titled `Tools`.
+produces one target-owned Rule titled `Tools`.
 
 Setup must make the relevant target evidence available: entry guidance, manifests and runtime
 requirements, repository scripts and current help, task runners and CI, Git state, existing Rules

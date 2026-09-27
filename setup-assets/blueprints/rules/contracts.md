@@ -1,11 +1,9 @@
 # Contracts
 
-Strength: `Mandatory`
-
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/contracts.md`, the Author
-produces one target-owned Mandatory Rule titled `Contracts` that defines what makes a change valid.
+produces one target-owned Rule titled `Contracts` that defines what makes a change valid.
 
 Setup must supply relevant target evidence: entry guidance and applicable Rules; accepted Issues,
 Specs, and ADRs; APIs, schemas, events, domain models, implementation, and behavioral tests; and

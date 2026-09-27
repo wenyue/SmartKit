@@ -1,11 +1,9 @@
 # Structure
 
-Strength: `Default`
-
 ## Purpose and evidence
 
 For a `setup-project-agents` request targeting `.agents/rules/structure.md`, the Author
-produces one target-owned Default Rule titled `Structure`. It ranks valid choices of
+produces one target-owned Rule titled `Structure`. It ranks valid choices of
 location, responsibility seam, or navigation entry under applicable policy and installed SmartKit
 governance. Ownership, dependency permission, delivery, installation, and exposure remain with
 their policy owners.
@@ -35,7 +33,7 @@ that favor:
   mechanics, provided moving upstream preserves the selecting context.
 - **A canonical navigation entry** that leads to the owning source without duplicating an inventory.
 
-Mandatory owners retain hard ownership, canonical-source, dependency, generation, installation,
+The relevant policy owners retain ownership, canonical-source, dependency, generation, installation,
 delivery, exposure, and validation policy. Keep recommendations specific to supported choices;
 package tours, cached layouts, generic layering, speculative architecture, and setup or authoring
 procedures do not belong in this Rule.

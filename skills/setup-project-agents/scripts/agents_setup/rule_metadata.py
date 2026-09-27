@@ -7,14 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .external_contract import is_link_like
-from .markdown import live_headings, live_text
+from .markdown import live_text
 
 
 class RuleMetadataError(ValueError):
     """Raised when policy metadata is missing, ambiguous, or conditional."""
 
 
-_STRENGTH = re.compile(r'^(?:\*\*)?Strength:(?:\*\*)?[ \t]*(.*)$', re.IGNORECASE)
 _YAML_FIELD = re.compile(r"(?P<key>'(?:[^']|'')*'|\"(?:[^\"\\]|\\.)*\"|[A-Za-z_][A-Za-z0-9_-]*)[ \t]*:[ \t]*(?P<value>.*)")
 _BLOCK_STRING = re.compile(r'[|>](?:[1-9][+-]?|[+-][1-9]?)?')
 
@@ -153,19 +152,6 @@ def reject_conditional_rule(text: str, label: str) -> None:
             )
 
 
-def policy_metadata(text: str, label: str) -> str:
-    """Read the first declared strength, leaving later section overrides intact."""
-    for line in live_text(text).splitlines():
-        match = _STRENGTH.fullmatch(line)
-        if match is None:
-            continue
-        strength = match.group(1).strip().strip('`')
-        if strength in {'Mandatory', 'Default', 'Advisory'}:
-            return strength
-        break
-    raise RuleMetadataError(f'policy requires valid Strength metadata: {label}')
-
-
 def _string_scalar(lines: Sequence[str], index: int, end: int, label: str) -> str:
     """Read supported native YAML strings; refuse ambiguous or non-string values."""
     raw = lines[index].split(':', 1)[1].strip()
@@ -220,7 +206,7 @@ def validate_rule_skill(text: str, name: str, label: str) -> None:
         return
     if not text.startswith('---\n') and not text.startswith('---\r\n'):
         raise RuleMetadataError(f'rule-led Skill requires YAML frontmatter: {label}')
-    fields, body = _frontmatter(text, label)
+    fields, _ = _frontmatter(text, label)
     invocation = fields.get('disable-model-invocation')
     if invocation is not None and (
         _without_comment(invocation.value) not in {'false', 'False', 'FALSE'}
@@ -248,7 +234,3 @@ def validate_rule_skill(text: str, name: str, label: str) -> None:
     )
     if not description.strip():
         raise RuleMetadataError(f'rule-led Skill requires a nonempty description: {label}')
-    sections = [heading for heading in live_headings(body)
-                if heading.level >= 2 and heading.title.casefold() != 'metadata']
-    introduction = body[:sections[0].start] if sections else body
-    policy_metadata(introduction, label)

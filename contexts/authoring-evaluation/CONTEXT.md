@@ -1,7 +1,7 @@
 # Authoring Evaluation
 
 Authoring Evaluation describes the language used to discuss how SmartKit writes and reviews Rules,
-Skills, and Setup Authoring Contracts.
+Skills, and Setup Authoring Blueprints.
 
 ## Language
 
@@ -98,7 +98,7 @@ _Avoid_: Detailed Skill, long Skill, mandatory outline
 A principle-led Skill that prescribes procedure only for the parts whose order materially matters.
 _Avoid_: Inconsistent Skill, partially specified Skill
 
-**Setup Authoring Contract（项目设置编写契约）**:
+**Setup Authoring Blueprint（项目设置编写蓝图）**:
 A project-owned blueprint that supplies accepted meaning and evidence for a future project-local Rule
 or Skill. It is neither the generated target nor the public authoring workflow.
 _Avoid_: Generated target, shared SmartKit artifact

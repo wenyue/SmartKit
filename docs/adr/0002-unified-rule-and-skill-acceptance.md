@@ -52,7 +52,7 @@ Corrections return to the same Reviewer until the Quality stage passes. Passing 
 numeric size reduction, but every increase from an available baseline must map to a distinct
 supported obligation.
 
-Setup Authoring Contracts use a separately owned static qualification workflow. A generated Rule or
+Setup Authoring Blueprints use a separately owned static qualification workflow. A generated Rule or
 Skill is a separate candidate that inherits neither evidence nor verdicts and independently passes
 the Rule and Skill authoring protocol.
 

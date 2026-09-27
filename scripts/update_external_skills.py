@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import os
@@ -92,6 +93,73 @@ class SourceSnapshot(NamedTuple):
 class UpdateResult(NamedTuple):
     changed_paths: tuple[str, ...]
     removed_paths: tuple[str, ...]
+
+
+class PatchStats(NamedTuple):
+    original_words: int
+    patched_words: int
+    added_words: int
+    deleted_words: int
+    changed_binary_files: int
+
+
+def patch_stats(upstream: Path, patched: Path) -> PatchStats:
+    """Compare final Skill resources to pristine upstream, using whitespace words per file."""
+    originals = {path.relative_to(upstream): path for path in _regular_files(upstream, 'upstream Skill')}
+    results = {path.relative_to(patched): path for path in _regular_files(patched, 'patched Skill')}
+    original_words = patched_words = added_words = deleted_words = changed_binary_files = 0
+    for relative in originals.keys() | results.keys():
+        try:
+            before = originals[relative].read_bytes() if relative in originals else b''
+            after = results[relative].read_bytes() if relative in results else b''
+        except OSError as error:
+            raise UpdateError(f'cannot read patch statistics resource: {relative}') from error
+        try:
+            old = before.decode('utf-8').split()
+            new = after.decode('utf-8').split()
+        except UnicodeDecodeError:
+            changed_binary_files += before != after
+            continue
+        if b'\0' in before or b'\0' in after:
+            changed_binary_files += before != after
+            continue
+        original_words += len(old)
+        patched_words += len(new)
+        for tag, start_old, end_old, start_new, end_new in difflib.SequenceMatcher(
+            None, old, new, autojunk=False,
+        ).get_opcodes():
+            if tag != 'equal':
+                added_words += end_new - start_new
+                deleted_words += end_old - start_old
+    return PatchStats(original_words, patched_words, added_words, deleted_words, changed_binary_files)
+
+
+def patch_report(snapshots: Mapping[str, SourceSnapshot]) -> str:
+    """Report local patch extent, excluding upstream upgrades and deletions from modification %."""
+    rows = [
+        'Patch extent versus resolved upstream (whitespace words; deletions excluded from modification %):',
+        '  Skill | original -> patched | added/rewritten | deleted | modification | changed binary files',
+    ]
+    totals = PatchStats(0, 0, 0, 0, 0)
+    for snapshot in snapshots.values():
+        for skill in snapshot.source.skills:
+            stats = patch_stats(
+                snapshot.checkout.root.joinpath(*skill.path.parts),
+                (snapshot.tree_root or snapshot.checkout.root).joinpath(*skill.path.parts),
+            )
+            totals = PatchStats(*(a + b for a, b in zip(totals, stats)))
+            rows.append(_patch_report_row(skill.id, stats))
+    rows.append(_patch_report_row('TOTAL (selected sources)', totals))
+    rows.append('  Modification = added/rewritten words / original words; binary resources excluded from words.')
+    return '\n'.join(rows)
+
+
+def _patch_report_row(label: str, stats: PatchStats) -> str:
+    percent = f'{stats.added_words / stats.original_words:.1%}' if stats.original_words else 'n/a (empty upstream)'
+    return (
+        f'  {label} | {stats.original_words} -> {stats.patched_words} | '
+        f'+{stats.added_words} | -{stats.deleted_words} | {percent} | {stats.changed_binary_files}'
+    )
 
 
 Resolver = Callable[[ExternalSource], ResolvedCheckout]
@@ -780,6 +848,7 @@ def main(argv: list[str] | None = None, *, resolver: Resolver = resolve_source) 
         desired_lock = _desired_lock(
             registry, snapshots, old_lock, selected_source=args.source
         )
+        report = patch_report(snapshots)
         if args.check:
             drift = check_repository(root, desired_lock)
             if drift:
@@ -788,6 +857,7 @@ def main(argv: list[str] | None = None, *, resolver: Resolver = resolve_source) 
                     print(f'  {path}', file=sys.stderr)
                 return 1
             print(f'External Skills are up to date: {len(registry.external_sources)} sources.')
+            print(report)
             return 0
         result = update_repository(
             root,
@@ -802,6 +872,7 @@ def main(argv: list[str] | None = None, *, resolver: Resolver = resolve_source) 
         )
         if result.removed_paths:
             print(f'Removed: {", ".join(result.removed_paths)}')
+        print(report)
         return 0
     except UpdateError as error:
         print(f'error: {error}', file=sys.stderr)

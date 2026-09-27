@@ -24,10 +24,6 @@ class PluginRuleContractTest(unittest.TestCase):
         environment = dict(os.environ)
         environment['PLUGIN_DATA'] = str(self.state_root)
         environment['PLUGIN_ROOT'] = str(root)
-        environment['XDG_CONFIG_HOME'] = str(self.state_root / 'config')
-        environment['APPDATA'] = str(self.state_root / 'config')
-        environment['XDG_STATE_HOME'] = str(self.state_root / 'sessions')
-        environment.pop('PONYTAIL_DEFAULT_MODE', None)
         return subprocess.run(
             [
                 sys.executable, str(ROOT / 'runtime/rules/dispatch.py'),
@@ -61,6 +57,7 @@ class PluginRuleContractTest(unittest.TestCase):
             context,
         )
         self.assertIn('## SmartKit Rule index', context)
+        self.assertNotIn('Strength', context)
         core_count = 0
         for rule in registry['rules']:
             if rule.get('delivery', 'inline' if rule['id'].startswith('smartkit/core-') else 'indexed') == 'inline':
@@ -94,12 +91,11 @@ class PluginRuleContractTest(unittest.TestCase):
     def test_registry_and_retired_adapter_contract(self):
         rules = json.loads((ROOT / 'rules/registry.json').read_text(encoding='utf-8'))['rules']
         self.assertEqual(rules[0]['id'], 'smartkit/core-instruction-governance')
-        self.assertEqual(rules[0]['strength'], 'Mandatory')
         self.assertTrue(rules[0]['description'])
         self.assertEqual(len({item['id'] for item in rules}), len(rules))
         for rule in rules:
-            self.assertTrue({'id', 'source', 'strength', 'description'} <= set(rule))
-            self.assertFalse(set(rule) - {'id', 'source', 'strength', 'description', 'delivery'})
+            self.assertTrue({'id', 'source', 'description'} <= set(rule))
+            self.assertFalse(set(rule) - {'id', 'source', 'description', 'delivery'})
             self.assertEqual(Path(rule['source']).name, rule['source'])
             self.assertTrue((ROOT / 'rules' / rule['source']).is_file())
         self.assertFalse((ROOT / 'rules/source').exists())
@@ -180,7 +176,7 @@ class PluginRuleContractTest(unittest.TestCase):
                 body = (ROOT / 'skills' / name / 'SKILL.md').read_text(encoding='utf-8')
                 self.assertRegex(body, rf'(?m)^name: {name}$')
                 self.assertRegex(body, r'(?m)^description: .+$')
-                self.assertIn('Strength: `Default`', body)
+                self.assertNotIn('Strength:', body)
                 self.assertNotIn('disable-model-invocation: true', body)
         for name in ('code', 'cpp', 'flutter', 'go', 'python'):
             self.assertFalse((ROOT / 'rules' / f'file-{name}.md').exists())
@@ -330,7 +326,7 @@ class PluginRuleContractTest(unittest.TestCase):
             ('description', ''), ('description', True), ('description', 'When\nediting'),
             ('source', '../file.md'), ('source', '/file.md'), ('source', 'source/file.md'),
             ('source', 'C:\\file.md'), ('source', 'file.txt'),
-            ('strength', 'Sometimes'), ('id', 'smartkit/core-instruction-governance'),
+            ('strength', 'Mandatory'), ('id', 'smartkit/core-instruction-governance'),
             ('trigger', {'type': 'file', 'include_globs': ['**/*.py']}),
             ('read_when', 'Always'),
         )
@@ -355,7 +351,7 @@ class PluginRuleContractTest(unittest.TestCase):
         document['rules'] = [
             rule for rule in document['rules'] if rule['id'] != 'smartkit/harness-codex'
         ]
-        document['rules'][0]['strength'] = 'Default'
+        document['rules'][0]['id'] = 'smartkit/not-governance'
         path.write_text(json.dumps(document), encoding='utf-8')
         result = self.run_raw_dispatch('cursor', 'session', b'{}', root=root)
         self.assertEqual(result.returncode, 1)

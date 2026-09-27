@@ -1,35 +1,38 @@
 # Create a Pull Request
 
-Publish one exact accepted commit and establish its pull request. The accepted PR request supplies
-publication authority; use the repository-approved host interface and infer routine title, body and
-draft choices from the accepted scope and project conventions.
+Publish one exact accepted commit and establish its PR through the repository's host interface.
+Derive routine title, body and draft state from accepted scope and project conventions. This route
+proves a handoff for review; a PR alone does not prove authoritative delivery.
 
-Establish the remote repository, base branch and observed base commit, intended head ref, and
-current host state. Search for an existing PR by repository, base and head before any creation. A
-matching open PR may be reused; check its actual head commit and metadata, updating only fields
-within the accepted request. A closed, merged, incompatible or ambiguously identified PR requires a
-specific continuation decision; never create a replacement merely because a prior call lacked a
-response.
+## Bind the intended publication
 
-Use [history preparation](history.md) to bind the delivery commit and exact tree to its
-accepted-state evidence. Task work outside that committed result returns to the implementation owner
-unless accepted authority identifies it as a separate preserved successor scope. Proven unrelated
-local state can remain outside the publication effect; retain a dirty source.
+Identify the remote repository, base branch and observed base OID, head ref and host state. Search
+for an existing PR by repository, base and head before creating one. Reuse a matching open PR,
+checking its actual head and making only authorized metadata updates. A closed, merged,
+incompatible or ambiguous match needs a continuation decision. A missing create response is not
+evidence that no PR exists.
 
-Before publication, recheck the delivery binding and remote base/head. Base movement uses history's
-**Preserve the result** contract. If the authoritative base already contains the accepted result,
-use its **Already Delivered** proof and create no empty PR. An existing exact PR is a successful
-handoff without a duplicate push or creation.
+Consume [History Preparation](history.md) and its accepted-state binding. Task work outside that
+accepted commit returns to the implementation owner unless a successor scope is separately
+authorized. Unrelated local work can stay dirty when publication cannot affect it and preservation
+is established.
 
-Otherwise push the immutable delivery OID to the exact head ref using a normal non-force push.
-Observe that the remote ref equals that OID before creating or updating the PR. Treat publication
-and PR establishment as separate effects in the receipt. A race, rejection, timeout or interruption
-requires server observation through [effect recovery](recovery.md) before continuation.
+Refresh the binding, remote base and head immediately before publication. A moved base follows
+History Preparation's result-preservation boundary. If the authoritative target already contains
+the result with **Already Delivered** proof, report that result without an empty PR. If the exact
+PR already exists, reuse it without a duplicate push or create.
 
-Prove the remote head and PR head equal the delivery OID, and verify repository, base, head ref,
-open state, intended metadata and URL. That proves the PR handoff. If PR establishment fails after a
-proven push, retain the publication fact, source, branch, receipt and recovery owner for PR
-continuation under effect recovery.
+## Publish and observe each effect
 
-Retain the source and required recovery state for review updates. A PR alone does not release them
-for cleanup or establish authoritative delivery.
+Use a non-force push of the exact delivery OID to the exact head ref. Observe that remote ref equal
+to the delivery OID before creating the PR. Push and PR creation are separate effects in the
+[recovery receipt](recovery.md), since one can succeed while the other fails.
+
+After a race, rejection, timeout or missing response, inspect server state and resolve the original
+attempt before retrying. A proven push with failed PR creation leaves publication as a known effect;
+retain the source, ref, receipt and recovery owner needed to finish the PR.
+
+To prove the outcome, bind the remote head and PR head to the delivery OID and verify repository,
+base, head ref, open state, required metadata and URL. Retain the items needed for review and
+updates, with their owners and release conditions. Preserve independently proven publication in a
+failed result even when PR proof remains unavailable.

@@ -1,10 +1,8 @@
 # 工具
 
-强度：`Mandatory`
-
 ## 目的与证据
 
-当 `setup-project-agents` 请求生成 `.agents/rules/tools.md` 时，Author 编写一份归目标仓库所有、标题为 `Tools` 的 Mandatory Rule。
+当 `setup-project-agents` 请求生成 `.agents/rules/tools.md` 时，Author 编写一份归目标仓库所有、标题为 `Tools` 的 Rule。
 
 Setup 必须提供相关目标证据：入口指引、清单和运行时要求、仓库脚本及其当前帮助、任务运行器和 CI、Git 状态、既有 Rules 和 Skills，以及已接受的 Issues、Specs 或 ADRs。按所有者和来源评定每项资料。已接受的项目意图具有决定权；既有 Rule 文本提供保留和回归证据。将义务分类为保留、变更、新增、停用或非目标；除非已接受意图要求变更或停用，否则保留受支持策略。可见性和访问权限不授予权威。
 

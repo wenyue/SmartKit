@@ -236,7 +236,7 @@ def _index_references(current: bytes | None) -> list[str]:
                         f'ambiguous Rule list item in AGENTS.md: {line.strip()}'
                     )
             continue
-        header = len(cells) >= 2 and cells[-2:] == ['Rule', 'Strength']
+        header = len(cells) >= 2 and cells[0] == 'Rule'
         separator = bool(cells) and all(re.fullmatch(r':?-+:?', cell) for cell in cells)
         if not (in_table or header or separator or line.lstrip().startswith('|') or '.agents/rules/' in line):
             continue

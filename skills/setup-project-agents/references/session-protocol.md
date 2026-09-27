@@ -1,96 +1,110 @@
-# Full session protocol
+# Full Session Protocol
+
+Read this before full setup. The public workflow owns one immutable private session from source
+selection through registration and one terminal `finish` or `cancel`. Explicit local synchronization
+uses separate commands and does not enter this protocol.
 
 ## Preflight
 
-Resolve only material choices that affect shipped defaults, project-owned inputs, or authorized
-effects. Prefer qualified repository evidence and ask only about genuinely unresolved choices.
+Resolve material choices affecting shipped defaults, project-owned inputs or effects. Use qualified
+repository evidence and ask only for genuinely unresolved choices.
 
-`start` checks the project-owned Matt context. If it reports incomplete setup, end this invocation
-and ask the user to invoke `setup-matt-pocock-skills` in the target; begin a fresh invocation after
-that workflow finishes. Setup neither creates nor owns that context.
+`start` checks project-owned Matt context. When it reports incomplete setup, end this invocation and
+ask the user to invoke `setup-matt-pocock-skills` in the target. Begin a fresh setup invocation after
+that workflow completes. Setup neither creates nor owns Matt context.
 
-Before each effect, establish that accepted session intent authorizes it: private system-temporary
-storage, one read-only fetch of canonical SmartKit `master`, configured external Skill fetches,
-generated authoring, and the target mutations. These are distinct grants; accepted setup intent may
-already supply them. Ask only for a missing grant, without repeating confirmations already settled.
-Downstream effects of generated authoring still need their own authority.
+Before each effect, establish its authority: private system-temporary storage, one read-only fetch
+of canonical SmartKit `master`, configured external Skill fetches, generated authoring and target
+mutations are distinct grants. Accepted setup intent may already supply them; do not repeat settled
+confirmations. Downstream effects of generated authoring still need their own authority. Stop before
+any unauthorized effect.
 
-The fetches may contact only their declared repositories and may create, then remove, private
-temporary checkouts. They run non-interactively without ambient Git configuration, credential
-helpers, proxies, SSH, or askpass state. None authorizes dependency installation, publication,
-Git-history changes, or any other target write. Stop before an unauthorized effect. If the canonical
-fetch is unavailable, `start` may use the validated installed plugin root and reports
-`source_commit: null`; configured external sources still require their own network authority.
+Fetches contact only their declared repositories and may create and remove private temporary
+checkouts. They run non-interactively without ambient Git configuration, credential helpers,
+proxies, SSH or askpass state. These grants do not include dependency installation, publication,
+Git-history changes or unrelated target writes. If the canonical fetch is unavailable, `start` may
+use the validated installed plugin root and reports `source_commit: null`. Configured external
+sources still need their own network authority.
 
-Scripts validate configured external sources, licenses, Skill trees, names, destination collisions,
-and recorded tag stability before target mutation. If `start` rejects a declaration or source,
-correct the reported cause and begin a fresh invocation.
+Scripts validate external source declarations, licenses, Skill trees, names, destination collisions
+and recorded tag stability before target mutation. If `start` rejects input or a source, correct the
+reported cause within accepted authority and begin a fresh invocation.
 
-## Start a frozen session
+## Start one frozen session
 
-Start one private session through the public `scripts/workflow.py` entry:
+Use the public entry:
 
 ```text
 python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 
-The session operations are `start`, `register`, `finish`, and `cancel`. Use each command’s `--help`
-for arguments; `sync-project` and `sync-project-rules` are separate local operations.
+The session commands are `start`, `register`, `finish` and `cancel`; inspect each command's `--help`
+for its arguments. `sync-project` and `sync-project-rules` are separate local operations.
 
-Stop on a nonzero result. Record `session` as `SESSION`, `generated` as `GENERATED`, and the returned
-`request`, `source_root`, `source_commit`, and `source_fingerprint`. The request freezes setup
-inputs, external snapshots, the generation requests, and source and setup-relevant target
-fingerprints. The target fingerprint covers only evidence setup consumes: project setup config,
-ownership and managed assets, generated destinations, project Rule and rule-led Skill metadata, project Agent sources,
-and touched native host configuration. Git history and index state, caches, logs, and other
-project-owned work remain outside it.
-The public launcher rejects a pinned source that does not request every current catalog contract.
-Confirm the returned request matches accepted intent before authoring. A canonical run is pinned to
-its commit and fingerprint; an installed fallback is identified by its root, null commit, and fingerprint.
+Stop on a nonzero result. Retain returned `session` as `SESSION`, `generated` as `GENERATED`, and
+`request`, `source_root`, `source_commit` and `source_fingerprint`. The request freezes setup inputs,
+external snapshots, generation requests, source evidence and setup-relevant target fingerprints.
+The public launcher refuses a pinned source that does not request every current catalog blueprint.
+Confirm the complete request against accepted intent before authoring.
 
-Keep exactly this private session until one `finish` or `cancel`. Treat the request and source as
-immutable. If another operation holds the session claim, preserve the session and stop. Any target change after
-`start` within the frozen setup-relevant surface—including a separately authorized authoring effect
-on that surface—ends this session: cancel it and restart from the resulting accepted target state.
-Changes outside that surface do not restart generation; preserve them as unrelated state. This
-keeps authoring effects under their own grant instead of silently incorporating them into setup.
+A canonical source is pinned by commit and fingerprint. An installed fallback is identified by its
+root, null commit and fingerprint. Keep this source and request immutable throughout the session.
+
+### Distinguish frozen setup evidence from unrelated work
+
+The target fingerprint covers evidence setup consumes: project setup config, ownership and managed
+assets, generated destinations, project Rule and rule-led Skill metadata, project Agent sources and
+touched native host configuration. Git history/index state, caches, logs and other project-owned
+work are outside that boundary.
+
+Any change after `start` inside the frozen setup-relevant surface ends the session, even when a
+separate authoring grant authorized that change. Cancel and restart from the accepted resulting
+target. Changes outside that surface do not restart generation; preserve them as unrelated state.
+This keeps separately authorized effects from being silently absorbed into an old setup request.
+
+Keep exactly the returned private session until its terminal operation. If another operation holds
+the session claim, preserve it and stop rather than competing for the same attempt.
 
 ## Finish once
 
-After every request has its final registered outputs, run `finish` once:
+After every request has its final registered outputs, invoke:
 
 ```text
 python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
-Finish validates the complete outputs, frozen evidence, ownership, and plan, then applies the plan
-and clean postcondition within one rollback boundary. Give it exclusive access to every planned
-target path through completion or failure handling: filesystem checks cannot prevent an uncooperative
-writer from being overwritten between a check and mutation. Success requires zero exit and JSON with
-`phase: finish` and `check: clean`; only then is the session removed as a completed transaction.
+Finish validates complete outputs, frozen evidence, ownership and plan, then applies the plan and
+clean postcondition within one rollback boundary. Keep exclusive access to every planned target
+path through completion or failure handling. A filesystem check cannot prevent an uncooperative
+writer from being overwritten between the check and mutation.
+
+Success requires exit 0 and JSON containing `phase: finish` and `check: clean`, with the private
+session removed as the completed transaction. Use the complete result; target convergence alone
+cannot establish successful session cleanup.
 
 ## Stop and recover
 
-If work must stop after `start` and before any `finish` attempt, cancel the session:
+When work stops after `start` but before any `finish` attempt, cancel:
 
 ```text
 python "<skill-root>/scripts/workflow.py" cancel --session "<SESSION>"
 ```
 
-Before finish, unresolved declarations, ownership or digest conflicts, or setup-relevant target
-drift require cancellation and a fresh session after correction. A cancel failure is terminal and
-is reported unchanged.
+Unresolved declarations, ownership/digest conflicts or setup-relevant target drift before finish
+require cancellation and a fresh session after correction. A cancel failure is terminal; report it
+unchanged.
 
-After a pinned finish or transaction failure, preserve its exact error. The transaction attempts to
-restore the pre-finish setup state and refuses a rollback mutation when its checks detect a
-concurrent third-party change; a reported rollback failure identifies residual target state for
-human inspection. The same filesystem limitation applies between a rollback check and its mutation,
-so keep exclusive access through failure handling. Finish then attempts to remove its private session
-and must report the exact session path if cleanup fails.
+After a pinned finish or transaction failure, preserve the original error. The transaction attempts
+to restore pre-finish setup state. Its guards refuse rollback mutations when they detect concurrent
+third-party changes; reported rollback failure identifies residual target state for human
+inspection. Exclusive access remains necessary through recovery because a third-party writer can
+still act between a rollback check and mutation.
 
-A cleanup failure can occur after the target already reached clean desired state or after a failed
-transaction, so neither a zero-exit success nor rollback may be inferred. Never reuse, finish, or
-cancel that residual session. Treat any remaining claim or partial session contents as
-failure evidence. Report the target and exact residual session path for recovery. Resolve the
-original cause and any verified workflow-owned residue under appropriate recovery authority before starting a fresh session.
-Keep cleanup limited to verified workflow-owned residue.
+Finish then attempts private-session cleanup. If cleanup fails, it must report the exact residual
+session path. This can happen after target convergence or after a failed transaction; infer neither
+a successful operation nor rollback from the target's appearance.
+
+Never reuse, finish or cancel such a residual session. Keep its remaining claim or partial contents
+as failure evidence, and report the target and exact session path. Resolve the original cause and
+any verified workflow-owned residue under appropriate recovery authority before a fresh session.
+Limit cleanup to that verified residue.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write Setup Authoring Blueprints"
+  short_description: "Author project Setup Authoring Blueprints"
+  default_prompt: "Use $write-setup-authoring-blueprints to author or revise a Setup Authoring Blueprint."

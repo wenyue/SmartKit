@@ -61,7 +61,7 @@ class SetupRendererTest(unittest.TestCase):
         rule = generated / '.agents/rules/tools.md'
         rule.parent.mkdir(parents=True, exist_ok=True)
         rule.write_text(
-            '# generated tooling rule\n\nStrength: `Mandatory`\n\n',
+            '# generated tooling rule\n\n',
             encoding='utf-8',
         )
         skill = generated / '.agents/skills/change-set-verification/SKILL.md'
@@ -1389,14 +1389,14 @@ class SetupRendererTest(unittest.TestCase):
             rule = target / '.agents/rules/local-policy.md'
             rule.parent.mkdir(parents=True)
             rule.write_text(
-                '# Testing\n\nStrength: `Default`\n\n',
+                '# Testing\n\n',
                 encoding='utf-8',
             )
             skill = target / '.agents/skills/rule-testing/SKILL.md'
             skill.parent.mkdir(parents=True)
             skill.write_text(
                 '---\nname: rule-testing\ndescription: Apply when writing tests.\n---\n'
-                '# Testing\n\nStrength: `Default`\n\n',
+                '# Testing\n\n',
                 encoding='utf-8',
             )
 
@@ -1433,7 +1433,7 @@ class SetupRendererTest(unittest.TestCase):
                 'shared-policy', 'rule', PurePosixPath('rules/core-personality.md'),
                 PurePosixPath('.agents/rules/shared-policy.md'), tuple(Harness),
                 metadata={
-                    'section': 'global', 'loading': 'always', 'strength': 'Mandatory',
+                    'section': 'global', 'loading': 'always',
                     'cursor': {'description': 'Shared policy', 'alwaysApply': True},
                     'github': {'applyTo': '**'},
                 },

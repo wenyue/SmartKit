@@ -4,7 +4,7 @@ Use this reference before choosing, changing, or reviewing repair, reconstructio
 degraded use of persistent or serialized data when authority, loss, later reads, or interpretation
 must be established. Ordinary I/O failure propagation alone needs no data-recovery decision.
 
-## Establish the data's role and recovery authority
+## Establish the Data's Role and Recovery Authority
 
 Identify the owner, the data's purpose, acceptable loss, and the valid state required by the accepted
 outcome. Establish whether recovery must change future reads and whether this boundary may mutate
@@ -28,10 +28,14 @@ The contract may support degradation, reconstruction, repair, or accepted discar
 reconstruction is unnecessary when another state fulfills the accepted contract. Carry unresolved
 material loss, ownership, or state decisions to their owner before dependent changes.
 
-## Separate invalid content from failed access
+Explain reconstruction assumptions and loss authority beside the recovery when code, types, and
+referenced contracts leave them unclear.
+
+## Distinguish Reading from Repair
 
 Locate the failing phase: reading bytes, validating their syntax or meaning, or executing repair.
-Valid syntax alone does not establish valid meaning.
+Valid syntax alone does not establish valid meaning. Failed access and invalid content need to
+remain distinguishable through handling.
 
 A read-only library may fulfill its contract by skipping invalid records and returning an explicitly
 degraded result. Preserve the skipped-record impact and useful diagnostics for its caller, and
@@ -40,20 +44,22 @@ requires a persisted change only when the accepted promise requires it and the b
 necessary authority.
 
 For writable state, verify the particular repair rather than treating defaults as evidence of
-success. For example, discarding invalid saved sign-in state can be justified when the parser
-establishes invalidity, the contract permits reconstruction through sign-in, and the application
-may remove the bytes. If recovery promises clean later reads, verify removal and the next read.
-The operation that required authentication still reports it unavailable; restoring a valid signed-
-out state has not completed that operation. Explain reconstruction assumptions and loss authority
-beside the recovery when code, types, and referenced contracts leave them unclear.
+success. Suppose the parser establishes that saved sign-in state is invalid, the contract permits
+reconstruction through sign-in, and the application may remove the bytes. Discard can then be a
+supported repair. If it promises clean later reads, verify removal and the next read.
 
-## Preserve evidence and interpretation through repair
+In this example, the operation that required authentication still reports it unavailable; restoring
+a valid signed-out state has not completed that operation.
+
+## Preserve Evidence and Interpretation Through Repair
 
 If repair fails, carry the invalid-content cause, repair failure, affected state, and actionable
 path to the final owner. A read-only store can prevent an otherwise authorized discard; returning
-defaults does not prove that repair established the intended state. Any retry needs a condition
-that can change, safe repeated effects, and a stopping bound. Preserve sole-copy data when its loss
-is unauthorized, along with the failed outcome, while the owner resolves the disposition.
+defaults does not prove that repair established the intended state.
+
+Any retry needs a condition that can change, safe repeated effects, and a stopping bound. Preserve
+sole-copy data when its loss is unauthorized, along with the failed outcome, while the owner
+resolves the disposition.
 
 Treat migration metadata as part of the data interpretation contract. Replacing an invalid marker
 with a current version could falsely mark old records as migrated. Establish how the prior version

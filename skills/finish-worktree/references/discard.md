@@ -1,31 +1,35 @@
 # Explicit Discard
 
-Remove one exact isolated worktree and only the observed losses the user has authorized. General
-cleanup or incomplete finalization authority is insufficient to authorize loss.
+Discard only the exact worktree and observed losses covered by explicit authority. General cleanup
+authority is insufficient. Keep the target and other owners' state outside the removal boundary.
 
-Identify the registered physical worktree, branch, HEAD, base and unique commits, publication and
-recovery refs, lifecycle owner, and every checkout using the branch. Inventory staged, unstaged,
-untracked and ignored contents that removal could lose, including bytes or content identity, file
-type, mode and symlink target. Prove the removal cannot reach the unaffected target checkout and
-capture preservation evidence there.
+## Match the grant to the actual loss
 
-Match the accepted request to that inventory. Existing explicit authority covering the exact
-worktree and all its local contents need not be requested again; disclose the observed losses.
-Ask only when a material loss, branch/ref deletion, or owner lies outside that authority. New or
-changed losses require a fresh match to authority before deletion, not automatic reconfirmation of
-an unchanged request. Unmerged commits require express abandonment authority or integration proof.
+Establish physical registration, branch, HEAD, base, unique commits, publication, recovery refs,
+ownership and every checkout using the branch. Inventory staged, unstaged, untracked and ignored
+contents, including bytes or content identities, types, modes and symlink targets. Establish that
+the unaffected target is unreachable by the removal and record the evidence needed to prove its
+preservation afterward.
 
-Read [recovery](recovery.md) and record the external receipt before removal. Recheck the loss
-inventory and target identity immediately before each effect. Drift stops. The host removes a
-host-created worktree. For a Git-created worktree use ordinary removal when possible; forced removal
-is eligible only when existing explicit loss authority covers everything it would destroy.
+Reuse an existing grant covering these exact full contents and disclose the losses. Ask only about
+material losses outside that grant. Changed observations need a fresh match against authority,
+not an automatic repeat of an already settled decision. Unmerged work requires explicit abandonment
+authority or proof that its result has been integrated.
 
-Observe removal before deleting a branch. A branch must be absent from every worktree and may be
-deleted only through an expected-old-OID update. Treat branch deletion and each separately authorized
-owned recovery-ref deletion as separate effects; retain refs on mismatch. Never repeat ambiguous
-removal based only on an interrupted response.
+## Remove within the observed boundary
 
-Prove the authorized items are gone and the unaffected target's HEAD, index and local state are
-preserved. Return `history_result: inapplicable`, the discard `outcome_result`, and a `cleanup_result`
-covering branch and recovery-item disposition. Proven discard is `classification: explicit discard`;
-retain earlier proven deletions and report residuals and irreversibility when later work fails.
+Persist the [recovery receipt](recovery.md) before effects. Immediately before removal, refresh
+identity and loss inventory; drift stops removal until its boundary is resolved. Use the host for a
+host-created worktree, or ordinary Git removal for a Git-owned one. Force removal requires explicit
+authority over the exact full loss it would cause.
+
+Observe worktree removal before considering branch deletion. A branch must be absent from all
+worktrees, and deletion must match its expected old OID. Treat each branch or recovery-ref deletion
+as a separate effect. A mismatch retains the ref; an ambiguous result requires observation before
+retry. Removal of one item never silently grants removal of another.
+
+Prove the worktree is gone and the unaffected target's HEAD, complete index and local state are
+preserved. History is inapplicable. The outcome is explicit discard; cleanup accounts for every
+remaining ref and other lifecycle item. If later work fails, retain proven deletions and any
+irreversible loss in the report, with residual locations and owners. Do not describe already lost
+state as recoverable merely because another item was retained.

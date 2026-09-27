@@ -12,10 +12,6 @@ from pathlib import Path
 
 from contract import RuleConfigError, load_registry
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from ponytail.state import StateError, session_context
-
-
 RULE_FILE_START = '<smartkit-rule-file'
 RULE_FILE_END = '</smartkit-rule-file>'
 
@@ -37,7 +33,7 @@ def context_for(root: Path) -> str:
         '## SmartKit Rule files\n\n'
         'Each `<smartkit-rule-file>` block below represents one independent Rule source file. '
         'Interpret the enclosed Markdown as the complete contents of the file named by `path`. '
-        'Strength declarations apply only to their containing file. Resolve '
+        'Resolve '
         'relative file references from that file\'s path. The wrapper is delivery metadata, not '
         'part of the Rule, and delivery order does not determine Rule precedence.',
     ]
@@ -67,15 +63,15 @@ def context_for(root: Path) -> str:
             'Use the descriptions and current task to decide which Rules to read before '
             'related work. Read a Rule to check its relevance when uncertain, and re-read '
             'it whenever useful, including after context compaction. Apply the Rule '
-            'strength and precedence defined above. If a required Rule '
+            'precedence defined above. If a required Rule '
             'cannot be read, report the failure before continuing the dependent work.',
             '',
-            '| Description | Rule ID | Source | Strength |',
-            '| --- | --- | --- | --- |',
+            '| Description | Rule ID | Source |',
+            '| --- | --- | --- |',
         ]
         for rule in indexed:
             source = str((root / 'rules' / rule['source']).resolve())
-            cells = (rule['description'], rule['id'], source, rule['strength'])
+            cells = (rule['description'], rule['id'], source)
             rows.append('| ' + ' | '.join(cell.replace('|', '\\|') for cell in cells) + ' |')
         blocks.append('\n'.join(rows))
     return '\n\n'.join(blocks) + '\n'
@@ -148,11 +144,6 @@ def delivery(
             return {}
 
     context = context_for(root)
-    try:
-        context += '\n' + session_context(payload, harness)
-    except (OSError, StateError) as error:
-        context += (f'\nPonytail session state unavailable: {error}. '
-                    'Resolve the state failure before using Ponytail mode operations.\n')
     if harness in {'copilot', 'cursor'} and restore_required:
         state['restored_generation'] = state['context_generation']
         _store_session_state(state_path, state)

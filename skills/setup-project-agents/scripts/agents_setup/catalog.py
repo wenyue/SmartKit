@@ -356,15 +356,12 @@ def parse_mcp_servers(value: object) -> tuple[McpServerSpec, ...]:
 
 def _rule_metadata(value: object, *, project_blueprint: bool) -> Mapping[str, object]:
     metadata = _object(value, 'asset metadata')
-    _fields(metadata, frozenset({'section', 'loading', 'description', 'strength', 'cursor', 'github'}), 'rule metadata')
-    for field in ('section', 'loading', 'strength', 'cursor', 'github'):
+    _fields(metadata, frozenset({'section', 'loading', 'description', 'cursor', 'github'}), 'rule metadata')
+    for field in ('section', 'loading', 'cursor', 'github'):
         _required(metadata, field, 'rule metadata')
     section = _nonempty_string(metadata['section'], 'rule metadata section')
     if section not in {'global', 'base', 'project'} or (project_blueprint and section != 'project'):
         raise ContractError('rule metadata section is unsupported')
-    strength = _nonempty_string(metadata['strength'], 'rule metadata strength')
-    if strength not in {'Mandatory', 'Default', 'Advisory'}:
-        raise ContractError('rule metadata strength is unsupported')
     if metadata['loading'] != 'always':
         raise ContractError('rule metadata loading must be always')
     if 'description' in metadata:

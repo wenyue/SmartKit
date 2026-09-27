@@ -7,9 +7,9 @@ accepted.
 
 SmartKit authors each obligation through an Owner Gate, then projects Rules through a Policy Frame,
 Skills through a supported Judgment-led, Procedure-led, or Hybrid shape, and judgment-only Setup
-Authoring Contracts through a Setup Contract Frame. Judgment-led is the default for Skills:
+Authoring Blueprints through a Setup Blueprint Frame. Judgment-led is the default for Skills:
 prescribed process needs evidence that order changes correctness, safety, protocol compliance,
-coordination, recovery, or the accepted outcome. A Setup Authoring Contract remains descriptive
+coordination, recovery, or the accepted outcome. A Setup Authoring Blueprint remains descriptive
 even when its future target is procedure-led. This keeps runtime artifacts complete without turning
 increasingly capable Agents into interpreters of unnecessary recipes.
 

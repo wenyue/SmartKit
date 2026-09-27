@@ -1,34 +1,49 @@
 # Public Results
 
-Preserve this vocabulary for callers such as `implement-tickets`. Return the selected route,
-`status`, `classification`, `causal_boundary`, `history_result`, `outcome_result`, and
-`cleanup_result`. Each phase result carries its state and the evidence/residuals needed to justify
-it. Include identities, exact relevant heads/trees or snapshots, verification/review binding when
-applicable, publication, retained locations and next owner/action. Keep unrelated detail bounded.
+Read this before returning any outcome. Callers such as `implement-tickets` depend on these field
+names and values. Report the selected route, `status`, `classification`, `causal_boundary`,
+`history_result`, `outcome_result` and `cleanup_result`.
+
+Each phase result includes its state and supporting evidence or residuals. Supply exact relevant
+identities, heads/trees or snapshots, verification/review bindings when applicable, publication,
+retained locations and the next owner/action. Bound the detail to what establishes the result and
+allows continuation.
+
+## Describe each phase
 
 | Phase state | Meaning |
 | --- | --- |
-| `not-started` | The phase was never entered; name the causal earlier boundary. |
-| `inapplicable` | This route and history policy do not require the phase. |
-| `stopped` | A prerequisite or guard rejected the phase attempt and complete observation proves it effect-free. |
+| `not-started` | The phase was never entered; identify the earlier causal boundary. |
+| `inapplicable` | The selected route and history policy do not require this phase. |
+| `stopped` | A prerequisite or guard rejected the attempt, and complete observation proves it effect-free. |
 | `failed` | An effect occurred or remains ambiguous, or required post-effect proof failed. |
 | `proven` | History or outcome has its route-specific positive proof. |
 | `complete` | Cleanup gives every lifecycle item an authorized removed, retained or delegated disposition. |
 
-Overall `status: complete` requires a proven outcome and completed cleanup. Before route readiness,
-a rejection is `status: stopped` at `causal_boundary: preflight`; required phases remain
-`not-started`, while inherently unused history is `inapplicable`. After phase entry, overall status
-is the causal phase's `stopped` or `failed` until its incomplete work is resolved. A failed history
-attempt leaves outcome and cleanup `not-started`. Preserve the original attempt and its causal result
-when recording recovery or a later completion.
+Before route readiness, rejection produces `status: stopped` and `causal_boundary: preflight`.
+Required phases remain `not-started`; inherently unused history is `inapplicable`. Once a phase is
+entered, overall status follows its causal `stopped` or `failed` state until the incomplete work is
+resolved. A failed history attempt leaves outcome and cleanup `not-started`. Keep the original
+attempt and causal result when recording recovery or subsequent completion.
 
-Classification is the strongest independently proven fact. Start with `no positive result`.
-History proof adds `history finalized`; a proven handoff adds `non-integrating handoff`; only
-proven local integration or **Already Delivered** adds `authoritative delivery`. Proven discard
-uses `explicit discard`. A phase stop/failure cannot erase or upgrade an earlier positive fact.
-A push alone remains residual publication rather than a proven PR outcome.
+Overall `status: complete` requires a proven outcome and completed cleanup. A command's exit code
+cannot alone establish these phase states. If an earlier child changed state, a later effect-free
+guard rejection still leaves that phase partially effected and `failed`.
 
-Representative legal results (phase columns are history, outcome, cleanup):
+## Preserve the strongest proven result
+
+Start classification at `no positive result`. History proof supports `history finalized`; a proven
+handoff supports `non-integrating handoff`. Only proven local integration or **Already Delivered**
+supports `authoritative delivery`. Proven discard uses `explicit discard`.
+
+A later stop or failure cannot erase or upgrade an independently proven fact. A push alone is
+residual publication, not a proven PR outcome. Retention during failure preserves residuals; it does
+not by itself prove the chosen outcome or complete the run. Conversely, authoritative delivery
+survives failed cleanup so a caller can continue legitimate post-delivery work without integrating
+again.
+
+The following combinations illustrate the contract. Phase columns list history, outcome and cleanup
+in that order.
 
 | Situation | Status | Classification | Phase states |
 | --- | --- | --- | --- |
@@ -41,9 +56,3 @@ Representative legal results (phase columns are history, outcome, cleanup):
 | Delivery proven, cleanup removal failed | `failed` | `authoritative delivery` | `proven`, `proven`, `failed` |
 | Transfer partly applied, restore guarded or unavailable | `failed` | `no positive result` | `inapplicable`, `failed`, `not-started` |
 | Exact authorized discard complete | `complete` | `explicit discard` | `inapplicable`, `proven`, `complete` |
-
-These combinations describe causal phases, not just the last command's exit code. If one child
-already changed state, a later effect-free rejection within that phase is still a failed partial
-phase. Retention during a failure is residual preservation; it does not by itself prove the selected
-outcome or complete the run. Conversely, cleanup failure after delivery retains authoritative
-delivery so its caller can continue legitimate post-delivery work without repeating integration.

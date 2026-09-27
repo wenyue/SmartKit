@@ -1,18 +1,20 @@
 # Keep for Later
 
-Retain this worktree as it stands so its owner can resume it. Unfinished implementation, unreviewed
-commits, staged and unstaged changes, untracked files, and ignored local material may all remain.
-Neither a clean tree nor formal review is a prerequisite imposed by this outcome.
+Use this route when the intended result is to leave work available for continuation. Dirty,
+unfinished or unreviewed work is eligible; retention does not require making it clean or obtaining
+review first.
 
-Observe enough state to identify the retained branch and HEAD, local work, known publication,
-unfinished verification or review, and any recovery items. Record the next owner and the concrete
-resume action. Describe uncertain attribution as retained uncertainty; retention does not require
-resolving it or reading every ignored file. Preserve the source, target, index, refs, and files. If
-the source changes while being observed, refresh the retention record rather than freezing a false
-exact snapshot. An unresolved earlier destructive or publishing attempt must still be handed to its
-recovery owner; retention cannot relabel that attempt successful.
+Identify the worktree, branch and HEAD, then describe the local work, any publication, unfinished
+checks and recovery state sufficiently for the next owner to resume. Record that owner and the next
+action. Uncertain attribution is a reason to retain state, not a reason to resolve every ownership
+question or read all ignored files before leaving it available.
 
-The retained work and concrete continuation prove this handoff. Complete cleanup by listing every
-lifecycle item as intentionally retained with its owner and release condition. An expressly selected
-history preparation must first satisfy its own contract; preserve its result. This outcome proves
-availability for later work, never authoritative delivery or review completion.
+Preserve the source, target, indexes, refs and files. This is a read-only handoff. If concurrent work
+changes the observed state, refresh the continuation record instead of presenting an old observation
+as a frozen snapshot. An unresolved earlier destructive or publication attempt still needs an
+[original-attempt recovery owner](recovery.md); retaining its residue cannot turn it into success.
+
+Available work and a usable continuation record prove the outcome. List retained lifecycle items
+with owners and release conditions to complete cleanup. History is ordinarily inapplicable; an
+explicit history requirement must satisfy [its own contract](history.md). This route proves a
+non-integrating handoff, without implying implementation acceptance, review or authoritative delivery.

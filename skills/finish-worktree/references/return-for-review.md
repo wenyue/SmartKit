@@ -1,71 +1,79 @@
 # Transfer Back to a Checkout
 
-The public route `return-for-review` transfers accepted task changes into one target checkout's
-working files, before or after review, while preserving its HEAD and complete index exactly.
-Existing staged content stays staged. This is always a non-integrating handoff.
+The public `return-for-review` route puts accepted task changes into one checkout's working files,
+before or after review. Preserve target HEAD and the complete index exactly, so existing staged
+content stays staged. The result is always a non-integrating handoff.
 
-## Freeze the three inputs
+## Identify the change and the receiving state
 
-Identify the target and accepted task scope. Establish **B**, the immutable shared baseline from
-which task changes are measured; **S**, the frozen accepted task result; and **W**, the target's
-actual working files at preparation time. Pin B by commit/tree OID and S by exact bytes, absence,
-types and modes. S may include attributable staged, unstaged and untracked work without a commit or
-source-index change. Resolve layered edits to accepted final contents, exclude unrelated source
-work, and stop on ambiguous ownership.
+Freeze three distinct inputs before deciding what to write:
 
-Transfer only **B → S**. W includes committed target evolution and local changes; it is not the HEAD
-or index version. Never copy the whole checkout or choose the destination's current HEAD as B for
-convenience. If B or S is ambiguous, retain both sides and return the decision to the result owner.
-Formal review is required only by independently applicable project/caller policy or an expressly
-selected history operation.
+| Input | Meaning |
+| --- | --- |
+| **B** | The immutable shared baseline from which task changes are measured, pinned by commit/tree OID. |
+| **S** | The accepted task result, frozen as exact bytes, absence, types and modes. |
+| **W** | The target's actual working files at preparation time, including committed evolution and local changes. |
 
-## Prepare the entire result before writing
+S can include attributable staged, unstaged and untracked work without making a commit or changing
+the source index. Resolve those layers into accepted final contents and exclude unrelated work.
+Ambiguous ownership, B or S stops preparation and returns the decision to the result owner while
+both sides remain retained.
 
-Derive all affected paths from B → S, including both ends of supported renames. Capture bounded path
-and ancestor evidence with complete target HEAD/index evidence at batch boundaries. Reuse immutable
-B and accepted S evidence while dependencies match. Inspect unrelated paths only for a concrete
-preservation risk; ordinary transfer needs no repeated global status, untracked or ignored
-inventory.
+Transfer **B → S**, not the whole source checkout. The target's HEAD or index version is not W, and
+its current HEAD is not a convenient substitute for the shared B. Formal review applies only when
+independent project/caller policy or an expressly selected history operation requires it.
 
-Prepare one accepted combined result. Where W=B, use S directly. Preserve target-only changes and
-include identical edits once. For overlapping ordinary text, use native three-way merging with B as
-ancestor, W as local and S as incoming, such as `git merge-file -p` on temporary files. Inspect
-semantic compatibility and verify combined behavior even without textual conflicts. Conflicting
-hunks, delete/modify, complex renames, binary overlap, unsupported types/modes, incompatible
-behavior or ambiguous generated output stop before target writes. Regeneration retains its
-deterministic owner and requires accepted authority.
+## Decide the whole combined result
 
-For regular-file create/update/delete in existing directories, read the [transfer
-mechanism](transfer-mechanism.md) and prepare one helper plan with expected W and accepted outputs.
-Use accepted S files directly for W=B; supply prepared combined outputs for overlap. The helper
-freezes all outputs and readable external backups before applying anything. Prepare the whole plan
-proactively, without driving per-file subprocesses through Agent calls. The Agent owns task
-attribution, B/S/W reasoning, semantics and verification; helpers own guarded mechanics.
+Derive every affected path from B → S, including both ends of supported renames. Capture bounded
+path and ancestor evidence and complete target HEAD/index evidence at batch boundaries. Reuse
+immutable B and accepted S evidence while dependencies match. Inspect unrelated paths for concrete
+preservation risks; ordinary transfer does not require repeated global status or untracked/ignored
+inventories.
 
-Return unsupported transfers to their implementation owner. Another authorized mechanism must prove
-the same whole-plan preparation and preservation, including absence, types, modes, aliases and
-symlink ancestors. A helper capability rejection grants no authority to bypass that boundary. Failed
-preparation leaves target working files untouched.
+Where W equals B, the output is S. Preserve target-only changes and include identical edits once.
+For overlapping ordinary text, a native three-way merge can combine B as ancestor, W as local and S
+as incoming; for example, use `git merge-file -p` on temporary files. A textually clean merge still
+needs semantic inspection and verification of combined behavior.
+
+Settle all outputs before target writes. Conflicting hunks, delete/modify cases, complex renames,
+binary overlap, unsupported types or modes, incompatible behavior and ambiguous generated output
+stop this preparation. Regeneration stays with its deterministic owner and needs accepted authority.
+
+## Freeze a plan the mechanism can preserve
+
+For admitted regular-file create/update/delete in existing directories, read [Transfer Mechanism](transfer-mechanism.md)
+and prepare one helper plan containing expected W and all accepted outputs. When W=B, use accepted
+S files directly; for overlap, supply the prepared combined outputs. The helper freezes the whole
+plan and readable external backups before application. Prepare that batch proactively instead of
+driving per-file subprocesses through Agent calls.
+
+The Agent owns task attribution, B/S/W reasoning, semantics and verification. The helper owns its
+narrower admitted inputs, capability checks and guarded writes. Return unsupported cases to their
+implementation owner, or use another authorized mechanism proving the same whole-plan preparation
+and preservation, including absence, types, modes, aliases and symlink ancestors. A capability
+rejection does not authorize bypassing its boundary. Failed preparation leaves target working files
+untouched, though external preparation artifacts may need retention and accounting.
 
 ## Apply with preservation evidence
 
-Coordinate with other writers, then apply the prepared batch once under the mechanism's entry, path
-and exit guards and persistent write record. Reuse its source, target HEAD/index and output proofs
-instead of repeating whole-repository checks per child; re-observe on drift or a changed dependency.
-Partial writes, missing responses and drift require original-receipt inspection and
-[partial-transfer recovery](transfer-mechanism.md#partial-file-transfer) before continuation. The
-mechanism handles cooperative concurrency and detected drift; it cannot promise portable atomic
-multi-file writes or protection from arbitrary simultaneous writers.
+Coordinate writers and apply the prepared batch once, using its entry, path and exit guards and
+persistent write record. Reuse source, target HEAD/index and output proofs rather than repeating
+whole-repository checks for each child. Changed dependencies or drift need fresh observations.
+Partial writes, missing responses and drift require inspection of the original receipt and
+[partial-transfer recovery](transfer-mechanism.md#partial-file-transfer) before continuing. Cooperative
+concurrency and detected drift do not make multi-file writes atomic or exclude arbitrary concurrent
+writers.
 
-Run relevant non-mutating verification on the combined target, reusing valid checks and renewing
-those whose inputs changed. A formatter, fixer or generator is a separate effect requiring express
-authority. Combine helper output proof with bounded evidence of concrete outside dependencies to
-prove preservation. If verification fails after full application, retain the reviewable target,
-source and backup with that failure; a completed transfer is not rolled back to erase the result.
+Run relevant non-mutating verification on the combined target. Reuse valid checks and refresh those
+whose inputs changed. Formatting, fixing or generation is a separate effect needing express
+authority. Combine helper proof with bounded evidence for concrete outside dependencies to prove
+preservation. If verification fails after full application, retain the reviewable combined target,
+source and backup with the failure; do not roll it back to erase that result.
 
-Proven transfer includes preservation and required verification, the exact source, target and backup
-locations, and the next review/acceptance action. Keep the source worktree, branch, snapshot, backup
-and required recovery items until the user accepts the transfer. Delegated acceptance must trace to
-the user's authority; cleanup ownership alone grants no acceptance authority. Until acceptance,
-cleanup is retention; afterward, existing cleanup authority and lifecycle conditions still apply.
-Even a target that already contained identical changes does not turn this handoff into delivery.
+Outcome proof includes preservation, required verification, exact source/target/backup locations and
+the next review or acceptance action. Retain the source worktree, branch, snapshot, backup and
+required recovery items until the user accepts the transfer. Any delegated acceptance must trace to
+the user's authority; owning cleanup does not confer acceptance authority. Before acceptance,
+cleanup means retention. Afterward, removal still follows existing cleanup authority and lifecycle
+conditions. Identical changes already present at the target do not turn this handoff into delivery.

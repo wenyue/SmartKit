@@ -22,8 +22,8 @@ def load_registry(root: Path) -> list[dict[str, str]]:
     for index, rule in enumerate(rules):
         if (
             not isinstance(rule, dict)
-            or not {'id', 'source', 'strength', 'description'} <= set(rule)
-            or set(rule) - {'id', 'source', 'strength', 'description', 'delivery'}
+            or not {'id', 'source', 'description'} <= set(rule)
+            or set(rule) - {'id', 'source', 'description', 'delivery'}
         ):
             raise RuleConfigError(f'invalid Rule at index {index}')
         if not all(
@@ -37,8 +37,6 @@ def load_registry(root: Path) -> list[dict[str, str]]:
         if not rule_id.startswith('smartkit/') or rule_id in ids:
             raise RuleConfigError(f'duplicate or invalid Rule id at index {index}')
         ids.add(rule_id)
-        if rule['strength'] not in {'Mandatory', 'Default', 'Advisory'}:
-            raise RuleConfigError(f'invalid strength for {rule_id}')
         source = rule['source']
         relative = PurePosixPath(source)
         if (
@@ -51,10 +49,9 @@ def load_registry(root: Path) -> list[dict[str, str]]:
     first = rules[0]
     if (
         first['id'] != 'smartkit/core-instruction-governance'
-        or first['strength'] != 'Mandatory'
         or first.get('delivery', 'inline') != 'inline'
     ):
         raise RuleConfigError(
-            'the first Rule must be mandatory core-instruction-governance'
+            'the first Rule must be inline core-instruction-governance'
         )
     return rules

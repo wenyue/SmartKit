@@ -20,11 +20,11 @@ from agents_setup import project_rules  # noqa: E402
 
 class SyncProjectRulesTest(unittest.TestCase):
     @staticmethod
-    def write_rule(target: Path, name: str, *, body: str, strength: str) -> None:
+    def write_rule(target: Path, name: str, *, body: str) -> None:
         rule = target / '.agents' / 'rules' / name
         rule.parent.mkdir(parents=True, exist_ok=True)
         rule.write_text(
-            f'# {name}\n\nStrength: `{strength}`\n\n{body}\n',
+            f'# {name}\n\n{body}\n',
             encoding='utf-8',
         )
 
@@ -40,7 +40,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 '| --- | --- |\n'
                 '| `.agents/rules/tools.md` | Mandatory |\n'
                 '| `.agents/rules/20-local.md` | Default |\n\n'
-                'Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the\n'
+                'Apply SmartKit plugin Rules for shared precedence. Keep project Rule policy in the\n'
                 'files listed above.\n\n'
                 '## Agent skills\n\nKeep this exact content.\n'
             ).encode()
@@ -49,19 +49,16 @@ class SyncProjectRulesTest(unittest.TestCase):
                 target,
                 '10-base.md',
                 body='Shared placement decisions.',
-                strength='Advisory',
             )
             self.write_rule(
                 target,
                 '20-common.md',
                 body='Shared placement decisions.',
-                strength='Advisory',
             )
             self.write_rule(
                 target,
                 '20-local.md',
                 body='Current local tests.',
-                strength='Default',
             )
             before = {
                 path.relative_to(target): path.read_bytes()
@@ -111,7 +108,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 + '| `.agents/rules/20-old-common.md` | Advisory |\n'
                 + '| `.agents/rules/30-testing.md` | Default |\n'
                 + '| `.agents/rules/40-removed.md` | Mandatory |\n\n'
-                + 'Apply SmartKit plugin Rules for shared strength and precedence. Keep project Rule policy in the\n'
+                + 'Apply SmartKit plugin Rules for shared precedence. Keep project Rule policy in the\n'
                 + 'files listed above.\n\n'
                 + suffix
             ).encode())
@@ -119,19 +116,16 @@ class SyncProjectRulesTest(unittest.TestCase):
                 target,
                 '20-common.md',
                 body='Shared module ownership.',
-                strength='Advisory',
             )
             self.write_rule(
                 target,
                 '30-testing.md',
                 body='Current test ownership: unit | integration.',
-                strength='Mandatory',
             )
             self.write_rule(
                 target,
                 '50-added.md',
                 body='Newly added checks.',
-                strength='Default',
             )
             unrelated = target / 'notes.txt'
             unrelated.write_bytes(b'preserve me exactly\x00\n')
@@ -196,7 +190,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             })
             self.assertEqual(agents.read_bytes(), updated)
 
-    def test_required_local_rules_keep_loading_policy_independent_of_strength(self):
+    def test_local_rules_without_metadata_are_required(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             entry = target / 'AGENTS.md'
@@ -205,8 +199,8 @@ class SyncProjectRulesTest(unittest.TestCase):
                 '| Rule | Strength |\n| --- | --- |\n'
                 '| `.agents/rules/00-local.md` | Default |\n', encoding='utf-8',
             )
-            self.write_rule(target, '00-local.md', body='Local guidance.', strength='Advisory')
-            self.write_rule(target, '20-checks.md', body='Local checks.', strength='Mandatory')
+            self.write_rule(target, '00-local.md', body='Local guidance.')
+            self.write_rule(target, '20-checks.md', body='Local checks.')
             project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
             text = entry.read_text(encoding='utf-8')
             self.assertNotIn('### On-demand rules', text)
@@ -239,7 +233,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                         f'| Library usage. | `.agents/rules/{name}` | Advisory |\n',
                         encoding='utf-8',
                     )
-                    self.write_rule(target, name, body='Library usage.', strength='Default')
+                    self.write_rule(target, name, body='Library usage.')
                     before = {path.relative_to(target): path.read_bytes()
                               for path in target.rglob('*') if path.is_file()}
                     error = StringIO()
@@ -262,7 +256,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 with self.subTest(heading=heading, edges=(left, right)), \
                      tempfile.TemporaryDirectory() as directory:
                     target = Path(directory)
-                    self.write_rule(target, 'local.md', body='Local work.', strength='Default')
+                    self.write_rule(target, 'local.md', body='Local work.')
                     entry = target / 'AGENTS.md'
                     rows = ('Rule | Strength', '--- | ---',
                             '`docs/policy.md` | Mandatory', '`.agents/rules/local.md` | Default')
@@ -292,7 +286,7 @@ class SyncProjectRulesTest(unittest.TestCase):
         for left, right in (('| ', ' |'), ('', ''), ('| ', ''), ('', ' |')):
             with self.subTest(edges=(left, right)), tempfile.TemporaryDirectory() as directory:
                 target = Path(directory)
-                self.write_rule(target, 'local.md', body='Local work.', strength='Default')
+                self.write_rule(target, 'local.md', body='Local work.')
                 rows = ('Description | Rule | Strength', '--- | --- | ---',
                         'Library work | `.agents/rules/local.md` | Default')
                 (target / 'AGENTS.md').write_text(
@@ -311,7 +305,7 @@ class SyncProjectRulesTest(unittest.TestCase):
     def test_ambiguous_rule_list_item_refuses_without_writing(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
-            self.write_rule(target, 'local.md', body='Local work.', strength='Default')
+            self.write_rule(target, 'local.md', body='Local work.')
             entry = target / 'AGENTS.md'
             entry.write_text(
                 '## Project rules\n\n### Required rules\n\n'
@@ -350,7 +344,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 with self.subTest(edges=(left, right), row=row), \
                      tempfile.TemporaryDirectory() as directory:
                     target = Path(directory)
-                    self.write_rule(target, 'local.md', body='Local work.', strength='Default')
+                    self.write_rule(target, 'local.md', body='Local work.')
                     (target / 'AGENTS.md').write_text(
                         '## Project rules\n\n' + ''.join(
                             left + content + right + '\n' for content in
@@ -372,7 +366,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                             '  alwaysApply: false', '  globs: "*.py"', '  applyTo: "*.py"'):
             with self.subTest(declaration=declaration), tempfile.TemporaryDirectory() as directory:
                 target = Path(directory)
-                self.write_rule(target, 'local.md', body='Local work.', strength='Default')
+                self.write_rule(target, 'local.md', body='Local work.')
                 rule = target / '.agents/rules/local.md'
                 rule.write_text('---\n' + declaration + '\n---\n' +
                                 rule.read_text(encoding='utf-8'), encoding='utf-8')
@@ -389,7 +383,7 @@ class SyncProjectRulesTest(unittest.TestCase):
     def test_invalid_rule_loading_diagnostic_identifies_the_control(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
-            self.write_rule(target, 'local.md', body='Local work.', strength='Default')
+            self.write_rule(target, 'local.md', body='Local work.')
             rule = target / '.agents/rules/local.md'
             rule.write_text('---\nloading: >\n    first\n  second\n---\n' +
                             rule.read_text(encoding='utf-8'), encoding='utf-8')
@@ -405,12 +399,12 @@ class SyncProjectRulesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             for name in ('plain.md', '01-old.md', '99-later.md'):
-                self.write_rule(target, name, body='Project work.', strength='Default')
+                self.write_rule(target, name, body='Project work.')
             skill = target / '.agents/skills/rule-testing/SKILL.md'
             skill.parent.mkdir(parents=True)
             skill.write_text(
                 '---\nname: rule-testing\ndescription: Use when writing tests.\n---\n'
-                '# Tests\n\nStrength: `Default`\n\n',
+                '# Tests\n\n',
                 encoding='utf-8',
             )
             original_skill = skill.read_bytes()
@@ -432,7 +426,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             skill.parent.mkdir(parents=True)
             skill.write_text(
                 '---\nname: rule-library\ndescription: Use for library work.\n---\n'
-                '# Library\n\nStrength: `Default`\n\n',
+                '# Library\n\n',
                 encoding='utf-8',
             )
             original = skill.read_bytes()
@@ -442,14 +436,14 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertNotIn('On-demand', entry.read_text(encoding='utf-8'))
             self.assertTrue(entry.read_text(encoding='utf-8').endswith('## Agent skills\n\nKeep this.\n'))
 
-    def test_existing_rule_metadata_section_and_section_strength_remain_supported(self):
+    def test_existing_rule_sections_are_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             rule = target / '.agents/rules/20-existing.md'
             rule.parent.mkdir(parents=True)
             rule.write_text(
-                '# Policy\n\n## Metadata\n\nStrength: `Default`\n\n'
-                '\n## Special cases\n\nStrength: `Mandatory`\n\nKeep required evidence.\n',
+                '# Policy\n\n## Metadata\n\n'
+                '\n## Special cases\n\nKeep required evidence.\n',
                 encoding='utf-8',
             )
             original = rule.read_bytes()
@@ -469,7 +463,6 @@ class SyncProjectRulesTest(unittest.TestCase):
                 target,
                 '20-testing.md',
                 body='Original test policy.',
-                strength='Default',
             )
             real_apply = project_rules.apply_plan
 
@@ -478,7 +471,6 @@ class SyncProjectRulesTest(unittest.TestCase):
                     target,
                     '30-concurrent.md',
                     body='Concurrent policy.',
-                    strength='Mandatory',
                 )
                 return real_apply(target_root, plan, postcondition=postcondition)
 
@@ -501,26 +493,15 @@ class SyncProjectRulesTest(unittest.TestCase):
                 (target / '.agents/rules/30-concurrent.md').read_text(encoding='utf-8'),
             )
 
-    def test_refuses_ambiguous_sections_and_invalid_rule_metadata_without_writing(self):
+    def test_refuses_ambiguous_sections_without_writing(self):
         invalid_cases = (
             (
                 'duplicate sections',
                 b'## Project rules\n\nFirst.\n\n## Project rules\n\nSecond.\n',
-                '# Valid\n\nStrength: `Default`\n\n',
+                '# Valid\n\n',
                 'duplicate ## Project rules',
             ),
-            (
-                'invalid strength',
-                b'# Repository\n\n## Agent skills\n\nKeep this.\n',
-                '# Invalid\n\nStrength: `Sometimes`\n',
-                'requires valid Strength metadata',
-            ),
-            (
-                'missing metadata',
-                b'# Repository\n\n## Agent skills\n\nKeep this.\n',
-                '# Invalid\n\nNo default strength.\n',
-                'requires valid Strength metadata',
-            ),
+
         )
         for label, agents_content, rule_content, message in invalid_cases:
             with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:

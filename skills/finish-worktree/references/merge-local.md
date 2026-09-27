@@ -1,34 +1,36 @@
 # Merge Locally
 
-Deliver the accepted result by fast-forwarding one authorized local target branch.
+Place the accepted result on one authorized local target branch. Consume [History Preparation](history.md)
+first. Its **Already Delivered** proof can establish delivery without a write; otherwise the target
+must be an ancestor of the exact accepted delivery commit so integration is fast-forward only.
+Divergence goes to the implementation owner for synchronization and renewed acceptance. This route
+does not substitute rebase, pull, a merge commit or file transfer.
 
-Identify the target checkout, branch and expected HEAD. Use [history preparation](history.md) to
-establish a scope-owned delivery commit with its accepted-state evidence. The target must be its
-ancestor. Divergence returns to the implementation workflow for synchronization and acceptance under
-that evidence contract. This route never rebases, pulls, creates a merge commit, or substitutes a
-transfer.
+## Establish what the fast-forward can affect
 
-Determine the fast-forward write set. A dirty target is eligible only when its local state is
-outside that set and before/after evidence can prove its preservation; otherwise retain both
-checkouts and stop. Capture affected files, complete index evidence, refs and relevant Git state,
-including ignored or untracked material an update could reach. Coordinate with other writers.
+Identify the physical target checkout and branch, then derive the fast-forward write set. A dirty
+target is eligible when its local state is disjoint and preservation can be proved. Otherwise retain
+it and stop before effects. Capture affected files, complete index, relevant refs and any ignored or
+untracked state the Git operation could reach. Coordinate writers over that boundary.
 
-Recheck target identity and HEAD just before the effect. If movement occurs after history has been
-proven, retain `history_result` and stop for the target-movement owner unless current evidence
-proves **Already Delivered**. For that case, record the authoritative proof and make no integration
-write. Otherwise create an authorized unique recovery ref at the old target OID through an
-expected-absent update, record it, and run from the target checkout:
+Immediately before integration, recheck target identity and HEAD. Movement after history proof
+leaves that history result intact but stops the outcome for the target-movement owner, unless
+current **Already Delivered** evidence proves no write is needed.
+
+## Integrate and prove delivery
+
+Record the effect in the [external receipt](recovery.md). Create an authorized, unique,
+expected-absent recovery ref for the old target, then run from the target checkout:
 
 ```text
 git merge --ff-only <exact-delivery-oid>
 ```
 
-Observe the actual result even when Git reports failure or the call is interrupted. Prove the target
-branch now points to the delivery commit, the tree is the accepted tree, required target
-verification passes, affected files match the intended update, and unrelated index, working,
-untracked and ignored state is preserved. Only that proof establishes `outcome_result: proven` and
-`classification: authoritative delivery`. An ambiguous result goes to [recovery](recovery.md); never
-rerun the merge based only on a missing success response.
+Observe the target even if the command fails or its response is interrupted. Proof requires its
+branch at the delivery OID, the accepted tree, required target verification and intended affected
+files, with unrelated index, working, untracked and ignored state preserved. An ambiguous result
+enters recovery; a timeout alone never justifies repeating integration.
 
-Proceed to authorized cleanup or retention. Keep the source and recovery ref until their lifecycle
-owners release them; preserve delivery proof if cleanup fails.
+This proof establishes authoritative delivery. Retain the source and recovery ref until their
+owners release them. A later cleanup failure keeps the proven delivery classification, so the
+caller can act on delivery without integrating again.

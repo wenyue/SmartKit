@@ -55,7 +55,7 @@ Project Contracts route ordinary governed Rules and Skills directly to the publi
 SmartKit candidates directly to the private entry. The private Skill remains outside plugin
 registries, manifests, setup catalogs, installation, and distribution. Setup-generated
 project-local targets invoke the concrete public workflow without selecting role mechanics. Setup
-Authoring Contracts reuse the same concrete Role Launch runtime through their separately owned
+Authoring Blueprints reuse the same concrete Role Launch runtime through their separately owned
 Author, Machine, and Static Reviewer sequence.
 
 ## Consequences
