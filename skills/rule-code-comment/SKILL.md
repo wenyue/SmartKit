@@ -25,6 +25,12 @@ These considerations have no fixed priority; local practice does not decide the 
 Public visibility alone does not require a comment, and straightforward local code may need none.
 Adding or omitting a comment need not imply that neighboring choices are wrong.
 
+For failures that matter to callers' decisions, explain in API documentation the failure conditions,
+any stable recognition the contract promises through a native type, category, or identity, and
+material state after failure. Cover returned and thrown failures, including those intentionally
+propagated across the boundary. Apply the coverage judgment above without cataloging incidental
+lower-level failures or repeating an already clear contract.
+
 ## Ground the explanation in the code
 
 Use the current implementation and its owning contracts to establish what is true. Expand the
