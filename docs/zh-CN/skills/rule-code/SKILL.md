@@ -5,13 +5,9 @@ description: 用于涉及任何语言代码的工作，包括用户要求的代�
 
 # 代码设计目标
 
-决定注释覆盖范围或是否需要注释前，阅读 [rule-code-comment](../rule-code-comment/SKILL.md)，包括可能适合省略注释的情况。
-
-决定操作结果、失败传播或处理方式前，阅读 [rule-error-handling](../rule-error-handling/SKILL.md)，包括沿用既有传播方式的常规情况。这些 Skills 分别负责自己的政策及配套资源的加载条件。
-
 ## Ponytail 加载
 
-每项编码任务中，在作出本 Rule 约束的决策前，都要加载原生 [ponytail](../ponytail/SKILL.md) Rule Skill。上下文中已有的完整、最新内容可以满足阅读要求。如果该 Skill 不可用，应报告缺失内容，并停止依赖它的工作；不相关且已获授权的工作可以继续。
+每项编码任务中，在作出决策前阅读 [ponytail](../ponytail/SKILL.md)。
 
 ## 让行为和 API 留在所属边界
 

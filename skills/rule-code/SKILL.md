@@ -5,19 +5,9 @@ description: Use for work involving code in any language, including requested co
 
 # Code Design Goals
 
-Before deciding comment coverage or whether a comment is needed, read
-[rule-code-comment](../rule-code-comment/SKILL.md), including when omission may be appropriate.
-
-Before deciding operation outcomes, failure propagation, or handling, read
-[rule-error-handling](../rule-error-handling/SKILL.md), including routine existing propagation.
-These Skills own their respective policies and the conditions for loading their supporting resources.
-
 ## Ponytail Loading
 
-Before governed decisions in each coding task, load the native
-[ponytail](../ponytail/SKILL.md) Rule Skill. Complete, current content already in context can
-satisfy reading. If the Skill is unavailable, report the missing content and stop dependent
-work; unrelated authorized work may continue.
+Before making decisions in any coding task, read [ponytail](../ponytail/SKILL.md).
 
 ## Keep Behavior and APIs with Their Owners
 
