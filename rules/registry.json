@@ -2,10 +2,8 @@
   "rules": [
     {"id": "smartkit/core-instruction-governance", "source": "core-instruction-governance.md", "description": "Instruction authority, Rule and Skill precedence, and conflict handling."},
     {"id": "smartkit/harness-codex", "source": "harness-codex.md", "description": "Codex subagent tools, JavaScript orchestration, and Agent waits."},
-    {"id": "smartkit/core-personality", "source": "core-personality.md", "description": "Agent reasoning posture, judgment priorities, collaboration, and temperament."},
-    {"id": "smartkit/core-communication", "source": "core-communication.md", "description": "Communication accuracy, clarity, and audience routing."},
-    {"id": "smartkit/core-response-format", "source": "core-response-format.md", "description": "Response language, formatting, tags, and work reports."},
-    {"id": "smartkit/core-reasoning-workflow", "source": "core-reasoning-workflow.md", "description": "Task understanding, change readiness, execution, and verification."},
+    {"id": "smartkit/core-communication", "source": "core-communication.md", "description": "User collaboration, recommendations, shared understanding, expression, and final response format."},
+    {"id": "smartkit/core-reasoning-workflow", "source": "core-reasoning-workflow.md", "description": "Evidence, judgment, task planning, implementation readiness, execution, and verification."},
     {"id": "smartkit/core-workspace-policy", "source": "core-workspace-policy.md", "description": "Workspace selection, existing work preservation, commits, and remote actions."}
   ]
 }

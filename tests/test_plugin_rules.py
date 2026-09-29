@@ -120,10 +120,11 @@ class PluginRuleContractTest(unittest.TestCase):
                     if item['id'] == 'smartkit/core-communication')
         rule['delivery'] = 'indexed'
         path.write_text(json.dumps(document), encoding='utf-8')
+        source_title = (root / 'rules' / rule['source']).read_text(encoding='utf-8').splitlines()[0]
         for harness in HARNESSES:
             with self.subTest(harness=harness):
                 context = self.session_context(harness, root=root)
-                self.assertNotIn('# Communication Quality', context)
+                self.assertNotIn(source_title, context)
                 self.assertIn(rule['id'], context)
                 self.assertIn(rule['description'], context)
                 self.assertIn(str(root / 'rules' / rule['source']), context)
@@ -308,7 +309,7 @@ class PluginRuleContractTest(unittest.TestCase):
         root = self.fixture_root()
         session = {'conversation_id': 'failure'}
         self.run_dispatch('cursor', 'compact', session, root=root)
-        source = root / 'rules/core-personality.md'
+        source = root / 'rules/core-communication.md'
         body = source.read_bytes()
         source.write_bytes(b'\xff')
         failed = self.run_raw_dispatch('cursor', 'tool', json.dumps(session).encode(), root=root)
@@ -359,7 +360,7 @@ class PluginRuleContractTest(unittest.TestCase):
 
     def test_core_rule_rejects_reserved_file_wrapper_delimiters(self):
         root = self.fixture_root()
-        source = root / 'rules/core-personality.md'
+        source = root / 'rules/core-communication.md'
         body = source.read_text(encoding='utf-8')
         for delimiter in ('<smartkit-rule-file', '</smartkit-rule-file>'):
             with self.subTest(delimiter=delimiter):

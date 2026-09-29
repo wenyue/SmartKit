@@ -38,9 +38,13 @@ Required per-task Ponytail loading belongs to
 retaining its upstream `ponytail` name under that specific naming exception;
 it does not replace the cross-task principles in
 [Reasoning Workflow](../../rules/core-reasoning-workflow.md) and
-[Agent Personality](../../rules/core-personality.md). Ponytail uses fixed full behavior;
+[Communication](../../rules/core-communication.md). Ponytail uses fixed full behavior;
 its former mode configuration, state, and delegation protocol are retired. Ordinary noncoding
 work needs no per-task Ponytail loading.
+
+The 2026-09-29 core Rule consolidation moved the former Agent Personality requirements into
+Reasoning Workflow and Communication. This owner update preserves the cross-task principles
+and leaves the external Skill decision unchanged.
 
 This decision replaces only the requirement in
 [ADR 0004](0004-harness-adaptation-and-contract-versioning.md) that external snapshots retain

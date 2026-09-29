@@ -1430,7 +1430,7 @@ class SetupRendererTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             asset = AssetSpec(
-                'shared-policy', 'rule', PurePosixPath('rules/core-personality.md'),
+                'shared-policy', 'rule', PurePosixPath('rules/core-communication.md'),
                 PurePosixPath('.agents/rules/shared-policy.md'), tuple(Harness),
                 metadata={
                     'section': 'global', 'loading': 'always',
@@ -1443,9 +1443,9 @@ class SetupRendererTest(unittest.TestCase):
                 replace(self.catalog, assets=(*self.catalog.assets, asset)),
                 ProjectConfig(('shared-policy',), ()), self.generated_tree(root),
             )
-            cursor = rendered.files_by_path['.cursor/rules/core-personality.mdc'].decode()
+            cursor = rendered.files_by_path['.cursor/rules/core-communication.mdc'].decode()
             copilot = rendered.files_by_path[
-                '.github/instructions/core-personality.instructions.md'
+                '.github/instructions/core-communication.instructions.md'
             ].decode()
             self.assertIn('alwaysApply: true', cursor)
             self.assertNotIn('globs:', cursor)

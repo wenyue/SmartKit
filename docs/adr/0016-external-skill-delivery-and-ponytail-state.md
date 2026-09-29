@@ -51,8 +51,10 @@ owns required per-task loading for coding work; [Ponytail](../../skills/ponytail
 fixed full simplification behavior. The review, audit, and debt Skills remain task-selected.
 Ponytail has no configurable modes, saved preferences, conversation state, or state Hooks.
 
-Cross-task principles remain with [Reasoning Workflow](../../rules/core-reasoning-workflow.md) and
-[Agent Personality](../../rules/core-personality.md).
+Following the 2026-09-29 core Rule consolidation, cross-task principles remain with
+[Reasoning Workflow](../../rules/core-reasoning-workflow.md) and
+[Communication](../../rules/core-communication.md). Former Agent Personality requirements are
+preserved by these owners; Ponytail's coding scope and delivery remain unchanged.
 
 ## Verification
 
