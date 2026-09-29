@@ -75,6 +75,10 @@ response, rather than channel or recovery alone. Successful recovery may still w
 Final feedback must convey useful context, impact, and disposition through the owning boundary,
 including material loss or unavailability even when its audience cannot repair it.
 
+At final handling, rely on human remediation only when the actual actor has the capability,
+authority, and available tools to perform it with reasonable effort. Exposing a failure does not
+establish that the human receiving it can resolve it.
+
 ## Load the Relevant Branch
 
 Ordinary propagation, clear translation or capture, routine review, I/O failure transfer, and
@@ -86,9 +90,10 @@ or reviewing the corresponding behavior:
 - [Persisted data](references/persisted-data.md) when repairing, reconstructing, discarding, or
   degrading use of persistent or serialized data requires decisions about authority, loss, later
   reads, or interpretation. Propagating an ordinary I/O failure alone does not trigger this branch.
-- [Remediation](references/remediation.md) when human remedial actions or cross-role resolution and
-  feedback responsibilities require decisions about capability, authority, or reasonable effort.
-  An ordinary diagnostic or feedback change alone does not trigger this branch.
+- [Remediation](references/remediation.md) when a final disposition relies on human action, or
+  cross-role resolution and feedback responsibilities need to be established. A diagnostic or
+  feedback change that leaves an established disposition and its responsibilities intact does not
+  by itself trigger this branch.
 
 ## Resolve and Verify Within the Task
 

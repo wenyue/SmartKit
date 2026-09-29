@@ -1,22 +1,44 @@
 # Remediation
 
-Use this reference when designing, changing, or reviewing human remedial actions or cross-role
-resolution and feedback responsibilities that require capability, authority, or effort decisions.
+Use this reference when designing, changing, or reviewing a final disposition that relies on human
+action, or when cross-role resolution and feedback responsibilities need to be established.
 
 ## Assign a Feasible Action to an Authorized Actor
 
-Establish who can perform the action from actual access, callers, and expected use, rather than a
-module or surface name. The actor needs both capability and authority, and the action's complexity
-and effort must be reasonable for that audience. Keep specialist troubleshooting and complex repair
-with qualified actors.
+Establish who can perform the action from actual deployment, access, available tools, callers, and
+expected use. Keep specialist troubleshooting and complex repair with qualified actors. Use these
+defaults to start that investigation:
+
+- For a service operated by developers or operations staff, the operator is the default remediation
+  actor for startup or infrastructure failures. A diagnosable failure routed into their supported
+  repair or alert process can be an appropriate disposition. The service's business users are not
+  thereby responsible for operating it.
+- For a client application, the default human audience is an ordinary user with limited ability to
+  inspect or modify internal state. The application must resolve the problem within its authority,
+  or provide a supported mechanism enabling the user or a qualified actor to resolve it. Displaying
+  an exception alone is insufficient when no feasible action follows.
+
+Actual evidence overrides these defaults: a specialist client may expose suitable repair tools,
+while a service may lack an operator with the necessary access. A product label establishes neither
+an actor's ability to repair the failure nor permission to do so. Keep concrete product facts and
+recovery mechanisms in the project's contracts and policy.
 
 Where direct repair is unavailable, offer a feasible supported escalation route when one exists.
-If no capable, authorized actor is established, keep remediation unresolved and pause the dependent
-design until its ownership is settled.
+If no feasible action by a capable, authorized actor is established, keep remediation unresolved
+and pause the dependent design until its ownership and disposition are settled.
 
 A runtime prompt may collect a bounded product choice under an established contract. It cannot
 resolve a missing development-time data or recovery contract. Investigate available evidence and
 obtain the missing decision from its owner before implementing the dependent behavior.
+
+For example, a deterministic reconstruction failure on unchanged persisted data will recur on
+later reads. If an ordinary client user cannot inspect or repair that data, transferring the
+exception to that user alone leaves a repeating failure. Select repair, explicit degradation or
+isolation, or supported escalation according to the data contract, preserving data whose loss is
+unauthorized. An accepted degraded result must keep the failure and its material impact visible;
+neither catching the exception nor keeping the bytes establishes a complete disposition. Apply the
+entry's persisted-data and recovery branches when their conditions hold. This is a final human-facing
+disposition decision; internal layers may still propagate through their accepted contracts.
 
 ## Connect Feedback to the Resulting State
 
