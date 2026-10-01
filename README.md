@@ -16,6 +16,8 @@ Ask for these skills by name; the assistant does not select them automatically.
 | --- | --- |
 | `setup-project-agents` | Sets up or updates a repository's coding assistants; use when adopting SmartKit or refreshing project agent setup. |
 | `implement-tickets` | Implements and reviews a batch of eligible tracker tickets in dependency order; use when several ready tickets belong in one batch. |
+| `review-for-humans` | Explains supplied changes by file with simple examples and reasoned judgments, displaying groups for a human reviewer to read and continue. |
+| `collect-todos` | Saves deferred tasks in the project's configured tracker and reports what was collected; use to record side tasks and continue the current main task. |
 
 ### Can be invoked automatically
 

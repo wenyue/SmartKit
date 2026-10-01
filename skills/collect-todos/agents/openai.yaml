@@ -1,0 +1,5 @@
+interface:
+  display_name: "Collect Todos"
+  short_description: "Save deferred tasks in the project's tracker"
+policy:
+  allow_implicit_invocation: false

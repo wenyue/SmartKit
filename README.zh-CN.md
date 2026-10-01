@@ -15,6 +15,8 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | --- | --- |
 | `setup-project-agents` | 配置或更新仓库中的编程助手；接入 SmartKit 或更新项目 Agent 配置时使用。 |
 | `implement-tickets` | 按依赖顺序实现并审查一批符合条件的工单；多个已就绪工单适合成批处理时使用。 |
+| `review-for-humans` | 按文件用简单例子和有依据的评价解释用户提供的修改，分组展示，便于人类 reviewer 阅读并继续审核。 |
+| `collect-todos` | 将暂缓任务保存到项目配置的任务跟踪器，并报告收集了哪些待办；需要记录旁支任务并继续当前主任务时使用。 |
 
 ### 可以自动调用
 
