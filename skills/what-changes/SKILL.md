@@ -35,8 +35,7 @@ confirmation.
 
 ## Present a Reviewable Scope
 
-Use four semantic sections in this order, with these emoji-prefixed bold labels. Translate the
-section names into the response language and omit empty sections:
+Use four semantic sections in this order, with these emoji-prefixed bold labels. Omit empty sections:
 
 1. ❓ **Pending confirmation** — Unsettled status, material details, or coverage gaps. Keep any
    possible file scope for an unresolved item here, rather than presenting it as a decided change.

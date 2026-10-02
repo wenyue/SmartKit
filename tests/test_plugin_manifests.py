@@ -223,9 +223,9 @@ class PluginManifestTest(unittest.TestCase):
     def test_chinese_documentation_has_no_han_separating_ascii_spaces(self):
         chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
         han_space = re.compile(
-            r'[\u3400-\u9fff] +(?=(?:\*{1,2})?[\u3400-\u9fff])'
-            r'|[\u3400-\u9fff] +\*'
-            r'|\* +[\u3400-\u9fff]'
+            r'[\u3400-\u9fff] +[\u3400-\u9fff]'
+            r'|[\u3400-\u9fff] +\*(?!\*)'
+            r'|(?<!\*)\* +[\u3400-\u9fff]'
         )
         protected = re.compile(r'(`+[^`]*?`+|\]\([^)]*\))')
 

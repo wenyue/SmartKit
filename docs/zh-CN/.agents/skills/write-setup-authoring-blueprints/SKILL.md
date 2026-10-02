@@ -9,7 +9,7 @@ description: 在 setup-assets/blueprints 下，为未来的项目 Rule 或 Skill
 `setup-assets/blueprints/**` 下的每份蓝图规定一个目标：它必须表达的含义、编写它所需的项目证据，
 以及未来 Author 的权限和验收条件。
 
-蓝图**仅用于判断**：它为有能力的 Author 提供作出这些决策所需的知识，将常规表述和推理留给 Author。
+蓝图 **仅用于判断** ：它为有能力的 Author 提供作出这些决策所需的知识，将常规表述和推理留给 Author。
 项目证据提供项目事实；setup 和公共 writer 提供生成机制。如果未来目标中的某个流程顺序会影响目标行为，
 这个必要流程仍应写入蓝图。
 

@@ -7,7 +7,7 @@ description: 编写或修订一个英文 Rule 或 Agent Skill。
 
 编写能帮助 Agent 做好具体工作的工件：作出正确决策，理解重要约束，并取得有用的结果。好的 Rule 让政策便于应用；好的 Skill 提供任务所需的知识和方法。堆积所有可能适用的指令，并不能让它们变得更好。
 
-每次调用产出一个**Candidate**：一份 Rule 或 Skill 及其范围内的配套资源。当前 Agent 担任 Controller。阅读 [Controller 契约](references/controller.md)，准备任务并管理整个过程直至交接。
+每次调用产出一个 **Candidate** ：一份 Rule 或 Skill 及其范围内的配套资源。当前 Agent 担任 Controller。阅读 [Controller 契约](references/controller.md)，准备任务并管理整个过程直至交接。
 
 ## 工作如何推进
 

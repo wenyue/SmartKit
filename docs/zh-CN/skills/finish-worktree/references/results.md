@@ -21,7 +21,7 @@
 
 ## 保留最强的已证明结果
 
-分类从 `no positive result` 开始。历史证明支持 `history finalized`；已证明交接支持 `non-integrating handoff`。只有已证明的本地集成或**Already Delivered**支持 `authoritative delivery`。已证明丢弃使用 `explicit discard`。
+分类从 `no positive result` 开始。历史证明支持 `history finalized`；已证明交接支持 `non-integrating handoff`。只有已证明的本地集成或 **Already Delivered** 支持 `authoritative delivery`。已证明丢弃使用 `explicit discard`。
 
 后续停止或失败不能抹去或升级一个已独立证明的事实。仅推送成功只算残留发布，不是已证明 PR 结果。失败中的保留保护残留，但本身不能证明所选结果或完成整次运行。反过来，权威交付在清理失败后仍成立，使调用者能够继续有依据的交付后工作，而不再次集成。
 

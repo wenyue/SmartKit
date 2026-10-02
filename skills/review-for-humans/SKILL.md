@@ -45,8 +45,8 @@ Small accompanying edits, such as a comment typo, can be mentioned in the overvi
 Explain each localization translation file as one item for the whole file, rather than separating
 its strings into several items.
 
-Label modification items **🔧 Change 1**, **🔧 Change 2**, and so on in the user's language, numbering
-continuously across all files and continuation groups in the same report.
+Label modification items **🔧 1.**, **🔧 2.**, and so on, with titles and continuous numbering
+across all files and continuation groups in the same report.
 
 For each item, present **⏪ Before**, then **⏩ After**, then **Evaluation** vertically. Explain the
 behavior before and after; a separate "consequence of not changing" field is unnecessary. Prefer
@@ -79,11 +79,12 @@ groups. If file A has 3 items and file B has 8, display both as one 11-item grou
 the next reply. A file with more than 10 items stays together. Display the final shorter group when
 the scope ends.
 
-End each group with **📊 Progress: displayed files / files requiring review**. This measures displayed
-files, not modification items or a claim that every judgment is conclusive. If files remain, explicitly
-prompt the user to enter `继续` to continue the review, after the progress, then wait. When the user
-continues, resume with the next file rather than repeating the previous group. When all files have
-been displayed, say the report is complete and retain any unresolved evidence gaps.
+End each group with `---` followed by **📊 Progress: displayed files / files requiring review**. This
+measures displayed files, not modification items or a claim that every judgment is conclusive. If
+files remain, explicitly prompt the user to enter `继续` to continue the review, after the progress,
+then wait. When the user continues, resume with the next file rather than repeating the previous
+group. When all files have been displayed, say the report is complete and retain any unresolved
+evidence gaps.
 
 Keep the snapshot, ordered file list, next-file position, next-item number, and prior judgments
 available across groups. If the reviewed content changes, identify which earlier explanations or
@@ -93,7 +94,7 @@ again, and make the version transition explicit so the report does not mix versi
 
 ## Reference report
 
-Use the following shape as a guide, adapting the language and detail to the user. Exact wording is
+Use the following shape as a guide, adapting the detail to the user. Exact wording is
 flexible; preserve the file overview, business items, vertical comparison, judgment, and progress.
 These are illustrative files and snippets, not findings about a particular repository. Assume that
 deleting an item detaches it from its storage box and that the task promises to flush the deletion.
@@ -104,7 +105,7 @@ The selected scope contains the following two non-test files.
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting
 an item can still flush the deletion afterward.
 
-**🔧 Change 1: Flush the deletion to the original storage box**
+**🔧 1. Flush the deletion to the original storage box**
 
 **⏪ Before**
 
@@ -135,7 +136,7 @@ A flush failure still needs to reach the caller; flushing does not roll back the
 This file supplies English interface text. The changed label makes clear that the action deletes
 the account; all translation changes in this file are reviewed together.
 
-**🔧 Change 2: Make the account-deletion label explicit**
+**🔧 2. Make the account-deletion label explicit**
 
 **⏪ Before**
 
@@ -156,7 +157,6 @@ The button names the affected object.
 **✅ Evaluation: Reasonable.** The text accurately describes the assumed action and helps the user
 understand it before clicking.
 
-**📊 Progress: 2/2 files displayed.** The report is complete for this selected scope.
+---
 
-For an unfinished group, replace the completion sentence with an explicit continuation prompt in
-the user's language. For example: **📊 审核进度：2/11。** 输入 `继续`，继续后面的 review。
+**📊 Progress: 2/2 files displayed.** The report is complete for this selected scope.

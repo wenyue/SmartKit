@@ -20,13 +20,13 @@
           "destination": "skills/ask-matt",
           "files": {
             "PHASE-BOUNDARIES.md": "bd0fe4291d25064080a5b880a17d2ebe320e65a63747a2d69a64b04d72a0d03e",
-            "SKILL.md": "3d38910535f5f01e15bc5fd7f6ca8880d628cd248741f08e6780dd7c1828e832",
+            "SKILL.md": "87183519eb3fa53cc5aa875958177ac31d64abbb5d3e002569b9f1875a8bcbe8",
             "agents/openai.yaml": "3b0b05939a3732cea306fc4c5c60d869c0f21e55ce6ff786513372fa5f9f40ca"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/ask-matt.openai.patch",
-              "sha256": "8190b5c31b390576e98b48c5257a8b1ef26d9c45bcce0d237d65b26739d6d5d6"
+              "sha256": "1923ca4dbc8d404b8b9a763d496aceb86c8206737bc808efc55c133f6408ee3a"
             }
           ]
         },
@@ -83,14 +83,14 @@
           "source_path": "skills/engineering/improve-codebase-architecture",
           "destination": "skills/improve-codebase-architecture",
           "files": {
-            "HTML-REPORT.md": "0b0936104158abeef7246ff6cbabefa4dc055f17589f2833f2d93001421910a1",
-            "SKILL.md": "7b76f01b0eefe49a127754c9027a6235a036a21348df5dad988893d8b2f384d6",
+            "HTML-REPORT.md": "0b98e14310d05438a55e48629cf1fc17d9c09a9a5e6cfb692bf296a340ebf6eb",
+            "SKILL.md": "cae0fbb70d85a4b9cfd2b7b05815b2c44e0a7bbf9ace9fbc50ccc2cfb15006f7",
             "agents/openai.yaml": "b16566b8b5f71cc0910d34a28140ddf52dee7634ee3b683b57a4c14b2dd62d52"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/improve-codebase-architecture.openai.patch",
-              "sha256": "a66eb08faddd7387a5b1175a6c2f5d26d0f6edfca8702379898402a07c5e1d8c"
+              "sha256": "c7bdb0074fc96ff058c6094febe20f70f6fc4425ec305b51978c2b279973190b"
             }
           ]
         },
@@ -233,14 +233,14 @@
           "destination": "skills/domain-modeling",
           "files": {
             "ADR-FORMAT.md": "3e030f51db41d04bb2f4c34ea1a9b9a8bf026b971262fc3cbea0e87308268037",
-            "CONTEXT-FORMAT.md": "6690b35bcd6f5d98863baa9c00d940c00f70165bd0a66916d13a6eabc8c37fcf",
+            "CONTEXT-FORMAT.md": "ae2c6eb22cdde7b0a8044977b37606f5d2ff3586caf5aa60902f8c77c93cddc4",
             "SKILL.md": "152e2c97239affb12a60c5f4a7e74ab546a49ae169688c81f4e2ccc42dafa579",
             "agents/openai.yaml": "257d19dff8c83f504f3db33fd7fb7b3daf1808b0b5c01f518d7fc34610271566"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/domain-modeling.patch",
-              "sha256": "c53b2a46a56aa11661f0b9ea1db231c5f1f67d79b78f3ffabdc51c3b419f6dde"
+              "sha256": "16b75a625e6e1d935cf67cd95068764f40ac6a12193929871cfe058a2b43c836"
             },
             {
               "path": "vendor/patches/mattpocock/domain-modeling.openai.patch",

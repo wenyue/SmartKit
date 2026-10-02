@@ -26,7 +26,7 @@ Keep headings one-for-one at the same levels, with corresponding Markdown blocks
 emphasis, protected literals, and prose paragraph boundaries.
 
 Within each prose paragraph, freely reorder, split, merge, or rephrase sentences for natural
-Chinese while preserving meaning.
+Simplified Chinese while preserving meaning.
 
 ## Preserve Links and Required Anchors
 

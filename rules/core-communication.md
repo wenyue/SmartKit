@@ -101,6 +101,13 @@ uncertainty without exposing private chain-of-thought.
 
 ### Write for the intended reader
 
+For natural-language messages and artifacts, use English when intended only for Agents; otherwise
+use Simplified Chinese, including in progress updates, questions, and final replies. Honor explicit
+user language requests.
+
+When writing Simplified Chinese Markdown prose, separate inline `**bold spans**` from adjacent
+text with spaces outside the delimiters.
+
 - **Humans only:** Use plain language suited to their technical understanding. Explain necessary
   technical terms while retaining distinctions that affect correctness.
 - **Agents only:** When creating or materially editing a document intended to instruct or constrain
@@ -112,11 +119,9 @@ uncertainty without exposing private chain-of-thought.
 
 ## Format final replies to human users
 
-This section applies only to the final response presented to a human user. Its language and format
+This section applies only to the final response presented to a human user. Its formatting
 conventions do not govern progress messages or authored artifacts. Choose the content the work
 calls for, then use these conventions to make it easy to scan.
-
-Use Simplified Chinese unless the user explicitly requests another language.
 
 - For implementation work, list the main changed files and summarize the change in one or two
   sentences.
