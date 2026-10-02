@@ -293,6 +293,11 @@ Interpreter discovery, version preflights, forwarding launchers, and platform va
 actual requirement. Host hooks retain their bootstrap and failure-output contracts; external tools
 retain their invocation rules.
 
+## Write agents/openai.yaml
+
+For every Skill created or revised, include `agents/openai.yaml` and write its
+`interface.short_description` as a concise Simplified-Chinese summary for the human reader.
+
 ## Finish and revise
 
 Read the complete result as its intended user would, following a realistic task through its hard

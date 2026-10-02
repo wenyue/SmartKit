@@ -222,6 +222,39 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
             ['--check', '--root', str(project)], resolver=resolve,
         ), 1)
 
+    def test_patch_adds_chinese_interface_metadata_to_snapshot_and_lock(self):
+        project, upstream, _, registry, checkouts = self.prepare_two_source_project()
+        metadata = (
+            'interface:\n'
+            '  display_name: "Alpha"\n'
+            '  short_description: "验证第三方技能的中文界面描述"\n'
+        )
+        patch = project / 'vendor/patches/alpha-openai.patch'
+        patch.parent.mkdir(parents=True)
+        patch.write_text(
+            '--- /dev/null\n+++ b/agents/openai.yaml\n@@ -0,0 +1,3 @@\n'
+            + ''.join('+' + line for line in metadata.splitlines(keepends=True)),
+            encoding='utf-8',
+        )
+        registry['external_sources'][0]['skills'][0]['patches'] = [
+            'vendor/patches/alpha-openai.patch'
+        ]
+        (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
+        resolver = lambda source: checkouts[source.id]
+        self.assertEqual(self.module.main(
+            ['--update', '--root', str(project)], resolver=resolver,
+        ), 0)
+        self.assertEqual(
+            (project / 'skills/alpha/agents/openai.yaml').read_text(encoding='utf-8'),
+            metadata,
+        )
+        self.assertFalse((upstream / 'skills/alpha/agents/openai.yaml').exists())
+        lock = json.loads((project / 'vendor/external-skills.lock.json').read_text())
+        self.assertIn('agents/openai.yaml', lock['sources'][0]['skills'][0]['files'])
+        self.assertEqual(self.module.main(
+            ['--check', '--root', str(project)], resolver=resolver,
+        ), 0)
+
     def test_patch_stats_cover_replacements_deletions_new_files_and_binary_resources(self):
         before, after = self.root / 'before', self.root / 'after'
         before.mkdir()

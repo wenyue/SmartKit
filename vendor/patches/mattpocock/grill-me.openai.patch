@@ -1,0 +1,9 @@
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,5 +1,5 @@
+ interface:
+   display_name: "Grill Me"
+-  short_description: "Sharpen a plan through interview"
++  short_description: "通过深入访谈完善计划与决策"
+ policy:
+   allow_implicit_invocation: false

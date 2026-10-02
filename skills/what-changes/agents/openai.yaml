@@ -1,5 +1,5 @@
 interface:
   display_name: "What Changes"
-  short_description: "Review intended changes before implementation"
+  short_description: "实施前核对累积的预期修改范围"
 policy:
   allow_implicit_invocation: true

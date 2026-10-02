@@ -1,0 +1,3 @@
+interface:
+  display_name: "Ponytail Debt"
+  short_description: "汇总代码中的简化与暂缓事项，形成技术债清单"

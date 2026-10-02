@@ -1,3 +1,3 @@
 interface:
   display_name: "Diagnose Agent Session"
-  short_description: "Analyze agent-session activity and cost"
+  short_description: "分析智能体会话的活动与资源开销"

@@ -1,4 +1,4 @@
 interface:
   display_name: "Finish Worktree"
-  short_description: "Keep, publish, integrate, transfer or discard work"
+  short_description: "保留、发布、整合、转移或丢弃工作树中的工作"
   default_prompt: "Use $finish-worktree to carry out the selected outcome for this isolated linked Git worktree, preserving user state and any independently proven results."

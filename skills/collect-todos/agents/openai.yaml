@@ -1,5 +1,5 @@
 interface:
   display_name: "Collect Todos"
-  short_description: "Save deferred tasks in the project's tracker"
+  short_description: "将暂缓任务保存到项目的任务跟踪器"
 policy:
   allow_implicit_invocation: false

@@ -1,0 +1,9 @@
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,5 +1,5 @@
+ interface:
+   display_name: "Wayfinder"
+-  short_description: "Map a large effort as decision tickets"
++  short_description: "将大型工作整理为决策工单与推进路径"
+ policy:
+   allow_implicit_invocation: false

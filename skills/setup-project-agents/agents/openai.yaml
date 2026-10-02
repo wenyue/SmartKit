@@ -1,5 +1,5 @@
 interface:
   display_name: "Setup Project Agents"
-  short_description: "Configure project Rules, Skills, Agents, and MCP"
+  short_description: "配置项目规则、技能、智能体与 MCP"
 policy:
   allow_implicit_invocation: false

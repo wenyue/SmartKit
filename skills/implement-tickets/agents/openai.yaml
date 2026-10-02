@@ -1,6 +1,6 @@
 interface:
   display_name: "Implement Tickets"
-  short_description: "Run or resume a Ticket Batch, or prove no eligible work"
+  short_description: "执行或恢复工单批次，或确认没有可执行的工单"
   default_prompt: "Use $implement-tickets to implement or resume the eligible dependency-ordered ticket batch, or prove that no eligible work remains."
 policy:
   allow_implicit_invocation: false

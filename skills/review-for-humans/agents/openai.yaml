@@ -1,5 +1,5 @@
 interface:
   display_name: "Review for Humans"
-  short_description: "Explain changes by file for human reviewers"
+  short_description: "按文件解释修改，帮助人类审查者理解与审核"
 policy:
   allow_implicit_invocation: false

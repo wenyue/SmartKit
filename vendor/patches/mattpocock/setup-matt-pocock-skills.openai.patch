@@ -1,0 +1,9 @@
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,5 +1,5 @@
+ interface:
+   display_name: "Setup Matt Pocock Skills"
+-  short_description: "Configure a repo for the skills"
++  short_description: "为仓库配置 Matt Pocock 技能集所需的项目资料"
+ policy:
+   allow_implicit_invocation: false

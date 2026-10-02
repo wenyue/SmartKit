@@ -1,4 +1,4 @@
 interface:
   display_name: "Write Shared Rules and Skills"
-  short_description: "Author portable shared Rules and Skills"
+  short_description: "编写或修订可跨项目复用的规则与技能"
   default_prompt: "Use $write-shared-rules-and-skills to qualify and author one portable cross-project Rule or Skill through the public protocol."

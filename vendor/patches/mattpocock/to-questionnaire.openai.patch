@@ -1,0 +1,9 @@
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,5 +1,5 @@
+ interface:
+   display_name: "To Questionnaire"
+-  short_description: "Front-load questions into a doc for someone to answer"
++  short_description: "将待确认的问题整理成可填写的问卷文档"
+ policy:
+   allow_implicit_invocation: false

@@ -1,4 +1,4 @@
 interface:
   display_name: "Create Worktree"
-  short_description: "Select or create an isolated Git worktree safely"
+  short_description: "安全选择、创建并准备隔离的 Git 工作树"
   default_prompt: "Use $create-worktree to select or create and prepare one isolated linked Git worktree for this implementation scope."

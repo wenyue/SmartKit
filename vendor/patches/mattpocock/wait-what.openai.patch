@@ -1,0 +1,9 @@
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,5 +1,5 @@
+ interface:
+   display_name: "Wait What"
+-  short_description: "Re-pitch that — simpler, with the context I'm missing"
++  short_description: "补充缺失背景，用更易懂的方式重新解释"
+ policy:
+   allow_implicit_invocation: false

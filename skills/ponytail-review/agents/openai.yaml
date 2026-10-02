@@ -1,0 +1,3 @@
+interface:
+  display_name: "Ponytail Review"
+  short_description: "审查修改中的过度设计，指出可删除或简化的代码"

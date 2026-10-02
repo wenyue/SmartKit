@@ -21,8 +21,14 @@
           "files": {
             "PHASE-BOUNDARIES.md": "bd0fe4291d25064080a5b880a17d2ebe320e65a63747a2d69a64b04d72a0d03e",
             "SKILL.md": "3d38910535f5f01e15bc5fd7f6ca8880d628cd248741f08e6780dd7c1828e832",
-            "agents/openai.yaml": "bdffbc5a0a99ed1b6ef3253d251d755fd18162b9845972e380007f844b09b05c"
-          }
+            "agents/openai.yaml": "3b0b05939a3732cea306fc4c5c60d869c0f21e55ce6ff786513372fa5f9f40ca"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/ask-matt.openai.patch",
+              "sha256": "8190b5c31b390576e98b48c5257a8b1ef26d9c45bcce0d237d65b26739d6d5d6"
+            }
+          ]
         },
         {
           "id": "mattpocock/diagnosing-bugs",
@@ -30,9 +36,15 @@
           "destination": "skills/diagnosing-bugs",
           "files": {
             "SKILL.md": "b9339b09ee3980808d8c5a35c7251b891b8b1e0036ec4ca37812b976ebddf6b6",
-            "agents/openai.yaml": "3e430dbe4334a87597488c060cb3dc3786bb00c9182877d6f5ec41f62490e90b",
+            "agents/openai.yaml": "f16824e9af79a3c7b5347e434c831d1b60230c11a045e19896cbf68c064d1561",
             "scripts/hitl-loop.template.sh": "18ae07e1cc49b32c71767e241a6e8de4be74ef21d5e3b7e39034d9c7335f2d80"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/diagnosing-bugs.openai.patch",
+              "sha256": "430035e1fc54a761d01de5bfa84238792d4353892b1353ac7509fc893439b250"
+            }
+          ]
         },
         {
           "id": "mattpocock/grill-with-docs",
@@ -40,8 +52,14 @@
           "destination": "skills/grill-with-docs",
           "files": {
             "SKILL.md": "610d091047bcfb9db0f75c057d15538481a721111579fc5ec7f83ad9131a2165",
-            "agents/openai.yaml": "94cd0ab161fb468a836349f5ed482ba58ce8e709a05c57ce533d739dbd35cca9"
-          }
+            "agents/openai.yaml": "df2caef9469bff0e229e5f0ad1597a57c465584aa1b93da3766e22f111eff784"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/grill-with-docs.openai.patch",
+              "sha256": "0c90e0a69110eee57d091f6af98f06e02ed917959c6742db452a54915f01dc0c"
+            }
+          ]
         },
         {
           "id": "mattpocock/triage",
@@ -51,8 +69,14 @@
             "AGENT-BRIEF.md": "5b78d347cc53f6bcf7b875106005ccf5315055fa4cf75eb28d41e96ee426d27b",
             "OUT-OF-SCOPE.md": "2526f998fd7ca5e956d3f6f234bcc2431a5971ee769f1148ddc60b92f04d5914",
             "SKILL.md": "91e2817ecb688c4df4e2444eab472d1d79d2a0a57abf9f6726967664c460ff2e",
-            "agents/openai.yaml": "2e683717720cf456d165d0bb1a68bb600d0b6a8ccb61841c172e50d26f95351c"
-          }
+            "agents/openai.yaml": "83dff0e6687a46bbfad1b2eab06f17f9468c0ed5a45e7e3e77a3b3a9f3261c8a"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/triage.openai.patch",
+              "sha256": "f509c5968cd46a1720b0fb845bf5b45bb293765c07cb4a4b53a230b5c237d9db"
+            }
+          ]
         },
         {
           "id": "mattpocock/improve-codebase-architecture",
@@ -61,8 +85,14 @@
           "files": {
             "HTML-REPORT.md": "0b0936104158abeef7246ff6cbabefa4dc055f17589f2833f2d93001421910a1",
             "SKILL.md": "7b76f01b0eefe49a127754c9027a6235a036a21348df5dad988893d8b2f384d6",
-            "agents/openai.yaml": "c8cb20f68ebf0edb4e497bc11ae5fcaa196004e661cd189015b04f4109ced7f1"
-          }
+            "agents/openai.yaml": "b16566b8b5f71cc0910d34a28140ddf52dee7634ee3b683b57a4c14b2dd62d52"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/improve-codebase-architecture.openai.patch",
+              "sha256": "a66eb08faddd7387a5b1175a6c2f5d26d0f6edfca8702379898402a07c5e1d8c"
+            }
+          ]
         },
         {
           "id": "mattpocock/setup-matt-pocock-skills",
@@ -70,13 +100,19 @@
           "destination": "skills/setup-matt-pocock-skills",
           "files": {
             "SKILL.md": "310fb1a73c0467e617e17d7c41d4a2278b5405c4a27f36d7cd22bb4599aee6bb",
-            "agents/openai.yaml": "9527de0110541c45712319025155aeab8dc7d77c6ed6e5e83271bab1851ab939",
+            "agents/openai.yaml": "d71685f42a6f155d299df6d1f1dff14411d556daf77ae509c01d3b09690e16f3",
             "domain.md": "25be404b58798b3cb2d51c93dba2ab052fc3a425632185726ac3f5fcff193b99",
             "issue-tracker-github.md": "ec8332bb69e7e79e349989e940be481a0c79b552be3acc613e718278bcc5e03d",
             "issue-tracker-gitlab.md": "16ea4a727803876cbc763e1f6b00992b3b393ba5e0cd394382dccc0f8d83c564",
             "issue-tracker-local.md": "6f38f66f9ffce2fdc26c43608d06b527f60e45c6f43003d0ea77d4e2641c9de3",
             "triage-labels.md": "4f53c9b40ce2651e3611aa090eaedbd6dbc9b71ef8c5f7e65eac0d8263190d0d"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch",
+              "sha256": "57eb2a6c61b9b42013ba37c55c2bb9706b5c4a93ee79d9aee606d08dc62d95a8"
+            }
+          ]
         },
         {
           "id": "mattpocock/tdd",
@@ -84,10 +120,16 @@
           "destination": "skills/tdd",
           "files": {
             "SKILL.md": "5e6b9c16b547113e90afbb946489d1c1384be5c2128f0159bd0bee57251ecf08",
-            "agents/openai.yaml": "ea6f01cf1b8c06a4b0f5b649d74b1b8ce8685e72af1b38d70d877693e092af0b",
+            "agents/openai.yaml": "b3faa7d92f8a7d71df8ea50a5ace05526108e2cea19e6701cc53210440ae53b7",
             "mocking.md": "3ceb807fdf4a47d6a93d4d9a891e5ba6d362a6247bd08adc451feebfc17361ef",
             "tests.md": "859f9e592c188fda4fc7277dd180e4ce9c7a2e13f6efe1f6f29eccc9d28c106a"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/tdd.openai.patch",
+              "sha256": "8aee429ed7d54072a239e53f69aa7c803184dd5811e42530e08c3b2d5075904b"
+            }
+          ]
         },
         {
           "id": "mattpocock/to-spec",
@@ -95,8 +137,14 @@
           "destination": "skills/to-spec",
           "files": {
             "SKILL.md": "5d26479544b08048d3a8f79d937b39bc613a617f026b3fd083bafc1e99a7b811",
-            "agents/openai.yaml": "1c5b4d1e3d8e52287ef19cc2742fdbbfae1914ac75d33af3e4c8174f08cc55bb"
-          }
+            "agents/openai.yaml": "e7ad0d7829b68c4b6abb6c3b0438f23c397249c9678299bce21a1335838eae14"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/to-spec.openai.patch",
+              "sha256": "ad390536ff08a59c32c5d29f7178af6fca4fe8778e124cf459c410786a6f70a1"
+            }
+          ]
         },
         {
           "id": "mattpocock/to-tickets",
@@ -104,12 +152,16 @@
           "destination": "skills/to-tickets",
           "files": {
             "SKILL.md": "99d1f56bd9eddd1f73729edf4d5a121a38589089b8d977514704a8ac9ac44e38",
-            "agents/openai.yaml": "21bc6215fffcd7614e9f772bb1760e87cc5fc7dcc707e7d282bc9414267a6090"
+            "agents/openai.yaml": "1271cdecf27ee1e215c9985f27bbed16ba0eb5a1edb0f80b71b3f8081e9830c0"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/to-tickets.patch",
               "sha256": "403c7cdc4702979c33ba9ed36de208e338077d02e395385a432001989d503362"
+            },
+            {
+              "path": "vendor/patches/mattpocock/to-tickets.openai.patch",
+              "sha256": "f4f544a6a3eb416036acec43607f68eb0d28903b8570278bc21a16c73375d844"
             }
           ]
         },
@@ -119,8 +171,14 @@
           "destination": "skills/wayfinder",
           "files": {
             "SKILL.md": "d33e2141f7c8bbfd137fef0213cbec465820e4680e67da5d0f0815d6742d26c2",
-            "agents/openai.yaml": "88bc81a11a6d52ac67aeaa76b8b619e387020d47c5133a4dd4927fd15c4ad073"
-          }
+            "agents/openai.yaml": "9397ddeb498df9aa2f2bf00a2123ac9080eb2db5e5fcad24ffd2071cdb9e3abf"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/wayfinder.openai.patch",
+              "sha256": "d60702b2a6ffa78316c4cc88dc8773978e623ee54e0ec1b7c879c58bebda4c9c"
+            }
+          ]
         },
         {
           "id": "mattpocock/implement",
@@ -128,8 +186,14 @@
           "destination": "skills/implement",
           "files": {
             "SKILL.md": "6d3fd9e83b8f36e5213854779db49b256a457a7ebb4a503e53fa7dcff696adc3",
-            "agents/openai.yaml": "8970a8596ade0c28ab427f41a4ea242d6bdf6186c59ebf55e1238dbecaab79dc"
-          }
+            "agents/openai.yaml": "2659bb9dffb7aa596348f0490d06e42533b45a1f476730a2f1c3ce8fe70c54c9"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/implement.openai.patch",
+              "sha256": "92ac7390755ec6932790f2af3e480a06cdb7d6a126fb29647c09d16307727b0a"
+            }
+          ]
         },
         {
           "id": "mattpocock/prototype",
@@ -139,8 +203,14 @@
             "LOGIC.md": "5aef84c2ef514dd2a7268433abd3ee8e47b35f42b60e0b5f7430ec4937f4f06a",
             "SKILL.md": "2579ecf89a7fb7e73345117405c7ba9b9fb5ab22a78ecb08b0ce68b73f0148c2",
             "UI.md": "e2ca04434be54acdee2f5df582ef8038fadf582bbcc99be0d2e27737ff8ed096",
-            "agents/openai.yaml": "5af65e43ab41a350436697b81e27b7f848d36782043b73c322bb2c9fa9cc55dc"
-          }
+            "agents/openai.yaml": "e1f73b12dc4d34731568027a08272aa66d9fe5743f8972f2e0079f021316f9bc"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/prototype.openai.patch",
+              "sha256": "693d773e6a4193562c8e12dc8e256ed6804e3934e8869af43fe2fe38f02ac63b"
+            }
+          ]
         },
         {
           "id": "mattpocock/research",
@@ -148,8 +218,14 @@
           "destination": "skills/research",
           "files": {
             "SKILL.md": "af378829f015775a3bcd65ff466826722e99359017ae6bae227ca4c9bd14049c",
-            "agents/openai.yaml": "9b4c470d63221c1f68f22df70b83e2f12401b317babe0d1b7b5f24a974474d0d"
-          }
+            "agents/openai.yaml": "2481bc362d26ffa3d418c076c1c55e80cb8a713c271760949241736f46885e0e"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/research.openai.patch",
+              "sha256": "82ac1714d364d6139bacc4e6243a0b809d82ec37a8da9b3955b5fc46ad627a8b"
+            }
+          ]
         },
         {
           "id": "mattpocock/domain-modeling",
@@ -159,12 +235,16 @@
             "ADR-FORMAT.md": "3e030f51db41d04bb2f4c34ea1a9b9a8bf026b971262fc3cbea0e87308268037",
             "CONTEXT-FORMAT.md": "6690b35bcd6f5d98863baa9c00d940c00f70165bd0a66916d13a6eabc8c37fcf",
             "SKILL.md": "152e2c97239affb12a60c5f4a7e74ab546a49ae169688c81f4e2ccc42dafa579",
-            "agents/openai.yaml": "f6bf2aa996c6e6f53fdd0708e18a0d16a56aed8322cca59fedbe3c0d2c75f06b"
+            "agents/openai.yaml": "257d19dff8c83f504f3db33fd7fb7b3daf1808b0b5c01f518d7fc34610271566"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/domain-modeling.patch",
               "sha256": "c53b2a46a56aa11661f0b9ea1db231c5f1f67d79b78f3ffabdc51c3b419f6dde"
+            },
+            {
+              "path": "vendor/patches/mattpocock/domain-modeling.openai.patch",
+              "sha256": "9e2563f692d632979ec1a5bdeda79fab7aef18faccfdda758f32b5b729d37fd9"
             }
           ]
         },
@@ -176,8 +256,14 @@
             "DEEPENING.md": "125e6b77413ad2bc7cf7a772bc74336d580a50f9e797db2178ed133d62333d06",
             "DESIGN-IT-TWICE.md": "09f9948ea7636a4d3704c5ab909762e876c0b39849eefb14d2e03a398cc9c7e7",
             "SKILL.md": "a8d50abac5a4018f60e1d911d4b6f4e36454ca14d6c390c0695a578c7de65dad",
-            "agents/openai.yaml": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f"
-          }
+            "agents/openai.yaml": "debfbfc3db631a01d02b4620ffd709751d82bba767c386c139e9251994312a05"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/codebase-design.openai.patch",
+              "sha256": "60db03e9cd7bdd81f0362881801ba3442767c761998c3dd248d30a8caed23add"
+            }
+          ]
         },
         {
           "id": "mattpocock/code-review",
@@ -185,8 +271,14 @@
           "destination": "skills/code-review",
           "files": {
             "SKILL.md": "9cf46653dd9c710ea1e6c22423caf31a794c88773bc94bdaa23140277f470442",
-            "agents/openai.yaml": "8229ca854e11dc8e6aef2131ee03f31fb1561cf905fab9ccc325180cf3331352"
-          }
+            "agents/openai.yaml": "606a57768edf9bc9c32e11c2224b008471108b2e9f496eb246221d1baf58f868"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/code-review.openai.patch",
+              "sha256": "283360a3d59debc9fa354df15daccec853fe42458a26925826397f5522ff23ca"
+            }
+          ]
         },
         {
           "id": "mattpocock/resolving-merge-conflicts",
@@ -194,8 +286,14 @@
           "destination": "skills/resolving-merge-conflicts",
           "files": {
             "SKILL.md": "c7c9ba81362a786aac05d2223123bf1bd2f8a99c3243a72882ede9c68bedfb24",
-            "agents/openai.yaml": "a1f4f96838f2ed6282eb28abbbf99029cb8fadce552baf53da90a025b8bffddf"
-          }
+            "agents/openai.yaml": "71dfaecc02efd14f74e7bb4323ebe48a75fcf5062c132323ec596f49d7ddba3a"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/resolving-merge-conflicts.openai.patch",
+              "sha256": "01bcbdea80a6243fc7866b4d1e43432dffa0ce2a02023d86281e2620c8c8097d"
+            }
+          ]
         },
         {
           "id": "mattpocock/wizard",
@@ -203,9 +301,15 @@
           "destination": "skills/wizard",
           "files": {
             "SKILL.md": "7fb2b4ba23870ec028c85c6d7ef1ca573413ca7026bd4d410fe0e6d8dc9d1e92",
-            "agents/openai.yaml": "98f44d682d58e262f160dc59a8befc365e0aa65820dd0261864af26aa8e59d83",
+            "agents/openai.yaml": "5f042c0e0bc20c922d1fc5dd0cad483a29c91124fc701a1e8aa16b19b0a1c6e6",
             "template.sh": "d43dc3f7b6008779ef55e3935bf1df246b5bc194b7f9e1dee3d9340a00922ce6"
-          }
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/wizard.openai.patch",
+              "sha256": "0459c8e9aa46b10e1e279813c20f78fd9275204a9ad63f822436db63942c13fc"
+            }
+          ]
         },
         {
           "id": "mattpocock/grill-me",
@@ -213,8 +317,14 @@
           "destination": "skills/grill-me",
           "files": {
             "SKILL.md": "6189dfceb7304a6e5558f75d87e68fa3bc7fcf7ba120e44f21f8a61fe01eba54",
-            "agents/openai.yaml": "c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b"
-          }
+            "agents/openai.yaml": "91c18c91e5ae14736006de17c34e42c1f1f5932227e2dd7f9f02b2824a2e6648"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/grill-me.openai.patch",
+              "sha256": "c9c43f4aab48022c4f405d3332406a8871a911846575dff96e1edb4bab1d4386"
+            }
+          ]
         },
         {
           "id": "mattpocock/grilling",
@@ -222,12 +332,16 @@
           "destination": "skills/grilling",
           "files": {
             "SKILL.md": "85f1ef2858cbe31d577364fbd288e2f69cce68f1413e5a92d0004f37327893ee",
-            "agents/openai.yaml": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+            "agents/openai.yaml": "fd026844e53ec159014132bd7d6cc774e808ea80e4d453a16b49e922ee381c3a"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/grilling.patch",
               "sha256": "3c646754a7837ca96698d1d7b327bb0a62884f150716ed8a91ea4862f51558a4"
+            },
+            {
+              "path": "vendor/patches/mattpocock/grilling.openai.patch",
+              "sha256": "d83559398af7b1ce6499732b6cd2f3470ab971723cbb14782d8a7ee4019ea8b8"
             }
           ]
         },
@@ -237,8 +351,14 @@
           "destination": "skills/handoff",
           "files": {
             "SKILL.md": "57c9f1f392d7352cdc85b1e39ca49eddc70ce1dc278bd9653fb4f23dfc2560fc",
-            "agents/openai.yaml": "5c479fd562c691851690e8b18c8501045bef0943c10743d636b2fae26add1d28"
-          }
+            "agents/openai.yaml": "8ffe40a861e4052bd78a1c184ffd2820a379b5a0f8d504b93b118e724dbeb842"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/handoff.openai.patch",
+              "sha256": "79eefabbcbae93ba047beab6f1e1fd9501498a29a3504a63dbac7627c8d43ed1"
+            }
+          ]
         },
         {
           "id": "mattpocock/teach",
@@ -250,8 +370,14 @@
             "MISSION-FORMAT.md": "8da6d3ac84eb2eb19f17c260b6acf01c560d3ac7a4501c415eea0e985602f4d7",
             "RESOURCES-FORMAT.md": "2bc634a64b0d0daa10904f9222e7aa0d361420dfacabbf092fbe3a72222edc08",
             "SKILL.md": "6d2dbe5e03084cf26fef66b535127b36cd1bcbe9478e26b0626029cd51dc2259",
-            "agents/openai.yaml": "5856f3ae8aec742f1499c640aecdd5f1d6af5fa210a7c6ec794de8263a6f733f"
-          }
+            "agents/openai.yaml": "d93d3ed7080eb96db70a974b517266fd042d5e9da30613230f3f90c123984d82"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/teach.openai.patch",
+              "sha256": "cfeb13c1585c42c593d91ead5c500fe6eacd361ba48b93b55743497d5ed39bc9"
+            }
+          ]
         },
         {
           "id": "mattpocock/to-questionnaire",
@@ -259,8 +385,14 @@
           "destination": "skills/to-questionnaire",
           "files": {
             "SKILL.md": "8e7f9ed8d7b2e66babf1a54aee9b94319bf38c32619cffe78819df6518ead5fc",
-            "agents/openai.yaml": "9e8a06c38c8842eea8d4922cb9d1ead8e3ace647bab259b943c994a1b4742bc2"
-          }
+            "agents/openai.yaml": "40ed1e4eb8928d47561d2fa7785a7d1aec66089a17c8d649565653ce1ccc496d"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/to-questionnaire.openai.patch",
+              "sha256": "1a5d77cf6db5e9f0096a575da33df939987333fa84ba5670e1b404ac56ad2992"
+            }
+          ]
         },
         {
           "id": "mattpocock/wait-what",
@@ -268,12 +400,16 @@
           "destination": "skills/wait-what",
           "files": {
             "SKILL.md": "995ccf3c6e20ae29f5a81074e293dc4f2806c3be782162d227d9d362f57f70f2",
-            "agents/openai.yaml": "3ec661af8fc7063b650518c95ab775bbeabaefce38b89acaf6da2f749168f37e"
+            "agents/openai.yaml": "93426c718378ecbd99e5e7a3fe871504f5568ff01b49297ca454d309a5310a06"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/wait-what.patch",
               "sha256": "358983232f14cc9907ce9abb1c9dae961ad6f0e203aab76e9afc490cbbdcb89d"
+            },
+            {
+              "path": "vendor/patches/mattpocock/wait-what.openai.patch",
+              "sha256": "bd97ea5017ced671ee51070f60384e86cecb487267667c3f47309317d631cb21"
             }
           ]
         },
@@ -284,8 +420,14 @@
           "files": {
             "SKILL-MECHANICS.md": "b4c54a0aaad3f6eddefde6d06770a0e401fbb8fc6a8f49ce18af816bd144d14d",
             "SKILL.md": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
-            "agents/openai.yaml": "eacb24b2a618cfb81dacb0416f4fdd75ddf3a8060f8ddb99aae1b1e301907e4b"
-          }
+            "agents/openai.yaml": "9d2c797209d44c2c4b67d762f3bde30495a6e9049bb4e783bd7137081a22174d"
+          },
+          "patches": [
+            {
+              "path": "vendor/patches/mattpocock/writing-for-agents.openai.patch",
+              "sha256": "59ae04f7d164dd8cbc41bcdf8236707dff16b0adde1ebe93e3c2625085f730d6"
+            }
+          ]
         }
       ]
     },
@@ -308,12 +450,17 @@
           "source_path": "skills/ponytail",
           "destination": "skills/ponytail",
           "files": {
-            "SKILL.md": "ee832ffc2e2530df353312d95a911dda1b3989f5a4bef5dec07777797ccfeeef"
+            "SKILL.md": "ee832ffc2e2530df353312d95a911dda1b3989f5a4bef5dec07777797ccfeeef",
+            "agents/openai.yaml": "b72f1a39db6fd27546e26cb2b2d4476dfa834e70ad73f0ac0aa26ef616a1e123"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail.patch",
               "sha256": "4c4c53ff88fc84ee3aba02b3f636e6da991d237458b423dced5be91923e59fd6"
+            },
+            {
+              "path": "vendor/patches/ponytail/ponytail.openai.patch",
+              "sha256": "903509fec29c5ea8b1cf24294f05264c6464b76245470ac82516358b4ab7414a"
             }
           ]
         },
@@ -322,12 +469,17 @@
           "source_path": "skills/ponytail-review",
           "destination": "skills/ponytail-review",
           "files": {
-            "SKILL.md": "aeca3321ab0f79abe971776f405518afdce46d3bd026062d19a0dfbc3217af8b"
+            "SKILL.md": "aeca3321ab0f79abe971776f405518afdce46d3bd026062d19a0dfbc3217af8b",
+            "agents/openai.yaml": "4a4253f1e6d0a2e235aa592521559b393b5a504e8c4fdf218825ce7edfca559a"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-review.patch",
               "sha256": "76c6c091720d1283f127a29e50d1fca8f7a69f18f57382d26ea36fde2ee4bc1d"
+            },
+            {
+              "path": "vendor/patches/ponytail/ponytail-review.openai.patch",
+              "sha256": "1631e07e1bc7b3101bf237894da01a579daa30b657465333f00feb785898eb5a"
             }
           ]
         },
@@ -336,12 +488,17 @@
           "source_path": "skills/ponytail-audit",
           "destination": "skills/ponytail-audit",
           "files": {
-            "SKILL.md": "bea2b4786d4c24a7169cdebfc921374ea9e9cbbbe7989c07732564a0eae47e77"
+            "SKILL.md": "bea2b4786d4c24a7169cdebfc921374ea9e9cbbbe7989c07732564a0eae47e77",
+            "agents/openai.yaml": "6f12b9f27491d356b52f21f981ea0d72115153d19d544a61b755a0285999affb"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-audit.patch",
               "sha256": "0b4215dc1c280dc0941243f4d8cae313dd740f8e66b3969af13aa2e0c7e8bcbb"
+            },
+            {
+              "path": "vendor/patches/ponytail/ponytail-audit.openai.patch",
+              "sha256": "bd1357de941a8ad8dcacdeee42d24b8af7b9be7b14a403468a711a684ff6cf49"
             }
           ]
         },
@@ -350,12 +507,17 @@
           "source_path": "skills/ponytail-debt",
           "destination": "skills/ponytail-debt",
           "files": {
-            "SKILL.md": "54513c0df089511732d7ac4d69b458feff5618b86bb2127ec8d3bc14b349ce23"
+            "SKILL.md": "54513c0df089511732d7ac4d69b458feff5618b86bb2127ec8d3bc14b349ce23",
+            "agents/openai.yaml": "2e8950acf354f70dfa3b66d42dfb9f33670385d51e3511de886874194ee5e84b"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-debt.patch",
               "sha256": "3f2c784cb4f0a15843efb6c75794010240bf222b71bc7daaff4aec0eb4683760"
+            },
+            {
+              "path": "vendor/patches/ponytail/ponytail-debt.openai.patch",
+              "sha256": "775d3ed37bb6cb698b875747b60e7e9e468de2ddc6fbca0a7017fdf6b4247d14"
             }
           ]
         }

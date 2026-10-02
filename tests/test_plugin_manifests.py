@@ -333,6 +333,26 @@ class PluginManifestTest(unittest.TestCase):
         }
         self.assertEqual(observed_entries, declared_entries)
 
+    def test_all_skills_have_chinese_interface_metadata(self):
+        for parent in ('skills', '.agents/skills'):
+            for entry in sorted((REPO_ROOT / parent).glob('*/SKILL.md')):
+                with self.subTest(skill=entry.parent.name):
+                    metadata = (entry.parent / 'agents/openai.yaml').read_text(
+                        encoding='utf-8'
+                    )
+                    self.assertRegex(metadata, r'(?m)^interface:\s*$')
+                    self.assertRegex(metadata, r'(?m)^\s+display_name:\s+.+$')
+                    description = re.search(
+                        r'(?m)^  short_description: "([^"\n]+)"$', metadata
+                    )
+                    self.assertIsNotNone(description)
+                    self.assertRegex(description.group(1), r'[\u4e00-\u9fff]')
+                    frontmatter = entry.read_text(encoding='utf-8').split('---', 2)[1]
+                    self.assertEqual(
+                        'disable-model-invocation: true' in frontmatter,
+                        'allow_implicit_invocation: false' in metadata,
+                    )
+
     def test_custom_skills_keep_invocation_metadata_aligned(self):
         custom = load_json('skills/registry.json')['custom']
         for item in custom:
