@@ -105,6 +105,14 @@ For natural-language messages and artifacts, use English when intended only for 
 use Simplified Chinese, including in progress updates, questions, and final replies. Honor explicit
 user language requests.
 
+Apply the selected output language to headings, labels, table headers, status wording, and other
+natural-language text. When adopting Skill formats, templates, or examples, keep their required
+structure (such as order, hierarchy, numbering, and emoji) and use that language for their
+natural-language text. English heading or label names alone do not require verbatim wording.
+
+Preserve code, identifiers, commands, paths, protocol fields, quoted source, content reproduced from
+artifacts being examined, and text explicitly required verbatim.
+
 When writing Simplified Chinese Markdown prose, separate inline `**bold spans**` from adjacent
 text with spaces outside the delimiters.
 
