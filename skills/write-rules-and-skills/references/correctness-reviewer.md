@@ -41,6 +41,10 @@ transitive dependencies in the supported environment. A source visible only in t
 a reliable loading route. Apply the governing owners' actual conditions and exceptions; neither
 packaging nor discovery grants new policy authority or external permissions.
 
+Check that lasting execution requirements come from maintained contracts and resources rather than
+process records such as ADRs or implementation plans. Distinguish these requirements from records
+used as investigation evidence or current task inputs.
+
 Verify the dependency route against the artifact type. A Rule may reference Rules or Skills; a Skill
 may invoke or reference Skills, including rule-led Skills. When a Skill relies on an independently
 loaded Rule, establish that the supported environment guarantees loading before the governed

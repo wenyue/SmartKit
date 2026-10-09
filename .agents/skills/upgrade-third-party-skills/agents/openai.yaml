@@ -1,0 +1,3 @@
+interface:
+  display_name: "升级第三方技能"
+  short_description: "评估并升级本项目的第三方技能，保留本地适配并处理必要决策"

@@ -241,7 +241,25 @@ class PluginManifestTest(unittest.TestCase):
         self.assertEqual(catalog['plugin']['id'], 'smartkit')
         self.assertEqual(catalog['plugin']['version'], version)
 
-    def test_rule_and_skill_authoring_has_one_public_and_three_private_skills(self):
+    def test_project_private_skill_inventory_is_not_public(self):
+        private_root = REPO_ROOT / '.agents' / 'skills'
+        private_names = {
+            'translate-agent-artifacts',
+            'upgrade-third-party-skills',
+            'write-setup-authoring-blueprints',
+            'write-shared-rules-and-skills',
+        }
+        self.assertEqual(
+            {path.name for path in private_root.iterdir() if path.is_dir()},
+            private_names,
+        )
+        custom = load_json('skills/registry.json')['custom']
+        public_ids = {item['id'] for item in custom}
+        for name in sorted(private_names):
+            with self.subTest(private_skill=name):
+                self.assertNotIn(f'smartkit/{name}', public_ids)
+
+    def test_rule_and_skill_authoring_entries_and_resources_are_consistent(self):
         custom = load_json('skills/registry.json')['custom']
         public_root = REPO_ROOT / 'skills' / 'write-rules-and-skills'
         self.assertIn(
@@ -253,19 +271,6 @@ class PluginManifestTest(unittest.TestCase):
         )
 
         private_root = REPO_ROOT / '.agents' / 'skills'
-        self.assertEqual(
-            {path.name for path in private_root.iterdir() if path.is_dir()},
-            {
-                'translate-agent-artifacts',
-                'write-setup-authoring-blueprints',
-                'write-shared-rules-and-skills',
-            },
-        )
-        public_ids = {item['id'] for item in custom}
-        self.assertNotIn('smartkit/write-setup-authoring-blueprints', public_ids)
-        self.assertNotIn('smartkit/write-shared-rules-and-skills', public_ids)
-        self.assertNotIn('smartkit/translate-agent-artifacts', public_ids)
-
         private_names = (
             'translate-agent-artifacts',
             'write-setup-authoring-blueprints',

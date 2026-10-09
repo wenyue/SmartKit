@@ -75,6 +75,11 @@ meaning to this task without restating the entire policy. Remove instructions al
 supplied by the environment or another owner only after checking that the reader can reach the
 needed meaning when it applies.
 
+Base lasting execution requirements on currently maintained contracts and resources. Process
+records, such as ADRs and implementation plans, may serve as investigation evidence or current task
+inputs, but must not supply a Rule's or Skill's lasting execution requirements. Incorporate
+requirements that need to persist into the maintained contract that owns them.
+
 Establish a supported route to every relied-on dependency. Rules may reference Rules or Skills;
 Skills may invoke or reference Skills, including rule-led Skills. A Skill may rely on an
 independently loaded Rule only when that loading is guaranteed in its supported environment; use
