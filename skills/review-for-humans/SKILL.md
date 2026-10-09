@@ -7,10 +7,12 @@ disable-model-invocation: true
 # Review for Humans
 
 Help a human reviewer understand what changed, whether it is reasonable, and where their attention
-is needed. Use this Skill only when the user requests it. Review the supplied scope without changing
-the reviewed contents.
+is needed. Use this Skill only when the user requests it. Review the supplied scope read-only;
+change the reviewed contents only when the user explicitly chooses repairs as described below.
 
-Load the necessary Skills and Rules to perform the review.
+Load the necessary Skills and Rules to perform the review. Write the human report, including labels
+and action prompts, in the response language required by the conversation; English labels below
+specify their meaning.
 
 ## Establish the review scope
 
@@ -60,18 +62,24 @@ Give every item a reasoned evaluation, prefixing its label with the correspondin
 - **✅ Reasonable:** it serves the intended task and its behavior and costs are justified by the
   available evidence.
 - **❌ Unreasonable:** a material defect, unnecessary scope expansion, or a clearly better supported
-  approach makes this change a poor choice. Give a concrete recommendation and explain why it is
-  better under the same requirements. Small optimizations and style preferences alone do not meet
-  this threshold.
+  approach makes this change a poor choice. Label each finding with a severity from P0 to P3 and
+  explain the impact that justifies that level. Give a concrete recommendation and explain why it
+  is better under the same requirements. Small optimizations and style preferences alone do not
+  meet this threshold.
 - **⚠️ Insufficient evidence:** name what prevents a sound judgment and what evidence would resolve
   it. Separate established behavior from assumptions instead of implying approval.
+
+Use P0 for critical problems requiring immediate intervention, P1 for serious problems needing
+prompt correction, P2 for normal-priority problems, and P3 for lower-impact problems worth correcting.
+Base severity on evidenced consequences and affected conditions, not on how much code changed.
+For example: **❌ Evaluation: Unreasonable (P1).** followed by the impact and recommended repair.
 
 Carry the underlying review's material findings and qualifications into the relevant items, including
 the basis of a standards or task-scope concern when that distinction matters. A readable explanation
 must retain limitations that could change the human reviewer's decision. Report checks actually
 performed and distinguish them from results merely supplied by the author.
 
-## Display one group and continue on request
+## Display one group and handle findings
 
 Separate file blocks with `---`. Add complete files in their established order until the group's
 modification-item count reaches or exceeds 10, then finish the group. Never split a file across
@@ -80,17 +88,37 @@ the next reply. A file with more than 10 items stays together. Display the final
 the scope ends.
 
 End each group with `---` followed by **📊 Progress: displayed files / files requiring review**. This
-measures displayed files, not modification items or a claim that every judgment is conclusive. If
-files remain, explicitly prompt the user to enter `继续` to continue the review, after the progress,
-then wait. When the user continues, resume with the next file rather than repeating the previous
-group. When all files have been displayed, say the report is complete and retain any unresolved
-evidence gaps.
+measures displayed files, not modification items or conclusive judgments. Keep the snapshot, ordered
+file list, next-unreviewed position, next-item number, judgments, and finding status across replies.
 
-Keep the snapshot, ordered file list, next-file position, next-item number, and prior judgments
-available across groups. If the reviewed content changes, identify which earlier explanations or
-judgments are affected and refresh them against the new snapshot before reporting progress on it.
-Rebuild the file list and total when necessary, account for affected files that need to be shown
-again, and make the version transition explicit so the report does not mix versions.
+When unreasonable findings are pending, list their item numbers and severities after progress.
+End with a choice between **fix and continue** and **ignore**, then wait, even in the final group.
+The final sentence must require item numbers for ignoring when multiple items are pending; a lone
+item needs no number. Clarify ambiguous selections rather than ignoring every item. A plain
+continue reply leaves this choice unresolved.
+
+**Fix and continue** authorizes repairs of pending, unignored findings within applicable authority
+and constraints. Load the necessary guidance, limit changes to resolving those findings, and run
+the required checks. After checks pass, follow the re-review procedure below; mark findings repaired
+only when re-review confirms resolution. If repair is blocked or a check fails, explain what remains
+and what is needed, and pause without advancing.
+
+**Ignore** leaves the selected items unchanged and records their findings and severity as ignored,
+not repaired or approved. If other items remain pending, offer the remaining choice and wait.
+Once none remain, resume at the saved next-unreviewed position or close if the scope is exhausted.
+
+Whenever reviewed content changes, refresh the snapshot and re-review every previously reviewed
+part modified or affected by that change, including changes beyond the original findings. Display
+updated explanations and judgments before resuming the review. Preserve existing item numbers, make the
+version transition explicit, and rebuild the file list and total when necessary. Re-review findings
+use the same repair-or-ignore choice; resume only after the affected parts have been re-reviewed
+and their pending findings repaired or explicitly ignored.
+
+When no unreasonable findings are pending and files remain, end an ordinary group with a **continue**
+prompt and wait; resume with the next file on that reply. Repair and ignore choices already request
+continuation. When all files have been displayed and no unreasonable findings are pending, close
+without a continuation prompt.
+Distinguish completed display from resolved findings and retain ignored findings and evidence gaps.
 
 ## Reference report
 
