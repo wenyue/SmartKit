@@ -17,6 +17,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | Skill | 出处 | 用途与使用时机 |
 | --- | --- | --- |
 | `implement` | [Matt Pocock](https://github.com/mattpocock/skills) | 根据规格或工单实现一项工作。 |
+| `implement-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | 通过并行 Agent 实现规格的依赖工单，汇入统一集成分支。 |
 | `grill-me` | [Matt Pocock](https://github.com/mattpocock/skills) | 通过深入追问梳理计划或设计，找出尚未明确的决定。 |
 | `to-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | 将已讨论的内容整理成规格，发布到项目任务跟踪器。 |
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | 将计划或规格拆成可逐步交付的工单，并声明依赖关系。 |
@@ -24,6 +25,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `collect-todos` | [SmartKit](https://github.com/wenyue/SmartKit) | 将暂缓任务保存到项目配置的任务跟踪器，并报告收集了哪些待办；需要记录旁支任务并继续当前主任务时使用。 |
 | `implement-tickets` | [SmartKit](https://github.com/wenyue/SmartKit) | 按依赖顺序实现并审查一批符合条件的工单；多个已就绪工单适合成批处理时使用。 |
 | `handoff` | [Matt Pocock](https://github.com/mattpocock/skills) | 将当前对话整理成交接文档，供另一个 Agent 或后续会话继续工作。 |
+| `retro` | [Matt Pocock](https://github.com/mattpocock/skills) | 复盘编码会话，提出 Agent 工作环境改进建议。 |
 | `ask-matt` | [Matt Pocock](https://github.com/mattpocock/skills) | 根据当前情况推荐适合的 Skill 或工作流；不知道该选哪个时使用。 |
 | `wait-what` | [Matt Pocock](https://github.com/mattpocock/skills) | 让助手重新解释上一条回答；说明难以理解时使用。 |
 | `teach` | [Matt Pocock](https://github.com/mattpocock/skills) | 结合当前工作区学习一个技能或概念。 |
@@ -44,11 +46,11 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `ponytail` | [ponytail](https://github.com/DietrichGebert/ponytail) | 编码时优先选择满足需求的最简单方案，减少不必要的抽象、依赖和代码。 |
 | `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | 逐步诊断故障或性能回退，找到原因并验证修复。 |
 | `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | 审查相对指定提交、分支或标签的修改，同时核对项目规范与需求规格。 |
+| `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | 撰写 PR 正文，说明变更、验证证据和合并风险。 |
 | `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | 按“先写失败测试，再实现，再重构”的方式开发功能或修复问题。 |
 | `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审查当前修改中的过度设计，指出可删除、简化或替换的实现。 |
 | `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 在保持行为不变的前提下改善一个具体代码目标的结构；该目标存在明确结构问题时使用。 |
 | `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 重命名一个符号或受 Git 跟踪的路径，并更新其实际引用；需要精确完成仓库内的重命名时使用。 |
-| `resolving-merge-conflicts` | [Matt Pocock](https://github.com/mattpocock/skills) | 处理正在进行的 Git merge 或 rebase 冲突。 |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | 用户要求执行累积较多或跨度较大的修改时，先核对范围，再询问是否开始实施；也可以明确指定调用。 |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | 对照可信的一手资料调查问题，将结论保存为仓库中的 Markdown 文档。 |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | 构建可丢弃的原型，验证设计、状态模型或界面是否可行。 |

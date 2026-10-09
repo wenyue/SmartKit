@@ -79,8 +79,8 @@ Ask only for choices or facts that cannot be recovered and materially affect the
 cases are adopting or retiring public Skills, changing their names or activation, changing a local
 adaptation's intended behavior, accepting new service or permission requirements, or expanding into
 consumer migrations. Bundle related questions with concrete alternatives and their consequences.
-Recommend an approach when the evidence supports it; present compatibility choices neutrally when
-the governing policy requires that. Wait for the answer before dependent changes.
+Recommend an approach when the evidence supports it, and wait for the user's decision before
+dependent changes.
 
 Reuse decisions and authorization already supplied. Do not turn a routine, behavior-preserving
 patch repair into another approval checkpoint. If the user requested analysis only, stop with the

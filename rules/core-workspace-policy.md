@@ -23,8 +23,9 @@ required or needed to protect existing state. That Skill owns workspace selectio
 
 ### Determine what may be committed
 
-Leave task changes uncommitted unless the user has authorized a commit or the checkpoint authority
-below applies.
+Commit task changes only when an applicable Skill, Rule, or conversation instruction explicitly
+requires or permits it. Follow that instruction's scope and conditions; otherwise leave the
+changes uncommitted.
 
 After receiving and rechecking a ready `create-worktree` result, the owning workflow may create
 scope-only Checkpoint Commits in that exact worktree through normal repository commit hooks,

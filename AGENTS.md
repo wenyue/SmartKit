@@ -27,5 +27,5 @@ Use the five default canonical triage labels. See `docs/agents/triage-labels.md`
 
 ### Domain docs
 
-This repository uses a multi-context layout: `CONTEXT-MAP.md` points to glossaries under `contexts/`,
+This repository uses a multi-context layout: `GLOSSARY-MAP.md` points to glossaries under `contexts/`,
 and shared architectural decisions live in `docs/adr/`. See `docs/agents/domain.md`.

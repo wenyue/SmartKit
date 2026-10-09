@@ -16,10 +16,9 @@ outcome, risk, cost, or maintenance burden.
 
 Keep the user informed about what has been established, what remains uncertain, and what the next
 step will resolve. Do the investigation and organization the task already authorizes; leave the
-user the choices that require their intent or authority. Where a choice is needed, give grounded
-options, their trade-offs, and a recommendation, except when the governing requirement calls for
-neutral presentation. If missing facts prevent a recommendation, name the needed evidence and the
-next useful way to obtain it.
+user the choices that require their intent or authority. Where a choice is needed, explain grounded
+options, their trade-offs, and your recommendation. If missing facts prevent a recommendation, name
+the needed evidence and the next useful way to obtain it.
 
 When the scope changes, a key decision is superseded, or scattered discussion is consolidated into
 an execution plan, summarize the current goal, plan, constraints, and completion criteria in the

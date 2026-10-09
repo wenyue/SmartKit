@@ -75,17 +75,17 @@ meaning to this task without restating the entire policy. Remove instructions al
 supplied by the environment or another owner only after checking that the reader can reach the
 needed meaning when it applies.
 
-Base lasting execution requirements on currently maintained contracts and resources. Process
-records, such as ADRs and implementation plans, may serve as investigation evidence or current task
-inputs, but must not supply a Rule's or Skill's lasting execution requirements. Incorporate
-requirements that need to persist into the maintained contract that owns them.
-
 Establish a supported route to every relied-on dependency. Rules may reference Rules or Skills;
 Skills may invoke or reference Skills, including rule-led Skills. A Skill may rely on an
 independently loaded Rule only when that loading is guaranteed in its supported environment; use
 that guarantee rather than a direct reference to an independently loaded Rule file. Current
 conversation context and a named source alone do not prove future availability. Check direct and
 transitive dependencies and what happens when a required source or capability is unavailable.
+
+Skills may require discovering and following relevant project records, such as ADRs or
+implementation plans, through the project's documentation conventions. Do not hardcode a particular
+record's path, number, or title as a lasting execution dependency: its identity and content can
+change. Specific records may still appear as illustrations or inputs supplied for the current task.
 
 Core governance retains applicability, ownership, precedence, and composition.
 An intentional task alternative or project delegation should state the condition, departure or

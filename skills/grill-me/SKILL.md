@@ -4,4 +4,4 @@ description: A relentless interview to sharpen a plan or design.
 disable-model-invocation: true
 ---
 
-Run a `/grilling` session.
+Load and apply the "grilling" skill through the active Harness.

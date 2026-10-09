@@ -41,16 +41,17 @@ transitive dependencies in the supported environment. A source visible only in t
 a reliable loading route. Apply the governing owners' actual conditions and exceptions; neither
 packaging nor discovery grants new policy authority or external permissions.
 
-Check that lasting execution requirements come from maintained contracts and resources rather than
-process records such as ADRs or implementation plans. Distinguish these requirements from records
-used as investigation evidence or current task inputs.
-
 Verify the dependency route against the artifact type. A Rule may reference Rules or Skills; a Skill
 may invoke or reference Skills, including rule-led Skills. When a Skill relies on an independently
 loaded Rule, establish that the supported environment guarantees loading before the governed
 decision. A direct reference to that Rule's file does not replace the guarantee. Follow transitive
 requirements and unavailable-source behavior far enough to establish that the reader can act under
 the actual policy, not just locate its name.
+
+For Skill dependencies on project records, distinguish a general requirement to discover and follow
+relevant ADRs or plans from a hardcoded dependency on a particular record. Flag the latter when
+required for recurring execution; illustrative examples and records supplied for the current task
+are valid.
 
 For rule-led Skills, include both application during ordinary work and requested assessment of
 existing work. For collaborative or executable Skills, inspect handoffs, version consistency,

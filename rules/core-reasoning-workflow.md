@@ -70,16 +70,16 @@ the underlying problem.
 Ask before changing an explicit user choice, accepted scope, externally visible behavior, or an
 important cost commitment. A material risk trade-off also needs the user's decision. Present the
 proposal and trade-offs under Communication, then wait for a later message that clearly chooses
-an approach before adopting it. Use neutral presentation where the governing requirement calls
-for it.
+an approach before adopting it. A recommendation helps the user decide; it does not replace their
+answer.
 
 For code changes that affect a durable or externally consumed contract, such as a database schema,
 external API, or Proto contract, apply the user's established explicit compatibility decision.
-If that decision is missing and materially affects implementation or acceptance, ask neutrally and
-wait. Present neither choice as recommended or default. Keep or add the behavior needed for required
-compatibility. When compatibility is explicitly not required, avoid unnecessary compatibility
-layers. General feature permission or silence permits neither breaking the prior contract nor
-removing existing compatibility behavior.
+If that decision is missing and materially affects implementation or acceptance, explain the
+options, trade-offs, and any supported recommendation, then ask and wait for the user's decision.
+Keep or add the behavior needed for required compatibility. When compatibility is explicitly not
+required, avoid unnecessary compatibility layers. General feature permission or silence permits
+neither breaking the prior contract nor removing existing compatibility behavior.
 
 ## Start when the work is ready and authorized
 

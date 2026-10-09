@@ -1,3 +1,0 @@
-interface:
-  display_name: "Resolving Merge Conflicts"
-  short_description: "解决 Git 合并与变基中的冲突"

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Implement Spec"
+  short_description: "并行实现规格及其依赖工单，汇入统一集成分支"
+policy:
+  allow_implicit_invocation: false

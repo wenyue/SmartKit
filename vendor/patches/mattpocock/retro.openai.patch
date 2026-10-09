@@ -1,0 +1,9 @@
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,5 +1,5 @@
+ interface:
+   display_name: "Retro"
+-  short_description: "Conduct a retrospective on a coding session."
++  short_description: "复盘编码会话，提出 Agent 工作环境改进建议"
+ policy:
+   allow_implicit_invocation: false

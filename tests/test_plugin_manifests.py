@@ -22,12 +22,14 @@ MATT_PROMOTED = {
     'to-tickets': 'skills/engineering/to-tickets',
     'wayfinder': 'skills/engineering/wayfinder',
     'implement': 'skills/engineering/implement',
+    'implement-spec': 'skills/engineering/implement-spec',
+    'pr': 'skills/engineering/pr',
+    'retro': 'skills/engineering/retro',
     'prototype': 'skills/engineering/prototype',
     'research': 'skills/engineering/research',
     'domain-modeling': 'skills/engineering/domain-modeling',
     'codebase-design': 'skills/engineering/codebase-design',
     'code-review': 'skills/engineering/code-review',
-    'resolving-merge-conflicts': 'skills/engineering/resolving-merge-conflicts',
     'wizard': 'skills/engineering/wizard',
     'grill-me': 'skills/productivity/grill-me',
     'grilling': 'skills/productivity/grilling',
@@ -493,10 +495,10 @@ class PluginManifestTest(unittest.TestCase):
         self.assertEqual(set(lock), {'sources'})
         matt = lock['sources'][0]
         self.assertEqual(matt['id'], 'mattpocock/skills')
-        self.assertEqual(matt['requested_ref'], 'v1.2.3')
+        self.assertEqual(matt['requested_ref'], 'v1.3.1')
         self.assertEqual(
             matt['commit'],
-            '6acc160e4e0cd062dbbbd7a1b26ae92855edf07e',
+            '24fe0ef7737efae15c87225755e9f6f5965e4888',
         )
         self.assertEqual(
             {skill['id'].split('/', 1)[1]: skill['source_path'] for skill in matt['skills']},

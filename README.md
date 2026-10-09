@@ -19,6 +19,7 @@ Ask for these skills by name; the assistant does not select them automatically.
 | Skill | Source | What it does and when to use it |
 | --- | --- | --- |
 | `implement` | [Matt Pocock](https://github.com/mattpocock/skills) | Implements a piece of work from a spec or tickets. |
+| `implement-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | Implements a spec’s dependency graph with parallel agents and a shared integration branch. |
 | `grill-me` | [Matt Pocock](https://github.com/mattpocock/skills) | Sharpens a plan or design through an in-depth interview and identifies unresolved decisions. |
 | `to-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | Synthesizes the discussion into a spec and publishes it to the project's tracker. |
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | Breaks a plan or spec into incrementally deliverable tickets with declared dependencies. |
@@ -26,6 +27,7 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `collect-todos` | [SmartKit](https://github.com/wenyue/SmartKit) | Saves deferred tasks in the project's configured tracker and reports what was collected; use to record side tasks and continue the current main task. |
 | `implement-tickets` | [SmartKit](https://github.com/wenyue/SmartKit) | Implements and reviews a batch of eligible tracker tickets in dependency order; use when several ready tickets belong in one batch. |
 | `handoff` | [Matt Pocock](https://github.com/mattpocock/skills) | Compacts the conversation into a handoff document for another agent or a later session. |
+| `retro` | [Matt Pocock](https://github.com/mattpocock/skills) | Reviews a coding session and suggests improvements to the agent’s working environment. |
 | `ask-matt` | [Matt Pocock](https://github.com/mattpocock/skills) | Recommends a skill or flow for your situation; use when unsure which one to choose. |
 | `wait-what` | [Matt Pocock](https://github.com/mattpocock/skills) | Asks the assistant to explain its last answer again when it was hard to follow. |
 | `teach` | [Matt Pocock](https://github.com/mattpocock/skills) | Teaches a skill or concept in the context of the current workspace. |
@@ -46,11 +48,11 @@ The assistant can select these skills when a task fits. You can also ask for the
 | `ponytail` | [ponytail](https://github.com/DietrichGebert/ponytail) | Favors the simplest solution that meets coding requirements, cutting unnecessary abstractions, dependencies, and code. |
 | `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | Diagnoses bugs or performance regressions, finds the cause, and verifies the fix. |
 | `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | Reviews changes since a commit, branch, or tag against both project standards and the originating spec. |
+| `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | Writes a concise PR body with a visual summary, verification evidence, and merge risks. |
 | `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds features or fixes bugs by writing a failing test, implementing, then refactoring. |
 | `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | Reviews current changes for over-engineering and identifies what to delete, simplify, or replace. |
 | `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Improves the structure of one concrete code target while preserving behavior; use when that target has a specific structural problem. |
 | `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Renames one symbol or tracked path and its real references; use for a precise rename across a repository. |
-| `resolving-merge-conflicts` | [Matt Pocock](https://github.com/mattpocock/skills) | Resolves conflicts in an ongoing Git merge or rebase. |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | When you ask to execute many accumulated edits or broad changes, reviews the intended scope and asks whether to begin implementation; you can also invoke it by name. |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | Investigates a question against trusted primary sources and saves the findings as a Markdown document in the repo. |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds a throwaway prototype to check a design, state model, or interface. |
