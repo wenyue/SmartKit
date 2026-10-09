@@ -57,7 +57,7 @@
     {
       "id": "DietrichGebert/ponytail",
       "url": "https://github.com/DietrichGebert/ponytail",
-      "ref": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "ref": "9cc65d03aa2da1db7121b912d03596409ee340b8",
       "license": {"spdx": "MIT", "path": "LICENSE"},
       "skills": [
         {"id": "DietrichGebert/ponytail", "path": "skills/ponytail", "patches": ["vendor/patches/ponytail/ponytail.patch", "vendor/patches/ponytail/ponytail.openai.patch"]},

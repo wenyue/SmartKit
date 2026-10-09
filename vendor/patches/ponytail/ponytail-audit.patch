@@ -1,19 +1,62 @@
 --- a/SKILL.md
 +++ b/SKILL.md
-@@ -29,8 +29,11 @@
- thing, dead flags and config, hand-rolled stdlib.
+@@ -3,7 +3,7 @@
+ description: >
+   Quality audit of a whole repo: bugs, security holes, what breaks under real
+   load, risky code without tests, slow paths, and what to delete, merge or
+-  split. Ranked, each finding explained in plain English. One-shot report,
++  split. Ranked, each finding explained in plain language. One-shot report,
+   changes nothing. Use for "audit this codebase", "review the whole repo",
+   "find bloat", "what can I delete", /ponytail-audit.
+ ---
+@@ -48,7 +48,7 @@
+    - stdlib / native: the standard library or platform already does it;
+      a dependency doing what a few lines or the platform can do
+    - yagni: interface with one implementation, factory with one product,
+-     wrapper that only passes calls through
++     wrapper that only passes calls through, when no current requirement needs them
+    - merge: near-copies that must change together
+    - split: one function or class doing several unrelated jobs, so it is
+      hard to read or test. Split by job, never by line count, and never into
+@@ -61,20 +61,17 @@
+ - Before calling code unused, grep the whole tree for it, including tests,
+   fixtures, config, and string or dynamic references.
+ - A shortcut marked with a `shortcut:` (or older `ponytail:`) comment that names its limit is a
+-  decision, not a finding, unless the expected load already crosses it.
++  decision, not a complexity finding, unless the expected load already crosses it.
+ - Propose the smallest fix that works. Prefer fixes that delete code. Never
+   add layers, frameworks or config the problem does not need.
+ - No style taste, no "consider", no vague worries.
 
-+These are clues: confirm from requirements, callers, and tests that each
-+proposed cut preserves needed behavior. Report material scan limitations.
-+
- ## Output
+ ## 4. Output
 
- One line per finding, ranked: `<tag> <what to cut>. <replacement>. [path]`.
--End with `net: -<N> lines, -<M> deps possible.` Nothing to cut: `Lean already. Ship.`
-+End with `net: -<N> lines, -<M> deps possible.` Nothing to cut: `No complexity findings in the scanned scope.`
+-Very simple English: short sentences, everyday words. Explain a technical
++Follow the shared language rules, including labels: short sentences, everyday words. Explain a technical
+ term the first time you use it. The reader may never have seen this code.
 
- ## Boundaries
-@@ -39,3 +42,2 @@
- and performance are explicitly out of scope. Route them to a normal review
- pass. Lists findings, applies nothing. One-shot.
--"stop ponytail-audit" or "normal mode" to revert.
+-Start with `What this repo does:` in two or three sentences, and the load
+-you assumed.
+-
+-Then the findings in three groups, most important first, skip empty groups:
++Present findings first in three groups, most important first, skip empty groups:
+ - **Must fix:** bug, security, data loss, breaks at the expected load.
+ - **Should fix:** risky code without a test, real slowness, duplication, a
+   function that mixes jobs, code that should not exist.
+@@ -92,12 +89,13 @@
+      `datetime.now(ZoneInfo("Europe/Berlin")).date()`. One line, nothing else changes.
+    - **If we skip it:** Late orders show the wrong date, and accounting fixes them by hand.
+
+-End with:
+-- `Verdict:` one line: healthy, or what to fix first.
++After the findings, explain what this repo does in two or three sentences and
++state the load you assumed. Include:
++- `Verdict:` one line: no blocking findings in the audited scope, or what to fix first.
+ - `Lean: -<N> lines, -<M> dependencies possible.` when lean findings exist.
+ - `Not checked:` the parts you did not read or could not run.
+
+-Nothing found: `What this repo does:`, then `Healthy. Nothing to fix.` and
+-one line on what you checked.
++Nothing found: `No findings in the audited scope.`, then briefly explain the
++repo, assumed load, and what you checked.
+
+ One-shot report, changes no code.

@@ -1,45 +1,74 @@
 --- a/SKILL.md
 +++ b/SKILL.md
-@@ -13,4 +13,7 @@
- Review diffs for unnecessary complexity. One line per finding: location, what
- to cut, what replaces it. The diff's best outcome is getting shorter.
+@@ -4,14 +4,18 @@
+   Quality review of a change: is the logic right, is it safe, does it hold
+   under real load, is risky code tested, is it fast enough, and is every line
+   needed. Reads the connected code, not only the diff. Each finding is
+-  explained in plain English. Use for "review this", "code review", "review
+-  the last commit", "review my PR", "is this over-engineered", /ponytail-review.
++  explained in plain language. Use for technical-quality reviews of changes,
++  commits or PRs, over-engineering reviews, or /ponytail-review. Use code-review
++  for the separate project-standards and originating-spec check.
+ ---
+
+ Review a change like the senior developer who will be paged when it breaks.
+ Order of importance: correct, safe, holds under load, tested, fast, lean.
+ Lean still matters: every extra line must be read, tested and fixed later.
+ This is a report the user asked for, so give it in full.
 +
-+Recommend cuts only when requirements, callers, and tests support preserving
-+needed behavior. One implementation or caller is a clue, not proof of waste.
++Use [code-review](../code-review/SKILL.md) when project standards or originating-spec
++compliance must be checked.
 
- ## Format
-@@ -32,11 +35,11 @@
- considered whether all these validation rules are needed at this stage?"
+ ## 1. Understand first
 
--✅ `L12-38: stdlib: 27-line validator class. "@" in email, 1 line, real validation is the confirmation mail.`
-+✅ `L12-38: stdlib: 27-line validator wrapping the same required regex. re.fullmatch with that pattern, same Boolean result.`
+@@ -48,7 +52,8 @@
+    - reuse: the repo already has this helper (name the path)
+    - stdlib / native: the standard library or platform already does it; a
+      new dependency for a few lines
+-   - yagni: abstraction with one implementation, config nobody sets
++   - yagni: abstraction with one implementation, config nobody sets,
++     when no current requirement needs them
+    - merge: near-copies that must change together
+    - split: one function doing several unrelated jobs, so it is hard to read
+      or test. Split by job, never by line count, and never into helpers that
+@@ -61,19 +66,17 @@
+ - Re-read the lines and confirm: the caller exists, the value can really be
+   empty, the code really is unused.
+ - A shortcut marked with a `shortcut:` (or older `ponytail:`) comment that names its limit is a
+-  decision, not a finding, unless the expected load already crosses it.
++  decision, not a complexity finding, unless the expected load already crosses it.
+ - Propose the smallest fix that works. Prefer fixes that delete code. Never
+   add layers, frameworks or config the problem does not need.
+ - No style taste, no "consider", no vague worries.
 
- ✅ `L4: native: moment.js imported for one format call. Intl.DateTimeFormat, 0 deps.`
+ ## 4. Output
 
--✅ `repo.py:L88: yagni: AbstractRepository with one implementation. Inline it until a second one exists.`
-+✅ `repo.py:L88: yagni: AbstractRepository only forwards calls, with no required boundary or test seam. Inline it.`
+-Very simple English: short sentences, everyday words. Explain a technical
++Follow the shared language rules, including labels: short sentences, everyday words. Explain a technical
+ term the first time you use it. The reader may never have seen this code.
 
--✅ `L52-71: delete: retry wrapper around an idempotent local call. Nothing replaces it.`
-+✅ `L52-71: delete: retry wrapper around a local call with no recoverable failures or required retry behavior. Nothing replaces it.`
+-Start with `What this change does:` in two or three sentences.
+-
+-Then the findings in three groups, skip empty groups:
++Present findings first in three groups, skip empty groups:
+ - **Must fix:** bug, security, data loss, breaks at the expected load.
+ - **Should fix:** risky code without a test, real slowness, duplication, a
+   function that mixes jobs, code that should not exist.
+@@ -90,12 +93,13 @@
+      `datetime.now(ZoneInfo("Europe/Berlin")).date()`. One line, nothing else changes.
+    - **If we skip it:** Late orders show the wrong date, and accounting fixes them by hand.
 
- ✅ `L30-44: shrink: manual loop builds dict. dict(zip(keys, values)), 1 line.`
-@@ -44,7 +47,7 @@
- ## Scoring
+-End with:
+-- `Verdict: Ship.` or `Verdict: fix 1 and 3 first.`
++After the findings, explain what this change does in two or three sentences.
++Include:
++- `Verdict: no blocking findings in the reviewed scope.` or `Verdict: fix 1 and 3 first.`
+ - `Lean: -<N> lines possible.` when lean findings exist.
+ - `Not checked:` one line, if something mattered and you could not check it.
 
--End with the only metric that matters: `net: -<N> lines possible.`
-+End with an estimated size saving: `net: -<N> lines possible.`
+-Nothing found: `What this change does:`, then `Looks good. Ship.` and one line
+-on what you checked.
++Nothing found: `No findings in the reviewed scope.`, then briefly explain the
++change and what you checked.
 
--If there is nothing to cut, say `Lean already. Ship.` and stop.
-+If there is nothing to cut, say `No complexity findings in the reviewed scope.` and stop.
-
- ## Boundaries
-@@ -52,6 +55,6 @@
- Scope: over-engineering and complexity only. Correctness bugs, security holes,
- and performance are explicitly out of scope. Route them to a normal review
--pass, not this one. A single smoke test or `assert`-based
--self-check is the ponytail minimum, not bloat, never flag it for deletion.
-+pass, not this one. Necessary tests and test infrastructure are not bloat;
-+never recommend their removal without sufficient remaining coverage.
- Does not apply the fixes, only lists them.
--"stop ponytail-review" or "normal mode": revert to verbose review style.
-+One-shot.
+ Lists findings, changes no code.

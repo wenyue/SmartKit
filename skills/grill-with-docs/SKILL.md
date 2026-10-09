@@ -4,4 +4,4 @@ description: A relentless interview to sharpen a plan or design, which also crea
 disable-model-invocation: true
 ---
 
-Load and apply both the "grilling" and "domain-modeling" skills through the active Harness.
+Load and apply both the "grilling" and "domain-modeling" skills.

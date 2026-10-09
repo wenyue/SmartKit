@@ -5,6 +5,6 @@
  ## Steps
 
 -1. Call the Skill tool with `writing-for-agents` for the writing style guide.
-+1. Load and apply the `writing-for-agents` skill through the active Harness for the writing style guide.
++1. Load and apply the `writing-for-agents` skill for the writing style guide.
 
  2. Read the primary sources for the session the user specifies. This may mean searching through session logs on this machine. If the user doesn't specify a session, default to the current one.

@@ -49,7 +49,7 @@ The assistant can select these skills when a task fits. You can also ask for the
 | `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | Reviews changes since a commit, branch, or tag against both project standards and the originating spec. |
 | `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | Writes a concise PR body with a visual summary, verification evidence, and merge risks. |
 | `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds features or fixes bugs by writing a failing test, implementing, then refactoring. |
-| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | Reviews current changes for over-engineering and identifies what to delete, simplify, or replace. |
+| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | Reviews changes for correctness, security, load, tests, performance, and complexity; use `code-review` for project-standard and spec compliance. |
 | `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Improves the structure of one concrete code target while preserving behavior; use when that target has a specific structural problem. |
 | `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Renames one symbol or tracked path and its real references; use for a precise rename across a repository. |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | When you ask to execute many accumulated edits or broad changes, reviews the intended scope and asks whether to begin implementation; you can also invoke it by name. |
@@ -60,8 +60,8 @@ The assistant can select these skills when a task fits. You can also ask for the
 | `finish-worktree` | [SmartKit](https://github.com/wenyue/SmartKit) | Completes an isolated worktree through a handoff, pull request, local merge, retention, or explicit discard; use when an isolated worktree needs a chosen outcome. |
 | `codebase-design` | [Matt Pocock](https://github.com/mattpocock/skills) | Clarifies module interfaces and responsibilities to improve encapsulation, testability, and code navigation. |
 | `domain-modeling` | [Matt Pocock](https://github.com/mattpocock/skills) | Defines domain terminology, maintains glossaries, and records architectural decisions. |
-| `ponytail-audit` | [ponytail](https://github.com/DietrichGebert/ponytail) | Scans the entire codebase for over-engineering and ranks what to delete or simplify; reports without applying fixes. |
-| `ponytail-debt` | [ponytail](https://github.com/DietrichGebert/ponytail) | Collects `ponytail:` comments into a technical debt ledger; saves a file only when authorized. |
+| `ponytail-audit` | [ponytail](https://github.com/DietrichGebert/ponytail) | Audits the codebase for bugs, security and load risks, missing tests, performance, and complexity; ranks findings without applying fixes. |
+| `ponytail-debt` | [ponytail](https://github.com/DietrichGebert/ponytail) | Collects `shortcut:` and older `ponytail:` comments into a debt ledger with limits, revisit triggers, and upgrade paths; saves a file only when authorized. |
 | `diagnose-agent-session` | [SmartKit](https://github.com/wenyue/SmartKit) | Investigates one agent session's token cost, tool activity, waits, or incomplete calls; use when session behavior looks abnormal. |
 | `write-rules-and-skills` | [SmartKit](https://github.com/wenyue/SmartKit) | Authors or revises one agent Rule or Skill; use when creating or changing reusable agent instructions. |
 | `writing-for-agents` | [Matt Pocock](https://github.com/mattpocock/skills) | Writes or edits agent-facing documents with clear instructions, boundaries, and conditions for action. |

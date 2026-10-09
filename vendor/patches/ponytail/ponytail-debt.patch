@@ -1,42 +1,54 @@
 --- a/SKILL.md
 +++ b/SKILL.md
-@@ -6,5 +6,5 @@
-   of rotting into "later means never". Use when the user says "ponytail debt",
-   "/ponytail-debt", "what did ponytail defer", "list the shortcuts", "ponytail
--  ledger", or "what did we mark to do later". One-shot report, changes nothing.
-+  ledger", or "what did we mark to do later". One-shot report; saves a file only when authorized.
+@@ -1,13 +1,13 @@
+ ---
+ name: ponytail-debt
+ description: >
+-  List every `shortcut:` comment (and older `ponytail:` ones) as a debt ledger. One-shot report,
+-  changes nothing. Use for "ponytail debt", "what did ponytail defer", "list the
+-  shortcuts", /ponytail-debt.
++  List every `shortcut:` comment (and older `ponytail:` ones) as a debt ledger.
++  One-shot report; saves a file only when authorized. Use for "ponytail debt",
++  "what did ponytail defer", "list the shortcuts", /ponytail-debt.
  ---
 
-@@ -20,6 +20,7 @@
- `grep -rnE '(#|//) ?ponytail:' .`  (add other comment prefixes if your stack uses them)
+ Every deliberate ponytail shortcut is marked with a `shortcut:` comment naming
+-its ceiling and upgrade path (older code may say `ponytail:`). This collects them into one ledger so a deferral
++its ceiling, revisit trigger, and upgrade path (older code may say `ponytail:`). This collects them into one ledger so a deferral
+ can't quietly become permanent.
+
+ ## Scan
+@@ -19,27 +19,25 @@
+
+ If the user names their own marker word (`/ponytail-debt TODO`), grep for that word instead.
 
 -Each hit is one ledger row. The comment prefix keeps prose that merely mentions
--the convention out of the ledger.
-+Inspect each hit in context to exclude strings and prose merely mentioning
-+the convention. Each actual comment marker is one ledger row, even if incomplete.
-+Report material scan limitations.
+-the convention out of the ledger. Skip hits that are not a deferral, like a note
+-about a keyboard shortcut.
++Inspect hits in context to exclude strings, prose, and non-deferrals.
++Each deferral comment is one ledger row, even if incomplete.
 
  ## Output
-@@ -27,18 +28,18 @@
+
  One row per marker, grouped by file:
 
 -`<file>:<line>, <what was simplified>. ceiling: <the limit named>. upgrade: <the trigger to revisit>.`
 +`<file>:<line>, <what was simplified>. ceiling: <the limit named>. trigger: <WHEN to revisit>. upgrade: <HOW to improve>.`
 
--The convention is `ponytail: <ceiling>, <upgrade path>`, so pull the ceiling
+-The convention is `shortcut: <ceiling>, <upgrade path>`, so pull the ceiling
 -and the trigger straight from the comment. Want an owner per row too? add
 -`git blame -L<line>,<line>`.
-+The convention is `ponytail: <ceiling>, <upgrade path>`; an upgrade path (HOW)
-+is not a trigger (WHEN). Extract these facts from the comment and immediate
-+context; mark missing facts `not stated`. For historical authorship, add
-+`git blame -L<line>,<line>` with the file path.
++The convention is `shortcut: <ceiling>; trigger: <WHEN>; upgrade: <HOW>`.
++Extract fields from the comment and immediate context, including older formats;
++mark missing facts `not stated`. For historical authorship, add
++`git blame -L<line>,<line> -- <file>`.
 
--Flag the rot risk: any `ponytail:` comment that names no upgrade path or
-+Flag the rot risk: any `ponytail:` comment that names no
- trigger gets a `no-trigger` tag, those are the ones that silently rot.
+-Flag the rot risk: any marker comment that names no upgrade path or
+-trigger gets a `no-trigger` tag, those are the ones that silently rot.
++Flag the rot risk: any marker comment that names no trigger gets a `no-trigger` tag, those are the ones that silently rot.
 
--End with `<N> markers, <M> with no trigger.` Nothing found: `No ponytail: debt. Clean ledger.`
-+End with `<N> markers, <M> with no trigger.` Nothing found: `No ponytail: markers found in the searched scope.`
+-End with `<N> markers, <M> with no trigger.` Nothing found: `No shortcut debt. Clean ledger.`
++End with `<N> markers, <M> with no trigger.` Nothing found: `No deferral markers found in the searched scope.`
 
  ## Boundaries
 

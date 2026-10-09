@@ -47,7 +47,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | 审查相对指定提交、分支或标签的修改，同时核对项目规范与需求规格。 |
 | `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | 撰写 PR 正文，说明变更、验证证据和合并风险。 |
 | `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | 按“先写失败测试，再实现，再重构”的方式开发功能或修复问题。 |
-| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审查当前修改中的过度设计，指出可删除、简化或替换的实现。 |
+| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审查改动的正确性、安全、负载、测试、性能与复杂度；项目标准和 Spec 符合性检查使用 `code-review`。 |
 | `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 在保持行为不变的前提下改善一个具体代码目标的结构；该目标存在明确结构问题时使用。 |
 | `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 重命名一个符号或受 Git 跟踪的路径，并更新其实际引用；需要精确完成仓库内的重命名时使用。 |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | 用户要求执行累积较多或跨度较大的修改时，先核对范围，再询问是否开始实施；也可以明确指定调用。 |
@@ -58,8 +58,8 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `finish-worktree` | [SmartKit](https://github.com/wenyue/SmartKit) | 通过交接、拉取请求、本地合并、保留或明确丢弃来结束隔离 worktree 的工作；需要确定该 worktree 的后续去向时使用。 |
 | `codebase-design` | [Matt Pocock](https://github.com/mattpocock/skills) | 梳理模块接口与职责，改善封装、可测试性和代码导航。 |
 | `domain-modeling` | [Matt Pocock](https://github.com/mattpocock/skills) | 明确领域术语、维护术语表并记录架构决策。 |
-| `ponytail-audit` | [ponytail](https://github.com/DietrichGebert/ponytail) | 扫描整个代码库的过度设计，按优先级报告可删除或简化的内容；不直接修改代码。 |
-| `ponytail-debt` | [ponytail](https://github.com/DietrichGebert/ponytail) | 将代码中的 `ponytail:` 注释汇总成技术债清单；获得授权后才保存文件。 |
+| `ponytail-audit` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审计代码库的缺陷、安全与负载风险、测试缺口、性能和复杂度；按重要性报告发现，不直接修改代码。 |
+| `ponytail-debt` | [ponytail](https://github.com/DietrichGebert/ponytail) | 将 `shortcut:` 和旧 `ponytail:` 注释汇总成包含限制、重审触发条件与升级路径的技术债清单；获得授权后才保存文件。 |
 | `diagnose-agent-session` | [SmartKit](https://github.com/wenyue/SmartKit) | 调查单个 Agent 会话的 token 开销、工具活动、等待或未完成的调用；会话行为异常时使用。 |
 | `write-rules-and-skills` | [SmartKit](https://github.com/wenyue/SmartKit) | 编写或修订一条 Agent Rule 或一个 Skill；创建或修改可复用的 Agent 指令时使用。 |
 | `writing-for-agents` | [Matt Pocock](https://github.com/mattpocock/skills) | 编写或修改面向 Agent 的文档，使指令、边界和行动条件清晰可执行。 |

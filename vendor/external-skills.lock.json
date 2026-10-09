@@ -51,7 +51,7 @@
           "source_path": "skills/engineering/grill-with-docs",
           "destination": "skills/grill-with-docs",
           "files": {
-            "SKILL.md": "d60438f79afddac222419d565608b160a1db46f98b9497653c7daa6ff3817889",
+            "SKILL.md": "2a328e938e8929de47d663e1b90231bdf382cb203cbb743aa14aac1e4e0acb0b",
             "agents/openai.yaml": "df2caef9469bff0e229e5f0ad1597a57c465584aa1b93da3766e22f111eff784"
           },
           "patches": [
@@ -61,7 +61,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/grill-with-docs.harness.patch",
-              "sha256": "907e50f3f8b560433332bd5a8b8f2e4b8b486f7ba7e0cde60ed919b0f2ecd500"
+              "sha256": "8f7062195032dc09f0f9770548df32622ba281f41026c4534556b8a776628c87"
             }
           ]
         },
@@ -72,7 +72,7 @@
           "files": {
             "AGENT-BRIEF.md": "7f5f87fed3033df1b06e083c480f3e847b1fbb0647746b8a4c6a50f9f26ef44f",
             "OUT-OF-SCOPE.md": "1fbf9b432130c6380aa65813b55553cfda150309b27c595e183f8e335b8a190d",
-            "SKILL.md": "007632030654e276023c65f07167110f01c784092cdb14d1445a25cbb3fe1f6f",
+            "SKILL.md": "5f3d9f51e5836d6376c13153dd7472bb4decc34e3070ac78038afde5de7f638e",
             "agents/openai.yaml": "83dff0e6687a46bbfad1b2eab06f17f9468c0ed5a45e7e3e77a3b3a9f3261c8a"
           },
           "patches": [
@@ -82,7 +82,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/triage.harness.patch",
-              "sha256": "6bb4b0a07c9ac6ba821ef31f8bdf54a6d043f50b2ebeea96c18cafbad2911346"
+              "sha256": "e3fe47e33844a98d1520cfe94098a2bf9ecf8e6a1db0605fb339ce91af6b4e96"
             }
           ]
         },
@@ -92,17 +92,17 @@
           "destination": "skills/improve-codebase-architecture",
           "files": {
             "HTML-REPORT.md": "b0face240a17600bfbe030a13da74af6232d03a21bf94f651403c747991a7385",
-            "SKILL.md": "16d506a0f30dc4c5af1daad33cc87e6be98727129d122081be5a8db3bbb625de",
+            "SKILL.md": "7c1040f84a471e5d4c37e4b6a1a3b9e9259a833e21f80db0d5d1e90bcdb9904d",
             "agents/openai.yaml": "b16566b8b5f71cc0910d34a28140ddf52dee7634ee3b683b57a4c14b2dd62d52"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/improve-codebase-architecture.openai.patch",
-              "sha256": "0247211532dc0257622533f8c4c9058f119259ee0946a52d37bc222e23bd72f6"
+              "sha256": "2af3f3c81ca5eab1abdd8ae0e6b6265f14aac0555668915463f82e0b608afe43"
             },
             {
               "path": "vendor/patches/mattpocock/improve-codebase-architecture.harness.patch",
-              "sha256": "419043f747857561487de68ceabf9ca8fe44356b301268f5b292c2b50d280460"
+              "sha256": "6bf7cb476980d721ddb22df17d860c9d34445141a35a80c201796acadabd8ae3"
             }
           ]
         },
@@ -131,7 +131,7 @@
           "source_path": "skills/engineering/tdd",
           "destination": "skills/tdd",
           "files": {
-            "SKILL.md": "04c0ccf23ab07ccc8931377704ad3e746338ea64ba4998cff0c11053cc6cf89c",
+            "SKILL.md": "5404c6338e1beaa5af80ef4d47fb8df1c4746f4158684ecb4a7d1f6ab2179737",
             "agents/openai.yaml": "b3faa7d92f8a7d71df8ea50a5ace05526108e2cea19e6701cc53210440ae53b7",
             "mocking.md": "3ceb807fdf4a47d6a93d4d9a891e5ba6d362a6247bd08adc451feebfc17361ef",
             "tests.md": "859f9e592c188fda4fc7277dd180e4ce9c7a2e13f6efe1f6f29eccc9d28c106a"
@@ -143,7 +143,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/tdd.harness.patch",
-              "sha256": "34ce2df37b34d3257bcf0888997c62b7d7e4bd24462b511509558beeca60d7bb"
+              "sha256": "765ee454538524e741d0eef1fd412dc9d613f98153ca447df2575cfe9774f48b"
             }
           ]
         },
@@ -167,13 +167,13 @@
           "source_path": "skills/engineering/to-tickets",
           "destination": "skills/to-tickets",
           "files": {
-            "SKILL.md": "12329d65ef086a24d02dbfae4e620197d1a2d8234ca187152bc602b53bcc6a2a",
+            "SKILL.md": "ff025da66b5ffff3fabbc888b0b3311a7078a783fe6fdd7a4dcbb19c2342ee52",
             "agents/openai.yaml": "1271cdecf27ee1e215c9985f27bbed16ba0eb5a1edb0f80b71b3f8081e9830c0"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/to-tickets.patch",
-              "sha256": "e4938fae80c0e5d2cade45a9b4981164f02c82777c4b44bacdb82f92f3101c17"
+              "sha256": "cb27a4f39497f86915af2ebdf82e0c62d6b32c48df01cf74895620e2de577aa1"
             },
             {
               "path": "vendor/patches/mattpocock/to-tickets.openai.patch",
@@ -186,7 +186,7 @@
           "source_path": "skills/engineering/wayfinder",
           "destination": "skills/wayfinder",
           "files": {
-            "SKILL.md": "5aa7733ba5e5b5c270a2a2393d7b39db3bcac4a27bf4862d4ff4039b08d9fa27",
+            "SKILL.md": "39a01bc49589b4d41351788ee2e5cc70b56bd8366db34baea1ae37ec3c53a97c",
             "agents/openai.yaml": "9397ddeb498df9aa2f2bf00a2123ac9080eb2db5e5fcad24ffd2071cdb9e3abf"
           },
           "patches": [
@@ -196,7 +196,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/wayfinder.harness.patch",
-              "sha256": "057ad51e0ef8b4acc0af694189bd14374e1d6168a03a70d089bd1634b2de25a9"
+              "sha256": "b9cc67cb445877d9a55d2f264578b5bba820be9218a721ce68e457149dc17878"
             }
           ]
         },
@@ -220,7 +220,7 @@
           "source_path": "skills/engineering/implement-spec",
           "destination": "skills/implement-spec",
           "files": {
-            "SKILL.md": "6bff3e8c115b6f1d072b7728cb0d80b4638411bd7c353338d0cbc74790f27c86",
+            "SKILL.md": "5d969ba0adefc7356b082655388a0a5502ccbbd074119745eb8f7fcefd314e87",
             "agents/openai.yaml": "d2b934de89670783bead2f187489a864bd3cb561a0299d341f620874ecc0d38a"
           },
           "patches": [
@@ -230,11 +230,11 @@
             },
             {
               "path": "vendor/patches/mattpocock/implement-spec.harness.patch",
-              "sha256": "32c246193f2fde8ad96bd9c6e45705b906564c48171404ddbe84523bf13bf6c4"
+              "sha256": "737559e91064608fe45fad50ee20452c90b2d95b4ec5b79fb6211da2bedb0e3c"
             },
             {
               "path": "vendor/patches/mattpocock/implement-spec.worktree.patch",
-              "sha256": "988e718faf9c0f6f39c670bedb7af1ff43061497f9b9799eafb60ccfade10898"
+              "sha256": "52b99b9b7b3cf069333dd3aae891f749518ff30380296f9997128ce159a90e39"
             }
           ]
         },
@@ -259,7 +259,7 @@
           "source_path": "skills/engineering/retro",
           "destination": "skills/retro",
           "files": {
-            "SKILL.md": "8a51908e3f195a5529babbd02bcaa70cec2ed0e73fd580cd61714ea1768e836d",
+            "SKILL.md": "f57a33082ec282bfed2804a44a90906bf329548b72d63419bffcb64daf6954c9",
             "agents/openai.yaml": "681a08f17a12c3e5148835236fea7662b3c2e84502c976b9890d6144dd2d4509"
           },
           "patches": [
@@ -269,7 +269,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/retro.harness.patch",
-              "sha256": "b8859f2d582eba1f2f2d011355f19d141978fcadf801ed89feefe0f94f4959f5"
+              "sha256": "3e00794ffcedfeef1889af263d6034e0e988cb4f6e8744b13eff4315d6e243be"
             }
           ]
         },
@@ -379,7 +379,7 @@
           "source_path": "skills/productivity/grill-me",
           "destination": "skills/grill-me",
           "files": {
-            "SKILL.md": "58d87ae77f14db5c1c5bf2664d0375fa5474c2febe56784f688a795a8aa9ac89",
+            "SKILL.md": "0d580b9cbe33cc307de9fc50f18be20a54312f58728704dcf591c156c65bc2f8",
             "agents/openai.yaml": "91c18c91e5ae14736006de17c34e42c1f1f5932227e2dd7f9f02b2824a2e6648"
           },
           "patches": [
@@ -389,7 +389,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/grill-me.harness.patch",
-              "sha256": "c48954b19319696fd10c50af8b21baad4265f0716a8b27cbd36f9aacd18e6510"
+              "sha256": "ab31a9fd99f0da7ebc5f6e371c9087235eec687c7e3b63ccfe4d9487c8078dbd"
             }
           ]
         },
@@ -398,13 +398,13 @@
           "source_path": "skills/productivity/grilling",
           "destination": "skills/grilling",
           "files": {
-            "SKILL.md": "c9de1a3b8aacb3f592ec0ddb6eb77ed7e894acd7c8a8fae924927165fde531a4",
+            "SKILL.md": "3816c36755af908c4485030066ab332b470912cf7f7767365a4b145dfcd40e32",
             "agents/openai.yaml": "fd026844e53ec159014132bd7d6cc774e808ea80e4d453a16b49e922ee381c3a"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/grilling.patch",
-              "sha256": "933c62ac2999a2fb6cd8f08dc2a3592b46ca7f949a5285c827ae005178b7c15b"
+              "sha256": "cf3f7473dd410226ea2c0eda1377cc5dc3b9db615a35efb969384f2b019a6ba4"
             },
             {
               "path": "vendor/patches/mattpocock/grilling.openai.patch",
@@ -417,7 +417,7 @@
           "source_path": "skills/productivity/handoff",
           "destination": "skills/handoff",
           "files": {
-            "SKILL.md": "708b79d9ec169a1ea3ab53d4d2ed84587060c97c3588173db70ef0f5e19f78e0",
+            "SKILL.md": "b69ed04143743449806b7c982c7f50614bbf731c04370ac867ad53398f5bf436",
             "agents/openai.yaml": "8ffe40a861e4052bd78a1c184ffd2820a379b5a0f8d504b93b118e724dbeb842"
           },
           "patches": [
@@ -427,7 +427,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/handoff.harness.patch",
-              "sha256": "2e0e13d7c55682e53c8ed1eb34f6c9b79e0cf6d6e0776fdbc24f1f2ee5800ac0"
+              "sha256": "0beb63b7942d9ccf3fd49583e62830417e6eed9aa01a095edc747c82bb3f5be6"
             }
           ]
         },
@@ -505,10 +505,10 @@
     {
       "id": "DietrichGebert/ponytail",
       "url": "https://github.com/DietrichGebert/ponytail",
-      "requested_ref": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
-      "resolved_ref": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "requested_ref": "9cc65d03aa2da1db7121b912d03596409ee340b8",
+      "resolved_ref": "9cc65d03aa2da1db7121b912d03596409ee340b8",
       "ref_kind": "commit",
-      "commit": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "commit": "9cc65d03aa2da1db7121b912d03596409ee340b8",
       "license": {
         "spdx": "MIT",
         "source_path": "LICENSE",
@@ -521,13 +521,13 @@
           "source_path": "skills/ponytail",
           "destination": "skills/ponytail",
           "files": {
-            "SKILL.md": "ee832ffc2e2530df353312d95a911dda1b3989f5a4bef5dec07777797ccfeeef",
+            "SKILL.md": "b1fc53c559921ecf5cc7bd4e2840d7b9600fe2b80885e08da435a9c408e0fc4e",
             "agents/openai.yaml": "b72f1a39db6fd27546e26cb2b2d4476dfa834e70ad73f0ac0aa26ef616a1e123"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail.patch",
-              "sha256": "4c4c53ff88fc84ee3aba02b3f636e6da991d237458b423dced5be91923e59fd6"
+              "sha256": "61dfc8cb9613f1bab86eeb52edd556845163cf55c832c923fbb214b1f8e3f594"
             },
             {
               "path": "vendor/patches/ponytail/ponytail.openai.patch",
@@ -540,17 +540,17 @@
           "source_path": "skills/ponytail-review",
           "destination": "skills/ponytail-review",
           "files": {
-            "SKILL.md": "aeca3321ab0f79abe971776f405518afdce46d3bd026062d19a0dfbc3217af8b",
-            "agents/openai.yaml": "4a4253f1e6d0a2e235aa592521559b393b5a504e8c4fdf218825ce7edfca559a"
+            "SKILL.md": "38288fe37dd56cff3e79191e8e95bd4cff42920dd4a8f99b9ae25994e2460cbb",
+            "agents/openai.yaml": "f95a439ddfe689fe1935dab31a9c2d0fb6316bcfd75f98756671b59b8b75e101"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-review.patch",
-              "sha256": "76c6c091720d1283f127a29e50d1fca8f7a69f18f57382d26ea36fde2ee4bc1d"
+              "sha256": "d28f9b6415b7988fd01897e36d0b7a3e9d14e98195ba9403ee680620b28700c5"
             },
             {
               "path": "vendor/patches/ponytail/ponytail-review.openai.patch",
-              "sha256": "1631e07e1bc7b3101bf237894da01a579daa30b657465333f00feb785898eb5a"
+              "sha256": "01d6b87af5461510e43867f753eebec4f899efb953442cce18d6de571f4654a1"
             }
           ]
         },
@@ -559,17 +559,17 @@
           "source_path": "skills/ponytail-audit",
           "destination": "skills/ponytail-audit",
           "files": {
-            "SKILL.md": "bea2b4786d4c24a7169cdebfc921374ea9e9cbbbe7989c07732564a0eae47e77",
-            "agents/openai.yaml": "6f12b9f27491d356b52f21f981ea0d72115153d19d544a61b755a0285999affb"
+            "SKILL.md": "d65f40dc359265f79de9930eec1e2f44bc889678396624d02d7d14bb4ffc2565",
+            "agents/openai.yaml": "d4cd20144438be12c3172b5507cce1cb1c194d1dd9b702bf07986ac27d8793b1"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-audit.patch",
-              "sha256": "0b4215dc1c280dc0941243f4d8cae313dd740f8e66b3969af13aa2e0c7e8bcbb"
+              "sha256": "4997293abc18dadfb32ad18cfcd15863a1a31bb396982e9ce64c6ea7f21f7341"
             },
             {
               "path": "vendor/patches/ponytail/ponytail-audit.openai.patch",
-              "sha256": "bd1357de941a8ad8dcacdeee42d24b8af7b9be7b14a403468a711a684ff6cf49"
+              "sha256": "b7e674d292e0d1c2e4ca988b5d4e356e0adb8c6d041cbe2270a3b960834c4319"
             }
           ]
         },
@@ -578,13 +578,13 @@
           "source_path": "skills/ponytail-debt",
           "destination": "skills/ponytail-debt",
           "files": {
-            "SKILL.md": "54513c0df089511732d7ac4d69b458feff5618b86bb2127ec8d3bc14b349ce23",
+            "SKILL.md": "85f8935421039a4e0706fb5c258a49ea0f5928e23df2e77464fb39cc5bd57484",
             "agents/openai.yaml": "2e8950acf354f70dfa3b66d42dfb9f33670385d51e3511de886874194ee5e84b"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-debt.patch",
-              "sha256": "3f2c784cb4f0a15843efb6c75794010240bf222b71bc7daaff4aec0eb4683760"
+              "sha256": "3c598935c5ba67aec2d6ea85ca803395277667c8c0df588b2abb060d1d9c6780"
             },
             {
               "path": "vendor/patches/ponytail/ponytail-debt.openai.patch",
