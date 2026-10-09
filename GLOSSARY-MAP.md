@@ -6,8 +6,8 @@
   workspace governance, setup ownership, and MCP delivery and readiness
 - [Authoring Evaluation](./contexts/authoring-evaluation/GLOSSARY.md) — Rule, Skill, and Setup Authoring
   Blueprint classification, authoring, qualification, review, correction, and adoption
-- [Worktree Lifecycle](./contexts/worktree-lifecycle/GLOSSARY.md) — Task and Batch Worktrees, commit
-  roles, ticket staging, delivery, completion, recovery, and finalization
+- [Worktree Lifecycle](./contexts/worktree-lifecycle/GLOSSARY.md) — Commit roles, delivery, completion,
+  recovery, and finalization
 
 ## Relationships
 

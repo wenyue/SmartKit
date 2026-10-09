@@ -167,7 +167,7 @@ class PluginManifestTest(unittest.TestCase):
         for name in (
             'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
             'what-changes', 'review-for-humans', 'collect-todos',
-            'finish-worktree', 'implement-tickets',
+            'finish-worktree',
             'write-rules-and-skills',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
@@ -360,6 +360,32 @@ class PluginManifestTest(unittest.TestCase):
                         'allow_implicit_invocation: false' in metadata,
                     )
 
+    def test_readme_invocation_groups_match_skill_metadata(self):
+        for filename, headings in (
+            ('README.md', ('Requires manual invocation', 'Can be invoked automatically')),
+            ('README.zh-CN.md', ('必须由用户手动调用', '可以自动调用')),
+        ):
+            readme = (REPO_ROOT / filename).read_text(encoding='utf-8')
+            listed_names = []
+            for heading, manual in zip(headings, (True, False)):
+                with self.subTest(readme=filename, heading=heading):
+                    section = re.search(
+                        r'^### ' + re.escape(heading) + r'\n(.*?)(?=^#{1,3} |\Z)',
+                        readme,
+                        re.MULTILINE | re.DOTALL,
+                    )
+                    self.assertIsNotNone(section)
+                    names = re.findall(r'^\| `([^`]+)` \|', section.group(1), re.MULTILINE)
+                    self.assertTrue(names)
+                    listed_names.extend(names)
+                    for name in names:
+                        with self.subTest(skill=name):
+                            entry = REPO_ROOT / 'skills' / name / 'SKILL.md'
+                            self.assertTrue(entry.is_file(), str(entry))
+                            frontmatter = entry.read_text(encoding='utf-8').split('---', 2)[1]
+                            self.assertEqual('disable-model-invocation: true' in frontmatter, manual)
+            self.assertEqual(len(listed_names), len(set(listed_names)), filename)
+
     def test_custom_skills_keep_invocation_metadata_aligned(self):
         custom = load_json('skills/registry.json')['custom']
         for item in custom:
@@ -485,7 +511,7 @@ class PluginManifestTest(unittest.TestCase):
         custom = {
             'setup-project-agents', 'create-worktree', 'refactor-code', 'rename-code',
             'diagnose-agent-session', 'what-changes', 'review-for-humans', 'collect-todos',
-            'finish-worktree', 'implement-tickets',
+            'finish-worktree',
             'write-rules-and-skills',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',

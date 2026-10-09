@@ -1,425 +1,212 @@
-import importlib.util
-"""Real batch mechanics in disposable linked worktrees; semantic acceptance is caller-owned."""
+"""Exercise the documented native transfer recipe in disposable repositories."""
 
-import json
 import os
+import shutil
 import subprocess
-import sys
 import tempfile
-import struct
 import unittest
-from collections import Counter
 from pathlib import Path
-from unittest.mock import patch
+from typing import Dict, Optional
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "skills/finish-worktree/scripts/worktree_transfer.py"
-sys.path.insert(0, str(SCRIPT.parent))
-try:
-    spec = importlib.util.spec_from_file_location("worktree_transfer", SCRIPT)
-    transfer = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(transfer)
-finally:
-    sys.path.pop(0)
-evidence = transfer.evidence
+def git(repository: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", "--no-optional-locks", "-C", str(repository), *args],
+        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
 
 
-def git(repository, *args):
-    return subprocess.run(["git", "--no-optional-locks", "-C", str(repository), *args],
-                          check=True, capture_output=True).stdout
-
-
-@unittest.skipUnless(sys.platform.startswith("linux"), "Linux mechanics; native Windows has its own suite")
-class TransferTests(unittest.TestCase):
-    def setUp(self):
+class NativeTransferTests(unittest.TestCase):
+    def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
-        self.repo = self.root / "target"
-        git(self.root, "init", "--quiet", "--initial-branch=main", str(self.repo))
-        git(self.repo, "config", "user.name", "Transfer Test")
-        git(self.repo, "config", "user.email", "transfer@example.invalid")
-        for name in ("a.txt", "b.txt", "outside.txt"):
-            (self.repo / name).write_text(f"base {name}\n")
-        git(self.repo, "add", ".")
-        git(self.repo, "commit", "--quiet", "-m", "base")
-        self.baseline = git(self.repo, "rev-parse", "HEAD").decode().strip()
+        self.target = self.root / "target"
+        git(self.root, "init", "--quiet", "--initial-branch=main", str(self.target))
+        git(self.target, "config", "user.name", "Transfer Test")
+        git(self.target, "config", "user.email", "transfer@example.invalid")
+        git(self.target, "config", "core.autocrlf", "false")
+        for name in ("text.txt", "delete.txt", "outside.txt"):
+            (self.target / name).write_bytes(b"base\n")
+        git(self.target, "add", ".")
+        git(self.target, "commit", "--quiet", "-m", "base")
         self.source = self.root / "source"
-        git(self.repo, "worktree", "add", "--quiet", "-b", "task", str(self.source))
+        git(self.target, "worktree", "add", "--quiet", "-b", "task", str(self.source))
         self.operation = self.root / "operation"
+        self.operation.mkdir()
+        self.before = self.operation / "before"
+        self.after = self.operation / "after"
+        self.before.mkdir()
+        self.after.mkdir()
+        self.patch = self.operation / "transfer.patch"
 
-    def plan(self, contents, source_contents=None):
-        changes = []
-        for number, (name, content) in enumerate(sorted(contents.items())):
-            incoming = (source_contents or contents)[name]
-            source_path = self.source / name
-            source_path.parent.mkdir(parents=True, exist_ok=True)
-            if incoming is None:
-                if source_path.exists():
-                    source_path.unlink()
-            else:
-                source_path.write_bytes(incoming)
-            output = None
-            after = {"type": "absent"}
+    def boundary(self) -> tuple:
+        shared = git(self.target, "rev-parse", "--shared-index-path").stdout.decode().strip()
+        shared_path = self.target / shared if shared else None
+        return (git(self.target, "symbolic-ref", "HEAD").stdout,
+                git(self.target, "rev-parse", "HEAD").stdout,
+                (self.target / ".git/index").read_bytes(),
+                shared_path.read_bytes() if shared_path else None)
+
+    def prepare(self, outputs: Dict[str, Optional[bytes]]) -> None:
+        for name, content in outputs.items():
+            current = self.target / name
+            if current.exists():
+                backup = self.before / name
+                backup.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(current, backup)
             if content is not None:
-                output = self.root / f"candidate-{number}"
+                output = self.after / name
+                output.parent.mkdir(parents=True, exist_ok=True)
                 output.write_bytes(content)
-                before_mode = evidence.file_state(self.repo / name)
-                output.chmod(before_mode["mode"] if before_mode["type"] == "file" else 0o644)
-                after = evidence.file_state(output)
-            changes.append({"path": name, "before": evidence.file_state(self.repo / name),
-                            "after": after, "output": str(output) if output else None})
-        paths = sorted(contents)
-        return {"schema": transfer.SCHEMA, "repository": str(self.repo), "baseline": self.baseline,
-                "source": evidence.snapshot(self.source, paths), "changes": changes,
-                "authority": "accepted task transfer request", "owner": "task owner"}
+                if current.exists():
+                    output.chmod(current.stat().st_mode & 0o777)
+        self.make_patch()
 
-    def prepare(self, contents, source_contents=None):
-        return transfer.prepare(self.plan(contents, source_contents), self.operation)
+    def make_patch(self) -> None:
+        result = git(self.operation, "-c", "diff.noprefix=true", "diff", "--no-index",
+                     "--binary", "--no-renames", "--no-ext-diff", "--no-textconv", "--no-color",
+                     "--src-prefix=a/", "--dst-prefix=b/", "--", "before", "after", check=False)
+        self.assertIn(result.returncode, (0, 1), result.stderr)
+        self.patch.write_bytes(result.stdout)
 
-    def test_prepare_can_freeze_accepted_source_directly(self):
-        plan = self.plan({"a.txt": b"accepted source\n"})
-        plan["changes"][0]["output"] = str(self.source / "a.txt")
-        plan["changes"][0]["after"] = plan["source"]["files"]["a.txt"]
-        transfer.prepare(plan, self.operation)
-        receipt = transfer.load(self.operation)
-        self.assertEqual((self.operation / receipt["entries"][0]["output"]).read_bytes(), b"accepted source\n")
-        self.assertEqual(transfer.apply(self.operation)["phase"], "applied")
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"accepted source\n")
+    def apply_patch(self, *, check: bool = True) -> subprocess.CompletedProcess:
+        return git(self.target, "-c", "core.autocrlf=false", "apply", "-p2", "--whitespace=nowarn", str(self.patch), check=check)
 
-    def test_same_base_create_update_delete_and_staging_preservation(self):
-        (self.repo / "outside.txt").write_text("staged outside\n")
-        git(self.repo, "add", "outside.txt")
-        (self.repo / "outside.txt").write_text("unstaged outside\n")
-        (self.repo / "untracked.txt").write_text("private target\n")
-        plan = self.plan({"a.txt": b"task a\n", "b.txt": None, "new.txt": b"new task\n"})
-        before = evidence.snapshot(self.repo, inventory=True)
-        source_before = evidence.snapshot(self.source, inventory=True)
-        transfer.prepare(plan, self.operation)
-        self.assertEqual(evidence.compare(before), [])
-        result = transfer.apply(self.operation)
-        self.assertEqual(result["phase"], "applied")
-        self.assertTrue(result["boundary_preserved"])
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"task a\n")
-        self.assertFalse((self.repo / "b.txt").exists())
-        self.assertEqual((self.repo / "new.txt").read_bytes(), b"new task\n")
-        after = evidence.snapshot(self.repo, inventory=True)
-        self.assertEqual(before["index"], after["index"])
-        self.assertEqual(before["identity"], after["identity"])
-        self.assertEqual(git(self.repo, "show", ":outside.txt"), b"staged outside\n")
-        self.assertEqual((self.repo / "outside.txt").read_bytes(), b"unstaged outside\n")
-        self.assertEqual((self.repo / "untracked.txt").read_bytes(), b"private target\n")
-        self.assertEqual(evidence.compare(source_before), [])
-        receipt = transfer.load(self.operation)
-        self.assertEqual((self.operation / receipt["entries"][0]["backup"]).read_bytes(), b"base a.txt\n")
+    def test_binary_add_delete_and_dirty_staging_are_preserved(self) -> None:
+        (self.target / "text.txt").write_bytes(b"staged\n")
+        (self.target / "outside.txt").write_bytes(b"staged outside\n")
+        git(self.target, "add", ".")
+        (self.target / "text.txt").write_bytes(b"staged\nworking\n")
+        (self.target / "outside.txt").write_bytes(b"unstaged outside\n")
+        (self.target / "untracked.txt").write_bytes(b"private\n")
+        boundary = self.boundary()
+        source = git(self.source, "status", "--porcelain=v1", "-z").stdout
+        outputs = {"text.txt": b"staged\nworking\ntask\n", "delete.txt": None,
+                   "binary space.bin": bytes(range(256)), "empty.txt": b""}
+        self.prepare(outputs)
+        git(self.target, "-c", "core.autocrlf=false", "apply", "-p2", "--check", "--whitespace=nowarn", str(self.patch))
+        self.apply_patch()
+        for name, content in outputs.items():
+            if content is None:
+                self.assertFalse((self.target / name).exists())
+            else:
+                self.assertEqual((self.target / name).read_bytes(), content)
+        self.assertEqual(self.boundary(), boundary)
+        self.assertEqual((self.target / "outside.txt").read_bytes(), b"unstaged outside\n")
+        self.assertEqual((self.target / "untracked.txt").read_bytes(), b"private\n")
+        self.assertEqual(git(self.source, "status", "--porcelain=v1", "-z").stdout, source)
+        self.assertEqual((self.before / "text.txt").read_bytes(), b"staged\nworking\n")
+        self.assertEqual((self.before / "delete.txt").read_bytes(), b"base\n")
 
-    def test_native_compatible_merge_preserves_staged_and_unstaged_same_path(self):
-        lines = [f"line {index}\n" for index in range(40)]
-        (self.repo / "a.txt").write_text("".join(lines))
-        git(self.repo, "commit", "--quiet", "-am", "shared text base")
-        self.baseline = git(self.repo, "rev-parse", "HEAD").decode().strip()
-        git(self.source, "merge", "--ff-only", self.baseline)
-        staged = lines.copy()
-        staged[3] = "target staged\n"
-        (self.repo / "a.txt").write_text("".join(staged))
-        git(self.repo, "add", "a.txt")
+    def test_native_merge_combines_staged_unstaged_and_incoming_edits(self) -> None:
+        base = ["line %s\n" % number for number in range(40)]
+        (self.target / "text.txt").write_text("".join(base))
+        git(self.target, "commit", "--quiet", "-am", "text baseline")
+        staged = base.copy()
+        staged[3] = "staged target\n"
+        (self.target / "text.txt").write_text("".join(staged))
+        git(self.target, "add", "text.txt")
         working = staged.copy()
-        working[12] = "target unstaged\n"
-        (self.repo / "a.txt").write_text("".join(working))
-        source = lines.copy()
-        source[30] = "incoming task\n"
-        ancestor, local, incoming = [self.root / name for name in ("B", "W", "S")]
-        ancestor.write_text("".join(lines))
-        local.write_text("".join(working))
-        incoming.write_text("".join(source))
-        combined = git(self.root, "merge-file", "-p", str(local), str(ancestor), str(incoming))
-        before_index = (self.repo / ".git/index").read_bytes()
-        self.prepare({"a.txt": combined}, {"a.txt": incoming.read_bytes()})
-        transfer.apply(self.operation)
-        self.assertEqual((self.repo / "a.txt").read_bytes(), combined)
-        self.assertEqual((self.repo / ".git/index").read_bytes(), before_index)
-        self.assertEqual(git(self.repo, "show", ":a.txt"), "".join(staged).encode())
+        working[12] = "unstaged target\n"
+        incoming = base.copy()
+        incoming[30] = "task result\n"
+        paths = [self.operation / name for name in ("W", "B", "S")]
+        for path, lines in zip(paths, (working, base, incoming)):
+            path.write_bytes("".join(lines).encode())
+        (self.target / "text.txt").write_bytes(paths[0].read_bytes())
+        merged = git(self.operation, "merge-file", "-p", *map(str, paths)).stdout
+        boundary = self.boundary()
+        self.prepare({"text.txt": merged})
+        self.apply_patch()
+        self.assertEqual((self.target / "text.txt").read_bytes(), merged)
+        for text in (b"staged target", b"unstaged target", b"task result"):
+            self.assertIn(text, merged)
+        self.assertEqual(self.boundary(), boundary)
 
-    def test_identical_result_performs_no_file_write(self):
-        content = (self.repo / "a.txt").read_bytes()
-        self.prepare({"a.txt": content})
-        with patch.object(transfer, "write_entry", side_effect=AssertionError("unexpected write")):
-            self.assertEqual(transfer.apply(self.operation)["phase"], "applied")
-        self.assertEqual(transfer.load(self.operation)["entries"][0]["state"], "unchanged")
+    def test_raw_crlf_and_binary_with_autocrlf_disabled_for_application(self) -> None:
+        git(self.target, "config", "core.autocrlf", "true")
+        (self.target / "text.txt").write_bytes(b"before\r\n")
+        outputs = {"text.txt": b"after\r\nextra\r\n", "new.bin": b"\x00\xff\r\n"}
+        boundary = self.boundary()
+        self.prepare(outputs)
+        self.apply_patch()
+        for name, content in outputs.items():
+            self.assertEqual((self.target / name).read_bytes(), content)
+        self.assertEqual(self.boundary(), boundary)
 
-    def test_prepared_candidate_drift_rejects_before_preparation(self):
-        plan = self.plan({"a.txt": b"accepted\n"})
-        Path(plan["changes"][0]["output"]).write_bytes(b"different\n")
-        before = evidence.snapshot(self.repo, inventory=True)
-        with self.assertRaisesRegex(transfer.TransferError, "accepted output drift"):
-            transfer.prepare(plan, self.operation)
-        self.assertEqual(evidence.compare(before), [])
-        self.assertFalse(self.operation.exists())
+    def test_working_file_application_still_consults_filters(self) -> None:
+        git(self.target, "config", "filter.forbidden.clean", "exit 97")
+        git(self.target, "config", "filter.forbidden.required", "true")
+        (self.target / ".gitattributes").write_bytes(b"*.txt filter=forbidden\n")
+        self.prepare({"text.txt": b"incoming\n"})
+        boundary = self.boundary()
+        result = git(self.target, "-c", "core.autocrlf=false", "apply", "-p2", "--check",
+                     str(self.patch), check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((self.target / "text.txt").read_bytes(), b"base\n")
+        self.assertEqual(self.boundary(), boundary)
 
-    def test_source_or_target_drift_stops_before_first_write(self):
-        for side in ("source", "target"):
-            with self.subTest(side=side):
-                self.operation = self.root / f"operation-{side}"
-                self.prepare({"a.txt": b"incoming\n"})
-                path = (self.source if side == "source" else self.repo) / "a.txt"
-                path.write_bytes(b"later user edit\n")
-                before = evidence.snapshot(self.repo, inventory=True)
-                with self.assertRaisesRegex(transfer.TransferError, "drift"):
-                    transfer.apply(self.operation)
-                self.assertEqual(evidence.compare(before), [])
+    def test_direct_byte_write_preserves_mode_and_leaves_failure_backup(self) -> None:
+        git(self.target, "config", "filter.forbidden.clean", "exit 97")
+        git(self.target, "config", "filter.forbidden.required", "true")
+        (self.target / ".gitattributes").write_bytes(b"*.txt filter=forbidden\n")
+        path = self.target / "text.txt"
+        if os.name != "nt":
+            path.chmod(0o600)
+        mode = path.stat().st_mode
+        self.prepare({"text.txt": b"short\r\n", "delete.txt": None})
+        boundary = self.boundary()
+        with path.open("r+b") as target:
+            self.assertEqual(target.read(), (self.before / "text.txt").read_bytes())
+            target.seek(0)
+            target.write((self.after / "text.txt").read_bytes())
+            target.truncate()
+        self.assertEqual(path.read_bytes(), b"short\r\n")
+        self.assertEqual(path.stat().st_mode, mode)
+        # An interrupted batch retains its partial result; a later edit makes rollback unsafe.
+        path.write_bytes(b"later user edit\n")
+        self.assertNotEqual(path.read_bytes(), (self.after / "text.txt").read_bytes())
+        self.assertEqual((self.before / "text.txt").read_bytes(), b"base\n")
+        self.assertEqual((self.target / "delete.txt").read_bytes(), b"base\n")
+        self.assertEqual(self.boundary(), boundary)
 
-    def fail_second_write(self):
-        writer = transfer.write_entry
-        def fail(operation, repository, entry, restore=False):
-            if not restore and entry["path"] == "b.txt":
-                raise OSError("injected write rejection")
-            return writer(operation, repository, entry, restore)
-        with patch.object(transfer, "write_entry", side_effect=fail):
-            with self.assertRaisesRegex(OSError, "injected"):
-                transfer.apply(self.operation)
+    def test_split_index_remains_byte_identical(self) -> None:
+        git(self.target, "update-index", "--split-index")
+        boundary = self.boundary()
+        self.prepare({"text.txt": b"incoming\n"})
+        self.apply_patch()
+        self.assertEqual(self.boundary(), boundary)
 
-    def test_partial_failure_recovery_restores_only_proven_writes(self):
-        self.prepare({"a.txt": b"new a\n", "b.txt": b"new b\n"})
-        self.fail_second_write()
-        receipt = transfer.load(self.operation)
-        self.assertEqual(receipt["entries"][0]["state"], "written")
-        self.assertIsNone(receipt["inflight"])
-        result = transfer.recover(self.operation, quiescent=True)
-        self.assertEqual(result["phase"], "restored")
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"base a.txt\n")
-        self.assertEqual((self.repo / "b.txt").read_bytes(), b"base b.txt\n")
-        self.assertIn("injected", transfer.load(self.operation)["error"])
+    def test_conflicting_later_edit_rejects_without_partial_application(self) -> None:
+        self.prepare({"text.txt": b"incoming\n", "delete.txt": None})
+        (self.target / "text.txt").write_bytes(b"later user edit\n")
+        boundary = self.boundary()
+        result = self.apply_patch(check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((self.target / "text.txt").read_bytes(), b"later user edit\n")
+        self.assertEqual((self.target / "delete.txt").read_bytes(), b"base\n")
+        self.assertEqual((self.before / "text.txt").read_bytes(), b"base\n")
+        self.assertEqual(self.boundary(), boundary)
 
-    def test_recovery_keeps_later_user_edit_and_backup(self):
-        self.prepare({"a.txt": b"new a\n", "b.txt": b"new b\n"})
-        self.fail_second_write()
-        (self.repo / "a.txt").write_bytes(b"user after failure\n")
-        with self.assertRaisesRegex(transfer.TransferError, "drift"):
-            transfer.recover(self.operation, quiescent=True)
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"user after failure\n")
-        self.assertTrue((self.operation / "backup-0").exists())
+    def test_patch_check_does_not_replace_whole_file_precondition(self) -> None:
+        original = b"".join(("line %s\n" % i).encode() for i in range(30))
+        (self.target / "text.txt").write_bytes(original)
+        self.prepare({"text.txt": original.replace(b"line 1\n", b"incoming\n")})
+        (self.target / "text.txt").write_bytes(original.replace(b"line 25\n", b"later edit\n"))
+        git(self.target, "-c", "core.autocrlf=false", "apply", "-p2", "--check", str(self.patch))
+        self.assertNotEqual((self.target / "text.txt").read_bytes(),
+                            (self.before / "text.txt").read_bytes())
 
-    def test_drift_during_batch_stops_later_path_without_whole_repo_rescan(self):
-        self.prepare({"a.txt": b"new a\n", "b.txt": b"new b\n"})
-        writer = transfer.write_entry
-        def drift(operation, repository, entry, restore=False):
-            writer(operation, repository, entry, restore)
-            if entry["path"] == "a.txt":
-                (self.repo / "b.txt").write_bytes(b"user changed next path\n")
-        with patch.object(transfer, "write_entry", side_effect=drift):
-            with self.assertRaisesRegex(transfer.TransferError, "drift"):
-                transfer.apply(self.operation)
-        self.assertEqual((self.repo / "b.txt").read_bytes(), b"user changed next path\n")
-        self.assertEqual(transfer.recover(self.operation, quiescent=True)["phase"], "restored")
-        self.assertEqual((self.repo / "b.txt").read_bytes(), b"user changed next path\n")
-
-    def test_interrupted_receipt_requires_observation_and_retains_ambiguous_output(self):
-        self.prepare({"a.txt": b"new a\n", "b.txt": b"new b\n"})
-        writer = transfer.write_entry
-        def interrupted(*args, **kwargs):
-            writer(*args, **kwargs)
-            raise SystemExit("simulated process interruption after replace")
-        with patch.object(transfer, "write_entry", side_effect=interrupted):
-            with self.assertRaises(SystemExit):
-                transfer.apply(self.operation)
-        observation = transfer.inspect(self.operation)
-        self.assertEqual(observation["phase"], "applying")
-        self.assertEqual(observation["inflight"]["path"], "a.txt")
-        self.assertEqual(observation["paths"]["a.txt"], "after")
-        with self.assertRaisesRegex(transfer.TransferError, "ambiguous"):
-            transfer.recover(self.operation, quiescent=True)
-        with self.assertRaisesRegex(transfer.TransferError, "original prepared"):
-            transfer.apply(self.operation)
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"new a\n")
-
-    def test_completed_transfer_survives_later_verification_failure(self):
-        self.prepare({"a.txt": b"new a\n"})
-        transfer.apply(self.operation)
-        verification = subprocess.run([sys.executable, "-c", "raise SystemExit(1)"], check=False)
-        self.assertEqual(verification.returncode, 1)
-        with self.assertRaisesRegex(transfer.TransferError, "does not admit"):
-            transfer.recover(self.operation, quiescent=True)
-        self.assertEqual(transfer.inspect(self.operation)["phase"], "applied")
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"new a\n")
-        self.assertTrue((self.operation / "backup-0").exists())
-
-    def test_boundary_observation_count_is_independent_of_batch_size(self):
-        counts = []
-        for size in (1, 24):
-            self.operation = self.root / f"batch-{size}"
-            contents = {f"file-{number:02}.txt": f"content {number}\n".encode() for number in range(size)}
-            plan = self.plan(contents)
-            actual_git = evidence.git
-            calls = []
-            actual_state = evidence.file_state
-            def counted(repository, *args):
-                calls.append(args[0])
-                return actual_git(repository, *args)
-            def bounded(path):
-                if Path(path) == self.repo / "outside.txt":
-                    raise AssertionError("read unrelated working contents")
-                return actual_state(path)
-            with patch.object(evidence, "git", side_effect=counted), patch.object(evidence, "file_state", side_effect=bounded):
-                transfer.prepare(plan, self.operation)
-                transfer.apply(self.operation)
-            self.assertNotIn("status", calls)
-            counts.append(Counter(calls))
-        self.assertEqual(counts[0], counts[1])
-        self.assertGreater(counts[0]["rev-parse"], 0)
-
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
-    def test_unsupported_mode_and_nonexistent_parent_leave_target_untouched(self):
-        plan = self.plan({"a.txt": b"new\n"})
-        output = Path(plan["changes"][0]["output"])
-        output.chmod(0o4644)
-        plan["changes"][0]["after"] = evidence.file_state(output)
-        before = evidence.snapshot(self.repo, inventory=True)
-        with self.assertRaisesRegex(transfer.TransferError, "unsupported mode"):
-            transfer.prepare(plan, self.operation)
-        self.assertEqual(evidence.compare(before), [])
-        plan = self.plan({"new-directory/file.txt": b"new\n"})
-        with self.assertRaisesRegex(transfer.TransferError, "existing real parent"):
-            transfer.prepare(plan, self.operation)
-        self.assertFalse((self.repo / "new-directory").exists())
-
-    @unittest.skipUnless(os.name == "posix", "POSIX symlinks/hardlinks")
-    def test_symlink_and_hardlink_boundaries_reject_before_preparation(self):
-        (self.repo / "a.txt").unlink()
-        (self.repo / "a.txt").symlink_to(self.root / "unowned")
-        plan = self.plan({"a.txt": b"incoming\n"})
-        with self.assertRaisesRegex(transfer.TransferError, "regular files|physical path"):
-            transfer.prepare(plan, self.operation)
-        (self.repo / "a.txt").unlink()
-        os.link(self.repo / "b.txt", self.repo / "a.txt")
-        plan = self.plan({"a.txt": b"incoming\n"})
-        with self.assertRaisesRegex(evidence.EvidenceError, "alias"):
-            transfer.prepare(plan, self.operation)
-        self.assertFalse(self.operation.exists())
-
-    def test_nested_repository_ancestor_rejects_bounded_batch(self):
-        git(self.repo, "init", "--quiet", "nested")
-        (self.repo / "nested/file.txt").write_bytes(b"nested user\n")
-        plan = self.plan({"nested/file.txt": b"incoming\n"})
-        with self.assertRaisesRegex(evidence.EvidenceError, "nested repository"):
-            transfer.prepare(plan, self.operation)
-        self.assertEqual((self.repo / "nested/file.txt").read_bytes(), b"nested user\n")
-        self.assertFalse(self.operation.exists())
-
-    @unittest.skipUnless(os.name == "posix", "requires POSIX transfer backend")
-    def test_cli_prepare_apply_inspect_and_refused_recovery(self):
-        plan = self.plan({"a.txt": b"cli\n"})
-        plan_file = self.root / "plan.json"
-        plan_file.write_text(json.dumps(plan))
-        launcher = [sys.executable, str(SCRIPT)]
-        for command in ("prepare", "apply", "inspect"):
-            arguments = [command, "--operation", str(self.operation)]
-            if command == "prepare":
-                arguments += ["--plan", str(plan_file)]
-            result = subprocess.run(launcher + arguments, capture_output=True)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("phase", json.loads(result.stdout))
-        result = subprocess.run(launcher + ["recover", "--operation", str(self.operation), "--quiescent"], capture_output=True)
-        self.assertEqual(result.returncode, 2)
-
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
-    def test_unsupported_host_or_missing_metadata_api_rejects_before_operation(self):
-        plan = self.plan({"a.txt": b"accepted\n"})
-        before = evidence.snapshot(self.repo, inventory=True)
-        with patch.object(transfer.sys, "platform", "win32"):
-            with self.assertRaisesRegex(transfer.TransferError, "host is unsupported"):
-                transfer.prepare(plan, self.operation)
-        original = transfer.os.listxattr
-        try:
-            del transfer.os.listxattr
-            with self.assertRaisesRegex(transfer.TransferError, "host is unsupported"):
-                transfer.prepare(plan, self.operation)
-        finally:
-            transfer.os.listxattr = original
-        self.assertFalse(self.operation.exists())
-        self.assertEqual(evidence.compare(before), [])
-
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
-    def test_canonical_path_alias_rejection_precedes_mutation(self):
-        plan = self.plan({"a.txt": b"accepted\n"})
-        readlink = transfer.os.readlink
-
-        def canonical_alias(path, *args, **kwargs):
-            if str(path).startswith("/proc/self/fd/"):
-                return "/different/physical/path"
-            return readlink(path, *args, **kwargs)
-
-        with patch.object(transfer.os, "readlink", side_effect=canonical_alias):
-            with self.assertRaisesRegex(transfer.TransferError, "physical path alias"):
-                transfer.prepare(plan, self.operation)
-        self.assertFalse(self.operation.exists())
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"base a.txt\n")
-
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
-    def test_inherited_default_acl_rejects_operation_storage(self):
-        plan = self.plan({"a.txt": b"accepted\n"})
-        acl = struct.pack("<I", 2) + b"".join(struct.pack("<HHI", tag, permissions, 0xffffffff)
-                                             for tag, permissions in ((1, 7), (4, 5), (32, 5)))
-        os.setxattr(self.root, "system.posix_acl_default", acl)
-        before = evidence.snapshot(self.repo, inventory=True)
-        with self.assertRaisesRegex(transfer.TransferError, "directory extended metadata"):
-            transfer.prepare(plan, self.operation)
-        self.assertFalse(self.operation.exists())
-        self.assertEqual(evidence.compare(before), [])
-
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
-    def test_prepared_artifact_metadata_and_hardlinks_stop_before_first_write(self):
-        for field, mutation in (("pending", "xattr"), ("output", "xattr"), ("backup", "xattr"), ("pending", "hardlink")):
-            with self.subTest(field=field, mutation=mutation):
-                self.operation = self.root / f"operation-{field}-{mutation}"
-                self.prepare({"a.txt": b"accepted\n"})
-                entry = transfer.load(self.operation)["entries"][0]
-                artifact = self.operation / entry[field]
-                if mutation == "xattr":
-                    os.setxattr(artifact, "user.unsupported", b"metadata")
-                else:
-                    os.link(artifact, self.operation / "alias")
-                before = evidence.snapshot(self.repo, inventory=True)
-                with self.assertRaisesRegex(transfer.TransferError, "extended attributes|hardlink"):
-                    transfer.apply(self.operation)
-                self.assertEqual(evidence.compare(before), [])
-
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux-specific admission contract")
-    def test_generated_restore_metadata_never_replaces_target(self):
-        self.prepare({"a.txt": b"new a\n", "b.txt": b"new b\n"})
-        self.fail_second_write()
-        copy = transfer.copy_file
-        def changed_copy(source, destination, mode):
-            copy(source, destination, mode)
-            if destination.name.endswith("-restore"):
-                os.setxattr(destination, "user.unsupported", b"metadata")
-        with patch.object(transfer, "copy_file", side_effect=changed_copy):
-            with self.assertRaisesRegex(transfer.TransferError, "extended attributes"):
-                transfer.recover(self.operation, quiescent=True)
-        self.assertEqual((self.repo / "a.txt").read_bytes(), b"new a\n")
-        self.assertEqual(os.listxattr(self.repo / "a.txt"), [])
-        self.assertTrue((self.operation / "backup-0").exists())
-
-
-@unittest.skipIf(os.name == "nt", "Windows uses its native admission path")
-class UnsupportedHostTests(unittest.TestCase):
-    def test_unsupported_host_rejects_before_observation_or_mutation(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory).resolve()
-            target = root / "target"
-            target.mkdir()
-            sentinel = target / "user.txt"
-            sentinel.write_bytes(b"preserve user state")
-            operation = root / "operation"
-            plan = {"schema": transfer.SCHEMA, "repository": str(target)}
-            for platform in ("darwin", "freebsd14"):
-                with self.subTest(platform=platform), patch.object(transfer.sys, "platform", platform):
-                    with patch.object(evidence, "snapshot", side_effect=AssertionError("unexpected Git observation")):
-                        with self.assertRaisesRegex(transfer.TransferError, "host is unsupported"):
-                            transfer.prepare(plan, operation)
-                    self.assertFalse(operation.exists())
-                    self.assertEqual(sentinel.read_bytes(), b"preserve user state")
-                    self.assertEqual(list(target.iterdir()), [sentinel])
+    @unittest.skipIf(os.name == "nt", "POSIX executable-bit behavior")
+    def test_executable_mode_change_and_ordinary_modes(self) -> None:
+        initial_mode = (self.target / "text.txt").stat().st_mode & 0o777
+        self.prepare({"text.txt": b"incoming\n"})
+        (self.after / "text.txt").chmod(initial_mode | 0o111)
+        self.make_patch()
+        self.apply_patch()
+        self.assertEqual((self.target / "text.txt").stat().st_mode & 0o777, initial_mode | 0o111)
+        self.assertEqual((self.before / "text.txt").stat().st_mode & 0o777, initial_mode)
 
 
 if __name__ == "__main__":

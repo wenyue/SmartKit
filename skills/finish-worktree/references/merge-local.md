@@ -1,36 +1,28 @@
 # Merge Locally
 
-Place the accepted result on one authorized local target branch. Consume [History Preparation](history.md)
-first. Its **Already Delivered** proof can establish delivery without a write; otherwise the target
-must be an ancestor of the exact accepted delivery commit so integration is fast-forward only.
-Divergence goes to the implementation owner for synchronization and renewed acceptance. This route
-does not substitute rebase, pull, a merge commit or file transfer.
+Read [History Preparation](history.md). If the authorized local target already contains the complete
+accepted result, verify and report that delivery without writing again. Otherwise its HEAD must be
+an ancestor of the accepted commit: this route is fast-forward only. Return divergence to the
+implementation workflow for synchronization and renewed acceptance.
 
-## Establish what the fast-forward can affect
+Identify the physical target checkout and branch and the files the fast-forward can affect. A dirty
+target is eligible only when its local changes are disjoint and their preservation can be verified.
+Capture the affected files, complete index, relevant refs and any untracked or ignored state the
+operation could reach. Coordinate writers and recheck target identity and HEAD immediately before
+integration. If the target moved, reassess rather than merging against stale observations.
 
-Identify the physical target checkout and branch, then derive the fast-forward write set. A dirty
-target is eligible when its local state is disjoint and preservation can be proved. Otherwise retain
-it and stop before effects. Capture affected files, complete index, relevant refs and any ignored or
-untracked state the Git operation could reach. Coordinate writers over that boundary.
-
-Immediately before integration, recheck target identity and HEAD. Movement after history proof
-leaves that history result intact but stops the outcome for the target-movement owner, unless
-current **Already Delivered** evidence proves no write is needed.
-
-## Integrate and prove delivery
-
-Record the effect in the [external receipt](recovery.md). Create an authorized, unique,
-expected-absent recovery ref for the old target, then run from the target checkout:
+Retain the old target under an authorized, unique, expected-absent recovery ref, then run in the
+target checkout:
 
 ```text
-git merge --ff-only <exact-delivery-oid>
+git merge --ff-only <exact-accepted-oid>
 ```
 
-Observe the target even if the command fails or its response is interrupted. Proof requires its
-branch at the delivery OID, the accepted tree, required target verification and intended affected
-files, with unrelated index, working, untracked and ignored state preserved. An ambiguous result
-enters recovery; a timeout alone never justifies repeating integration.
+Observe the target even after failure or a missing response. Verify its branch points to the
+accepted commit, its tree and affected files match, required target checks pass, and unrelated
+index entries, working files, untracked and ignored state remain preserved. A timeout alone does
+not justify repeating the merge.
 
-This proof establishes authoritative delivery. Retain the source and recovery ref until their
-owners release them. A later cleanup failure keeps the proven delivery classification, so the
-caller can act on delivery without integrating again.
+Report delivery only after those checks. Retain the source and recovery ref while needed for
+continuation or recovery; remove them only under the entry's cleanup conditions. If cleanup fails,
+report the completed delivery separately so the next action is cleanup, not another integration.

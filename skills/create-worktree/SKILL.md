@@ -5,189 +5,127 @@ description: Use when state-changing repository work needs an isolated linked Gi
 
 # Create Worktree
 
-Select or create one linked Git worktree, prepare its environment, and return `ready` or `non-ready`
-with evidence the caller can use. New creation carries the source's current work by default;
-isolation does not erase that work's original ownership.
+Select or create one linked Git worktree, prepare its environment, and return `ready` or
+`non-ready`. Carry the source's current work by default while leaving the source unchanged.
+Inherited changes remain protected work, not automatically part of the caller's task.
 
-The caller owns the accepted scope and isolation requirement. Honor its target, base, path,
-ownership, and effect constraints, including choices already made in the session. This Skill owns
-workspace selection and immediate readiness. Implementation, commits, project verification,
-finalization, cleanup, and remote actions retain their existing owners.
+## 1. Select the workspace and starting state
 
-## Select One Attributable Workspace
+Use the accepted task scope and existing choices of source, target, base, and permitted effects.
+Resolve the source checkout, primary project checkout, and physical Git common directory from
+repository topology; the invoking linked checkout need not be the primary checkout.
 
-Identify the accepted scope and `scope_owner`, the source and primary project checkouts, and the
-physical Git common directory. Use proportionate repository and filesystem evidence to establish
-those identities; investigate aliases or other boundaries further when a concrete risk could change
-preservation or authority.
+If continuing a selected worktree, check its physical path, Git registration, branch, `HEAD`, base
+relationship, and local changes against the task context. Reuse it when they agree, preserving its
+inherited and task changes. Do not copy fresh source changes over it. If its identity or ownership
+is unclear, return `non-ready`; otherwise skip creation and proceed to environment preparation.
 
-When continuing an exact attributable linked worktree, compare its physical root, registration,
-branch/ref, `HEAD`, base relationship, and local state with retained task context. Reuse it when they
-agree. Preserve inherited and task state already there; do not apply fresh source changes over it.
-There is no need to search unrelated candidates exhaustively or migrate the selected path.
-Ambiguous identity or ownership returns `non-ready`.
+For a new worktree, resolve the base to an immutable commit and choose the starting state:
 
-For reuse, recheck that target's identity and preserved local state before environment preparation,
-then continue there without creation or transfer. For a new worktree, establish the choices and
-source evidence below before mutation.
+- **Carry** is the default: source `HEAD` plus staged, unstaged, and untracked nonignored changes,
+  preserving the distinction between those layers.
+- **Clean** requires an explicit choice: the selected base without source changes.
 
-## Plan New Creation
+A different base requires an explicit clean choice or agreed compatible carry semantics. Establish
+how carried changes apply to that base before proceeding; a base choice alone does not authorize
+copying changes from another base. A caller that requires only task-owned state may reject inherited
+work, but that does not authorize dropping it or changing the carry default.
 
-### Choose the base and state to carry
+## 2. Settle location and carry decisions
 
-Freeze the immutable base and creation mode:
+### Location
 
-- **Carry** defaults to the source's frozen current `HEAD` plus its staged, unstaged, and untracked
-  nonignored state.
-- **Clean** creates the selected base without source changes.
+Honor an explicit target path. Otherwise prefer `<primary-project-root>/.worktrees/<task>` and use
+an existing valid `.worktrees` container. An invalid entry, unsafe physical alias, or tracked-content
+conflict requires resolution rather than fallback to another location.
 
-An explicit different base requires an explicit clean choice or agreed compatible carry semantics;
-it does not implicitly authorize applying dirty state from another base. A caller requiring all
-state to belong to its task may reject inherited unrelated work, without changing the carry default
-or authorizing that work's loss.
+When the container is absent and placement is undecided, ask the user to choose between exactly two
+locations, showing both concrete target paths:
 
-### Resolve the physical location
+1. `<primary-project-root>/.worktrees/<task>` with local Git exclusion.
+2. The plugin's persistent `data/worktrees/<project-id>/<task>` location.
 
-Use an explicit target path when supplied. Otherwise prefer
-`<primary-project-root>/.worktrees/<task>`, even when invoked from another linked checkout. Resolve
-the primary root from repository topology rather than assuming the invoking checkout is primary.
-Use an existing valid `.worktrees` container directly. An invalid existing entry, unsafe physical
-alias, or tracked-content conflict is a conflict to report, not an absent-container fallback.
+Resolve the plugin data root from authoritative host or configuration inputs. On Codex, SmartKit's
+convention is `<resolved-codex-configuration-root>/plugins/data/smartkit/worktrees/<project-id>/<task>`.
+Use `<project-name>-<short-hash-of-canonical-git-common-dir>` for the project ID, so linked worktrees
+share a location and same-name clones remain distinct. This is SmartKit's convention, not an
+official host capability. On another host without a known persistent root, obtain that location
+before offering the second path. Keep worktrees outside versioned plugin caches and Skill installs.
 
-When that container is absent and no prior choice resolves placement, ask the user to choose
-between exactly two locations, displaying both concrete proposed target paths:
+Choose a unique task path and named branch. Verify that the path, branch, and worktree registration
+are absent; resolve physical paths to avoid aliases and recursive nesting beneath the invoking
+worktree. Preserve an existing branch rather than repurposing it.
 
-1. Create `<primary-project-root>/.worktrees/<task>` with local Git exclusion.
-2. Use the plugin's persistent `data/worktrees/<project-id>/<task>` location.
+For project placement, verify effective Git exclusion. If necessary, resolve the local `info/exclude`
+through Git and narrowly add `/.worktrees/`, preserving other bytes and shared `.gitignore`.
+The placement choice authorizes this local exclusion within the caller's effect constraints.
+Wait until both placement and carry decisions are settled before changing the container or exclusion.
 
-Resolve the actual plugin data root from authoritative host or configuration inputs. For Codex,
-SmartKit proposes `<resolved-codex-configuration-root>/plugins/data/smartkit/worktrees/<project-id>/<task>`;
-this is a SmartKit storage convention, not an official host capability. Use
-`<project-name>-<short-hash-of-canonical-git-common-dir>` as the project ID: same-name clones remain
-distinct, while linked worktrees share one project location. Do not put worktrees inside a versioned
-plugin cache or installed Skill directory. On another host, missing persistent-root information
-requires an explicit location before offering the concrete second path; do not invent a host path.
+### Source preservation and carry
 
-Choose safe, unique task paths and named branches from current filesystem and Git evidence. New
-creation requires the target path, branch, and registration to be absent, with conflict-rejecting
-semantics. Do not overwrite or repurpose a branch. Resolve physical paths to prevent aliases and
-recursive container nesting beneath whichever linked checkout invoked the Skill.
+For either mode, capture the source's `HEAD`, branch, index, working contents, and untracked
+nonignored state sufficiently to check that creation leaves them unchanged. An unresolved index
+conflict, in-progress operation, or unsupported file/index semantics stops creation unless the
+chosen mechanism can faithfully preserve that state.
 
-For project placement, verify effective exclusion before creation. If needed, resolve the actual
-local Git `info/exclude` path through Git and narrowly add `/.worktrees/`, preserving every other
-byte and leaving shared `.gitignore` unchanged. Selecting project placement authorizes this local
-exclusion subject to the caller's effect constraints. Defer container and exclusion edits until
-both the location decision and any carry decision below are complete.
+For **clean**, skip transfer capture, counting, and carry approval. For **carry**, capture staged and
+unstaged changes separately, including when both affect one path, plus untracked inputs. Preserve contents,
+additions, deletions, renames, binary files, executable modes, and symlinks. Exclude ignored files,
+dependency caches, and nested worktrees; route necessary omitted inputs to environment preparation.
+Establish the expected target state before copying, including any agreed cross-base transformation.
 
-## Freeze Source State and Resolve the Carry Gate
+Count added plus deleted lines in both staged and unstaged deltas and new untracked text. Count each
+distinct changed path once across all layers. Binary changes count as paths without invented line
+counts. Before creation or copying, if **lines >= 300 OR paths >= 10**, show the source, target,
+counts, and carried state, then obtain an explicit carry decision unless that snapshot and target
+already have one. Disclose unmeasurable items and obtain a decision covering them; they are not zero.
+Below both thresholds, proceed with default carry and report the counts.
 
-For either creation mode, record a stable source snapshot sufficient to prove preservation: physical
-source identity, `HEAD` and branch/ref, index entries and staged contents, working contents and file
-types/modes, and untracked nonignored paths. A conflicted index or ambiguous in-progress operation
-stops before mutation unless the selected mechanism explicitly supports preserving that state.
+A material change to the reviewed snapshot or target requires a fresh summary and decision. If
+carry is declined, obtain an explicit clean `HEAD`/base choice or cancel; silence is not approval.
 
-This preservation evidence is separate from the transfer payload. For **clean**, the expected target
-is the selected base with a clean index and working tree; skip carry capture, counting, and approval.
+## 3. Create and verify
 
-For **carry**, capture staged and unstaged layers separately, including when one path has both.
-Preserve additions, deletions, renames, binary contents, executable modes, and symlinks where
-supported. Establish the expected target index and working state from the selected base and agreed
-carry semantics. Same-base carry reproduces the source state; explicit compatible cross-base carry
-preserves its changes over the selected base. An unresolved transformation or conflict that prevents
-establishing the expected result stops before mutation.
+Immediately before creation, recheck the source snapshot, selected base and mode, decisions, and
+absence of the target path, branch, and registration. Use the host's applicable creation interface
+or Git with conflict-rejecting semantics. Account for material hooks, filters, and subprocess effects
+within the permitted operation before running it.
 
-Exclude ignored files, dependency caches, and nested worktree contents from carry by default. Route
-known required omitted inputs to environment preparation or a missing-prerequisite result. Stop
-before mutation if unsupported file or index semantics prevent faithful transfer.
+Create at the selected commit. For clean mode, copy no source changes. For carry mode, reproduce the
+captured index and working state, including untracked inputs. Keep source bytes, index, `HEAD`, and
+branch unchanged: stash, commit, reset, and moving source files are not transfer methods.
 
-For carry, count added plus deleted lines across the snapshot's staged and unstaged deltas, including
-new untracked text lines. Count each distinct changed path once across those layers and untracked files.
-Binary changes count as paths; do not invent line counts for them.
+Verify the registered target path, named branch, and `HEAD` at the chosen base. Compare its index and
+working state to the expected result, including file contents, types, modes, and staged versus
+unstaged changes. Compare index semantics, not binary index-extension metadata. Confirm that the
+source stayed unchanged and that container, exclusion, and creation effects match the chosen plan.
+Drift or an incomplete comparison yields `non-ready`.
 
-Before any creation or state copy, if **lines >= 300 OR paths >= 10**, show the source, target,
-both counts, and what will be carried, and obtain the user's explicit carry decision. An unmeasurable
-item must not count as zero: disclose the uncertainty and obtain a decision covering it. Below both
-thresholds, proceed with default carry and report the counts.
+After interruption or failure, inspect what actually exists before retrying. Retain partial paths,
+branches, registrations, and copied work with enough context to continue safely; do not replay a
+copy over later changes. Remove partial artifacts only when they belong solely to this attempt,
+contain no other work, and removal is authorized. Recheck the applicable choices before resuming.
 
-Approval covers the reviewed snapshot and target. A material change requires a fresh summary and
-decision. No reply is not approval. If carry is declined, obtain an explicit clean `HEAD`/base choice
-or cancel; do not silently omit source changes.
+## 4. Prepare the environment and report readiness
 
-## Establish and Verify the New Target
+Discover the selected target's project `worktree-environment-setup` Skill. When present, invoke it
+for that target within accepted setup permissions, marking inherited modifications as protected.
+Use its `environment-ready` or `environment-non-ready` result; reuse still-valid results for this
+target instead of repeating setup checks. A present but unavailable, failed, interrupted, or
+ambiguous setup yields `non-ready`. When absent, report `not-provided` and skip it; a known
+indispensable missing input or preparation still prevents readiness.
 
-Name the `creation_owner` accountable for the attempt and recovery. Establish the expected local
-filesystem, branch/ref, and Git administration effects and authority for each. Use the applicable
-host-owned creation interface or Git with conflict-rejecting semantics. Inspect configuration-driven
-hooks, filters, or subprocess effects where material. Unresolved authority for credentials, network,
-services, or another persistent effect stops that effect.
+Recheck target identity and expected state after setup, accounting for its authorized changes.
+Return `ready` only when creation or reuse is verified, existing work is preserved, required setup
+succeeded, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains.
+Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
 
-Immediately before mutation, confirm that the frozen source snapshot, immutable base, mode, and
-required decisions remain valid, and that the target path, branch, and registration remain absent.
-Create from that base. For **clean**, perform no source-state transfer. For **carry**, reproduce the
-agreed index and working state from captured changes, including in-scope untracked inputs.
+Give the caller the status, target path, branch, immutable base and current `HEAD`, whether it was
+created or reused, the carried/inherited-state summary and any carry decision, and environment
+status. For `non-ready`, add the blocker, retained partial state, and concrete next action. Keep
+supporting observations available when needed; a full evidence inventory is not the handoff.
 
-Leave source bytes, index, `HEAD`, and branch/ref unchanged. Stash, commit, reset, and moving source
-files are not transfer methods.
-
-Verify the target's registered physical root, named branch, and `HEAD` at the selected base. Compare
-its index and working tree with the expected clean or carry state, including contents, file
-types/modes, and staged versus unstaged semantics. Compare index content and semantics rather than
-requiring binary-identical index extension metadata. In both modes, prove that the source remained
-unchanged through capture and establishment, and account for authorized container, exclusion, and
-creation effects. Source drift or an incomplete comparison returns `non-ready`.
-
-### Retain attributable state after failure
-
-After a failed or interrupted attempt, observe actual effects and retain partial paths, refs,
-registrations, copied state, and evidence with their recovery owner. Remove an artifact only when
-it is proven solely attributable to this attempt, contains no user or unrelated work, and exact
-recovery authority permits removal.
-
-Retry only from an observed state supported by the mechanism owner, with selection and carry gates
-satisfied again. A partial copy is evidence for recovery, not permission to overwrite later work or
-assume the whole attempt must be repeated.
-
-## Prepare the Selected Environment
-
-Resolve the selected target's `worktree-environment-setup` through its project Skill discovery.
-When present, invoke it for that exact target with accepted setup-effect authority and inherited
-modifications marked as protected. Consume its `environment-ready` or `environment-non-ready`
-result, reusing valid attributable dependency evidence without duplicating its internal checks.
-A present but unavailable, failed, interrupted, or ambiguous dependency yields `non-ready`; it is
-not an absent Skill.
-
-When the target Skill is absent, record `not-provided` and skip it. A known indispensable missing
-preparation or input still prevents readiness.
-
-This Skill runs no project baseline, build, test, or project-health check. Repository-required
-verification belongs to implementation and finalization owners. Environment readiness makes no
-claim that project tests pass.
-
-## Return Readiness and Ownership
-
-Finish with a small current target identity/state check against creation or reuse evidence and the
-attributable environment result. Account for authorized preparation effects when determining the
-expected state. Investigate concrete drift or unexpected effects.
-
-Return `ready` only when the selected workspace and inherited state are correct, preservation holds,
-expected effects are authorized, present environment preparation succeeded, and no known
-indispensable prerequisite is missing. Otherwise return `non-ready`, retaining the selected workspace
-and any partial state for their owner. Unresolved material choices and unsupported effects cannot
-become readiness.
-
-Give the caller a compact handoff containing:
-
-- Status and reason; scope, `scope_owner`, reuse/create choice, and `creation_owner` where applicable.
-- Source and target roots, physical repository/Git-common identity, registration, branch, immutable
-  base, current `HEAD`/tree, and the observation boundary for those facts.
-- Source snapshot and inherited-state attribution; staged, unstaged, and untracked evidence; carry
-  counts and decision, or the explicit clean-base choice.
-- Environment status and attributable evidence; expected local state; expected and actual effects;
-  preservation verdict; and retained partial or uncertain state.
-- For `non-ready`, the blocker, next owner, and exact next action.
-
-Inherited work retains its original ownership and protection. Carrying it does not authorize
-committing it; the caller accounts for inherited work under its own scope and commit policy.
-Consuming a fresh result requires only the necessary current target identity/state check, with
-concrete drift investigated before mutation. Later workflows and `finish-worktree` establish their
-own current contracts.
+Readiness covers the workspace and its preparation, not project health. This Skill runs no project
+baseline, build, or test checks. The implementation workflow owns those checks and commit decisions;
+carrying inherited work does not authorize committing it. Before using a returned workspace,
+recheck its current identity and state and investigate unexpected drift.

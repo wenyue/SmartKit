@@ -1,14 +1,15 @@
 ---
 name: upgrade-third-party-skills
-description: Assess or perform upgrades of third-party Skills maintained by this repository, including upstream changes, local patches, and adoption decisions.
+description: Assess or perform upgrades of third-party Skills maintained by this repository, identifying adoption risks, trade-offs, and recommended adaptations.
 ---
 
 # Upgrade Third-Party Skills
 
-Upgrade this repository's registered external Skills with their accepted local behavior intact.
-The central comparison has three parts: what upstream changed, what our patches are meant to
-preserve, and which consumers depend on the resulting instructions. A clean patch application
-answers only the mechanical part of that comparison.
+Guide adoption of upstream changes while preserving accepted local behavior until a change is
+chosen. Investigate risks and consequential choices before the user has to identify them, then
+recommend a supported approach. Compare what upstream changed, why local adaptations exist, and
+what the combined instructions will make consumers do. A clean patch application establishes only
+mechanical compatibility.
 
 This is a project-local maintenance Skill. An assessment request authorizes investigation and a
 proposal; an upgrade request also authorizes the ready implementation within its accepted scope.
@@ -37,55 +38,75 @@ The updater's `--source` selects an entire upstream repository, not one Skill. E
 selected Skill affected by that source revision. If the user asked for one Skill, explain any
 unavoidable wider update and resolve its scope before implementing it.
 
-## Compare the result people will actually use
+## Discover what could change the adoption decision
 
 Read release notes and compare the old and target upstream trees for all selected Skills and their
-owned resources. Follow changed references and affected consumers far enough to establish whether
-the proposed result still works. Use the actual diff to direct investigation; unrelated upstream
-features need no adoption work merely because they exist.
+owned resources. Follow changed instructions into affected local Rules, Skills, callers, and tools.
+Use those relationships to find risks and useful simplifications; a changelog alone cannot show
+what the combined system will do. Focus on upstream interactions with local behavior and patches.
+Upstream-internal conflicts or ambiguities need attention only when they materially impede local
+adoption; unrelated upstream features need no adoption work merely because they exist.
 
-For each materially affected Skill, establish these relationships:
+For each materially affected Skill, investigate the consequences of the delta:
 
-| Concern | Evidence and decision |
+| Concern | What could change the decision |
 | --- | --- |
-| Workflow behavior | Compare triggers, required steps, approval and stopping conditions, delegation, and side effects. Identify where a new instruction changes accepted behavior or conflicts with applicable project or shared guidance. |
-| Local adaptations | Read each patch's intended result against old upstream and current applied content, then locate its counterpart in the target. Decide whether it applies unchanged, needs context repair, is already satisfied upstream, or requires a behavioral decision. |
-| Selection and discovery | Account for renamed, moved, removed, and newly required Skills or resources. Trace callers, router references, registry entries, and public exposure; a new upstream Skill is a separate adoption choice. |
-| Documents and dependencies | Check affected templates, glossary names, links, scripts, commands, tools, harness capabilities, and external services. Establish migration work and availability before relying on the new route. |
-| Provenance and execution | Review relevant license or attribution changes, source identity, and new executable or network behavior. Explain additional access, credentials, recurring cost, or trust requirements when the delta introduces them. |
+| Behavior and composition | Changes to triggers, obligations, stopping conditions, delegation, or side effects can alter accepted behavior. Read applicable Rules, native discovery metadata, and actual dependencies together before deciding what is missing or incompatible. |
+| Local adaptations | Establish each patch's purpose from old upstream and current applied content, then find its counterpart in the target. Distinguish context repair, an equivalent upstream implementation, and a change to the intended behavior. |
+| Selection and overlap | Trace renamed, moved, removed, and newly required entries through callers, registry, and public exposure. Compare new capabilities with existing local ones; additions and replacements can change both coverage and maintenance cost. |
+| Dependencies and migration | Check changed document conventions, templates, links, scripts, commands, tools, and harness capabilities. A renamed format can leave callers or existing documents unusable even when the patch applies. |
+| Provenance and effects | Check source identity, relevant license or attribution changes, and new executable or network behavior. Expose additional access, credentials, services, recurring cost, or trust requirements. |
 
-A patch can be rebased without asking when only context changes and its accepted result survives.
-If upstream now supplies that result, prove the equivalence before retiring the redundant patch.
-If the new workflow makes the old adaptation ineffective or incompatible, expose that choice;
-silently dropping the patch to make the updater pass loses the behavior it exists to preserve.
+Establish a conflict only when applicable clauses cannot both be satisfied for the same decision.
+Cite both precise source locations, their conditions, the triggering scenario, and its consequence;
+apply governing precedence before proposing a repair. Instructions for different stages can
+coexist. Likewise, a missing explicit Skill name does not prove missing capability: check whether
+applicable Rules and native discovery already supply the required route. Distinguish a supported
+static reading from observed invocation behavior, and identify consequential uncertainty.
 
-For example, if upstream renames a glossary format and starts looking only for the new filename,
-repairing the patch path is insufficient. Locate project pointers, templates, and existing documents
-that still use the old name, and settle their migration or supported compatibility before upgrading
-the consumer. Likewise, an upstream Skill removal needs a decision about its supported callers and
-public entry, not merely deletion of a registry row.
+Evaluate replacement by the outcomes and necessary guarantees consumers depend on, including
+accepted authorization, verification, and recovery boundaries. Different steps alone do not justify
+retaining two Skills. Explain what the replacement covers, what remains unsupported, and whether
+the gap merits a small integration, keeping a distinct capability, or deferring adoption. Include
+the maintenance cost of preserving the old protocol; preserve its necessary guarantees without
+transplanting steps that no longer serve them.
 
-Finish this assessment when every selected Skill and patch is accounted for, affected dependencies
-have a supported route, and remaining choices are explicit. Summarize material changes and their
-evidence in the conversation; registry, lock, and patches remain the durable provenance records.
+Choose the owner of each adaptation from the responsibility that needs to change. A local caller or
+Rule may need revision to compose with a sound upstream design; a patch belongs where an accepted
+local difference must remain in the vendored Skill. Compare those options before adding patch
+burden. Context-only patch repair can proceed within existing authorization. Retire a patch only
+after establishing that its accepted result is supplied elsewhere or its removal is authorized;
+dropping it merely to make the updater pass loses the behavior it exists to preserve.
 
-## Resolve the choices before mutation
+For a proposed retirement or replacement, trace remaining consumers and assumptions: references,
+public exposure, terms, protocols, documentation, and checks. Separate cleanup required by that
+choice from optional simplification of surrounding workflows. Recommend bounded follow-up work
+when the old dependency was their reason for complexity; material expansion remains a user choice.
 
-Present the source and baseline-to-target change, expected benefits, affected files and consumers,
-patch dispositions, migration work, verification, and recovery approach. Scale this account to the
-delta. Separate established facts from uncertain assumptions that could change the decision.
+The assessment is ready when every selected Skill and patch is accounted for, affected consumers
+and dependencies have a supported route or an explicit gap, and material risks and choices are
+explained. Keep evidence in the conversation; registry, lock, and patches remain the durable
+provenance records.
 
-Ask only for choices or facts that cannot be recovered and materially affect the result. Typical
-cases are adopting or retiring public Skills, changing their names or activation, changing a local
-adaptation's intended behavior, accepting new service or permission requirements, or expanding into
-consumer migrations. Bundle related questions with concrete alternatives and their consequences.
-Recommend an approach when the evidence supports it, and wait for the user's decision before
-dependent changes.
+## Recommend a course and settle consequential choices
 
-Reuse decisions and authorization already supplied. Do not turn a routine, behavior-preserving
-patch repair into another approval checkpoint. If the user requested analysis only, stop with the
-concrete proposal and needed decisions. For an authorized upgrade, proceed once the accepted scope,
-remaining behavior, prerequisites, and checks are clear.
+Lead with the recommended adoption scope and why it serves the user's goal. Identify the source
+and baseline-to-target change, benefits, material risks, affected consumers, patch dispositions,
+migration work, and proposed verification and recovery. Prioritize consequences that could change
+the decision rather than giving every diff equal weight.
+
+For each unresolved material choice, present viable alternatives, their trade-offs, and a grounded
+recommendation. State the evidence and any assumption on which it turns. If missing evidence could
+reverse the recommendation, obtain it when recoverable; otherwise name the gap and next useful
+investigation or precise user input needed. Do not substitute an open-ended request for direction
+for analysis the Agent can perform.
+
+Ask and wait before dependent changes when the choice changes accepted scope or behavior, such as
+adopting or retiring a public Skill, changing names or activation, accepting new service or permission
+requirements, or expanding consumer migrations. Reuse decisions and authorization already supplied;
+routine repairs that preserve the accepted result need no new approval checkpoint. For analysis
+only, finish with the concrete proposal and remaining decisions. For an authorized upgrade, proceed
+once the accepted scope, behavior, prerequisites, and checks are clear.
 
 ## Apply through the owning updater
 

@@ -5,77 +5,65 @@ description: Finish an isolated linked Git worktree by keeping it for later, pub
 
 # Finish Worktree
 
-Finish one selected outcome and leave every remaining item with an owner. This Skill prepares
-history when needed, carries out the handoff or delivery, recovers its effects, and accounts for
-cleanup. The implementation workflow owns accepted content, verification and formal review.
-Tracker closure belongs to its existing owner.
+Choose where the work should go, verify that result, and leave any remaining work easy to resume.
+The implementation workflow owns content, checks and review; the issue tracker's owner decides
+when to close its records. A PR or a transfer is a handoff, not proof that the result was integrated.
 
-## Establish the job and choose its outcome
+## Choose the outcome
 
-Identify the source by its physical path, linked-worktree registration, common repository, branch
-and current HEAD. A `create-worktree` handoff helps locate it; current Git evidence must establish
-that it is still the intended worktree. Resolve substitutions or ambiguous identities before effects.
-Establish the accepted scope, ownership of local state and any unresolved earlier attempt.
+Confirm the source's physical path, Git worktree registration, repository, branch and HEAD against
+the intended task. Establish its scope, local changes and any unfinished earlier operation. Reuse
+an existing choice and authorization; ask when the destination or a consequential choice is missing.
+Read the selected route before changing state:
 
-Choose the intended result and read its complete route before proceeding:
-
-| Selected route | Result to establish |
+| Outcome | When to use it |
 | --- | --- |
-| `keep-for-later` | [Available work and a continuation owner](references/keep-for-later.md), including dirty or unfinished work. |
-| `create-pull-request` | [The exact accepted commit published with its PR](references/create-pull-request.md). |
-| `merge-locally` | [The accepted result on the authorized local target](references/merge-local.md), by fast-forward or Already Delivered proof. |
-| `return-for-review` | [Task changes combined with a checkout's working files](references/return-for-review.md), preserving its HEAD and complete index. |
-| explicit discard | [Only the authorized observed losses removed](references/discard.md), with the unaffected target preserved. |
+| Keep for later | Leave the work available, including dirty or unfinished work. Follow the guidance below. |
+| [Create a pull request](references/create-pull-request.md) | Publish the accepted commits and hand them off for review. |
+| [Merge locally](references/merge-local.md) | Deliver to an authorized local branch by fast-forward. |
+| [Return for review](references/return-for-review.md) | Combine task changes with a checkout's working files while preserving its HEAD and complete index. |
+| [Explicit discard](references/discard.md) | Remove work whose actual loss the user has authorized. |
 
-An ambiguous outcome needs a decision before mutation. Integration, transfer and discard have
-different consequences; do not substitute one for another to get past a blocked route.
+A blocked route does not authorize a different outcome. Preserve commits unless consolidation is
+explicitly requested or required by project policy. Publication, local integration and requested consolidation require
+[History Preparation](references/history.md); keeping, transferring and discarding do not otherwise
+require formal review. Independent project and caller requirements still apply.
 
-Use authority already supplied by the request and applicable policy. A PR request includes necessary
-publication; a transfer request includes its bounded transfer and protective preparation. Ask only
-for a missing material choice or effect, such as the destination or loss beyond an explicit discard
-grant. Retain state of uncertain ownership. Independent project or caller requirements for checks
-and review still apply.
+To **keep for later**, leave files, indexes and refs untouched. Report the worktree, branch, HEAD,
+unfinished work, pending checks or operations, and who will continue with what next action. Refresh
+that account if concurrent work changes it. There is no need to clean or review work merely to keep
+it. Retaining the residue of an earlier failed operation does not make that operation successful.
 
-## Prepare only the phases this outcome needs
+## Handle changes and interrupted operations
 
-Preserve commits by default. For publication, integration or expressly selected consolidation,
-read [History Preparation](references/history.md). Consolidation needs an explicit user request or
-project requirement; selecting a finishing route alone does not authorize it. Ordinary retention
-and transfer have an inapplicable history phase and no blanket formal-review prerequisite.
+Immediately before a write, refresh the identities, refs, files or host state it depends on.
+Coordinate writers and stop the affected operation when those facts change. Reuse immutable evidence
+and valid checks; changes to previously accepted content go back to the implementation workflow
+for the applicable checks and review.
+If an essential capability is unavailable, retain the work and report what is needed to continue.
 
-The route supplies readiness and positive proof. Native Git and the repository's host interface
-supply deterministic facts and bounded operations; the Agent decides scope, ownership, semantic
-compatibility and authority. If a required capability or source is unavailable, stop its dependent
-work and report the missing dependency rather than claiming the route's proof.
+After a failure or missing response, inspect what the original operation actually did before retrying.
+Continue only the unfinished work whose preconditions and authorization still hold. For example, a
+successful push followed by failed PR creation needs PR recovery; delivered work followed by failed
+cleanup needs cleanup alone. If the effect cannot be established, keep the uncertainty visible and
+retain the state needed to resolve it. For an interrupted file transfer, keep the source and external
+backups while inspecting the partial result under its route.
 
-Before the first state-changing effect, read [Effect Recovery](references/recovery.md) and persist
-its external receipt. If an earlier attempt is unresolved, recover that original attempt before
-another effect on the same state. A read-only retention handoff needs only its returned record.
+## Clean up and report
 
-Capture the write set and dependencies once. Reuse shared evidence at batch boundaries, with related
-path guards inside the bounded batch. Immediately before an effect, refresh the mutable facts it
-depends on: identities, relevant refs, index, affected files, host state and authority over newly
-observed losses. Observe afterward what the effect could have changed. Immutable commit/tree and
-review evidence remains reusable while its dependencies match.
+Remove only identified, task-owned items that are no longer needed and whose removal is authorized.
+Retain dirty worktrees, uncertain ownership and anything needed for review, continuation or recovery.
+Inventory ignored contents before removal could reach them; ordinary cleanup does not authorize
+losing them. Use the creating host's removal interface for host-created worktrees.
 
-Drift stops the dependent effect and leaves completed phases intact. If content changes, return
-verification and acceptance to the implementation owner under its contract; finalization does not
-silently accept a different result.
+Before deleting a branch, establish that no worktree uses it. Delete owned branch and recovery refs
+with their expected old OIDs. Observe each removal before proceeding; partial cleanup does not undo
+a verified handoff or delivery. Keeping an item is a valid finish when its location, next owner and
+condition for later removal are clear. Transfer backups and sources have the stricter acceptance
+condition in their route.
 
-## Account for what remains
-
-Follow the proven route's retention conditions. Dirty sources stay retained: ordinary finalization
-cleanup does not authorize losing their contents. Removal requires exact owned items, release by
-their lifecycle and retention owners, and existing removal authority. Inventory ignored content
-before any removal that could reach it. Use the host to remove host-created worktrees.
-
-Before deleting a branch, prove it is absent from every worktree. Delete owned branch and recovery
-refs with expected-old-OID updates. Give each removal its own receipt and recovery decision.
-Authorized retention or delegation, with an owner and release condition, completes cleanup without
-requiring deletion.
-
-Read [Public Results](references/results.md) before every return, including stops and failures.
-Report actual effects, concise evidence, retained locations and the next owner/action. Completion
-requires both the route's positive proof and a disposition for every lifecycle item. A required
-check that did not pass leaves its outcome unproven. Later failure cannot erase independently proven
-history, publication, handoff or delivery.
+Report the selected outcome and what was verified: relevant paths, branches/commits or PR URL,
+checks, retained work and the next action. Distinguish completed actions from failures or uncertainty;
+for example, “delivered to main; source cleanup failed” must not prompt another integration. Finish
+when the selected result is verified and remaining items are either safely removed or deliberately
+retained with enough information to continue.

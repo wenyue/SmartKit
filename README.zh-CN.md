@@ -23,7 +23,6 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | 将计划或规格拆成可逐步交付的工单，并声明依赖关系。 |
 | `review-for-humans` | [SmartKit](https://github.com/wenyue/SmartKit) | 按文件用简单例子和有依据的评价解释用户提供的修改，分组展示，便于人类 reviewer 阅读并继续审核。 |
 | `collect-todos` | [SmartKit](https://github.com/wenyue/SmartKit) | 将暂缓任务保存到项目配置的任务跟踪器，并报告收集了哪些待办；需要记录旁支任务并继续当前主任务时使用。 |
-| `implement-tickets` | [SmartKit](https://github.com/wenyue/SmartKit) | 按依赖顺序实现并审查一批符合条件的工单；多个已就绪工单适合成批处理时使用。 |
 | `handoff` | [Matt Pocock](https://github.com/mattpocock/skills) | 将当前对话整理成交接文档，供另一个 Agent 或后续会话继续工作。 |
 | `retro` | [Matt Pocock](https://github.com/mattpocock/skills) | 复盘编码会话，提出 Agent 工作环境改进建议。 |
 | `ask-matt` | [Matt Pocock](https://github.com/mattpocock/skills) | 根据当前情况推荐适合的 Skill 或工作流；不知道该选哪个时使用。 |

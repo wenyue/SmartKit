@@ -2,7 +2,6 @@
   "custom": [
     {"id": "smartkit/setup-project-agents", "path": "setup-project-agents"},
     {"id": "smartkit/create-worktree", "path": "create-worktree"},
-    {"id": "smartkit/implement-tickets", "path": "implement-tickets"},
     {"id": "smartkit/refactor-code", "path": "refactor-code"},
     {"id": "smartkit/rename-code", "path": "rename-code"},
     {"id": "smartkit/diagnose-agent-session", "path": "diagnose-agent-session"},
@@ -37,7 +36,7 @@
         {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.patch", "vendor/patches/mattpocock/to-tickets.openai.patch"]},
         {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder", "patches": ["vendor/patches/mattpocock/wayfinder.openai.patch", "vendor/patches/mattpocock/wayfinder.harness.patch"]},
         {"id": "mattpocock/implement", "path": "skills/engineering/implement", "patches": ["vendor/patches/mattpocock/implement.openai.patch"]},
-        {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch"]},
+        {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch", "vendor/patches/mattpocock/implement-spec.worktree.patch"]},
         {"id": "mattpocock/pr", "path": "skills/engineering/pr", "patches": ["vendor/patches/mattpocock/pr.openai.patch"]},
         {"id": "mattpocock/retro", "path": "skills/engineering/retro", "patches": ["vendor/patches/mattpocock/retro.openai.patch", "vendor/patches/mattpocock/retro.harness.patch"]},
         {"id": "mattpocock/prototype", "path": "skills/engineering/prototype", "patches": ["vendor/patches/mattpocock/prototype.openai.patch"]},

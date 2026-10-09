@@ -25,7 +25,6 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | Breaks a plan or spec into incrementally deliverable tickets with declared dependencies. |
 | `review-for-humans` | [SmartKit](https://github.com/wenyue/SmartKit) | Explains supplied changes by file with simple examples and reasoned judgments, displaying groups for a human reviewer to read and continue. |
 | `collect-todos` | [SmartKit](https://github.com/wenyue/SmartKit) | Saves deferred tasks in the project's configured tracker and reports what was collected; use to record side tasks and continue the current main task. |
-| `implement-tickets` | [SmartKit](https://github.com/wenyue/SmartKit) | Implements and reviews a batch of eligible tracker tickets in dependency order; use when several ready tickets belong in one batch. |
 | `handoff` | [Matt Pocock](https://github.com/mattpocock/skills) | Compacts the conversation into a handoff document for another agent or a later session. |
 | `retro` | [Matt Pocock](https://github.com/mattpocock/skills) | Reviews a coding session and suggests improvements to the agent’s working environment. |
 | `ask-matt` | [Matt Pocock](https://github.com/mattpocock/skills) | Recommends a skill or flow for your situation; use when unsure which one to choose. |

@@ -220,7 +220,7 @@
           "source_path": "skills/engineering/implement-spec",
           "destination": "skills/implement-spec",
           "files": {
-            "SKILL.md": "5ae77babba484a0ec18a626ceeb9e2f12068cf2861f28c62ddb0f9919a376493",
+            "SKILL.md": "6bff3e8c115b6f1d072b7728cb0d80b4638411bd7c353338d0cbc74790f27c86",
             "agents/openai.yaml": "d2b934de89670783bead2f187489a864bd3cb561a0299d341f620874ecc0d38a"
           },
           "patches": [
@@ -231,6 +231,10 @@
             {
               "path": "vendor/patches/mattpocock/implement-spec.harness.patch",
               "sha256": "32c246193f2fde8ad96bd9c6e45705b906564c48171404ddbe84523bf13bf6c4"
+            },
+            {
+              "path": "vendor/patches/mattpocock/implement-spec.worktree.patch",
+              "sha256": "988e718faf9c0f6f39c670bedb7af1ff43061497f9b9799eafb60ccfade10898"
             }
           ]
         },

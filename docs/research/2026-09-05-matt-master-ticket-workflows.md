@@ -2,6 +2,8 @@
 
 研究日期：2026-09-05。本文是供设计讨论使用的事实笔记，不是 Rule、Skill、ADR 或已接受的设计；“可借鉴”仅表示值得讨论。
 
+2026-10-09 状态补充：`implement-tickets` 已退休，常规规格实现使用 `implement-spec`。以下对照保留研究当时的事实；已删除技能的路径仅作历史定位，不是当前入口。
+
 ## 版本与范围
 
 GitHub 的 `branches/master` 返回永久迁移，目标是 `branches/main`。本次读取的当前主分支提交是 `3cca18b368ae95cdbdebbff572ccafa662551015`，提交时间为 2026-09-04 08:43:27 UTC，根 tree 为 `6e84c093fda2026396cea9fad6a924a6da0e1452`。后续源码均固定到该提交，不用浮动分支解释历史事实。[分支迁移 API](https://api.github.com/repos/mattpocock/skills/branches/master)、[主分支 API](https://api.github.com/repos/mattpocock/skills/branches/main)、[固定提交](https://github.com/mattpocock/skills/commit/3cca18b368ae95cdbdebbff572ccafa662551015)。
@@ -33,20 +35,20 @@ GitHub 的 `branches/master` 返回永久迁移，目标是 `branches/main`。�
 | 完成语义 | 文本以全票完成、整批审查、ready PR 收尾 | 只有 finalizer 证明权威交付后才进入 tracker closure，保留已完成前缀与原失败状态 |
 | 恢复 | 核心文件未展开 | Git、tracker、依赖回执与原 worker/finalizer 身份恢复；不维护 Batch journal，不因响应缺失重试效果 |
 
-本地来源：[SKILL.md](../../skills/implement-tickets/SKILL.md) L8–L40、`skills/implement-tickets/references/tracker.md`（历史位置，现已移除） L18–L57 与 L148–L161、[worker-transaction.md](../../skills/implement-tickets/references/worker-transaction.md)、[complete-run.md](../../skills/implement-tickets/references/complete-run.md) L49–L92 与 L115–L168。本地已经有依赖图、frontier 和一次整批审查，不能把它们描述为上游首次带来的新能力。
+本地来源：SKILL.md（历史路径：`skills/implement-tickets/SKILL.md`） L8–L40、`skills/implement-tickets/references/tracker.md`（历史位置，现已移除） L18–L57 与 L148–L161、worker-transaction.md（历史路径：`skills/implement-tickets/references/worker-transaction.md`）、complete-run.md（历史路径：`skills/implement-tickets/references/complete-run.md`） L49–L92 与 L115–L168。本地已经有依赖图、frontier 和一次整批审查，不能把它们描述为上游首次带来的新能力。
 
 [ADR-0007](../adr/0007-use-one-worktree-per-ticket-batch.md) 已接受单批单 worktree、串行、票据提交边界和不单独建 Batch journal；它替代 ADR-0005 与 ADR-0003 的相关旧设计。直接采用上游并行每票 worktree 会改变这项决策，而非普通文字精简。
 
-当前工作区 [finish-worktree](../../skills/finish-worktree/SKILL.md) 已按所选 outcome 判断前置条件，支持保留未完成工作与转移变更，复用仍有效的证据，并引入外部操作回执。[implement-tickets 的统一 finalizer 入口](../../skills/implement-tickets/references/complete-run.md) L115–L138 仍要求整批验证和双轴审查通过，存在值得单独讨论的接口差异。
+当前工作区 [finish-worktree](../../skills/finish-worktree/SKILL.md) 已按所选 outcome 判断前置条件，支持保留未完成工作与转移变更，复用仍有效的证据，并引入外部操作回执。implement-tickets 的统一 finalizer 入口（历史路径：`skills/implement-tickets/references/complete-run.md`） L115–L138 仍要求整批验证和双轴审查通过，存在值得单独讨论的接口差异。
 
-本地“空选择”和“选中票据全部无需修改”不同：前者已经是成功无效果结果；后者可以产生空 Ticket Commit，但整批 diff 为空仍不能进入现有 code-review，进入保留状态的 stop。这不是查询不到工作的问题。[主技能](../../skills/implement-tickets/SKILL.md) L8–L9、单票证明 `skills/implement-tickets/references/process-one-ticket.md`（历史位置，现已移除） L40–L60、[最终审查入口](../../skills/implement-tickets/references/complete-run.md) L49–L55。
+本地“空选择”和“选中票据全部无需修改”不同：前者已经是成功无效果结果；后者可以产生空 Ticket Commit，但整批 diff 为空仍不能进入现有 code-review，进入保留状态的 stop。这不是查询不到工作的问题。主技能（历史路径：`skills/implement-tickets/SKILL.md`） L8–L9、单票证明 `skills/implement-tickets/references/process-one-ticket.md`（历史位置，现已移除） L40–L60、最终审查入口（历史路径：`skills/implement-tickets/references/complete-run.md`） L49–L55。
 
 ## 可借鉴的方向：分析而非已接受设计
 
 - **指针式上下文与一次探索、多次消费。** 可减少重复读取、重复转述；若用于本地自动化，指针仍需能够定位准确版本和适用范围，否则旧笔记会误导后续 Worker。上游提出信息组织方式，本地已有的新鲜度与归属约束可提供判断边界。[spec-core][spec-run]
 - **把任务图与执行资源策略分开讨论。** 图和 frontier 描述依赖；它们本身不推出必须并行。保留本地串行也能借用 frontier 解释“为什么现在可以处理这一票”。若改为并行，需要另行处理集成结果、语义冲突、失败分支与恢复权属，而非仅增加线程数。[spec-core][spec-run]、[ADR-0007](../adr/0007-use-one-worktree-per-ticket-batch.md)
 - **把探索、票据形成与明确任务执行分清。** wayfinder 的问题发现、to-tickets 的人工批准拆分、implement-spec 的已有图执行分别承担不同结果。用户当前希望执行更自动化，不意味着执行器应自行作出新产品决定。[wayfinder][tickets][spec-core]
-- **复用整批审查，保留本地更强的修复闭环。** 两边都在批次末尾审查；本地明确修复后以新 HEAD/tree 重跑整个验证及两轴，是上游简短步骤没有展开的部分。[spec-end]、[本地修复](../../skills/implement-tickets/references/complete-run.md) L94–L113。
+- **复用整批审查，保留本地更强的修复闭环。** 两边都在批次末尾审查；本地明确修复后以新 HEAD/tree 重跑整个验证及两轴，是上游简短步骤没有展开的部分。[spec-end]、本地修复（历史路径：`skills/implement-tickets/references/complete-run.md`） L94–L113。
 
 不能直接照搬的行为包括：无条件最大并发、默认每票新 worktree、默认提前创建并关联关闭所有票据的 PR、把 ready PR 视为任务权威交付、无条件清理所有 worker worktrees、把 wayfinder 每会话只解决一个决策的 HITL 节奏带入自动执行。这些行为各自对应不同的隔离、授权、完成或交互选择；本文未替用户作出选择。
 

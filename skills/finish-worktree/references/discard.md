@@ -1,35 +1,24 @@
 # Explicit Discard
 
-Discard only the exact worktree and observed losses covered by explicit authority. General cleanup
-authority is insufficient. Keep the target and other owners' state outside the removal boundary.
+Discard requires explicit authority over the actual losses; general cleanup permission is
+insufficient. Confirm the worktree's physical registration, branch, HEAD, unique commits,
+publication and recovery refs. Identify other checkouts using the branch and keep them outside
+the removal boundary.
 
-## Match the grant to the actual loss
+Inventory staged, unstaged, untracked and ignored contents, including content identities, types,
+modes and symlink targets. Establish that removal cannot reach the unaffected target, and capture
+its HEAD, complete index and local state for comparison. Match the existing grant against these
+losses and disclose them; ask only about material losses it does not cover. Unmerged work needs
+explicit abandonment authority or proof that its result has been integrated.
 
-Establish physical registration, branch, HEAD, base, unique commits, publication, recovery refs,
-ownership and every checkout using the branch. Inventory staged, unstaged, untracked and ignored
-contents, including bytes or content identities, types, modes and symlink targets. Establish that
-the unaffected target is unreachable by the removal and record the evidence needed to prove its
-preservation afterward.
+Immediately before removal, refresh the identity and loss inventory. Changed facts require a new
+match against the grant. Use the creating host for a host-created worktree and ordinary Git removal
+otherwise. Force removal requires authority over its exact full loss.
 
-Reuse an existing grant covering these exact full contents and disclose the losses. Ask only about
-material losses outside that grant. Changed observations need a fresh match against authority,
-not an automatic repeat of an already settled decision. Unmerged work requires explicit abandonment
-authority or proof that its result has been integrated.
+Verify worktree removal before deleting any branch or recovery ref. Follow the entry's cleanup
+conditions for each item; removal of one never grants removal of another. After an ambiguous result,
+inspect current state before retrying.
 
-## Remove within the observed boundary
-
-Persist the [recovery receipt](recovery.md) before effects. Immediately before removal, refresh
-identity and loss inventory; drift stops removal until its boundary is resolved. Use the host for a
-host-created worktree, or ordinary Git removal for a Git-owned one. Force removal requires explicit
-authority over the exact full loss it would cause.
-
-Observe worktree removal before considering branch deletion. A branch must be absent from all
-worktrees, and deletion must match its expected old OID. Treat each branch or recovery-ref deletion
-as a separate effect. A mismatch retains the ref; an ambiguous result requires observation before
-retry. Removal of one item never silently grants removal of another.
-
-Prove the worktree is gone and the unaffected target's HEAD, complete index and local state are
-preserved. History is inapplicable. The outcome is explicit discard; cleanup accounts for every
-remaining ref and other lifecycle item. If later work fails, retain proven deletions and any
-irreversible loss in the report, with residual locations and owners. Do not describe already lost
-state as recoverable merely because another item was retained.
+Verify that the worktree is gone and the unaffected target's HEAD, complete index and local state
+are preserved. Report removed and retained items, including irreversible losses and any failed
+cleanup. Retaining another branch or artifact does not make deleted local contents recoverable.

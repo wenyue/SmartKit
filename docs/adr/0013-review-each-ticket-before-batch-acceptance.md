@@ -1,8 +1,13 @@
 ---
-status: accepted
+status: deprecated
 ---
 
 # Independently accept each ticket before reviewing the combined batch
+
+Deprecated on 2026-10-09: `implement-tickets` is retired in favor of Matt Pocock’s
+`implement-spec` for ordinary spec execution. Its parallel ticket worktrees and whole-spec review
+replace this sequential per-ticket acceptance protocol; shared workspace and finalization Skills
+retain their responsibilities. The decision below is historical.
 
 Implement a fixed dependency-ordered batch sequentially in one worktree created in clean mode from
 an accepted committed base. Reuse its prepared environment: per-ticket worktrees would repeat

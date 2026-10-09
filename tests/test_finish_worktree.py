@@ -1,209 +1,97 @@
-from __future__ import annotations
-import json
-import os
+"""Verify the native consolidation sequence and its retained failure state."""
+
 import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "skills/finish-worktree/scripts/consolidate_worktree_history.py"
+def git(repository: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(repository), *args], check=check,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-def git(repository: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", "-C", str(repository), *args],
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ).stdout.strip()
+class NativeHistoryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        self.repo = self.root / "repo"
+        git(self.root, "init", "--quiet", "--initial-branch=task", str(self.repo))
+        git(self.repo, "config", "user.name", "History Test")
+        git(self.repo, "config", "user.email", "history@example.invalid")
+        (self.repo / "file.txt").write_bytes(b"base\n")
+        git(self.repo, "add", ".")
+        git(self.repo, "commit", "--quiet", "-m", "base")
+        self.base = self.oid("HEAD")
+        (self.repo / "file.txt").write_bytes(b"one\n")
+        git(self.repo, "commit", "--quiet", "-am", "one")
+        (self.repo / "file.txt").write_bytes(b"two\n")
+        git(self.repo, "commit", "--quiet", "-am", "two")
+        self.old = self.oid("HEAD")
+        self.tree = self.oid("HEAD^{tree}")
+        self.backup = "refs/smartkit/recovery/native-test"
+        self.message = self.root / "message.txt"
+        self.message.write_text("delivery\n")
 
+    def oid(self, name: str) -> str:
+        return git(self.repo, "rev-parse", name).stdout.decode().strip()
 
-class FinishWorktreeHistoryTests(unittest.TestCase):
-    def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory()
-        root = Path(self.temporary.name)
-        self.root = root
-        self.base = root / "base"
-        self.task = root / "task"
-        self.marker = root / "pre-commit-ran"
-        self.message = root / "message.txt"
+    def candidate(self) -> subprocess.CompletedProcess:
+        git(self.repo, "update-ref", self.backup, self.old, "")
+        git(self.repo, "switch", "--detach", self.old)
+        git(self.repo, "reset", "--soft", self.base)
+        return git(self.repo, "commit", "--file", str(self.message), check=False)
 
-        git(root, "init", "--quiet", "--initial-branch=main", str(self.base))
-        git(self.base, "config", "user.name", "SmartKit Test")
-        git(self.base, "config", "user.email", "smartkit@example.invalid")
-        (self.base / "artifact.txt").write_text("base\n", encoding="utf-8")
-        git(self.base, "add", "artifact.txt")
-        git(self.base, "commit", "--quiet", "-m", "base")
-        self.target = git(self.base, "rev-parse", "HEAD")
-        git(self.base, "worktree", "add", "--quiet", "-b", "task", str(self.task))
+    def hook(self, contents: str) -> None:
+        path = self.repo / ".git/hooks/pre-commit"
+        path.write_text("#!/bin/sh\n" + contents)
+        path.chmod(0o755)
 
-        (self.task / "artifact.txt").write_text("checkpoint one\n", encoding="utf-8")
-        git(self.task, "commit", "--quiet", "-am", "checkpoint one")
-        (self.task / "artifact.txt").write_text("checkpoint two\n", encoding="utf-8")
-        git(self.task, "commit", "--quiet", "-am", "review fix")
-        self.checkpoint_head = git(self.task, "rev-parse", "HEAD")
-        self.checkpoint_tree = git(self.task, "rev-parse", "HEAD^{tree}")
-        self.message.write_text("feat: deliver task\n", encoding="utf-8")
-
-    def tearDown(self):
-        self.temporary.cleanup()
-
-    def install_hook(self, exit_code: int) -> None:
-        hooks = Path(git(self.task, "rev-parse", "--git-common-dir")) / "hooks"
-        if not hooks.is_absolute():
-            hooks = (self.task / hooks).resolve()
-        hook = hooks / "pre-commit"
-        hook.write_text(
-            f"#!/bin/sh\nprintf ran > '{self.marker}'\nexit {exit_code}\n",
-            encoding="utf-8",
-        )
-        hook.chmod(hook.stat().st_mode | 0o111)
-
-    def run_script(
-        self, recovery_ref: str, target: str | None = None
-    ) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            [
-                sys.executable,
-                str(SCRIPT),
-                "--repository",
-                str(self.task),
-                "--target",
-                target or self.target,
-                "--message-file",
-                str(self.message),
-                "--recovery-ref",
-                recovery_ref,
-            ],
-            check=False,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env={**os.environ, "GIT_CONFIG_NOSYSTEM": "1"},
-        )
-
-    def test_consolidates_checkpoints_through_normal_commit_hooks(self):
-        self.install_hook(0)
-        recovery_ref = "refs/smartkit/recovery/task/success"
-
-        result = self.run_script(recovery_ref)
-
+    def test_normal_hooks_and_same_tree_single_parent(self) -> None:
+        self.hook("printf ran > .git/hook-ran\n")
+        result = self.candidate()
         self.assertEqual(result.returncode, 0, result.stderr)
-        payload = json.loads(result.stdout)
-        delivery_commit = payload["delivery_commit"]
-        self.assertTrue(self.marker.exists())
-        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
-        self.assertEqual(git(self.task, "rev-list", "--count", "main..task"), "1")
-        self.assertEqual(git(self.task, "show", "-s", "--format=%P", delivery_commit), self.target)
-        self.assertEqual(git(self.task, "rev-parse", f"{delivery_commit}^{{tree}}"), self.checkpoint_tree)
-        self.assertEqual(git(self.task, "rev-parse", recovery_ref), self.checkpoint_head)
-        self.assertEqual(git(self.task, "status", "--porcelain"), "")
+        self.assertTrue((self.repo / ".git/hook-ran").exists())
+        candidate = self.oid("HEAD")
+        self.assertEqual(self.oid("HEAD^{tree}"), self.tree)
+        self.assertEqual(git(self.repo, "show", "-s", "--format=%P", "HEAD").stdout.strip(), self.base.encode())
+        self.assertEqual(self.oid("refs/heads/task"), self.old)
+        git(self.repo, "update-ref", "refs/heads/task", candidate, self.old)
+        git(self.repo, "switch", "task")
+        self.assertEqual(self.oid("HEAD"), candidate)
+        self.assertEqual(self.oid(self.backup), self.old)
+        self.assertEqual(git(self.repo, "status", "--porcelain").stdout, b"")
 
-    def test_rejected_hook_restores_task_branch_and_retains_recovery(self):
-        self.install_hook(1)
-        recovery_ref = "refs/smartkit/recovery/task/rejected"
+    def test_rejected_hook_retains_original_branch_and_its_edits(self) -> None:
+        self.hook("printf 'hook edit\\n' > file.txt\nexit 1\n")
+        result = self.candidate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.oid("refs/heads/task"), self.old)
+        self.assertEqual(self.oid(self.backup), self.old)
+        self.assertEqual((self.repo / "file.txt").read_bytes(), b"hook edit\n")
+        self.assertEqual(git(self.repo, "show", ":file.txt").stdout, b"two\n")
 
-        result = self.run_script(recovery_ref)
+    def test_successful_hook_changing_tree_requires_new_acceptance(self) -> None:
+        self.hook("printf 'hook edit\\n' > file.txt\ngit add file.txt\n")
+        self.assertEqual(self.candidate().returncode, 0)
+        self.assertNotEqual(self.oid("HEAD^{tree}"), self.tree)
+        self.assertEqual(self.oid("refs/heads/task"), self.old)
+        self.assertEqual(self.oid(self.backup), self.old)
 
-        self.assertEqual(result.returncode, 1)
-        self.assertTrue(self.marker.exists())
-        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
-        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
-        self.assertEqual(git(self.task, "rev-parse", recovery_ref), self.checkpoint_head)
-        self.assertEqual(git(self.task, "status", "--porcelain"), "")
-
-    def test_existing_recovery_ref_is_rejected_without_mutating_task(self):
-        recovery_ref = "refs/smartkit/recovery/task/existing"
-        git(self.task, "update-ref", recovery_ref, self.checkpoint_head)
-
-        result = self.run_script(recovery_ref)
-
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("recovery ref already exists", result.stderr)
-        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
-        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
-        self.assertEqual(git(self.task, "rev-parse", recovery_ref), self.checkpoint_head)
-        self.assertEqual(git(self.task, "status", "--porcelain"), "")
-
-    def test_recovery_ref_outside_namespace_is_rejected_before_effect(self):
-        recovery_ref = "refs/recovery/task/wrong-namespace"
-        refs_before = git(self.task, "for-each-ref", "--format=%(refname):%(objectname)")
-
-        result = self.run_script(recovery_ref)
-
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("recovery ref must start with refs/smartkit/recovery/", result.stderr)
-        self.assertEqual(
-            git(self.task, "for-each-ref", "--format=%(refname):%(objectname)"),
-            refs_before,
-        )
-        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
-        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
-        self.assertEqual(git(self.task, "status", "--porcelain"), "")
-
-    def test_candidate_ref_creation_failure_does_not_claim_it_was_retained(self):
-        recovery_ref = "refs/smartkit/recovery/task/candidate-collision"
-        candidate_ref = f"{recovery_ref}-candidate"
-        git(self.task, "update-ref", candidate_ref, self.target)
-
-        result = self.run_script(recovery_ref)
-
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("recovery ref already exists", result.stderr)
-        self.assertIn(candidate_ref, result.stderr)
-        self.assertNotIn(f"candidate retained at {candidate_ref}", result.stderr)
-        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
-        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
-        self.assertNotEqual(subprocess.run(
-            ["git", "-C", str(self.task), "show-ref", "--verify", "--quiet", recovery_ref],
-            check=False,
-        ).returncode, 0)
-        self.assertEqual(git(self.task, "rev-parse", candidate_ref), self.target)
-        self.assertEqual(git(self.task, "status", "--porcelain"), "")
-
-    def test_equal_target_is_rejected_without_creating_empty_commit(self):
-        recovery_ref = "refs/smartkit/recovery/task/already-delivered"
-
-        result = self.run_script(recovery_ref, target=self.checkpoint_head)
-
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("checkpoint HEAD equals the delivery target", result.stderr)
-        self.assertEqual(git(self.task, "symbolic-ref", "--short", "HEAD"), "task")
-        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.checkpoint_head)
-        self.assertNotEqual(
-            subprocess.run(
-                ["git", "-C", str(self.task), "show-ref", "--verify", "--quiet", recovery_ref],
-                check=False,
-            ).returncode,
-            0,
-        )
-        self.assertEqual(git(self.task, "status", "--porcelain"), "")
-
-
-    def test_hook_edit_is_retained_when_checkout_recovery_would_change_state(self):
-        self.install_hook(1)
-        hooks = Path(git(self.task, "rev-parse", "--git-common-dir")) / "hooks"
-        hook = hooks / "pre-commit"
-        hook.write_text("#!/bin/sh\nprintf 'hook edit\\n' > artifact.txt\nexit 1\n")
-        result = self.run_script("refs/smartkit/recovery/task/hook-edit")
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("checkout recovery stopped", result.stderr)
-        self.assertEqual((self.task / "artifact.txt").read_text(), "hook edit\n")
-        self.assertEqual(git(self.task, "rev-parse", "refs/heads/task"), self.checkpoint_head)
-        self.assertEqual(git(self.task, "rev-parse", "HEAD"), self.target)
-
-    def test_dirty_source_rejects_history_before_recovery_ref_creation(self):
-        (self.task / "unfinished.txt").write_text("unfinished\n")
-        refs_before = git(self.task, "for-each-ref", "--format=%(refname):%(objectname)")
-        result = self.run_script("refs/smartkit/recovery/task/dirty")
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("source worktree is not clean", result.stderr)
-        self.assertEqual(git(self.task, "for-each-ref", "--format=%(refname):%(objectname)"), refs_before)
-        self.assertEqual((self.task / "unfinished.txt").read_text(), "unfinished\n")
+    def test_existing_backup_and_moved_branch_reject_overwrite(self) -> None:
+        git(self.repo, "update-ref", self.backup, self.base)
+        result = git(self.repo, "update-ref", self.backup, self.old, "", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.oid(self.backup), self.base)
+        git(self.repo, "update-ref", "-d", self.backup, self.base)
+        self.assertEqual(self.candidate().returncode, 0)
+        candidate = self.oid("HEAD")
+        git(self.repo, "update-ref", "refs/heads/task", self.base, self.old)
+        result = git(self.repo, "update-ref", "refs/heads/task", candidate, self.old, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.oid("refs/heads/task"), self.base)
+        self.assertEqual(self.oid("HEAD"), candidate)
 
 
 if __name__ == "__main__":
