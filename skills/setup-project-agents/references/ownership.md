@@ -16,6 +16,11 @@ that project-owned file before `start` using the loaded plugin's schema:
 The same schema governs local synchronization and defines external Skill sources, project Agent
 mappings and MCP declarations.
 
+`setupVersion` is the last successful full setup's SmartKit release, not the currently installed
+plugin version. The public workflow writes this one field only after configuration convergence and
+private-session cleanup. Preparation, failure and local synchronization leave the prior value intact.
+Preserve the other project configuration values; never advance the field by hand to silence a hook.
+
 For full setup, `start` validates input against its selected canonical or installed-fallback source
 before freezing the request. If that source rejects input prepared under the loaded schema, follow
 [Preflight](session-protocol.md#preflight): correct the reported cause within accepted authority and
@@ -27,6 +32,14 @@ Setup discovers and preserves additional project-owned Rules and Skills. Project
 stay project-owned. Codex Plugin Agent defaults are fallbacks, not project Agent declarations.
 Native Cursor, Copilot and Qoder Plugin Agents, and native plugin Rules, Skills and MCP, are outside
 this workflow.
+
+Project custom Agents discovered in native host directories must be reconciled during full setup,
+including undeclared ones. The `native_source` harness branch preserves a complete native document
+under `.agents/agents/` and copies it verbatim to its adapter; that source alone owns its prompt and
+settings. It is exclusive with structured settings for that harness. A shared prompt `source` is
+required only for harnesses using the structured branch. Existing recorded plugin defaults retain
+their owner. The adoption helper's guarded import preserves independent canonical content and
+existing adapter digest protection; it does not authorize rewriting an ownership record.
 
 ## Preserve the policy's loading meaning
 
@@ -49,7 +62,7 @@ change when policy loads. Fenced examples are not operative index rows.
 For each generated Rule or Skill, `.agents/smartkit.lock.json` records its blueprint fingerprint and
 exact output paths, including supporting files. It stores no persistent digests of their contents.
 Every full session requests the complete current blueprint set; use existing content and current
-project evidence to preserve qualified intent during reauthoring.
+project evidence to preserve qualified intent during assessment and any necessary revision. An unchanged complete handoff preserves exact bytes.
 
 Blueprint removal retires its recorded outputs. A renamed catalog target retires old recorded paths
 and generates the current destination. A supporting output omitted from a new complete handoff is

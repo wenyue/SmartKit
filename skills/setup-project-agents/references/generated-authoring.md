@@ -5,6 +5,12 @@ requested even when upstream fingerprints and recorded outputs are unchanged. Se
 that the resulting project set works together; individual writing results do not establish that
 property.
 
+Requesting every artifact means assessing its complete current contract, not requiring new wording.
+Use each blueprint's refresh preference and writing focus to distinguish facts that need current
+evidence from stable decisions that should survive repeated setup. Preserve valid obligations,
+conditions, exceptions and project additions. Base each substantive change on a blueprint requirement,
+project fact or demonstrated defect; a fingerprint comparison cannot make that semantic decision.
+
 ## Establish the pinned inputs and responsibilities
 
 Resolve each requested immutable Setup Authoring Blueprint from the session's `source_root`. Load
@@ -67,6 +73,11 @@ frozen scope, evidence, validation, review and result. Jobs may run sequentially
 Consume only a public-writer `COMPLETE` whose exact Candidate paths already lie beneath `GENERATED`
 and satisfy that request's blueprint. Retain blueprint-required evidence in the handoff. A blueprint's
 readiness terminology does not replace the public writer's result.
+
+The writer may supply an exact copy of existing content when its full assessment supports retention.
+Supply every supporting file that remains part of the artifact, and obtain the same `COMPLETE`
+handoff as for changed content. This preserves the full request and review protocol while matching
+bytes avoid target writes. Omission is not reuse: omitted recorded supporting files are retired.
 
 Authoring supplies no authority for downstream effects. Obtain a separate grant before such an
 effect, and apply the frozen-target drift rule if it changes setup-relevant target state. A writer

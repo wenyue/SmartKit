@@ -52,6 +52,7 @@ class RenderedState:
     replace_roots: tuple[PurePosixPath, ...] = ()
     preserved_paths: tuple[PurePosixPath, ...] = ()
     external_sources: tuple[Mapping[str, object], ...] = ()
+    native_agent_paths: tuple[PurePosixPath, ...] = ()
 
     @property
     def files_by_path(self) -> Mapping[str, bytes]:
@@ -302,7 +303,7 @@ def render_desired_state(
                 }))
 
     before_project_agents = set(files)
-    project_agent_sources = _render_project_agents(files, target_root, config)
+    project_agents = _render_project_agents(files, target_root, config)
     project_files = set(files) - before_project_agents
 
     generated_targets = set(generated_outputs) if generated_outputs is not None else {
@@ -454,7 +455,7 @@ def render_desired_state(
                 {
                     *(item.path for item in project_rules),
                     *(item.path / 'SKILL.md' for item in project_skills),
-                    *project_agent_sources,
+                    *project_agents.sources,
                     *generated_skill_resources,
                     *retained_outputs,
                 },
@@ -462,4 +463,5 @@ def render_desired_state(
             )
         ),
         tuple(dict(item) for item in sources),
+        project_agents.native_paths,
     )

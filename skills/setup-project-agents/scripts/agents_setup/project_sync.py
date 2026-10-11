@@ -54,7 +54,7 @@ def _inputs(target: Path, catalog):
     """Observe local declarations and discovery entries, including additions and removals."""
     config = inspect_project(target, catalog=catalog).config
     paths = {PurePosixPath('.agents/config.json')}
-    paths.update(agent.source for agent in config.agents)
+    paths.update(path for agent in config.agents for path in agent.source_paths)
     directories = []
     for relative in (PurePosixPath('.agents/rules'), PurePosixPath('.agents/skills')):
         root = confined_target(target, relative)
@@ -92,7 +92,7 @@ def _plan(source: Path, target: Path, catalog):
     retained = tuple(asset for asset in state.assets if asset not in managed)
     project_state = OwnershipState((), managed)
     files = {}
-    sources = _render_project_agents(files, target, config)
+    agents = _render_project_agents(files, target, config)
     project_files = tuple(files)
     observed_paths = {OWNERSHIP_PATH, PurePosixPath('AGENTS.md'), *project_files,
                       *(asset.path for asset in managed),
@@ -155,7 +155,7 @@ def _plan(source: Path, target: Path, catalog):
     ) | frozenset(contract.target.parent for contract in state.contracts if contract.target.name == 'SKILL.md')
     skills = discover_project_skills(target, catalog, previous_managed=skill_roots)
     preserved = tuple(sorted({
-        *(source.as_posix() for source in sources),
+        *(source.as_posix() for source in agents.sources),
         *((skill.path / 'SKILL.md').as_posix() for skill in skills),
         *(output.as_posix() for contract in state.contracts for output in contract.outputs),
     }))

@@ -941,6 +941,7 @@ class SetupSourceTest(unittest.TestCase):
                     'prepare', '--target', str(target), '--session', str(session),
                     '--source-root', str(REPO_ROOT),
                     '--source-commit', 'offline', '--no-bootstrap',
+                    '--completion-protocol', 'setup-version-v1',
                 ]
             )
             self.assertEqual(result, 0)

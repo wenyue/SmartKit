@@ -10,7 +10,7 @@
 仅编写源文件，既不要求也不授权下游生成、交付或安装。
 
 对 Setup 的修改必须保留
-[Setup Project Agents](../../skills/setup-project-agents/SKILL.md#inputs-and-ownership)
+[Setup Project Agents](../../skills/setup-project-agents/SKILL.md)
 定义的所有权和冲突处理边界。
 
 ## 完整退役契约
@@ -19,6 +19,10 @@
 仅当已接受的当前契约有要求时，才保留或添加兼容性支持。
 
 ## 根据读者需要维护文档
+
+### Skill 引用
+
+项目 Rule 通过 `SKILL.md` 入口引用 Skill，不链接其内部章节。由各 Skill 自己负责引导读者阅读其支持资料。
 
 ### 根目录 README
 

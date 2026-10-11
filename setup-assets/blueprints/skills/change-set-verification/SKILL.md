@@ -28,6 +28,18 @@ Classify obligations as preserve, change, add, retire, or non-goal. Existing Ski
 preservation and regression evidence; accepted intent authorizes changes or retirement. Visibility,
 executability, write access, and Author permissions confer no Candidate runtime authority.
 
+## Refresh focus
+
+Keep the accepted verification sequence, effect boundaries, and result meanings stable unless
+project policy or supported tool behavior changes them. Recheck tool selection and affected-surface
+mappings against current scripts, manifests, CI jobs, and generator owners. A new test runner may
+change a check route without changing when the Skill may report success or hand work back.
+
+Give the reader concrete directions for selecting the minimum sufficient checks and interpreting
+their outcomes. Refresh obsolete mappings in place, preserve still-valid project-specific checks
+and exceptions, and remove duplicated recipes. Reuse unchanged prose and supporting references
+when they remain complete; existing content is evidence to assess, not a reason to skip assessment.
+
 ## Verification contract
 
 ### Scope and effects

@@ -1299,6 +1299,41 @@ def default_cache_root() -> Path:
     return Path.home() / '.cache' / 'smartkit'
 
 
+def check_setup_migrations(project_root: Path) -> list[Finding]:
+    """Reuse setup's declaration reader without running setup or changing project state."""
+    source_root = Path(__file__).resolve().parents[2]
+    scripts = str(source_root / 'skills/setup-project-agents/scripts')
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    try:
+        from agents_setup.migrations import SetupStatus, SetupVersion, applicable_migrations, project_setup_version
+        setup = project_setup_version(project_root, source_root)
+        if setup is SetupStatus.UNINITIALIZED:
+            return []
+        version = setup.version if isinstance(setup, SetupVersion) else None
+        migrations = applicable_migrations(source_root, version)
+    except (OSError, ValueError) as error:
+        return [Finding(
+            'setup-required', 'SmartKit project setup',
+            f'cannot establish the project migration baseline: {error}',
+            'Preserve the configuration and ownership evidence; resolve the reported issue '
+            'through setup-project-agents before ordinary project work.',
+        )]
+    if version is not None and not migrations:
+        return []
+    reason = (
+        'initialized project has no successful setup version'
+        if version is None else
+        f'project setup {version} requires migrations for ' + ', '.join(item.version for item in migrations)
+    )
+    guides = ', '.join(item.guide for item in migrations)
+    return [Finding(
+        'setup-required', 'SmartKit project setup', reason,
+        'Run a full setup-project-agents invocation to apply all required migrations. '
+        + (f'Guides: {guides}.' if guides else ''),
+    )]
+
+
 def _project_cache_key(project_root: Path) -> str:
     resolved = project_root.resolve()
     normalized = os.path.normcase(str(resolved))
@@ -1424,6 +1459,7 @@ def run_hook(
                         project_root,
                     ),
                     *check_mcp_readiness(harness, project_root, mcp_registry_path),
+                    *check_setup_migrations(project_root),
                 ]
             findings = tuple(findings_list)
             if not findings:
@@ -1535,6 +1571,24 @@ def render_hook_result(
 ) -> str:
     findings = render_findings(result.findings)
     rendered = findings
+    if any(finding.code == 'setup-required' for finding in result.findings):
+        message = (
+            f'{rendered}\n[smartkit] Pause ordinary project work until the required project '
+            'setup is resolved. Explain the missing baseline or applicable migration and '
+            'offer setup-project-agents. Continue an already authorized setup or repair task; '
+            'this finding does not block its own remedy. Preserve unresolved evidence. '
+            'A version mismatch alone is not a migration requirement.'
+        )
+        if harness in {'codex', 'qoder'}:
+            return json.dumps({
+                'continue': True, 'systemMessage': message,
+                'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': message},
+            })
+        if harness == 'cursor':
+            return json.dumps({'additional_context': message}) if delivery == 'context' else json.dumps({
+                'continue': False, 'user_message': message,
+            })
+        return json.dumps({'additionalContext': message})
     if result.requires_user_prompt:
         if harness in {'codex', 'qoder'}:
             return json.dumps(

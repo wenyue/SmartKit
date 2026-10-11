@@ -17,7 +17,8 @@ def validate_rendered_state(rendered: RenderedState) -> None:
         format_name = format_for_path(relative)
         if format_name is not None:
             parse_document(content, format_name)
-        if path.endswith(('.md', '.mdc', '.toml')):
+        # Complete native documents retain project-owned prompt references, unlike generated wrappers.
+        if relative not in rendered.native_agent_paths and path.endswith(('.md', '.mdc', '.toml')):
             for reference in _REFERENCE.findall(content.decode()):
                 if reference not in files and reference not in preserved:
                     raise RenderError(f'wrapper reference is not rendered: {reference}')

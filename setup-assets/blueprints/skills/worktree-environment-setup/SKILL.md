@@ -32,6 +32,19 @@ shapes, fixed waits, and setup-authoring mechanics. Provisioning, worktree lifec
 completed-change verification, implementation, history, integration, cleanup, and Agent
 synchronization are non-goals; `change-set-verification` owns completed-change verification.
 
+## Refresh focus
+
+Preserve accepted root-identity checks, Git protection, effect boundaries, recovery, and readiness
+meaning while they remain valid. Revisit the current dependency manifests, lock files, setup
+entry points, required generated outputs, and service readiness owners when the environment
+changes. A new preparation command should update its owner lookup and effects without weakening
+the surrounding preservation contract.
+
+Explain which evidence distinguishes an already-ready worktree from one needing preparation,
+and which failed condition prevents readiness. Keep working project-specific optional branches
+and reasons, refresh obsolete preparation facts in place, and remove superseded recipes instead
+of accumulating alternatives. Retain unchanged complete content where current evidence supports it.
+
 ## Environment contract
 
 ### Identity and preservation

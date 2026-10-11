@@ -38,6 +38,19 @@ delivery, exposure, and validation policy. Keep recommendations specific to supp
 package tours, cached layouts, generic layering, speculative architecture, and setup or authoring
 procedures do not belong in this Rule.
 
+## Refresh focus
+
+Revisit callers, consumers, dependency boundaries, and canonical navigation entries when project
+structure changes. Use concrete relationships from representative implementation and tests to
+explain where new behavior belongs and when sharing is justified. A directory move can require a
+new pointer without changing the underlying responsibility or placement principle.
+
+Preserve accepted rankings and their reasons while their evidence remains valid; revise a ranking
+when changed responsibilities, consumers, or accepted architectural decisions invalidate it.
+Retain project additions that still describe supported choices. Keep the result a decision guide,
+updating affected facts without turning each refresh into a directory inventory or a restatement
+of unchanged guidance.
+
 ## Author boundary and result
 
 The Author may inspect target evidence, run owner-supported read-only or non-fixing checks, and

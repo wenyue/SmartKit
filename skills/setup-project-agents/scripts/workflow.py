@@ -11,13 +11,18 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Mapping, Sequence
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import bootstrap
 from agents_setup.external_contract import is_link_like as _is_link_like
 from agents_setup.markdown import live_headings
 from agents_setup.catalog import load_catalog
 from agents_setup.generation import generation_requests
+from agents_setup.migrations import SetupStatus, SetupVersion, applicable_migrations, project_setup_version
+from agents_setup.models import DesiredFile
+from agents_setup.planner import build_plan
+from agents_setup.project import confined_target
+from agents_setup.transaction import TransactionError, apply_plan
 from agents_setup.project_sync import ProjectSyncError, synchronize_project
 from agents_setup.ownership import OwnershipError, normalize_external_sources
 from agents_setup.project_rules import ProjectRuleSyncError, synchronize_project_rules
@@ -220,6 +225,7 @@ def _start(args: argparse.Namespace) -> int:
         forwarded = [
             'prepare', '--target', str(target),
             '--session', str(session),
+            '--completion-protocol', 'setup-version-v1',
         ]
         result = bootstrap.main(forwarded)
         if result != 0:
@@ -235,6 +241,9 @@ def _start(args: argparse.Namespace) -> int:
                 'pinned setup source did not request the complete current generated set; '
                 'update the source implementation before full setup'
             )
+        setup = project_setup_version(target, source)
+        setup_version = setup.version if isinstance(setup, SetupVersion) else None
+        migrations = () if setup is SetupStatus.UNINITIALIZED else applicable_migrations(source, setup_version)
         _emit({
             'phase': 'start',
             'session': str(session),
@@ -245,6 +254,11 @@ def _start(args: argparse.Namespace) -> int:
             'source_fingerprint': request.get('source_fingerprint'),
             'harnesses': request.get('harnesses'),
             'generation_requests': request.get('generation_requests'),
+            'setup_version': setup_version,
+            'target_setup_version': load_catalog(source).plugin_version,
+            'migrations': [
+                {'version': item.version, 'guide': item.guide} for item in migrations
+            ],
         })
         return 0
     except BaseException as error:
@@ -321,6 +335,7 @@ def _run_pinned(
         '--source-root', str(source),
         '--source-commit', commit,
         '--no-bootstrap',
+        '--completion-protocol', 'setup-version-v1',
         *extra_args,
     )
     try:
@@ -408,9 +423,27 @@ def _finish(args: argparse.Namespace) -> int:
         return 2
     try:
         request, target, source, commit = _request_context(session)
+        setup_version = load_catalog(source).plugin_version
         finish_result = _run_pinned(
             'finish', session=session, target=target, source=source, commit=commit
         )
+        config_relative = PurePosixPath('.agents/config.json')
+        config_path = confined_target(target, config_relative)
+        config_content = config_path.read_bytes()
+        if hashlib.sha256(config_content).hexdigest() != finish_result.get('setup_config_sha256'):
+            raise WorkflowError('project config changed after pinned finish')
+        config = json.loads(config_content)
+        if not isinstance(config, dict):
+            raise WorkflowError('project config must be a JSON object')
+        if config.get('setupVersion') == setup_version:
+            version_content = config_content
+        else:
+            config['setupVersion'] = setup_version
+            version_content = (json.dumps(config, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+        version_plan = build_plan(target, [DesiredFile(config_relative, version_content)])
+        config_preimage = version_plan.changes[0].expected
+        if config_preimage is None or config_preimage.content != config_content:
+            raise WorkflowError('project config changed during setup version planning')
         result = {
             'phase': 'finish',
             'source_commit': request.get('source_commit'),
@@ -427,8 +460,25 @@ def _finish(args: argparse.Namespace) -> int:
             'external_sources': finish_result.get('external_sources'),
             'preserved_paths': finish_result.get('preserved_paths'),
             'check': 'clean',
+            'setup_version': setup_version,
         }
         _remove_session(session)
+        # This success marker must remain old when either the pinned finish or cleanup fails.
+        def version_postcondition() -> None:
+            if confined_target(target, config_relative).read_bytes() != version_content:
+                raise WorkflowError('setup version commit did not converge')
+
+        try:
+            apply_plan(target, version_plan, postcondition=version_postcondition)
+        except TransactionError as error:
+            raise WorkflowError(
+                f'configuration applied but setup version commit failed: {error}; '
+                'preserve the target state and start a fresh full setup'
+            ) from error
+        if any(change.kind.value != 'unchanged' for change in version_plan.changes):
+            result['changed_paths'] = sorted({
+                *(result['changed_paths'] or []), config_relative.as_posix(),
+            })
         _emit(result)
         return 0
     except BaseException as error:

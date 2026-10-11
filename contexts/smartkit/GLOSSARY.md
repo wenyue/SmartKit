@@ -79,3 +79,12 @@ _Avoid_: Global daily check, per-check throttle, session throttle
 A typed, non-interactive static check set interpreted after the Daily Project Check Gate. Plugin MCP
 declares it explicitly; Project MCP derives it from command paths and environment-variable names.
 _Avoid_: MCP-specific Hook, arbitrary check script
+
+**Project Setup Version（项目设置版本）** :
+项目最近一次成功完成 setup 时使用的 SmartKit 发布版本，代表项目当前已完成的设置基线。
+_Avoid_: 当前安装的插件版本、独立配置版本号、上一次尝试的版本
+
+**Required Project Migration（必要项目迁移）** :
+因 SmartKit 改变项目 setup 的要求、生成结果或读取方式，受影响项目必须完成的设置更新。
+共享 Skill 更新和纯措辞修正本身不构成必要项目迁移。
+_Avoid_: 插件版本不一致、每次插件升级、完整发布日志

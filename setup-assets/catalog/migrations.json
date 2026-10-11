@@ -1,0 +1,8 @@
+{
+  "migrations": [
+    {
+      "version": "1.2.19",
+      "guide": "references/migrations.md#project-refresh-and-version-baseline"
+    }
+  ]
+}

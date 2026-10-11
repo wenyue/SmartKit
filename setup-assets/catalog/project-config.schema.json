@@ -4,6 +4,7 @@
   "additionalProperties": false,
   "properties": {
     "$schema": {"type": "string"},
+    "setupVersion": {"type": "string", "description": "SmartKit release used by the last successful full setup; written only by finish.", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},
     "skills": {
       "type": "array",
       "items": {
@@ -68,7 +69,8 @@
     "projectAgent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "source", "description", "harnesses"],
+      "required": ["id", "description", "harnesses"],
+      "anyOf": [{"required": ["source"]}, {"properties": {"harnesses": {"additionalProperties": {"required": ["native_source"]}}}}],
       "properties": {
         "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
         "source": {
@@ -92,8 +94,9 @@
     "codexAgent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sandbox_mode"],
+      "oneOf": [{"required": ["sandbox_mode"], "not": {"required": ["native_source"]}}, {"required": ["native_source"], "maxProperties": 1}],
       "properties": {
+        "native_source": {"type": "string", "pattern": "^\\.agents/agents/[a-z0-9][a-z0-9-]*\\.codex\\.toml$"},
         "model": {"type": "string", "minLength": 1},
         "model_reasoning_effort": {"type": "string", "minLength": 1},
         "sandbox_mode": {"type": "string", "minLength": 1}
@@ -102,8 +105,9 @@
     "cursorAgent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["readonly"],
+      "oneOf": [{"required": ["readonly"], "not": {"required": ["native_source"]}}, {"required": ["native_source"], "maxProperties": 1}],
       "properties": {
+        "native_source": {"type": "string", "pattern": "^\\.agents/agents/[a-z0-9][a-z0-9-]*\\.cursor\\.md$"},
         "model": {"type": "string", "minLength": 1},
         "readonly": {"type": "boolean"}
       }
@@ -111,8 +115,9 @@
     "copilotAgent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["disable_model_invocation"],
+      "oneOf": [{"required": ["disable_model_invocation"], "not": {"required": ["native_source"]}}, {"required": ["native_source"], "maxProperties": 1}],
       "properties": {
+        "native_source": {"type": "string", "pattern": "^\\.agents/agents/[a-z0-9][a-z0-9-]*\\.copilot\\.md$"},
         "model": {"type": "string", "minLength": 1},
         "disable_model_invocation": {"type": "boolean"}
       }
@@ -120,7 +125,9 @@
     "qoderAgent": {
       "type": "object",
       "additionalProperties": false,
+      "oneOf": [{"not": {"required": ["native_source"]}}, {"required": ["native_source"], "maxProperties": 1}],
       "properties": {
+        "native_source": {"type": "string", "pattern": "^\\.agents/agents/[a-z0-9][a-z0-9-]*\\.qoder\\.md$"},
         "model": {"type": "string", "minLength": 1}
       }
     },

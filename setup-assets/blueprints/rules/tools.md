@@ -31,6 +31,18 @@ placement policy with their existing owners. Scripts retain deterministic mechan
 procedures. Include live-owner facts only when their omission changes a policy outcome, leaving
 inventories, command catalogs, snapshots, and setup mechanics to those owners.
 
+## Refresh focus
+
+Recheck runtime requirements, tool entry points, generator ownership, and CI selectors on each
+refresh. Follow the current manifests, script help, and CI jobs to determine which changes need
+synchronization or verification. Correct changed facts promptly, even when this blueprint is
+unchanged; preserve project-specific conditions and permission boundaries that still apply.
+
+Emphasize decisions a contributor needs before running a tool: the correct root, affected inputs
+and outputs, the supported check, and the action required by its result. Keep stable policy wording
+when its meaning remains accurate. Replace outdated mappings instead of appending another competing
+recipe, and retain an unchanged complete Rule when the evidence warrants no correction.
+
 ## Author boundary and result
 
 The Author may inspect target evidence, run owner-supported read-only or non-fixing checks, and

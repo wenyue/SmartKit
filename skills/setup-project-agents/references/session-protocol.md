@@ -26,6 +26,12 @@ Git-history changes or unrelated target writes. If the canonical fetch is unavai
 use the validated installed plugin root and reports `source_commit: null`. Configured external
 sources still need their own network authority.
 
+Before preparation or target mutation, the selected source requires the public launcher to declare
+support for the completion protocol: private-session cleanup followed by the final `setupVersion`
+commit. Fetching a newer source does not upgrade the launcher that owns those steps. If the source
+rejects launcher compatibility, end this invocation, update the installed SmartKit plugin and start
+a fresh setup invocation.
+
 Scripts validate external source declarations, licenses, Skill trees, names, destination collisions
 and recorded tag stability before target mutation. If `start` rejects input or a source, correct the
 reported cause within accepted authority and begin a fresh invocation.
@@ -53,8 +59,9 @@ root, null commit and fingerprint. Keep this source and request immutable throug
 ### Distinguish frozen setup evidence from unrelated work
 
 The target fingerprint covers evidence setup consumes: project setup config, ownership and managed
-assets, generated destinations, project Rule and rule-led Skill metadata, project Agent sources and
-touched native host configuration. Git history/index state, caches, logs and other project-owned
+assets, generated destinations, project Rule and rule-led Skill metadata, project Agent sources,
+native Agent discovery membership and definition content, and touched native host configuration.
+Git history/index state, caches, logs and other project-owned
 work are outside that boundary.
 
 Any change after `start` inside the frozen setup-relevant surface ends the session, even when a
@@ -74,12 +81,15 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
 Finish validates complete outputs, frozen evidence, ownership and plan, then applies the plan and
-clean postcondition within one rollback boundary. Keep exclusive access to every planned target
+clean postcondition within one rollback boundary. The public workflow then removes the private
+session and atomically commits `setupVersion` as the final success marker. This final guarded write
+preserves every other project configuration value; it refuses concurrent config drift. Local
+synchronization does not perform that write. Keep exclusive access to every planned target
 path through completion or failure handling. A filesystem check cannot prevent an uncooperative
 writer from being overwritten between the check and mutation.
 
 Success requires exit 0 and JSON containing `phase: finish` and `check: clean`, with the private
-session removed as the completed transaction. Use the complete result; target convergence alone
+session removed and the source release recorded as the successful setup version. Use the complete result; target convergence alone
 cannot establish successful session cleanup.
 
 ## Stop and recover
@@ -108,3 +118,9 @@ Never reuse, finish or cancel such a residual session. Keep its remaining claim 
 as failure evidence, and report the target and exact session path. Resolve the original cause and
 any verified workflow-owned residue under appropriate recovery authority before a fresh session.
 Limit cleanup to that verified residue.
+
+If private-session cleanup fails after configuration convergence, the previous `setupVersion` remains.
+If its final version commit fails, configuration may already be updated and the session removed, but
+the version commit retains or restores the previous baseline under the transaction's guards. Report
+that failed outcome and any rollback failure; preserve conflicting third-party changes. Resolve the
+cause and use a fresh full session. Do not claim the earlier configuration transaction rolled back.

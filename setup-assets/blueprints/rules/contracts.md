@@ -45,6 +45,18 @@ verification procedures. The structure owner retains placement advice. Include l
 only when their omission changes policy; inventories, implementation recipes, and generic
 architecture guidance add no contract meaning.
 
+## Refresh focus
+
+Treat accepted project contracts and their reasons as durable. Recheck their current owners in API
+and schema definitions, behavioral tests, delivery boundaries, and accepted architectural decisions.
+Change the Rule when those sources establish a changed obligation, supported exception, ownership
+boundary, or compatibility decision; a new wording preference alone does not warrant rewriting it.
+
+Concentrate on consequential included and excluded cases, such as whether a change preserves a
+consumer contract or requires a migration. Preserve still-valid project additions and exceptions.
+When an obligation changes, replace its affected definition and reconcile neighboring references
+instead of keeping both versions. With unchanged meaning, retain the complete existing Rule.
+
 ## Author boundary and result
 
 The Author may inspect target evidence, run owner-supported read-only or non-fixing checks, and

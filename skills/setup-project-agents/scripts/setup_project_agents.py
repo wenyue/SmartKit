@@ -9,6 +9,7 @@ import stat
 import sys
 import tempfile
 from collections.abc import Mapping, Sequence
+from dataclasses import asdict
 from pathlib import Path, PurePosixPath
 
 from agents_setup.catalog import (
@@ -25,7 +26,7 @@ from agents_setup.external import ExternalSkillError, snapshot_external_skills
 from agents_setup.external_contract import (
     is_link_like as _is_link_like,
 )
-from agents_setup.models import Catalog, ChangeKind, Harness, Plan, ProjectConfig
+from agents_setup.models import Catalog, ChangeKind, Harness, NativeAgentConfig, Plan, ProjectConfig
 from agents_setup.ownership import (
     OWNERSHIP_PATH,
     OwnershipError,
@@ -39,6 +40,7 @@ from agents_setup.project_rules import validate_project_rule_index
 from agents_setup.skill_registry import load_skill_registry
 from agents_setup.source import InvalidFetchedSource, validate_source
 from agents_setup.transaction import TransactionError, apply_plan
+from agents_setup.migrations import load_migrations
 from agents_setup.validation import validate_rendered_state
 
 
@@ -209,32 +211,16 @@ def _request(
         'project_agents': [
             {
                 'id': agent.id,
-                'source': agent.source.as_posix(),
+                **({'source': agent.source.as_posix()} if agent.source is not None else {}),
                 'description': agent.description,
                 'harnesses': {
-                    **({
-                        'codex': {
-                            **({'model': agent.codex.model} if agent.codex.model else {}),
-                            **({
-                                'model_reasoning_effort':
-                                agent.codex.model_reasoning_effort
-                            } if agent.codex.model_reasoning_effort else {}),
-                            'sandbox_mode': agent.codex.sandbox_mode,
-                        }
-                    } if agent.codex is not None else {}),
-                    **({
-                        'cursor': {
-                            **({'model': agent.cursor.model} if agent.cursor.model else {}),
-                            'readonly': agent.cursor.readonly,
-                        }
-                    } if agent.cursor is not None else {}),
-                    **({
-                        'copilot': {
-                            **({'model': agent.copilot.model} if agent.copilot.model else {}),
-                            'disable_model_invocation':
-                            agent.copilot.disable_model_invocation,
-                        }
-                    } if agent.copilot is not None else {}),
+                    host: ({'native_source': value.native_source.as_posix()}
+                           if isinstance(value, NativeAgentConfig) else
+                           {key: item for key, item in asdict(value).items() if item is not None})
+                    for host, value in (
+                        ('codex', agent.codex), ('cursor', agent.cursor),
+                        ('copilot', agent.copilot), ('qoder', agent.qoder),
+                    ) if value is not None
                 },
             }
             for agent in config.agents
@@ -607,7 +593,8 @@ def _target_evidence_paths(
                 add(relative / 'SKILL.md', content=child.name.startswith('rule-'))
 
     for agent in config.agents:
-        add(agent.source)
+        for source_path in agent.source_paths:
+            add(source_path)
         if agent.codex is not None:
             add(PurePosixPath('.codex/agents') / f'{agent.id}.toml')
         if agent.cursor is not None:
@@ -616,6 +603,27 @@ def _target_evidence_paths(
             add(PurePosixPath('.github/agents') / f'{agent.id}.agent.md')
         if agent.qoder is not None:
             add(PurePosixPath('.qoder/agents') / f'{agent.id}.md')
+    # Full setup consumes undeclared native Agents too; freeze their discovery surface.
+    for directory, suffix in (
+        ('.codex/agents', '.toml'), ('.cursor/agents', '.md'),
+        ('.github/agents', '.agent.md'), ('.qoder/agents', '.md'),
+    ):
+        relative_root = PurePosixPath(directory)
+        add(relative_root, content=False)
+        native_root = root.joinpath(*relative_root.parts)
+        if _target_link_boundary(root, relative_root) is not None or not native_root.is_dir():
+            continue
+        for parent, directories, files in os.walk(native_root, followlinks=False):
+            parent_path = Path(parent)
+            for name in tuple(directories):
+                child = parent_path / name
+                if _is_link_like(child):
+                    add(PurePosixPath(child.relative_to(root).as_posix()), content=False)
+                    directories.remove(name)
+            for name in files:
+                child = parent_path / name
+                if name.endswith(suffix) or _is_link_like(child):
+                    add(PurePosixPath(child.relative_to(root).as_posix()))
     for skill in config.external_skills:
         _add_target_tree(
             root,
@@ -744,6 +752,7 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
             'setup-assets/catalog/assets.json',
             'setup-assets/catalog/harnesses.json',
             'setup-assets/catalog/project-config.schema.json',
+            'setup-assets/catalog/migrations.json',
         )
     }
     paths.update(
@@ -819,11 +828,13 @@ def _emit_result(
     external_skills: Sequence[str],
     external_sources: Sequence[Mapping[str, object]],
     preserved_paths: Sequence[str],
+    setup_config_sha256: str,
 ) -> None:
     print(json.dumps({
         'phase': phase,
         'source_commit': source_commit,
         'changed_paths': sorted(changed_paths),
+        'setup_config_sha256': setup_config_sha256,
         'harnesses': list(harnesses),
         'external_skills': sorted(external_skills),
         'external_sources': list(external_sources),
@@ -847,6 +858,8 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument('--source-root', type=Path, required=True)
         command.add_argument('--source-commit', required=True)
         command.add_argument('--no-bootstrap', action='store_true', required=True)
+        command.add_argument('--completion-protocol',
+                             help='Completion contract implemented by the calling public workflow.')
         if phase == 'register':
             command.add_argument('--request-id', required=True)
             command.add_argument('--output', action='append', required=True)
@@ -855,6 +868,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None) -> None:
     catalog = load_catalog(args.source_root)
+    load_migrations(args.source_root)
     source_fingerprint = _source_fingerprint(args.source_root, catalog)
     project, target_fingerprint = _stable_target_observation(
         args.target,
@@ -1055,6 +1069,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     except SystemExit as error:
         return int(error.code)
     try:
+        # The installed launcher owns cleanup and the final version write, even with a newer source.
+        if args.completion_protocol != 'setup-version-v1':
+            raise SetupError(
+                'setup source requires a launcher that records the successful setup version; '
+                'update the installed SmartKit plugin and start a fresh setup invocation'
+            )
         session = _private_session(args.session)
         validate_source(args.source_root)
         source_commit = normalize_source_commit(args.source_commit)
@@ -1142,6 +1162,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             phase=args.phase,
             source_commit=source_commit,
             changed_paths=changed_paths,
+            setup_config_sha256=hashlib.sha256((target / '.agents/config.json').read_bytes()).hexdigest(),
             **result_context,
         )
         return 0

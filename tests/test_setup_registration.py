@@ -30,7 +30,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
         self.arguments = [
             '--target', str(self.target), '--session', str(session),
-            '--source-root', str(REPO_ROOT), '--source-commit', 'offline', '--no-bootstrap',
+            '--source-root', str(REPO_ROOT), '--source-commit', 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
         ]
         self.assertEqual(setup.main(['prepare', *self.arguments]), 0)
         request_path = session / 'request.json'

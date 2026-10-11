@@ -1750,5 +1750,44 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
         executor.assert_not_called()
 
 
+class SetupMigrationHookTest(unittest.TestCase):
+    def setUp(self):
+        self.checker = load_checker()
+
+    def test_uninitialized_is_allowed_missing_version_and_required_migration_are_blocked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.assertEqual(self.checker.check_setup_migrations(target), [])
+            folder = target / '.agents'
+            folder.mkdir()
+            (folder / 'smartkit.lock.json').write_text('{"sources":[],"assets":[]}', encoding='utf-8')
+            self.assertEqual(self.checker.check_setup_migrations(target)[0].code, 'setup-required')
+            (folder / 'config.json').write_text('{"setupVersion":"1.0.0"}', encoding='utf-8')
+            self.assertEqual(self.checker.check_setup_migrations(target)[0].code, 'setup-required')
+            (folder / 'config.json').write_text('{"setupVersion":"9.0.0"}', encoding='utf-8')
+            self.assertEqual(self.checker.check_setup_migrations(target), [])
+
+    def test_unknown_ownership_is_preserved_and_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            folder = target / '.agents'
+            folder.mkdir()
+            lock = folder / 'smartkit.lock.json'
+            lock.write_bytes(b'{"unknown": true}')
+            result = self.checker.check_setup_migrations(target)
+            self.assertEqual(result[0].code, 'setup-required')
+            self.assertEqual(lock.read_bytes(), b'{"unknown": true}')
+
+    def test_required_setup_notice_allows_its_remedy_without_decline_bypass(self):
+        finding = self.checker.Finding('setup-required', 'SmartKit project setup', 'missing version', 'Run setup')
+        result = self.checker.HookResult(True, (finding,))
+        for host in ('codex', 'cursor', 'copilot', 'qoder'):
+            with self.subTest(host=host):
+                output = self.checker.render_hook_result(result, host, delivery='context')
+                self.assertIn('Pause ordinary project work', output)
+                self.assertIn('already authorized setup or repair task', output)
+                self.assertNotIn('declines all listed', output)
+
+
 if __name__ == '__main__':
     unittest.main()

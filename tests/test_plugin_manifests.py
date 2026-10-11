@@ -247,6 +247,7 @@ class PluginManifestTest(unittest.TestCase):
         private_root = REPO_ROOT / '.agents' / 'skills'
         private_names = {
             'translate-agent-artifacts',
+            'upgrade-smartkit',
             'upgrade-third-party-skills',
             'write-setup-authoring-blueprints',
             'write-shared-rules-and-skills',

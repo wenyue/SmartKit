@@ -126,6 +126,30 @@ class SetupWorkflowTest(unittest.TestCase):
 
         self.assertEqual(result, 2)
 
+    def test_legacy_launcher_prepare_is_refused_and_its_session_is_cleaned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'target'
+            self.write_matt_context(target)
+            before = {p.relative_to(target): p.read_bytes() for p in target.rglob('*') if p.is_file()}
+            session = workflow._create_session()
+            self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
+            bootstrap_main = bootstrap.main
+
+            def legacy_prepare(arguments):
+                index = arguments.index('--completion-protocol')
+                return bootstrap_main(arguments[:index] + arguments[index + 2:])
+
+            error = StringIO()
+            with mock.patch.object(workflow, '_create_session', return_value=session), \
+                 mock.patch.object(bootstrap, 'fetch_canonical', side_effect=bootstrap.SourceUnavailable('offline')), \
+                 mock.patch.object(bootstrap, 'main', side_effect=legacy_prepare), \
+                 redirect_stdout(StringIO()), redirect_stderr(error):
+                self.assertEqual(workflow.main(['start', '--target', str(target)]), 2)
+            self.assertFalse(session.exists())
+            self.assertEqual(
+                {p.relative_to(target): p.read_bytes() for p in target.rglob('*') if p.is_file()}, before,
+            )
+
     def test_start_requires_matt_context_before_creating_session(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / 'target'
@@ -692,6 +716,115 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(finish['external_sources'], [])
             self.assertFalse(session.exists())
             self.assertTrue((target / 'AGENTS.md').is_file())
+
+
+class SetupVersionCommitTest(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.target = Path(self.temporary.name)
+        self.config = self.target / '.agents/config.json'
+        self.config.parent.mkdir()
+        self.config.write_text('{"setupVersion":"1.0.0","agents":[],"mcp":[]}\n', encoding='utf-8')
+        self.before = self.config.read_bytes()
+        self.session = workflow._create_session()
+        self.addCleanup(lambda: shutil.rmtree(self.session) if self.session.exists() else None)
+        self.request = {'source_commit': None, 'source_root': str(REPO_ROOT), 'harnesses': []}
+
+    def pinned_result(self, *args, **kwargs):
+        import hashlib
+        return {'changed_paths': [], 'external_skills': [], 'external_sources': [],
+                'preserved_paths': [],
+                'setup_config_sha256': hashlib.sha256(self.config.read_bytes()).hexdigest()}
+
+    def run_finish(self, *, pinned=None, cleanup=None, commit=None):
+        from contextlib import ExitStack
+        output, error = StringIO(), StringIO()
+        with ExitStack() as stack:
+            stack.enter_context(mock.patch.object(workflow, '_request_context', return_value=(
+                self.request, self.target, REPO_ROOT, 'offline')))
+            stack.enter_context(mock.patch.object(workflow, '_run_pinned', side_effect=pinned or self.pinned_result))
+            if cleanup is not None:
+                stack.enter_context(mock.patch.object(workflow, '_remove_session', side_effect=cleanup))
+            if commit is not None:
+                stack.enter_context(mock.patch.object(workflow, 'apply_plan', side_effect=commit))
+            stack.enter_context(redirect_stdout(output))
+            stack.enter_context(redirect_stderr(error))
+            status = workflow.main(['finish', '--session', str(self.session)])
+        return status, output.getvalue(), error.getvalue()
+
+    def test_success_commits_only_version_after_cleanup_and_repeat_keeps_exact_bytes(self):
+        status, output, _ = self.run_finish()
+        self.assertEqual(status, 0)
+        version = workflow.load_catalog(REPO_ROOT).plugin_version
+        self.assertEqual(json.loads(self.config.read_bytes()), {'setupVersion': version, 'agents': [], 'mcp': []})
+        self.assertEqual(json.loads(output)['setup_version'], version)
+        self.assertFalse(self.session.exists())
+        before = self.config.read_bytes()
+        modified = self.config.stat().st_mtime_ns
+        self.session = workflow._create_session()
+        status, output, _ = self.run_finish()
+        self.assertEqual(status, 0)
+        self.assertEqual(self.config.read_bytes(), before)
+        self.assertEqual(self.config.stat().st_mtime_ns, modified)
+        self.assertNotIn('.agents/config.json', json.loads(output)['changed_paths'])
+
+    def test_cleanup_failure_preserves_version(self):
+        status, _, error = self.run_finish(cleanup=OSError('cleanup fault'))
+        self.assertEqual(status, 2)
+        self.assertEqual(self.config.read_bytes(), self.before)
+        self.assertIn('cleanup fault', error)
+
+    def test_version_commit_failure_preserves_version_and_reports_partial_configuration(self):
+        status, _, error = self.run_finish(commit=workflow.TransactionError(OSError('commit fault')))
+        self.assertEqual(status, 2)
+        self.assertEqual(self.config.read_bytes(), self.before)
+        self.assertIn('configuration applied but setup version commit failed', error)
+        self.assertFalse(self.session.exists())
+
+    def test_config_change_during_cleanup_is_preserved_and_refuses_version_commit(self):
+        remove = workflow._remove_session
+        external = b'{"setupVersion":"1.0.0","agents":[],"mcp":[],"$schema":"external"}\n'
+        def cleanup(session):
+            remove(session)
+            self.config.write_bytes(external)
+        status, _, error = self.run_finish(cleanup=cleanup)
+        self.assertEqual(status, 2)
+        self.assertEqual(self.config.read_bytes(), external)
+        self.assertIn('setup version commit failed', error)
+
+    def test_config_change_after_pinned_receipt_is_detected(self):
+        def pinned(*args, **kwargs):
+            result = self.pinned_result()
+            self.config.write_bytes(self.before + b' ')
+            return result
+        status, _, error = self.run_finish(pinned=pinned)
+        self.assertEqual(status, 2)
+        self.assertEqual(self.config.read_bytes(), self.before + b' ')
+        self.assertIn('changed after pinned finish', error)
+
+    def test_version_plan_refuses_a_new_config_preimage(self):
+        build = workflow.build_plan
+        external = b'{"setupVersion":"1.0.0","agents":[],"$schema":"external-edit"}\n'
+        def changed(*args, **kwargs):
+            self.config.write_bytes(external)
+            return build(*args, **kwargs)
+        with mock.patch.object(workflow, 'build_plan', side_effect=changed):
+            status, _, error = self.run_finish()
+        self.assertEqual(status, 2)
+        self.assertEqual(self.config.read_bytes(), external)
+        self.assertIn('changed during setup version planning', error)
+
+    def test_version_plan_refuses_config_removed_after_receipt(self):
+        build = workflow.build_plan
+        def removed(*args, **kwargs):
+            self.config.unlink()
+            return build(*args, **kwargs)
+        with mock.patch.object(workflow, 'build_plan', side_effect=removed):
+            status, _, error = self.run_finish()
+        self.assertEqual(status, 2)
+        self.assertFalse(self.config.exists())
+        self.assertIn('changed during setup version planning', error)
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@ class SetupCliTest(unittest.TestCase):
         return [
             '--source-root', str(REPO_ROOT),
             '--source-commit', self.source_commit,
-            '--no-bootstrap',
+            '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
         ]
 
     def private_session(self, root: Path) -> Path:
@@ -143,6 +143,40 @@ class SetupCliTest(unittest.TestCase):
 
             self.assertEqual(result, 2)
             self.assertEqual(self.snapshot_tree(target), {})
+
+    def test_legacy_or_unknown_completion_protocol_cannot_prepare_or_apply(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            target.mkdir()
+            (target / 'keep.txt').write_bytes(b'project data')
+            session = self.private_session(root)
+            source_args = self.source_args()
+            capability = source_args.index('--completion-protocol')
+            legacy_args = source_args[:capability] + source_args[capability + 2:]
+            before = self.snapshot_tree(target)
+
+            def refuse(phase):
+                for extra in ([], ['--completion-protocol', 'unknown']):
+                    with self.subTest(phase=phase, extra=extra), redirect_stderr(StringIO()) as error:
+                        status = setup_project_agents.main([
+                            phase, '--target', str(target), '--session', str(session),
+                            *legacy_args, *extra,
+                        ])
+                    self.assertEqual(status, 2)
+                    self.assertIn('update the installed SmartKit plugin', error.getvalue())
+                    self.assertEqual(self.snapshot_tree(target), before)
+
+            refuse('prepare')
+            self.assertFalse((session / 'request.json').exists())
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            refuse('finish')
+            with redirect_stdout(StringIO()):
+                self.assertEqual(setup_project_agents.main([
+                    'finish', '--target', str(target), '--session', str(session), *source_args,
+                ]), 0)
+            self.assertTrue((target / '.agents/smartkit.lock.json').exists())
 
     def test_prepare_rejects_removed_platform_option(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -435,7 +469,7 @@ class SetupCliTest(unittest.TestCase):
             target.mkdir()
             source_args = [
                 '--source-root', str(source), '--source-commit', self.source_commit,
-                '--no-bootstrap',
+                '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
             ]
 
             def sync():
@@ -517,7 +551,7 @@ class SetupCliTest(unittest.TestCase):
             source_args = [
                 '--source-root', str(source),
                 '--source-commit', self.source_commit,
-                '--no-bootstrap',
+                '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
             ]
             self.assertEqual(
                 setup_project_agents.main([
@@ -561,14 +595,102 @@ class SetupCliTest(unittest.TestCase):
             )
             catalog = setup_project_agents.load_catalog(source)
             baseline = setup_project_agents._source_fingerprint(source, catalog)
-            contract = source / 'skills/write-rules-and-skills/SKILL.md'
+            for relative in (
+                'skills/write-rules-and-skills/SKILL.md',
+                'setup-assets/catalog/migrations.json',
+                'skills/setup-project-agents/scripts/adopt_project_agents.py',
+            ):
+                with self.subTest(relative=relative):
+                    contract = source / relative
+                    original = contract.read_bytes()
+                    contract.write_bytes(original + b'\n')
+                    self.assertNotEqual(
+                        setup_project_agents._source_fingerprint(source, catalog), baseline,
+                    )
+                    contract.write_bytes(original)
 
-            contract.write_bytes(contract.read_bytes() + b'\n')
-
-            self.assertNotEqual(
-                setup_project_agents._source_fingerprint(source, catalog),
-                baseline,
+    def test_native_agent_source_is_frozen_and_round_trips_through_request(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir)
+            source = target / '.agents/agents/local.qoder.md'
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b'---\nmodel: current\n---\nPrompt\n')
+            (target / '.agents/config.json').write_text(json.dumps({'agents': [{
+                'id': 'local', 'description': 'Local agent', 'harnesses': {
+                    'qoder': {'native_source': '.agents/agents/local.qoder.md'},
+                },
+            }]}), encoding='utf-8')
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            config = setup_project_agents.inspect_project(target, catalog=catalog).config
+            before = setup_project_agents._target_fingerprint(
+                target, source_root=REPO_ROOT, catalog=catalog, config=config,
             )
+            request = setup_project_agents._request(
+                None, config, catalog, target=target, source_root=REPO_ROOT,
+                source_fingerprint='a' * 64, external_snapshot_sha256=None,
+                target_fingerprint=before,
+            )
+            restored = setup_project_agents._request_config(
+                request, None, target=target, source_root=REPO_ROOT, catalog=catalog,
+            )
+            self.assertEqual(config, restored)
+            source.write_bytes(source.read_bytes() + b'Changed prompt\n')
+            self.assertNotEqual(before, setup_project_agents._target_fingerprint(
+                target, source_root=REPO_ROOT, catalog=catalog, config=config,
+            ))
+
+    def test_native_agent_inventory_freezes_addition_content_deletion_and_moves(self):
+        for directory, suffix in (
+            ('.codex/agents', '.toml'), ('.cursor/agents', '.md'),
+            ('.github/agents', '.agent.md'), ('.qoder/agents', '.md'),
+        ):
+            with self.subTest(directory=directory), tempfile.TemporaryDirectory() as temporary:
+                target = Path(temporary)
+                native = target / directory
+                native.mkdir(parents=True)
+                catalog = setup_project_agents.load_catalog(REPO_ROOT)
+                config = setup_project_agents.inspect_project(target, catalog=catalog).config
+                def fingerprint():
+                    return setup_project_agents._target_fingerprint(
+                        target, source_root=REPO_ROOT, catalog=catalog, config=config,
+                    )
+                baseline = fingerprint()
+                (native / 'unrelated.log').write_bytes(b'unrelated work')
+                self.assertEqual(fingerprint(), baseline)
+                agent = native / f'new-custom{suffix}'
+                agent.write_bytes(b'custom Agent content')
+                added = fingerprint()
+                self.assertNotEqual(added, baseline)
+                agent.write_bytes(b'changed custom Agent content')
+                self.assertNotEqual(fingerprint(), added)
+                agent.unlink()
+                self.assertEqual(fingerprint(), baseline)
+                agent.write_bytes(b'custom Agent content')
+                moved = native / 'nested' / agent.name
+                moved.parent.mkdir()
+                agent.rename(moved)
+                self.assertNotEqual(fingerprint(), added)
+
+    def test_finish_refuses_an_undeclared_native_agent_added_after_prepare(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            native = target / '.cursor/agents'
+            native.mkdir(parents=True)
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            self.write_generated_outputs(session)
+            (native / 'new-custom.md').write_bytes(b'---\nname: new-custom\n---\nPrompt\n')
+            before = self.snapshot_tree(target)
+            error = StringIO()
+            with redirect_stderr(error):
+                status = setup_project_agents.main([
+                    'finish', '--target', str(target), '--session', str(session),
+                    *self.source_args(),
+                ])
+            self.assertEqual(status, 2)
+            self.assertIn('target changed', error.getvalue())
+            self.assertEqual(self.snapshot_tree(target), before)
 
     def test_finish_installs_only_exactly_declared_generated_skill_resources(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1105,8 +1227,12 @@ class SetupCliTest(unittest.TestCase):
                 {
                     'phase', 'source_commit', 'changed_paths', 'harnesses',
                     'external_skills', 'external_sources', 'preserved_paths',
+                    'setup_config_sha256',
                 },
             )
+            self.assertEqual(finish_result['setup_config_sha256'], hashlib.sha256(
+                (target / '.agents/config.json').read_bytes()
+            ).hexdigest())
 
     def test_finish_rolls_back_when_post_apply_validation_fails(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1342,6 +1468,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(
                 bootstrap.main([
                     'prepare', '--target', str(target), '--session', str(session),
+                    '--completion-protocol', 'setup-version-v1',
                 ]),
                 0,
             )
@@ -1355,7 +1482,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 str(source_root / 'skills/setup-project-agents/scripts/setup_project_agents.py'),
                 'finish', '--target', str(target), '--session', str(session),
                 '--source-root', str(source_root),
-                '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap',
+                '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
             ),
             check=False,
             stdout=subprocess.PIPE,
@@ -1370,7 +1497,7 @@ class SetupEndToEndTest(unittest.TestCase):
         return setup_project_agents.main([
             'finish', '--target', str(target), '--session', str(session),
             '--source-root', request['source_root'],
-            '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap',
+            '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
         ])
 
     def test_remote_master_upgrade_is_idempotent_and_keeps_setup_control_plane_out_of_snapshot(self):
@@ -1465,6 +1592,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 self.assertEqual(
                     bootstrap.main([
                         'prepare', '--target', str(offline_target), '--session', str(offline_session),
+                        '--completion-protocol', 'setup-version-v1',
                     ]),
                     0,
                 )
@@ -1476,7 +1604,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(target), '--session', str(baseline_session),
                 '--source-root', str(source),
-                '--source-commit', 'a' * 40, '--no-bootstrap',
+                '--source-commit', 'a' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
             ]), 0)
             self.write_generated_outputs(baseline_session)
             self.assertEqual(self.finish_pinned(target, baseline_session)[0], 0)
@@ -1491,7 +1619,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(collision_target), '--session', str(collision_session),
                 '--source-root', str(source),
-                '--source-commit', 'a' * 40, '--no-bootstrap',
+                '--source-commit', 'a' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
             ]), 0)
             self.write_generated_outputs(collision_session)
             self.assertEqual(self.finish_pinned(collision_target, collision_session)[0], 2)
@@ -1518,7 +1646,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(target), '--session', str(rollback_session),
                 '--source-root', str(source),
-                '--source-commit', 'b' * 40, '--no-bootstrap',
+                '--source-commit', 'b' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
             ]), 0)
             self.write_generated_outputs(rollback_session)
             before_rollback = self.snapshot_tree(target)

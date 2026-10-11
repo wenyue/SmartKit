@@ -13,7 +13,7 @@ Source authoring alone neither requires nor authorizes downstream generation, de
 installation.
 
 Changes to setup must preserve the ownership and conflict boundaries defined in
-[Setup Project Agents](../../skills/setup-project-agents/SKILL.md#inputs-and-ownership).
+[Setup Project Agents](../../skills/setup-project-agents/SKILL.md).
 
 ## Retire Contracts as a Whole
 
@@ -21,6 +21,11 @@ When retiring a current contract, remove its implementation, documentation, test
 together. Retain or add compatibility only when an accepted current contract requires it.
 
 ## Maintain Documentation for Its Readers
+
+### Skill references
+
+Project Rules reference Skills through their `SKILL.md` entries, without links to internal sections.
+Let each Skill own the reading path to its supporting guidance.
 
 ### Root READMEs
 

@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 import sys
 from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from .catalog import safe_field_key
-from .models import Harness, McpServerSpec, McpTransport, OperatingSystem, ProjectAgentSpec, ProjectConfig
+from .models import Harness, McpServerSpec, McpTransport, NativeAgentConfig, OperatingSystem, ProjectAgentSpec, ProjectConfig
 from .project import ProjectError, confined_target
 from .structured import (
     StructuredConfigError, field_value, format_for_path as _format_for, parse_document,
@@ -75,17 +76,44 @@ def _project_agent_source(target_root: Path, agent: ProjectAgentSpec) -> Path:
     return source
 
 
+@dataclass(frozen=True)
+class RenderedProjectAgents:
+    sources: tuple[PurePosixPath, ...]
+    native_paths: tuple[PurePosixPath, ...]
+
+
 def _render_project_agents(
     files: dict[PurePosixPath, bytes],
     target_root: Path,
     config: ProjectConfig,
-) -> tuple[PurePosixPath, ...]:
+) -> RenderedProjectAgents:
     preserved: list[PurePosixPath] = []
+    native_paths: list[PurePosixPath] = []
     for agent in config.agents:
-        _project_agent_source(target_root, agent)
-        preserved.append(agent.source)
-        reference = agent.source.as_posix()
-        if agent.codex is not None:
+        reference = ''
+        if agent.source is not None:
+            _project_agent_source(target_root, agent)
+            preserved.append(agent.source)
+            reference = agent.source.as_posix()
+        for host, native_config, destination in (
+            ('codex', agent.codex, f'.codex/agents/{agent.id}.toml'),
+            ('cursor', agent.cursor, f'.cursor/agents/{agent.id}.md'),
+            ('copilot', agent.copilot, f'.github/agents/{agent.id}.agent.md'),
+            ('qoder', agent.qoder, f'.qoder/agents/{agent.id}.md'),
+        ):
+            if isinstance(native_config, NativeAgentConfig):
+                try:
+                    content = confined_target(target_root, native_config.native_source).read_bytes()
+                    if not content.decode('utf-8').strip():
+                        raise RenderError(f'project Agent native source is empty: {native_config.native_source}')
+                except (OSError, UnicodeDecodeError, ProjectError) as error:
+                    raise RenderError(f'cannot read {host} Agent native source: {native_config.native_source}') from error
+                if host == 'codex':
+                    parse_document(content, 'toml')
+                _copy_file(files, PurePosixPath(destination), content)
+                preserved.append(native_config.native_source)
+                native_paths.append(PurePosixPath(destination))
+        if agent.codex is not None and not isinstance(agent.codex, NativeAgentConfig):
             target = PurePosixPath('.codex/agents') / f'{agent.id}.toml'
             if target in files:
                 raise RenderError(
@@ -115,7 +143,7 @@ def _render_project_agents(
                 target,
                 ('\n'.join(lines) + '\n').encode(),
             )
-        if agent.cursor is not None:
+        if agent.cursor is not None and not isinstance(agent.cursor, NativeAgentConfig):
             lines = [
                 '---',
                 f'name: {_quoted(agent.id)}',
@@ -134,7 +162,7 @@ def _render_project_agents(
                 PurePosixPath('.cursor/agents') / f'{agent.id}.md',
                 ('\n'.join(lines) + '\n').encode(),
             )
-        if agent.copilot is not None:
+        if agent.copilot is not None and not isinstance(agent.copilot, NativeAgentConfig):
             lines = [
                 '---',
                 f'name: {_quoted(agent.id)}',
@@ -154,7 +182,7 @@ def _render_project_agents(
                 PurePosixPath('.github/agents') / f'{agent.id}.agent.md',
                 ('\n'.join(lines) + '\n').encode(),
             )
-        if agent.qoder is not None:
+        if agent.qoder is not None and not isinstance(agent.qoder, NativeAgentConfig):
             lines = [
                 '---',
                 f'name: {_quoted(agent.id)}',
@@ -172,7 +200,7 @@ def _render_project_agents(
                 PurePosixPath('.qoder/agents') / f'{agent.id}.md',
                 ('\n'.join(lines) + '\n').encode(),
             )
-    return tuple(preserved)
+    return RenderedProjectAgents(tuple(preserved), tuple(native_paths))
 
 
 def _remove_dotted_field(document: dict[str, object], key: str) -> bool:

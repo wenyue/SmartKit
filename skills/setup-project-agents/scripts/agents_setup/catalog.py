@@ -24,6 +24,7 @@ from .models import (
     ProjectAgentSpec,
     ProjectConfig,
     QoderAgentConfig,
+    NativeAgentConfig,
 )
 from .external_contract import (
     ExternalContractError,
@@ -53,7 +54,7 @@ _ASSET_FIELDS = frozenset({
 })
 _CATALOG_FIELDS = frozenset({'plugin', 'assets'})
 _PLUGIN_FIELDS = frozenset({'id', 'version', 'repository', 'ref'})
-_PROJECT_CONFIG_FIELDS = frozenset({'$schema', 'skills', 'mcp', 'agents'})
+_PROJECT_CONFIG_FIELDS = frozenset({'$schema', 'skills', 'mcp', 'agents', 'setupVersion'})
 _EXTERNAL_SOURCE_FIELDS = frozenset({'source', 'ref', 'include'})
 _MCP_SERVER_FIELDS = frozenset({
     'id', 'harnesses', 'command', 'args', 'cwd', 'env', 'url', 'overrides',
@@ -660,11 +661,9 @@ def parse_project_agents(value: object) -> tuple[ProjectAgentSpec, ...]:
         document = _object(item, label)
         _fields(document, _PROJECT_AGENT_FIELDS, label)
         agent_id = _name(_required(document, 'id', label), f'{label}.id')
-        source = safe_relative(
-            _required(document, 'source', label), f'{label}.source'
-        )
+        source = safe_relative(document['source'], f'{label}.source') if 'source' in document else None
         expected_source = PurePosixPath('.agents/agents') / f'{agent_id}.md'
-        if source != expected_source:
+        if source is not None and source != expected_source:
             raise ContractError(
                 f'{label}.source must be .agents/agents/{agent_id}.md'
             )
@@ -675,6 +674,22 @@ def parse_project_agents(value: object) -> tuple[ProjectAgentSpec, ...]:
         _fields(harnesses, _PROJECT_AGENT_HARNESS_FIELDS, f'{label}.harnesses')
         if not harnesses:
             raise ContractError(f'{label}.harnesses must not be empty')
+
+        native: dict[str, NativeAgentConfig] = {}
+        structured = dict(harnesses)
+        for host, value in harnesses.items():
+            if isinstance(value, dict) and 'native_source' in value:
+                if set(value) != {'native_source'}:
+                    raise ContractError(f'{label}.{host}: native_source is exclusive with mapped settings')
+                extension = 'toml' if host == 'codex' else 'md'
+                path = safe_relative(value['native_source'], f'{label}.{host}.native_source')
+                if path != PurePosixPath(f'.agents/agents/{agent_id}.{host}.{extension}'):
+                    raise ContractError(f'{label}.{host}.native_source must use the canonical Agent path')
+                native[host] = NativeAgentConfig(path)
+                structured.pop(host)
+        if structured and source is None:
+            raise ContractError(f'{label}.source is required for mapped harness settings')
+        harnesses = structured
 
         codex = None
         if 'codex' in harnesses:
@@ -728,7 +743,9 @@ def parse_project_agents(value: object) -> tuple[ProjectAgentSpec, ...]:
             )
 
         result.append(ProjectAgentSpec(
-            agent_id, source, description, codex, cursor, copilot, qoder,
+            agent_id, source, description,
+            native.get('codex', codex), native.get('cursor', cursor),
+            native.get('copilot', copilot), native.get('qoder', qoder),
         ))
     ids = [agent.id for agent in result]
     if len(ids) != len(set(ids)):
@@ -747,6 +764,10 @@ def load_project_config(
     else:
         document = _load_json(path, 'project config')
     _fields(document, _PROJECT_CONFIG_FIELDS, 'project config')
+    if 'setupVersion' in document:
+        setup_version = document['setupVersion']
+        if not isinstance(setup_version, str) or _SEMVER.fullmatch(setup_version) is None:
+            raise ContractError('project config setupVersion must be a semantic version')
     project_external_skills = parse_external_skills(document.get('skills'), catalog)
     mcp_servers = parse_mcp_servers(document.get('mcp'))
     agents = parse_project_agents(document.get('agents'))

@@ -746,5 +746,50 @@ class SetupCatalogTest(unittest.TestCase):
                 load_project_config(path, catalog=load_catalog(REPO_ROOT))
 
 
+class SetupMigrationTest(unittest.TestCase):
+    def test_release_declarations_select_all_crossed_migrations_not_every_new_version(self):
+        from agents_setup.migrations import applicable_migrations, load_migrations, version_key
+        migrations = load_migrations(REPO_ROOT)
+        self.assertEqual([item.version for item in applicable_migrations(REPO_ROOT, '1.0.0')],
+                         [item.version for item in migrations])
+        self.assertEqual(applicable_migrations(REPO_ROOT, migrations[-1].version), ())
+        self.assertEqual(applicable_migrations(REPO_ROOT, '9.0.0'), ())
+        self.assertLess(version_key('1.2.19-rc.2'), version_key('1.2.19-rc.10'))
+        self.assertLess(version_key('1.2.19-rc.10'), version_key('1.2.19'))
+        self.assertEqual(version_key('1.2.19+build'), version_key('1.2.19'))
+
+    def test_project_setup_baseline_is_not_inferred_from_plugin_version(self):
+        from agents_setup.migrations import SetupStatus, SetupVersion, project_setup_version
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.assertIs(project_setup_version(target, REPO_ROOT), SetupStatus.UNINITIALIZED)
+            folder = target / '.agents'
+            folder.mkdir()
+            (folder / 'smartkit.lock.json').write_text('{"sources":[],"assets":[]}', encoding='utf-8')
+            self.assertIs(project_setup_version(target, REPO_ROOT), SetupStatus.BASELINE_REQUIRED)
+            (folder / 'config.json').write_text('{}', encoding='utf-8')
+            self.assertIs(project_setup_version(target, REPO_ROOT), SetupStatus.BASELINE_REQUIRED)
+            (folder / 'config.json').write_text('{"setupVersion":"1.2.3"}', encoding='utf-8')
+            self.assertEqual(project_setup_version(target, REPO_ROOT), SetupVersion('1.2.3'))
+            (folder / 'config.json').write_text('{"setupVersion":"bogus"}', encoding='utf-8')
+            with self.assertRaises(ValueError):
+                project_setup_version(target, REPO_ROOT)
+
+    def test_native_source_is_exclusive_and_shared_prompt_only_required_for_mapped_hosts(self):
+        from agents_setup.catalog import parse_project_agents
+        from agents_setup.models import NativeAgentConfig
+        item = {'id':'local','description':'Local agent','harnesses':{
+            'codex': {'native_source': '.agents/agents/local.codex.toml'}}}
+        parsed = parse_project_agents([item])[0]
+        self.assertIsNone(parsed.source)
+        self.assertIsInstance(parsed.codex, NativeAgentConfig)
+        item['harnesses']['codex']['model'] = 'duplicate-authority'
+        with self.assertRaisesRegex(ValueError, 'exclusive'):
+            parse_project_agents([item])
+        item['harnesses'] = {'qoder': {}}
+        with self.assertRaisesRegex(ValueError, 'source is required'):
+            parse_project_agents([item])
+
+
 if __name__ == '__main__':
     unittest.main()

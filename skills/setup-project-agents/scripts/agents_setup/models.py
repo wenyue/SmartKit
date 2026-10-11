@@ -84,14 +84,27 @@ class QoderAgentConfig:
 
 
 @dataclass(frozen=True)
+class NativeAgentConfig:
+    native_source: PurePosixPath
+
+
+@dataclass(frozen=True)
 class ProjectAgentSpec:
     id: str
-    source: PurePosixPath
+    source: PurePosixPath | None
     description: str
-    codex: CodexAgentConfig | None = None
-    cursor: CursorAgentConfig | None = None
-    copilot: CopilotAgentConfig | None = None
-    qoder: QoderAgentConfig | None = None
+    codex: CodexAgentConfig | NativeAgentConfig | None = None
+    cursor: CursorAgentConfig | NativeAgentConfig | None = None
+    copilot: CopilotAgentConfig | NativeAgentConfig | None = None
+    qoder: QoderAgentConfig | NativeAgentConfig | None = None
+
+    @property
+    def source_paths(self) -> tuple[PurePosixPath, ...]:
+        return (
+            *((self.source,) if self.source is not None else ()),
+            *(host.native_source for host in (self.codex, self.cursor, self.copilot, self.qoder)
+              if isinstance(host, NativeAgentConfig)),
+        )
 
 
 @dataclass(frozen=True)

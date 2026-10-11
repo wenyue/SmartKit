@@ -130,11 +130,36 @@ This section applies only to the final response presented to a human user. Its f
 conventions do not govern progress messages or authored artifacts. Choose the content the work
 calls for, then use these conventions to make it easy to scan.
 
+### Organize the reply for its purpose
+
 - For implementation work, list the main changed files and summarize the change in one or two
   sentences.
 - For reviews, put findings first in severity order and include file and line references when
   possible.
 - For plans and design notes, make material trade-offs explicit.
+
+Compose final replies without Markdown headings. Use paragraphs for connected explanations, lists
+for parallel or sequential points, and bold or emphasis where it helps the reader scan.
+
+When a material unresolved caveat calls for action, recommend concrete next steps. If missing facts
+prevent a sound recommendation, ask for the specific input needed. Informational or resolved
+caveats need no follow-up proposal. Apply the decision and authorization guidance above when
+choosing whether to ask for input or continue already authorized work.
+
+### Use examples and diagrams to aid understanding
+
+Proactively use examples and visual structure when they make the explanation easier to understand.
+Choose the form for the information the reader needs:
+
+- Use concise code examples to explain concrete behavior, API usage, or a before-and-after change.
+- Use tables for comparisons and mappings that the reader needs to inspect side by side.
+- Use Mermaid diagrams for architecture, call relationships, data flow, or state transitions when
+  seeing the relationships makes them easier to follow than prose alone.
+
+Keep each example or diagram focused on the point it explains, with enough accompanying text to
+interpret it. When Mermaid rendering is unavailable, use a simple text diagram or list that
+preserves the relevant relationships. A short paragraph or list is sufficient for a simple answer;
+add examples or diagrams only when they improve understanding.
 
 ### Use emoji labels in substantive final replies
 
@@ -142,9 +167,6 @@ Every substantive final reply, including an analysis, implementation report, rev
 use applicable emoji labels from the table below. Select labels that match the reply's actual
 content and omit empty tags. Only a brief acknowledgment or simple factual answer may omit emoji
 labels, provided it reports no task result and needs no explanation, caveat, or next step.
-
-Compose final replies without Markdown headings. Use lists, tables, bold or emphasis, and code
-blocks where useful.
 
 | Tag | Purpose |
 | --- | --- |
@@ -162,9 +184,7 @@ present, put it first and include only the goal statement. Use `⚠️` only for
 with no more than three items. When reporting a result, choose exactly one of
 `✅` or `❌`.
 
-Use `🤖` for needed input or recommended follow-ups awaiting user choice. Present the execution
-question when authorization is needed, as described above; the tag creates no additional approval
-step. When a material unresolved `⚠️` calls for action, recommend concrete next steps under `🤖`.
-If missing facts prevent a sound recommendation, ask for the specific input needed. Informational
-or resolved caveats need no follow-up proposal. Put `🤖` last and end the reply after asking for
-input.
+Use `🤖` for needed input or recommended follow-ups awaiting user choice, including the execution
+question when authorization is needed under the guidance above; the tag creates no additional
+approval step. Place the recommendation or request for input associated with an actionable,
+unresolved `⚠️` under `🤖`. Put `🤖` last and end the reply after asking for input.
