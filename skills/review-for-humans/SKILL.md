@@ -92,12 +92,12 @@ measures displayed files, not modification items or conclusive judgments. Keep t
 file list, next-unreviewed position, next-item number, judgments, and finding status across replies.
 
 When unreasonable findings are pending, list their item numbers and severities after progress.
-End with a choice between **fix and continue** and **ignore**, then wait, even in the final group.
+End with a choice between **fix** and **ignore**, then wait, even in the final group.
 The final sentence must require item numbers for ignoring when multiple items are pending; a lone
 item needs no number. Clarify ambiguous selections rather than ignoring every item. A plain
 continue reply leaves this choice unresolved.
 
-**Fix and continue** authorizes repairs of pending, unignored findings within applicable authority
+**Fix** authorizes repairs of pending, unignored findings within applicable authority
 and constraints. Load the necessary guidance, limit changes to resolving those findings, and run
 the required checks. After checks pass, follow the re-review procedure below; mark findings repaired
 only when re-review confirms resolution. If repair is blocked or a check fails, explain what remains
@@ -109,15 +109,18 @@ Once none remain, resume at the saved next-unreviewed position or close if the s
 
 Whenever reviewed content changes, refresh the snapshot and re-review every previously reviewed
 part modified or affected by that change, including changes beyond the original findings. Display
-updated explanations and judgments before resuming the review. Preserve existing item numbers, make the
-version transition explicit, and rebuild the file list and total when necessary. Re-review findings
-use the same repair-or-ignore choice; resume only after the affected parts have been re-reviewed
-and their pending findings repaired or explicitly ignored.
+updated explanations and judgments in complete file blocks, in replies dedicated to the re-review
+and separate from not-yet-reviewed files. Repairs create revised content that deserves the human
+reviewer's attention before moving on. Preserve existing item numbers, make the version transition
+explicit, and rebuild the file list and total when necessary. Re-review findings use the same
+fix-or-ignore choice; affected parts must be re-reviewed and their pending findings repaired or
+explicitly ignored before advancing.
 
 When no unreasonable findings are pending and files remain, end an ordinary group with a **continue**
-prompt and wait; resume with the next file on that reply. Repair and ignore choices already request
-continuation. When all files have been displayed and no unreasonable findings are pending, close
-without a continuation prompt.
+prompt and wait; resume with the next file on that reply. Apply the same pause after a fix's dedicated
+re-review: show its result, prompt for **continue**, and wait before reviewing remaining files.
+Ignoring resumes automatically as described above. When all files have been displayed and no
+unreasonable findings are pending, close without a continuation prompt.
 Distinguish completed display from resolved findings and retain ignored findings and evidence gaps.
 
 ## Reference report
