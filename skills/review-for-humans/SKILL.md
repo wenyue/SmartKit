@@ -17,17 +17,21 @@ specify their meaning.
 ## Establish the review scope
 
 Identify the task's intended outcome and obtain the supplied changes with their before-and-after
-evidence. Keep a fixed review snapshot and an ordered file list. Follow the user's supplied file
-order; for a pull request, follow its actual Files changed order. When reviewing selected files,
-count and report that selection rather than the entire pull request.
+evidence. Keep a fixed review snapshot and an ordered file list for displaying the report. For all
+review scopes, match GitHub's Files changed directory-tree order: at every directory, recursively
+list each subdirectory's changed files before the files directly in that directory. Use the pull
+request's actual tree sibling order when accessible; otherwise sort sibling directories and direct
+files by name. For example, `src/z/api.dart` precedes `src/a.dart`; sorting complete paths from
+`git diff` does not establish that order. When reviewing selected files, count and report that
+selection rather than the entire pull request.
 
 Skip test files entirely: do not review them or count them toward progress or modification items.
 Count the remaining files in the supplied scope before displaying the first group. Briefly identify
 the scope and exclusions so the reader can interpret the total. If no files require review, say so
 and finish without manufacturing a report or a progress fraction.
 
-When scope, order, required guidance, or source evidence is unavailable, identify the missing input
-and its effect. Pause the dependent review rather than inventing facts, totals, or a completed
+When scope, required guidance, or source evidence is unavailable, identify the missing input and
+its effect. Pause the dependent review rather than inventing facts, totals, or a completed
 assessment. A known file with incomplete evidence remains in the total; explain the gap in that
 file's report and use an insufficient-evidence evaluation where necessary.
 

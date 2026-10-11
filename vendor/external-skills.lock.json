@@ -167,14 +167,10 @@
           "source_path": "skills/engineering/to-tickets",
           "destination": "skills/to-tickets",
           "files": {
-            "SKILL.md": "ff025da66b5ffff3fabbc888b0b3311a7078a783fe6fdd7a4dcbb19c2342ee52",
+            "SKILL.md": "5c9fba69845c2519b9b35b9af42ae5142c21f8ca15ac2123dc2722002c8058ae",
             "agents/openai.yaml": "1271cdecf27ee1e215c9985f27bbed16ba0eb5a1edb0f80b71b3f8081e9830c0"
           },
           "patches": [
-            {
-              "path": "vendor/patches/mattpocock/to-tickets.patch",
-              "sha256": "cb27a4f39497f86915af2ebdf82e0c62d6b32c48df01cf74895620e2de577aa1"
-            },
             {
               "path": "vendor/patches/mattpocock/to-tickets.openai.patch",
               "sha256": "f4f544a6a3eb416036acec43607f68eb0d28903b8570278bc21a16c73375d844"

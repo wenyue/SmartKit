@@ -33,7 +33,7 @@
         {"id": "mattpocock/setup-matt-pocock-skills", "path": "skills/engineering/setup-matt-pocock-skills", "patches": ["vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch"]},
         {"id": "mattpocock/tdd", "path": "skills/engineering/tdd", "patches": ["vendor/patches/mattpocock/tdd.openai.patch", "vendor/patches/mattpocock/tdd.harness.patch"]},
         {"id": "mattpocock/to-spec", "path": "skills/engineering/to-spec", "patches": ["vendor/patches/mattpocock/to-spec.openai.patch"]},
-        {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.patch", "vendor/patches/mattpocock/to-tickets.openai.patch"]},
+        {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.openai.patch"]},
         {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder", "patches": ["vendor/patches/mattpocock/wayfinder.openai.patch", "vendor/patches/mattpocock/wayfinder.harness.patch"]},
         {"id": "mattpocock/implement", "path": "skills/engineering/implement", "patches": ["vendor/patches/mattpocock/implement.openai.patch"]},
         {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch", "vendor/patches/mattpocock/implement-spec.worktree.patch"]},
