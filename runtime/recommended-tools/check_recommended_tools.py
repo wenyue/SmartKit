@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import glob
 import hashlib
+import http.client
 import json
 import os
 import queue
@@ -16,6 +17,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +28,20 @@ _DEFAULT_VERSION_PATTERN = r'(\d+(?:\.\d+)+(?:[-+][0-9A-Za-z.-]+)?)'
 _MAX_COMMAND_OUTPUT = 16_384
 _MAX_CONFIG_RPC_OUTPUT = 1_048_576
 _LOCK_STALE_SECONDS = 300
+_SMARTKIT_VERSION_URL = 'https://raw.githubusercontent.com/wenyue/SmartKit/HEAD/VERSION'
+_SMARTKIT_VERSION_TIMEOUT_SECONDS = 10
+_SMARTKIT_UPDATE_GUIDANCE = {
+    'codex': (
+        'Run `codex plugin marketplace upgrade wenyue`, update smartkit@wenyue in the '
+        'Codex Plugins interface, then start a new session.'
+    ),
+    'copilot': 'Run `copilot plugin update smartkit@wenyue`, then start a new session.',
+    'cursor': (
+        'Update the SmartKit plugin (for the local clone: '
+        '`git -C ~/.cursor/plugins/local/smartkit pull`), then reload the Cursor window.'
+    ),
+    'qoder': 'Update smartkit@wenyue through Qoder plugin management, then start a new session.',
+}
 _RUNTIME_PROBES = {
     'node': (('node', '--version'), _DEFAULT_VERSION_PATTERN),
 }
@@ -1334,6 +1350,53 @@ def check_setup_migrations(project_root: Path) -> list[Finding]:
     )]
 
 
+def _start_latest_smartkit_version_fetch() -> Callable[[], str | None]:
+    """Fetch in the background so the network wait overlaps the local checks."""
+    deadline = time.monotonic() + _SMARTKIT_VERSION_TIMEOUT_SECONDS
+    fetched: list[str] = []
+
+    def fetch() -> None:
+        try:
+            with urllib.request.urlopen(
+                _SMARTKIT_VERSION_URL, timeout=_SMARTKIT_VERSION_TIMEOUT_SECONDS,
+            ) as response:
+                text = response.read(64).decode('ascii').strip()
+        except (OSError, ValueError, http.client.HTTPException):
+            return
+        if re.fullmatch(r'\d+(?:\.\d+)+', text):
+            fetched.append(text)
+
+    thread = threading.Thread(target=fetch, daemon=True)
+    thread.start()
+
+    def wait() -> str | None:
+        # The join bound also covers DNS, which the socket timeout does not.
+        thread.join(max(0.0, deadline - time.monotonic()))
+        return fetched[0] if fetched else None
+
+    return wait
+
+
+def check_smartkit_version(harness: str, latest: str | None) -> list[Finding]:
+    """Report an installed plugin older than GitHub; unknown versions stay silent."""
+    if latest is None:
+        return []
+    try:
+        installed = (Path(__file__).resolve().parents[2] / 'VERSION').read_text(
+            encoding='utf-8'
+        ).strip()
+        outdated = is_strictly_greater(latest, installed)
+    except (OSError, ValueError):
+        return []
+    if not outdated:
+        return []
+    return [Finding(
+        'smartkit-outdated', 'SmartKit plugin',
+        f'installed version {installed} is older than the latest version {latest}',
+        _SMARTKIT_UPDATE_GUIDANCE[harness],
+    )]
+
+
 def _project_cache_key(project_root: Path) -> str:
     resolved = project_root.resolve()
     normalized = os.path.normcase(str(resolved))
@@ -1451,6 +1514,7 @@ def run_hook(
             if evaluator is not None:
                 findings_list = evaluator(policy)
             else:
+                latest_smartkit_version = _start_latest_smartkit_version_fetch()
                 policy_findings = check_policy(policy)
                 findings_list = [
                     *policy_findings,
@@ -1460,6 +1524,7 @@ def run_hook(
                     ),
                     *check_mcp_readiness(harness, project_root, mcp_registry_path),
                     *check_setup_migrations(project_root),
+                    *check_smartkit_version(harness, latest_smartkit_version()),
                 ]
             findings = tuple(findings_list)
             if not findings:

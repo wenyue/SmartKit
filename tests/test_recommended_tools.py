@@ -102,7 +102,11 @@ class RecommendedToolPolicyTest(unittest.TestCase):
             policy = Path(temp_dir) / 'codex.json'
             policy.write_text('{"harness": "codex", "tools": []}\n', encoding='utf-8')
             maintenance_runner = mock.Mock(side_effect=AssertionError('Hooks must not mutate tools'))
-            with mock.patch.object(self.checker, 'check_policy', return_value=[]):
+            with mock.patch.object(self.checker, 'check_policy', return_value=[]), \
+                    mock.patch.object(
+                        self.checker, '_start_latest_smartkit_version_fetch',
+                        return_value=lambda: None,
+                    ):
                 with mock.patch.object(self.checker.subprocess, 'run', maintenance_runner):
                     result = self.checker.run_hook(
                         'codex', policy, policy.parent / 'cache', datetime(2026, 8, 4), force=True,
@@ -926,7 +930,10 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             with mock.patch.object(checker, 'check_policy', return_value=[tool_finding]) \
                     as tool_check, mock.patch.object(
                         checker, 'check_mcp_readiness', return_value=[mcp_finding]
-                    ) as mcp_check:
+                    ) as mcp_check, mock.patch.object(
+                        checker, '_start_latest_smartkit_version_fetch',
+                        return_value=lambda: None,
+                    ):
                 first = checker.run_hook(
                     'codex', policy, root / 'cache',
                     datetime(2026, 8, 10, 10), project_root=project,
@@ -940,6 +947,80 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             self.assertFalse(second.ran)
             tool_check.assert_called_once()
             mcp_check.assert_called_once()
+
+    def test_smartkit_version_reports_only_a_newer_latest_release(self):
+        checker = self.checker
+        installed = (REPO_ROOT / 'VERSION').read_text(encoding='utf-8').strip()
+
+        self.assertEqual(checker.check_smartkit_version('copilot', None), [])
+        self.assertEqual(checker.check_smartkit_version('copilot', installed), [])
+        self.assertEqual(checker.check_smartkit_version('copilot', '0.0.1'), [])
+        findings = checker.check_smartkit_version('copilot', '999.0.0')
+
+        self.assertEqual([finding.code for finding in findings], ['smartkit-outdated'])
+        self.assertIn(installed, findings[0].message)
+        self.assertIn('copilot plugin update smartkit@wenyue', findings[0].guidance)
+        for harness in ('codex', 'cursor', 'qoder'):
+            with self.subTest(harness=harness):
+                self.assertEqual(
+                    len(checker.check_smartkit_version(harness, '999.0.0')), 1
+                )
+
+    def test_latest_smartkit_fetch_accepts_only_plain_versions(self):
+        checker = self.checker
+        for body, expected in ((b'1.2.20\n', '1.2.20'), (b'<html>', None), (b'1.2; rm', None)):
+            with self.subTest(body=body):
+                with mock.patch.object(
+                    checker.urllib.request, 'urlopen',
+                    return_value=io.BytesIO(body),
+                ):
+                    self.assertEqual(checker._start_latest_smartkit_version_fetch()(), expected)
+
+        with mock.patch.object(
+            checker.urllib.request, 'urlopen', side_effect=OSError('offline'),
+        ):
+            self.assertIsNone(checker._start_latest_smartkit_version_fetch()())
+
+    def test_latest_smartkit_fetch_timeout_is_bounded_and_checked_once_per_day(self):
+        checker = self.checker
+        release = checker.threading.Event()
+        calls = []
+
+        def hang(*_args, **_kwargs):
+            calls.append(True)
+            release.wait(5)
+            raise OSError('timed out')
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project = root / 'project'
+            (project / '.git').mkdir(parents=True)
+            policy = root / 'copilot.json'
+            policy.write_text('{"harness":"copilot","tools":[]}\n', encoding='utf-8')
+            try:
+                with mock.patch.object(checker, '_SMARTKIT_VERSION_TIMEOUT_SECONDS', 0.2), \
+                        mock.patch.object(checker.urllib.request, 'urlopen', side_effect=hang), \
+                        mock.patch.object(checker, 'check_policy', return_value=[]), \
+                        mock.patch.object(checker, 'check_mcp_readiness', return_value=[]), \
+                        mock.patch.object(checker, 'check_setup_migrations', return_value=[]):
+                    started = time.monotonic()
+                    first = checker.run_hook(
+                        'copilot', policy, root / 'cache',
+                        datetime(2026, 10, 12, 9), project_root=project,
+                    )
+                    elapsed = time.monotonic() - started
+                    second = checker.run_hook(
+                        'copilot', policy, root / 'cache',
+                        datetime(2026, 10, 12, 10), project_root=project,
+                    )
+            finally:
+                release.set()
+
+        self.assertTrue(first.ran)
+        self.assertEqual(first.findings, ())
+        self.assertLess(elapsed, 2)
+        self.assertFalse(second.ran)
+        self.assertEqual(len(calls), 1)
 
     def test_daily_state_ignores_policy_change_but_allows_force_and_next_day(self):
         checker = self.checker
