@@ -1,3 +1,7 @@
 interface:
   display_name: "Research"
-  short_description: "依据可信的一手来源研究问题"
+  short_description: "查阅可信一手资料，并将有来源支持的研究结果写入仓库。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $research，针对我提供的问题查阅一手资料并形成带来源的研究记录。"

@@ -1,3 +1,7 @@
 interface:
   display_name: "Writing for Agents"
-  short_description: "编写供智能体理解和执行的文档"
+  short_description: "应用信息层级、上下文指引和完成条件，编写智能体可用的文档。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $writing-for-agents，检查我提供的智能体文档并改善其信息组织与执行指引。"

@@ -1,3 +1,7 @@
 interface:
   display_name: "Ponytail"
-  short_description: "以最小实现满足需求，优先复用标准库与原生能力"
+  short_description: "以最小完整实现解决编程任务，兼顾正确性、安全和必要验证。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $ponytail，以最小完整实现完成我提供的编程任务并做必要验证。"

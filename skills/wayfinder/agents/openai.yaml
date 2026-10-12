@@ -1,5 +1,9 @@
 interface:
   display_name: "Wayfinder"
-  short_description: "将大型工作整理为决策工单与推进路径"
+  short_description: "将大型工作组织成决策工单，逐一澄清通往目标的路径。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $wayfinder，将我描述的大型工作组织成决策工单并逐步澄清实施路径。"
 policy:
   allow_implicit_invocation: false

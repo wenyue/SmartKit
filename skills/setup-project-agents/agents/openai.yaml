@@ -1,5 +1,9 @@
 interface:
   display_name: "Setup Project Agents"
-  short_description: "逐步检查并升级项目规则、技能、自定义智能体与 MCP"
+  short_description: "跨开发工具设置或更新项目规则、技能、自定义智能体与 MCP。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $setup-project-agents，检查并更新当前项目的规则、技能、自定义智能体和 MCP 配置。"
 policy:
   allow_implicit_invocation: false

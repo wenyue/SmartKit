@@ -1,5 +1,9 @@
 interface:
   display_name: "What Changes"
-  short_description: "实施前核对累积的预期修改范围"
+  short_description: "在实施前核对累积修改意图，并给出可审阅的文件范围。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $what-changes，核对当前讨论中仍需实施的修改并列出文件范围。"
 policy:
   allow_implicit_invocation: true

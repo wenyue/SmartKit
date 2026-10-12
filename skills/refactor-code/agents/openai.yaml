@@ -1,3 +1,7 @@
 interface:
   display_name: "Refactor Code"
-  short_description: "保持现有行为和对外契约，改善代码结构"
+  short_description: "重构一个明确代码目标，在保留对外行为的前提下改善内部结构。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $refactor-code，重构我指定的代码目标并保留受支持的行为和外部契约。"

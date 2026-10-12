@@ -1,5 +1,9 @@
 interface:
   display_name: "To Questionnaire"
-  short_description: "将待确认的问题整理成可填写的问卷文档"
+  short_description: "将他人掌握的待确认信息整理成可异步填写的问卷文档。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $to-questionnaire，将我需要向他人确认的信息整理成可填写的问卷文档。"
 policy:
   allow_implicit_invocation: false

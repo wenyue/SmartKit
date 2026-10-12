@@ -1,3 +1,7 @@
 interface:
   display_name: "Write Setup Authoring Blueprints"
-  short_description: "编写或修订项目配置所需的创作蓝图"
+  short_description: "为未来项目规则或技能编写蓝图，明确项目证据与创作要求。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $write-setup-authoring-blueprints，为我指定的项目规则或技能编写配置创作蓝图。"

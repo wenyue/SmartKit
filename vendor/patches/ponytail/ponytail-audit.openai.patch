@@ -1,6 +1,16 @@
 --- /dev/null
 +++ b/agents/openai.yaml
-@@ -0,0 +1,3 @@
+@@ -0,0 +1,7 @@
 +interface:
 +  display_name: "Ponytail Audit"
-+  short_description: "审计代码库的质量与风险，按重要性列出修复建议"
++  short_description: "审计代码库的缺陷、安全、负载与复杂度，按重要性列出问题。"
++  icon_small: "./assets/icon.svg"
++  icon_large: "./assets/icon.svg"
++  brand_color: "#2563EB"
++  default_prompt: "使用 $ponytail-audit，审计我指定的代码范围并按重要性说明质量与风险问题。"
+--- /dev/null
++++ b/assets/icon.svg
+@@ -0,0 +1,3 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
++  <path d="M8 18h18l6 7h24v29H8Z"/><circle cx="32" cy="37" r="12"/><path d="m26 37 4 4 8-9M14 13h21"/>
++</svg>

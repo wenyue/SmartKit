@@ -1,3 +1,7 @@
 interface:
   display_name: "Prototype"
-  short_description: "通过可丢弃的原型验证设计问题"
+  short_description: "通过可丢弃的交互原型验证逻辑、状态模型或界面设计问题。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $prototype，为我提出的设计问题制作一个可丢弃的交互原型。"

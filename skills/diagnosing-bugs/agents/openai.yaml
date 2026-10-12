@@ -1,3 +1,7 @@
 interface:
   display_name: "Diagnosing Bugs"
-  short_description: "诊断疑难缺陷、性能问题与回归"
+  short_description: "通过证据和验证循环定位疑难缺陷、性能问题与回归原因。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $diagnosing-bugs，诊断我描述的故障或性能问题并验证其原因。"

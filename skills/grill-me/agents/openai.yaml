@@ -1,5 +1,9 @@
 interface:
   display_name: "Grill Me"
-  short_description: "通过深入访谈完善计划与决策"
+  short_description: "通过逐轮深入访谈检验并完善计划、设计或决策。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $grill-me，通过逐轮提问检验我提出的计划或设计。"
 policy:
   allow_implicit_invocation: false

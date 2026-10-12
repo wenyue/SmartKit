@@ -1,3 +1,7 @@
 interface:
   display_name: "Rename Code"
-  short_description: "重命名代码符号或路径，并更新实际引用"
+  short_description: "沿实际引用重命名一个代码符号或路径，并落实约定的兼容性。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $rename-code，重命名我指定的代码符号或路径并落实约定的兼容性要求。"

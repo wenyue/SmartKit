@@ -1,3 +1,7 @@
 interface:
-  display_name: "Go Policy"
-  short_description: "应用 Go 包、接口、错误、上下文与并发规范"
+  display_name: "Rule Go"
+  short_description: "应用 Go 包、接口、错误、上下文和并发规范。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-go，依据 Go 规范检查我提供的代码。"

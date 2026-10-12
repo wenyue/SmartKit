@@ -1,3 +1,7 @@
 interface:
-  display_name: "Error Handling Policy"
-  short_description: "应用错误契约、传播、恢复与反馈规范"
+  display_name: "Rule Error Handling"
+  short_description: "应用错误与结果契约，保留失败传播、恢复和反馈的真实含义。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-error-handling，检查我提供的操作结果与错误处理是否符合相关契约。"

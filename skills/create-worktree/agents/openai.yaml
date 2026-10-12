@@ -1,3 +1,7 @@
 interface:
   display_name: "Create Worktree"
-  short_description: "安全选择、创建并准备隔离的 Git 工作树"
+  short_description: "选择、创建并准备隔离的 Git 工作树，保留已有工作。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $create-worktree，为当前已授权任务准备隔离的 Git 工作树并保留已有工作。"

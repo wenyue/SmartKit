@@ -1,9 +1,19 @@
 --- a/agents/openai.yaml
 +++ b/agents/openai.yaml
-@@ -1,5 +1,5 @@
+@@ -1,5 +1,9 @@
  interface:
    display_name: "Wait What"
 -  short_description: "Re-pitch that: simpler, with the context I'm missing"
-+  short_description: "补充缺失背景，用更易懂的方式重新解释"
++  short_description: "补足必要背景，用清楚的中文和项目术语重新解释上一条消息。"
++  icon_small: "./assets/icon.svg"
++  icon_large: "./assets/icon.svg"
++  brand_color: "#2563EB"
++  default_prompt: "使用 $wait-what，补充必要背景并用清楚的中文重新解释上一条消息。"
  policy:
    allow_implicit_invocation: false
+--- /dev/null
++++ b/assets/icon.svg
+@@ -0,0 +1,3 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
++  <path d="M7 9h36v26H21L11 44v-9H7ZM31 41h23v13h-6l-7 7v-7H31"/><path d="M20 20c0-7 12-7 12 0 0 5-6 4-6 9"/>
++</svg>

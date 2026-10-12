@@ -1,3 +1,7 @@
 interface:
-  display_name: "Dart and Flutter Policy"
-  short_description: "应用 Dart 与 Flutter 接口、文件、生命周期与路由规范"
+  display_name: "Rule Flutter"
+  short_description: "应用 Dart 与 Flutter 接口、文件、生命周期和路由规范。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-flutter，依据 Dart 与 Flutter 规范检查我提供的代码。"

@@ -1,3 +1,7 @@
 interface:
   display_name: "Translate Agent Artifacts"
-  short_description: "将最终英文规则与技能同步为简体中文镜像"
+  short_description: "按指定路径同步英文规则与技能的简体中文镜像，保留含义和结构。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $translate-agent-artifacts，按我指定的源文件与目标路径同步简体中文镜像。"

@@ -1,3 +1,7 @@
 interface:
   display_name: "Diagnose Agent Session"
-  short_description: "分析智能体会话的活动与资源开销"
+  short_description: "分析指定智能体会话的活动、资源开销和异常证据。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $diagnose-agent-session，分析我指定的智能体会话是否存在异常开销或执行问题。"

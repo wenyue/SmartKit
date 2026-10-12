@@ -1,3 +1,7 @@
 interface:
-  display_name: "Python Policy"
-  short_description: "应用 Python 接口、类型、数据、失败与资源规范"
+  display_name: "Rule Python"
+  short_description: "应用 Python 接口、类型、数据、错误和资源管理规范。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-python，依据 Python 规范检查我提供的代码。"

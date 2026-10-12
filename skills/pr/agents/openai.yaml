@@ -1,3 +1,7 @@
 interface:
   display_name: "PR"
-  short_description: "撰写便于审查的 PR 正文"
+  short_description: "根据改动背景撰写便于审查的 PR 正文。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $pr，根据我提供的改动和验证结果撰写 PR 正文。"

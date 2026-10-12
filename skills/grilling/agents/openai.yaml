@@ -1,3 +1,7 @@
 interface:
   display_name: "Grilling"
-  short_description: "逐轮提问，检验计划、决策或想法"
+  short_description: "逐轮追问当前可决策的问题，直到计划或设计形成共同理解。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $grilling，逐轮检验我提出的计划或决策并形成共同理解。"

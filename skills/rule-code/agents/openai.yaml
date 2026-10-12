@@ -1,3 +1,7 @@
 interface:
-  display_name: "Code Policy"
-  short_description: "应用代码归属、设计、状态与诊断规范"
+  display_name: "Rule Code"
+  short_description: "应用代码设计规范，明确行为归属、状态和依赖。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-code，依据代码设计规范检查我提供的代码或设计。"

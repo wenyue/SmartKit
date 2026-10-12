@@ -1,3 +1,7 @@
 interface:
   display_name: "Write Shared Rules and Skills"
-  short_description: "编写或修订可跨项目复用的规则与技能"
+  short_description: "编写或修订一份可跨项目复用的规则或技能，并验证其可移植性。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $write-shared-rules-and-skills，将我提供的要求整理成一份可跨项目复用的规则或技能。"

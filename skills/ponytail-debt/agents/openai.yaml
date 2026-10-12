@@ -1,3 +1,7 @@
 interface:
   display_name: "Ponytail Debt"
-  short_description: "汇总代码中的简化与暂缓事项，形成技术债清单"
+  short_description: "汇总代码中的明确捷径及其重访条件，形成技术债清单。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $ponytail-debt，汇总代码中的捷径注释及其重访条件，形成技术债清单。"

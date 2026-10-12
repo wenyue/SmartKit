@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import unittest
+import xml.etree.ElementTree as ET
 from collections import Counter
 from pathlib import Path
 
@@ -354,6 +355,34 @@ class PluginManifestTest(unittest.TestCase):
                     )
                     self.assertIsNotNone(description)
                     self.assertRegex(description.group(1), r'[\u4e00-\u9fff]')
+                    prompt = re.search(
+                        r'(?m)^  default_prompt: "([^"\n]+)"$', metadata
+                    )
+                    self.assertIsNotNone(prompt)
+                    self.assertRegex(prompt.group(1), r'[\u4e00-\u9fff]')
+                    self.assertRegex(
+                        prompt.group(1),
+                        r'\$' + re.escape(entry.parent.name) + r'(?![a-z0-9-])',
+                    )
+                    self.assertRegex(
+                        metadata, r'(?m)^  brand_color: "#[0-9A-Fa-f]{6}"$'
+                    )
+                    for field in ('icon_small', 'icon_large'):
+                        icon = re.search(
+                            r'(?m)^  ' + field + r': "([^"\n]+)"$', metadata
+                        )
+                        self.assertIsNotNone(icon)
+                        relative = Path(icon.group(1))
+                        self.assertFalse(relative.is_absolute())
+                        path = (entry.parent / relative).resolve()
+                        self.assertIn(entry.parent.resolve(), path.parents)
+                        self.assertTrue(path.is_file(), str(path))
+                        if path.suffix == '.svg':
+                            image = ET.parse(path).getroot()
+                            self.assertEqual(
+                                image.tag, '{http://www.w3.org/2000/svg}svg'
+                            )
+                            self.assertTrue(image.get('viewBox'))
                     frontmatter = entry.read_text(encoding='utf-8').split('---', 2)[1]
                     self.assertEqual(
                         'disable-model-invocation: true' in frontmatter,

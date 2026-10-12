@@ -1,3 +1,7 @@
 interface:
-  display_name: "C++ Policy"
-  short_description: "应用 C++ 所有权、接口、失败与并发规范"
+  display_name: "Rule C++"
+  short_description: "应用 C++ 接口、生命周期、容器、表达式和结构规范。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-cpp，依据 C++ 规范检查我提供的代码。"

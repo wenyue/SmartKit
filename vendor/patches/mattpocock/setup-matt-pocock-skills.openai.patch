@@ -1,9 +1,19 @@
 --- a/agents/openai.yaml
 +++ b/agents/openai.yaml
-@@ -1,5 +1,5 @@
+@@ -1,5 +1,9 @@
  interface:
    display_name: "Setup Matt Pocock Skills"
 -  short_description: "Configure a repo for the skills"
-+  short_description: "为仓库配置 Matt Pocock 技能集所需的项目资料"
++  short_description: "为工程技能配置项目任务跟踪器、分诊标签和领域文档布局。"
++  icon_small: "./assets/icon.svg"
++  icon_large: "./assets/icon.svg"
++  brand_color: "#15803D"
++  default_prompt: "使用 $setup-matt-pocock-skills，为当前项目配置工程技能所需的任务跟踪器、标签和领域文档。"
  policy:
    allow_implicit_invocation: false
+--- /dev/null
++++ b/assets/icon.svg
+@@ -0,0 +1,3 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="#15803D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
++  <path d="M8 18h18l6 7h24v29H8Z"/><path d="M17 36h12M17 44h12"/><circle cx="44" cy="39" r="8"/><path d="M44 26v5M44 47v5M31 39h5m16 0h5m-22-9 4 4m10 11 4 4m0-19-4 4m-10 11-4 4"/>
++</svg>

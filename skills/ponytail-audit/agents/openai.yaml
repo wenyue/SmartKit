@@ -1,3 +1,7 @@
 interface:
   display_name: "Ponytail Audit"
-  short_description: "审计代码库的质量与风险，按重要性列出修复建议"
+  short_description: "审计代码库的缺陷、安全、负载与复杂度，按重要性列出问题。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $ponytail-audit，审计我指定的代码范围并按重要性说明质量与风险问题。"

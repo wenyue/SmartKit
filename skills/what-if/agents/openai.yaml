@@ -1,5 +1,9 @@
 interface:
   display_name: "What If"
-  short_description: "评估尚不确定的想法是否优于现状并给出独立结论"
+  short_description: "对尚不确定的想法作只读评估，比较现状与替代方案并给出判断。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $what-if，只读评估我提出的想法是否可行且优于现状与替代方案。"
 policy:
   allow_implicit_invocation: false

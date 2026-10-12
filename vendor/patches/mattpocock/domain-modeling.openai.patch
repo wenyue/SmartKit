@@ -1,7 +1,17 @@
 --- a/agents/openai.yaml
 +++ b/agents/openai.yaml
-@@ -1,3 +1,3 @@
+@@ -1,3 +1,7 @@
  interface:
    display_name: "Domain Modeling"
 -  short_description: "Build and sharpen a domain model"
-+  short_description: "建立并完善项目的领域模型"
++  short_description: "明确项目领域概念与术语，并维护词汇表和架构决策。"
++  icon_small: "./assets/icon.svg"
++  icon_large: "./assets/icon.svg"
++  brand_color: "#2563EB"
++  default_prompt: "使用 $domain-modeling，梳理我提供的领域概念并完善项目术语与相关决策记录。"
+--- /dev/null
++++ b/assets/icon.svg
+@@ -0,0 +1,3 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
++  <circle cx="32" cy="12" r="7"/><circle cx="13" cy="48" r="7"/><circle cx="51" cy="48" r="7"/><path d="M28 18 17 42M36 18l11 24M20 48h24"/><rect x="25" y="30" width="14" height="12" rx="3"/>
++</svg>

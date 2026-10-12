@@ -1,5 +1,9 @@
 interface:
   display_name: "Teach"
-  short_description: "在引导式学习工作区中理解一个概念"
+  short_description: "在可持续接续的学习工作区中引导理解一个技能或概念。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $teach，在当前学习工作区中教我理解所指定的技能或概念。"
 policy:
   allow_implicit_invocation: false
