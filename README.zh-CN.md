@@ -19,6 +19,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `implement` | [Matt Pocock](https://github.com/mattpocock/skills) | 根据规格或工单实现一项工作。 |
 | `implement-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | 通过并行 Agent 实现规格的依赖工单，汇入统一集成分支。 |
 | `grill-me` | [Matt Pocock](https://github.com/mattpocock/skills) | 通过深入追问梳理计划或设计，找出尚未明确的决定。 |
+| `what-if` | [SmartKit](https://github.com/wenyue/SmartKit) | 判断你不确定的想法是否优于当前做法和替代方案，给出带优缺点的独立结论，且不做任何修改。 |
 | `to-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | 将已讨论的内容整理成规格，发布到项目任务跟踪器。 |
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | 将计划或规格拆成可逐步交付的工单，并声明依赖关系。 |
 | `review-for-humans` | [SmartKit](https://github.com/wenyue/SmartKit) | 按文件用简单例子和有依据的评价解释用户提供的修改，分组展示，便于人类 reviewer 阅读并继续审核。 |

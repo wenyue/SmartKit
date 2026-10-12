@@ -21,6 +21,7 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `implement` | [Matt Pocock](https://github.com/mattpocock/skills) | Implements a piece of work from a spec or tickets. |
 | `implement-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | Implements a spec’s dependency graph with parallel agents and a shared integration branch. |
 | `grill-me` | [Matt Pocock](https://github.com/mattpocock/skills) | Sharpens a plan or design through an in-depth interview and identifies unresolved decisions. |
+| `what-if` | [SmartKit](https://github.com/wenyue/SmartKit) | Judges whether an idea you are unsure about beats current practice and alternatives, giving an independent verdict with pros and cons without making changes. |
 | `to-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | Synthesizes the discussion into a spec and publishes it to the project's tracker. |
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | Breaks a plan or spec into incrementally deliverable tickets with declared dependencies. |
 | `review-for-humans` | [SmartKit](https://github.com/wenyue/SmartKit) | Explains supplied changes by file with simple examples and reasoned judgments, displaying groups for a human reviewer to read and continue. |

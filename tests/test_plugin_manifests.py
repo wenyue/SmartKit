@@ -166,7 +166,7 @@ class PluginManifestTest(unittest.TestCase):
             )
         for name in (
             'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
-            'what-changes', 'review-for-humans', 'collect-todos',
+            'what-changes', 'review-for-humans', 'collect-todos', 'what-if',
             'finish-worktree',
             'write-rules-and-skills',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
@@ -512,7 +512,7 @@ class PluginManifestTest(unittest.TestCase):
         custom = {
             'setup-project-agents', 'create-worktree', 'refactor-code', 'rename-code',
             'diagnose-agent-session', 'what-changes', 'review-for-humans', 'collect-todos',
-            'finish-worktree',
+            'what-if', 'finish-worktree',
             'write-rules-and-skills',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',

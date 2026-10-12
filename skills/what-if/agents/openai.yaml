@@ -1,0 +1,5 @@
+interface:
+  display_name: "What If"
+  short_description: "评估尚不确定的想法是否优于现状并给出独立结论"
+policy:
+  allow_implicit_invocation: false

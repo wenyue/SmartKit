@@ -8,6 +8,7 @@
     {"id": "smartkit/what-changes", "path": "what-changes"},
     {"id": "smartkit/review-for-humans", "path": "review-for-humans"},
     {"id": "smartkit/collect-todos", "path": "collect-todos"},
+    {"id": "smartkit/what-if", "path": "what-if"},
     {"id": "smartkit/finish-worktree", "path": "finish-worktree"},
     {"id": "smartkit/write-rules-and-skills", "path": "write-rules-and-skills"},
     {"id": "smartkit/rule-code", "path": "rule-code"},
