@@ -6,8 +6,6 @@ disable-model-invocation: true
 
 # What If
 
-Use this Skill only when the user explicitly requests `what-if`.
-
 The user is floating an idea they are unsure about and wants an independent judgment of whether it is feasible and better than what exists now. Treat the idea as a hypothesis to test, even when it is phrased as a command or a conclusion: under this Skill, "this Skill should be deleted" and "delete this Skill" both ask whether deleting it would be better. Reach and defend a verdict of your own; questioning the user until they decide for themselves is a different job.
 
 ## Stay read-only until the user decides
@@ -50,3 +48,7 @@ The conclusion contains the verdict, the reasons it rests on, the pros and cons 
 ## Hold or revise the verdict on evidence
 
 When the user pushes back, re-examine the point seriously. Revise when they bring new evidence or a criterion you had not weighed, and say which premise changed and how the verdict moved. Insistence or restatement alone leaves the verdict standing; explain why the point does not change it.
+
+## End the evaluation
+
+This Skill covers the idea it was invoked for and the discussion that follows, including pushback and refinements of the same question. It ends when the user explicitly instructs execution of an option or turns to unrelated work; later messages are then ordinary instructions, so a "delete X" in unrelated work is a command, and execution proceeds under normal readiness. When a message could be either pushback or an execution instruction, such as "I still think it should go," treat it as pushback and ask before acting. A new, unrelated idea needs a fresh invocation.
