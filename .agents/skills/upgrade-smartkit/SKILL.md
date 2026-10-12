@@ -29,15 +29,15 @@ Account for every relevant release change as requiring migration or remaining us
 
 ## 3. Maintain only necessary migration instructions
 
-Read [the setup migration guide](../../../skills/setup-project-agents/references/migrations.md) and [the migration catalog](../../../setup-assets/catalog/migrations.json) before changing migration records. The guide explains applicability and project execution; the catalog records the release version and guide section for each necessary migration. Follow their existing structure.
+Read [the setup migration guide](../../../skills/setup-project-agents/references/migrations.md) and [the migration catalog](../../../setup-assets/catalog/migrations.json) before changing migration records. The guide explains applicability and how to find independent version guides under `skills/setup-project-agents/references/migrations/`; the catalog records the release version and guide file for each necessary migration. Read each applicable version guide before deciding its action.
 
-When migration is necessary, add the target release's declaration and matching guide section as one coherent change. Keep the section brief: state the main changes and what the affected project must do. Include a prerequisite, ordering constraint, or manual source change only when it affects a successful upgrade. Make the required action specific enough for setup to execute or identify the missing project decision; a changelog entry alone is insufficient.
+When migration is necessary, add the target release's declaration and one `skills/setup-project-agents/references/migrations/<version>.md` file as one coherent change. The declaration's `guide` is `references/migrations/<version>.md`; keep the migration instructions in that file without adding a version entry to the overview. Keep the file brief: state the main changes and what the affected project must do. Include a prerequisite, ordering constraint, or manual source change only when it affects a successful upgrade. Make the required action specific enough for setup to execute or identify the missing project decision; a changelog entry alone is insufficient.
 
 Retain necessary migration history so a project skipping releases can satisfy all applicable requirements in one setup. Read earlier applicable entries when writing a new one; explain any dependency or superseded action so projects need not install each intermediate plugin version. Keep published migration identities stable. Before editing an existing target-version entry, establish that it belongs to the same unpublished release; resolve a conflicting published entry as a release decision rather than silently replacing it.
 
-Reconcile an existing entry for the same unpublished release with the current migration decision rather than appending a duplicate. If migration remains necessary, update that entry and its guide section. If the release no longer needs migration, remove its obsolete draft declaration and the corresponding draft guidance within the accepted editing scope. Preserve published history and independently owned edits; unresolved ownership or permission blocks that removal and must be reported before proceeding with release preparation.
+Reconcile an existing entry for the same unpublished release with the current migration decision rather than appending a duplicate. If migration remains necessary, update that entry and its version guide. If the release no longer needs migration, remove its obsolete draft declaration and version guide within the accepted editing scope. Preserve published history and independently owned edits; unresolved ownership or permission blocks that removal and must be reported before proceeding with release preparation.
 
-If no migration is needed and no obsolete draft entry exists, leave the catalog and guide unchanged. Report the reason; an unrelated version bump needs no empty migration section.
+If no migration is needed and no obsolete draft entry exists, leave the catalog, overview, and version guides unchanged. Report the reason; an unrelated version bump needs no empty migration file.
 
 ## 4. Advance the canonical version and synchronize
 
@@ -57,7 +57,7 @@ Run the version check without modifying files:
 python scripts/sync_plugin_version.py --check
 ```
 
-Run the applicable owner checks from [CI](../../../.github/workflows/test.yml), including migration validation and tests when declarations or guides changed. Verify that every declaration resolves to its matching guide section, that migration versions fit the target release, and that earlier necessary entries remain available. Follow the project translation workflow for changed first-party Skill references.
+Run the applicable owner checks from [CI](../../../.github/workflows/test.yml), including migration validation and tests when declarations or guides changed. Verify that every declaration resolves to its matching version guide, that migration versions fit the target release, and that earlier necessary entries and files remain available. Follow the project translation workflow for changed first-party Skill references.
 
 Review the complete diff against the established baseline and existing-work record. Check whitespace with `git diff <comparison-point> --check`, including new files, and confirm that source changes, synchronized version fields, and the migration decision agree. Required check failures remain unresolved work, even when the version synchronizer reports success.
 

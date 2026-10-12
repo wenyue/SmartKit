@@ -62,22 +62,13 @@ def load_migrations(source_root: Path) -> tuple[Migration, ...]:
         if key > current or (previous is not None and key <= previous):
             raise ContractError('project migrations must be ordered unique released versions')
         guide = entry['guide']
-        if not isinstance(guide, str):
-            raise ContractError('project migration guide must be a relative reference with an anchor')
-        relative, separator, anchor = guide.partition('#')
-        if relative != 'references/migrations.md' or not separator or not anchor:
-            raise ContractError('project migration guide must reference references/migrations.md')
+        expected_guide = f"references/migrations/{entry['version']}.md"
+        if not isinstance(guide, str) or guide != expected_guide:
+            raise ContractError(f'project migration guide must reference {expected_guide}')
         try:
-            content = (source_root / 'skills/setup-project-agents' / relative).read_text(encoding='utf-8')
+            (source_root / 'skills/setup-project-agents' / guide).read_text(encoding='utf-8')
         except (OSError, UnicodeDecodeError) as error:
             raise ContractError('project migration guide is unavailable') from error
-        headings = {
-            ''.join(character for character in line.lstrip('#').strip().lower().replace(' ', '-')
-                    if character.isalnum() or character in '-_')
-            for line in content.splitlines() if line.startswith('#')
-        }
-        if anchor not in headings:
-            raise ContractError(f'project migration guide anchor is missing: {guide}')
         result.append(Migration(entry['version'], guide))
         previous = key
     return tuple(result)

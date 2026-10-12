@@ -2,7 +2,11 @@
   "migrations": [
     {
       "version": "1.2.19",
-      "guide": "references/migrations.md#project-refresh-and-version-baseline"
+      "guide": "references/migrations/1.2.19.md"
+    },
+    {
+      "version": "1.2.20",
+      "guide": "references/migrations/1.2.20.md"
     }
   ]
 }

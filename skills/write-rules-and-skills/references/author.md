@@ -134,7 +134,7 @@ Interpreter discovery, version preflights, forwarding launchers, and platform va
 
 ## Write agents/openai.yaml
 
-For every Skill created or revised, include `agents/openai.yaml` and write its `interface.short_description` as a concise Simplified-Chinese summary for the human reader.
+For every Skill created or revised, include `agents/openai.yaml`. Write `interface.display_name` as an English title for the human reader; preserve proper-name tokens in their original form, and use a display title explicitly specified by the user verbatim. Write `interface.short_description` as a concise Simplified-Chinese summary.
 
 ## Finish and revise
 

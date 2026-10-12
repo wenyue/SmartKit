@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path, PurePosixPath
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -747,6 +748,47 @@ class SetupCatalogTest(unittest.TestCase):
 
 
 class SetupMigrationTest(unittest.TestCase):
+    def test_migration_guides_must_use_the_declared_version_file(self):
+        from agents_setup.migrations import load_migrations
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            declarations = source / 'setup-assets/catalog/migrations.json'
+            declarations.parent.mkdir(parents=True)
+            with mock.patch('agents_setup.migrations.load_catalog', return_value=load_catalog(REPO_ROOT)):
+                for guide in (
+                    None,
+                    'references/migrations.md#project-refresh-and-version-baseline',
+                    'references/migrations/1.2.20.md',
+                    'references/migrations/1.2.19.md#section',
+                    '../migrations/1.2.19.md',
+                    '/references/migrations/1.2.19.md',
+                ):
+                    with self.subTest(guide=guide):
+                        declarations.write_text(json.dumps({'migrations': [
+                            {'version': '1.2.19', 'guide': guide},
+                        ]}), encoding='utf-8')
+                        with self.assertRaisesRegex(ContractError, 'must reference'):
+                            load_migrations(source)
+
+    def test_missing_or_unreadable_version_guide_stops_migration_loading(self):
+        from agents_setup.migrations import load_migrations
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            declarations = source / 'setup-assets/catalog/migrations.json'
+            declarations.parent.mkdir(parents=True)
+            declarations.write_text(json.dumps({'migrations': [
+                {'version': '1.2.19', 'guide': 'references/migrations/1.2.19.md'},
+            ]}), encoding='utf-8')
+            guide = source / 'skills/setup-project-agents/references/migrations/1.2.19.md'
+            guide.parent.mkdir(parents=True)
+            with mock.patch('agents_setup.migrations.load_catalog', return_value=load_catalog(REPO_ROOT)):
+                for content in (None, b'\xff'):
+                    with self.subTest(content=content):
+                        if content is not None:
+                            guide.write_bytes(content)
+                        with self.assertRaisesRegex(ContractError, 'guide is unavailable'):
+                            load_migrations(source)
+
     def test_release_declarations_select_all_crossed_migrations_not_every_new_version(self):
         from agents_setup.migrations import applicable_migrations, load_migrations, version_key
         migrations = load_migrations(REPO_ROOT)

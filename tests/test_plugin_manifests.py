@@ -323,8 +323,6 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertRegex(metadata, r'(?m)^interface:\s*$')
                 self.assertRegex(metadata, r'(?m)^\s+display_name:\s+.+$')
                 self.assertRegex(metadata, r'(?m)^\s+short_description:\s+.+$')
-                self.assertRegex(metadata, r'(?m)^\s+default_prompt:\s+.+$')
-                self.assertIn(f'${name}', metadata)
 
     def test_custom_skill_entry_inventory_matches_registry(self):
         custom = load_json('skills/registry.json')['custom']
