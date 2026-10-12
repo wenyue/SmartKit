@@ -48,8 +48,7 @@ SOFTWARE.
 
 https://github.com/DietrichGebert/ponytail
 
-上游版本：`e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156`。
-来源路径：`skills/ponytail/SKILL.md`。
+上游版本：`e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156`。来源路径：`skills/ponytail/SKILL.md`。
 
 阅读的版本是 SmartKit 当前检出中具有权威性的改编版本，包含本地 `vendor/patches/ponytail/ponytail.patch` 变更。`writing-lessons.md` 引用了其开篇工作姿态和保护已确认要求的边界，并概述决策阶梯。它没有让 Ponytail 的编码政策成为其他工件的政策。
 

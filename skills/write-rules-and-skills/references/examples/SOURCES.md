@@ -1,8 +1,6 @@
 # Sources for the Writing Examples and Lessons
 
-These sources inform the teaching cases; their domain policies are not incorporated into the
-authoring contract. All material needed to read the lessons is included locally. The source URLs
-identify provenance and are not runtime reading requirements.
+These sources inform the teaching cases; their domain policies are not incorporated into the authoring contract. All material needed to read the lessons is included locally. The source URLs identify provenance and are not runtime reading requirements.
 
 ## Matt Pocock
 
@@ -18,12 +16,7 @@ Source paths inspected in the source distribution:
 - `skills/engineering/codebase-design/SKILL.md`
 - `skills/productivity/writing-for-agents/SKILL.md`
 
-`elegant-procedure-led-skill.md` adapts the feedback-loop construction and simplification ideas
-from `diagnosing-bugs` into a narrower, standalone reproduction task. It changes wording, removes
-the broader diagnosis/fix workflow, and retains task-bound execution rather than importing all
-upstream thresholds, gates, or tool choices. `writing-lessons.md` discusses that adaptation and the
-paired-example and question-led organization techniques in `tdd` and `prototype`. The decision-memo
-example is original teaching material, not an upstream Skill copy.
+`elegant-procedure-led-skill.md` adapts the feedback-loop construction and simplification ideas from `diagnosing-bugs` into a narrower, standalone reproduction task. It changes wording, removes the broader diagnosis/fix workflow, and retains task-bound execution rather than importing all upstream thresholds, gates, or tool choices. `writing-lessons.md` discusses that adaptation and the paired-example and question-led organization techniques in `tdd` and `prototype`. The decision-memo example is original teaching material, not an upstream Skill copy.
 
 ```text
 MIT License
@@ -55,13 +48,9 @@ Source: Ponytail.
 
 https://github.com/DietrichGebert/ponytail
 
-Upstream revision: `e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156`.
-Source path: `skills/ponytail/SKILL.md`.
+Upstream revision: `e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156`. Source path: `skills/ponytail/SKILL.md`.
 
-Inspected version: SmartKit's checkout-authoritative adaptation of that source, including the
-local `vendor/patches/ponytail/ponytail.patch` changes. `writing-lessons.md` quotes its opening posture
-and confirmed-requirements boundary and summarizes its decision ladder. It does not establish
-Ponytail's coding policies for other artifacts.
+Inspected version: SmartKit's checkout-authoritative adaptation of that source, including the local `vendor/patches/ponytail/ponytail.patch` changes. `writing-lessons.md` quotes its opening posture and confirmed-requirements boundary and summarizes its decision ladder. It does not establish Ponytail's coding policies for other artifacts.
 
 ```text
 MIT License

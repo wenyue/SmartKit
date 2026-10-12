@@ -7,8 +7,7 @@ description: 编写或修订一个可跨项目使用的 SmartKit Rule 或 Skill�
 
 编写在所支持的各个项目中都有依据的指导。难点在于判断：哪些含义能随工件一起迁移，哪些事实只属于某个目标环境。
 
-本 Skill 为一个共享工件确认资格，将编写与审查委托给
-[`write-rules-and-skills`](../../../skills/write-rules-and-skills/SKILL.md)，并依据其可移植性义务核对返回的证据。编写与审查机制由该公共工作流负责。
+本 Skill 为一个共享工件确认资格，将编写与审查委托给 [`write-rules-and-skills`](../../../skills/write-rules-and-skills/SKILL.md)，并依据其可移植性义务核对返回的证据。编写与审查机制由该公共工作流负责。
 
 ## 1. 确定哪些内容可以共享
 
