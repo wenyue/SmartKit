@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help a human reviewer understand what changed, whether it is reasonable, and where their attention is needed. Use this Skill only when the user requests it. Review the supplied scope read-only; change the reviewed contents only when the user explicitly chooses repairs as described below.
+Help a human reviewer understand what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the supplied scope read-only; change the reviewed contents only when the user explicitly chooses repairs as described below.
 
 Load the necessary Skills and Rules to perform the review. Write the human report, including labels and action prompts, in the response language required by the conversation; English labels below specify their meaning.
 
@@ -28,17 +28,29 @@ Small accompanying edits, such as a comment typo, can be mentioned in the overvi
 
 Label modification items **🔧 1.**, **🔧 2.**, and so on, with titles and continuous numbering across all files and continuation groups in the same report.
 
-For each item, present **⏪ Before**, then **⏩ After**, then **Evaluation** vertically. Explain the behavior before and after; a separate "consequence of not changing" field is unnecessary. Prefer short, simple actual code in the project's language, keeping only the parts that illustrate the scenario. Explain the code in plain language and preserve the behavior being compared. A simplified example must be recognizable as an illustration, not a claimed verbatim source excerpt. Omit the example when the change is very simple or code would not help, such as a comment correction.
+### Assess every item on two independent dimensions
 
-Give every item a reasoned evaluation, prefixing its label with the corresponding emoji:
+Use the same reasoning coverage for every modification item: establish what changed from before to after, its effects and supporting evidence, then judge reasonableness and elegance independently. Apply both dimensions to all kinds of changes, including fixes, features, refactors, documentation, and translations. For prose, elegance concerns clear expression and organization; for code, it concerns the mechanism and structure. Adjust the expression's length, not the assessment's coverage.
 
-- **✅ Reasonable:** it serves the intended task and its behavior and costs are justified by the available evidence.
-- **❌ Unreasonable:** a material defect, unnecessary scope expansion, or a clearly better supported approach makes this change a poor choice. Label each finding with a severity from P0 to P3 and explain the impact that justifies that level. Give a concrete recommendation and explain why it is better under the same requirements. Small optimizations and style preferences alone do not meet this threshold.
-- **⚠️ Insufficient evidence:** name what prevents a sound judgment and what evidence would resolve it. Separate established behavior from assumptions instead of implying approval.
+Use the fixed emoji **⚖️** for reasonableness and **🎨** for elegance in every item, including a single-sentence item. Display each judgment as its emoji followed directly by the conclusion, without repeating the dimension's name. Give each dimension an explicit conclusion and a reason; the emoji identifies the dimension, not whether the judgment is favorable.
 
-Use P0 for critical problems requiring immediate intervention, P1 for serious problems needing prompt correction, P2 for normal-priority problems, and P3 for lower-impact problems worth correcting. Base severity on evidenced consequences and affected conditions, not on how much code changed. For example: **❌ Evaluation: Unreasonable (P1).** followed by the impact and recommended repair.
+- **⚖️ Reasonable.** The change serves the intended task; its behavior is correct and safe, its scope fits the task, and its costs are justified by the available evidence.
+- **⚖️ Unreasonable.** A material defect, unnecessary scope expansion, or unjustified cost makes the change a poor choice under the task's requirements. Label each finding with a severity from P0 to P3, explain the evidenced impact, and give a concrete recommendation with its advantage under the same requirements. A more elegant alternative, small optimization, or style preference alone does not meet this threshold.
+- **🎨 Elegant.** The change addresses the underlying problem at the appropriate responsibility or location, with clear structure and little unnecessary state, branching, or repetition. Explain which choices make it easy to understand and maintain.
+- **🎨 Can improve.** The behavior may be reasonable while its mechanism or expression creates avoidable complexity or repetition. Point to the concrete structure that could improve, suggest a simpler approach where supported, and explain the maintenance or clarity benefit. Distinguish that benefit from personal style preferences.
+- **⚖️ Insufficient evidence.** or **🎨 Insufficient evidence.** Name what prevents a sound judgment on that dimension and what evidence would resolve it. Keep established facts and assumptions distinct. One dimension can have a supported conclusion while the other lacks evidence.
+
+A reasonable change can be inelegant. An elegance concern alone is advice and does not trigger the mandatory fix-or-ignore pause. If the same structure also causes an evidenced material defect, risk, or unjustified cost, report that impact under reasonableness as well; that unreasonable finding follows the normal pause and repair procedure.
+
+Use P0 for critical problems requiring immediate intervention, P1 for serious problems needing prompt correction, P2 for normal-priority problems, and P3 for lower-impact problems worth correcting. Base severity on evidenced consequences and affected conditions, not on how much code changed. For example: **⚖️ Unreasonable (P1).** followed by the impact and recommended repair.
 
 Carry the underlying review's material findings and qualifications into the relevant items, including the basis of a standards or task-scope concern when that distinction matters. A readable explanation must retain limitations that could change the human reviewer's decision. Report checks actually performed and distinguish them from results merely supplied by the author.
+
+### Choose how much to show
+
+Use a compact explanation when the behavior change is straightforward, the affected scope is clear, and no material risk or trade-off needs elaboration. In one or two natural sentences, explain the change and include both emoji-marked judgments with their reasons. Omit the fixed Before, After, Reasonableness, and Elegance sections and unhelpful code. Judge simplicity by what the reader needs to understand, not by the diff's line count: one changed line can affect exception handling or persistence.
+
+Expand items involving complex mechanisms, important contracts, material risks or findings, consequential trade-offs, or key evidence gaps. Present **⏪ Before**, then **⏩ After**, then the **⚖️** reasonableness judgment, then the **🎨** elegance judgment vertically, using emoji plus conclusion for both judgment labels. Explain the behavior before and after; a separate "consequence of not changing" field is unnecessary. Prefer short, simple actual code in the project's language, keeping only the parts that illustrate the scenario. Explain the code in plain language and preserve the behavior being compared. A simplified example must be recognizable as an illustration, not a claimed verbatim source excerpt. Omit code when it would not help, such as for prose organization.
 
 ## Display one group and handle findings
 
@@ -58,13 +70,23 @@ When no unreasonable findings are pending and files remain, end an ordinary grou
 
 ## Reference report
 
-Use the following shape as a guide, adapting the detail to the user. Exact wording is flexible; preserve the file overview, business items, vertical comparison, judgment, and progress. These are illustrative files and snippets, not findings about a particular repository. Assume that deleting an item detaches it from its storage box and that the task promises to flush the deletion. The selected scope contains the following two non-test files.
+Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, business items, both reasoned judgments, and progress; use a vertical comparison only when the item calls for expansion. These are illustrative files and snippets, not findings about a particular repository. The selected scope contains three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
+
+**📄 File: `l10n/en.json`**
+
+This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
+
+**🔧 1. Make the account-deletion label explicit**
+
+Changing “Delete” to “Delete account” names the affected object. **⚖️ Reasonable,** because the label accurately describes the assumed action; **🎨 Elegant,** because two plain words communicate the action clearly.
+
+---
 
 **📄 File: `lib/item_storage.dart`**
 
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting an item can still flush the deletion afterward.
 
-**🔧 1. Flush the deletion to the original storage box**
+**🔧 2. Flush the deletion to the original storage box**
 
 **⏪ Before**
 
@@ -85,34 +107,20 @@ await originalBox?.flush();
 
 Saving the box reference first lets the code flush that same box after deleting the item.
 
-**✅ Evaluation: Reasonable.** This directly repairs the promised deletion behavior with a small change. A flush failure still needs to reach the caller; flushing does not roll back the deletion.
+**⚖️ Reasonable.** This directly repairs the promised deletion behavior with a small change. Flush failures reach the caller; flushing does not roll back the deletion, so a failed flush must not be described as a restored item.
+
+**🎨 Elegant.** Keeping the original box reference at the deletion site directly handles the detachment mechanism without adding a separate lookup or new state elsewhere.
 
 ---
 
-**📄 File: `l10n/en.json`**
+**📄 File: `ui/save_button.dart`**
 
-This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
+This file handles the Save button. The change prevents repeated clicks from starting duplicate saves.
 
-**🔧 2. Make the account-deletion label explicit**
+**🔧 3. Refuse repeated clicks while saving**
 
-**⏪ Before**
-
-```json
-{"deleteAccount": "Delete"}
-```
-
-The button does not say what will be deleted.
-
-**⏩ After**
-
-```json
-{"deleteAccount": "Delete account"}
-```
-
-The button names the affected object.
-
-**✅ Evaluation: Reasonable.** The text accurately describes the assumed action and helps the user understand it before clicking.
+The handler now returns while a save is pending; completion and cancellation both reset the pending flag correctly. **⚖️ Reasonable,** because this prevents duplicate saves within the requested scope; **🎨 Can improve,** because both branches repeat the same flag reset, which a shared completion path would make easier to maintain.
 
 ---
 
-**📊 Progress: 2/2 files displayed.** The report is complete for this selected scope.
+**📊 Progress: 3/3 files displayed.** The report is complete for this selected scope. Item 3's elegance suggestion does not create an unreasonable finding or a fix-or-ignore pause.
