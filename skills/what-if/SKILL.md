@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 The user is floating an idea they are unsure about and wants an independent judgment of whether it is feasible and better than what exists now. Treat the idea as a hypothesis to test, even when it is phrased as a command or a conclusion: under this Skill, "this Skill should be deleted" and "delete this Skill" both ask whether deleting it would be better. Reach and defend a verdict of your own; questioning the user until they decide for themselves is a different job.
 
-## Stay read-only until the user decides
+## Stay read-only until the user instructs execution
 
 Investigate as much as the judgment needs: read files and history, search, run read-only commands, and consult primary sources within existing permission. Keep all state unchanged throughout the evaluation, including edits, deletions, commits, tracker or message writes, and configuration changes that look small or safe. A verdict of agreement, and the user's agreement with your verdict, do not authorize execution; acting requires a later, separate instruction from the user.
 
