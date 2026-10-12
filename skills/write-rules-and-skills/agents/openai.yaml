@@ -1,3 +1,7 @@
 interface:
   display_name: "Write Rules and Skills"
-  short_description: "设计、编写并验证一份规则或技能"
+  short_description: "设计、编写并验证一份可供 Agent 使用的规则或技能。"
+  icon_small: "./assets/write-rules-and-skills.svg"
+  icon_large: "./assets/write-rules-and-skills.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $write-rules-and-skills，将我提供的要求整理成一份可执行的 Agent 规则或技能。"

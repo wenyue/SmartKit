@@ -134,7 +134,7 @@ Interpreter discovery, version preflights, forwarding launchers, and platform va
 
 ## Write agents/openai.yaml
 
-For every Skill created or revised, include `agents/openai.yaml`. Write `interface.display_name` as an English title for the human reader; preserve proper-name tokens in their original form, and use a display title explicitly specified by the user verbatim. Write `interface.short_description` as a concise Simplified-Chinese summary.
+For a Skill Candidate, read [OpenAI metadata](openai-metadata.md) before writing or revising its `agents/openai.yaml` and icon assets. That reference owns the display copy, required fields, icon choices, and color conventions for every Skill created or revised; Rule Candidates do not need it.
 
 ## Finish and revise
 

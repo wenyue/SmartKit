@@ -286,6 +286,7 @@ class PluginManifestTest(unittest.TestCase):
                 'change-reviewer.md',
                 'controller.md',
                 'correctness-reviewer.md',
+                'openai-metadata.md',
                 'quality-reviewer.md',
                 'reviewer.md',
                 'runner.md',

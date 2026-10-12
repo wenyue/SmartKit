@@ -134,7 +134,7 @@ Rule 的权威由核心治理的归属与具体性比较决定，不取决于语
 
 ## 编写 agents/openai.yaml
 
-每次创建或修订 Skill，都要包含 `agents/openai.yaml`。将 `interface.display_name` 写成供人类读者阅读的英文标题；专有名称保留原文，用户明确指定的显示标题按原文使用。将 `interface.short_description` 写成简洁的简体中文摘要。
+对于 Skill Candidate，在编写或修订其 `agents/openai.yaml` 和图标素材之前，阅读 [OpenAI 元数据](openai-metadata.md)。该参考文档负责每个新建或修订 Skill 的展示文案、必填字段、图标选择和颜色约定；Rule Candidate 无需阅读。
 
 ## 完成并修订
 
