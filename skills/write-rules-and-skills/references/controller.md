@@ -76,6 +76,8 @@ An Integrated Reviewer may return `INDEPENDENT_REVIEW_REQUIRED`. Safely close th
 
 ## Manage checks and repairs
 
+### Gate each Author return
+
 After every Author draft or repair return, capture and compare the complete Candidate. Verify that the return came from the assigned Author, changes fit the allowed operations, and state is attributable. Preserve and report uncertain or out-of-scope changes as `BLOCKED`; do not erase them. For `NEEDS_INPUT` or `BLOCKED`, retain partial work as evidence and follow the clarification or finalization route.
 
 Use the compare operation to derive changes against preserved pre-write evidence:
@@ -86,11 +88,32 @@ python "<skill-root>/scripts/candidate_evidence.py" compare --root "<candidate-r
 
 Repeat `--allowed-change-path` for the permitted changed paths in that snapshot; omit it when no change is allowed. With supplemental baselines, compare each snapshot and account for their union. Capture the complete current scope to bind checks and reviews to one fingerprint; a comparison of only one supplement does not identify the complete Candidate.
 
-For an Author `COMPLETE`, run all required checks in non-fixing mode, retaining commands, results, and the tested fingerprint. Candidate-caused failures go to the same Author for repair. Missing user-controlled input or permission requires `NEEDS_INPUT`; other unresolved failures or correction without progress require `BLOCKED`. Begin review only after the checks pass.
+### Run the required checks
 
-Reviewers send findings and Candidate questions directly to the Author. Track their returns and verify an unchanged Candidate fingerprint after each. Resolve questions about intent or permission, but leave semantic verdicts with Reviewers. Wait for all applicable results and necessary answers before releasing one coherent repair. Reapply the Author-return gate and checks after that repair; every perspective then reviews the complete new version.
+After every Author draft or repair, run this Skill's check entry on every surviving Markdown file in the complete Candidate scope, including scoped references. The entry is a required check whenever Candidate Markdown survives. It runs every document check this Skill owns, and its help names each check with its coverage, exemptions, and limits. Resolve `<skill-root>` to this loaded Skill's directory and pass the Candidate files explicitly, without scanning unrelated repository files:
 
-A round closes when all perspectives have returned. If they all pass, proceed to handoff. If a material defect remains, continue only within the remaining budget and with a plausible correction. Report `BLOCKED` when the bound is reached or no progress is possible. Do not spend further rounds on unsupported preferences or treat elapsed effort as evidence of quality.
+```text
+python "<skill-root>/scripts/check_candidate.py" --help
+python "<skill-root>/scripts/check_candidate.py" -- "<candidate-root>/<candidate-relative-path.md>" "<candidate-root>/<scoped-reference.md>"
+```
+
+The entry never rewrites files. A pass establishes only what its checks cover, not Markdown validity or semantic correctness. If the Candidate has no surviving Markdown files, record the entry as not applicable.
+
+For an Author `COMPLETE`, also run every other required check in non-fixing mode. Retain commands, results, and the tested fingerprint for the entry and each other check. Begin review only after all required checks pass.
+
+### Route check failures
+
+Read the entry's result from its exit status and streams, not from knowledge of individual checks. Status 0 means no problem was found. Status 1 means document problems, listed on stdout. Status 2 means a usage or input error, reported on stderr, left the result incomplete; it takes precedence over 1, and stdout may still list problems in the inputs that could be read.
+
+Route each failure by its cause and retain the diagnostics. Candidate-caused failures go to the same Author for repair; these include document problems in Candidate files and any input error a Candidate file causes, such as Markdown that is not UTF-8. When the Author reports a failure as having another cause, such as an unreadable target outside the Candidate or a suspected false positive, establish its cause from the diagnostics before routing it. Correct your own invocation mistakes and rerun. Missing user-controlled input or permission requires `NEEDS_INPUT`; other unresolved failures or correction without progress require `BLOCKED`.
+
+### Review and repair
+
+Reviewers send findings and Candidate questions directly to the Author. Track their returns and verify an unchanged Candidate fingerprint after each. Resolve questions about intent or permission, but leave semantic verdicts with Reviewers. When a Reviewer retains a contested blocking finding after reassessment, resolve any intent, scope, or permission question it turns on, asking the user when the decision is user-owned; otherwise the Reviewer's verdict stands. Wait for all applicable results and necessary answers before releasing one coherent repair. Reapply the Author-return gate and checks after that repair; every perspective then reviews the complete new version.
+
+### Close a round
+
+A round closes when all perspectives have returned. If they all pass, tell the Author that no repair follows and proceed to handoff; non-blocking suggestions alone do not start another round. If a material defect remains, continue only within the remaining budget and with a plausible correction. Report `BLOCKED` when the bound is reached or no progress is possible. Do not spend further rounds on unsupported preferences or treat elapsed effort as evidence of quality.
 
 ## Resolve questions faithfully
 

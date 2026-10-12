@@ -76,6 +76,8 @@ Integrated Reviewer 可以返回 `INDEPENDENT_REVIEW_REQUIRED`。安全结束该
 
 ## 管理检查和修复
 
+### 把关每次 Author 返回
+
 每次 Author 返回初稿或修复结果后，捕获并比较完整 Candidate。确认结果来自指定 Author，变更符合允许操作，且状态归属明确。保留不确定或范围外的变更，并以 `BLOCKED` 报告；不要将其抹去。对于 `NEEDS_INPUT` 或 `BLOCKED`，将部分工作保留为证据，并进入澄清或收尾路径。
 
 使用 compare 操作，相对于保留的写入前证据得出变更：
@@ -86,11 +88,32 @@ python "<skill-root>/scripts/candidate_evidence.py" compare --root "<candidate-r
 
 对该快照中允许变更的路径重复使用 `--allowed-change-path`；不允许任何变更时省略此参数。存在补充基线时，比较每份快照，并完整核对它们的并集。捕获完整的当前范围，将检查和审查绑定到一个指纹；只比较一份补充快照，不能标识完整 Candidate。
 
-Author 返回 `COMPLETE` 后，以不自动修复的方式运行全部必要检查，保留命令、结果和被测指纹。Candidate 导致的失败交给同一位 Author 修复。缺少用户控制的输入或权限时返回 `NEEDS_INPUT`；其他未解决的失败，或修正未取得进展时，返回 `BLOCKED`。只有检查通过后才开始审查。
+### 运行必要检查
 
-Reviewer 将 finding 和 Candidate 问题直接发送给 Author。跟踪他们的返回，并在每次返回后验证 Candidate 指纹未变。解决意图或权限问题，将语义结论留给 Reviewer。等待所有适用结果和必要回答后，再允许进行一次连贯修复。修复后重新应用 Author 返回检查和必要检查；每个视角随后审查完整的新版本。
+每次 Author 返回初稿或修复结果后，对完整 Candidate 范围内所有仍存在的 Markdown 文件运行本 Skill 的检查入口，包括范围内的参考文件。只要 Candidate 中仍有 Markdown 文件，该入口就是必要检查。它运行本 Skill 拥有的全部文档检查，其帮助信息列出每项检查及其覆盖范围、例外和限制。将 `<skill-root>` 解析为当前加载的 Skill 目录，并显式传入 Candidate 文件，不扫描无关的仓库文件：
 
-所有视角均返回后，一轮结束。全部通过则进入交接。如果仍有实质性缺陷，只有在剩余预算内且存在合理修正方向时才继续。达到上限或无法取得进展时，报告 `BLOCKED`。不要为缺乏依据的偏好多耗费轮次，也不要把已投入的时间当作品质证据。
+```text
+python "<skill-root>/scripts/check_candidate.py" --help
+python "<skill-root>/scripts/check_candidate.py" -- "<candidate-root>/<candidate-relative-path.md>" "<candidate-root>/<scoped-reference.md>"
+```
+
+该入口从不改写文件。通过只证明满足其检查所覆盖的内容，不代表 Markdown 语法有效或语义正确。如果 Candidate 中没有仍存在的 Markdown 文件，将该入口记录为不适用。
+
+Author 返回 `COMPLETE` 后，还要以不自动修复的方式运行其他全部必要检查。为该入口和其他每项检查保留命令、结果和被测指纹。只有全部必要检查通过后才开始审查。
+
+### 路由检查失败
+
+根据入口的退出状态和输出流读取结果，而不是依据对单项检查的了解。状态 0 表示未发现问题。状态 1 表示存在文档问题，列在 stdout 上。状态 2 表示用法或输入错误，报告在 stderr 上，结果不完整；它优先于 1，stdout 仍可能列出可读输入中的问题。
+
+按原因路由每个失败，并保留诊断。Candidate 导致的失败交给同一位 Author 修复；这包括 Candidate 文件中的文档问题，以及 Candidate 文件导致的任何输入错误，例如不是 UTF-8 编码的 Markdown。当 Author 报告某个失败另有原因，例如 Candidate 外的目标无法读取或疑似误报时，先根据诊断确定其原因，再进行路由。修正你自己的调用错误并重新运行。缺少用户控制的输入或权限时返回 `NEEDS_INPUT`；其他未解决的失败，或修正未取得进展时，返回 `BLOCKED`。
+
+### 审查和修复
+
+Reviewer 将 finding 和 Candidate 问题直接发送给 Author。跟踪他们的返回，并在每次返回后验证 Candidate 指纹未变。解决意图或权限问题，将语义结论留给 Reviewer。当 Reviewer 重新评估后仍保留有争议的阻断 finding 时，解决它所依赖的意图、范围或权限问题；决定属于用户时询问用户，否则以 Reviewer 的结论为准。等待所有适用结果和必要回答后，再允许进行一次连贯修复。修复后重新应用 Author 返回检查和必要检查；每个视角随后审查完整的新版本。
+
+### 结束一轮
+
+所有视角均返回后，一轮结束。全部通过时，告知 Author 不再进行修复，然后进入交接；仅有非阻断建议时，不启动新一轮。如果仍有实质性缺陷，只有在剩余预算内且存在合理修正方向时才继续。达到上限或无法取得进展时，报告 `BLOCKED`。不要为缺乏依据的偏好多耗费轮次，也不要把已投入的时间当作品质证据。
 
 ## 忠实处理问题
 
