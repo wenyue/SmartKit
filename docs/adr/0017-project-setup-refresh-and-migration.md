@@ -18,8 +18,8 @@ to require these preferences and concrete guidance, as well as revising the exis
 Record only the SmartKit release version used by the latest successful project setup. A plugin
 upgrade or failed setup does not advance that record. This reuses the plugin release identity from
 [ADR 0004](0004-harness-adaptation-and-contract-versioning.md), rather than introducing an independent
-configuration release version. Previously initialized projects without this record are blocked
-until successful setup establishes a known baseline; do not guess their historical version.
+configuration release version. Previously initialized projects without this record require a
+successful setup to establish a known baseline; do not guess their historical version.
 Projects that have never used setup are not blocked merely for lacking that record.
 This adds a baseline-establishment path beyond ADR 0004's historical hard cut.
 
@@ -28,8 +28,14 @@ their reading contract, including blueprint, configuration-format, and AGENTS.md
 wording corrections and shared Skill changes alone do not require migration. A maintainer-facing
 Skill in the SmartKit repository owns version advancement and the assessment of migration needs;
 the hook consumes the declared result instead of inferring necessity from unequal version numbers.
-Keep the current hook delivery and daily-check behavior. Migration guidance belongs in the setup
-Skill's references and briefly states the main changes and required project actions; add migration
+All readiness checks share the Daily Project Check Gate, run concurrently, and aggregate findings
+before one consent request. A reported problem temporarily pauses ordinary work; the user may
+explicitly decline or defer its action and continue the original task. This includes missing setup
+baselines and Required Project Migrations. Deferral preserves unresolved findings and never advances
+the Project Setup Version. Already authorized actions addressing the findings may continue without
+another approval request. Keep host-native hook delivery and the shared daily-check behavior.
+Migration guidance belongs in the setup Skill's references and briefly states the main changes
+and required project actions; add migration
 entries only when migration is necessary.
 
 Retain necessary migration entries across releases. When a project skips versions, setup gathers

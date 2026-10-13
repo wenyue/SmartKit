@@ -981,6 +981,54 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         ):
             self.assertIsNone(checker._start_latest_smartkit_version_fetch()())
 
+    def test_all_readiness_checks_run_concurrently_behind_one_daily_gate(self):
+        checker = self.checker
+        barrier = checker.threading.Barrier(5, timeout=5)
+        findings = tuple(
+            checker.Finding(code, code, 'needs attention', 'Defer or repair.')
+            for code in (
+                'tool-missing', 'required-value-mismatch', 'mcp-prerequisite-missing',
+                'setup-required', 'smartkit-outdated',
+            )
+        )
+
+        def evaluate(finding):
+            barrier.wait()
+            return [finding]
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / 'project'
+            (project / '.git').mkdir(parents=True)
+            config = project / '.agents/config.json'
+            config.parent.mkdir()
+            config.write_text('{"setupVersion":"1.0.0"}', encoding='utf-8')
+            baseline = config.read_bytes()
+            policy = root / 'codex.json'
+            policy.write_text('{"harness":"codex","tools":[]}', encoding='utf-8')
+            day = datetime(2026, 10, 13, 9)
+            with mock.patch.object(checker, 'check_policy', side_effect=lambda *_: evaluate(findings[0])) as tools, \
+                    mock.patch.object(checker, 'check_config_requirements', side_effect=lambda *_: evaluate(findings[1])) as config_check, \
+                    mock.patch.object(checker, 'check_mcp_readiness', side_effect=lambda *_: evaluate(findings[2])) as mcp, \
+                    mock.patch.object(checker, 'check_setup_migrations', side_effect=lambda *_: evaluate(findings[3])) as setup, \
+                    mock.patch.object(checker, 'check_smartkit_version', side_effect=lambda *_: evaluate(findings[4])) as version, \
+                    mock.patch.object(checker, '_start_latest_smartkit_version_fetch', return_value=lambda: '999.0.0') as fetch:
+                first = checker.run_hook('codex', policy, root / 'cache', day, project_root=project)
+                same_day = checker.run_hook('codex', policy, root / 'cache', day, project_root=project)
+                forced = checker.run_hook('codex', policy, root / 'cache', day, project_root=project, force=True)
+                next_day = checker.run_hook('codex', policy, root / 'cache', day + timedelta(days=1), project_root=project)
+
+            self.assertFalse(same_day.ran)
+            for result in (first, forced, next_day):
+                self.assertTrue(result.ran)
+                self.assertEqual(result.findings, findings)
+                message = json.loads(checker.render_hook_result(result, 'codex'))['systemMessage']
+                self.assertEqual(message.count('Reply with the names'), 1)
+                self.assertIn('bypass the pause temporarily', message)
+            for check in (tools, config_check, mcp, setup, version, fetch):
+                self.assertEqual(check.call_count, 3)
+            self.assertEqual(config.read_bytes(), baseline)
+
     def test_latest_smartkit_fetch_timeout_is_bounded_and_checked_once_per_day(self):
         checker = self.checker
         release = checker.threading.Event()
@@ -1349,11 +1397,11 @@ class RecommendedToolCheckerTest(unittest.TestCase):
 
         for message in messages:
             self.assertIn(
-                'Tell the user which tools or settings need a change and ask whether',
+                'Tell the user which checks reported problems',
                 message,
             )
             self.assertIn(
-                'If the user explicitly declines all listed readiness actions',
+                'If the user explicitly declines or defers all listed readiness actions',
                 message,
             )
             self.assertIn('continue the original task', message)
@@ -1835,7 +1883,7 @@ class SetupMigrationHookTest(unittest.TestCase):
     def setUp(self):
         self.checker = load_checker()
 
-    def test_uninitialized_is_allowed_missing_version_and_required_migration_are_blocked(self):
+    def test_uninitialized_is_allowed_missing_version_and_required_migration_are_reported(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             self.assertEqual(self.checker.check_setup_migrations(target), [])
@@ -1859,15 +1907,47 @@ class SetupMigrationHookTest(unittest.TestCase):
             self.assertEqual(result[0].code, 'setup-required')
             self.assertEqual(lock.read_bytes(), b'{"unknown": true}')
 
-    def test_required_setup_notice_allows_its_remedy_without_decline_bypass(self):
+    def test_required_setup_uses_shared_temporary_pause_and_allows_deferral(self):
         finding = self.checker.Finding('setup-required', 'SmartKit project setup', 'missing version', 'Run setup')
         result = self.checker.HookResult(True, (finding,))
         for host in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(host=host):
                 output = self.checker.render_hook_result(result, host, delivery='context')
-                self.assertIn('Pause ordinary project work', output)
-                self.assertIn('already authorized setup or repair task', output)
-                self.assertNotIn('declines all listed', output)
+                self.assertIn('All reported readiness findings use the same temporary pause', output)
+                self.assertIn('explicitly declines or defers all', output)
+                self.assertIn('continue the original task', output)
+                self.assertIn('Continue an already authorized action', output)
+                self.assertIn('Keep deferred findings unresolved', output)
+                self.assertIn('nor advances the successful project setup version', output)
+                self.assertNotIn('Pause ordinary project work until', output)
+                self.assertNotIn('maintain_recommended_tools.py', output)
+                if host in {'codex', 'qoder', 'cursor'}:
+                    native = self.checker.render_hook_result(result, host)
+                    self.assertIn('bypass the pause temporarily', native)
+
+    def test_setup_and_other_findings_share_one_prompt_and_only_approved_maintenance(self):
+        findings = (
+            self.checker.Finding('setup-required', 'SmartKit project setup', 'missing version', 'Run setup-project-agents'),
+            self.checker.Finding('smartkit-outdated', 'SmartKit plugin', 'outdated', 'Update the plugin'),
+            self.checker.Finding('tool-missing', 'Example Tool', 'missing', 'Install', 'tool', 'example', 'install'),
+        )
+        for host in ('codex', 'cursor', 'copilot', 'qoder'):
+            with self.subTest(host=host):
+                result = self.checker.HookResult(True, findings)
+                output = json.loads(self.checker.render_hook_result(result, host, delivery='context'))
+                if host in {'codex', 'qoder'}:
+                    context = output['hookSpecificOutput']['additionalContext']
+                    self.assertEqual(output['systemMessage'].count('Reply with the names'), 1)
+                elif host == 'cursor':
+                    context = output['additional_context']
+                else:
+                    context = output['additionalContext']
+                for finding in findings:
+                    self.assertIn(finding.message, context)
+                self.assertIn('setup-project-agents', context)
+                self.assertIn('apply --harness ' + host + ' --tool example --action install --approved', context)
+                self.assertIn('Execute only approved actions', context)
+                self.assertIn('leave explicitly deferred items unresolved', context)
 
 
 if __name__ == '__main__':

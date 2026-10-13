@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -1333,7 +1334,7 @@ def check_setup_migrations(project_root: Path) -> list[Finding]:
             'setup-required', 'SmartKit project setup',
             f'cannot establish the project migration baseline: {error}',
             'Preserve the configuration and ownership evidence; resolve the reported issue '
-            'through setup-project-agents before ordinary project work.',
+            'through setup-project-agents.',
         )]
     if version is not None and not migrations:
         return []
@@ -1515,17 +1516,16 @@ def run_hook(
                 findings_list = evaluator(policy)
             else:
                 latest_smartkit_version = _start_latest_smartkit_version_fetch()
-                policy_findings = check_policy(policy)
-                findings_list = [
-                    *policy_findings,
-                    *check_config_requirements(
-                        policy,
-                        project_root,
-                    ),
-                    *check_mcp_readiness(harness, project_root, mcp_registry_path),
-                    *check_setup_migrations(project_root),
-                    *check_smartkit_version(harness, latest_smartkit_version()),
-                ]
+                checks = (
+                    lambda: check_policy(policy),
+                    lambda: check_config_requirements(policy, project_root),
+                    lambda: check_mcp_readiness(harness, project_root, mcp_registry_path),
+                    lambda: check_setup_migrations(project_root),
+                    lambda: check_smartkit_version(harness, latest_smartkit_version()),
+                )
+                with ThreadPoolExecutor(max_workers=len(checks)) as executor:
+                    pending = [executor.submit(check) for check in checks]
+                    findings_list = [finding for future in pending for finding in future.result()]
             findings = tuple(findings_list)
             if not findings:
                 try:
@@ -1570,8 +1570,9 @@ def _user_consent_request(findings: str) -> str:
     return (
         f'{findings}\n'
         '[smartkit] Recommended readiness changes require approval. Reply with the '
-        'names whose requested actions you approve, or decline those actions, before '
-        'continuing.'
+        'names whose requested actions you approve, or explicitly decline or defer those '
+        'actions to bypass the pause temporarily and continue the original task. '
+        'Deferred findings remain unresolved.'
     )
 
 
@@ -1614,10 +1615,16 @@ def _agent_consent_request(
     )
     return (
         f'{findings}\n'
-        '[smartkit] If the user explicitly declines all listed readiness actions, do not ask '
-        'again or run maintenance; continue the original task. Otherwise, stop the current '
-        'task now. Tell the user which tools or settings need a change and ask whether '
-        'they consent to those actions. Do '
+        '[smartkit] All reported readiness findings use the same temporary pause, including '
+        'required project setup or migration. If the user explicitly declines or defers all '
+        'listed readiness actions, do not ask again or run maintenance; continue the original '
+        'task. Keep deferred findings unresolved; bypassing the pause neither repairs them '
+        'nor advances the successful project setup version. Continue an already authorized '
+        'action that addresses these findings without asking for approval again. Otherwise, '
+        'stop the current task now. Tell the user which checks reported problems, their '
+        'consequences and proposed actions. Ask whether they approve those actions or prefer '
+        'to defer them and continue the original task. Execute only approved actions and '
+        'leave explicitly deferred items unresolved. Do '
         'not show the underlying maintenance commands. Do not mutate tools or '
         'configuration before the user consents. End this turn after requesting consent '
         'and wait for the next user message. If the runner reports manual action required, '
@@ -1636,24 +1643,6 @@ def render_hook_result(
 ) -> str:
     findings = render_findings(result.findings)
     rendered = findings
-    if any(finding.code == 'setup-required' for finding in result.findings):
-        message = (
-            f'{rendered}\n[smartkit] Pause ordinary project work until the required project '
-            'setup is resolved. Explain the missing baseline or applicable migration and '
-            'offer setup-project-agents. Continue an already authorized setup or repair task; '
-            'this finding does not block its own remedy. Preserve unresolved evidence. '
-            'A version mismatch alone is not a migration requirement.'
-        )
-        if harness in {'codex', 'qoder'}:
-            return json.dumps({
-                'continue': True, 'systemMessage': message,
-                'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': message},
-            })
-        if harness == 'cursor':
-            return json.dumps({'additional_context': message}) if delivery == 'context' else json.dumps({
-                'continue': False, 'user_message': message,
-            })
-        return json.dumps({'additionalContext': message})
     if result.requires_user_prompt:
         if harness in {'codex', 'qoder'}:
             return json.dumps(
