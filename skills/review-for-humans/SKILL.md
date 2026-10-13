@@ -6,9 +6,9 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help a human reviewer understand what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the supplied scope read-only; change the reviewed contents only when the user explicitly chooses repairs as described below.
+Help a human reviewer understand what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the supplied scope read-only; change the reviewed contents only when the user authorizes repairs or elegance improvements through the actions below.
 
-Load the necessary Skills and Rules to perform the review. Write the human report, including labels and action prompts, in the response language required by the conversation; English labels below specify their meaning.
+Load the necessary Skills and Rules to perform the review.
 
 ## Establish the review scope
 
@@ -40,9 +40,9 @@ Use the fixed emoji **⚖️** for reasonableness and **🎨** for elegance in e
 - **🎨 Can improve.** The behavior may be reasonable while its mechanism or expression creates avoidable complexity or repetition. Point to the concrete structure that could improve, suggest a simpler approach where supported, and explain the maintenance or clarity benefit. Distinguish that benefit from personal style preferences.
 - **⚖️ Insufficient evidence.** or **🎨 Insufficient evidence.** Name what prevents a sound judgment on that dimension and what evidence would resolve it. Keep established facts and assumptions distinct. One dimension can have a supported conclusion while the other lacks evidence.
 
-A reasonable change can be inelegant. An elegance concern alone is advice and does not trigger the mandatory fix-or-ignore pause. If the same structure also causes an evidenced material defect, risk, or unjustified cost, report that impact under reasonableness as well; that unreasonable finding follows the normal pause and repair procedure.
+A reasonable change can be inelegant. An elegance concern alone is an optional improvement suggestion and does not trigger the mandatory fix-or-ignore pause. If the same structure also causes an evidenced material defect, risk, or unjustified cost, report that impact independently under reasonableness as well; that unreasonable finding follows the normal pause and repair procedure.
 
-Use P0 for critical problems requiring immediate intervention, P1 for serious problems needing prompt correction, P2 for normal-priority problems, and P3 for lower-impact problems worth correcting. Base severity on evidenced consequences and affected conditions, not on how much code changed. For example: **⚖️ Unreasonable (P1).** followed by the impact and recommended repair.
+Assign P0–P3 only to unreasonable findings, never to a pure elegance suggestion or style preference. Use P0 for critical problems requiring immediate intervention, P1 for serious problems needing prompt correction, P2 for normal-priority problems, and P3 for lower-impact problems worth correcting. Base severity on evidenced consequences and affected conditions, not on how much code changed. For example: **⚖️ Unreasonable (P1).** followed by the impact and recommended repair.
 
 Carry the underlying review's material findings and qualifications into the relevant items, including the basis of a standards or task-scope concern when that distinction matters. A readable explanation must retain limitations that could change the human reviewer's decision. Report checks actually performed and distinguish them from results merely supplied by the author.
 
@@ -52,21 +52,41 @@ Use a compact explanation when the behavior change is straightforward, the affec
 
 Expand items involving complex mechanisms, important contracts, material risks or findings, consequential trade-offs, or key evidence gaps. Present **⏪ Before**, then **⏩ After**, then the **⚖️** reasonableness judgment, then the **🎨** elegance judgment vertically, using emoji plus conclusion for both judgment labels. Explain the behavior before and after; a separate "consequence of not changing" field is unnecessary. Prefer short, simple actual code in the project's language, keeping only the parts that illustrate the scenario. Explain the code in plain language and preserve the behavior being compared. A simplified example must be recognizable as an illustration, not a claimed verbatim source excerpt. Omit code when it would not help, such as for prose organization.
 
-## Display one group and handle findings
+## Display one group and handle actions
 
-Separate file blocks with `---`. Add complete files in their established order until the group's modification-item count reaches or exceeds 10, then finish the group. Never split a file across groups. If file A has 3 items and file B has 8, display both as one 11-item group; the next file starts the next reply. A file with more than 10 items stays together. Display the final shorter group when the scope ends.
+### Group files
 
-End each group with `---` followed by **📊 Progress: displayed files / files requiring review**. This measures displayed files, not modification items or conclusive judgments. Keep the snapshot, ordered file list, next-unreviewed position, next-item number, judgments, and finding status across replies.
+Separate file blocks with `---` and display complete files in their established order. Finish the group after the file that brings its modification-item count to at least 10. Never split a file, even if it alone exceeds 10 items. For example, files with 3 and 8 items form one 11-item group; the next file starts the next reply. Display the final shorter group when the scope ends.
 
-When unreasonable findings are pending, list their item numbers and severities after progress. End with a choice between **fix** and **ignore**, then wait, even in the final group. The final sentence must require item numbers for ignoring when multiple items are pending; a lone item needs no number. Clarify ambiguous selections rather than ignoring every item. A plain continue reply leaves this choice unresolved.
+End each group with `---` and **📊 Progress: displayed files / files requiring review**. Count displayed files, not items or conclusive judgments. Across replies, retain the snapshot, ordered file list, next-unreviewed position, next-item number, judgments, finding statuses, and outstanding elegance suggestions.
 
-**Fix** authorizes repairs of pending, unignored findings within applicable authority and constraints. Load the necessary guidance, limit changes to resolving those findings, and run the required checks. After checks pass, follow the re-review procedure below; mark findings repaired only when re-review confirms resolution. If repair is blocked or a check fails, explain what remains and what is needed, and pause without advancing.
+### Choose an action
 
-**Ignore** leaves the selected items unchanged and records their findings and severity as ignored, not repaired or approved. If other items remain pending, offer the remaining choice and wait. Once none remain, resume at the saved next-unreviewed position or close if the scope is exhausted.
+Item numbers select that item's relevant findings or suggestions. "All" covers only the current report's already displayed, outstanding items in the chosen dimension, including earlier groups. Clarify ambiguous, contradictory, or invalid selections before editing.
 
-Whenever reviewed content changes, refresh the snapshot and re-review every previously reviewed part modified or affected by that change, including changes beyond the original findings. Display updated explanations and judgments in complete file blocks, in replies dedicated to the re-review and separate from not-yet-reviewed files. Repairs create revised content that deserves the human reviewer's attention before moving on. Preserve existing item numbers, make the version transition explicit, and rebuild the file list and total when necessary. Re-review findings use the same fix-or-ignore choice; affected parts must be re-reviewed and their pending findings repaired or explicitly ignored before advancing.
+| Action | Without item numbers | With item numbers |
+| --- | --- | --- |
+| **fix** | Repair all pending, unignored unreasonable findings. | Repair only the selected pending, unignored unreasonable findings. |
+| **ignore** | Ask which items to ignore; only explicit **ignore all** ignores every pending unreasonable finding. | Ignore the selected findings and automatically repair all remaining pending, unignored unreasonable findings. |
+| **optimize** | Improve all outstanding, supported **🎨 Can improve** suggestions. | Improve only the selected outstanding, supported elegance suggestions. |
 
-When no unreasonable findings are pending and files remain, end an ordinary group with a **continue** prompt and wait; resume with the next file on that reply. Apply the same pause after a fix's dedicated re-review: show its result, prompt for **continue**, and wait before reviewing remaining files. Ignoring resumes automatically as described above. When all files have been displayed and no unreasonable findings are pending, close without a continuation prompt. Distinguish completed display from resolved findings and retain ignored findings and evidence gaps.
+**ignore** has no default, even for a lone finding. For a bare **ignore**, ask for item numbers or **ignore all**, state that every remaining pending, unignored finding will be repaired, and wait without changes. Record ignored findings with their severity as ignored, not repaired or approved. Ignoring affects only reasonableness and leaves separately authorized elegance improvements available. For example, “ignore 11 and 12, fix the rest” has the same effect as numbered ignoring alone.
+
+After progress, list pending unreasonable findings by item number and severity; summarize supported elegance suggestions by item number, proposed improvement, and benefit. When awaiting an action, end with a brief, complete question offering only the applicable choices below. Keep defaults, command syntax, and usage examples out of this closing question.
+
+### Edit, re-review, and continue
+
+For authorized repairs or optimizations, load the necessary guidance, limit edits to the authorized findings or suggestions, and run required checks. Optimization preserves existing supported behavior and contracts. If an action is blocked or a check fails, explain what remains and what is needed; pause without advancing.
+
+After checks pass, re-review the revised content before moving on. Whenever reviewed content changes, refresh the snapshot and re-review every changed or affected previously reviewed part, including unexpected changes. Show updated explanations and both judgments in complete file blocks, in dedicated replies separate from unseen files. Retain item numbers, explain the version transition, and update the file list and total when needed. Mark findings repaired or suggestions completed only after re-review confirms the result.
+
+Use the same action rules and continuation flow after ordinary groups and dedicated re-reviews:
+
+- **Pending unreasonable findings:** ask whether to **fix** or **ignore**, even in the final group; also offer **optimize** if supported elegance suggestions remain. Wait for the user's choice. **continue** is unavailable; **optimize** alone neither authorizes repairs nor permits advancing.
+- **No pending findings, but supported elegance suggestions remain:** ask whether to **optimize** or **continue** if files remain, or **optimize** or finish if the scope is exhausted. Wait for the user's choice. Continuing resumes with the next file or closes an exhausted scope; finishing closes the review. Both retain unselected suggestions as advice.
+- **Neither remains:** ask whether to continue and wait if files remain; close without a prompt if the scope is exhausted.
+
+If explicit ignoring leaves no remaining repairs, resume automatically at the saved next-unreviewed position or close if the scope is exhausted, unless supported elegance suggestions remain; those still require a choice. Retain ignored findings and evidence gaps, and distinguish completed display from resolved findings.
 
 ## Reference report
 
@@ -123,4 +143,6 @@ The handler now returns while a save is pending; completion and cancellation bot
 
 ---
 
-**📊 Progress: 3/3 files displayed.** The report is complete for this selected scope. Item 3's elegance suggestion does not create an unreasonable finding or a fix-or-ignore pause.
+**📊 Progress: 3/3 files displayed.** All files in this selected scope have been displayed, and no unreasonable findings are pending. Item 3 can improve: use a shared completion path for the flag reset to reduce duplication and make cleanup easier to maintain. This optional suggestion has no P0–P3 severity.
+
+Would you like me to optimize this change, or finish the review?
