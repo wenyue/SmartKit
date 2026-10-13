@@ -8,9 +8,7 @@ assistants. It supports Windows and Linux.
 
 ## Skills at a glance
 
-Includes SmartKit workflows, Matt Pocock's skills, and the ponytail series. Each group is ordered
-from more to less frequently needed in everyday development, to make common tools easier to find;
-this is an estimated order, not usage statistics.
+Includes SmartKit workflows, Matt Pocock's skills, and the ponytail series. Each group is organized by purpose to help you find the Skill for your current task.
 
 ### Requires manual invocation
 
@@ -41,26 +39,22 @@ Ask for these skills by name; the assistant does not select them automatically.
 
 ### User-invokable task Skills
 
-Use these Skills for a specific task. Ask for them by name, or let the assistant select them when the task fits.
+Use these Skills for a specific task. Ask for them by name, or let the assistant select them when the task fits. They are ordered by purpose: scope review, research and validation, development and improvement, audit and delivery, then setup and session diagnosis.
 
 | Skill | Source | What it does and when to use it |
 | --- | --- | --- |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | When you ask to execute many accumulated edits or broad changes, reviews the intended scope and asks whether to begin implementation; you can also invoke it by name. |
-| `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | Diagnoses bugs or performance regressions, finds the cause, and verifies the fix. |
-| `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | Reviews changes since a commit, branch, or tag against both project standards and the originating spec. |
-| `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | Writes a concise PR body with a visual summary, verification evidence, and merge risks. |
-| `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds features or fixes bugs by writing a failing test, implementing, then refactoring. |
-| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | Reviews changes for correctness, security, load, tests, performance, and complexity; use `code-review` for project-standard and spec compliance. |
-| `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Improves the structure of one concrete code target while preserving behavior; use when that target has a specific structural problem. |
-| `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Renames one symbol or tracked path and its real references; use for a precise rename across a repository. |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | Investigates a question against trusted primary sources and saves the findings as a Markdown document in the repo. |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds a throwaway prototype to check a design, state model, or interface. |
-| `grilling` | [Matt Pocock](https://github.com/mattpocock/skills) | Stress-tests a plan, decision, or idea through probing questions. |
+| `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | Diagnoses bugs or performance regressions, finds the cause, and verifies the fix. |
+| `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds features or fixes bugs by writing a failing test, implementing, then refactoring. |
+| `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Improves the structure of one concrete code target while preserving behavior; use when that target has a specific structural problem. |
 | `ponytail-audit` | [ponytail](https://github.com/DietrichGebert/ponytail) | Audits the codebase for bugs, security and load risks, missing tests, performance, and complexity; ranks findings without applying fixes. |
 | `ponytail-debt` | [ponytail](https://github.com/DietrichGebert/ponytail) | Collects `shortcut:` and older `ponytail:` comments into a debt ledger with limits, revisit triggers, and upgrade paths; saves a file only when authorized. |
-| `diagnose-agent-session` | [SmartKit](https://github.com/wenyue/SmartKit) | Investigates one agent session's token cost, tool activity, waits, or incomplete calls; use when session behavior looks abnormal. |
+| `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | Writes a concise PR body with a visual summary, verification evidence, and merge risks. |
 | `write-rules-and-skills` | [SmartKit](https://github.com/wenyue/SmartKit) | Authors or revises one agent Rule or Skill; use when creating or changing reusable agent instructions. |
 | `wizard` | [Matt Pocock](https://github.com/mattpocock/skills) | Generates an interactive Bash guide for steps only a human can perform, such as credentials, CI secrets, or migration cutovers. |
+| `diagnose-agent-session` | [SmartKit](https://github.com/wenyue/SmartKit) | Investigates one agent session's token cost, tool activity, waits, or incomplete calls; use when session behavior looks abnormal. |
 
 ### Generally invoked automatically by the Agent
 
@@ -69,6 +63,10 @@ The Agent usually selects these supporting Skills as part of its work. You can a
 | Skill | Source | What it does and when to use it |
 | --- | --- | --- |
 | `ponytail` | [ponytail](https://github.com/DietrichGebert/ponytail) | Favors the simplest solution that meets coding requirements, cutting unnecessary abstractions, dependencies, and code. |
+| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | Reviews changes for correctness, security, load, tests, performance, and complexity; use `code-review` for project-standard and spec compliance. |
+| `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | Reviews changes since a commit, branch, or tag against both project standards and the originating spec. |
+| `grilling` | [Matt Pocock](https://github.com/mattpocock/skills) | Stress-tests a plan, decision, or idea through probing questions. |
+| `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | Renames one symbol or tracked path and its real references; use for a precise rename across a repository. |
 | `create-worktree` | [SmartKit](https://github.com/wenyue/SmartKit) | Prepares an isolated Git worktree; use when parallel work or existing checkout changes need protection. |
 | `finish-worktree` | [SmartKit](https://github.com/wenyue/SmartKit) | Completes an isolated worktree through a handoff, pull request, local merge, retention, or explicit discard; use when an isolated worktree needs a chosen outcome. |
 | `codebase-design` | [Matt Pocock](https://github.com/mattpocock/skills) | Clarifies module interfaces and responsibilities to improve encapsulation, testability, and code navigation. |
@@ -115,23 +113,17 @@ Use this Skill for one concrete code target with a known structural problem. Nam
 
 Example: “Use `refactor-code` to remove duplicated escape handling in `parse_record`, preserving its input order and error behavior.”
 
-### `rename-code`
+### `write-rules-and-skills`
 
-Use this Skill to rename one established symbol or tracked path and update its actual references. Supply the old and new names. For a public or persisted name, explicitly settle compatibility before edits; renaming a code symbol does not automatically rename database columns or protocol fields.
+Use this Skill to author or revise one reusable Agent Rule or Skill. You can ask for it by name or let the Agent select it when the task fits. Describe the intended job, readers, and constraints. It produces one coherent artifact with required checks and quality, change, and correctness reviews; publication and installation are separate actions.
 
-Example: “Use `rename-code` to rename the private helper `read_config` to `load_config` and update its references.”
+Example: “Use `write-rules-and-skills` to write a project Rule requiring verification of exported records before replacing an existing export.”
 
 ### `diagnose-agent-session`
 
 Use this Skill to investigate abnormal token usage, tool activity, waits, or incomplete calls in one agent session. Name the client and session for another session; the current Codex session can be inferred when both are omitted. Codex supports turn and session evidence; Cursor and Copilot CLI support whole-session usage evidence. The report distinguishes observations from missing evidence and labels cost as an estimate; whole-session acquisition requires authorization for the provider's record scanning, network, and cache access.
 
 Example: “Use `diagnose-agent-session` to investigate tool activity and waits in the current Codex turn.”
-
-### `write-rules-and-skills`
-
-Use this Skill to author or revise one reusable Agent Rule or Skill. You can ask for it by name or let the Agent select it when the task fits. Describe the intended job, readers, and constraints. It produces one coherent artifact with required checks and quality, change, and correctness reviews; publication and installation are separate actions.
-
-Example: “Use `write-rules-and-skills` to write a project Rule requiring verification of exported records before replacing an existing export.”
 
 ## Install the plugin
 

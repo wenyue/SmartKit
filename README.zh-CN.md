@@ -7,8 +7,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 ## Skill 一览
 
-包含 SmartKit 工作流、Matt Pocock 技能集和 ponytail 系列。各组按日常开发中的预计使用频率
-由高到低排列，方便优先找到常用功能；顺序不是实际使用统计。
+包含 SmartKit 工作流、Matt Pocock 技能集和 ponytail 系列。各组按用途组织，方便按当前任务查找所需 Skill。
 
 ### 必须由用户手动调用
 
@@ -39,26 +38,22 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 ### 用户可主动调用的任务 Skill
 
-针对一项具体任务使用。用户可以明确指定 Skill 名称，助手也可以在任务匹配时自行选用。
+针对一项具体任务使用。用户可以明确指定 Skill 名称，助手也可以在任务匹配时自行选用。此类按核对范围、调查与验证、开发与改进、审计与交付、配置与会话诊断的用途顺序排列。
 
 | Skill | 出处 | 用途与使用时机 |
 | --- | --- | --- |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | 用户要求执行累积较多或跨度较大的修改时，先核对范围，再询问是否开始实施；也可以明确指定调用。 |
-| `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | 逐步诊断故障或性能回退，找到原因并验证修复。 |
-| `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | 审查相对指定提交、分支或标签的修改，同时核对项目规范与需求规格。 |
-| `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | 撰写 PR 正文，说明变更、验证证据和合并风险。 |
-| `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | 按“先写失败测试，再实现，再重构”的方式开发功能或修复问题。 |
-| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审查改动的正确性、安全、负载、测试、性能与复杂度；项目标准和 Spec 符合性检查使用 `code-review`。 |
-| `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 在保持行为不变的前提下改善一个具体代码目标的结构；该目标存在明确结构问题时使用。 |
-| `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 重命名一个符号或受 Git 跟踪的路径，并更新其实际引用；需要精确完成仓库内的重命名时使用。 |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | 对照可信的一手资料调查问题，将结论保存为仓库中的 Markdown 文档。 |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | 构建可丢弃的原型，验证设计、状态模型或界面是否可行。 |
-| `grilling` | [Matt Pocock](https://github.com/mattpocock/skills) | 深入追问并检验计划、决定或想法，找出薄弱环节。 |
+| `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | 逐步诊断故障或性能回退，找到原因并验证修复。 |
+| `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | 按“先写失败测试，再实现，再重构”的方式开发功能或修复问题。 |
+| `refactor-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 在保持行为不变的前提下改善一个具体代码目标的结构；该目标存在明确结构问题时使用。 |
 | `ponytail-audit` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审计代码库的缺陷、安全与负载风险、测试缺口、性能和复杂度；按重要性报告发现，不直接修改代码。 |
 | `ponytail-debt` | [ponytail](https://github.com/DietrichGebert/ponytail) | 将 `shortcut:` 和旧 `ponytail:` 注释汇总成包含限制、重审触发条件与升级路径的技术债清单；获得授权后才保存文件。 |
-| `diagnose-agent-session` | [SmartKit](https://github.com/wenyue/SmartKit) | 调查单个 Agent 会话的 token 开销、工具活动、等待或未完成的调用；会话行为异常时使用。 |
+| `pr` | [Matt Pocock](https://github.com/mattpocock/skills) | 撰写 PR 正文，说明变更、验证证据和合并风险。 |
 | `write-rules-and-skills` | [SmartKit](https://github.com/wenyue/SmartKit) | 编写或修订一条 Agent Rule 或一个 Skill；创建或修改可复用的 Agent 指令时使用。 |
 | `wizard` | [Matt Pocock](https://github.com/mattpocock/skills) | 为只能由人完成的配置步骤生成交互式 Bash 向导，例如凭证、CI 密钥或迁移切换。 |
+| `diagnose-agent-session` | [SmartKit](https://github.com/wenyue/SmartKit) | 调查单个 Agent 会话的 token 开销、工具活动、等待或未完成的调用；会话行为异常时使用。 |
 
 ### 一般由 Agent 自动调用
 
@@ -67,6 +62,10 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 | Skill | 出处 | 用途与使用时机 |
 | --- | --- | --- |
 | `ponytail` | [ponytail](https://github.com/DietrichGebert/ponytail) | 编码时优先选择满足需求的最简单方案，减少不必要的抽象、依赖和代码。 |
+| `ponytail-review` | [ponytail](https://github.com/DietrichGebert/ponytail) | 审查改动的正确性、安全、负载、测试、性能与复杂度；项目标准和 Spec 符合性检查使用 `code-review`。 |
+| `code-review` | [Matt Pocock](https://github.com/mattpocock/skills) | 审查相对指定提交、分支或标签的修改，同时核对项目规范与需求规格。 |
+| `grilling` | [Matt Pocock](https://github.com/mattpocock/skills) | 深入追问并检验计划、决定或想法，找出薄弱环节。 |
+| `rename-code` | [SmartKit](https://github.com/wenyue/SmartKit) | 重命名一个符号或受 Git 跟踪的路径，并更新其实际引用；需要精确完成仓库内的重命名时使用。 |
 | `create-worktree` | [SmartKit](https://github.com/wenyue/SmartKit) | 准备隔离的 Git worktree；并行工作或需要保护当前检出目录中的改动时使用。 |
 | `finish-worktree` | [SmartKit](https://github.com/wenyue/SmartKit) | 通过交接、拉取请求、本地合并、保留或明确丢弃来结束隔离 worktree 的工作；需要确定该 worktree 的后续去向时使用。 |
 | `codebase-design` | [Matt Pocock](https://github.com/mattpocock/skills) | 梳理模块接口与职责，改善封装、可测试性和代码导航。 |
@@ -113,23 +112,17 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 
 例子：“用 `refactor-code` 消除 `parse_record` 中重复的转义处理，保留输入顺序和错误行为。”
 
-### `rename-code`
+### `write-rules-and-skills`
 
-需要重命名一个已确定的符号或受 Git 跟踪的路径，并更新其实际引用时使用。提供旧名和新名。涉及公开名称或持久化名称时，先明确兼容性决定；重命名代码符号不会自动更改数据库列名或协议字段。
+需要编写或修订一条可复用的 Agent Rule 或一个 Skill 时使用。用户可以明确指定调用，Agent 也可以在任务匹配时自行选用。说明预期任务、读者和约束。它会产出一份完整工件，经过必需检查以及质量、变更和正确性审查；发布和安装是另外的操作。
 
-例子：“用 `rename-code` 将私有辅助函数 `read_config` 改名为 `load_config`，并更新引用。”
+例子：“用 `write-rules-and-skills` 编写一条项目 Rule，要求在替换已有导出文件前核对导出记录。”
 
 ### `diagnose-agent-session`
 
 需要调查单个 Agent 会话的异常 token 用量、工具活动、等待或未完成调用时使用。诊断其他会话时，提供客户端和会话标识；两者都未提供时，可以推定为当前 Codex 会话。Codex 支持轮次和整场会话证据，Cursor 与 Copilot CLI 支持整场会话的用量证据。报告会区分观察结果与缺失证据，并将费用标为估算值；获取整场会话证据需要授权提供方扫描记录、访问网络和读写缓存。
 
 例子：“用 `diagnose-agent-session` 调查当前 Codex 轮次中的工具活动和等待。”
-
-### `write-rules-and-skills`
-
-需要编写或修订一条可复用的 Agent Rule 或一个 Skill 时使用。用户可以明确指定调用，Agent 也可以在任务匹配时自行选用。说明预期任务、读者和约束。它会产出一份完整工件，经过必需检查以及质量、变更和正确性审查；发布和安装是另外的操作。
-
-例子：“用 `write-rules-and-skills` 编写一条项目 Rule，要求在替换已有导出文件前核对导出记录。”
 
 ## 安装插件
 
