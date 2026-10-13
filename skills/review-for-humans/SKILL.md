@@ -1,18 +1,31 @@
 ---
 name: review-for-humans
-description: Explain supplied changes file by file in a readable review report for a human reviewer.
+description: Review pull requests and branch changes file by file for humans; default to the current worktree's net uncommitted changes.
 disable-model-invocation: true
 ---
 
 # Review for Humans
 
-Help a human reviewer understand what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the supplied scope read-only; change the reviewed contents only when the user authorizes repairs or elegance improvements through the actions below.
+Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only; change the reviewed contents only when the user authorizes repairs or elegance improvements through the actions below.
 
 Load the necessary Skills and Rules to perform the review.
 
 ## Establish the review scope
 
-Identify the task's intended outcome and obtain the supplied changes with their before-and-after evidence. Keep a fixed review snapshot and an ordered file list for displaying the report. For all review scopes, match GitHub's Files changed directory-tree order: at every directory, recursively list each subdirectory's changed files before the files directly in that directory. Use the pull request's actual tree sibling order when accessible; otherwise sort sibling directories and direct files by name. For example, `src/z/api.dart` precedes `src/a.dart`; sorting complete paths from `git diff` does not establish that order. When reviewing selected files, count and report that selection rather than the entire pull request.
+Identify the task's intended outcome and select the comparison below. Obtain its before-and-after evidence through available read-only Git or GitHub interfaces, such as a CLI or connector.
+
+| Requested scope | Comparison |
+| --- | --- |
+| A pull request | Obtain the PR's changed files and comparison evidence, recording its base and head commit IDs. Review that fixed PR version. |
+| A branch, with or without an explicit base | Resolve the reviewed branch tip and a reliable comparison base; compare their merge-base with that tip, pinning both commit IDs. If the base cannot be established reliably, ask the user rather than assuming `main`. |
+| No explicit scope | Compare the current worktree with the current branch's `HEAD`, using `git diff HEAD` or equivalent evidence. |
+| Selected files | Filter the applicable comparison to those files; count and report the selection rather than the full PR or branch. |
+
+The default comparison reviews the combined net effect of staged and unstaged changes, displaying each file once. It intentionally omits changes that cancel between the index and worktree: if staged content is subsequently reverted in the worktree to `HEAD`, no net change remains to review. Do not separately review index versions, include earlier commits, or fall back to the last commit when the comparison is empty. Exclude untracked files unless the user explicitly includes them; when included, review them as additions.
+
+An explicit PR or branch comparison does not include local uncommitted changes unless the user requests them. Preserve this Skill's selected comparison when loading other review guidance with different scope defaults. When there is no usable `HEAD`, the requested refs or PR evidence are unavailable, or a required interface cannot be used, name the missing prerequisite and pause the dependent review.
+
+Keep a fixed review snapshot, recording the comparison commits and the reviewed worktree content where applicable, and an ordered file list for displaying the report. For all review scopes, match GitHub's Files changed directory-tree order: at every directory, recursively list each subdirectory's changed files before the files directly in that directory. Use the pull request's actual tree sibling order when accessible; otherwise sort sibling directories and direct files by name. For example, `src/z/api.dart` precedes `src/a.dart`; sorting complete paths from `git diff` does not establish that order.
 
 Skip test files entirely: do not review them or count them toward progress or modification items. Count the remaining files in the supplied scope before displaying the first group. Briefly identify the scope and exclusions so the reader can interpret the total. If no files require review, say so and finish without manufacturing a report or a progress fraction.
 
@@ -58,9 +71,11 @@ Expand items involving complex mechanisms, important contracts, material risks o
 
 Separate file blocks with `---` and display complete files in their established order. Finish the group after the file that brings its modification-item count to at least 10. Never split a file, even if it alone exceeds 10 items. For example, files with 3 and 8 items form one 11-item group; the next file starts the next reply. Display the final shorter group when the scope ends.
 
-End each group with `---` and **📊 Progress: displayed files / files requiring review**. Count displayed files, not items or conclusive judgments. Across replies, retain the snapshot, ordered file list, next-unreviewed position, next-item number, judgments, finding statuses, and outstanding elegance suggestions.
+End each group with `---` and **📊 Progress: displayed files / files requiring review**, explicitly saying that the files have been displayed. Count displayed files, not items or conclusive judgments. Across replies, retain the snapshot, ordered file list, next-unreviewed position, next-item number, judgments, finding statuses, and outstanding elegance suggestions.
 
 ### Choose an action
+
+Use the conversation's language for human-facing labels, summaries, action names, and questions. In a Chinese conversation, name the actions **修复**, **忽略**, **优化**, and **继续**; these have the same meanings as **fix**, **ignore**, **optimize**, and **continue** below. Interpret natural-language selections by meaning, rather than requiring command syntax.
 
 Item numbers select that item's relevant findings or suggestions. "All" covers only the current report's already displayed, outstanding items in the chosen dimension, including earlier groups. Clarify ambiguous, contradictory, or invalid selections before editing.
 
@@ -70,9 +85,15 @@ Item numbers select that item's relevant findings or suggestions. "All" covers o
 | **ignore** | Ask which items to ignore; only explicit **ignore all** ignores every pending unreasonable finding. | Ignore the selected findings and automatically repair all remaining pending, unignored unreasonable findings. |
 | **optimize** | Improve all outstanding, supported **🎨 Can improve** suggestions. | Improve only the selected outstanding, supported elegance suggestions. |
 
-**ignore** has no default, even for a lone finding. For a bare **ignore**, ask for item numbers or **ignore all**, state that every remaining pending, unignored finding will be repaired, and wait without changes. Record ignored findings with their severity as ignored, not repaired or approved. Ignoring affects only reasonableness and leaves separately authorized elegance improvements available. For example, “ignore 11 and 12, fix the rest” has the same effect as numbered ignoring alone.
+**ignore** has no default, even for a lone finding. If the user has not specified which findings to ignore, ask them to identify the items or explicitly choose all, state that every remaining pending, unignored finding will be repaired, and wait without changes. Record ignored findings with their severity as ignored, not repaired or approved. Ignoring affects only reasonableness and leaves separately authorized elegance improvements available.
 
-After progress, list pending unreasonable findings by item number and severity; summarize supported elegance suggestions by item number, proposed improvement, and benefit. When awaiting an action, end with a brief, complete question offering only the applicable choices below. Keep defaults, command syntax, and usage examples out of this closing question.
+### Make the closing choice readable
+
+After progress, use Markdown to separate **Pending findings**, **Optional improvements**, and **Available actions**, omitting empty sections. List pending unreasonable findings by item number, severity, and a short impact summary. List supported elegance suggestions by item number, proposed improvement, and benefit. These summaries cover outstanding items from earlier groups as well as the current group.
+
+Offer only the actions available under the continuation rules below. Explain their effects in short bullets, including what an unqualified choice does: **fix** repairs all pending findings unless the user selects a subset; **ignore** needs a selection and automatically repairs the remaining findings, while explicitly ignoring all performs no repairs; **optimize** implements all supported outstanding suggestions unless the user selects a subset; **continue** displays the next group or ends an exhausted scope, retaining unimplemented suggestions as advice. When pending findings remain, say that optimization leaves them pending.
+
+Keep concrete invocation syntax and numbered usage recipes out of closing menus; item numbers belong in the finding and suggestion lists. End with one concise question asking for the applicable action and, when needed, selected items. If no choice remains, close without a question. The examples below illustrate the different result states; localize their wording for the conversation.
 
 ### Edit, re-review, and continue
 
@@ -83,7 +104,7 @@ After checks pass, re-review the revised content before moving on. Whenever revi
 Use the same action rules and continuation flow after ordinary groups and dedicated re-reviews:
 
 - **Pending unreasonable findings:** ask whether to **fix** or **ignore**, even in the final group; also offer **optimize** if supported elegance suggestions remain. Wait for the user's choice. **continue** is unavailable; **optimize** alone neither authorizes repairs nor permits advancing.
-- **No pending findings, but supported elegance suggestions remain:** ask whether to **optimize** or **continue** if files remain, or **optimize** or finish if the scope is exhausted. Wait for the user's choice. Continuing resumes with the next file or closes an exhausted scope; finishing closes the review. Both retain unselected suggestions as advice.
+- **No pending findings, but supported elegance suggestions remain:** ask whether to **optimize** or **continue**. Wait for the user's choice. Continuing resumes with the next file or closes an exhausted scope, retaining unselected suggestions as advice.
 - **Neither remains:** ask whether to continue and wait if files remain; close without a prompt if the scope is exhausted.
 
 If explicit ignoring leaves no remaining repairs, resume automatically at the saved next-unreviewed position or close if the scope is exhausted, unless supported elegance suggestions remain; those still require a choice. Retain ignored findings and evidence gaps, and distinguish completed display from resolved findings.
@@ -143,6 +164,99 @@ The handler now returns while a save is pending; completion and cancellation bot
 
 ---
 
-**📊 Progress: 3/3 files displayed.** All files in this selected scope have been displayed, and no unreasonable findings are pending. Item 3 can improve: use a shared completion path for the flag reset to reduce duplication and make cleanup easier to maintain. This optional suggestion has no P0–P3 severity.
+**📊 Progress: 3/3 files displayed.** No unreasonable findings are pending.
 
-Would you like me to optimize this change, or finish the review?
+**Optional improvements**
+
+- **#3:** Use a shared completion path for the flag reset to reduce duplication and make cleanup easier to maintain.
+
+**Available actions**
+
+- **Optimize:** Implement the optional improvement.
+- **Continue:** End this review, retaining the improvement as advice.
+
+**🤖 Would you like to optimize or continue?**
+
+## Example closings for different results
+
+These illustrative closings follow the file reports; they do not replace the two judgments in each item. A complete display total does not mean findings have been resolved.
+
+### Pending findings and optional improvements
+
+**📊 Progress: 4/9 files displayed.**
+
+**Pending findings**
+
+- **#2 · P1:** Closing the resource can lose unsaved data.
+- **#5 · P2:** The error path leaves the button disabled.
+
+**Optional improvements**
+
+- **#7:** Share the repeated state-reset logic to reduce maintenance omissions.
+
+**Available actions**
+
+- **Fix:** Repair all pending findings, or the subset you select.
+- **Ignore:** Choose which findings to ignore; the remaining findings will be repaired automatically. Explicitly ignoring all performs no repairs.
+- **Optimize:** Implement the optional improvements, or the subset you select; the pending findings still need attention.
+
+**🤖 Which action would you like? Identify items if selecting a subset or ignoring findings. Pending findings must be handled before continuing.**
+
+### Only pending findings, including after the final group
+
+**📊 Progress: 9/9 files displayed.**
+
+**Pending findings**
+
+- **#5 · P2:** The error path leaves the button disabled.
+
+**Available actions**
+
+- **Fix:** Repair the pending finding.
+- **Ignore:** Explicitly select the finding to ignore; it will remain recorded as ignored.
+
+**🤖 Would you like to fix the finding or explicitly ignore it? All files have been displayed, but the finding is still pending.**
+
+### Only optional improvements, with files remaining
+
+**📊 Progress: 4/9 files displayed.** No unreasonable findings are pending.
+
+**Optional improvements**
+
+- **#7:** Share the state-reset logic to reduce duplication.
+
+**Available actions**
+
+- **Optimize:** Implement the optional improvement.
+- **Continue:** Display the next group, retaining this improvement as advice.
+
+**🤖 Would you like to optimize or continue?**
+
+### Only optional improvements, after the final group
+
+**📊 Progress: 9/9 files displayed.** No unreasonable findings are pending.
+
+**Optional improvements**
+
+- **#7:** Share the state-reset logic to reduce duplication.
+
+**Available actions**
+
+- **Optimize:** Implement the optional improvement.
+- **Continue:** End this review, retaining the improvement as advice.
+
+**🤖 Would you like to optimize or continue?**
+
+### No findings or suggestions, with files remaining
+
+**📊 Progress: 4/9 files displayed.**
+
+No pending findings or optional improvements were found in this group or remain from earlier groups.
+
+**🤖 Would you like to continue with the next group?**
+
+### No findings or suggestions, after the final group
+
+**📊 Progress: 9/9 files displayed.**
+
+The review is complete. No pending findings or optional improvements remain in the reviewed scope.

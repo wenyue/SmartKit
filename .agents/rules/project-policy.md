@@ -24,6 +24,16 @@ Project Rules reference Skills through their `SKILL.md` entries, without links t
 
 Keep `README.md` and `README.zh-CN.md` aligned as concise, human-facing plugin documentation. Provide a brief introduction and actionable installation instructions, including necessary prerequisites and activation steps.
 
+Organize the Skill overview into three usage groups:
+
+1. Explicit invocation only: Skills that require the user to invoke them.
+2. User-invokable tasks: Skills users choose for a particular task, which Agents may also invoke automatically when applicable.
+3. Generally invoked automatically by the Agent: Skills the Agent ordinarily selects to support the user's work.
+
+These groups describe ordinary usage; Skill metadata remains authoritative for actual invocation restrictions.
+
+Give each SmartKit Skill in the first two groups its own section, in the order its entry appears in the overview. Briefly explain when to use it and how to invoke it; include a short example when it makes usage clearer. Keep Skills in the third group in the overview without individual sections.
+
 Keep internal workings, architecture, Rule delivery, discovery and precedence, implementation details, and maintainer or configuration reference material outside these READMEs.
 
 ### Rule and Skill mirrors

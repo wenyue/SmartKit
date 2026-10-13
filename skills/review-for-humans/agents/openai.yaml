@@ -1,9 +1,9 @@
 interface:
   display_name: "Review for Humans"
-  short_description: "按文件解释提供的改动，形成便于人类审阅的报告。"
+  short_description: "按文件审查 PR 和分支改动，默认查看当前工作区相对已提交内容的净变化。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
   brand_color: "#2563EB"
-  default_prompt: "使用 $review-for-humans，按文件解释我提供的改动并整理成便于审阅的报告。"
+  default_prompt: "使用 $review-for-humans，审查当前工作区相对当前分支已提交内容的净变化，按文件解释并给出中文操作提示。"
 policy:
   allow_implicit_invocation: false

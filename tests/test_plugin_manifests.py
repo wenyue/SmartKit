@@ -391,12 +391,13 @@ class PluginManifestTest(unittest.TestCase):
 
     def test_readme_invocation_groups_match_skill_metadata(self):
         for filename, headings in (
-            ('README.md', ('Requires manual invocation', 'Can be invoked automatically')),
-            ('README.zh-CN.md', ('必须由用户手动调用', '可以自动调用')),
+            ('README.md', ('Requires manual invocation', 'User-invokable task Skills', 'Generally invoked automatically by the Agent')),
+            ('README.zh-CN.md', ('必须由用户手动调用', '用户可主动调用的任务 Skill', '一般由 Agent 自动调用')),
         ):
             readme = (REPO_ROOT / filename).read_text(encoding='utf-8')
             listed_names = []
-            for heading, manual in zip(headings, (True, False)):
+            usage_names = []
+            for heading, manual in zip(headings, (True, False, False)):
                 with self.subTest(readme=filename, heading=heading):
                     section = re.search(
                         r'^### ' + re.escape(heading) + r'\n(.*?)(?=^#{1,3} |\Z)',
@@ -407,6 +408,10 @@ class PluginManifestTest(unittest.TestCase):
                     names = re.findall(r'^\| `([^`]+)` \|', section.group(1), re.MULTILINE)
                     self.assertTrue(names)
                     listed_names.extend(names)
+                    if heading != headings[2]:
+                        usage_names.extend(re.findall(
+                            r'^\| `([^`]+)` \| \[SmartKit\]', section.group(1), re.MULTILINE,
+                        ))
                     for name in names:
                         with self.subTest(skill=name):
                             entry = REPO_ROOT / 'skills' / name / 'SKILL.md'
@@ -414,6 +419,7 @@ class PluginManifestTest(unittest.TestCase):
                             frontmatter = entry.read_text(encoding='utf-8').split('---', 2)[1]
                             self.assertEqual('disable-model-invocation: true' in frontmatter, manual)
             self.assertEqual(len(listed_names), len(set(listed_names)), filename)
+            self.assertEqual(re.findall(r'^### `([^`]+)`$', readme, re.MULTILINE), usage_names, filename)
 
     def test_custom_skills_keep_invocation_metadata_aligned(self):
         custom = load_json('skills/registry.json')['custom']
