@@ -108,7 +108,7 @@ class PluginRuleContractTest(unittest.TestCase):
             with self.subTest(harness=harness):
                 context = self.session_context(harness, {'prompt': 'Discuss Python error handling'})
                 self.assert_core_and_index(context)
-                self.assertIn('Codex subagent tools', context)
+                self.assertIn('Codex child-result waiting', context)
                 self.assertLess(len(context.encode()), 50000)
         self.assertFalse(self.state_root.exists())
 

@@ -1,27 +1,11 @@
 # Codex Harness Adaptation
 
-Use Codex operations to carry out the active task or Skill's decisions. That workflow owns why an Agent is delegated and what result it must produce. This Rule supplies tool adaptation; it changes neither user authorization, Rule precedence, nor completion criteria.
+Apply this waiting guidance in Codex sessions where `wait_agent` provides event-driven mailbox updates. The active task or Skill owns delegation decisions and required results; this Rule changes neither user authorization, Rule precedence, nor completion criteria.
 
-## Coordinate Delegated Work
+## Wait when no useful parent work remains
 
-Choose the operation for the work the Agent now needs:
+Continue useful parent work while it is available. When genuinely idle with child results outstanding, use `wait_agent` as an event wait. Mailbox activity can wake the wait early, so a longer bound need not delay receiving child updates.
 
-| Need | Operation |
-| --- | --- |
-| Start one concrete, independently useful task | `spawn_agent` |
-| Add context without starting another turn | `send_message` |
-| Give an idle Agent a new bounded task | `followup_task` |
-| Stop an Agent's current work | Use `interrupt_agent` only when that work should stop. |
-| Inspect current status | Use `list_agents` for an intentional inspection, not a polling loop. |
+Choose a bounded wait supported by the current tool and compatible with applicable waiting limits and progress-reporting requirements. Within those constraints, prefer a duration that avoids unnecessary busy polling; a timeout alone is no reason to shorten the next wait.
 
-Use the task name or agent identifier returned by `spawn_agent` with subsequent Subagent operations.
-
-### Wait when no useful parent work remains
-
-Continue useful parent work while it is available; a completed Agent's mailbox update arrives on the parent's next turn. When genuinely idle with live Agents, use `wait_agent` as an event subscription. A long subscription wakes on mailbox activity with the same latency as a short one, so shorter polling adds calls without reducing response time.
-
-Use bounded stretches of 300000–600000 ms where the active Harness and runtime allow. When their current limits require a shorter stretch, use a supported duration within those limits. A timeout means only that no mailbox update arrived during the stretch; do not shorten the next stretch merely because the previous one timed out.
-
-## Compose Concurrent Tool Calls
-
-Within `functions.exec`, choose how to collect results from independent calls already selected for concurrent execution: use `Promise.allSettled` when partial results remain useful, or `Promise.all` when every result is required. Keep calls sequential when the current tool schema or an applicable Skill prohibits parallel execution.
+A wait timeout reports only that no mailbox update arrived during that interval. It alone establishes neither child failure nor blockage and does not justify interrupting a child. Use actual child messages or status evidence to judge whether intervention is needed.

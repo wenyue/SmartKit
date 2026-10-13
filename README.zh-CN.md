@@ -2,8 +2,7 @@
 
 [English](README.md) | 简体中文
 
-WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件，提供可复用的 AI 编程工作流和
-统一的项目规范，帮助团队配置和维护编程助手。支持 Windows 和 Linux。
+WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件，提供可复用的 AI 编程工作流和统一的项目规范，帮助团队配置和维护编程助手。支持 Windows 和 Linux。
 
 ## Skill 一览
 
@@ -84,9 +83,9 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 
 ### `review-for-humans`
 
-需要按文件理解改动，并分别判断改动是否合理、实现是否优雅时，手动调用。可以指定 PR、分支或文件；未指定范围时，审查当前 worktree 中未提交改动的净效果。它跳过测试文件，分组展示完整文件；可以要求继续展示下一组，也可以按编号选择修复问题或优化建议。
+需要按文件理解改动，并分别判断改动是否合理、实现是否优雅时，手动调用。可以指定 PR、分支或文件。审查 PR 时，默认跳过当前 GitHub 查看者标为已查看的文件；审查本地改动或未指定范围时，只审查相对暂存区的未暂存改动。可以明确要求包含已查看的 PR 文件或已暂存的本地改动。它跳过测试文件，分组展示完整文件；可以要求继续展示下一组，也可以按编号选择修复问题或优化建议。
 
-例子：“用 `review-for-humans` 解释我未提交的改动。”随后：“修复第 2 项，然后继续。”
+例子：“用 `review-for-humans` 解释我未暂存的改动。”随后：“修复第 2 项，然后继续。”
 
 ### `collect-todos`
 
@@ -124,9 +123,30 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 
 例子：“用 `diagnose-agent-session` 调查当前 Codex 轮次中的工具活动和等待。”
 
+## 第三方 Skills 与工具
+
+### 随插件提供的 Skills
+
+SmartKit 收录了以下项目的部分 Skills，并作了适配。它们随插件一起安装；具体 Skill 及其出处见上方一览。
+
+| 来源 | 侧重点 | 许可证 |
+| --- | --- | --- |
+| [Matt Pocock Skills](https://github.com/mattpocock/skills) | 计划、规格、实现、研究与审查工作流。 | [MIT](licenses/mattpocock-skills-LICENSE.txt) |
+| [ponytail](https://github.com/DietrichGebert/ponytail) | 简洁的编码方案、改动审查、代码库审计与技术债跟踪。 | [MIT](licenses/DietrichGebert-ponytail-LICENSE.txt) |
+
+### 工具
+
+SmartKit 配置或推荐以下工具。CodeGraph 和 Tokscale 需单独安装；请按各自上游的安装说明操作，并确保编程助手能够调用对应命令。
+
+| 工具 | 用途 | 安装与使用 |
+| --- | --- | --- |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | 通过符号和调用关系导航已索引的代码。 | 将 `codegraph` 加入 PATH；自行选择要初始化和建立索引的仓库。 |
+| [Tokscale](https://github.com/junhoyeo/tokscale) | 为 `diagnose-agent-session` 提供 token 用量和费用估算证据。 | 将 `tokscale` 加入 PATH；可用诊断数据取决于客户端及其已记录的用量。 |
+| [Playwright MCP](https://github.com/microsoft/playwright-mcp) | 提供浏览器自动化。 | 插件提供 MCP 配置，客户端通过 `npx` 获取并启动 `@playwright/mcp`。需要 Node.js 18 或更新版本，并将 `npx` 加入 PATH。 |
+
 ## 安装插件
 
-先安装你使用的编程助手，再按对应步骤安装插件。
+先安装你使用的编程助手和 Python 3.8 或更新版本，并将 `python` 加入 PATH，供 SmartKit Hooks 和项目配置使用。使用 Playwright MCP 时，还需安装 Node.js 18 或更新版本，并将 `npx` 加入 PATH。然后按对应步骤安装插件。
 
 ### Codex
 
@@ -135,8 +155,7 @@ codex plugin marketplace add wenyue/SmartKit
 codex plugin add smartkit@wenyue
 ```
 
-安装后，打开 Codex CLI 会话，运行 `/hooks`，审查并信任 SmartKit 的 Hooks，然后开启新会话或运行
-`/clear`。也可以通过 `/plugins` 从已添加的市场中安装。参见 [Codex 插件指南](https://learn.chatgpt.com/docs/plugins)。
+安装后，打开 Codex CLI 会话，运行 `/hooks`，审查并信任 SmartKit 的 Hooks，然后开启新会话或运行 `/clear`。也可以通过 `/plugins` 从已添加的市场中安装。参见 [Codex 插件指南](https://learn.chatgpt.com/docs/plugins)。
 
 ### Cursor
 
@@ -146,8 +165,7 @@ codex plugin add smartkit@wenyue
 git clone https://github.com/wenyue/SmartKit.git "$HOME/.cursor/plugins/local/smartkit"
 ```
 
-重启 Cursor 或运行 `Developer: Reload Window`，然后打开 Customize，确认插件已加载。
-所在组织需允许导入本地插件。通过团队市场安装的方法，参见 [Cursor 插件指南](https://cursor.com/docs/plugins)。
+重启 Cursor 或运行 `Developer: Reload Window`，然后打开 Customize，确认插件已加载。所在组织需允许导入本地插件。通过团队市场安装的方法，参见 [Cursor 插件指南](https://cursor.com/docs/plugins)。
 
 ### GitHub Copilot CLI
 

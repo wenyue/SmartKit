@@ -2,9 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-WenYue SmartKit is a plugin for Codex, Cursor, GitHub Copilot, and Qoder. It provides reusable
-AI coding workflows and shared project guidelines to help teams set up and maintain their coding
-assistants. It supports Windows and Linux.
+WenYue SmartKit is a plugin for Codex, Cursor, GitHub Copilot, and Qoder. It provides reusable AI coding workflows and shared project guidelines to help teams set up and maintain their coding assistants. It supports Windows and Linux.
 
 ## Skills at a glance
 
@@ -85,9 +83,9 @@ Example: “Use `what-if` to judge whether we should combine these two configura
 
 ### `review-for-humans`
 
-Manually invoke this Skill to understand changes file by file, with explanations and separate judgments of reasonableness and elegance. Specify a PR, branch, or selected files; without a scope, it reviews the current worktree's net uncommitted changes. It skips test files and displays complete files in groups; ask to continue for the next group, or select numbered findings to fix or suggestions to optimize.
+Manually invoke this Skill to understand changes file by file, with explanations and separate judgments of reasonableness and elegance. Specify a PR, branch, or selected files. PR reviews default to skipping files the current GitHub viewer has marked viewed; local reviews, including requests without a scope, cover only unstaged changes relative to the index. You can explicitly include viewed PR files or staged local changes. It skips test files and displays complete files in groups; ask to continue for the next group, or select numbered findings to fix or suggestions to optimize.
 
-Example: “Use `review-for-humans` to explain my uncommitted changes.” Then: “Fix item 2 and continue.”
+Example: “Use `review-for-humans` to explain my unstaged changes.” Then: “Fix item 2 and continue.”
 
 ### `collect-todos`
 
@@ -125,9 +123,30 @@ Use this Skill to investigate abnormal token usage, tool activity, waits, or inc
 
 Example: “Use `diagnose-agent-session` to investigate tool activity and waits in the current Codex turn.”
 
+## Third-party Skills and tools
+
+### Included Skills
+
+SmartKit includes selected Skills from the following projects, with SmartKit-specific adaptations. They are installed with the plugin. The overview above lists the individual Skills and their sources.
+
+| Source | Focus | License |
+| --- | --- | --- |
+| [Matt Pocock Skills](https://github.com/mattpocock/skills) | Planning, specifications, implementation, research, and review workflows. | [MIT](licenses/mattpocock-skills-LICENSE.txt) |
+| [ponytail](https://github.com/DietrichGebert/ponytail) | Simple coding solutions, change reviews, codebase audits, and technical debt tracking. | [MIT](licenses/DietrichGebert-ponytail-LICENSE.txt) |
+
+### Tools
+
+SmartKit configures or recommends the following tools. CodeGraph and Tokscale are installed separately; follow their upstream installation instructions and expose their commands to your coding assistant.
+
+| Tool | Purpose | Installation and use |
+| --- | --- | --- |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Make `codegraph` available on PATH; choose which repositories to initialize and index. |
+| [Tokscale](https://github.com/junhoyeo/tokscale) | Supplies token usage and estimated cost evidence for `diagnose-agent-session`. | Make `tokscale` available on PATH; available diagnostic data depends on the client and its recorded usage. |
+| [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Provides browser automation. | The plugin includes MCP configuration; the client uses `npx` to obtain and launch `@playwright/mcp`. Requires Node.js 18 or newer and `npx` on PATH. |
+
 ## Install the plugin
 
-Install your preferred coding assistant first, then follow its instructions below.
+Install your preferred coding assistant and Python 3.8 or newer first, with `python` available on PATH for SmartKit Hooks and project setup. To use Playwright MCP, also install Node.js 18 or newer with `npx` on PATH. Then follow your assistant's instructions below.
 
 ### Codex
 
@@ -136,9 +155,7 @@ codex plugin marketplace add wenyue/SmartKit
 codex plugin add smartkit@wenyue
 ```
 
-After installation, open a Codex CLI session and run `/hooks` to review and trust SmartKit's
-Hooks. Then start a new session or run `/clear`. You can also install from the added marketplace
-through `/plugins`. See the [Codex plugin guide](https://learn.chatgpt.com/docs/plugins).
+After installation, open a Codex CLI session and run `/hooks` to review and trust SmartKit's Hooks. Then start a new session or run `/clear`. You can also install from the added marketplace through `/plugins`. See the [Codex plugin guide](https://learn.chatgpt.com/docs/plugins).
 
 ### Cursor
 
@@ -148,9 +165,7 @@ Clone the plugin into Cursor's local plugin directory:
 git clone https://github.com/wenyue/SmartKit.git "$HOME/.cursor/plugins/local/smartkit"
 ```
 
-Restart Cursor or run `Developer: Reload Window`, then open Customize to confirm the plugin is
-loaded. Your organization must allow local plugin imports. For team marketplace installation,
-see the [Cursor plugin guide](https://cursor.com/docs/plugins).
+Restart Cursor or run `Developer: Reload Window`, then open Customize to confirm the plugin is loaded. Your organization must allow local plugin imports. For team marketplace installation, see the [Cursor plugin guide](https://cursor.com/docs/plugins).
 
 ### GitHub Copilot CLI
 
@@ -168,5 +183,4 @@ qoder plugin marketplace add wenyue/SmartKit
 qoder plugin install smartkit@wenyue
 ```
 
-These commands require plugin marketplace support to be enabled in Qoder. See the
-[Qoder plugin guide](https://docs.qoder.com/cli/plugins).
+These commands require plugin marketplace support to be enabled in Qoder. See the [Qoder plugin guide](https://docs.qoder.com/cli/plugins).

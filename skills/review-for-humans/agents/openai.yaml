@@ -1,9 +1,9 @@
 interface:
   display_name: "Review for Humans"
-  short_description: "按文件审查 PR 和分支改动，默认查看当前工作区相对已提交内容的净变化。"
+  short_description: "按文件解释 PR、分支和本地改动，默认跳过 PR 中已查看的文件并只审查本地未暂存改动。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
   brand_color: "#2563EB"
-  default_prompt: "使用 $review-for-humans，审查当前工作区相对当前分支已提交内容的净变化，按文件解释并给出中文操作提示。"
+  default_prompt: "使用 $review-for-humans，只审查当前工作区的未暂存改动，按文件解释并给出中文操作提示。"
 policy:
   allow_implicit_invocation: false

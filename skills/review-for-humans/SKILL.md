@@ -1,6 +1,6 @@
 ---
 name: review-for-humans
-description: Review pull requests and branch changes file by file for humans; default to the current worktree's net uncommitted changes.
+description: 按文件解释 PR、分支和本地改动，默认跳过 PR 中已查看的文件，本地只审查未暂存改动。
 disable-model-invocation: true
 ---
 
@@ -12,22 +12,36 @@ Load the necessary Skills and Rules to perform the review.
 
 ## Establish the review scope
 
-Identify the task's intended outcome and select the comparison below. Obtain its before-and-after evidence through available read-only Git or GitHub interfaces, such as a CLI or connector.
+### Choose the comparison
+
+Identify the task's intended outcome and select the comparison below. Obtain its before-and-after evidence through available read-only Git or GitHub interfaces, such as a CLI, connector, or authenticated GitHub UI.
 
 | Requested scope | Comparison |
 | --- | --- |
-| A pull request | Obtain the PR's changed files and comparison evidence, recording its base and head commit IDs. Review that fixed PR version. |
+| A pull request | Obtain the PR's changed files and comparison evidence, recording its base and head commit IDs. Review that fixed PR version, applying the file-level viewed-state filter below. |
 | A branch, with or without an explicit base | Resolve the reviewed branch tip and a reliable comparison base; compare their merge-base with that tip, pinning both commit IDs. If the base cannot be established reliably, ask the user rather than assuming `main`. |
-| No explicit scope | Compare the current worktree with the current branch's `HEAD`, using `git diff HEAD` or equivalent evidence. |
+| Local changes, or no explicit scope | Compare the index with the current worktree, using `git diff` or equivalent evidence. |
 | Selected files | Filter the applicable comparison to those files; count and report the selection rather than the full PR or branch. |
 
-The default comparison reviews the combined net effect of staged and unstaged changes, displaying each file once. It intentionally omits changes that cancel between the index and worktree: if staged content is subsequently reverted in the worktree to `HEAD`, no net change remains to review. Do not separately review index versions, include earlier commits, or fall back to the last commit when the comparison is empty. Exclude untracked files unless the user explicitly includes them; when included, review them as additions.
+An explicit PR or branch comparison does not include local uncommitted changes unless the user requests them.
 
-An explicit PR or branch comparison does not include local uncommitted changes unless the user requests them. Preserve this Skill's selected comparison when loading other review guidance with different scope defaults. When there is no usable `HEAD`, the requested refs or PR evidence are unavailable, or a required interface cannot be used, name the missing prerequisite and pause the dependent review.
+### Review local changes
 
-Keep a fixed review snapshot, recording the comparison commits and the reviewed worktree content where applicable, and an ordered file list for displaying the report. For all review scopes, match GitHub's Files changed directory-tree order: at every directory, recursively list each subdirectory's changed files before the files directly in that directory. Use the pull request's actual tree sibling order when accessible; otherwise sort sibling directories and direct files by name. For example, `src/z/api.dart` precedes `src/a.dart`; sorting complete paths from `git diff` does not establish that order.
+The local default reviews only unstaged changes, using the index as the before version. Skip staged-only edits; for a partially staged file, review only its unstaged portion. If a staged edit is subsequently reverted in the worktree, that reversal relative to the index is an unstaged change to review. An explicit request to include staged changes or use another local comparison overrides this default. Do not include earlier commits or fall back to staged changes or the last commit when the selected comparison is empty. Exclude untracked files unless the user explicitly includes them; when included, review them as additions.
 
-Skip test files entirely: do not review them or count them toward progress or modification items. Count the remaining files in the supplied scope before displaying the first group. Briefly identify the scope and exclusions so the reader can interpret the total. If no files require review, say so and finish without manufacturing a report or a progress fraction.
+### Filter PR files
+
+For a PR, default to skipping files marked viewed by the current authenticated GitHub viewer. Obtain the complete file-level states through an available authenticated read-only GitHub interface; GitHub GraphQL exposes them as [`PullRequestChangedFile.viewerViewedState`](https://docs.github.com/en/graphql/reference/pulls#pullrequestchangedfile). Exclude `VIEWED`; include `UNVIEWED` and `DISMISSED`, which means the file changed since it was last viewed. Complete any pagination and check that the PR's base and head remain unchanged while obtaining the file list and states, so the filter belongs to the pinned version. Current viewed states cannot establish a filter for an older PR snapshot. A PR approval, comments, or files displayed in an earlier chat are not evidence of a file's viewed state.
+
+The user can explicitly include reviewed files, overriding that exclusion. If required viewed-state evidence is unavailable, name the missing prerequisite and pause the dependent review; ask for access to that evidence or whether to include all otherwise eligible files without the filter. Treat missing state as unknown rather than `UNVIEWED`.
+
+### Keep a fixed snapshot and file list
+
+Preserve this Skill's selected comparison when loading other review guidance with different scope defaults. When there is no usable `HEAD`, the requested refs or PR evidence are unavailable, or a required interface cannot be used, name the missing prerequisite and pause the dependent review.
+
+Keep a fixed review snapshot and an ordered file list for displaying the report. Record comparison commit IDs for PRs and branches, the local comparison's before-and-after content including the index baseline for unstaged reviews, and the viewer identity and file-level states used for PR filtering. For all review scopes, match GitHub's Files changed directory-tree order: at every directory, recursively list each subdirectory's changed files before the files directly in that directory. Use the pull request's actual tree sibling order when accessible; otherwise sort sibling directories and direct files by name. For example, `src/z/api.dart` precedes `src/a.dart`; sorting complete paths from `git diff` does not establish that order.
+
+Skip test files entirely: do not review them or count them toward progress or modification items. Apply the scope filters before counting; skipped viewed PR files and staged-only local files receive no file reports, progress credit, or modification items. Count the remaining files before displaying the first group. Briefly identify the scope and exclusions so the reader can interpret the total. If no files require review, say so and finish without manufacturing a report or a progress fraction.
 
 When scope, required guidance, or source evidence is unavailable, identify the missing input and its effect. Pause the dependent review rather than inventing facts, totals, or a completed assessment. A known file with incomplete evidence remains in the total; explain the gap in that file's report and use an insufficient-evidence evaluation where necessary.
 
