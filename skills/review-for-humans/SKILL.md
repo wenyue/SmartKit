@@ -93,51 +93,71 @@ End each group with `---` and 📊 **Progress**: **displayed files / files requi
 
 Use the conversation's language for human-facing labels, summaries, action names, and questions. Localize action names and their descriptions consistently in that language, without pairing them with names in another language. Interpret natural-language selections by meaning, rather than requiring command syntax.
 
-Modification IDs select that modification's relevant findings or suggestions. "All" covers only the current report's already displayed, outstanding modifications in the chosen dimension, including earlier groups. Clarify ambiguous, contradictory, or invalid selections before carrying out an action.
+Modification IDs select that modification's relevant findings or suggestions. Unqualified **fix**, **optimize**, and explicit **ignore all** cover only this report's already displayed, outstanding items in the chosen dimension, including earlier groups. A subset affects only that subset. Explain the applicable scope and count in the menu. Advancing displays the next group at the saved position or finishes an exhausted scope.
 
-| Action | Without modification IDs | With modification IDs |
-| --- | --- | --- |
-| **fix** | Repair all pending, unignored unreasonable findings. | Repair only the selected pending, unignored unreasonable findings. |
-| **ignore** | Ask which modifications to ignore; only explicit **ignore all** ignores every pending unreasonable finding. | Ignore the selected findings and automatically repair all remaining pending, unignored unreasonable findings. |
-| **optimize** | Improve all outstanding, supported 🎨 **Can improve** suggestions. | Improve only the selected outstanding, supported elegance suggestions. |
-| **pass** | Record review state for the current displayed group, then continue or finish as described below. | This action selects a whole group; clarify a selection of individual modifications before recording state. |
-| **continue** | Display the next group or end an exhausted scope, retaining unimplemented elegance suggestions as advice. | This action advances the whole group; clarify a selection of individual modifications before advancing. |
+| Action | Effect and selection |
+| --- | --- |
+| **fix** | Repair pending unreasonable findings: all when unqualified, otherwise only those selected. |
+| **ignore** | Record only the selected findings as ignored, retaining their severity and impact. A lone clearly identified finding needs no repeated ID; otherwise ask which findings, unless the user explicitly chooses all. Other findings stay pending. |
+| **optimize** | Implement supported outstanding 🎨 **Can improve** suggestions: all when unqualified, otherwise only those selected. This leaves separately pending findings unchanged. |
+| **pass** | Local review: stage this group's reviewed delta. PR review: mark this group's reviewed files Viewed. Verify the operation, then advance. It authorizes neither commit nor push. |
+| **continue** | Advance without staging, committing, pushing, or marking Viewed. Retain unpublished modifications and unimplemented suggestions. |
+| **sync and continue** | For a verified PR target, commit and push this report's authorized, checked and re-reviewed decisions; mark eligible displayed files Viewed, then advance. It expressly authorizes the scoped publication and marking, including earlier displayed files awaiting Viewed. |
 
-**ignore** has no default, even for a lone finding. If the user has not specified which findings to ignore, ask them to identify the modifications or explicitly choose all, state that every remaining pending, unignored finding will be repaired, and wait without changes. Record ignored findings with their severity as ignored, not repaired or approved. Ignoring affects only reasonableness and leaves separately authorized elegance improvements available.
+**pass** and **continue** select the whole current group; clarify selections of individual modifications. For **sync and continue**, identify the actual publication delta and eligible Viewed set before writing. Neither **pass** nor **sync and continue** formally approves or merges a PR. Ignored findings remain ignored, not repaired or approved.
+
+### Generate the closing menu
+
+Use the same state table after ordinary reviews and re-reviews. Advancing requires every displayed unreasonable finding to be repaired or explicitly ignored, required correctness and version evidence to be available, required checks and affected re-reviews to be complete, and any selected recording or synchronization operation to be verified. An optional improvement or lack of elegance evidence alone does not block advancing.
+
+| State, in priority order | Available choices or next step |
+| --- | --- |
+| Pending unreasonable findings, including after subset fixes or ignores | **fix**, **ignore**, and **optimize** if supported suggestions remain. Refuse **pass**, **sync and continue**, and **continue** until the findings are handled. |
+| Missing correctness/version evidence, incomplete or failed required checks, or stale affected review | Complete authorized checks or re-review; otherwise offer the concrete prerequisite or remedy. Keep advancing unavailable. |
+| A selected staging, Viewed, or synchronization operation is unfinished | Resolve its blocker and complete the remaining verified steps; offer **complete sync and continue** for synchronization. Keep ordinary **continue** unavailable. |
+| Ready local review | **pass**, **continue**. Omit **pass** when this group's reviewed delta is already staged. |
+| Ready branch comparison without a PR | **continue**; no state-recording or synchronization target is implied. |
+| Ready PR matching the reviewed version, with no unpublished reviewed changes | **pass**, **continue**. Omit **pass** when this group's files are already Viewed. |
+| Ready PR with authorized, checked, re-reviewed local changes awaiting publication | **sync and continue**, **continue**, if the publication and marking prerequisites below are established. Explain that ordinary **pass** requires the reviewed version on the PR; **continue** retains the local changes without publishing. |
+| Required write target, interface, or safe scope cannot be established | Name the concrete prerequisite; omit the unavailable write action. **continue** remains available only if the advancing gate is satisfied and no selected operation is unfinished. |
+
+Add **optimize** to ready-state menus whenever supported outstanding suggestions remain. Do not offer redundant synchronization when no publication is needed; if the user nevertheless requests it, perform only the required marking and advancement, without an empty commit or unnecessary push. A known, verified PR is required for synchronization; an ordinary branch or local comparison supplies none.
+
+After progress, separate **Pending findings**, **Optional improvements**, and **Available actions** with Markdown, omitting empty sections. List pending findings using the exact format `**M1** (P1): <impact summary>`, substituting the actual ID and severity; bold only the ID and keep the ASCII parentheses and colon plain. List supported suggestions by ID, proposed improvement, and benefit. Include outstanding items from earlier groups. Describe only the actual operation for each available action, using short bullets without command syntax or numbered recipes. End with one concise question; when no choice remains, close without a question.
+
+In the final group, label **pass** as **pass and finish**, **sync and continue** as **sync and finish**, and **continue** as **finish review**; these are closing wordings of the same actions. An incoming “continue” finishes an exhausted scope only when the gate is satisfied. A ready exhausted branch scope with no suggestions can close without a prompt. An explicit stop or pause is always allowed: report the displayed progress, unresolved or ignored findings, evidence gaps, unpublished modifications, and unfinished operations as applicable, without claiming successful completion. Completed display does not mean all findings were repaired or all modifications were published.
+
+### Interpret replies and re-review edits
+
+Apply the selected meaning even when it is absent from the menu, provided its prerequisites hold. If the user requests advancement while blocked, refuse it briefly, name the blockers, and ask for the relevant fix, ignore, or remedy; “continue” never means “ignore.” Never upgrade **pass** to a commit or push. Clarify ambiguous scopes, invalid IDs, conflicting directions, or a bare agreement following an ambiguous menu; “yes” authorizes an action only when the preceding question specifies it unambiguously. Reassess disputed findings from the supplied evidence rather than treating disagreement as ignoring. Answer questions without interpreting them as authorization for edits or advancement.
+
+For authorized repairs or optimizations, load the necessary guidance, limit edits to the selected findings or suggestions and their necessary supporting changes, and run required checks. Optimization preserves supported behavior and contracts. Whenever reviewed content changes, complete required checks successfully, refresh the snapshot, and independently re-review every changed or affected previously reviewed part, including unexpected changes. Show complete file blocks with updated explanations and both judgments in dedicated replies separate from unseen files. Retain modification IDs and original group membership, count each displayed file once, explain the version transition, and update the file list and total only for actual scope changes. For unpublished PR changes, retain both the pinned remote version and the checked local content expected to be published. Mark findings repaired or suggestions completed only after re-review confirms the result.
+
+A single **fix**, **ignore**, or **optimize** ends with the regenerated menu, not automatic advancement. An explicit compound request authorizes its ordered steps: for example, fix, check, display the dedicated re-review, synchronize, then advance. Continue already authorized steps without routine reconfirmation; a new finding, failed check, or material change pauses dependent steps and regenerates the menu. An independently authorized optimization can still proceed while findings are pending, but does not open the advancing gate.
 
 ### Record a passed group
 
-**pass** applies only to a local or PR comparison and only when no pending unreasonable findings remain. It covers the current displayed group's reviewed changes or files, including their latest displayed re-review, rather than all files in the comparison or earlier groups. It retains unimplemented elegance suggestions as advice. A branch comparison has no corresponding state-recording operation; offer ordinary **continue** there. Selecting **pass** authorizes staging or Viewed updates for this group, not a local commit, push, or PR approval.
+**pass** covers only the current group's reviewed delta or file paths, including its latest displayed re-review. For a local review, verify the current worktree contents and relevant index entries against the retained snapshot and capture the complete current index as the write baseline. Stage only the reviewed delta not already staged, using a scoped patch when whole-file staging would include unseen or excluded changes. Preserve existing staged contents outside that delta, including unrelated edits in partially staged files, and leave the worktree unchanged. Verify that the resulting index equals the write baseline plus exactly that delta, all other entries remain unchanged, and the worktree still matches the snapshot. If the snapshot is stale or the delta cannot be separated safely, refresh and display the affected review and obtain a new selection before staging.
 
-For a local review, verify that the group's current worktree contents and relevant index entries match the retained snapshot before writing, and capture the complete current index as the write baseline. Stage only the group's displayed reviewed changes that are not already staged. Use a scoped patch when staging a whole file would include unseen or excluded changes. Preserve existing staged contents outside the authorized reviewed delta, including unrelated edits in a partially staged file, and leave the worktree unchanged. Verify that the resulting index equals the write baseline plus exactly that delta, all other entries remain unchanged, and the group's worktree contents still match the snapshot. If the snapshot is stale or the reviewed delta cannot be separated safely, pause the action, refresh and display the affected review, and obtain a new selection before staging.
+For a PR review, obtain an available authenticated interface capable of marking files Viewed. Verify the viewer identity and pinned base and head immediately before writing, mark only this group's reviewed paths, then read back every selected path's `viewerViewedState` and the PR version. Every selected path must be `VIEWED`, with both commit IDs unchanged, before advancing. A changed version requires an affected re-review and a new selection; marking a newer version does not establish that it was reviewed.
 
-For a PR review, obtain an available authenticated interface capable of marking files Viewed, and verify the viewer identity and pinned base and head immediately before writing. Mark only this group's reviewed file paths as Viewed for that viewer. Read back every selected file's `viewerViewedState` and the PR version; all selected files must be `VIEWED`, and both commit IDs must still match the reviewed snapshot before advancing. If the version changed, refresh and display the affected review before another selection; marking a newer version does not establish that version was reviewed.
+### Synchronize a reviewed PR
 
-If the required interface or snapshot evidence is unavailable, or a write or verification fails, pause without advancing or substituting **continue**. Report what is confirmed, failed, or still unknown, including any partial staging or Viewed updates. Inspect the current state before retrying so a lost response is not mistaken for a failed write. Only after verification succeeds, acknowledge the applicable operation and display the next group or end an exhausted scope. Recording state leaves the review snapshot, file total, and saved next-unreviewed position intact; do not reapply the unstaged or Viewed filters to remove passed files from progress.
+Use available Git and authenticated GitHub read/write interfaces, such as a CLI, connector, or UI. Establish the exact repository, PR, source branch, viewer, write capabilities, and attributable publication scope before offering synchronization. Include only this report's explicitly authorized decisions that passed required checks and re-review, with their necessary support, generated, and test changes; tests remain excluded from report counts. Preserve unrelated staged and worktree changes, and exclude unrelated unpushed commits, other unseen edits, and unknown file versions. If the push ancestry or delta cannot be separated safely, explain the prerequisite rather than implicitly rebasing or force-pushing.
 
-### Make the closing choice readable
+Execute the selected operation in this order:
 
-After progress, use Markdown to separate **Pending findings**, **Optional improvements**, and **Available actions**, omitting empty sections. List pending unreasonable findings by modification ID, severity, and a short impact summary. Use the exact label format `**M1** (P1): <impact summary>`, substituting the actual ID and severity; bold only the ID, keep the severity in plain ASCII parentheses, and place the ASCII colon after them. List supported elegance suggestions by modification ID, proposed improvement, and benefit. These summaries cover outstanding modifications from earlier groups as well as the current group.
+1. Verify the pinned remote base and head, the reviewed before-and-after content and affected dependencies, and the entire delta and commit ancestry to be published. Announce the actual publication delta and eligible displayed paths awaiting Viewed; verify each path's content and the pinned viewer.
+2. If needed, stage and create a scope-only commit through normal repository hooks, preserving pre-existing staged work outside the authorized delta and the worktree. Verify the resulting commit and remaining local state; hook changes need checks and affected re-review before publication.
+3. Push normally to the validated PR source branch. Read back the remote head and base, confirming the expected commit and that its complete comparison and effects match the checked, re-reviewed decisions.
+4. Mark only eligible displayed paths Viewed for the pinned viewer. Read back every selected path's state and the PR version; all must be `VIEWED` on the verified base and head.
+5. Acknowledge the completed operation and advance from the saved position, or finish an exhausted scope.
 
-Offer only the actions available under the continuation rules below, using the same short-bullet format for each action. Explain their effects and what an unqualified choice does: **fix** repairs all pending findings unless the user selects a subset; **ignore** needs a selection and automatically repairs the remaining findings, while explicitly ignoring all performs no repairs; **optimize** implements all supported outstanding suggestions unless the user selects a subset; **pass** records the current group's review state and then continues or finishes; **continue** displays the next group or ends an exhausted scope. Passing and continuing retain unimplemented suggestions as advice. When pending findings remain, say that optimization leaves them pending.
+The intentional new head needs verification, not a repeat of the whole review. Unexpected changes to content, base, or affected dependencies require re-review of the affected parts; text equality alone does not establish unchanged effects. Refresh the snapshot and obtain a new choice when the result no longer represents the authorized reviewed version. Retain the ordered list, group membership, next position, modification IDs, and decisions across synchronization.
 
-Describe **pass** using only the operation applicable to the actual comparison: for a local review, “Stage this group's reviewed changes and display the next group”; for a PR review, “Mark this group's reviewed PR files as Viewed and display the next group.” In the final group, replace “display the next group” with “end this review.” When elegance suggestions remain, say that they are retained as advice. Keep plain **continue** available alongside **pass**, and omit **pass** in branch reviews.
+### Recover an unfinished operation
 
-Keep concrete invocation syntax and numbered usage recipes out of closing menus; modification IDs belong in the finding and suggestion lists. End with one concise question asking for the applicable action and, when needed, selected modifications. If no choice remains, close without a question. The examples below illustrate the different result states; localize their wording for the conversation.
-
-### Edit, re-review, and continue
-
-For authorized repairs or optimizations, load the necessary guidance, limit edits to the authorized findings or suggestions, and run required checks. Optimization preserves existing supported behavior and contracts. If an action is blocked or a check fails, explain what remains and what is needed; pause without advancing.
-
-After checks pass, re-review the revised content before moving on. Whenever reviewed content changes, refresh the snapshot and re-review every changed or affected previously reviewed part, including unexpected changes. Show updated explanations and both judgments in complete file blocks, in dedicated replies separate from unseen files. Retain modification IDs, explain the version transition, and update the file list and total when needed. Mark findings repaired or suggestions completed only after re-review confirms the result.
-
-Use the same action rules and continuation flow after ordinary groups and dedicated re-reviews:
-
-- **Pending unreasonable findings**: ask whether to **fix** or **ignore**, even in the final group; also offer **optimize** if supported elegance suggestions remain. Wait for the user's choice. **pass** and **continue** are unavailable; **optimize** alone neither authorizes repairs nor permits advancing.
-- **No pending findings, but supported elegance suggestions remain**: offer **optimize**, **continue**, and, for a local or PR comparison, **pass**. Wait for the user's choice. Continuing resumes with the next file or closes an exhausted scope, retaining unselected suggestions as advice; passing records the group's state first.
-- **Neither remains**: for a local or PR comparison, offer **pass** or **continue** and wait even in the final group, so the last group can be staged or marked Viewed. For a branch comparison, ask whether to continue and wait if files remain; close without a prompt if the scope is exhausted.
-
-If explicit ignoring leaves no remaining repairs, resume automatically at the saved next-unreviewed position or close if the scope is exhausted, unless supported elegance suggestions remain; those still require a choice. This existing automatic continuation does not stage changes or mark PR files Viewed. Retain ignored findings and evidence gaps, and distinguish completed display from resolved findings.
+If a required interface is unavailable or a write or verification fails, pause without advancing, rolling back automatically, or substituting **continue**. Report confirmed, failed, and unknown steps, including the exact commits, publication status, and partial staging or Viewed paths. After a lost response, inspect the actual local and remote state before deciding whether a write occurred. Once readiness is restored, resume only the remaining supported steps, without duplicate commits or repeated successful writes. A selected operation completes only after all its required readbacks succeed; explicit stopping can leave it incomplete and must report that residual state. Successful recording and synchronization preserve saved progress and the resume position; amend totals only for real scope changes, and do not reapply unstaged or Viewed filters to remove displayed files.
 
 ## Reference report
 
@@ -211,14 +231,14 @@ Previously, repeated clicks could start duplicate saves; the handler now refuses
 **Available actions**
 
 - **Optimize**: Implement the optional improvement.
-- **Pass**: Stage this group's reviewed changes and end this review, retaining the improvement as advice.
-- **Continue**: End this review, retaining the improvement as advice.
+- **Pass and finish**: Stage this group's reviewed changes and end this review, retaining the improvement as advice.
+- **Finish review**: End this review, retaining the improvement as advice.
 
-🤖 **Would you like to optimize, pass, or continue?**
+🤖 **Would you like to optimize, pass and finish, or finish review?**
 
 ## Example closings for different results
 
-These illustrative closings follow the file reports; they do not replace the two judgments in each modification. A complete display total does not mean findings have been resolved. The eligible examples name their local or PR scope to show the different **pass** descriptions; adapt them to the actual comparison. In a branch review, omit **pass** and close an exhausted scope without a question when no findings or suggestions remain.
+These illustrative closings follow file reports or dedicated re-reviews; they do not replace the two judgments in each modification. Localize them and use only the options available for the actual state.
 
 ### Pending findings and optional improvements
 
@@ -235,81 +255,37 @@ These illustrative closings follow the file reports; they do not replace the two
 
 **Available actions**
 
-- **Fix**: Repair all pending findings, or the subset you select.
-- **Ignore**: Choose which findings to ignore; the remaining findings will be repaired automatically. Explicitly ignoring all performs no repairs.
-- **Optimize**: Implement the optional improvements, or the subset you select; the pending findings still need attention.
+- **Fix**: Repair both pending findings, or the subset you select.
+- **Ignore**: Choose which findings to ignore; other findings remain pending.
+- **Optimize**: Implement the optional improvement; the pending findings still need attention.
 
-🤖 **Which action would you like? Identify modifications if selecting a subset or ignoring findings. Pending findings must be handled before continuing.**
+🤖 **Would you like to fix or ignore the findings, or optimize? The findings must be handled before continuing.**
 
-### Only pending findings, including after the final group
+If the user replies “continue,” respond: “M2 and M5 are still pending, so I cannot show the next group yet. Would you like to fix them or explicitly ignore them?”
 
-📊 **Progress**: **9/9 files displayed**.
+### PR repaired locally and ready to synchronize
 
-**Pending findings**
-
-- **M5** (P2): The error path leaves the button disabled.
+📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired; required checks and re-review passed. The fixes remain local, so ordinary pass is unavailable until the PR contains this reviewed version.
 
 **Available actions**
 
-- **Fix**: Repair the pending finding.
-- **Ignore**: Explicitly select the finding to ignore; it will remain recorded as ignored.
+- **Sync and continue**: Commit and push the two fixes, verify the PR version, mark the four displayed files Viewed, then show the next group.
+- **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
 
-🤖 **Would you like to fix the finding or explicitly ignore it? All files have been displayed, but the finding is still pending.**
+🤖 **Would you like to sync and continue, or continue with the fixes kept local?**
 
-### Only optional improvements, with files remaining in a PR review
+### Final group of a PR review
 
-📊 **Progress**: **4/9 files displayed**. No unreasonable findings are pending.
+📊 **Progress**: **9/9 files displayed**. No pending findings or unpublished reviewed changes remain; the PR matches the reviewed version.
 
 **Optional improvements**
 
-- **M7**: Share the state-reset logic to reduce duplication.
+- **M7**: Share the state-reset logic to reduce duplication and maintenance omissions.
 
 **Available actions**
 
 - **Optimize**: Implement the optional improvement.
-- **Pass**: Mark this group's reviewed PR files as Viewed and display the next group, retaining this improvement as advice.
-- **Continue**: Display the next group, retaining this improvement as advice.
+- **Pass and finish**: Mark this group's reviewed files Viewed and end this review, retaining the improvement as advice.
+- **Finish review**: End this review without marking Viewed, retaining the improvement as advice.
 
-🤖 **Would you like to optimize, pass, or continue?**
-
-### Only optional improvements, after the final group in a local review
-
-📊 **Progress**: **9/9 files displayed**. No unreasonable findings are pending.
-
-**Optional improvements**
-
-- **M7**: Share the state-reset logic to reduce duplication.
-
-**Available actions**
-
-- **Optimize**: Implement the optional improvement.
-- **Pass**: Stage this group's reviewed changes and end this review, retaining the improvement as advice.
-- **Continue**: End this review, retaining the improvement as advice.
-
-🤖 **Would you like to optimize, pass, or continue?**
-
-### No findings or suggestions, with files remaining in a local review
-
-📊 **Progress**: **4/9 files displayed**.
-
-No pending findings or optional improvements were found in this group or remain from earlier groups.
-
-**Available actions**
-
-- **Pass**: Stage this group's reviewed changes and display the next group.
-- **Continue**: Display the next group.
-
-🤖 **Would you like to pass or continue?**
-
-### No findings or suggestions, after the final group in a PR review
-
-📊 **Progress**: **9/9 files displayed**.
-
-All files have been displayed. No pending findings or optional improvements remain in the reviewed scope.
-
-**Available actions**
-
-- **Pass**: Mark this group's reviewed PR files as Viewed and end this review.
-- **Continue**: End this review.
-
-🤖 **Would you like to pass or continue?**
+🤖 **Would you like to optimize, pass and finish, or finish review?**
