@@ -1481,6 +1481,124 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             self.assertEqual(len(calls), 1)
 
 
+class UserShellPathTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.checker = load_checker()
+
+    @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
+    def test_launcher_detects_tools_and_newer_node_from_interactive_login_shell(self):
+        with tempfile.TemporaryDirectory(prefix='shell path ') as temp_dir:
+            root = Path(temp_dir)
+            inherited_bin = root / 'inherited bin'
+            user_bin = root / 'user bin'
+            inherited_bin.mkdir()
+            user_bin.mkdir()
+            (inherited_bin / 'python').symlink_to(sys.executable)
+            (inherited_bin / 'dirname').symlink_to(shutil.which('dirname'))
+            old_node = inherited_bin / 'node'
+            old_node.write_text('#!/bin/sh\nprintf "v14.21.3\\n"\n', encoding='utf-8')
+            old_node.chmod(0o755)
+            for name in ('codex', 'tokscale', 'node'):
+                tool = user_bin / name
+                tool.write_text('#!/bin/sh\nprintf "24.14.0\\n"\n', encoding='utf-8')
+                tool.chmod(0o755)
+            shell = root / 'user shell'
+            shell.write_text(
+                '#!/bin/sh\n'
+                '[ "$1" = "-ilc" ] || exit 1\n'
+                'printf "shell startup output\\n"\n'
+                'printf "shell startup warning\\n" >&2\n'
+                'PATH="$SMARTKIT_TEST_BIN:$PATH"\nexport PATH\n'
+                'exec /bin/sh -c "$2"\n',
+                encoding='utf-8',
+            )
+            shell.chmod(0o755)
+            policy = root / 'policy.json'
+            policy.write_text(json.dumps({
+                'harness': 'codex',
+                'tools': [
+                    {
+                        'id': name,
+                        'name': name,
+                        'target_version': '18.0.0',
+                        'comparison': '>',
+                        'detectors': [{
+                            'kind': 'command-regex',
+                            'command': [name, '--version'],
+                        }],
+                        'install': 'Install the tool.',
+                        'upgrade': 'Upgrade the tool.',
+                    }
+                    for name in ('codex', 'tokscale', 'node')
+                ],
+            }), encoding='utf-8')
+
+            completed = subprocess.run(
+                [
+                    '/bin/sh',
+                    str(REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.sh'),
+                    'check', '--harness', 'codex', '--policy', str(policy),
+                ],
+                env=dict(
+                    os.environ,
+                    PATH=str(inherited_bin),
+                    SHELL=str(shell),
+                    SMARTKIT_TEST_BIN=str(user_bin),
+                ),
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        self.assertEqual(completed.stdout, '')
+        self.assertEqual(completed.stderr, '')
+
+    def test_shell_path_failure_does_not_emit_tool_installation_findings(self):
+        checker = self.checker
+        for command in ('check', 'hook'):
+            with self.subTest(command=command), \
+                    mock.patch.object(
+                        checker, 'load_user_shell_path',
+                        side_effect=checker.DetectorError('shell timed out'),
+                    ), \
+                    mock.patch.object(checker, 'check_policy') as check, \
+                    mock.patch.object(checker, 'run_hook') as hook, \
+                    mock.patch('sys.stdout', new_callable=io.StringIO) as stdout, \
+                    mock.patch('sys.stderr', new_callable=io.StringIO) as stderr:
+                exit_code = checker.main([command, '--harness', 'codex'])
+
+            check.assert_not_called()
+            hook.assert_not_called()
+            if command == 'hook':
+                self.assertEqual(exit_code, 0)
+                message = json.loads(stdout.getvalue())
+                self.assertTrue(message['continue'])
+                self.assertIn('could not complete', message['systemMessage'])
+            else:
+                self.assertEqual(exit_code, 2)
+                self.assertIn('could not complete', stderr.getvalue())
+
+    @unittest.skipUnless(os.name == 'posix', 'requires a POSIX shell')
+    def test_shell_path_is_preserved_when_initialization_fails(self):
+        checker = self.checker
+        for output in (None, 'startup output only', '\0SMARTKIT_PATH\0\0'):
+            with self.subTest(output=output), \
+                    mock.patch.dict(os.environ, SHELL='/bin/sh', PATH='/original'), \
+                    mock.patch.object(checker, '_run_command', return_value=output):
+                with self.assertRaises(checker.DetectorError):
+                    checker.load_user_shell_path()
+                self.assertEqual(os.environ['PATH'], '/original')
+
+    def test_shell_path_is_unchanged_without_a_configured_shell(self):
+        with mock.patch.dict(os.environ, SHELL='', PATH='/original'), \
+                mock.patch.object(self.checker, '_run_command') as run:
+            self.checker.load_user_shell_path()
+            self.assertEqual(os.environ['PATH'], '/original')
+        run.assert_not_called()
+
+
 class PythonLauncherContractTest(unittest.TestCase):
     launchers = (
         REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.sh',
@@ -1814,7 +1932,9 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
             self.maintainer,
             'configure_setting',
             return_value=completed,
-        ) as configure, mock.patch('builtins.print'):
+        ) as configure, mock.patch.object(
+            self.maintainer.checker, 'load_user_shell_path',
+        ) as load_path, mock.patch('builtins.print'):
             exit_code = self.maintainer.main([
                 'configure',
                 '--harness',
@@ -1825,6 +1945,7 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
             ])
 
         self.assertEqual(exit_code, 0)
+        load_path.assert_called_once_with()
         configure.assert_called_once_with(
             'codex',
             'parallel_agent_capacity',

@@ -365,6 +365,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.approved:
+            checker.load_user_shell_path()
         if args.command == 'apply':
             result = apply_maintenance(
                 args.harness,

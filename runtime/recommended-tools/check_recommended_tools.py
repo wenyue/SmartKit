@@ -189,6 +189,25 @@ def _run_command(command: list[str], timeout: float) -> str | None:
         process.stdout.close()
 
 
+def load_user_shell_path() -> None:
+    """Use the user's initialized PATH for checks launched outside their terminal."""
+    shell = os.environ.get('SHELL')
+    if os.name != 'posix' or not shell:
+        return
+    # Version managers often initialize only in interactive shell startup files.
+    output = _run_command(
+        [shell, '-ilc', 'printf \'\\000SMARTKIT_PATH\\000%s\\000\' "$PATH"'],
+        5,
+    )
+    if output is None:
+        raise DetectorError('user shell is unavailable')
+    _, marker, remainder = output.rpartition('\0SMARTKIT_PATH\0')
+    path, terminator, _ = remainder.partition('\0')
+    if not marker or not terminator or not path:
+        raise DetectorError('user shell PATH is unavailable')
+    os.environ['PATH'] = path
+
+
 def _read_manifest_version(pattern: str, json_path: str) -> str | None:
     candidates = sorted(glob.glob(_expand(pattern)), reverse=True)
     unreadable = False
@@ -1715,11 +1734,15 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     policy_path = args.policy or default_policy_path(args.harness)
     if args.command == 'hook':
-        result = run_hook(
-            args.harness,
-            policy_path,
-            force=args.force,
-        )
+        try:
+            load_user_shell_path()
+            result = run_hook(
+                args.harness,
+                policy_path,
+                force=args.force,
+            )
+        except PolicyError:
+            result = HookResult(True, internal_error=True)
         output = render_hook_result(
             result,
             args.harness,
@@ -1729,6 +1752,7 @@ def main(argv: list[str] | None = None) -> int:
             print(output)
         return 0
     try:
+        load_user_shell_path()
         findings = check_policy(load_policy(policy_path, args.harness))
     except Exception:
         print('[smartkit] Recommended-tool check could not complete.', file=sys.stderr)
