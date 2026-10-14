@@ -155,9 +155,14 @@ def _deploy(root: Path, current: dict[str, object]) -> None:
 
 
 def ensure(root: Path, *, enable: bool = False) -> dict[str, str]:
-    """Maintain an opted-in installation; never claim ownership of a foreign handler."""
+    """Prepare links automatically; only enable=True overrides an explicit disable.
+
+    A missing record permits first installation. Disabled records and unavailable
+    desktops remain unchanged. Registration failures retain any completed install
+    for a later check; foreign handlers and invalid metadata are never replaced.
+    """
     state = _state(root)
-    if not enable and (state is None or not state['enabled']):
+    if not enable and state is not None and not state['enabled']:
         return {'status': 'disabled'}
     environment = registration.desktop_environment()
     if not registration.desktop_available(environment):
@@ -166,7 +171,7 @@ def ensure(root: Path, *, enable: bool = False) -> dict[str, str]:
         return {'status': 'skipped'}
     with installation_lock(root):
         state = _state(root)
-        if not enable and (state is None or not state['enabled']):
+        if not enable and state is not None and not state['enabled']:
             return {'status': 'disabled'}
         if registration.ownership(environment) == 'foreign':
             raise FileExistsError('smartkit:// is associated with another application; no association was replaced')
@@ -202,10 +207,9 @@ def ensure(root: Path, *, enable: bool = False) -> dict[str, str]:
 
 
 def uninstall(root: Path) -> dict[str, str]:
+    """Disable future automatic preparation, retaining the program and snapshots."""
     with installation_lock(root):
-        state = _state(root)
-        if state is None:
-            return {'status': 'disabled'}
+        _state(root)
         # Disabling first prevents another Hook from recreating a partially removed association.
         _atomic_json(root / 'installation.json', {'owner': 'smartkit', 'enabled': False})
         registration.unregister(registration.desktop_environment())
@@ -369,20 +373,60 @@ def serve(root: Path, port: int, batch: object = None) -> None:
 
 
 def main(arguments: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        epilog=('Session Hooks run ensure --quiet to prepare the current-user handler automatically.\n'
+                'There is no resident service: clicking smartkit:// starts the installed handler.\n'
+                'Clients must allow custom links; native links refer to snapshots on this computer.\n'
+                'Run COMMAND --help for batch formats, readiness checks, and preview options.'),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
-    installer = commands.add_parser('ensure', help='check an enabled installation; --enable opts in')
-    installer.add_argument('--enable', action='store_true')
-    installer.add_argument('--quiet', action='store_true')
-    batch = commands.add_parser('create', help='snapshot a batch and print JSON links')
-    batch.add_argument('--input', type=Path, required=True)
-    batch.add_argument('--viewer', choices=sorted(actions.VIEWERS), default='auto')
-    opener = commands.add_parser('open', help='dispatch a SmartKit URL')
+    installer = commands.add_parser(
+        'ensure', help='prepare or maintain the handler, respecting an explicit disable',
+        description=('Automatically install on the first supported desktop session, then maintain the handler.\n'
+                     'An explicit uninstall stays disabled unless --enable is supplied. CI and unavailable\n'
+                     'desktops are skipped. Foreign handlers and invalid installation records are preserved.\n'
+                     'JSON status: ready (verified installation and association), disabled, or skipped.\n'
+                     'Before emitting native links, call without --quiet and require status ready.\n'
+                     'Errors go to stderr with a nonzero exit; quiet Hook launchers let the session continue.'),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    installer.add_argument('--enable', action='store_true', help='explicitly re-enable after uninstall')
+    installer.add_argument('--quiet', action='store_true', help='omit successful JSON output for Hooks')
+    batch = commands.add_parser(
+        'create', help='snapshot a batch and print JSON links',
+        description=('Input: a JSON array; id is unique and nonempty, action defaults to diff.\n'
+                     'Paths are resolved relative to the input JSON file, not the working directory.\n'
+                     '\n'
+                     '[{"id":"example","action":"diff","title":"src/example.py",\n'
+                     '  "before":"before/example.py","after":"after/example.py","viewer":"auto"},\n'
+                     ' {"id":"report","action":"artifact","path":"report.html"}]\n'
+                     '\n'
+                     'diff: before/after are UTF-8 files; one may be null for an addition/deletion.\n'
+                     'artifact: path is a standalone HTML, PDF, text, Markdown, or supported image file.\n'
+                     'Optional title defaults to the filename. Artifact companion files are not copied.\n'
+                     'Diff viewer: auto prefers an existing VS Code window, falling back to HTML;\n'
+                     'vscode reports failure with a web recovery page; web always opens HTML.\n'
+                     'A task viewer overrides --viewer. All source files are copied to fixed snapshots.\n'
+                     '\n'
+                     'Output: an ordered JSON array with id, action, url, web_url, and markdown.\n'
+                     'Use the returned markdown or url, not an invented smartkit://diff/<task ID>.\n'
+                     'web_url is a local file URL. For HTTP previews, pass this output to serve --input.\n'
+                     'Creating snapshots does not ensure protocol readiness: require ensure status ready\n'
+                     'before presenting native links. Snapshots survive source edits and session exit;\n'
+                     'they remain until explicitly removed with clean.'),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    batch.add_argument('--input', type=Path, required=True, help='JSON task array')
+    batch.add_argument('--viewer', choices=sorted(actions.VIEWERS), default='auto', help='default diff viewer')
+    opener = commands.add_parser('open', help='dispatch a SmartKit URL',
+                                description='Open an existing snapshot. A sent viewer request still needs visual confirmation.')
     opener.add_argument('url')
-    commands.add_parser('uninstall', help='disable auto-registration and remove the owned association')
-    cleanup = commands.add_parser('clean', help='explicitly delete one task and its snapshots')
+    commands.add_parser('uninstall', help='disable automatic preparation and remove the owned association',
+                        description='Record an explicit disable even before first installation; retain the program and snapshots. Re-enable with ensure --enable.')
+    cleanup = commands.add_parser('clean', help='explicitly delete one task and its snapshots',
+                                 description='Delete only the named task and its snapshots. Its old links will stop working.')
     cleanup.add_argument('task_id')
-    web = commands.add_parser('serve', help='serve optional HTTP preview links until stopped')
+    web = commands.add_parser('serve', help='serve optional HTTP preview links until stopped',
+                              description='Bind to 127.0.0.1 and print real preview URLs. GET/HEAD only read previews; they never launch a viewer. Keep this process running while using its HTTP links.')
     web.add_argument('--port', type=int, default=0)
     web.add_argument('--input', type=Path, help='the JSON array returned by create; print real HTTP URLs')
     args = parser.parse_args(arguments)

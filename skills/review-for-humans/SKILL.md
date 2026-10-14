@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below.
+Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Apart from the shared runtime's initialization below, read-only review permits only auxiliary snapshot/export writes; keep the reviewed files and Git index unchanged until an authorized action below.
 
 Load the necessary Skills and Rules to perform the review.
 
@@ -45,11 +45,31 @@ Skip test files entirely: do not review them or count them toward progress or mo
 
 When scope, required guidance, or source evidence is unavailable, identify the missing input and its effect. Pause the dependent review rather than inventing facts, totals, or a completed assessment. A known file with incomplete evidence remains in the total; explain the gap in that file's report and use an insufficient-evidence evaluation where necessary.
 
+### Prepare fixed diff links
+
+Every reported filename must link to a fixed diff snapshot of that file's reviewed before-and-after content. For the local default, export the index version and captured worktree version, preserving only their unstaged comparison even for a partially staged file. For a PR, use the pinned base/head comparison evidence; for a branch, use the pinned merge-base and tip. Honor any explicitly selected comparison. Export from the retained review snapshot rather than current refs or mutable files, so opening the link later shows the version explained in the report.
+
+Use the shared plugin runtime, resolving `<runtime>` as `../../runtime/deep-links/deep_links.py` relative to this loaded Skill's directory. The reviewed repository need not contain it. Read its command help for the current interface; if the runtime is missing, pause the dependent report and request a complete or restored plugin installation.
+
+```text
+python "<runtime>" --help
+python "<runtime>" ensure --help
+python "<runtime>" ensure
+python "<runtime>" create --help
+python "<runtime>" create --input "<batch.json>" --viewer auto
+```
+
+Before generating this report's links, call `ensure` without `--quiet` and require its JSON `status` to be `ready`; a successful session Hook exit does not prove readiness. Automatic preparation initializes absent state on a supported desktop and preserves an explicit disable. This Skill never supplies `--enable`. A `disabled` or `skipped` status, malformed output, or command failure pauses the dependent report: state the actual cause and concrete remedy, such as explicitly re-enabling a disabled installation, using a supported desktop outside CI, restoring the runtime, or resolving the reported foreign-handler or damaged-record conflict. Preserve those conflicts for their owner to resolve. Do not claim readiness, fabricate a URL, or replace the required diff link with a source link.
+
+Build a JSON batch with one unique `id` per file/version, `action: "diff"`, the real reported path as `title`, and `before`/`after` paths to UTF-8 exports. Input paths resolve relative to the batch file. Use `null` for the absent side of an addition or deletion. `create` copies both sides into fixed snapshots; use the automatic viewer to prefer an existing VS Code window and fall back to the HTML comparison. Match each returned `id` and `action` to its real filename and preserve the returned `url`, `web_url`, and `markdown`. Use its actual Markdown or URL in the filename header; task IDs are not native URL tokens. The emitted native URL has the form `smartkit://diff/<token>`.
+
+Retain the link mapping with the review snapshot. Every new reviewed version needs newly generated links; preserve earlier snapshots so earlier reports still open their original comparison. A verified handler and a client permitting custom-scheme links are separate prerequisites. If the client blocks the scheme, state that restriction and the concrete client remedy; the emitted `web_url` can additionally expose the same fixed comparison. Claim an actual successful click only when observed.
+
 ## Explain each file through the problem it solves
 
 Keep all report emoji outside bold spans, preserving emphasis on their accompanying text. When emphasizing a word, phrase, identifier, or label, keep surrounding separators and terminal punctuation outside bold; deliberately emphasized complete sentences may retain their sentence punctuation. Preserve punctuation intrinsic to code, identifiers, and paths.
 
-Begin each file with 📄 **path** and a short overview of its responsibility and overall change. Include a source link and relevant line references when available. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
+Begin each file in the form `📄 **[path](diff-url)**`, using the actual generated diff link, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
 
 Divide the explanation into modifications by business problem or human-understood scenario. Start by keeping related changes together. Split only when they are logically independent or cannot be explained jointly with one simple example. Methods, diff hunks, and individual implementation steps do not by themselves justify separate modifications. For example, tracking pending work, refusing new work, and waiting before closing a resource can be one modification about safely finishing work on shutdown.
 
@@ -131,7 +151,7 @@ In the final group, label **pass** as **pass and finish**, **sync and continue**
 
 Apply the selected meaning even when it is absent from the menu, provided its prerequisites hold. If the user requests advancement while blocked, refuse it briefly, name the blockers, and ask for the relevant fix, ignore, or remedy; “continue” never means “ignore.” Never upgrade **pass** to a commit or push. Clarify ambiguous scopes, invalid IDs, conflicting directions, or a bare agreement following an ambiguous menu; “yes” authorizes an action only when the preceding question specifies it unambiguously. Reassess disputed findings from the supplied evidence rather than treating disagreement as ignoring. Answer questions without interpreting them as authorization for edits or advancement.
 
-For authorized repairs or optimizations, load the necessary guidance, limit edits to the selected findings or suggestions and their necessary supporting changes, and run required checks. Optimization preserves supported behavior and contracts. Whenever reviewed content changes, complete required checks successfully, refresh the snapshot, and independently re-review every changed or affected previously reviewed part, including unexpected changes. Show complete file blocks with updated explanations and both judgments in dedicated replies separate from unseen files. Retain modification IDs and original group membership, count each displayed file once, explain the version transition, and update the file list and total only for actual scope changes. For unpublished PR changes, retain both the pinned remote version and the checked local content expected to be published. Mark findings repaired or suggestions completed only after re-review confirms the result.
+For authorized repairs or optimizations, load the necessary guidance, limit edits to the selected findings or suggestions and their necessary supporting changes, and run required checks. Optimization preserves supported behavior and contracts. Whenever reviewed content changes, complete required checks successfully, refresh the snapshot and its diff links, and independently re-review every changed or affected previously reviewed part, including unexpected changes. Show complete file blocks with updated explanations and both judgments in dedicated replies separate from unseen files. Retain modification IDs and original group membership, count each displayed file once, explain the version transition, and update the file list and total only for actual scope changes. For unpublished PR changes, retain both the pinned remote version and the checked local content expected to be published. Mark findings repaired or suggestions completed only after re-review confirms the result.
 
 A single **fix**, **ignore**, or **optimize** ends with the regenerated menu, not automatic advancement. An explicit compound request authorizes its ordered steps: for example, fix, check, display the dedicated re-review, synchronize, then advance. Continue already authorized steps without routine reconfirmation; a new finding, failed check, or material change pauses dependent steps and regenerates the menu. An independently authorized optimization can still proceed while findings are pending, but does not open the advancing gate.
 
@@ -163,7 +183,9 @@ If a required interface is unavailable or a write or verification fails, pause w
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
-📄 **`l10n/en.json`**
+The `example://diff/...` destinations below illustrate filename-link formatting only; they are not generated or usable SmartKit links. Actual reports use the runtime's returned links.
+
+📄 **[l10n/en.json](example://diff/l10n-en)**
 
 This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
 
@@ -177,7 +199,7 @@ The label changes from “Delete” to “Delete account,” naming the affected
 
 ---
 
-📄 **`lib/item_storage.dart`**
+📄 **[lib/item_storage.dart](example://diff/item-storage)**
 
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting an item can still flush the deletion afterward.
 
@@ -208,7 +230,7 @@ Saving the box reference first lets the code flush that same box after deleting 
 
 ---
 
-📄 **`ui/save_button.dart`**
+📄 **[ui/save_button.dart](example://diff/save-button)**
 
 This file handles the Save button. The change prevents repeated clicks from starting duplicate saves.
 

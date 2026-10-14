@@ -202,12 +202,36 @@ class DeepLinksTests(unittest.TestCase):
         self.assertIn('-5', result['warning'])
         browser.assert_called_once()
 
-    def test_never_enabled_hook_is_silent_and_does_not_write(self):
+    def test_first_hook_prepares_the_handler_without_success_output(self):
+        desktop = self.desktop()
         with mock.patch.object(registration, 'data_root', return_value=self.root), \
                 mock.patch('sys.stdout') as output:
             self.assertEqual(links.main(['ensure', '--quiet']), 0)
         output.write.assert_not_called()
+        self.assertTrue((self.root / 'deep-links.pyz').is_file())
+        self.assertTrue(json.loads((self.root / 'installation.json').read_text())['enabled'])
+        desktop['register'].assert_called_once()
+
+    def test_unavailable_desktop_does_not_disable_later_automatic_installation(self):
+        desktop = self.desktop()
+        desktop['desktop_available'].return_value = False
+        self.assertEqual(links.ensure(self.root), {'status': 'skipped'})
         self.assertFalse(self.root.exists())
+        desktop['desktop_available'].return_value = True
+        self.assertEqual(links.ensure(self.root)['status'], 'ready')
+        desktop['register'].assert_called_once()
+
+    def test_ci_session_does_not_create_an_installation_record(self):
+        with mock.patch.object(registration, 'desktop_environment', return_value={'CI': 'true'}):
+            self.assertEqual(links.ensure(self.root), {'status': 'skipped'})
+        self.assertFalse(self.root.exists())
+
+    def test_disable_while_waiting_for_the_lock_is_respected(self):
+        desktop = self.desktop()
+        with mock.patch.object(links, '_state', side_effect=[None, {'owner': 'smartkit', 'enabled': False}]):
+            self.assertEqual(links.ensure(self.root), {'status': 'disabled'})
+        desktop['register'].assert_not_called()
+        self.assertFalse((self.root / 'deep-links.pyz').exists())
 
     def test_install_is_stable_idempotent_and_program_runs_outside_source(self):
         desktop = self.desktop()
@@ -229,7 +253,7 @@ class DeepLinksTests(unittest.TestCase):
         desktop = self.desktop()
         desktop['ownership'].return_value = 'foreign'
         with self.assertRaises(FileExistsError):
-            links.ensure(self.root, enable=True)
+            links.ensure(self.root)
         desktop['register'].assert_not_called()
         self.assertFalse((self.root / 'deep-links.pyz').exists())
 
@@ -300,13 +324,18 @@ class DeepLinksTests(unittest.TestCase):
         self.assertEqual(json.loads((self.root / 'installation.json').read_text())['archive_hash'],
                          hashlib.sha256(archive.read_bytes()).hexdigest())
 
-    def test_failed_registration_retains_opt_in_for_the_next_hook(self):
+    def test_failed_automatic_registration_is_completed_by_the_next_check(self):
         desktop = self.desktop()
         desktop['register'].side_effect = OSError('desktop unavailable')
         with self.assertRaises(OSError):
-            links.ensure(self.root, enable=True)
+            links.ensure(self.root)
         self.assertTrue(json.loads((self.root / 'installation.json').read_text())['enabled'])
-        self.assertTrue((self.root / 'deep-links.pyz').is_file())
+        archive = self.root / 'deep-links.pyz'
+        before = archive.stat().st_mtime_ns
+        desktop['register'].side_effect = lambda *args: (self.root / 'association-test').write_text('registered')
+        self.assertEqual(links.ensure(self.root)['status'], 'ready')
+        self.assertEqual(archive.stat().st_mtime_ns, before)
+        self.assertEqual(desktop['register'].call_count, 2)
 
     def test_invalid_install_metadata_is_not_replaced(self):
         self.root.mkdir()
@@ -328,6 +357,18 @@ class DeepLinksTests(unittest.TestCase):
         links.clean(self.root, links.parse_url(link.url)[1])
         with self.assertRaises(FileNotFoundError):
             links.load_task(self.root, *links.parse_url(link.url))
+
+    def test_uninstall_before_first_session_requires_explicit_reenable(self):
+        desktop = self.desktop()
+        with mock.patch.object(registration, 'unregister') as remove:
+            self.assertEqual(links.uninstall(self.root), {'status': 'disabled'})
+        remove.assert_called_once()
+        state = (self.root / 'installation.json').read_bytes()
+        self.assertEqual(links.ensure(self.root), {'status': 'disabled'})
+        self.assertEqual((self.root / 'installation.json').read_bytes(), state)
+        desktop['register'].assert_not_called()
+        self.assertEqual(links.ensure(self.root, enable=True)['status'], 'ready')
+        desktop['register'].assert_called_once()
 
     @unittest.skipIf(os.name == 'nt', 'POSIX locking path')
     def test_two_installers_cannot_hold_the_user_lock(self):
