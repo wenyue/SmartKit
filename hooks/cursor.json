@@ -7,6 +7,10 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/recommended-tools/run_recommended_tools.cmd\" hook --harness cursor --delivery context"
       },
       {
+        "name": "smartkit user deep-link registration",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/deep-links/dispatch.cmd\" ensure --quiet"
+      },
+      {
         "name": "smartkit core Rules and Rule index",
         "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/rules/dispatch.cmd\" --harness cursor --event session"
       }
