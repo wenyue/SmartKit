@@ -10,6 +10,12 @@
       },
       {
         "type": "command",
+        "bash": "sh \"${CLAUDE_PLUGIN_ROOT}/runtime/deep-links/dispatch.sh\" ensure --quiet",
+        "powershell": "& \"$env:CLAUDE_PLUGIN_ROOT\\runtime\\deep-links\\dispatch.ps1\" ensure --quiet",
+        "timeoutSec": 30
+      },
+      {
+        "type": "command",
         "bash": "sh \"${CLAUDE_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness copilot --event session",
         "powershell": "& \"$env:CLAUDE_PLUGIN_ROOT\\runtime\\rules\\dispatch.ps1\" --harness copilot --event session",
         "timeoutSec": 30

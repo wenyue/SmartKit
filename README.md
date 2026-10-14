@@ -143,6 +143,7 @@ SmartKit configures or recommends the following tools. CodeGraph and Tokscale ar
 | [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Make `codegraph` available on PATH; choose which repositories to initialize and index. |
 | [Tokscale](https://github.com/junhoyeo/tokscale) | Supplies token usage and estimated cost evidence for `diagnose-agent-session`. | Make `tokscale` available on PATH; available diagnostic data depends on the client and its recorded usage. |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Provides browser automation. | The plugin includes MCP configuration; the client uses `npx` to obtain and launch `@playwright/mcp`. Requires Node.js 18 or newer and `npx` on PATH. |
+| SmartKit links | Opens fixed local diffs and generated reports from Markdown links. | Enable the current-user handler once; see the [link guide](docs/deep-links.md). |
 
 ## Install the plugin
 
