@@ -253,6 +253,53 @@ class DeepLinksTests(unittest.TestCase):
         self.assertEqual((self.root / 'deep-links.pyz').stat().st_mtime_ns, before)
         self.assertEqual(desktop['register'].call_count, 2)
 
+    def test_failed_upgrade_metadata_write_preserves_the_installed_program(self):
+        self.desktop()
+        with mock.patch.object(links, 'source_release', return_value=('8.0.0', 'a' * 64)):
+            links.ensure(self.root, enable=True)
+        archive = self.root / 'deep-links.pyz'
+        before = archive.read_bytes()
+        with mock.patch.object(links, 'source_release', return_value=('9.0.0', 'b' * 64)), \
+                mock.patch.object(links, '_atomic_json', side_effect=OSError('metadata write failed')):
+            with self.assertRaisesRegex(OSError, 'metadata write failed'):
+                links.ensure(self.root)
+        self.assertEqual(archive.read_bytes(), before)
+        self.assertEqual(json.loads((self.root / 'installation.json').read_text())['version'], '8.0.0')
+        with mock.patch.object(links, 'source_release', return_value=('9.0.0', 'b' * 64)):
+            links.ensure(self.root)
+        upgraded = archive.read_bytes()
+        with mock.patch.object(links, 'source_release', return_value=('8.0.0', 'a' * 64)):
+            links.ensure(self.root)
+        self.assertEqual(archive.read_bytes(), upgraded)
+
+    def test_interrupted_archive_replacement_is_repaired_only_by_a_new_enough_source(self):
+        self.desktop()
+        with mock.patch.object(links, 'source_release', return_value=('8.0.0', 'a' * 64)):
+            links.ensure(self.root, enable=True)
+        archive = self.root / 'deep-links.pyz'
+        before = archive.read_bytes()
+        replace = os.replace
+
+        def interrupted(source, destination):
+            if Path(destination) == archive:
+                raise OSError('archive replacement failed')
+            return replace(source, destination)
+
+        with mock.patch.object(links, 'source_release', return_value=('9.0.0', 'b' * 64)), \
+                mock.patch.object(links.os, 'replace', side_effect=interrupted):
+            with self.assertRaisesRegex(OSError, 'archive replacement failed'):
+                links.ensure(self.root)
+        self.assertEqual(archive.read_bytes(), before)
+        self.assertEqual(json.loads((self.root / 'installation.json').read_text())['version'], '9.0.0')
+        with mock.patch.object(links, 'source_release', return_value=('8.0.0', 'a' * 64)):
+            with self.assertRaisesRegex(OSError, 'older Hook cannot replace'):
+                links.ensure(self.root)
+        self.assertEqual(archive.read_bytes(), before)
+        with mock.patch.object(links, 'source_release', return_value=('9.0.0', 'b' * 64)):
+            self.assertEqual(links.ensure(self.root)['status'], 'ready')
+        self.assertEqual(json.loads((self.root / 'installation.json').read_text())['archive_hash'],
+                         hashlib.sha256(archive.read_bytes()).hexdigest())
+
     def test_failed_registration_retains_opt_in_for_the_next_hook(self):
         desktop = self.desktop()
         desktop['register'].side_effect = OSError('desktop unavailable')
@@ -398,10 +445,16 @@ class WindowsAdapterTests(unittest.TestCase):
             except KeyError:
                 raise FileNotFoundError(name)
 
+        def delete_key(root, path):
+            try:
+                self.keys.pop((root, path))
+            except KeyError:
+                raise FileNotFoundError(path)
+
         fake = types.SimpleNamespace(HKEY_CURRENT_USER='HKCU', HKEY_CLASSES_ROOT='HKCR', REG_SZ=1,
                                      CreateKey=create, OpenKey=open_key, QueryValueEx=query,
                                      SetValueEx=lambda key, name, reserved, kind, value: self.keys[key.identity].__setitem__(name, value),
-                                     DeleteKey=lambda root, path: self.keys.pop((root, path)))
+                                     DeleteKey=delete_key)
         self.fake = fake
         self.patches = [mock.patch.dict(sys.modules, winreg=fake), mock.patch.object(sys, 'platform', 'win32'),
                         mock.patch.object(registration, '_notify_windows_association')]
@@ -427,6 +480,23 @@ class WindowsAdapterTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 registration.register(Path('python'), Path('program.pyz'), {})
             self.assertEqual(self.keys, before)
+
+    def test_interrupted_unregister_resumes_after_a_key_was_already_removed(self):
+        registration.register(Path('Python/pythonw.exe'), Path('SmartKit/deep-links.pyz'), {})
+        delete = self.fake.DeleteKey
+
+        def interrupted(root, path):
+            if path == registration.REGISTRY_KEY + r'\shell\open':
+                raise PermissionError('registry deletion interrupted')
+            delete(root, path)
+
+        with mock.patch.object(self.fake, 'DeleteKey', side_effect=interrupted):
+            with self.assertRaisesRegex(PermissionError, 'registry deletion interrupted'):
+                registration.unregister({})
+        self.assertNotIn(('HKCU', registration.REGISTRY_KEY + r'\shell\open\command'), self.keys)
+        self.assertEqual(registration.ownership({}), 'owned')
+        registration.unregister({})
+        self.assertEqual(self.keys, {})
 
     def test_windows_user_choice_is_respected(self):
         for value in ('another.app', 42):

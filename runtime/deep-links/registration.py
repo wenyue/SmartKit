@@ -245,7 +245,10 @@ def unregister(environment: Mapping[str, str]) -> None:
             return
         import winreg
         for suffix in (r'\shell\open\command', r'\shell\open', r'\shell', ''):
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, REGISTRY_KEY + suffix)
+            try:
+                winreg.DeleteKey(winreg.HKEY_CURRENT_USER, REGISTRY_KEY + suffix)
+            except FileNotFoundError:
+                pass
         _notify_windows_association()
     elif sys.platform == 'darwin':
         app = Path.home() / 'Applications' / 'SmartKit Links.app'

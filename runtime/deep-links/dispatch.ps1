@@ -9,6 +9,7 @@ if ($null -ne $resolved) {
         & $resolved.Source -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' *> $null
         $pythonReady = $LASTEXITCODE -eq 0
     }
+    # Any probe failure leaves Python unverified; optional quiet maintenance can safely skip registration.
     catch { $pythonReady = $false }
 }
 if ($pythonReady) {

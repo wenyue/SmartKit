@@ -129,7 +129,7 @@ def _state(root: Path) -> dict[str, object] | None:
     return value
 
 
-def _deploy(root: Path, version: str, digest: str) -> str:
+def _deploy(root: Path, current: dict[str, object]) -> None:
     target = root / 'deep-links.pyz'
     descriptor, name = tempfile.mkstemp(prefix='.deep-links-', suffix='.pyz', dir=root)
     os.close(descriptor)
@@ -142,12 +142,13 @@ def _deploy(root: Path, version: str, digest: str) -> str:
             with zipfile.ZipFile(temporary, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
                 for filename in SOURCE_FILES:
                     archive.writestr(filename, (source / filename).read_bytes())
-                archive.writestr('release.json', json.dumps({'version': version, 'digest': digest}))
+                archive.writestr('release.json', json.dumps({'version': current['version'], 'digest': current['digest']}))
         subprocess.run([sys.executable, str(temporary), '--help'], check=True,
                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=10)
-        archive_hash = hashlib.sha256(temporary.read_bytes()).hexdigest()
+        current['archive_hash'] = hashlib.sha256(temporary.read_bytes()).hexdigest()
+        # Record the new release first so an interrupted upgrade cannot be downgraded by an older Hook.
+        _atomic_json(root / 'installation.json', current)
         os.replace(temporary, target)
-        return archive_hash
     finally:
         if temporary.exists():
             temporary.unlink()
@@ -187,12 +188,14 @@ def ensure(root: Path, *, enable: bool = False) -> dict[str, str]:
             interpreter = interpreter.with_name('pythonw.exe')
         intact = bool(state and state['enabled'] and state['digest'] == digest and archive.is_file()
                       and hashlib.sha256(archive.read_bytes()).hexdigest() == state['archive_hash'])
-        archive_hash = state['archive_hash'] if intact else _deploy(root, version, digest)
         current = {'owner': 'smartkit', 'enabled': True, 'version': version,
-                   'digest': digest, 'archive_hash': archive_hash, 'interpreter': str(interpreter)}
-        # Persist opt-in before registration so an interrupted desktop change can be repaired.
-        if current != state:
-            _atomic_json(root / 'installation.json', current)
+                   'digest': digest, 'interpreter': str(interpreter)}
+        if intact:
+            current['archive_hash'] = state['archive_hash']
+            if current != state:
+                _atomic_json(root / 'installation.json', current)
+        else:
+            _deploy(root, current)
         if not registration.registration_matches(interpreter, archive, environment):
             registration.register(interpreter, archive, environment)
         return {'status': 'ready', 'path': str(archive)}
