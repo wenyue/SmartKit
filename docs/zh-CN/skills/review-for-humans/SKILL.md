@@ -187,9 +187,9 @@ PR 审核中，获取能够标记 Viewed 的可用已认证接口。写入前立
 
 参考以下示例，根据读者调整详略。保留文件总说明、修改项、两个有依据的判断和进度；仅在修改项需要展开时使用纵向比较。以下文件和代码仅为示意，不是对某个仓库的审核发现。本例为本地未暂存改动审核，包含三个非测试文件。假设删除一条记录后，该记录会脱离其存储 box，任务要求删除后执行 flush，且 flush 错误会传递给调用者。这项持久化契约及脱离存储 box 的机制需要展开说明。
 
-下文的 `example://diff/...` 目标仅用于演示文件名链接格式，并非实际生成或可用的 SmartKit 链接。实际报告使用运行时返回的链接。
+下文的 `smartkit://diff/TOKEN_PLACEHOLDER_*` 目标仅用于演示文件名链接格式。其中的 token 部分为占位符，因此这些链接并非实际生成，也不可用。实际报告使用运行时返回的链接。
 
-📄 **[l10n/en.json](example://diff/l10n-en)**
+📄 **[l10n/en.json](smartkit://diff/TOKEN_PLACEHOLDER_1)**
 
 这个文件提供英文界面文案。修改后的标签明确说明操作会删除账号；该文件的所有翻译修改一起审核。
 
@@ -203,7 +203,7 @@ PR 审核中，获取能够标记 Viewed 的可用已认证接口。写入前立
 
 ---
 
-📄 **[lib/item_storage.dart](example://diff/item-storage)**
+📄 **[lib/item_storage.dart](smartkit://diff/TOKEN_PLACEHOLDER_2)**
 
 这个文件负责保存和删除记录。这次修改保留存储 box 的引用，使删除记录后仍能刷新这次删除。
 
@@ -234,7 +234,7 @@ await originalBox?.flush();
 
 ---
 
-📄 **[ui/save_button.dart](example://diff/save-button)**
+📄 **[ui/save_button.dart](smartkit://diff/TOKEN_PLACEHOLDER_3)**
 
 这个文件处理保存按钮。这次修改防止重复点击启动重复的保存操作。
 

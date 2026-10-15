@@ -187,9 +187,9 @@ If a required interface is unavailable or a write or verification fails, pause w
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
-The `example://diff/...` destinations below illustrate filename-link formatting only; they are not generated or usable SmartKit links. Actual reports use the runtime's returned links.
+The `smartkit://diff/TOKEN_PLACEHOLDER_*` destinations below illustrate filename-link formatting only. Their token segments are placeholders, so these are not generated or usable links. Actual reports use the runtime's returned links.
 
-📄 **[l10n/en.json](example://diff/l10n-en)**
+📄 **[l10n/en.json](smartkit://diff/TOKEN_PLACEHOLDER_1)**
 
 This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
 
@@ -203,7 +203,7 @@ The label changes from “Delete” to “Delete account,” naming the affected
 
 ---
 
-📄 **[lib/item_storage.dart](example://diff/item-storage)**
+📄 **[lib/item_storage.dart](smartkit://diff/TOKEN_PLACEHOLDER_2)**
 
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting an item can still flush the deletion afterward.
 
@@ -234,7 +234,7 @@ Saving the box reference first lets the code flush that same box after deleting 
 
 ---
 
-📄 **[ui/save_button.dart](example://diff/save-button)**
+📄 **[ui/save_button.dart](smartkit://diff/TOKEN_PLACEHOLDER_3)**
 
 This file handles the Save button. The change prevents repeated clicks from starting duplicate saves.
 
