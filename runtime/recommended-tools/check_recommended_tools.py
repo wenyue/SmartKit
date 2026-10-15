@@ -1730,6 +1730,28 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def record_readiness_snapshot(result: HookResult, harness: str) -> None:
+    """Publish a complete observation; a skipped daily gate supplies no new evidence."""
+    if not result.ran:
+        return
+    web_scripts = Path(__file__).resolve().parents[1] / 'web'
+    if str(web_scripts) not in sys.path:
+        sys.path.insert(0, str(web_scripts))
+    from web_store import record_project
+
+    status = 'failed' if result.internal_error else 'findings' if result.findings else 'passed'
+    observation = {
+        'status': status,
+        'captured_at': time.time(),
+        'message': '检查未能完成，请在 Agent 会话中重新运行就绪检查。' if result.internal_error else '',
+        'findings': [
+            {'code': finding.code, 'tool': finding.tool, 'message': finding.message, 'guidance': finding.guidance}
+            for finding in result.findings
+        ],
+    }
+    record_project(resolve_project_root(), harness, observation)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     policy_path = args.policy or default_policy_path(args.harness)
@@ -1743,6 +1765,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         except PolicyError:
             result = HookResult(True, internal_error=True)
+        try:
+            record_readiness_snapshot(result, args.harness)
+        except (OSError, ValueError) as error:
+            print('[smartkit] Readiness snapshot unavailable: ' + str(error), file=sys.stderr)
         output = render_hook_result(
             result,
             args.harness,

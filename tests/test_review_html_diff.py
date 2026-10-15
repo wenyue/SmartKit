@@ -1,4 +1,4 @@
-"""Exercise fixed HTML and expiry using isolated temporary user-cache settings."""
+"""Exercise review capture, rendering, private mapping, and explicit HTTP delivery."""
 from __future__ import annotations
 
 import contextlib
@@ -7,16 +7,16 @@ import io
 import json
 import os
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
 import types
 import unittest
 from pathlib import Path
-from typing import Iterator
 from unittest import mock
-from urllib.parse import unquote
+from urllib.error import HTTPError
+from urllib.parse import urlsplit
+from urllib.request import ProxyHandler, build_opener
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "skills/review-for-humans/scripts/export_html_diff.py"
@@ -24,6 +24,8 @@ SPEC = importlib.util.spec_from_file_location("review_html_diff", SCRIPT)
 exporter = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = exporter
 SPEC.loader.exec_module(exporter)
+CACHE_MODULE = "runtime/artifacts/artifact_cache.py"
+WEB_MODULE = "runtime/web/web_service.py"
 
 
 class ReviewHtmlDiffTests(unittest.TestCase):
@@ -34,6 +36,7 @@ class ReviewHtmlDiffTests(unittest.TestCase):
         environment = mock.patch.dict(os.environ, {
             "HOME": str(self.base / "home"), "USERPROFILE": str(self.base / "home"),
             "XDG_CACHE_HOME": str(self.base / "cache [中文] #1%"),
+            "XDG_STATE_HOME": str(self.base / "state [中文] #1%"),
             "LOCALAPPDATA": str(self.base / "cache [中文] #1%")})
         environment.start()
         self.addCleanup(environment.stop)
@@ -41,6 +44,18 @@ class ReviewHtmlDiffTests(unittest.TestCase):
         redirect = contextlib.redirect_stderr(self.stderr)
         redirect.__enter__()
         self.addCleanup(redirect.__exit__, None, None, None)
+        self.load_runtime = exporter._runtime
+        self.cache = self.load_runtime(CACHE_MODULE)
+        self.publication = mock.Mock(side_effect=self.publish_files)
+
+        def runtime(relative: str):
+            if relative == WEB_MODULE:
+                return types.SimpleNamespace(publish_artifact=self.publication)
+            return self.load_runtime(relative)
+
+        runtime_patch = mock.patch.object(exporter, "_runtime", side_effect=runtime)
+        runtime_patch.start()
+        self.addCleanup(runtime_patch.stop)
         self.before = self.base / "before.txt"
         self.after = self.base / "after [中文] #1%.txt"
         self.before.write_bytes(b"timeout = 5\r\n")
@@ -53,59 +68,36 @@ class ReviewHtmlDiffTests(unittest.TestCase):
     def write_batch(self, entries: object) -> None:
         self.batch.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
 
-    def export_at(self, timestamp: float) -> list:
-        with mock.patch.object(exporter.time, "time", return_value=timestamp):
-            return exporter.export_batch(self.batch)
+    def publish_files(self, identity: str, *, port: int = 43123) -> dict:
+        artifact = self.cache.mark_published(identity)
+        return {name: "http://127.0.0.1:%d/artifacts/%s/%s" % (port, identity, name)
+                for name, entry in artifact.files.items() if entry.public}
 
     def group(self, record: dict) -> Path:
         return Path(record["path"]).parents[2]
 
-    @contextlib.contextmanager
-    def model_windows_reparse(self, path: Path) -> Iterator[None]:
-        """Model junction attributes around an actual temp-only redirect on any OS."""
-        real_lstat = Path.lstat
-        real_is_symlink = Path.is_symlink
-
-        def lstat(selected: Path):
-            if selected == path:
-                return types.SimpleNamespace(st_mode=stat.S_IFDIR | 0o700,
-                                             st_file_attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT)
-            return real_lstat(selected)
-
-        def is_symlink(selected: Path) -> bool:
-            return False if selected == path else real_is_symlink(selected)
-
-        with mock.patch.object(Path, "lstat", lstat), mock.patch.object(Path, "is_symlink", is_symlink):
-            yield
-
-    def test_platform_user_cache_roots_and_relative_environment_fallback(self) -> None:
-        home = Path.home().resolve()
-        configured = Path(os.environ["XDG_CACHE_HOME"]).resolve()
-        for platform, expected in (("linux", configured), ("win32", configured),
-                                   ("darwin", home / "Library/Caches")):
-            with self.subTest(platform=platform), mock.patch.object(exporter.sys, "platform", platform):
-                self.assertEqual(exporter.cache_root(), expected / "smartkit/review-for-humans")
-        with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": "relative", "LOCALAPPDATA": "relative"}):
-            for platform, expected in (("linux", home / ".cache"), ("win32", home / "AppData/Local")):
-                with self.subTest(platform=platform), mock.patch.object(exporter.sys, "platform", platform):
-                    self.assertEqual(exporter.cache_root(), expected / "smartkit/review-for-humans")
+    def copy_exporter(self) -> Path:
+        target = self.base / "plugin/skills/review-for-humans/scripts/export_html_diff.py"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(SCRIPT, target)
+        return target
 
     def test_cli_capture_is_fixed_and_links_handle_special_characters(self) -> None:
-        expired = self.group(self.export_at(1000000.0)[0])
-        malformed = exporter.cache_root() / ("review-" + "0" * 32)
-        malformed.mkdir()
+        (self.cache.user_cache_dir() / "smartkit/review-for-humans").mkdir(parents=True)
+        # Stop the real subprocess's authenticated service before restoring its
+        # environment or removing its private cache/state.
+        self.addCleanup(lambda: self.load_runtime(WEB_MODULE).stop_service())
         result = subprocess.run(
-            [sys.executable, str(SCRIPT), "--input", str(self.batch)],
+            [sys.executable, "-B", str(SCRIPT), "--input", str(self.batch)],
             cwd=self.base, env=dict(os.environ, PYTHONIOENCODING="ascii"),
-            capture_output=True, encoding="ascii", timeout=10)
+            capture_output=True, encoding="ascii", timeout=20)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(expired.exists())
-        self.assertTrue(malformed.is_dir())
-        self.assertIn("Expired cache removed:", result.stderr)
-        self.assertIn("Preserved unrecognized or unsafe cache:", result.stderr)
         record = json.loads(result.stdout)[0]
+        self.assertEqual(set(record), {"id", "title", "path", "url", "markdown"})
+        self.assertEqual(record["id"], self.entries[0]["id"])
+        self.assertEqual(record["title"], self.entries[0]["title"])
         path = Path(record["path"])
-        self.assertEqual(self.group(record).parent, exporter.cache_root())
+        self.assertEqual(self.group(record).parent, self.cache.cache_root())
         original_html = path.read_bytes()
         self.before.write_bytes(b"changed before")
         self.after.write_bytes(b"changed after")
@@ -114,12 +106,153 @@ class ReviewHtmlDiffTests(unittest.TestCase):
         self.assertEqual((path.parent / "before.txt").read_bytes(), b"timeout = 5\r\n")
         self.assertEqual((path.parent / "after.txt").read_bytes(), b"timeout = 10\n")
         self.assertEqual(path.read_bytes(), original_html)
-        self.assertEqual(json.loads((path.parents[1] / "manifest.json").read_text()), [record])
-        destination = record["markdown"].rsplit("(<", 1)[1][:-2]
-        self.assertEqual(unquote(destination), path.as_posix())
-        self.assertIn(r"\[x\]\*\_\`&amp;&lt;", record["markdown"])
+        mapping = [{"id": record["id"], "title": record["title"], "file": "0001/diff.html"}]
+        self.assertEqual(json.loads((path.parents[1] / "manifest.json").read_text()), mapping)
+        destination = record["markdown"].rsplit("](", 1)[1][:-1]
+        self.assertEqual(destination, record["url"])
+        self.assertEqual(urlsplit(destination).hostname, "127.0.0.1")
+        self.assertEqual(urlsplit(destination).path, "/artifacts/" + self.group(record).name + "/0001/diff.html")
+        self.assertIn(r"\[x\]\*&#95;\`&amp;&lt;", record["markdown"])
+        self.assertNotIn(r"\_", record["markdown"])
+        opener = build_opener(ProxyHandler({}))
+        with opener.open(destination, timeout=2) as response:
+            self.assertEqual(response.headers.get_content_type(), "text/html")
+            self.assertEqual(response.read(), original_html)
+        for private in ("0001/before.txt", "0001/after.txt", "manifest.json"):
+            url = destination.rsplit("/0001/diff.html", 1)[0] + "/" + private
+            with self.subTest(private=private), self.assertRaises(HTTPError) as error:
+                opener.open(url, timeout=2)
+            self.assertEqual(error.exception.code, 404)
+            error.exception.close()
         self.assertTrue(path.is_absolute())
         self.assertNotIn("id-is-not-a-path", str(path))
+
+    def test_publication_receives_complete_html_and_private_immutable_mapping(self) -> None:
+        captured = []
+
+        def publish(identity: str) -> dict:
+            artifact = self.cache.load_artifact(identity)
+            self.assertFalse(artifact.published)
+            self.assertEqual({name for name, entry in artifact.files.items() if entry.public}, {"0001/diff.html"})
+            self.assertIn(b"<!doctype html>", self.cache.read_file(artifact.files["0001/diff.html"]))
+            self.assertEqual(self.cache.read_file(artifact.files["0001/before.txt"]), self.before.read_bytes())
+            self.assertEqual(self.cache.read_file(artifact.files["0001/after.txt"]), self.after.read_bytes())
+            manifest = artifact.files["manifest.json"]
+            self.assertFalse(manifest.public)
+            content = self.cache.read_file(manifest)
+            self.assertEqual(json.loads(content), [{"id": self.entries[0]["id"], "title": self.entries[0]["title"],
+                                                   "file": "0001/diff.html"}])
+            captured.append((manifest, content))
+            return self.publish_files(identity)
+
+        self.publication.side_effect = publish
+        record = exporter.export_batch(self.batch)[0]
+        manifest, original = captured[0]
+        self.assertEqual(self.cache.read_file(manifest), original)
+        self.assertNotIn(record["url"].encode(), original)
+
+    def test_markdown_title_renders_literal_underscores_and_delimiters(self) -> None:
+        markdown = exporter._markdown("_name_/scene_view_[a]*`&<.py", "http://127.0.0.1:43123/artifacts/artifact-x/diff.html")
+        self.assertEqual(markdown, r"[&#95;name&#95;/scene&#95;view&#95;\[a\]\*\`&amp;&lt;.py](http://127.0.0.1:43123/artifacts/artifact-x/diff.html)")
+        self.assertNotIn(r"\_", markdown)
+
+    def test_links_use_the_current_origin_returned_by_publication(self) -> None:
+        for port in (43123, 43124):
+            with self.subTest(port=port):
+                self.publication.side_effect = lambda identity: self.publish_files(identity, port=port)
+                record = exporter.export_batch(self.batch)[0]
+                self.assertEqual(urlsplit(record["url"]).port, port)
+                self.assertTrue(record["markdown"].endswith("](" + record["url"] + ")"))
+
+    def test_failed_delivery_retains_complete_comparison_and_returns_no_links(self) -> None:
+        for failure in (OSError("web service startup failed"), ValueError("publication refused")):
+            with self.subTest(failure=str(failure)):
+                self.publication.side_effect = failure
+                stdout = io.StringIO()
+                with contextlib.redirect_stdout(stdout), self.assertRaises(SystemExit) as result:
+                    exporter.main(["--input", str(self.batch)])
+                self.assertEqual(result.exception.code, 2)
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertIn(str(failure), self.stderr.getvalue())
+        groups = list(self.cache.cache_root().iterdir())
+        self.assertEqual(len(groups), 2)
+        for group in groups:
+            artifact = self.cache.load_artifact(group.name)
+            self.assertFalse(artifact.published)
+            self.assertEqual(self.cache.read_file(artifact.files["0001/before.txt"]), self.before.read_bytes())
+            self.assertTrue(artifact.files["0001/diff.html"].path.is_file())
+            self.assertTrue(artifact.files["manifest.json"].path.is_file())
+            self.assertIn("cached artifact " + group.name, self.stderr.getvalue())
+            self.assertIn(str(group / "files"), self.stderr.getvalue())
+
+    def test_creation_failure_does_not_publish(self) -> None:
+        with mock.patch.object(self.cache, "create_artifact", side_effect=OSError("cache write failed")):
+            with self.assertRaisesRegex(OSError, "cache write failed"):
+                exporter.export_batch(self.batch)
+        self.publication.assert_not_called()
+
+    def test_manifest_failure_does_not_publish_an_incomplete_comparison(self) -> None:
+        original = exporter.export_batch(self.batch)[0]
+        self.publication.reset_mock()
+        write = Path.write_bytes
+
+        def fail_manifest(path: Path, content: bytes) -> int:
+            if path.name == "manifest.json":
+                raise OSError("manifest disk failure")
+            return write(path, content)
+
+        with mock.patch.object(Path, "write_bytes", fail_manifest):
+            with self.assertRaisesRegex(OSError, "manifest disk failure"):
+                exporter.export_batch(self.batch)
+        self.publication.assert_not_called()
+        self.assertEqual(list(self.cache.cache_root().iterdir()), [self.group(original)])
+        self.assertTrue(Path(original["path"]).is_file())
+
+    def test_missing_shared_cache_fails_without_storage_or_file_links(self) -> None:
+        isolated = self.copy_exporter()
+        result = subprocess.run([sys.executable, "-B", str(isolated), "--input", str(self.batch)],
+                                cwd=self.base, capture_output=True, encoding="utf-8", timeout=10)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertIn(CACHE_MODULE, result.stderr.replace("\\", "/"))
+        self.assertFalse(self.cache.cache_root().exists())
+
+    def test_missing_web_runtime_retains_shared_cache_comparison(self) -> None:
+        isolated = self.copy_exporter()
+        target = isolated.parents[3] / CACHE_MODULE
+        target.parent.mkdir(parents=True)
+        shutil.copy2(SCRIPT.parents[3] / CACHE_MODULE, target)
+        result = subprocess.run([sys.executable, "-B", str(isolated), "--input", str(self.batch)],
+                                cwd=self.base, capture_output=True, encoding="utf-8", timeout=10)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertIn(WEB_MODULE, result.stderr.replace("\\", "/"))
+        group = next(self.cache.cache_root().iterdir())
+        self.assertIn("cached artifact " + group.name, result.stderr)
+        self.assertEqual((group / "files/0001/before.txt").read_bytes(), self.before.read_bytes())
+        self.assertTrue((group / "files/manifest.json").is_file())
+
+    def test_runtime_loading_rejects_foreign_aliases_and_missing_local_files(self) -> None:
+        foreign = types.ModuleType("artifact_cache")
+        foreign.__file__ = str(self.base / "other-plugin/runtime/artifacts/artifact_cache.py")
+        with mock.patch.dict(sys.modules, {"artifact_cache": foreign}):
+            with self.assertRaisesRegex(OSError, "another plugin copy"):
+                self.load_runtime(CACHE_MODULE)
+        isolated = self.copy_exporter()
+        with mock.patch.object(exporter, "__file__", str(isolated)):
+            with self.assertRaises(FileNotFoundError):
+                self.load_runtime(CACHE_MODULE)
+
+    def test_failed_runtime_import_leaves_no_partial_module_alias(self) -> None:
+        isolated = self.copy_exporter()
+        target = isolated.parents[3] / CACHE_MODULE
+        target.parent.mkdir(parents=True)
+        target.write_text("raise ImportError('cache dependency unavailable')\n", encoding="utf-8")
+        with mock.patch.object(exporter, "__file__", str(isolated)), mock.patch.dict(sys.modules):
+            sys.modules.pop("artifact_cache", None)
+            with self.assertRaisesRegex(OSError, "cache dependency unavailable"):
+                self.load_runtime(CACHE_MODULE)
+            self.assertNotIn("artifact_cache", sys.modules)
 
     def test_relative_inputs_additions_deletions_and_empty_files(self) -> None:
         self.after.write_bytes(b"")
@@ -127,6 +260,7 @@ class ReviewHtmlDiffTests(unittest.TestCase):
             {"id": "add", "title": "new.txt", "before": None, "after": self.after.name},
             {"id": "delete", "title": "old.txt", "before": self.before.name, "after": None}])
         result = exporter.export_batch(self.batch)
+        self.assertEqual([item["id"] for item in result], ["add", "delete"])
         added, deleted = [Path(item["path"]) for item in result]
         self.assertFalse((added.parent / "before.txt").exists())
         self.assertEqual((added.parent / "after.txt").read_bytes(), b"")
@@ -135,7 +269,7 @@ class ReviewHtmlDiffTests(unittest.TestCase):
         self.assertIn("不存在", added.read_text(encoding="utf-8"))
         self.assertIn("0 字节", added.read_text(encoding="utf-8"))
 
-    def test_invalid_batches_publish_nothing(self) -> None:
+    def test_invalid_batches_create_nothing(self) -> None:
         valid = self.entries[0]
         cases = [None, {}, [], [None], [dict(valid, extra=True)],
                  [dict(valid, id=[])], [dict(valid, title="two\nlines")],
@@ -147,26 +281,11 @@ class ReviewHtmlDiffTests(unittest.TestCase):
                 self.write_batch(entries)
                 with self.assertRaises((OSError, ValueError)):
                     exporter.export_batch(self.batch)
-                self.assertFalse(exporter.cache_root().exists())
+                self.assertFalse(self.cache.cache_root().exists())
         self.batch.write_text('[{"id":"one","id":"two"}]', encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "duplicate JSON field"):
             exporter.export_batch(self.batch)
-
-    def test_failed_writes_and_publication_preserve_unexpired_exports(self) -> None:
-        original = exporter.export_batch(self.batch)[0]
-        output = self.group(original)
-        files = {path.relative_to(output): path.read_bytes() for path in output.rglob("*") if path.is_file()}
-        with mock.patch.object(exporter.uuid, "uuid4", return_value=mock.Mock(hex=output.name[7:])):
-            with self.assertRaises(FileExistsError):
-                exporter.export_batch(self.batch)
-        self.assertEqual({path.relative_to(output): path.read_bytes() for path in output.rglob("*")
-                          if path.is_file()}, files)
-        for operation in ("write_bytes", "rename"):
-            with self.subTest(operation=operation), mock.patch.object(Path, operation, side_effect=OSError("disk failure")):
-                with self.assertRaisesRegex(OSError, "disk failure"):
-                    exporter.export_batch(self.batch)
-            self.assertEqual(list(exporter.cache_root().iterdir()), [output])
-        self.assertTrue(Path(original["path"]).is_file())
+        self.publication.assert_not_called()
 
     def test_html_escapes_content_and_explains_newline_only_changes(self) -> None:
         title = '<img src="x" onerror="bad()"> & report'
@@ -187,227 +306,21 @@ class ReviewHtmlDiffTests(unittest.TestCase):
     def test_invalid_utf8_cli_returns_error_without_partial_output(self) -> None:
         self.after.write_bytes(b"\xff")
         self.write_batch([dict(self.entries[0], id="first", after=self.before.name), self.entries[0]])
-        result = subprocess.run(
-            [sys.executable, str(SCRIPT), "--input", str(self.batch)],
-            cwd=self.base, capture_output=True, encoding="utf-8", timeout=10)
+        result = subprocess.run([sys.executable, "-B", str(SCRIPT), "--input", str(self.batch)],
+                                cwd=self.base, capture_output=True, encoding="utf-8", timeout=10)
         self.assertEqual(result.returncode, 2)
         self.assertIn("utf-8", result.stderr)
         self.assertEqual(result.stdout, "")
-        self.assertFalse(exporter.cache_root().exists())
+        self.assertFalse(self.cache.cache_root().exists())
 
-    def test_exact_seven_day_boundary_ignores_access_and_mtime(self) -> None:
-        start = 1000000.25
-        old = self.export_at(start)[0]
-        old_group = self.group(old)
-        old_metadata = (old_group / "files/cache.json").read_bytes()
-        for path in [old_group] + list(old_group.rglob("*")):
-            os.utime(path, (start + 10 * exporter.RETENTION_SECONDS,) * 2)
-        Path(old["path"]).read_bytes()
-        recent = self.export_at(start + exporter.RETENTION_SECONDS - 0.01)[0]
-        self.assertEqual((old_group / "files/cache.json").read_bytes(), old_metadata)
-        for path in [self.group(recent)] + list(self.group(recent).rglob("*")):
-            os.utime(path, (0, 0))
-        self.export_at(start + exporter.RETENTION_SECONDS)
-        self.assertFalse(old_group.exists())
-        self.assertTrue(Path(recent["path"]).exists())
-        self.assertEqual(len(list(exporter.cache_root().iterdir())), 2)
-        self.assertIn("Expired cache removed: " + str(old_group), self.stderr.getvalue())
-
-    @unittest.skipIf(os.name == "nt", "Windows directory privacy uses inherited user-cache ACLs")
-    def test_new_namespaces_and_export_directories_are_private_without_chmod(self) -> None:
-        record = exporter.export_batch(self.batch)[0]
-        root = exporter.cache_root()
-        for folder in (root.parent, root, self.group(record), Path(record["path"]).parents[1],
-                       Path(record["path"]).parent):
-            self.assertEqual(folder.stat().st_mode & 0o777, 0o700)
-        root.chmod(0o755)
-        root.parent.chmod(0o755)
-        exporter.export_batch(self.batch)
-        self.assertEqual(root.stat().st_mode & 0o777, 0o755)
-        self.assertEqual(root.parent.stat().st_mode & 0o777, 0o755)
-
-    def test_success_timestamp_is_recorded_after_rendering_and_inputs_precede_expiry(self) -> None:
-        with mock.patch.object(exporter.time, "time", side_effect=[1000000.0, 1000010.0]):
-            record = exporter.export_batch(self.batch)[0]
-        group = self.group(record)
-        metadata = json.loads((group / "files/cache.json").read_text())
-        self.assertEqual(metadata["created_at"], 1000010.0)
-        self.after.write_bytes(b"\xff")
-        with self.assertRaises(UnicodeDecodeError):
-            self.export_at(1000010.0 + exporter.RETENTION_SECONDS)
-        self.assertTrue(group.exists())
-        self.assertNotIn("Expired cache removed", self.stderr.getvalue())
-
-    def test_foreign_and_malformed_cache_groups_and_legacy_data_are_preserved(self) -> None:
-        start = 1000000.0
-        groups = []
-        mutations = [{"schema": "foreign/v1"}, {"directory": "different"},
-                     {"created_at": True}, {"created_at": "yesterday"},
-                     {"created_at": float("nan")}, {"created_at": 10 ** 500}]
-        for mutation in mutations:
-            group = self.group(self.export_at(start)[0])
-            marker = group / "files/cache.json"
-            metadata = json.loads(marker.read_text())
-            metadata.update(mutation)
-            marker.write_text(json.dumps(metadata), encoding="utf-8")
-            groups.append(group)
-        for name in ("cache.json", "manifest.json"):
-            group = self.group(self.export_at(start)[0])
-            (group / "files" / name).write_bytes(b"not json")
-            groups.append(group)
-        group = self.group(self.export_at(start)[0])
-        (group / "unrelated.txt").write_text("preserve", encoding="utf-8")
-        groups.append(group)
-        root = exporter.cache_root()
-        foreign = root / "foreign"
-        foreign.mkdir()
-        (foreign / "report.txt").write_bytes(b"foreign bytes")
-        legacy = Path.home() / ".local/share/smartkit/deep-links"
-        legacy.mkdir(parents=True)
-        (legacy / "snapshot.txt").write_bytes(b"legacy bytes")
-        self.export_at(start + exporter.RETENTION_SECONDS)
-        self.assertTrue(all(group.is_dir() for group in groups))
-        self.assertEqual((foreign / "report.txt").read_bytes(), b"foreign bytes")
-        self.assertEqual((legacy / "snapshot.txt").read_bytes(), b"legacy bytes")
-        self.assertNotIn("Expired cache removed", self.stderr.getvalue())
-
-    def test_symlinks_and_namespace_redirects_are_preserved(self) -> None:
-        start = 1000000.0
-        record = self.export_at(start)[0]
-        group = self.group(record)
-        outside = self.base / "outside"
-        outside.mkdir()
-        sentinel = outside / "keep.txt"
-        sentinel.write_bytes(b"outside bytes")
-        linked = Path(record["path"]).parent / "before.txt"
-        linked.unlink()
-        root_link = exporter.cache_root() / ("review-" + "a" * 32)
-        try:
-            linked.symlink_to(sentinel)
-            root_link.symlink_to(outside, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            self.skipTest("symlink creation unavailable")
-        self.export_at(start + exporter.RETENTION_SECONDS)
-        self.assertTrue(group.is_dir())
-        self.assertTrue(linked.is_symlink())
-        self.assertTrue(root_link.is_symlink())
-        self.assertEqual(sentinel.read_bytes(), b"outside bytes")
-        root = exporter.cache_root()
-        shutil.rmtree(root)
-        root.symlink_to(outside, target_is_directory=True)
-        with self.assertRaisesRegex(ValueError, "namespace must not redirect"):
-            exporter.export_batch(self.batch)
-        self.assertTrue(root.is_symlink())
-        self.assertEqual(sentinel.read_bytes(), b"outside bytes")
-
-    def test_cleanup_failure_reports_completed_deletions_and_stops_generation(self) -> None:
-        start = 1000000.0
-        groups = sorted(self.group(self.export_at(start)[0]) for _ in range(2))
-        real_remove = shutil.rmtree
-
-        def fail_second(path, *args, **kwargs):
-            if Path(path) == groups[1]:
-                (groups[1] / "files/0001/before.txt").unlink()
-                raise PermissionError("injected removal failure")
-            return real_remove(path, *args, **kwargs)
-
-        with mock.patch.object(exporter.time, "time", return_value=start + exporter.RETENTION_SECONDS):
-            with mock.patch.object(exporter.shutil, "rmtree", side_effect=fail_second):
-                with self.assertRaises(SystemExit) as failure:
-                    exporter.main(["--input", str(self.batch)])
-        self.assertEqual(failure.exception.code, 2)
-        self.assertFalse(groups[0].exists())
-        self.assertTrue(groups[1].is_dir())
-        self.assertFalse((groups[1] / "files/0001/before.txt").exists())
-        self.assertEqual(list(exporter.cache_root().iterdir()), [groups[1]])
-        self.assertIn("Expired cache removed: " + str(groups[0]), self.stderr.getvalue())
-        self.assertIn("some files may already be deleted", self.stderr.getvalue())
-        self.assertIn("injected removal failure", self.stderr.getvalue())
-
-    def test_namespace_reparse_redirect_is_rejected_before_traversal(self) -> None:
-        root = exporter.cache_root()
-        root.parent.mkdir(parents=True)
-        outside = self.base / "outside-namespace"
-        outside.mkdir()
-        sentinel = outside / "keep.txt"
-        sentinel.write_bytes(b"outside bytes")
-        try:
-            root.symlink_to(outside, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            self.skipTest("temp redirect creation unavailable")
-        with self.model_windows_reparse(root):
-            with self.assertRaisesRegex(ValueError, "namespace"):
-                exporter.export_batch(self.batch)
-        self.assertEqual(list(outside.iterdir()), [sentinel])
-        self.assertTrue(root.is_symlink())
-
-    def test_internal_reparse_redirect_preserves_the_whole_expired_group(self) -> None:
-        start = 1000000.0
-        record = self.export_at(start)[0]
-        group = self.group(record)
-        folder = Path(record["path"]).parent
-        outside = self.base / "outside-snapshot"
-        folder.rename(outside)
-        try:
-            folder.symlink_to(outside, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            self.skipTest("temp redirect creation unavailable")
-        with self.model_windows_reparse(folder):
-            self.export_at(start + exporter.RETENTION_SECONDS)
-        self.assertTrue(group.is_dir())
-        self.assertTrue(folder.is_symlink())
-        self.assertEqual((outside / "before.txt").read_bytes(), b"timeout = 5\r\n")
-        self.assertNotIn("Expired cache removed: " + str(group), self.stderr.getvalue())
-
-    def test_explicit_cache_base_can_resolve_a_redirect(self) -> None:
-        target = self.base / "selected-cache"
-        target.mkdir()
-        configured = self.base / "configured-cache"
-        try:
-            configured.symlink_to(target, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            self.skipTest("temp redirect creation unavailable")
-        with mock.patch.object(exporter.sys, "platform", "linux"):
-            with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": str(configured)}):
-                record = exporter.export_batch(self.batch)[0]
-        self.assertEqual(self.group(record).parent, target.resolve() / "smartkit/review-for-humans")
-
-    @unittest.skipUnless(os.name == "nt", "actual junction creation requires Windows")
-    def test_actual_windows_junctions_are_preserved(self) -> None:
-        root = exporter.cache_root()
-        root.parent.mkdir(parents=True)
-        outside = self.base / "outside-junction"
-        outside.mkdir()
-        created = subprocess.run(["cmd", "/c", "mklink", "/J", str(root), str(outside)],
-                                 capture_output=True, timeout=10)
-        self.assertEqual(created.returncode, 0, created.stderr)
-        with self.assertRaisesRegex(ValueError, "namespace"):
-            exporter.export_batch(self.batch)
-        self.assertEqual(list(outside.iterdir()), [])
-        root.rmdir()
-        start = 1000000.0
-        record = self.export_at(start)[0]
-        group = self.group(record)
-        folder = Path(record["path"]).parent
-        target = outside / "snapshot"
-        folder.rename(target)
-        created = subprocess.run(["cmd", "/c", "mklink", "/J", str(folder), str(target)],
-                                 capture_output=True, timeout=10)
-        self.assertEqual(created.returncode, 0, created.stderr)
-        self.export_at(start + exporter.RETENTION_SECONDS)
-        self.assertTrue(group.is_dir())
-        self.assertTrue(folder.is_dir())
-        self.assertEqual((target / "before.txt").read_bytes(), b"timeout = 5\r\n")
-
-    def test_export_failure_does_not_undo_expiry_and_leaves_no_new_group(self) -> None:
-        start = 1000000.0
-        old = self.group(self.export_at(start)[0])
-        with mock.patch.object(exporter, "render_diff", side_effect=OSError("render failed")):
-            with self.assertRaisesRegex(OSError, "render failed"):
-                self.export_at(start + exporter.RETENTION_SECONDS)
-        self.assertFalse(old.exists())
-        self.assertEqual(list(exporter.cache_root().iterdir()), [])
-        self.assertIn("Expired cache removed: " + str(old), self.stderr.getvalue())
+    def test_rendering_failure_precedes_shared_cache_creation(self) -> None:
+        with mock.patch.object(self.cache, "create_artifact") as create:
+            with mock.patch.object(exporter, "render_diff", side_effect=OSError("render failed")):
+                with self.assertRaisesRegex(OSError, "render failed"):
+                    exporter.export_batch(self.batch)
+        create.assert_not_called()
+        self.publication.assert_not_called()
+        self.assertFalse(self.cache.cache_root().exists())
 
 
 if __name__ == "__main__":

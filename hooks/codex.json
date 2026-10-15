@@ -20,6 +20,18 @@
             "statusMessage": "Loading SmartKit plugin rules"
           }
         ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${PLUGIN_ROOT}/runtime/web/dispatch.sh\" hook --harness codex",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\web\\dispatch.ps1\" hook --harness codex",
+            "timeout": 15,
+            "statusMessage": "Starting shared SmartKit HTTP service"
+          }
+        ]
       }
     ]
   }

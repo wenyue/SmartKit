@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Read-only review permits auxiliary snapshot/export writes and the helper's expired-cache cleanup below; keep the reviewed files and Git index unchanged until an authorized action below.
+Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Read-only review permits capturing the comparison and running the bundled exporter; keep the reviewed files and Git index unchanged until an authorized action below.
 
 Load the necessary Skills and Rules to perform the review.
 
@@ -51,22 +51,22 @@ Every reported filename must link to the exact file and comparison explained in 
 
 Prefer an existing diff page on GitHub or another repository website when you can verify its fixed commit IDs, comparison semantics, displayed file, and before-and-after content against the snapshot. Use full commit IDs and a file anchor obtained from the actual page when needed; a URL containing two commit IDs alone does not establish the right comparison, because direct and merge-base comparisons can differ. Obtain the real file destination through an available authenticated interface or page inspection; never infer an anchor hash. A mutable PR page or a source-file page does not satisfy this fixed diff requirement. Keep the verified URL and its comparison evidence with the snapshot.
 
-When a suitable repository URL cannot be verified, generate a self-contained HTML comparison with this Skill's bundled `scripts/export_html_diff.py`. This includes local index/worktree changes, unpublished repairs, and repository pages that omit or truncate the selected diff. Resolve `<skill-root>` to the directory containing the loaded Skill's `SKILL.md`; the reviewed repository need not contain the helper. Export the retained UTF-8 before-and-after contents, then read the script's help for its batch schema and output contract:
+When a suitable repository URL cannot be verified, export the retained UTF-8 before-and-after contents with this Skill's bundled `scripts/export_html_diff.py`. Resolve `<skill-root>` to the directory containing the loaded Skill's `SKILL.md`, independently of the reviewed repository or working directory. Read the exporter's help for its batch schema and output contract:
 
 ```text
 python "<skill-root>/scripts/export_html_diff.py" --help
 python "<skill-root>/scripts/export_html_diff.py" --input "<batch.json>"
 ```
 
-Use the real reported paths as titles and match each returned `id` and `title` to its file. The script captures raw bytes, renders all pages before returning links, and retains its mapping with the exports; use its returned `markdown`, which links directly to an absolute local HTML path. It chooses a unique directory under the platform's user cache and, before each new generation, removes its own exports that were successfully generated at least seven days earlier. HTML, raw snapshots, and mapping expire together; access does not extend their lifetime. Cleanup is opportunistic, so expired links become unavailable when a later generation removes them. Disclose this seven-day cache lifetime in reports using HTML links. This fallback needs no service, installation, protocol handler, or upload; do not publish repository changes merely to obtain a link. A missing script, failed cleanup, or failed export pauses the dependent report; retain its diagnostics, including any expired groups already removed, when resolving the failure.
+Use the real reported paths as titles, match each returned `id` and `title` to its file, and use the returned `markdown` as the filename's HTTP diff link. The returned `path` is filesystem metadata, not a report link. Retain the link mapping with the review snapshot; each new reviewed version needs a newly verified repository URL or a new export. Do not publish repository changes merely to obtain a link.
 
-Retain the link mapping with the review snapshot. Each new reviewed version needs a newly verified repository URL or a new HTML export; unexpired earlier exports remain fixed. Local HTML is for the current computer, while repository links retain the site's access requirements. Verify that each returned HTML file exists and matches the intended comparison before reporting it. Claim that a link opened successfully only when observed; generation alone establishes neither client support nor a successful click. If the client prevents opening a local HTML file, report the observed restriction and the file's absolute path for opening in a browser.
+If the exporter or delivery is unavailable or fails, pause the dependent report and preserve its diagnostics. Use the supported shared tool's help when refreshing a retained URL or troubleshooting delivery. Report observed navigation restrictions and claim that a link opened successfully only when observed.
 
 ## Explain each file through the problem it solves
 
 Keep all report emoji outside bold spans, preserving emphasis on their accompanying text. When emphasizing a word, phrase, identifier, or label, keep surrounding separators and terminal punctuation outside bold; deliberately emphasized complete sentences may retain their sentence punctuation. Preserve punctuation intrinsic to code, identifiers, and paths.
 
-Begin each file in the form `📄 **[path](diff-destination)**`, using the verified repository diff URL or the script's returned local-file Markdown, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
+Begin each file in the form `📄 **[path](diff-destination)**`, using the verified repository diff URL or the script's returned HTTP Markdown, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
 
 Divide the explanation into modifications by business problem or human-understood scenario. Start by keeping related changes together. Split only when they are logically independent or cannot be explained jointly with one simple example. Methods, diff hunks, and individual implementation steps do not by themselves justify separate modifications. For example, tracking pending work, refusing new work, and waiting before closing a resource can be one modification about safely finishing work on shutdown.
 
@@ -184,9 +184,9 @@ If a required interface is unavailable or a write or verification fails, pause w
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
-The absolute HTML paths below illustrate filename-link formatting only; they are placeholders rather than generated files. Actual reports use a verified repository diff URL or the export script's returned Markdown.
+The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use a verified repository diff URL or the export script's returned Markdown.
 
-📄 **[l10n/en.json](</absolute/review-export/files/0001/diff.html>)**
+📄 **[l10n/en.json](http://127.0.0.1:43123/artifacts/review-example/0001/diff.html)**
 
 This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
 
@@ -200,7 +200,7 @@ The label changes from “Delete” to “Delete account,” naming the affected
 
 ---
 
-📄 **[lib/item_storage.dart](</absolute/review-export/files/0002/diff.html>)**
+📄 **[lib/item_storage.dart](http://127.0.0.1:43123/artifacts/review-example/0002/diff.html)**
 
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting an item can still flush the deletion afterward.
 
@@ -231,7 +231,7 @@ Saving the box reference first lets the code flush that same box after deleting 
 
 ---
 
-📄 **[ui/save_button.dart](</absolute/review-export/files/0003/diff.html>)**
+📄 **[ui/save_button.dart](http://127.0.0.1:43123/artifacts/review-example/0003/diff.html)**
 
 This file handles the Save button. The change prevents repeated clicks from starting duplicate saves.
 

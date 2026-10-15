@@ -36,6 +36,13 @@ def context_for(root: Path) -> str:
         'Resolve '
         'relative file references from that file\'s path. The wrapper is delivery metadata, not '
         'part of the Rule, and delivery order does not determine Rule precedence.',
+        '## SmartKit plugin resources\n\n'
+        'Resource locations from this loaded installation (availability remains a prerequisite):\n\n'
+        '```json\n' + json.dumps({
+            'plugin_root': str(root.resolve()),
+            'artifact_cache': str((root / 'runtime/artifacts/artifact_cache.py').resolve()),
+            'web_service': str((root / 'runtime/web/web_service.py').resolve()),
+        }, ensure_ascii=True, indent=2) + '\n```',
     ]
     indexed: list[dict[str, str]] = []
     for rule in rules:

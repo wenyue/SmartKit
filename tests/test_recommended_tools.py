@@ -1565,6 +1565,7 @@ class UserShellPathTest(unittest.TestCase):
                     ), \
                     mock.patch.object(checker, 'check_policy') as check, \
                     mock.patch.object(checker, 'run_hook') as hook, \
+                    mock.patch.object(checker, 'record_readiness_snapshot'), \
                     mock.patch('sys.stdout', new_callable=io.StringIO) as stdout, \
                     mock.patch('sys.stderr', new_callable=io.StringIO) as stderr:
                 exit_code = checker.main([command, '--harness', 'codex'])

@@ -18,6 +18,13 @@
             "timeout": 30,
             "additionalContextLimit": 50000,
             "statusMessage": "Loading SmartKit plugin rules"
+          },
+          {
+            "type": "command",
+            "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/web/dispatch.sh\" hook --harness qoder",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\web\\dispatch.ps1\" hook --harness qoder",
+            "timeout": 15,
+            "statusMessage": "Starting shared SmartKit HTTP service"
           }
         ]
       }

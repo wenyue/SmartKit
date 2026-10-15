@@ -65,6 +65,14 @@ supported plugin hosts load Skills from plugin-local paths and do not share a re
 contract.
 _Avoid_: Referenced Skill, runtime-fetched Skill
 
+**SmartKit Local Web Service（SmartKit 本机 Web 服务）** :
+The shared user-local SmartKit host for application pages, feature data interfaces, and generated previews. Each presented feature retains ownership of its meaning and source data.
+_Avoid_: Skill-specific server, native link handler
+
+**Preview Artifact（预览产物）** :
+A fixed SmartKit-generated output retained for human inspection, distinct from an application page whose displayed data can change. Its preview lifetime is separate from the lifetime of any canonical source material.
+_Avoid_: Authoring Artifact, live application page
+
 **Static MCP Readiness（MCP 静态就绪条件）** :
 The configuration and local prerequisites that can be checked without starting an MCP server,
 probing a remote endpoint, triggering authentication, or requiring an application runtime to be live.

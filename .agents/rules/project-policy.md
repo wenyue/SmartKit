@@ -10,6 +10,16 @@ Source authoring alone neither requires nor authorizes downstream generation, de
 
 Changes to setup must preserve the ownership and conflict boundaries defined in [Setup Project Agents](../../skills/setup-project-agents/SKILL.md).
 
+## Reuse Shared Plugin Resources
+
+SmartKit Skills may reuse shared documentation, scripts, and assets outside their own directories through supported plugin resource paths. Required resources must be declared and bundled in the supported plugin distribution; resolve them from the actual loaded Skill or plugin installation, rather than the target project's working directory or an authoring machine's absolute paths.
+
+Keep each resource's canonical owner and applicable loading and failure requirements. State when and how to load or use it in the consuming Skill, or centrally in a core Rule guaranteed to load in the supported plugin environment. A consuming Skill may rely on that central route once the Rule is loaded, without repeating its shared guidance or pointers. Supported command interfaces and their help may supply use guidance.
+
+Keep task-specific inputs, outputs, permissions, and lifetime contracts with the consuming Skill. If a required resource is unavailable, report the prerequisite gap and leave dependent work incomplete.
+
+Skills need not be independently copyable when this supported route supplies their dependencies. This permission covers declared shared plugin resources; it grants neither access to another Skill's private resources or arbitrary project or external files, nor authority to package, publish, or install resources.
+
 ## Retire Contracts as a Whole
 
 When retiring a current contract, remove its implementation, documentation, tests, and handling together. Retain or add compatibility only when an accepted current contract requires it.

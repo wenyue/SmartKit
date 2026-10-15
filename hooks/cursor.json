@@ -9,6 +9,10 @@
       {
         "name": "smartkit core Rules and Rule index",
         "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/rules/dispatch.cmd\" --harness cursor --event session"
+      },
+      {
+        "name": "smartkit shared HTTP service",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/web/dispatch.cmd\" hook --harness cursor"
       }
     ],
     "preCompact": [
