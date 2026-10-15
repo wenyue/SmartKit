@@ -191,6 +191,18 @@ class DeepLinksTests(unittest.TestCase):
         self.assertTrue(all(str(self.root / 'tasks') in path for path in arguments[3:]))
         self.assertIn('发送', result['message'])
 
+    def test_native_vscode_does_not_inherit_electron_node_mode(self):
+        link = links.create(self.root, self.batch())[0]
+        environment = {'ELECTRON_RUN_AS_NODE': '1', 'PATH': 'preserved'}
+        with mock.patch.object(registration, 'desktop_environment', return_value=environment), \
+                mock.patch.object(actions, 'find_vscode', return_value=self.base / 'Code.exe'), \
+                mock.patch.object(actions.subprocess, 'Popen') as spawn:
+            spawn.return_value.wait.return_value = 0
+            links.open_link(self.root, link.url)
+        self.assertNotIn('ELECTRON_RUN_AS_NODE', spawn.call_args.kwargs['env'])
+        self.assertEqual(spawn.call_args.kwargs['env']['PATH'], 'preserved')
+        self.assertEqual(environment['ELECTRON_RUN_AS_NODE'], '1')
+
     def test_vscode_nonzero_exit_uses_web_in_auto_mode(self):
         link = links.create(self.root, self.batch())[0]
         with mock.patch.object(actions, 'find_vscode', return_value=self.base / 'code'), \

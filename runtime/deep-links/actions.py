@@ -164,9 +164,12 @@ def open_diff(folder: Path, record: Mapping[str, str], environment: Mapping[str,
         else:
             command = [str(launcher), '--reuse-window', '--diff',
                        str(folder / record['before']), str(folder / record['after'])]
+            launch_environment = dict(environment)
+            # Native Electron launchers must open VS Code rather than inherit a host's Node mode.
+            launch_environment.pop('ELECTRON_RUN_AS_NODE', None)
             try:
                 with (folder / 'vscode-launch.log').open('wb') as log:
-                    process = subprocess.Popen(command, env=environment, stdin=subprocess.DEVNULL,
+                    process = subprocess.Popen(command, env=launch_environment, stdin=subprocess.DEVNULL,
                                                stdout=log, stderr=log, start_new_session=True)
                     try:
                         status = process.wait(timeout=2)
