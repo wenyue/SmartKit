@@ -144,12 +144,6 @@ SmartKit 配置或推荐以下工具。CodeGraph 和 Tokscale 需单独安装；
 | [Tokscale](https://github.com/junhoyeo/tokscale) | 为 `diagnose-agent-session` 提供 token 用量和费用估算证据。 | 将 `tokscale` 加入 PATH；可用诊断数据取决于客户端及其已记录的用量。 |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | 提供浏览器自动化。 | 插件提供 MCP 配置，客户端通过 `npx` 获取并启动 `@playwright/mcp`。需要 Node.js 18 或更新版本，并将 `npx` 加入 PATH。 |
 
-## SmartKit 点击链接
-
-从 Markdown 链接打开本机固定 diff 和生成的报告。SmartKit 会在支持的桌面会话启动时自动准备此功能。
-
-SmartKit 点击链接使用当前用户的协议处理器和这台电脑上的快照；客户端需要允许 `smartkit://` 链接。在插件目录运行 `python runtime/deep-links/deep_links.py uninstall` 可关闭自动准备，运行 `python runtime/deep-links/deep_links.py ensure --enable` 可重新启用。命令的 `--help` 提供链接创建和预览选项的说明。
-
 ## 安装插件
 
 先安装你使用的编程助手和 Python 3.8 或更新版本，并将 `python` 加入 PATH，供 SmartKit Hooks 和项目配置使用。使用 Playwright MCP 时，还需安装 Node.js 18 或更新版本，并将 `npx` 加入 PATH。然后按对应步骤安装插件。

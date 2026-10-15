@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY_POINTS = (
-    'runtime/deep-links/deep_links.py',
+    'skills/review-for-humans/scripts/export_html_diff.py',
     'runtime/rules/dispatch.py',
     'runtime/recommended-tools/check_recommended_tools.py',
     'runtime/recommended-tools/maintain_recommended_tools.py',

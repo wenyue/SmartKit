@@ -13,12 +13,6 @@
           },
           {
             "type": "command",
-            "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/deep-links/dispatch.sh\" ensure --quiet",
-            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\deep-links\\dispatch.ps1\" ensure --quiet",
-            "timeout": 30
-          },
-          {
-            "type": "command",
             "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/rules/dispatch.sh\" --harness qoder --event session",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\rules\\dispatch.ps1\" --harness qoder --event session",
             "timeout": 30,

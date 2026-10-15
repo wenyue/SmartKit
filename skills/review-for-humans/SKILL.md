@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Apart from the shared runtime's initialization below, read-only review permits only auxiliary snapshot/export writes; keep the reviewed files and Git index unchanged until an authorized action below.
+Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Read-only review permits auxiliary snapshot/export writes and the helper's expired-cache cleanup below; keep the reviewed files and Git index unchanged until an authorized action below.
 
 Load the necessary Skills and Rules to perform the review.
 
@@ -47,29 +47,26 @@ When scope, required guidance, or source evidence is unavailable, identify the m
 
 ### Prepare fixed diff links
 
-Every reported filename must link to a fixed diff snapshot of that file's reviewed before-and-after content. For the local default, export the index version and captured worktree version, preserving only their unstaged comparison even for a partially staged file. For a PR, use the pinned base/head comparison evidence; for a branch, use the pinned merge-base and tip. Honor any explicitly selected comparison. Export from the retained review snapshot rather than current refs or mutable files, so opening the link later shows the version explained in the report.
+Every reported filename must link to the exact file and comparison explained in the report. For the local default, retain the index version and captured worktree version, preserving only their unstaged comparison even for a partially staged file. For a PR, use the pinned comparison evidence; for a branch, use the pinned merge-base and tip. Honor any explicitly selected comparison. Build links from that retained snapshot so later edits or commits cannot change the explained version.
 
-Use the shared plugin runtime, resolving `<runtime>` as `../../runtime/deep-links/deep_links.py` relative to this loaded Skill's directory. The reviewed repository need not contain it. Read its command help for the current interface; if the runtime is missing, pause the dependent report and request a complete or restored plugin installation.
+Prefer an existing diff page on GitHub or another repository website when you can verify its fixed commit IDs, comparison semantics, displayed file, and before-and-after content against the snapshot. Use full commit IDs and a file anchor obtained from the actual page when needed; a URL containing two commit IDs alone does not establish the right comparison, because direct and merge-base comparisons can differ. Obtain the real file destination through an available authenticated interface or page inspection; never infer an anchor hash. A mutable PR page or a source-file page does not satisfy this fixed diff requirement. Keep the verified URL and its comparison evidence with the snapshot.
+
+When a suitable repository URL cannot be verified, generate a self-contained HTML comparison with this Skill's bundled `scripts/export_html_diff.py`. This includes local index/worktree changes, unpublished repairs, and repository pages that omit or truncate the selected diff. Resolve `<skill-root>` to the directory containing the loaded Skill's `SKILL.md`; the reviewed repository need not contain the helper. Export the retained UTF-8 before-and-after contents, then read the script's help for its batch schema and output contract:
 
 ```text
-python "<runtime>" --help
-python "<runtime>" ensure --help
-python "<runtime>" ensure
-python "<runtime>" create --help
-python "<runtime>" create --input "<batch.json>" --viewer auto
+python "<skill-root>/scripts/export_html_diff.py" --help
+python "<skill-root>/scripts/export_html_diff.py" --input "<batch.json>"
 ```
 
-Before generating this report's links, call `ensure` without `--quiet` and require its JSON `status` to be `ready`; a successful session Hook exit does not prove readiness. Automatic preparation initializes absent state on a supported desktop and preserves an explicit disable. This Skill never supplies `--enable`. A `disabled` or `skipped` status, malformed output, or command failure pauses the dependent report: state the actual cause and concrete remedy, such as explicitly re-enabling a disabled installation, using a supported desktop outside CI, restoring the runtime, or resolving the reported foreign-handler or damaged-record conflict. Preserve those conflicts for their owner to resolve. Do not claim readiness, fabricate a URL, or replace the required diff link with a source link.
+Use the real reported paths as titles and match each returned `id` and `title` to its file. The script captures raw bytes, renders all pages before returning links, and retains its mapping with the exports; use its returned `markdown`, which links directly to an absolute local HTML path. It chooses a unique directory under the platform's user cache and, before each new generation, removes its own exports that were successfully generated at least seven days earlier. HTML, raw snapshots, and mapping expire together; access does not extend their lifetime. Cleanup is opportunistic, so expired links become unavailable when a later generation removes them. Disclose this seven-day cache lifetime in reports using HTML links. This fallback needs no service, installation, protocol handler, or upload; do not publish repository changes merely to obtain a link. A missing script, failed cleanup, or failed export pauses the dependent report; retain its diagnostics, including any expired groups already removed, when resolving the failure.
 
-Build a JSON batch with one unique `id` per file/version, `action: "diff"`, the real reported path as `title`, and `before`/`after` paths to UTF-8 exports. Input paths resolve relative to the batch file. Use `null` for the absent side of an addition or deletion. `create` copies both sides into fixed snapshots; use the automatic viewer to prefer an existing VS Code window and fall back to the HTML comparison. Match each returned `id` and `action` to its real filename and preserve the returned `url`, `web_url`, and `markdown`. Use its actual Markdown or URL in the filename header; task IDs are not native URL tokens. The emitted native URL has the form `smartkit://diff/<token>`.
-
-Retain the link mapping with the review snapshot. Every new reviewed version needs newly generated links; preserve earlier snapshots so earlier reports still open their original comparison. Handler readiness, client acceptance of the scheme, and an opened editor are separate facts. When client support has not been tested, report it as unverified. If the client blocks the scheme, pause the dependent report and state the observed restriction and concrete client remedy; the emitted `web_url` can additionally expose the same fixed comparison. Claim a successful click or an opened VS Code Diff only when observed; generating a link or receiving a successful CLI exit does not establish either result.
+Retain the link mapping with the review snapshot. Each new reviewed version needs a newly verified repository URL or a new HTML export; unexpired earlier exports remain fixed. Local HTML is for the current computer, while repository links retain the site's access requirements. Verify that each returned HTML file exists and matches the intended comparison before reporting it. Claim that a link opened successfully only when observed; generation alone establishes neither client support nor a successful click. If the client prevents opening a local HTML file, report the observed restriction and the file's absolute path for opening in a browser.
 
 ## Explain each file through the problem it solves
 
 Keep all report emoji outside bold spans, preserving emphasis on their accompanying text. When emphasizing a word, phrase, identifier, or label, keep surrounding separators and terminal punctuation outside bold; deliberately emphasized complete sentences may retain their sentence punctuation. Preserve punctuation intrinsic to code, identifiers, and paths.
 
-Begin each file in the form `📄 **[path](diff-url)**`, using the actual generated diff link, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
+Begin each file in the form `📄 **[path](diff-destination)**`, using the verified repository diff URL or the script's returned local-file Markdown, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
 
 Divide the explanation into modifications by business problem or human-understood scenario. Start by keeping related changes together. Split only when they are logically independent or cannot be explained jointly with one simple example. Methods, diff hunks, and individual implementation steps do not by themselves justify separate modifications. For example, tracking pending work, refusing new work, and waiting before closing a resource can be one modification about safely finishing work on shutdown.
 
@@ -187,9 +184,9 @@ If a required interface is unavailable or a write or verification fails, pause w
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
-The `smartkit://diff/TOKEN_PLACEHOLDER_*` destinations below illustrate filename-link formatting only. Their token segments are placeholders, so these are not generated or usable links. Actual reports use the runtime's returned links.
+The absolute HTML paths below illustrate filename-link formatting only; they are placeholders rather than generated files. Actual reports use a verified repository diff URL or the export script's returned Markdown.
 
-📄 **[l10n/en.json](smartkit://diff/TOKEN_PLACEHOLDER_1)**
+📄 **[l10n/en.json](</absolute/review-export/files/0001/diff.html>)**
 
 This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
 
@@ -203,7 +200,7 @@ The label changes from “Delete” to “Delete account,” naming the affected
 
 ---
 
-📄 **[lib/item_storage.dart](smartkit://diff/TOKEN_PLACEHOLDER_2)**
+📄 **[lib/item_storage.dart](</absolute/review-export/files/0002/diff.html>)**
 
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting an item can still flush the deletion afterward.
 
@@ -234,7 +231,7 @@ Saving the box reference first lets the code flush that same box after deleting 
 
 ---
 
-📄 **[ui/save_button.dart](smartkit://diff/TOKEN_PLACEHOLDER_3)**
+📄 **[ui/save_button.dart](</absolute/review-export/files/0003/diff.html>)**
 
 This file handles the Save button. The change prevents repeated clicks from starting duplicate saves.
 

@@ -144,12 +144,6 @@ SmartKit configures or recommends the following tools. CodeGraph and Tokscale ar
 | [Tokscale](https://github.com/junhoyeo/tokscale) | Supplies token usage and estimated cost evidence for `diagnose-agent-session`. | Make `tokscale` available on PATH; available diagnostic data depends on the client and its recorded usage. |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Provides browser automation. | The plugin includes MCP configuration; the client uses `npx` to obtain and launch `@playwright/mcp`. Requires Node.js 18 or newer and `npx` on PATH. |
 
-## SmartKit links
-
-Open fixed local diffs and generated reports from Markdown links. SmartKit prepares this feature automatically when a supported desktop session starts.
-
-SmartKit links use the current user's protocol handler and snapshots on this computer; your client must allow `smartkit://` links. From the plugin directory, run `python runtime/deep-links/deep_links.py uninstall` to turn off automatic preparation, or `python runtime/deep-links/deep_links.py ensure --enable` to re-enable it. Command `--help` describes link creation and preview options.
-
 ## Install the plugin
 
 Install your preferred coding assistant and Python 3.8 or newer first, with `python` available on PATH for SmartKit Hooks and project setup. To use Playwright MCP, also install Node.js 18 or newer with `npx` on PATH. Then follow your assistant's instructions below.
