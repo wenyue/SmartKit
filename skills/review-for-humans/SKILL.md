@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Read-only review permits capturing the comparison and running the bundled exporter; keep the reviewed files and Git index unchanged until an authorized action below.
+Help a human reviewer understand a pull request or branch change: what changed, whether it is reasonable, whether its implementation is elegant and tasteful, and where their attention is needed. Use this Skill only when the user requests it. Review the selected scope read-only, then carry out only the effects authorized by the user's selected actions within the scope and verification rules below. Read-only review permits capturing the comparison, resolving existing Git objects, and running the shared diff-link command; keep the reviewed files and Git index unchanged until an authorized action below.
 
 Load the necessary Skills and Rules to perform the review.
 
@@ -45,28 +45,34 @@ Skip test files entirely: do not review them or count them toward progress or mo
 
 When scope, required guidance, or source evidence is unavailable, identify the missing input and its effect. Pause the dependent review rather than inventing facts, totals, or a completed assessment. A known file with incomplete evidence remains in the total; explain the gap in that file's report and use an insufficient-evidence evaluation where necessary.
 
-### Prepare fixed diff links
+### Prepare live diff links
 
-Every reported filename must link to the exact file and comparison explained in the report. For the local default, retain the index version and captured worktree version, preserving only their unstaged comparison even for a partially staged file. For a PR, use the pinned comparison evidence; for a branch, use the pinned merge-base and tip. Honor any explicitly selected comparison. Build links from that retained snapshot so later edits or commits cannot change the explained version.
+Every reported filename links to a diff for that path. Keep the fixed review evidence used for the report and later actions independently of what the display link currently shows. A local link always compares the actual review's fixed before content with the path's current on-disk worktree state; later edits may therefore differ from the judged snapshot. Supply the selected comparison's actual before commit, an already-known before blob, or genuine absence; do not substitute the latest index, `HEAD`, or a mutable branch name.
 
-Prefer an existing diff page on GitHub or another repository website when you can verify its fixed commit IDs, comparison semantics, displayed file, and before-and-after content against the snapshot. Use full commit IDs and a file anchor obtained from the actual page when needed; a URL containing two commit IDs alone does not establish the right comparison, because direct and merge-base comparisons can differ. Obtain the real file destination through an available authenticated interface or page inspection; never infer an anchor hash. A mutable PR page or a source-file page does not satisfy this fixed diff requirement. Keep the verified URL and its comparison evidence with the snapshot.
+For every PR review, the Agent must supply `head` and `github` in every diff batch entry, reusing the pinned PR head and GitHub diff URL obtained for the review. No separate page visit is required to reverify that URL; never invent a file anchor. Non-PR reviews may omit this PR context. If required PR context is unavailable, identify the missing prerequisite and pause the dependent report. GitHub is an accepted display exception and may show the remote PR version rather than local edits.
 
-When a suitable repository URL cannot be verified, export the retained UTF-8 before-and-after contents with this Skill's bundled `scripts/export_html_diff.py`. Resolve `<skill-root>` to the directory containing the loaded Skill's `SKILL.md`, independently of the reviewed repository or working directory. Read the exporter's help for its batch schema and output contract:
+Use the unified `local_web` tool supplied in `SmartKit plugin resources`, independently of the reviewed repository or cwd. Read its help for the batch schema and output contract:
 
 ```text
-python "<skill-root>/scripts/export_html_diff.py" --help
-python "<skill-root>/scripts/export_html_diff.py" --input "<batch.json>"
+python "<local_web>" --help
+python "<local_web>" diff --input "<batch.json>"
 ```
 
-Use the real reported paths as titles, match each returned `id` and `title` to its file, and use the returned `markdown` as the filename's HTTP diff link. The returned `path` is filesystem metadata, not a report link. Retain the link mapping with the review snapshot; each new reviewed version needs a newly verified repository URL or a new export. Do not publish repository changes merely to obtain a link.
+Pass the reported file and existing review context to the tool, using the repository worktree root as the `repo` lookup entry. For the local default, prepare links alongside the review snapshot using index mode, so the tool fixes the same index baseline used for the review, including partially staged files. Branch and PR comparisons use their actual fixed before commit or an already-known blob; a PR cannot use the mutable index. Supply a rename's old path as `base_path` when resolving an index or commit baseline. The CLI help owns the exact batch schema; `local_web` owns baseline resolution and URL encoding.
 
-If the exporter or delivery is unavailable or fails, pause the dependent report and preserve its diagnostics. Use the supported shared tool's help when refreshing a retained URL or troubleshooting delivery. Report observed navigation restrictions and claim that a link opened successfully only when observed.
+Use that same command even when no PR checkout is known. `local_web` searches and validates the current checkout and its existing linked worktrees against the supplied PR head, binds a single match automatically, offers a page to choose among multiple matches, and routes to the supplied GitHub URL when no match or usable local comparison exists. The Agent supplies context rather than enumerating, verifying, or selecting worktrees. Link preparation and display use existing Git data only; they do not fetch, clone, write Git objects, switch checkouts, create worktrees, or persist arbitrary before bytes.
+
+Match each returned `id` and `title` to its file and use the returned `markdown` for the filename link. The self-contained URL carries its comparison context without a signature, registration record, or link expiry. Once bound to a worktree, the link always compares its fixed baseline with that worktree's current on-disk path; subsequent edits or commits do not cause PR-head matching or rerouting. It does not back up the baseline: missing Git objects or an unavailable repository are errors, not empty content or permission to substitute a different baseline. Deletion in an existing worktree is an absent current side, and a rename needs a link for the new path.
+
+When a local comparison is available, opening the page tries VS Code first. Explicit unavailability or launch failure goes to GitHub when supplied, otherwise to HTML computed from the current local comparison. GitHub navigation stays in the current tab for both automatic fallback and manual links. After an editor request is dispatched, the page attempts to close itself; if browser policy blocks closing, it keeps the status and manual fallback controls. A normal CLI return does not prove the diff was displayed. The returned `html_url` requests HTML without attempting the editor. Diff URLs remain usable after service restart while the referenced worktree and Git object exist; ordinary preview artifact retention remains separate. Filename links need no fixed after snapshot, but report examples and review-action verification still do.
+
+If required link generation or display is unavailable, preserve diagnostics and pause the dependent report. The supplied GitHub diff URL can be used for an applicable PR. Use the unified tool's help for service recovery; report observed navigation restrictions and claim successful opening only when observed. Do not publish repository changes merely to obtain a link.
 
 ## Explain each file through the problem it solves
 
 Keep all report emoji outside bold spans, preserving emphasis on their accompanying text. When emphasizing a word, phrase, identifier, or label, keep surrounding separators and terminal punctuation outside bold; deliberately emphasized complete sentences may retain their sentence punctuation. Preserve punctuation intrinsic to code, identifiers, and paths.
 
-Begin each file in the form `📄 **[path](diff-destination)**`, using the verified repository diff URL or the script's returned HTTP Markdown, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
+Begin each file in the form `📄 **[path](diff-destination)**`, using the returned live diff Markdown or an applicable GitHub PR diff URL from the review context, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
 
 Divide the explanation into modifications by business problem or human-understood scenario. Start by keeping related changes together. Split only when they are logically independent or cannot be explained jointly with one simple example. Methods, diff hunks, and individual implementation steps do not by themselves justify separate modifications. For example, tracking pending work, refusing new work, and waiting before closing a resource can be one modification about safely finishing work on shutdown.
 
@@ -152,7 +158,7 @@ In the final group, label **pass** as **pass and finish**, **sync and continue**
 
 Apply the selected meaning even when it is absent from the menu, provided its prerequisites hold. If the user requests advancement while blocked, refuse it briefly, name the blockers, and ask for the relevant fix, ignore, or remedy; “continue” never means “ignore.” Never upgrade **pass** to a commit or push. Clarify ambiguous scopes, invalid IDs, conflicting directions, or a bare agreement following an ambiguous menu; “yes” authorizes an action only when the preceding question specifies it unambiguously. Reassess disputed findings from the supplied evidence rather than treating disagreement as ignoring. Answer questions without interpreting them as authorization for edits or advancement.
 
-For authorized repairs or optimizations, load the necessary guidance, limit edits to the selected findings or suggestions and their necessary supporting changes, and run required checks. Optimization preserves supported behavior and contracts. Whenever reviewed content changes, complete required checks successfully, refresh the snapshot and its diff links, and independently re-review every changed or affected previously reviewed part, including unexpected changes. Show complete file blocks with updated explanations and both judgments in dedicated replies separate from unseen files. Retain modification IDs and original group membership, count each displayed file once, explain the version transition, and update the file list and total only for actual scope changes. For unpublished PR changes, retain both the pinned remote version and the checked local content expected to be published. Mark findings repaired or suggestions completed only after re-review confirms the result.
+For authorized repairs or optimizations, load the necessary guidance, limit edits to the selected findings or suggestions and their necessary supporting changes, and run required checks. Optimization preserves supported behavior and contracts. Whenever reviewed content changes, complete required checks successfully, refresh the review snapshot and regenerate or revalidate its diff links, and independently re-review every changed or affected previously reviewed part, including unexpected changes. Show complete file blocks with updated explanations and both judgments in dedicated replies separate from unseen files. Retain modification IDs and original group membership, count each displayed file once, explain the version transition, and update the file list and total only for actual scope changes. For unpublished PR changes, retain both the pinned remote version and the checked local content expected to be published. Mark findings repaired or suggestions completed only after re-review confirms the result.
 
 A single **fix**, **ignore**, or **optimize** ends with the regenerated menu, not automatic advancement. An explicit compound request authorizes its ordered steps: for example, fix, check, display the dedicated re-review, synchronize, then advance. Continue already authorized steps without routine reconfirmation; a new finding, failed check, or material change pauses dependent steps and regenerates the menu. An independently authorized optimization can still proceed while findings are pending, but does not open the advancing gate.
 
@@ -184,9 +190,9 @@ If a required interface is unavailable or a write or verification fails, pause w
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
-The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use a verified repository diff URL or the export script's returned Markdown.
+The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use the shared tool's returned Markdown or an applicable GitHub PR diff URL from the review context.
 
-📄 **[l10n/en.json](http://127.0.0.1:43123/artifacts/review-example/0001/diff.html)**
+📄 **[l10n/en.json](http://127.0.0.1:47821/diff?repo=%2Fproject&path=l10n%2Fen.json&base=blob%3A1111111111111111111111111111111111111111)**
 
 This file supplies English interface text. The changed label makes clear that the action deletes the account; all translation changes in this file are reviewed together.
 
@@ -200,7 +206,7 @@ The label changes from “Delete” to “Delete account,” naming the affected
 
 ---
 
-📄 **[lib/item_storage.dart](http://127.0.0.1:43123/artifacts/review-example/0002/diff.html)**
+📄 **[lib/item_storage.dart](http://127.0.0.1:47821/diff?repo=%2Fproject&path=lib%2Fitem_storage.dart&base=blob%3A1111111111111111111111111111111111111111)**
 
 This file saves and deletes stored items. The change preserves the storage-box reference so deleting an item can still flush the deletion afterward.
 
@@ -231,7 +237,7 @@ Saving the box reference first lets the code flush that same box after deleting 
 
 ---
 
-📄 **[ui/save_button.dart](http://127.0.0.1:43123/artifacts/review-example/0003/diff.html)**
+📄 **[ui/save_button.dart](http://127.0.0.1:47821/diff?repo=%2Fproject&path=ui%2Fsave_button.dart&base=blob%3A1111111111111111111111111111111111111111)**
 
 This file handles the Save button. The change prevents repeated clicks from starting duplicate saves.
 

@@ -5,13 +5,26 @@ import html
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Mapping
+from typing import Dict, List, Mapping, Optional
 from urllib.parse import quote
 
-from web_store import project_records
+import hashlib
+import os
+from ..storage import user_cache_dir, safe_namespace, redirected, read_json, write_json
 
 
-SOURCE_ROOT = Path(__file__).resolve().parents[2]
+SOURCE_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_SCHEMA = "smartkit.preview-project/v1"
+
+def cache_dir() -> Path:
+    # Project observations are independently owned, not disposable preview data.
+    return user_cache_dir() / "smartkit/preview"
+
+def prepare_cache() -> Path:
+    base = user_cache_dir()
+    base.mkdir(mode=0o700, parents=True, exist_ok=True)
+    safe_namespace(cache_dir(), base)
+    return cache_dir()
 
 
 def hook_page_links(project: Path, harness: str, urls: Mapping[str, str]) -> Dict[str, str]:
@@ -23,9 +36,9 @@ def hook_page_links(project: Path, harness: str, urls: Mapping[str, str]) -> Dic
         observation = record.get("readiness")
         if observation is None or observation["status"] not in ("findings", "failed"):
             continue
-        selected["最近一次就绪检查详情"] = urls["readiness"]
+        selected["最近一次就绪检查详情"] = urls["readiness"].replace("/?", "/" + record["id"] + "?")
         if any(item["code"] == "setup-required" for item in observation["findings"]):
-            selected["项目设置与迁移状态"] = urls["setup"]
+            selected["项目设置与迁移状态"] = urls["setup"].replace("/?", "/" + record["id"] + "?")
     return selected
 
 
@@ -82,7 +95,7 @@ def application_data(feature: str, project_id: str = "") -> dict:
 def render_application(feature: str, key: str, data: dict) -> bytes:
     title = "项目就绪状态" if feature == "readiness" else "项目设置状态"
     access = "?key=" + quote(key, safe="")
-    nav = '<a href="/apps/readiness/' + access + '">就绪检查</a> · <a href="/apps/setup/' + access + '">项目设置</a>'
+    nav = '<a href="/readiness/' + access + '">就绪检查</a> · <a href="/setup/' + access + '">项目设置</a>'
     rows = []
     for project in data["projects"]:
         identity = html.escape(project["project"])
@@ -119,3 +132,65 @@ def render_application(feature: str, key: str, data: dict) -> bytes:
             '<style>body{font:15px system-ui;max-width:1100px;margin:30px auto;padding:0 20px;color:#202124}section{border:1px solid #ccd3db;border-radius:8px;padding:18px;margin:18px 0}h2{font-size:18px;overflow-wrap:anywhere}li{margin:10px 0}a{color:#245ec7}</style>'
             '<nav>' + nav + '</nav><h1>' + title + '</h1><p>只读视图。刷新仅重新读取记录，不运行检查、安装、修复或迁移。检查发现已显示不等于已修复；静态 MCP 就绪不等于运行健康。</p>'
             + ("".join(rows) or empty) + '</html>').encode("utf-8")
+
+
+def record_project(project: Path, harness: str, readiness: Optional[dict] = None) -> None:
+    """Persist the latest owner-produced observation, never acquire evidence here."""
+    if harness not in ("codex", "cursor", "copilot", "qoder"):
+        raise ValueError("unknown web service harness")
+    project = project.resolve(strict=True)
+    identity = hashlib.sha256(os.path.normcase(str(project)).encode("utf-8")).hexdigest()
+    root = prepare_cache() / "projects"
+    safe_namespace(root, user_cache_dir())
+    path = root / (identity + "-" + harness + ".json")
+    existing = None
+    if path.exists():
+        existing = read_json(path)
+        validate_project(existing, path.name)
+        if readiness is None:
+            return
+    record = {"schema": PROJECT_SCHEMA, "id": identity, "project": str(project), "harness": harness,
+              "observed_at": time.time(), "readiness": readiness if readiness is not None else (existing or {}).get("readiness")}
+    validate_project(record, path.name)
+    try:
+        write_json(path, record, create_only=readiness is None)
+    except FileExistsError:
+        if readiness is not None:
+            raise
+        validate_project(read_json(path), path.name)
+
+
+def validate_project(value: object, filename: str) -> None:
+    if (not isinstance(value, dict) or set(value) != {"schema", "id", "project", "harness", "observed_at", "readiness"}
+            or value.get("schema") != PROJECT_SCHEMA or not isinstance(value.get("project"), str)
+            or not Path(value["project"]).is_absolute() or value.get("harness") not in ("codex", "cursor", "copilot", "qoder")
+            or value.get("id") != hashlib.sha256(os.path.normcase(value["project"]).encode("utf-8")).hexdigest()
+            or filename != value["id"] + "-" + value["harness"] + ".json"
+            or type(value.get("observed_at")) not in (int, float) or not 0 < value["observed_at"] < 32503680000):
+        raise ValueError("invalid web service project record: " + filename)
+    observation = value["readiness"]
+    if observation is None:
+        return
+    if (not isinstance(observation, dict) or set(observation) != {"status", "captured_at", "message", "findings"}
+            or observation["status"] not in ("passed", "findings", "failed")
+            or type(observation["captured_at"]) not in (int, float) or not 0 < observation["captured_at"] < 32503680000
+            or not isinstance(observation["message"], str) or not isinstance(observation["findings"], list)):
+        raise ValueError("invalid readiness snapshot: " + filename)
+    for finding in observation["findings"]:
+        if (not isinstance(finding, dict) or set(finding) != {"code", "tool", "message", "guidance"}
+                or not all(isinstance(item, str) for item in finding.values())):
+            raise ValueError("invalid readiness finding: " + filename)
+
+
+def project_records() -> list:
+    root = cache_dir() / "projects"
+    if not root.exists():
+        return []
+    if redirected(root):
+        raise ValueError("project registry redirects")
+    records = []
+    for path in sorted(root.glob("*.json")):
+        value = read_json(path)
+        validate_project(value, path.name)
+        records.append(value)
+    return records

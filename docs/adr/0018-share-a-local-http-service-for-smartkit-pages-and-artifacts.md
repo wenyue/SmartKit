@@ -4,6 +4,8 @@ Status: Accepted
 
 Date: 2026-10-15
 
+The runtime layout, addressing, URL routes, human-review display behavior, and historical preview compatibility decisions below are superseded by [ADR 0019](0019-unify-local-hosting-and-open-live-review-diffs.md). Other ownership, preservation, and feature access boundaries remain applicable.
+
 Local HTML file links have opened as source in the current Codex client, and its file-reference labels have exposed Markdown escapes. Generating a correct HTML file therefore does not establish a usable rendered preview. Use one user-local SmartKit HTTP service for generated previews and future application pages, sharing lifecycle management instead of introducing a separate server for every Skill. Verified fixed repository diff URLs remain preferable for human reviews; the HTTP service supplies the local HTML fallback.
 
 ## Address and feature ownership
@@ -28,9 +30,9 @@ Keep rendering with its feature. In particular, the human-review diff exporter r
 
 The cache stores complete groups under the platform user cache's `smartkit/artifacts/` namespace. Creation accepts a retention duration, defaulting to seven days, and fixes `created_at` and `expires_at` after payload creation succeeds. All files are private by default. A producer may declare particular files eligible for publication, but they become available over HTTP only after explicit publication. Private-only caching starts no HTTP service. Public HTML, private raw snapshots, and internal mapping expire and are physically removed as one group. Access, publication, and URL refresh never renew the deadline.
 
-Core Workspace Policy supplies the default route for disposable temporary files without an overriding location or lifetime contract. An unspecified directory alone does not establish that a durable record may expire. Existing user, project, and Skill requirements for research, ADRs, lessons, prototype evidence, and earlier deletion of attempt-private material remain authoritative. Tools that already return a cached artifact or URL are not cached again.
+Core Artifact Policy supplies the default route for disposable temporary files without an overriding location or lifetime contract. An unspecified directory alone does not establish that a durable record may expire. Existing user, project, and Skill requirements for research, ADRs, lessons, prototype evidence, and earlier deletion of attempt-private material remain authoritative. Tools that already return a cached artifact or URL are not cached again.
 
-The supported full plugin distributes the cache and web entry points. Rule delivery supplies their actual installation paths independently of the target repository. Core policy points to their CLI help; business Skills retain only their feature invocation and special requirements. Command usage, parameters, outputs, and failure effects belong in CLI help. This ADR records design and trade-offs, rather than becoming a required input for recurring Skill execution. There is no shared runtime README or additional cache Skill.
+The supported full plugin distributes the cache and web entry points. Rule delivery supplies their actual installation paths independently of the target repository. Core Artifact Policy points to their CLI help; business Skills retain only their feature invocation and special requirements. Command usage, parameters, outputs, and failure effects belong in CLI help. This ADR records design and trade-offs, rather than becoming a required input for recurring Skill execution. There is no shared runtime README or additional cache Skill.
 
 For example, a future token-usage page can use `/apps/token-usage/` and `/api/token-usage/…`, with an exported fixed report under `/artifacts/<random-id>/…`. These names illustrate the routing model; they do not declare an existing dashboard or authorize broader session acquisition.
 

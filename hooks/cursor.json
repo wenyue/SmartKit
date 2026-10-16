@@ -12,7 +12,7 @@
       },
       {
         "name": "smartkit shared HTTP service",
-        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/web/dispatch.cmd\" hook --harness cursor"
+        "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/local_web/dispatch.cmd\" hook --harness cursor"
       }
     ],
     "preCompact": [

@@ -40,8 +40,7 @@ def context_for(root: Path) -> str:
         'Resource locations from this loaded installation (availability remains a prerequisite):\n\n'
         '```json\n' + json.dumps({
             'plugin_root': str(root.resolve()),
-            'artifact_cache': str((root / 'runtime/artifacts/artifact_cache.py').resolve()),
-            'web_service': str((root / 'runtime/web/web_service.py').resolve()),
+            'local_web': str((root / 'runtime/local_web/__main__.py').resolve()),
         }, ensure_ascii=True, indent=2) + '\n```',
     ]
     indexed: list[dict[str, str]] = []

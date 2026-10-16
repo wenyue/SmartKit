@@ -16,8 +16,8 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'runtime/artifacts'))
-import artifact_cache as cache
+sys.path.insert(0, str(ROOT / 'runtime'))
+from local_web import artifacts as cache
 
 
 class ArtifactCacheTests(unittest.TestCase):
@@ -176,7 +176,7 @@ class ArtifactCacheTests(unittest.TestCase):
         (source / 'raw.bin').write_bytes(b'\x00\xfffixed')
         batch = source / 'batch.json'
         batch.write_text(json.dumps({'files': {'raw/data.bin': 'raw.bin'}}))
-        result = subprocess.run([sys.executable, '-B', str(ROOT / 'runtime/artifacts/artifact_cache.py'),
+        result = subprocess.run([sys.executable, '-B', str(ROOT / 'runtime/local_web/__main__.py'),
                                  'create', '--input', str(batch), '--retention-seconds', '43200'],
                                 cwd=self.base, capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -226,7 +226,7 @@ class ArtifactCacheTests(unittest.TestCase):
         configured.symlink_to(target, target_is_directory=True)
         with patch.dict(os.environ, XDG_CACHE_HOME=str(configured)):
             artifact = cache.create_artifact({'x': b'fixed'})
-            self.assertEqual(self.group(artifact).parent, target / 'smartkit/artifacts')
+            self.assertEqual(self.group(artifact).parent, target / 'smartkit/local-web/artifacts')
         base = cache.user_cache_dir()
         base.mkdir(parents=True, exist_ok=True)
         (base / 'smartkit').symlink_to(target, target_is_directory=True)
@@ -248,53 +248,8 @@ class ArtifactCacheTests(unittest.TestCase):
         cache.cleanup_expired(time.time())
         self.assertTrue(self.group(future).exists())
 
-    def test_known_legacy_exports_keep_the_original_deadline_and_are_cleaned_by_any_producer(self):
-        identity = 'review-' + 'a' * 32
-        old = cache.user_cache_dir() / 'smartkit/review-for-humans' / identity
-        folder = old / 'files/0001'
-        folder.mkdir(parents=True)
-        page = folder / 'diff.html'
-        page.write_bytes(b'old html')
-        (folder / 'before.txt').write_bytes(b'old raw')
-        created = time.time()
-        metadata = {'schema': 'smartkit.review-html-cache/v2', 'directory': identity, 'created_at': created}
-        (old / 'files/cache.json').write_text(json.dumps(metadata))
-        url = 'http://127.0.0.1:43123/artifacts/' + identity + '/0001/diff.html'
-        manifest = [{'id': 'M1', 'title': 'x.py', 'path': str(page), 'url': url, 'markdown': '[x.py](' + url + ')'}]
-        (old / 'files/manifest.json').write_text(json.dumps(manifest))
-        original = (old / 'files/cache.json').read_bytes()
-        cache.cleanup_expired(created + 7 * 86400 - 0.1)
-        self.assertEqual((old / 'files/cache.json').read_bytes(), original)
-        with patch.object(cache.time, 'time', return_value=created + 7 * 86400):
-            cache.create_artifact({'diagram.svg': b'new producer'})
-        self.assertFalse(old.exists())
 
-    def test_foreign_import_cannot_supply_missing_legacy_reader(self):
-        legacy = cache.user_cache_dir() / 'smartkit/review-for-humans'
-        legacy.mkdir(parents=True)
-        fake = SimpleNamespace(__file__=str(self.base / 'other-plugin/legacy_review_cache.py'))
-        with patch.dict(sys.modules, legacy_review_cache=fake):
-            with self.assertRaisesRegex(OSError, 'not from the loaded plugin'):
-                cache.create_artifact({'x': b'blocked'})
-        self.assertEqual(list(legacy.iterdir()), [])
 
-    def test_cold_loaded_cache_resolves_its_legacy_reader_without_import_path_help(self):
-        legacy = cache.user_cache_dir() / 'smartkit/review-for-humans'
-        legacy.mkdir(parents=True)
-        program = '''import importlib.util, sys
-spec = importlib.util.spec_from_file_location("artifact_cache", sys.argv[1])
-module = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = module
-spec.loader.exec_module(module)
-print(module.create_artifact({"report.html": b"cold export"}).id)
-'''
-        result = subprocess.run([sys.executable, '-I', '-B', '-c', program,
-                                 str(ROOT / 'runtime/artifacts/artifact_cache.py')],
-                                cwd=self.base, text=True, capture_output=True, timeout=10)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        artifact = cache.load_artifact(result.stdout.strip())
-        self.assertEqual(cache.read_file(artifact.files['report.html']), b'cold export')
-        self.assertTrue(legacy.is_dir())
 
     @unittest.skipUnless(os.name == 'nt', 'requires native Windows junction support')
     def test_windows_namespace_junction_is_preserved_and_rejected(self):

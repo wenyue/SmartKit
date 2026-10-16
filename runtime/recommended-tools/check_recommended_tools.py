@@ -1734,10 +1734,10 @@ def record_readiness_snapshot(result: HookResult, harness: str) -> None:
     """Publish a complete observation; a skipped daily gate supplies no new evidence."""
     if not result.ran:
         return
-    web_scripts = Path(__file__).resolve().parents[1] / 'web'
+    web_scripts = Path(__file__).resolve().parents[1]
     if str(web_scripts) not in sys.path:
         sys.path.insert(0, str(web_scripts))
-    from web_store import record_project
+    from local_web.apps.status import record_project
 
     status = 'failed' if result.internal_error else 'findings' if result.findings else 'passed'
     observation = {

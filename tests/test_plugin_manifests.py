@@ -691,12 +691,12 @@ class PluginManifestTest(unittest.TestCase):
     def test_shared_http_session_hooks_use_plugin_owned_launchers(self):
         for harness in ('codex', 'cursor', 'copilot', 'qoder'):
             content = (REPO_ROOT / ('hooks/' + harness + '.json')).read_text()
-            self.assertIn('runtime/web/dispatch.', content.replace('\\\\', '/').replace('\\', '/'))
+            self.assertIn('runtime/local_web/dispatch.', content.replace('\\\\', '/').replace('\\', '/'))
             self.assertIn('hook --harness ' + harness, content)
             self.assertNotIn('register', content.lower())
         codex = load_json('hooks/codex.json')['hooks']['SessionStart']
-        self.assertTrue(any('fork' in group['matcher'] and any('runtime/web/' in handler['command'] for handler in group['hooks']) for group in codex))
-        launcher = REPO_ROOT / 'runtime/web/dispatch.cmd'
+        self.assertTrue(any('fork' in group['matcher'] and any('runtime/local_web/' in handler['command'] for handler in group['hooks']) for group in codex))
+        launcher = REPO_ROOT / 'runtime/local_web/dispatch.cmd'
         command = ['cmd.exe', '/d', '/c', str(launcher), '--help'] if os.name == 'nt' else ['sh', '-c', '"$1" --help', 'smartkit-web-test', str(launcher)]
         result = subprocess.run(command, capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)

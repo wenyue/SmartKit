@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$scriptPath = Join-Path $PSScriptRoot 'web_service.py'
+$scriptPath = Join-Path $PSScriptRoot '__main__.py'
 
 $resolved = Get-Command python -CommandType Application -ErrorAction SilentlyContinue |
     Select-Object -First 1

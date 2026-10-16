@@ -61,8 +61,7 @@ class PluginRuleContractTest(unittest.TestCase):
                                .split('```json\n', 1)[1].split('\n```', 1)[0])
         self.assertEqual(resources, {
             'plugin_root': str(root.resolve()),
-            'artifact_cache': str((root / 'runtime/artifacts/artifact_cache.py').resolve()),
-            'web_service': str((root / 'runtime/web/web_service.py').resolve()),
+            'local_web': str((root / 'runtime/local_web/__main__.py').resolve()),
         })
         self.assertNotIn('Strength', context)
         core_count = 0

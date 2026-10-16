@@ -20,13 +20,11 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENTRY = ROOT / 'runtime/web/web_service.py'
-spec = importlib.util.spec_from_file_location('smartkit_web_tests', ENTRY)
-web = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(web)
-import web_store as store
-import web_apps as apps
-import artifact_cache as artifacts
+ENTRY = ROOT / 'runtime/local_web/__main__.py'
+sys.path.insert(0, str(ROOT / 'runtime'))
+from local_web import service as web, artifacts, storage, http_server
+from local_web.apps import status as apps
+from local_web.apps import diff
 
 
 class WebServiceTests(unittest.TestCase):
@@ -50,11 +48,6 @@ class WebServiceTests(unittest.TestCase):
             self.environment.stop()
             self.temporary.cleanup()
 
-    def captured(self, name='diff.html', content=b'<!doctype html><title>fixed_diff</title>'):
-        path = store.user_cache_dir() / 'smartkit/review-for-humans/test' / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(content)
-        return path
 
     def request(self, url, headers=None):
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -70,7 +63,7 @@ class WebServiceTests(unittest.TestCase):
                                                'raw/before.txt': b'secret before'}, public_files=['0001/diff.html'])
         path = artifact.files['0001/diff.html'].path
         info = web.ensure_service()
-        candidate = info['origin'] + '/artifacts/' + artifact.id + '/0001/diff.html'
+        candidate = info['origin'] + '/preview/' + artifact.id + '/0001/diff.html'
         self.assertEqual(self.request(candidate)[0], 404)
         urls = web.publish_artifact(artifact.id)
         url = urls['0001/diff.html']
@@ -82,7 +75,7 @@ class WebServiceTests(unittest.TestCase):
         self.assertIn("connect-src 'none'", headers['Content-Security-Policy'])
         self.assertNotIn('allow-same-origin', headers['Content-Security-Policy'])
         self.assertIsNone(headers.get('Access-Control-Allow-Origin'))
-        self.assertEqual(self.request(info['origin'] + '/artifacts/' + artifact.id + '/raw/before.txt')[0], 404)
+        self.assertEqual(self.request(info['origin'] + '/preview/' + artifact.id + '/raw/before.txt')[0], 404)
         self.assertEqual(self.request(url.replace('diff.html', '%2e%2e/service.json'))[0], 404)
         self.assertEqual(self.request(url, {'Host': 'attacker.example'})[0], 403)
         self.assertEqual(self.request(url, {'Origin': 'https://attacker.example'})[0], 403)
@@ -119,8 +112,8 @@ class WebServiceTests(unittest.TestCase):
         self.assertFalse(old.files['private.txt'].path.exists())
 
     def test_running_service_triggers_periodic_cleanup_without_a_request(self):
-        store.prepare_state()
-        state = {'schema': web.SERVICE_SCHEMA, 'port': 0, 'key': 'a' * 64, 'mode': 'applications', 'pid': 0}
+        storage.prepare_state()
+        state = {'schema': web.SERVICE_SCHEMA, 'port': 47821, 'key': 'a' * 64, 'mode': 'applications', 'pid': 0}
         ticks = [0]
         calls = [0]
         handlers = {}
@@ -134,10 +127,10 @@ class WebServiceTests(unittest.TestCase):
         server = SimpleNamespace(server_port=43123, handle_request=idle)
         manager = MagicMock()
         manager.__enter__.return_value = server
-        logger = web.logging.getLogger('smartkit.web')
+        logger = web.logging.getLogger('smartkit.local_web')
         before = set(logger.handlers)
         try:
-            with patch.object(web, 'WebServer', return_value=manager), patch.object(web, 'load_state', return_value=state), patch.object(web, 'write_json'), patch.object(web.time, 'monotonic', side_effect=lambda: ticks[0]), patch.object(web.signal, 'signal', side_effect=lambda number, handler: handlers.update({number: handler})), patch.object(web, 'cleanup_artifacts') as cleanup:
+            with patch.object(http_server, 'WebServer', return_value=manager), patch.object(web, 'load_state', return_value=state), patch.object(web, 'write_json'), patch.object(web.time, 'monotonic', side_effect=lambda: ticks[0]), patch.object(web.signal, 'signal', side_effect=lambda number, handler: handlers.update({number: handler})), patch.object(web, 'cleanup_artifacts') as cleanup:
                 web.serve()
             cleanup.assert_called_once_with()
         finally:
@@ -151,7 +144,7 @@ class WebServiceTests(unittest.TestCase):
                                      'message': 'migration needed', 'guidance': 'Run setup'}]}
         for harness in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(harness=harness):
-                store.record_project(self.project, harness, observation)
+                apps.record_project(self.project, harness, observation)
                 result = subprocess.run([sys.executable, '-B', str(ENTRY), 'hook', '--harness', harness],
                                         input=json.dumps({'cwd': str(self.project)}), capture_output=True, text=True, timeout=15)
                 self.assertEqual(result.returncode, 0, result.stderr)
@@ -161,11 +154,11 @@ class WebServiceTests(unittest.TestCase):
                 else:
                     context = payload['additional_context' if harness == 'cursor' else 'additionalContext']
                 info = web.ensure_service()
-                self.assertIn(info['apps']['readiness'], context)
-                self.assertIn(info['apps']['setup'], context)
+                self.assertIn(info['apps']['readiness'].split('/?')[0], context)
+                self.assertIn(info['apps']['setup'].split('/?')[0], context)
                 self.assertNotIn('apply --harness', context)
         clean = dict(observation, status='passed', findings=[])
-        store.record_project(self.project, 'codex', clean)
+        apps.record_project(self.project, 'codex', clean)
         self.assertEqual(apps.hook_page_links(self.project, 'codex', web.ensure_service()['apps']), {})
 
     def test_reuse_detached_hook_and_restart_return_current_origin(self):
@@ -177,46 +170,35 @@ class WebServiceTests(unittest.TestCase):
         first_key = web.load_state()['key']
         cached = artifacts.create_artifact({'diff.html': b'fixed'}, public_files=['diff.html'])
         artifact = web.publish_artifact(cached.id)['diff.html']
+        subprocess.run(['git', '-C', str(self.project), 'init'], capture_output=True, check=True)
+        sample = self.project / 'live.py'
+        sample.write_bytes(b'baseline\n')
+        subprocess.run(['git', '-C', str(self.project), 'add', 'live.py'], capture_output=True, check=True)
+        baseline = subprocess.run(['git', '-C', str(self.project), 'rev-parse', ':live.py'], capture_output=True, check=True).stdout.decode().strip()
+        live_url = diff.Target(self.project, 'live.py', 'blob:' + baseline).url(html_only=True)
+        sample.write_bytes(b'before restart\n')
+        self.assertEqual(self.request(live_url)[0], 200)
         self.assertEqual(web.ensure_service()['pid'], first['pid'])
         self.assertEqual(self.request(first['apps']['setup'])[0], 200)
         self.assertEqual(self.request(artifact)[0], 200)
         self.assertTrue(web.stop_service())
         second = web.ensure_service()
+        self.assertEqual(second['origin'], first['origin'])
+        sample.write_bytes(b'after restart\n')
+        code, _, live_content = self.request(live_url)
+        self.assertEqual(code, 200)
+        self.assertIn(b'baseline', live_content)
+        self.assertIn(b'after&nbsp;restart', live_content)
         self.assertNotEqual(second['pid'], first['pid'])
         self.assertNotEqual(web.load_state()['key'], first_key)
         self.assertEqual(self.request(second['apps']['setup'])[0], 200)
-        self.assertTrue(second['apps']['setup'].startswith(second['origin'] + '/apps/setup/'))
+        self.assertTrue(second['apps']['setup'].startswith(second['origin'] + '/setup/'))
         refreshed_artifact = second['origin'] + urlsplit(artifact).path
         self.assertEqual(self.request(refreshed_artifact)[0], 200)
         result = subprocess.run([sys.executable, '-B', str(ENTRY), 'status'], text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['service']['origin'], second['origin'])
 
-    def test_older_authenticated_service_is_recognized_but_replaced_for_new_cache(self):
-        first = web.ensure_service()
-        previous = dict(web.load_state())
-        old_health = {'schema': web.SERVICE_SCHEMA, 'pid': first['pid'], 'mode': first['mode']}
-        opener = MagicMock()
-        opener.open.return_value.__enter__.return_value.read.return_value = json.dumps(old_health).encode('utf-8')
-        with patch.object(web.urllib.request, 'build_opener', return_value=opener):
-            self.assertEqual(web.health(previous), old_health)
-
-        actual_health = web.health
-
-        def without_new_capability(state):
-            observed = actual_health(state)
-            if observed and observed['pid'] == first['pid']:
-                observed.pop('artifact_cache_schema', None)
-            return observed
-
-        with patch.object(web, 'health', side_effect=without_new_capability):
-            current = web.ensure_service()
-        self.assertNotEqual(current['pid'], first['pid'])
-        self.assertEqual(web.health(web.load_state())['artifact_cache_schema'], artifacts.SCHEMA)
-        deadline = time.monotonic() + 4
-        while actual_health(previous) and time.monotonic() < deadline:
-            time.sleep(0.05)
-        self.assertIsNone(actual_health(previous))
 
     def test_preview_only_process_exits_without_remaining_artifacts(self):
         info = web.ensure_service('previews')
@@ -253,29 +235,28 @@ class WebServiceTests(unittest.TestCase):
             time.sleep(0.05)
             self.assertEqual(web.ensure_service()['pid'], info['pid'])
 
-    def test_occupied_last_known_port_does_not_block_new_start_or_stop_its_owner(self):
-        info = web.ensure_service()
+
+    def test_fixed_port_conflict_preserves_state_and_unknown_process(self):
+        web.ensure_service()
         web.stop_service()
-        state_file = store.state_dir() / 'service.json'
+        state_file = storage.state_dir() / 'service.json'
         original = state_file.read_bytes()
         with socket.socket() as other:
             if os.name != 'nt':
                 other.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            other.bind(('127.0.0.1', int(info['origin'].rsplit(':', 1)[1])))
+            other.bind(('127.0.0.1', 47821))
             other.listen()
             with self.assertRaisesRegex(OSError, 'unverified'):
+                web.ensure_service()
+            with self.assertRaisesRegex(OSError, 'unverified'):
                 web.stop_service()
+            self.assertEqual(other.getsockname()[1], 47821)
             self.assertEqual(state_file.read_bytes(), original)
-            second = web.ensure_service()
-            self.assertNotEqual(second['origin'], info['origin'])
-            self.assertEqual(self.request(second['apps']['setup'])[0], 200)
-            self.assertEqual(other.getsockname()[1], int(info['origin'].rsplit(':', 1)[1]))
-            self.assertEqual(web.ensure_service()['pid'], second['pid'])
 
     def test_invalid_state_is_preserved_instead_of_replaced(self):
         web.ensure_service()
         web.stop_service()
-        state_file = store.state_dir() / 'service.json'
+        state_file = storage.state_dir() / 'service.json'
         original = state_file.read_bytes()
         state_file.write_bytes(b'{invalid state')
         try:
@@ -300,28 +281,16 @@ class WebServiceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 web.publish_artifact(artifact.id)
 
-    def test_previously_delivered_records_keep_their_original_content_and_deadline(self):
-        path = self.captured()
-        identity = 'review-' + 'a' * 32
-        created = time.time() - 6 * 24 * 60 * 60
-        record = {'schema': store.ARTIFACT_SCHEMA, 'id': identity, 'created_at': created,
-                  'files': {'0001/diff.html': {'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}}}
-        (store.artifact_dir() / (identity + '.json')).write_text(json.dumps(record))
-        info = web.ensure_service()
-        url = info['origin'] + '/artifacts/' + identity + '/0001/diff.html'
-        self.assertEqual(self.request(url)[2], path.read_bytes())
-        self.assertEqual(store.load_artifact(identity)['created_at'], created)
-        self.assertTrue(path.exists())
 
     def test_readiness_and_setup_are_read_only_and_missing_evidence_is_explicit(self):
-        store.record_project(self.project, 'codex')
+        apps.record_project(self.project, 'codex')
         self.assertEqual(apps.application_data('readiness')['projects'][0]['readiness']['status'], 'unavailable')
         observation = {'status': 'findings', 'captured_at': time.time(), 'message': '',
                        'findings': [{'code': 'test', 'tool': 'test <tool>', 'message': 'needs work', 'guidance': 'ask owner'}]}
-        store.record_project(self.project, 'codex', observation)
-        store.record_project(self.project, 'codex')
+        apps.record_project(self.project, 'codex', observation)
+        apps.record_project(self.project, 'codex')
         info = web.ensure_service()
-        before = {str(path): path.read_bytes() for root in (self.project, store.cache_dir()) for path in root.rglob('*') if path.is_file()}
+        before = {str(path): path.read_bytes() for root in (self.project, apps.cache_dir()) for path in root.rglob('*') if path.is_file()}
         for _ in range(2):
             code, _, body = self.request(info['apps']['readiness'])
             self.assertEqual(code, 200)
@@ -331,7 +300,7 @@ class WebServiceTests(unittest.TestCase):
             code, _, body = self.request(info['apps']['setup'])
             self.assertEqual(code, 200)
             self.assertIn('尚未初始化'.encode(), body)
-        after = {str(path): path.read_bytes() for root in (self.project, store.cache_dir()) for path in root.rglob('*') if path.is_file()}
+        after = {str(path): path.read_bytes() for root in (self.project, apps.cache_dir()) for path in root.rglob('*') if path.is_file()}
         self.assertEqual(before, after)
         self.assertEqual(apps.application_data('readiness')['projects'][0]['readiness'], observation)
         state = web.load_state()
@@ -356,14 +325,14 @@ class WebServiceTests(unittest.TestCase):
         finding = checker.Finding('missing', 'tool', 'needs work', 'ask owner', action={'private': 'never expose'})
         with patch.object(checker, 'resolve_project_root', return_value=self.project):
             checker.record_readiness_snapshot(checker.HookResult(True, (finding,)), 'codex')
-            original = store.project_records()[0]['readiness']
+            original = apps.project_records()[0]['readiness']
             checker.record_readiness_snapshot(checker.HookResult(False), 'codex')
-            self.assertEqual(store.project_records()[0]['readiness'], original)
+            self.assertEqual(apps.project_records()[0]['readiness'], original)
             self.assertNotIn('action', original['findings'][0])
             checker.record_readiness_snapshot(checker.HookResult(True, internal_error=True), 'codex')
-            self.assertEqual(store.project_records()[0]['readiness']['status'], 'failed')
+            self.assertEqual(apps.project_records()[0]['readiness']['status'], 'failed')
             checker.record_readiness_snapshot(checker.HookResult(True), 'codex')
-            self.assertEqual(store.project_records()[0]['readiness']['status'], 'passed')
+            self.assertEqual(apps.project_records()[0]['readiness']['status'], 'passed')
 
 
 if __name__ == '__main__':

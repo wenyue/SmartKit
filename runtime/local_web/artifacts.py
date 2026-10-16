@@ -7,14 +7,12 @@ effects; failed publication never rolls back already completed cache creation.
 """
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import math
 import os
 import re
 import shutil
-import stat
 import sys
 import tempfile
 import time
@@ -24,8 +22,10 @@ from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Dict, Mapping, Optional, Sequence, Tuple
 
+from .storage import redirected, user_cache_dir, cache_dir, prepare_cache
 
-SCHEMA = "smartkit.cached-artifact/v1"
+
+SCHEMA = "smartkit.local-artifact/v1"
 DEFAULT_RETENTION = timedelta(days=7)
 ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,79}")
 METADATA_NAME = ".artifact.json"
@@ -47,26 +47,8 @@ class CachedArtifact:
     published: bool
 
 
-def user_cache_dir() -> Path:
-    if sys.platform == "darwin":
-        return Path.home() / "Library/Caches"
-    windows = sys.platform == "win32"
-    configured = Path(os.environ.get("LOCALAPPDATA" if windows else "XDG_CACHE_HOME", ""))
-    fallback = Path.home() / ("AppData/Local" if windows else ".cache")
-    return (configured if configured.is_absolute() else fallback).resolve()
-
-
 def cache_root() -> Path:
-    return user_cache_dir() / "smartkit/artifacts"
-
-
-def redirected(path: Path) -> bool:
-    try:
-        information = path.lstat()
-    except FileNotFoundError:
-        return False
-    return stat.S_ISLNK(information.st_mode) or bool(
-        getattr(information, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+    return cache_dir() / "artifacts"
 
 
 def checked_path(path: Path) -> Path:
@@ -110,10 +92,8 @@ def _number(value: object) -> bool:
 
 
 def _prepare_root() -> Path:
-    base = user_cache_dir()
-    base.mkdir(mode=0o700, parents=True, exist_ok=True)
+    prepare_cache()
     root = checked_path(cache_root())
-    root.parent.mkdir(mode=0o700, exist_ok=True)
     root.mkdir(mode=0o700, exist_ok=True)
     return root
 
@@ -216,20 +196,6 @@ def cleanup_expired(now: Optional[float] = None) -> None:
                 raise OSError("expired cache cleanup failed at %s; some files may already be deleted: %s"
                               % (group, error)) from error
             print("Expired cache removed: " + str(group), file=sys.stderr)
-    legacy = checked_path(user_cache_dir() / "smartkit/review-for-humans")
-    if legacy.exists():
-        try:
-            source = Path(__file__).resolve().with_name("legacy_review_cache.py")
-            if not source.is_file():
-                raise ImportError("legacy cache reader unavailable: " + str(source))
-            if str(source.parent) not in sys.path:
-                sys.path.insert(0, str(source.parent))
-            import legacy_review_cache
-            if Path(legacy_review_cache.__file__).resolve() != source:
-                raise ImportError("legacy cache reader is not from the loaded plugin: " + str(source))
-        except ImportError as error:
-            raise OSError("shared cache legacy reader unavailable: " + str(error)) from error
-        legacy_review_cache.cleanup_expired(legacy, moment)
 
 
 def create_artifact(files: Mapping[str, bytes], *, public_files: Sequence[str] = (),
@@ -333,67 +299,3 @@ def has_unexpired_artifacts(now: float) -> bool:
         if artifact is not None and artifact.published and artifact.expires_at > now:
             return True
     return False
-
-
-def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Store disposable artifact groups privately, with a fixed per-group expiry.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''Create input JSON: {"files":{"report.html":"captured.html","raw/before.txt":"before.txt"},"public":["report.html"]}
-Source paths resolve relative to the JSON file. All bytes are captured before cleanup.
-Omit public or use [] for private-only storage. Declaring public files makes them
-eligible for explicit HTTP publication; creation alone starts no server and returns no URL.
-Default retention is seven days; --retention-seconds accepts any positive finite duration.
-Creation returns id, created_at, expires_at and absolute file paths. Access and URL
-refresh never renew expiry. Before creation, recognized expired groups are deleted
-including private files. Unknown, altered or redirected groups are preserved.
-Cleanup failures stop creation; completed removals remain effective. HTTP publication
-failures leave the completed cache group intact. Design rationale lives in the ADR;
-the CLI help is sufficient for operation. Python3.8+ and the full plugin are required.
-
-Examples (<plugin-root> is the actually loaded SmartKit installation):
-  python "<plugin-root>/runtime/artifacts/artifact_cache.py" create --input batch.json
-  python "<plugin-root>/runtime/artifacts/artifact_cache.py" create --input batch.json --retention-seconds 43200
-  python "<plugin-root>/runtime/artifacts/artifact_cache.py" cleanup
-''')
-    commands = parser.add_subparsers(dest="command", required=True)
-    create = commands.add_parser("create", help="Capture a complete private or publishable artifact group.")
-    create.add_argument("--input", type=Path, required=True)
-    create.add_argument("--retention-seconds", type=float, default=DEFAULT_RETENTION.total_seconds())
-    commands.add_parser("cleanup", help="Remove positively owned expired groups; preserve unknown data.")
-    args = parser.parse_args(argv)
-    try:
-        if args.command == "cleanup":
-            cleanup_expired()
-            print(json.dumps({"cleaned": True}))
-            return 0
-        source = args.input.resolve(strict=True)
-        value = json.loads(source.read_bytes().decode("utf-8"), object_pairs_hook=_unique_object)
-        if (not isinstance(value, dict) or set(value) - {"files", "public"}
-                or not isinstance(value.get("files"), dict) or not value["files"]
-                or not isinstance(value.get("public", []), list)
-                or not all(isinstance(name, str) for name in value.get("public", []))):
-            raise ValueError("input needs files mapping and an optional public filename list")
-        captured = {}
-        for name, location in value["files"].items():
-            filename(name)
-            if not isinstance(location, str) or not location:
-                raise ValueError("input file locations must be nonempty paths")
-            path = (source.parent / location).resolve(strict=True)
-            if not path.is_file():
-                raise ValueError("input is not a regular file: " + str(path))
-            captured[name] = path.read_bytes()
-        if not _number(args.retention_seconds):
-            raise ValueError("retention seconds must be finite and positive")
-        artifact = create_artifact(captured, public_files=value.get("public", []),
-                                   retention=timedelta(seconds=args.retention_seconds))
-        print(json.dumps({"id": artifact.id, "created_at": artifact.created_at, "expires_at": artifact.expires_at,
-                          "files": {name: {"path": str(entry.path), "public": entry.public}
-                                    for name, entry in artifact.files.items()}}, ensure_ascii=True))
-        return 0
-    except (OSError, ValueError, OverflowError) as error:
-        parser.exit(2, "error: " + str(error) + "\n")
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
