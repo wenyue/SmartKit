@@ -94,10 +94,8 @@ def links(batch: object) -> List[Dict[str, str]]:
         if len(resolution.targets) == 1:
             target = resolution.targets[0]
         label = re.sub(r"([\\`*\[\]])", r"\\\1", html.escape(title, quote=False)).replace("_", "&#95;")
-        result = {"id": identity, "title": title, "url": target.url(), "html_url": target.url(html_only=True),
+        result = {"id": identity, "title": title, "url": target.url(),
                   "markdown": "[" + label + "](" + target.url() + ")"}
-        if target.github:
-            result["github_url"] = target.github
         results.append(result)
     from ..service import ensure_service
     ensure_service()

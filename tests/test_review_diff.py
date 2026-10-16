@@ -232,7 +232,7 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
         self.assertEqual(diff.read_comparison(targets[0]).before, b"baseline\n")
         self.assertIsNone(diff.read_comparison(targets[1]).before)
         self.assertEqual(diff.read_comparison(targets[1]).after, b"new file\n")
-        self.assertTrue(all("github_url" not in result for result in results))
+        self.assertTrue(all(set(result) == {"id", "title", "url", "markdown"} for result in results))
 
     def test_per_file_baseline_without_a_batch_default(self):
         batch = self.batch(self.entry(base="blob:" + self.oid))
@@ -266,15 +266,16 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
         with patch.object(service, "ensure_service"):
             results = diff.links(batch)
         url = "https://github.com/Owner/Repo.Name/pull/507/files"
-        self.assertEqual([result["github_url"] for result in results], [
+        expected = [
             url + "#diff-0d3dd6727fedba508a77015e633b5790ffccb390ffb6a760dc2dfc774e1284ec",
             url + "#diff-observedR12-R18",
-        ])
-        for result in results:
+        ]
+        for result, github in zip(results, expected):
             target = diff.target_from_query(result["url"].split("?", 1)[1])
-            self.assertEqual(target.github, result["github_url"])
+            self.assertEqual(set(result), {"id", "title", "url", "markdown"})
+            self.assertEqual(target.github, github)
             self.assertEqual(target.head, pr["head"])
-            self.assertEqual(diff.render_page(target).redirect, result["github_url"])
+            self.assertEqual(diff.render_page(target).redirect, github)
 
     def test_default_pr_anchors_match_observed_github_file_fragments(self):
         entries = [
@@ -283,7 +284,8 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
         ]
         with patch.object(service, "ensure_service"):
             results = diff.links(self.batch(*entries, pr={"repository": "wenyue/OtakuRoom", "number": 507, "head": "f" * 40}))
-        self.assertEqual([result["github_url"] for result in results], [
+        targets = [diff.target_from_query(urllib.parse.urlsplit(result["url"]).query) for result in results]
+        self.assertEqual([target.github for target in targets], [
             "https://github.com/wenyue/OtakuRoom/pull/507/files#diff-e7af03f197ac95de06e34b0d00ba3b824ac4af11e8615d30743d2e889a028633",
             "https://github.com/wenyue/OtakuRoom/pull/507/files#diff-1aa4adc2dd7fb91113f483b1d7ac500edb453475dcfd261acfa04632dc5f0cfa",
         ])
@@ -324,13 +326,14 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
         with patch("sys.stdin", io.StringIO(json.dumps(batch))), patch("sys.stdout", output), patch.object(service, "ensure_service"):
             status = cli.main(["diff", "--input", "-"])
         self.assertEqual(status, 0)
-        self.assertEqual(json.loads(output.getvalue())[0]["github_url"],
+        result = json.loads(output.getvalue())[0]
+        self.assertEqual(set(result), {"id", "title", "url", "markdown"})
+        self.assertEqual(urllib.parse.urlsplit(result["url"]).netloc, "127.0.0.1:47821")
+        self.assertEqual(urllib.parse.urlsplit(result["url"]).path, "/diff")
+        self.assertTrue(result["markdown"].endswith("](" + result["url"] + ")"))
+        target = diff.target_from_query(urllib.parse.urlsplit(result["url"]).query)
+        self.assertEqual(target.github,
                          "https://github.com/o/r/pull/507/files#diff-0d3dd6727fedba508a77015e633b5790ffccb390ffb6a760dc2dfc774e1284ec")
-
-    def test_issued_url_protocol_remains_readable(self):
-        target = replace(self.target, github="https://github.com/o/r/pull/507/files#diff-observed")
-        self.assertEqual(diff.target_from_query(target.query()), target)
-        self.assertEqual(urllib.parse.parse_qs(target.query())["github"], [target.github])
 
 
 class PrDiffTests(DiffFixture, unittest.TestCase):

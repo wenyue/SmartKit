@@ -1,5 +1,5 @@
 interface:
-  display_name: "Write Setup Authoring Blueprints"
+  display_name: "Write Project Authoring Blueprints"
   short_description: "为未来项目规则或技能编写蓝图，明确项目证据与创作要求。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

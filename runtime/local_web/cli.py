@@ -70,10 +70,11 @@ It never fetches, checks out, clones, or creates worktrees. Bound URLs keep the
 selected worktree even after later edits/commits; they do not reselect by head.
 Unresolved PR URLs retain the context for selection/fallback on opening.
 Validate the entire batch before starting the service.
-Output: per-file id, title, url, html_url, markdown, plus github_url for PRs.
-Use the returned links; url/markdown keep editor-first opening, html_url requests
-local HTML, and github_url opens GitHub directly. Existing issued URL parameters
-remain readable; the former per-file input array is replaced by this batch object.
+Output: per-file id, title, url, markdown. url and markdown identify the same
+localhost /diff entry. Use that entry for every filename link; local_web owns
+VS Code detection and GitHub/HTML fallback when the browser opens it.
+Alternate viewer destinations remain inside local_web's pages and responses.
+No legacy localhost-link formats or alternative output fields are maintained.
 No registration, URL signature, baseline backup, Git write or seven-day link
 expiry is created.
 The URL compares the fixed blob with the current on-disk path; deletion is an

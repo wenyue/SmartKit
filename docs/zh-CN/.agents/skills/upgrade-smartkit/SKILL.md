@@ -31,7 +31,9 @@ description: 推进本仓库的 SmartKit 发布版本，并评估这些改动是
 
 修改迁移记录前，读取 [setup 迁移指引](../../../skills/setup-project-agents/references/migrations.md) 和 [迁移目录](../../../setup-assets/catalog/migrations.json)。指引说明适用条件，以及如何在 `skills/setup-project-agents/references/migrations/` 下查找独立的版本指引；目录记录每次必要迁移的发布版本和指引文件。确定迁移动作前，读取每份适用的版本指引。
 
-需要迁移时，将目标版本声明和一份 `skills/setup-project-agents/references/migrations/<version>.md` 文件作为一项完整改动添加。声明的 `guide` 为 `references/migrations/<version>.md`；迁移说明保留在该文件中，不在总览中添加版本条目。文件应简短，说明主要变化，以及受影响项目需要做什么。只有影响升级成功时，才写入前置条件、执行顺序限制或手动修改源文件的要求。动作应足够具体，让 setup 能执行，或能指出缺少哪项项目决策；仅有变更日志不够。
+需要迁移时，将目标版本声明和一份 `skills/setup-project-agents/references/migrations/<version>.md` 文件作为一项完整改动添加。声明的 `guide` 为 `references/migrations/<version>.md`；迁移说明保留在该文件中，不在总览中添加版本条目。
+
+为负责升级受影响项目的 Agent 编写简短指引。仅写入会影响其升级判断或必需操作的变化：指出受影响的项目状态、必须改变的内容，以及如何确认完成。只有影响升级成功时，才写入前置条件、执行顺序限制或手动修改源文件的要求。省略仅涉及内部的变化，以及无需该 Agent 留意的变化。对于 setup 或被调用写作器已提供的执行细节，应引用其所属指引。动作应足够具体，让 setup 能执行，或能指出缺少哪项项目决策；仅有变更日志不够。
 
 保留必要迁移的历史，让跳过多个版本的项目能通过一次 setup 满足全部适用要求。编写新条目时，读取之前适用的条目；说明依赖关系或已被替代的动作，使项目不必逐个安装中间插件版本。保持已发布迁移的标识稳定。修改现有目标版本条目前，先确认它属于同一个尚未发布的版本；如与已发布条目冲突，应作为发布决策处理，不能悄悄替换。
 
