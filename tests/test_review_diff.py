@@ -1,5 +1,6 @@
 """Exercise live Git comparisons without link registrations or baseline writes."""
 import json
+import io
 import os
 from dataclasses import replace
 from pathlib import Path
@@ -16,7 +17,7 @@ from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
-from local_web import ORIGIN, HOST, PORT, artifacts, http_server, service, storage
+from local_web import ORIGIN, HOST, PORT, artifacts, cli, http_server, service, storage
 from local_web.apps import diff
 
 
@@ -48,13 +49,16 @@ class DiffFixture:
         return result.stdout
 
     def entry(self, **extra):
-        return dict({"id": "M1", "title": self.name, "repo": str(self.repo), "path": self.name,
-                     "base": "blob:" + self.oid}, **extra)
+        return dict({"id": "M1", "path": self.name}, **extra)
+
+    def batch(self, *entries, **extra):
+        return dict({"repo": str(self.repo), "base": "blob:" + self.oid,
+                     "files": list(entries) if entries else [self.entry()]}, **extra)
 
 class DiffTests(DiffFixture, unittest.TestCase):
     def test_index_context_is_resolved_once_without_mutable_url_state(self):
         with patch.object(service, "ensure_service"):
-            result = diff.links([self.entry(base="index")])[0]
+            result = diff.links(self.batch(base="index"))[0]
         target = diff.target_from_query(result["url"].split("?", 1)[1])
         self.assertEqual(target.base, "blob:" + self.oid)
         self.file.write_bytes(b"later index\n")
@@ -66,7 +70,7 @@ class DiffTests(DiffFixture, unittest.TestCase):
     def test_live_after_and_fixed_index_blob_without_link_storage(self):
         index_before = self.run_git("ls-files", "--stage")
         with patch.object(service, "ensure_service") as ensure:
-            links = diff.links([self.entry()])
+            links = diff.links(self.batch())
         ensure.assert_called_once_with()
         self.assertNotIn("sig=", links[0]["url"])
         self.assertNotIn("expires", links[0]["url"])
@@ -125,7 +129,7 @@ class DiffTests(DiffFixture, unittest.TestCase):
             diff.target_from_fields(dict(repo=str(self.repo), path=self.name, base=self.target.base, github="https://evil.example/"))
         with patch.object(service, "ensure_service") as ensure:
             with self.assertRaises(ValueError):
-                diff.links([self.entry(), self.entry()])
+                diff.links(self.batch(self.entry(), self.entry()))
         ensure.assert_not_called()
 
     @unittest.skipIf(os.name == "nt", "POSIX symlinks; cache junctions are checked separately")
@@ -214,6 +218,121 @@ class DiffTests(DiffFixture, unittest.TestCase):
             link.rmdir()
 
 
+class BatchInputTests(DiffFixture, unittest.TestCase):
+    def test_shared_context_and_file_overrides_preserve_distinct_baselines(self):
+        added = self.repo / "added.py"
+        added.write_bytes(b"new file\n")
+        batch = self.batch(self.entry(), self.entry(id="F2", path="added.py", base="absent", title="New file"))
+        with patch.object(service, "ensure_service") as ensure:
+            results = diff.links(batch)
+        ensure.assert_called_once_with()
+        self.assertEqual([result["id"] for result in results], ["M1", "F2"])
+        self.assertEqual([result["title"] for result in results], [self.name, "New file"])
+        targets = [diff.target_from_query(result["url"].split("?", 1)[1]) for result in results]
+        self.assertEqual(diff.read_comparison(targets[0]).before, b"baseline\n")
+        self.assertIsNone(diff.read_comparison(targets[1]).before)
+        self.assertEqual(diff.read_comparison(targets[1]).after, b"new file\n")
+        self.assertTrue(all("github_url" not in result for result in results))
+
+    def test_per_file_baseline_without_a_batch_default(self):
+        batch = self.batch(self.entry(base="blob:" + self.oid))
+        del batch["base"]
+        with patch.object(service, "ensure_service"):
+            result = diff.links(batch)[0]
+        self.assertEqual(diff.target_from_query(result["url"].split("?", 1)[1]), self.target)
+
+    def test_complete_batch_is_validated_before_service_start(self):
+        for batch in (
+            [], [self.entry()], {}, self.batch(files=[]), self.batch(files={}),
+            self.batch(repo="relative"), self.batch(base="HEAD"),
+            self.batch(self.entry(base="absent"), base="HEAD"),
+            self.batch(self.entry(title=None)), self.batch(self.entry(path="../outside")),
+            self.batch(self.entry(github="https://github.com/o/r/pull/1.diff")),
+            self.batch(github="https://github.com/o/r/pull/1/files"),
+            self.batch(head="f" * 40), self.batch(self.entry(repo=str(self.repo))),
+            self.batch(self.entry(github_anchor="diff-observed")),
+            self.batch(self.entry(base_path="old.py")),
+            {"repo": str(self.repo), "files": [self.entry()]},
+            self.batch(self.entry(), self.entry(id="F2", path="other.py", base=None)),
+        ):
+            with self.subTest(batch=batch), patch.object(service, "ensure_service") as ensure:
+                with self.assertRaises(ValueError):
+                    diff.links(batch)
+                ensure.assert_not_called()
+
+    def test_pr_metadata_generates_files_changed_and_observed_anchor(self):
+        pr = {"repository": "Owner/Repo.Name", "number": 507, "head": "f" * 40}
+        batch = self.batch(self.entry(), self.entry(id="F2", github_anchor="diff-observedR12-R18"), pr=pr)
+        with patch.object(service, "ensure_service"):
+            results = diff.links(batch)
+        url = "https://github.com/Owner/Repo.Name/pull/507/files"
+        self.assertEqual([result["github_url"] for result in results], [
+            url + "#diff-0d3dd6727fedba508a77015e633b5790ffccb390ffb6a760dc2dfc774e1284ec",
+            url + "#diff-observedR12-R18",
+        ])
+        for result in results:
+            target = diff.target_from_query(result["url"].split("?", 1)[1])
+            self.assertEqual(target.github, result["github_url"])
+            self.assertEqual(target.head, pr["head"])
+            self.assertEqual(diff.render_page(target).redirect, result["github_url"])
+
+    def test_default_pr_anchors_match_observed_github_file_fragments(self):
+        entries = [
+            self.entry(path=".agents/skills/change-set-verification/agents/openai.yaml"),
+            self.entry(id="F2", path=".agents/skills/create-icon/agents/openai.yaml"),
+        ]
+        with patch.object(service, "ensure_service"):
+            results = diff.links(self.batch(*entries, pr={"repository": "wenyue/OtakuRoom", "number": 507, "head": "f" * 40}))
+        self.assertEqual([result["github_url"] for result in results], [
+            "https://github.com/wenyue/OtakuRoom/pull/507/files#diff-e7af03f197ac95de06e34b0d00ba3b824ac4af11e8615d30743d2e889a028633",
+            "https://github.com/wenyue/OtakuRoom/pull/507/files#diff-1aa4adc2dd7fb91113f483b1d7ac500edb453475dcfd261acfa04632dc5f0cfa",
+        ])
+
+    def test_pr_context_is_complete_and_cannot_supply_a_url(self):
+        pr = {"repository": "o/r", "number": 507, "head": "f" * 40}
+        invalid = [None, {}, dict(pr, url="https://github.com/o/r/pull/507/files")]
+        invalid.extend({key: value for key, value in pr.items() if key != missing} for missing in pr)
+        invalid.extend(dict(pr, repository=value) for value in (
+            "https://github.com/o/r/pull/507.diff", "o", "o/r/extra", "o/..", "o/r#fragment", "o/r?query"))
+        invalid.extend(dict(pr, number=value) for value in (0, -1, True, "507", 1.5))
+        invalid.extend(dict(pr, head=value) for value in ("HEAD", "abc", None))
+        for context in invalid:
+            with self.subTest(pr=context), patch.object(service, "ensure_service") as ensure:
+                with self.assertRaises(ValueError):
+                    diff.links(self.batch(pr=context))
+                ensure.assert_not_called()
+        for anchor in ("#diff-observed", "https://github.com/o/r/pull/507/files#diff-observed", "", "diff-x\n"):
+            with self.subTest(anchor=anchor), patch.object(service, "ensure_service") as ensure:
+                with self.assertRaises(ValueError):
+                    diff.links(self.batch(self.entry(github_anchor=anchor), pr=pr))
+                ensure.assert_not_called()
+
+    def test_pr_effective_baselines_must_be_fixed(self):
+        pr = {"repository": "o/r", "number": 1, "head": "f" * 40}
+        for batch in (self.batch(base="index", pr=pr), self.batch(self.entry(base="index"), pr=pr)):
+            with self.subTest(batch=batch), patch.object(service, "ensure_service") as ensure:
+                with self.assertRaises(ValueError):
+                    diff.links(batch)
+                ensure.assert_not_called()
+        with patch.object(service, "ensure_service"):
+            result = diff.links(self.batch(self.entry(base="blob:" + self.oid), base="index", pr=pr))[0]
+        self.assertEqual(diff.target_from_query(result["url"].split("?", 1)[1]).base, "blob:" + self.oid)
+
+    def test_cli_reads_batch_stdin_and_returns_generated_urls(self):
+        batch = self.batch(pr={"repository": "o/r", "number": 507, "head": "f" * 40})
+        output = io.StringIO()
+        with patch("sys.stdin", io.StringIO(json.dumps(batch))), patch("sys.stdout", output), patch.object(service, "ensure_service"):
+            status = cli.main(["diff", "--input", "-"])
+        self.assertEqual(status, 0)
+        self.assertEqual(json.loads(output.getvalue())[0]["github_url"],
+                         "https://github.com/o/r/pull/507/files#diff-0d3dd6727fedba508a77015e633b5790ffccb390ffb6a760dc2dfc774e1284ec")
+
+    def test_issued_url_protocol_remains_readable(self):
+        target = replace(self.target, github="https://github.com/o/r/pull/507/files#diff-observed")
+        self.assertEqual(diff.target_from_query(target.query()), target)
+        self.assertEqual(urllib.parse.parse_qs(target.query())["github"], [target.github])
+
+
 class PrDiffTests(DiffFixture, unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -226,13 +345,20 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.run_git("commit", "-m", "reviewed PR")
         self.head = self.run_git("rev-parse", "HEAD").decode().strip()
         self.github = "https://github.com/o/r/pull/1/files"
+        self.github_file = self.github + "#diff-0d3dd6727fedba508a77015e633b5790ffccb390ffb6a760dc2dfc774e1284ec"
         self.context = diff.Target(self.repo, self.name, "commit:" + self.before, self.github, self.head)
 
     def prepare(self, context=None):
         target = context or self.context
+        entry = self.entry(path=target.path)
+        if target.base_path:
+            entry["base_path"] = target.base_path
+        if urllib.parse.urlsplit(target.github).fragment:
+            entry["github_anchor"] = urllib.parse.urlsplit(target.github).fragment
+        batch = self.batch(entry, repo=str(target.repo), base=target.base,
+                           pr={"repository": "o/r", "number": 1, "head": target.head})
         with patch.object(service, "ensure_service"):
-            result = diff.links([dict(id="M1", title=target.path, **dict(
-                (name, value[0]) for name, value in urllib.parse.parse_qs(target.query()).items()))])[0]
+            result = diff.links(batch)[0]
         return diff.target_from_query(result["url"].split("?", 1)[1])
 
     def linked(self, name):
@@ -256,9 +382,9 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(self.run_git("cat-file", "-t", self.head).strip(), b"commit")
         target = self.prepare()
         self.assertEqual(target.head, self.head)
-        self.assertEqual(diff.render_page(target).redirect, self.github)
+        self.assertEqual(diff.render_page(target).redirect, self.github_file)
         with patch.object(diff, "find_vscode") as find:
-            self.assertEqual(diff.open_editor(target)["url"], self.github)
+            self.assertEqual(diff.open_editor(target)["url"], self.github_file)
         find.assert_not_called()
 
     def test_linked_detached_checkout_is_found_and_binding_survives_later_commits(self):
@@ -307,7 +433,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual({choice.repo for choice in selected}, {self.repo.resolve(), linked.resolve()})
         self.assertTrue(all(choice.head is None for choice in selected))
         self.assertTrue(all("/diff/html?" in url for url in local))
-        self.assertIn(self.github, parser.urls)
+        self.assertIn(self.github_file, parser.urls)
 
     def test_rename_uses_before_path_and_new_file_uses_absent_baseline(self):
         renamed = "renamed.py"
@@ -315,6 +441,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         context = replace(self.context, path=renamed, base_path=self.name)
         target = self.prepare(context)
         self.assertEqual(target.base, "blob:" + self.oid)
+        self.assertEqual(target.github, self.github + "#diff-b1cb4c2fea8f27faabf83123f17e7e992ed88c065ec16deaef2c77891f8da40d")
         self.assertEqual(diff.read_comparison(target).after, b"first edit\n")
         addition = self.repo / "new.py"
         addition.write_bytes(b"new file\n")
@@ -327,8 +454,8 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
                        replace(self.context, repo=self.base / "missing")):
             with self.subTest(target=target):
                 prepared = self.prepare(target)
-                self.assertEqual(diff.render_page(prepared).redirect, self.github)
-                self.assertEqual(diff.open_editor(prepared)["url"], self.github)
+                self.assertEqual(diff.render_page(prepared).redirect, self.github_file)
+                self.assertEqual(diff.open_editor(prepared)["url"], self.github_file)
 
     def test_pr_context_requires_fixed_head_github_and_safe_before_path(self):
         fields = dict(repo=str(self.repo), path=self.name, base=self.context.base, head=self.head, github=self.github)
@@ -337,7 +464,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 diff.target_from_fields(dict(fields, **change))
         with patch.object(service, "ensure_service"), self.assertRaises(ValueError):
-            diff.links([self.entry(github=self.github)])
+            diff.links(self.batch(pr={"repository": "o/r", "number": 1}))
 
 
 class DiffHttpTests(DiffFixture, unittest.TestCase):

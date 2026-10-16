@@ -51,6 +51,23 @@ class Resolution:
     message: str = ""
 
 
+def validate_base(base: object) -> None:
+    if not isinstance(base, str) or (base not in ("absent", "index")
+            and re.fullmatch(r"(?:blob|commit):(?:[0-9a-f]{40}|[0-9a-f]{64})", base) is None):
+        raise ValueError("base must be index, absent, blob:<full OID>, or commit:<full OID>")
+
+
+def github_pr_url(repository: str, number: int) -> str:
+    """Build a Files changed URL from the PR-owning repository and number."""
+    if (not isinstance(repository, str)
+            or re.fullmatch(r"[A-Za-z0-9-]+/[A-Za-z0-9_.-]+", repository) is None
+            or repository.split("/")[1] in (".", "..")):
+        raise ValueError("pr.repository must be a GitHub owner/name, not a URL")
+    if type(number) is not int or number < 1:
+        raise ValueError("pr.number must be a positive integer")
+    return "https://github.com/" + repository + "/pull/" + str(number) + "/files"
+
+
 def target_from_fields(fields: Mapping[str, str]) -> Target:
     if set(fields) - {"repo", "path", "base", "github", "head", "base_path"} or not {"repo", "path", "base"} <= set(fields):
         raise ValueError("diff needs repo, path, base, and optional github/head/base_path context")
@@ -64,8 +81,7 @@ def target_from_fields(fields: Mapping[str, str]) -> Target:
                 or any(part in ("", ".", "..") or part.lower() == ".git" for part in name.split("/"))):
             raise ValueError("path must be a confined worktree-relative file")
     base = fields["base"]
-    if base not in ("absent", "index") and re.fullmatch(r"(?:blob|commit):(?:[0-9a-f]{40}|[0-9a-f]{64})", base) is None:
-        raise ValueError("base must be index, absent, blob:<full OID>, or commit:<full OID>")
+    validate_base(base)
     if "base_path" in fields and not (base == "index" or base.startswith("commit:")):
         raise ValueError("base_path only applies to an index or commit baseline")
     github = fields.get("github")

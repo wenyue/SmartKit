@@ -45,11 +45,11 @@ Skip test files entirely: do not review them or count them toward progress or mo
 
 When scope, required guidance, or source evidence is unavailable, identify the missing input and its effect. Pause the dependent review rather than inventing facts, totals, or a completed assessment. A known file with incomplete evidence remains in the total; explain the gap in that file's report and use an insufficient-evidence evaluation where necessary.
 
-### Prepare live diff links
+## Prepare live diff links
+
+### Prepare inputs
 
 Every reported filename links to a diff for that path. Keep the fixed review evidence used for the report and later actions independently of what the display link currently shows. A local link always compares the actual review's fixed before content with the path's current on-disk worktree state; later edits may therefore differ from the judged snapshot. Supply the selected comparison's actual before commit, an already-known before blob, or genuine absence; do not substitute the latest index, `HEAD`, or a mutable branch name.
-
-For every PR review, the Agent must supply `head` and `github` in every diff batch entry, reusing the pinned PR head and GitHub diff URL obtained for the review. No separate page visit is required to reverify that URL; never invent a file anchor. Non-PR reviews may omit this PR context. If required PR context is unavailable, identify the missing prerequisite and pause the dependent report. GitHub is an accepted display exception and may show the remote PR version rather than local edits.
 
 Use the unified `local_web` tool supplied in `SmartKit plugin resources`, independently of the reviewed repository or cwd. Read its help for the batch schema and output contract:
 
@@ -58,21 +58,35 @@ python "<local_web>" --help
 python "<local_web>" diff --input "<batch.json>"
 ```
 
-Pass the reported file and existing review context to the tool, using the repository worktree root as the `repo` lookup entry. For the local default, prepare links alongside the review snapshot using index mode, so the tool fixes the same index baseline used for the review, including partially staged files. Branch and PR comparisons use their actual fixed before commit or an already-known blob; a PR cannot use the mutable index. Supply a rename's old path as `base_path` when resolving an index or commit baseline. The CLI help owns the exact batch schema; `local_web` owns baseline resolution and URL encoding.
+Submit one batch object with shared `repo`, an optional default `base`, optional `pr` context, and a nonempty `files` list. Use the repository worktree root as the `repo` lookup entry. Each file supplies a unique `id` and its current `path`; `title` defaults to that path. A file's explicit `base` overrides the batch default; otherwise the batch must supply one. Separate repositories or PRs need separate batches. The CLI help owns the exact schema; `local_web` owns validation, baseline resolution, GitHub address construction, and URL encoding.
 
-Use that same command even when no PR checkout is known. `local_web` searches and validates the current checkout and its existing linked worktrees against the supplied PR head, binds a single match automatically, offers a page to choose among multiple matches, and routes to the supplied GitHub URL when no match or usable local comparison exists. The Agent supplies context rather than enumerating, verifying, or selecting worktrees. Link preparation and display use existing Git data only; they do not fetch, clone, write Git objects, switch checkouts, create worktrees, or persist arbitrary before bytes.
+For the local default, prepare links alongside the review snapshot using index mode, so the tool fixes the same index baseline used for the review, including partially staged files. Branch and PR comparisons use their actual fixed before commit or an already-known blob; a PR cannot use the mutable index.
 
-Match each returned `id` and `title` to its file and use the returned `markdown` for the filename link. The self-contained URL carries its comparison context without a signature, registration record, or link expiry. Once bound to a worktree, the link always compares its fixed baseline with that worktree's current on-disk path; subsequent edits or commits do not cause PR-head matching or rerouting. It does not back up the baseline: missing Git objects or an unavailable repository are errors, not empty content or permission to substitute a different baseline. Deletion in an existing worktree is an absent current side, and a rename needs a link for the new path.
+For every PR review, supply batch-level `pr.repository`, `pr.number`, and the full pinned reviewed `pr.head` from the obtained PR metadata. `repository` identifies the GitHub repository that owns the PR, not its source fork or an inferred local remote. Non-PR reviews omit `pr`. If required PR context is unavailable, identify the missing prerequisite and pause the dependent report. GitHub is an accepted display exception and may show the remote PR version rather than local edits.
 
-When a local comparison is available, opening the page tries VS Code first. Explicit unavailability or launch failure goes to GitHub when supplied, otherwise to HTML computed from the current local comparison. GitHub navigation stays in the current tab for both automatic fallback and manual links. After an editor request is dispatched, the page attempts to close itself; if browser policy blocks closing, it keeps the status and manual fallback controls. A normal CLI return does not prove the diff was displayed. The returned `html_url` requests HTML without attempting the editor. Diff URLs remain usable after service restart while the referenced worktree and Git object exist; ordinary preview artifact retention remains separate. Filename links need no fixed after snapshot, but report examples and review-action verification still do.
+### Locate files and worktrees
 
-If required link generation or display is unavailable, preserve diagnostics and pause the dependent report. The supplied GitHub diff URL can be used for an applicable PR. Use the unified tool's help for service recovery; report observed navigation restrictions and claim successful opening only when observed. Do not publish repository changes merely to obtain a link.
+Supply a rename's old path as `base_path` when resolving an index or commit baseline; the current `path` remains the GitHub file target.
+
+The tool constructs a GitHub Files changed URL targeting each file, deriving its default file anchor from the current `path`. The Agent supplies neither a complete GitHub URL nor a computed anchor. A file's optional `github_anchor` overrides that default with an already-observed fragment without the leading `#`; omit it when unavailable and let the tool derive the anchor. No separate GitHub visit or network lookup is needed to prepare file links.
+
+Use that same command even when no PR checkout is known. `local_web` searches and validates the current checkout and its existing linked worktrees against the supplied PR head, binds a single match automatically, offers a page to choose among multiple matches, and routes to the generated GitHub URL when no match or usable local comparison exists. The Agent supplies context rather than enumerating, verifying, or selecting worktrees. Link preparation and display use existing Git data only; they do not fetch, clone, write Git objects, switch checkouts, create worktrees, or persist arbitrary before bytes.
+
+### Use and open links
+
+Match each returned `id` and `title` to its file and use the returned `markdown` for the filename link. PR results also return `github_url`; use that generated address when a direct GitHub link is needed. The self-contained local URL carries its comparison context without a signature, registration record, or link expiry. Once bound to a worktree, the link always compares its fixed baseline with that worktree's current on-disk path; subsequent edits or commits do not cause PR-head matching or rerouting. It does not back up the baseline: missing Git objects or an unavailable repository are errors, not empty content or permission to substitute a different baseline. Deletion in an existing worktree is an absent current side, and a rename needs a link for the new path.
+
+When a local comparison is available, opening the page tries VS Code first. Explicit unavailability or launch failure goes to the generated GitHub address for a PR, otherwise to HTML computed from the current local comparison. GitHub navigation stays in the current tab for both automatic fallback and manual links. After an editor request is dispatched, the page attempts to close itself; if browser policy blocks closing, it keeps the status and manual fallback controls. A normal CLI return does not prove the diff was displayed. The returned `html_url` requests HTML without attempting the editor. Diff URLs remain usable after service restart while the referenced worktree and Git object exist; ordinary preview artifact retention remains separate. Filename links need no fixed after snapshot, but report examples and review-action verification still do.
+
+### Handle unavailable links
+
+If required link generation is unavailable, preserve diagnostics and pause the dependent report under the shared resource's unavailable-resource policy; leave dependent links incomplete rather than substituting old tools or hand-written addresses. If local display alone is unavailable, an already-returned `github_url` can serve an applicable PR. Use the unified tool's help for service recovery; report observed navigation restrictions and claim successful opening only when observed. Do not publish repository changes merely to obtain a link.
 
 ## Explain each file through the problem it solves
 
 Keep all report emoji outside bold spans, preserving emphasis on their accompanying text. When emphasizing a word, phrase, identifier, or label, keep surrounding separators and terminal punctuation outside bold; deliberately emphasized complete sentences may retain their sentence punctuation. Preserve punctuation intrinsic to code, identifiers, and paths.
 
-Begin each file in the form `📄 **[path](diff-destination)**`, using the returned live diff Markdown or an applicable GitHub PR diff URL from the review context, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
+Begin each file in the form `📄 **[path](diff-destination)**`, using the returned live diff Markdown or the tool's applicable `github_url`, and a short overview of its responsibility and overall change. Source links and relevant line references may supplement this required filename link. Explain in ordinary language what the change means for users or callers, retaining technical detail that affects the judgment.
 
 Divide the explanation into modifications by business problem or human-understood scenario. Start by keeping related changes together. Split only when they are logically independent or cannot be explained jointly with one simple example. Methods, diff hunks, and individual implementation steps do not by themselves justify separate modifications. For example, tracking pending work, refusing new work, and waiting before closing a resource can be one modification about safely finishing work on shutdown.
 
@@ -190,7 +204,7 @@ If a required interface is unavailable or a write or verification fails, pause w
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
-The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use the shared tool's returned Markdown or an applicable GitHub PR diff URL from the review context.
+The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use the shared tool's returned Markdown or its applicable `github_url`.
 
 📄 **[l10n/en.json](http://127.0.0.1:47821/diff?repo=%2Fproject&path=l10n%2Fen.json&base=blob%3A1111111111111111111111111111111111111111)**
 

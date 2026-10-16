@@ -1315,12 +1315,10 @@ def load_policy(path: Path, harness: str | None = None) -> dict[str, Any]:
 
 
 def default_policy_path(harness: str) -> Path:
-    runtime_root = Path(__file__).resolve().parents[1]
-    for ancestor in runtime_root.parents:
-        plugin_policy = ancestor / 'policies' / 'recommended-tools' / f'{harness}.json'
-        if plugin_policy.is_file():
-            return plugin_policy
-    raise PolicyError('recommended-tool policy is unavailable')
+    policy_path = Path(__file__).resolve().parent / 'policies' / f'{harness}.json'
+    if not policy_path.is_file():
+        raise PolicyError('recommended-tool policy is unavailable')
+    return policy_path
 
 
 def default_cache_root() -> Path:

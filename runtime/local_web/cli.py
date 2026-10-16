@@ -43,25 +43,39 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         epilog='''Python 3.8+ and the full plugin are required. Resolve this entry from the
 loaded plugin's local_web resource, independently of the caller's cwd.
 
-diff input (JSON array; --input - reads stdin):
-  [{"id":"M1","title":"src/example.py","repo":"/absolute/worktree",
-    "path":"src/example.py","base":"index"}]
-Supply review context, not a preselected PR checkout. base is index (capture
-alongside the local review snapshot), absent, blob:FULL_OBJECT_ID from retained
-evidence, or commit:FULL_BEFORE_COMMIT_ID. Optional base_path names the old path
-for index/commit baselines, including renames. The tool resolves existing Git
-objects to a fixed blob/absence; mutable index never appears in a returned URL.
-For every PR add head=FULL_REVIEWED_PR_HEAD and github=HTTPS_GITHUB_DIFF_URL.
-Reuse the URL already obtained for the review; non-PR entries may omit it.
-PR baselines must be fixed, not index. The tool searches this repository's
-existing worktrees and verifies matching commits: one binds automatically,
+diff input (one JSON object; --input - reads stdin):
+  {"repo":"/absolute/worktree", "base":"index",
+   "files":[{"id":"F1", "path":"src/example.py"}]}
+One batch shares repo, a default base, and optional PR context. Each file needs
+a unique id and a path; title defaults to path. A file's explicit base overrides
+the batch base; at least one must be supplied. base is index (capture alongside
+the local review snapshot), absent, blob:FULL_OBJECT_ID from retained evidence,
+or commit:FULL_BEFORE_COMMIT_ID. Optional file base_path names the old path for
+index/commit baselines, including renames. There is no implicit HEAD or base.
+The tool resolves existing Git objects to a fixed blob/absence; mutable index
+never appears in a returned URL. Different repositories/PRs need separate batches.
+For every PR add this complete batch context:
+  "pr":{"repository":"owner/name", "number":507, "head":"FULL_REVIEWED_PR_HEAD"}
+repository identifies the PR-owning GitHub repository, not the source fork or
+local remote. number is a positive integer; head is the full fixed reviewed OID.
+The tool builds each file's HTTPS GitHub Files changed URL, including its
+diff- fragment from SHA-256 of the current UTF-8 path; do not pass a complete URL.
+Optional file github_anchor overrides that default with an already-observed
+diff- fragment without #. No GitHub lookup is needed to generate file links.
+Non-PR batches omit pr and github_anchor. Every effective PR base must be fixed,
+not index. Supply review context, not a preselected PR checkout. The tool searches
+this repository's existing worktrees and verifies matching commits: one binds automatically,
 multiple show a selection page, none or unavailable local data goes to GitHub.
 It never fetches, checks out, clones, or creates worktrees. Bound URLs keep the
 selected worktree even after later edits/commits; they do not reselect by head.
 Unresolved PR URLs retain the context for selection/fallback on opening.
 Validate the entire batch before starting the service.
-Output: id, title, url, html_url, markdown. No registration, URL
-signature, baseline backup, Git write or seven-day link expiry is created.
+Output: per-file id, title, url, html_url, markdown, plus github_url for PRs.
+Use the returned links; url/markdown keep editor-first opening, html_url requests
+local HTML, and github_url opens GitHub directly. Existing issued URL parameters
+remain readable; the former per-file input array is replaced by this batch object.
+No registration, URL signature, baseline backup, Git write or seven-day link
+expiry is created.
 The URL compares the fixed blob with the current on-disk path; deletion is an
 absent current side, rename needs a new link, and missing Git data is an error.
 VS Code is attempted from a visible page; explicit launch failure falls back

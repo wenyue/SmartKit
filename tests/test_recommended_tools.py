@@ -25,7 +25,7 @@ MAINTAINER_PATH = (
     REPO_ROOT / 'runtime' / 'recommended-tools'
     / 'maintain_recommended_tools.py'
 )
-POLICY_ROOT = REPO_ROOT / 'policies' / 'recommended-tools'
+POLICY_ROOT = CHECKER_PATH.parent / 'policies'
 RECOMMENDED_TOOL_POLICIES = POLICY_ROOT
 
 
@@ -83,11 +83,28 @@ class RecommendedToolPolicyTest(unittest.TestCase):
                     ['fleet_mode'] if harness == 'copilot' else [],
                 )
 
-    def test_default_policy_path_resolves_plugin_root_policy(self):
-        self.assertEqual(
-            self.checker.default_policy_path('codex'),
-            POLICY_ROOT / 'codex.json',
-        )
+    def test_default_policy_path_resolves_feature_local_policy(self):
+        for harness in ('codex', 'cursor', 'copilot', 'qoder'):
+            with self.subTest(harness=harness):
+                self.assertEqual(
+                    self.checker.default_policy_path(harness),
+                    POLICY_ROOT / f'{harness}.json',
+                )
+
+    def test_missing_bundled_policy_does_not_use_ancestor_policy(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            ancestor_policy = root / 'policies' / 'recommended-tools' / 'codex.json'
+            ancestor_policy.parent.mkdir(parents=True)
+            ancestor_policy.write_text('{}', encoding='utf-8')
+            checker_path = root / 'runtime' / 'recommended-tools' / CHECKER_PATH.name
+            checker_path.parent.mkdir(parents=True)
+
+            with mock.patch.object(self.checker, '__file__', str(checker_path)):
+                with self.assertRaisesRegex(
+                    self.checker.PolicyError, 'recommended-tool policy is unavailable'
+                ):
+                    self.checker.default_policy_path('codex')
 
     def test_codex_readiness_hook_timeout_remains_thirty_seconds(self):
         manifest = json.loads(

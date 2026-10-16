@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import difflib
+from dataclasses import replace
+import hashlib
 import html
 import json
 import os
@@ -15,7 +17,8 @@ from typing import Dict, List, NamedTuple, Optional, Sequence
 
 from .. import artifacts
 from ..storage import prepare_state, redirected
-from .comparisons import Comparison, Target, read_comparison, resolve_targets, target_from_fields, target_from_query
+from .comparisons import (Comparison, Target, github_pr_url, read_comparison, resolve_targets,
+                          target_from_fields, target_from_query, validate_base)
 
 
 class DiffPage(NamedTuple):
@@ -46,30 +49,56 @@ def render_page(target: Target, *, html_only: bool = False, automatic: bool = Tr
 
 
 
-def links(entries: object) -> List[Dict[str, str]]:
+def links(batch: object) -> List[Dict[str, str]]:
     """Validate a complete batch, then ensure one host without persisting link records."""
+    if (not isinstance(batch, dict) or not {"repo", "files"} <= set(batch)
+            or set(batch) - {"repo", "base", "pr", "files"}):
+        raise ValueError("diff input needs repo, files, and optional base/pr context")
+    entries = batch["files"]
     if not isinstance(entries, list) or not entries:
-        raise ValueError("diff input must be a nonempty JSON array")
+        raise ValueError("files must be a nonempty JSON array")
+    if "base" in batch:
+        validate_base(batch["base"])
+    pr = batch.get("pr")
+    if "pr" in batch and (not isinstance(pr, dict) or set(pr) != {"repository", "number", "head"}):
+        raise ValueError("pr needs exactly repository, number, and the fixed reviewed head")
+    github = github_pr_url(pr["repository"], pr["number"]) if pr is not None else None
     results = []  # type: List[Dict[str, str]]
     identities = set()
     for entry in entries:
-        if not isinstance(entry, dict) or not {"id", "title", "repo", "path", "base"} <= set(entry) or set(entry) - {"id", "title", "repo", "path", "base", "github", "head", "base_path"}:
-            raise ValueError("diff entry needs id, title, repo, path, base, and optional github/head/base_path")
-        identity, title = entry["id"], entry["title"]
+        if (not isinstance(entry, dict) or not {"id", "path"} <= set(entry)
+                or set(entry) - {"id", "path", "title", "base", "base_path", "github_anchor"}):
+            raise ValueError("file needs id, path, and optional title/base/base_path/github_anchor")
+        identity, title = entry["id"], entry.get("title", entry["path"])
         if not all(isinstance(value, str) and value and not any(ord(c) < 32 for c in value) for value in (identity, title)):
             raise ValueError("diff id and title must be nonempty single lines")
         if identity in identities:
             raise ValueError("duplicate diff id")
         identities.add(identity)
-        if "github" in entry and "head" not in entry:
-            raise ValueError("GitHub PR link context also needs the reviewed head commit")
-        target = target_from_fields({name: value for name, value in entry.items() if name not in ("id", "title")})
+        fields = {"repo": batch["repo"], "path": entry["path"], "base": entry.get("base", batch.get("base"))}
+        validate_base(fields["base"])
+        if "base_path" in entry:
+            fields["base_path"] = entry["base_path"]
+        if pr is not None:
+            fields.update(github=github, head=pr["head"])
+        if "github_anchor" in entry:
+            anchor = entry["github_anchor"]
+            if pr is None or not isinstance(anchor, str) or re.fullmatch(r"diff-[A-Za-z0-9_-]+", anchor) is None:
+                raise ValueError("github_anchor needs PR context and an observed diff- fragment without #")
+            fields["github"] += "#" + anchor
+        target = target_from_fields(fields)
+        if target.github and "github_anchor" not in entry:
+            # GitHub's file fragment hashes the current UTF-8 path, not base_path.
+            target = replace(target, github=target.github + "#diff-" + hashlib.sha256(target.path.encode("utf-8")).hexdigest())
         resolution = resolve_targets(target)
         if len(resolution.targets) == 1:
             target = resolution.targets[0]
         label = re.sub(r"([\\`*\[\]])", r"\\\1", html.escape(title, quote=False)).replace("_", "&#95;")
-        results.append({"id": identity, "title": title, "url": target.url(), "html_url": target.url(html_only=True),
-                        "markdown": "[" + label + "](" + target.url() + ")"})
+        result = {"id": identity, "title": title, "url": target.url(), "html_url": target.url(html_only=True),
+                  "markdown": "[" + label + "](" + target.url() + ")"}
+        if target.github:
+            result["github_url"] = target.github
+        results.append(result)
     from ..service import ensure_service
     ensure_service()
     return results

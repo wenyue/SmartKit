@@ -125,6 +125,7 @@ class PluginManifestTest(unittest.TestCase):
         self.assertNotIn('| Rule | Strength |', index)
         self.assertIn('- `.agents/rules/self-hosting-authority.md`', index)
         self.assertIn('- `.agents/rules/project-policy.md`', index)
+        self.assertIn('- `.agents/rules/structure.md`', index)
 
     def test_repository_local_rules_match_required_paths(self):
         self.assertEqual(
@@ -135,6 +136,7 @@ class PluginManifestTest(unittest.TestCase):
             {
                 'self-hosting-authority.md',
                 'project-policy.md',
+                'structure.md',
             },
         )
 

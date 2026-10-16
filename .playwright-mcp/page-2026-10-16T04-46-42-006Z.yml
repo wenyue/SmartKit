@@ -1,0 +1,40 @@
+- generic [ref=f15e2]:
+  - generic [ref=f15e3]:
+    - link "Skip to content" [ref=f15e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f15e6]
+  - main [ref=f15e9]:
+    - generic [ref=f15e10]:
+      - heading "Sign in to GitHub" [level=1] [ref=f15e20]
+      - generic [ref=f15e22]:
+        - generic [ref=f15e23]:
+          - generic [ref=f15e24]: Username or email address
+          - textbox "Username or email address" [active] [ref=f15e25]
+        - generic [ref=f15e26]:
+          - generic [ref=f15e27]: Password
+          - textbox "Password" [ref=f15e28]
+          - link "Forgot password?" [ref=f15e29] [cursor=pointer]:
+            - /url: /password_reset
+        - button "Sign in" [ref=f15e31] [cursor=pointer]
+      - paragraph [ref=f15e34]:
+        - text: New to GitHub?
+        - link "Create an account" [ref=f15e35] [cursor=pointer]:
+          - /url: /signup?return_to=%2Fwenyue%2FOtakuRoom%2Fpull%2F507%2Ffiles&source=login
+  - contentinfo [ref=f15e36]:
+    - list [ref=f15e37]:
+      - listitem [ref=f15e38]:
+        - link "Terms" [ref=f15e39] [cursor=pointer]:
+          - /url: https://docs.github.com/site-policy/github-terms/github-terms-of-service
+      - listitem [ref=f15e40]:
+        - link "Privacy" [ref=f15e41] [cursor=pointer]:
+          - /url: https://docs.github.com/site-policy/privacy-policies/github-privacy-statement
+      - listitem [ref=f15e42]:
+        - link "Docs" [ref=f15e43] [cursor=pointer]:
+          - /url: https://docs.github.com
+      - listitem [ref=f15e44]:
+        - link "Contact GitHub Support" [ref=f15e45] [cursor=pointer]:
+          - /url: https://support.github.com
+      - listitem [ref=f15e46]:
+        - button "Manage cookies" [ref=f15e48] [cursor=pointer]
+      - listitem [ref=f15e49]:
+        - button "Do not share my personal information" [ref=f15e51] [cursor=pointer]

@@ -19,6 +19,9 @@ from agents_setup import project_rules  # noqa: E402
 
 
 class SyncProjectRulesTest(unittest.TestCase):
+    def test_repository_rule_index_uses_supported_declarations(self):
+        project_rules.validate_project_rule_index(REPO_ROOT)
+
     @staticmethod
     def write_rule(target: Path, name: str, *, body: str) -> None:
         rule = target / '.agents' / 'rules' / name
