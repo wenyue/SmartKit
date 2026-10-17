@@ -4,7 +4,7 @@ These examples illustrate the report and closing formats defined in [Review for 
 
 ## Complete report
 
-Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
+Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. The full branch inventory also contains their tests; all changes were introduced in this conversation and required checks passed. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
 The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use the shared tool's returned Markdown.
 
@@ -76,8 +76,8 @@ Previously, repeated clicks could start duplicate saves; the handler now refuses
 **Available actions**
 
 1. **Optimize**: Implement the optional improvement.
-2. **Pass and finish**: Stage the remaining reviewed changes across all groups in this report and end this review, retaining the improvement as advice.
-3. **Finish**: End this review without staging remaining changes, retaining the improvement as advice.
+2. **Pass and finish**: Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
+3. **Finish**: End this review without committing, retaining the improvement as advice.
 
 🤖 **Enter an operation number.**
 
@@ -87,7 +87,7 @@ These illustrative closings follow file reports or dedicated re-reviews; they do
 
 ### Incidental observation with a ready final group
 
-In this illustrative local review, the selected change only adjusts export-button text. The source location below is illustrative; an actual report uses an available source link.
+In this illustrative local review, the selected change only adjusts export-button text. The branch inventory contains only the three text files changed in this conversation; required checks passed. The source location below is illustrative; an actual report uses an available source link.
 
 📊 **Progress**: **3/3 files displayed**. No unreasonable findings are pending.
 
@@ -104,10 +104,35 @@ O1 remains advice, does not block completion, and is excluded from bulk fixes or
 
 **Available actions**
 
-1. **Pass and finish**: Stage the remaining reviewed changes across all groups in this report and end this review, retaining O1 as advice.
-2. **Finish**: End this review without staging remaining changes, retaining O1 as advice.
+1. **Pass and finish**: Commit all three branch changes, verify the result, and end this review without pushing, retaining O1 as advice.
+2. **Finish**: End this review without committing, retaining O1 as advice.
 
 🤖 **Enter an operation number.**
+
+### Dedicated re-review after an O repair
+
+The user separately authorized repairing O1 above. This follow-up is shown apart from the main file groups; its required checks passed, and the independent re-review below assesses the saved before-and-after evidence.
+
+📌 **O1 — Restore the export button after failure**
+
+**Location**: `src/export.ts:68`.
+
+Previously, a rejected export left the button disabled because restoration occurred only on success. The repair restores the button in a shared completion path, while preserving the export error for the caller. The failure-path check confirms that the button becomes usable again when export rejects.
+
+⚖️ **Reasonable**. Users can retry after failure, and callers still receive the original export error.
+
+🎨 **Elegant**. A single completion path handles restoration after either success or failure without duplicating state changes.
+
+**O1 status**: Repaired; required checks and independent re-review confirmed the result. Main-review progress remains **3/3 files displayed**. This separate re-review creates no M ID or additional Viewed eligibility.
+
+**Available actions**
+
+1. **Pass and finish**: Commit all branch changes, including the three reviewed text files and O1's checked, re-reviewed repair, verify the result, and end this review without pushing.
+2. **Finish**: End this review without committing.
+
+🤖 **Enter an operation number.**
+
+If O1's check or re-review is incomplete or fails, retain its unresolved status and leave completion that would include the repair unavailable. Confirmation to include branch content does not replace this re-review.
 
 ### Pending findings and optional improvements
 
@@ -136,28 +161,65 @@ If the user replies “1, M2,” repair only M2; M5 remains pending. If the user
 
 If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the numbered available actions and number-entry prompt above.
 
-### PR repaired locally and ready for completion
+### Local partial staging with extra content
 
-📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired; required checks and re-review passed. The fixes remain local. The PR target, viewer, write interfaces, and publication scope have been verified.
+📊 **Progress**: **1/3 files displayed**. The displayed unstaged save-handler fix is reasonable; required checks passed for the full proposed commit.
+
+The branch commit will include all staged, unstaged, and untracked changes: the save-handler fix, two undisplayed source files, and its new test file. The test remains outside report progress. These changes were introduced in this conversation except for an already-staged label change in `ui/save_button.dart`, which changes “Save” to “Save draft.” That staged hunk shares a file with the displayed fix and was made before this conversation. The final worktree retains both changes; the original index state is saved for recovery.
 
 **Available actions**
 
-1. **Pass and continue**: Commit and push the two fixes, verify the PR version, mark the four displayed reviewed files Viewed and verify every readback, then show the next group.
+1. **Confirm inclusion and pass and continue**: Include the extra “Save draft” label change, commit the full branch inventory above, verify the result, then show the next group without pushing.
+2. **Continue**: Show the next group without staging or committing.
+
+🤖 **Enter an operation number.**
+
+If the user declines the extra content, leave full-branch completion pending; do not silently commit only the save-handler fix. If option 1 completes, display the remaining two source files from the retained review snapshot even though the worktree is now clean. They were included in the commit but have not yet been displayed or counted as reviewed.
+
+### Clean branch without a PR
+
+📊 **Progress**: **3/3 files displayed**. No unreasonable findings are pending. All branch changes are already committed, the branch and worktree state are verified, and no PR publication was requested.
+
+**Available actions**
+
+1. **Pass and finish**: Reuse the verified commits and end this review, with no empty commit or push.
+2. **Finish**: End this review without further writes.
+
+🤖 **Enter an operation number.**
+
+### PR repaired locally and ready for completion
+
+📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired; required checks and re-review passed. The full local branch delta contains those two fixes, their tests, and an undisplayed release-note change introduced earlier in this conversation. All applicable checks passed and the four displayed files' assessments remain valid. The PR target, viewer, write interfaces, and full publication scope have been verified.
+
+**Available actions**
+
+1. **Pass and continue**: Commit and push all branch changes listed above, including the tests and release note, verify the PR version, mark only the four displayed reviewed files Viewed and verify every readback, then show the next group.
 2. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
 
 🤖 **Enter an operation number.**
 
-### Publication scope is not safe
+### Extra unpushed content needs confirmation
 
-📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired; required checks and re-review passed.
+📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired. Required checks passed for the complete proposed publication, and affected re-review confirmed the displayed files' assessments.
 
-**Pass and continue** is unavailable: pushing the current ancestry would also publish an unrelated unpushed commit. Completion first needs a separable publication scope containing only this report's authorized, checked fixes.
+The normal push would publish the two local fixes and existing unpushed commit `a1b2c3d`, which changes the export default from CSV to JSON. That commit was not introduced in this conversation and its files have not been displayed in this review. Users relying on the old default would need to choose CSV explicitly. Confirm inclusion of that extra commit before publication; it will not receive review progress or Viewed marking merely because it is pushed.
 
 **Available actions**
 
-1. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
+1. **Confirm inclusion and pass and continue**: Include `a1b2c3d` in publication, commit all outstanding branch changes, push the complete branch delta, verify the PR version, mark only the four displayed reviewed files Viewed, verify readbacks, then show the next group.
+2. **Continue**: Show the next group, retaining the local fixes and unpushed commit without publishing or marking Viewed.
 
 🤖 **Enter an operation number.**
+
+If the commit's origin cannot be established, say so and request the same explicit inclusion decision. If inclusion is declined, preserve the branch and leave completion pending until the user chooses a revised outcome; do not automatically cherry-pick only the fixes, rewrite history, or publish a smaller delta.
+
+### Extra content shares a displayed PR file
+
+The current group already displayed the save-handler change in `ui/save_button.dart`. Full-branch publication will also include an independent label change in that same file, and the user explicitly confirmed its inclusion. Checks passed, but the label hunk has not been displayed or assessed.
+
+**Pass and continue** is not yet ready to mark that file Viewed: the published file's complete PR delta must be covered. Show a dedicated re-review of the missing label change with both judgments, retain the file's original group and progress count, and then offer completion for the same selected Viewed set.
+
+If the label hunk cannot be reviewed within the authorized scope, keep the file unmarked and explain the required scope choice. Do not infer review from inclusion consent, drop the file from completion, or subtract it from displayed progress. If publication already succeeded before the coverage gap was discovered, retain that verified push and resume only the missing review and recording steps.
 
 ### Resume partially completed PR recording
 
@@ -173,7 +235,7 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 ### Final group of a PR review
 
-📊 **Progress**: **9/9 files displayed**. No pending findings or unpublished reviewed changes remain; the PR matches the reviewed version. Four files from earlier groups are verified Viewed; five reviewed files across the report, including files from groups advanced using continue, still await Viewed.
+📊 **Progress**: **9/9 files displayed**. No pending findings, outstanding local changes, or unpublished branch commits remain; the full branch state and reviewed PR version are verified. Four files from earlier groups are verified Viewed; five reviewed files across the report, including files from groups advanced using continue, still await Viewed.
 
 **Optional improvements**
 
