@@ -163,7 +163,7 @@ Explicitly selecting an O item for handling requires a separately established ou
 
 ### Choose an action
 
-Use the conversation's language for human-facing labels, summaries, action names, and questions. Localize action names and their descriptions consistently in that language, without pairing them with names in another language. Interpret natural-language selections by meaning, rather than requiring command syntax.
+Use the conversation's language for human-facing labels, summaries, action names, and input prompts. Localize action names and their descriptions consistently in that language, without pairing them with names in another language. Interpret natural-language selections by meaning, rather than requiring command syntax.
 
 Modification IDs select their relevant findings or suggestions. Unqualified **fix**, **optimize**, and explicit **ignore all** cover this report's already displayed, outstanding items in the chosen dimension, including earlier groups. A subset affects only that subset. Explain the applicable scope and count in the menu. Advancing displays the next group at the saved position or finishes an exhausted scope.
 
@@ -208,17 +208,19 @@ After progress, use these Markdown sections in order, omitting empty sections:
 1. **Pending findings**: Include outstanding findings from earlier groups. Use the exact format `**M1** (P1): <impact summary>` with the actual ID and severity; bold only the ID and keep the ASCII parentheses and colon plain.
 2. **Optional improvements**: Include outstanding supported suggestions from earlier groups, each with its ID, proposed improvement, and benefit.
 3. 📌 **Incidental observations (outside this review's scope)**: Use the separate O items defined above.
-4. **Available actions**: Describe actual effects in short bullets without command syntax or numbered recipes, including the exact publication delta and eligible Viewed set when needed.
+4. **Available actions**: Number every executable choice consecutively from 1 in an ordered list, including a sole continuation or resumption choice. Use short descriptions of actual effects rather than execution recipes, including the exact publication delta and eligible Viewed set when needed. Regenerate the numbering for each menu; these numbers identify its choices, while M and O IDs retain their item identities across the report.
 
-End with one concise question; when no choice remains, close without a question. Consult [example closings](references/report-examples.md#example-closings-for-different-results) when the presentation of a particular state needs clarification.
+End with one concise instruction to enter an operation number, such as “Enter an operation number.” When no choice remains, close without an input prompt. Consult [example closings](references/report-examples.md#example-closings-for-different-results) when the presentation of a particular state needs clarification.
 
-An incoming “continue” finishes an exhausted scope only when the gate is satisfied. A ready exhausted branch scope with no suggestions can close without a question after explaining why completion is not applicable. An explicit stop or pause is always allowed: report the displayed progress, unresolved or ignored findings, evidence gaps, unpublished modifications, and unfinished operations as applicable, without claiming successful completion. Completed display does not mean all findings were repaired or all modifications were published.
+An incoming “continue” finishes an exhausted scope only when the gate is satisfied. A ready exhausted branch scope with no suggestions can close without an input prompt after explaining why completion is not applicable. An explicit stop or pause is always allowed: report the displayed progress, unresolved or ignored findings, evidence gaps, unpublished modifications, and unfinished operations as applicable, without claiming successful completion. Completed display does not mean all findings were repaired or all modifications were published.
 
 ## Carry out the selected action
 
 ### Interpret replies
 
-Apply the selected meaning even when it is absent from the menu, provided its prerequisites and authority hold. If required effects were not disclosed or explicitly authorized, explain them and obtain the selection before writing; a historical “pass” disclosed as staging or marking Viewed supplies no commit or push authority. If the user requests advancement while blocked, refuse it briefly, name the blockers, and ask for the relevant fix, ignore, or remedy; “continue” never means “ignore.” Clarify ambiguous scopes, invalid IDs, conflicting directions, or a bare agreement following an ambiguous menu; “yes” authorizes an action only when the preceding question specifies it unambiguously. Reassess disputed findings from the supplied evidence rather than treating disagreement as ignoring. Answer questions without interpreting them as authorization for edits or advancement.
+Resolve operation numbers against the latest displayed menu, then apply the selected action's existing scope and authorization requirements. M-prefixed modification IDs and O-prefixed observation IDs select items rather than menu actions. Keep natural-language selections supported, including a meaning absent from the menu when its prerequisites and authority hold.
+
+If required effects were not disclosed or explicitly authorized, explain them and obtain the selection before writing; a historical “pass” disclosed as staging or marking Viewed supplies no commit or push authority. If the user requests advancement while blocked, refuse it briefly, name the blockers, and regenerate the numbered menu for the relevant fix, ignore, or remedy; “continue” never means “ignore.” Clarify ambiguous scopes or menu references, invalid operation numbers or item IDs, conflicting directions, or a bare agreement following an ambiguous menu; “yes” authorizes an action only when the preceding question specifies it unambiguously. Reassess disputed findings from the supplied evidence rather than treating disagreement as ignoring. Answer questions without interpreting them as authorization for edits or advancement.
 
 ### Repair or optimize, then re-review
 

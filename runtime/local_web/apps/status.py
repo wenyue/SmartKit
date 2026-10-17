@@ -11,6 +11,7 @@ from urllib.parse import quote
 import hashlib
 import os
 from ..storage import user_cache_dir, safe_namespace, redirected, read_json, write_json
+from .presentation import icon, page
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[3]
@@ -95,43 +96,60 @@ def application_data(feature: str, project_id: str = "") -> dict:
 def render_application(feature: str, key: str, data: dict) -> bytes:
     title = "项目就绪状态" if feature == "readiness" else "项目设置状态"
     access = "?key=" + quote(key, safe="")
-    nav = '<a href="/readiness/' + access + '">就绪检查</a> · <a href="/setup/' + access + '">项目设置</a>'
+    nav = '<nav class="tabs" aria-label="项目状态">' + ''.join(
+        '<a href="/' + name + '/' + access + '"' + (' aria-current="page"' if name == feature else '')
+        + '>' + text + '</a>' for name, text in (("readiness", "就绪检查"), ("setup", "项目设置"))) + '</nav>'
     rows = []
     for project in data["projects"]:
         identity = html.escape(project["project"])
         if feature == "readiness":
             observation = project["readiness"]
             status = {"passed": "检查通过", "findings": "存在待处理发现", "failed": "检查失败", "unavailable": "证据不可用"}.get(observation.get("status"), "证据不可用")
+            tone, symbol = {"passed": ("success", "check"), "findings": ("warning", "warning"),
+                            "failed": ("danger", "warning")}.get(observation.get("status"), ("muted", "info"))
             captured = observation.get("captured_at")
             stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(captured)) if isinstance(captured, (int, float)) else "未知"
-            parts = ['<h3>' + html.escape(status) + '</h3><p>宿主：' + html.escape(project["harness"]) + '；采集时间：' + stamp + '</p>']
+            parts = ['<p class="metadata"><span>宿主：' + html.escape(project["harness"])
+                     + '</span><span>采集时间：' + stamp + '</span></p>']
             if observation.get("message"):
-                parts.append('<p>' + html.escape(str(observation["message"])) + '</p>')
-            parts.append('<ul>')
+                parts.append('<p class="message">' + html.escape(str(observation["message"])) + '</p>')
+            parts.append('<ul class="findings">')
             for finding in observation.get("findings", []):
-                parts.append('<li><strong>' + html.escape(str(finding.get("tool", ""))) + '</strong>：' + html.escape(str(finding.get("message", ""))) + '<br>' + html.escape(str(finding.get("guidance", ""))) + '</li>')
+                parts.append('<li class="finding"><h3>' + html.escape(str(finding.get("tool", "")))
+                             + '</h3><p>' + html.escape(str(finding.get("message", "")))
+                             + '</p><p class="guidance">' + html.escape(str(finding.get("guidance", ""))) + '</p></li>')
             parts.append('</ul>')
             body = "".join(parts)
         else:
             setup = project["setup"]
             status = {"uninitialized": "尚未初始化", "baseline-required": "缺少已完成设置的版本基线", "initialized": "已有设置基线", "failed": "状态读取失败"}.get(setup["status"], setup["status"])
-            body = '<h3>' + html.escape(status) + '</h3>'
+            tone, symbol = {"initialized": ("info", "info"), "failed": ("danger", "warning"),
+                            "baseline-required": ("warning", "warning")}.get(setup["status"], ("muted", "info"))
+            body = ''
             if setup["status"] == "failed":
-                body += '<p>' + html.escape(setup["message"]) + '</p>'
+                body += '<p class="message">' + html.escape(setup["message"]) + '</p>'
             else:
-                body += '<p>成功设置版本：' + html.escape(setup["setup_version"] or "未建立") + '；插件版本：' + html.escape(setup["plugin_version"]) + '</p>'
+                body += ('<dl class="versions"><div><dt>成功设置版本</dt><dd class="mono">'
+                         + html.escape(setup["setup_version"] or "未建立")
+                         + '</dd></div><div><dt>插件版本</dt><dd class="mono">'
+                         + html.escape(setup["plugin_version"]) + '</dd></div></dl>')
                 guides = setup["migrations"]
                 if guides:
                     label = "声明的必要迁移" if setup["status"] == "initialized" else "可供设置流程评估的迁移声明"
-                    body += '<p>' + label + '：</p><ul>' + "".join('<li>' + html.escape(item["version"] + " — " + item["guide"]) + '</li>' for item in guides) + '</ul>'
+                    body += ('<p class="migration-label">' + icon("warning") + label
+                             + '</p><ul class="migrations">' + "".join('<li><span>' + html.escape(item["version"])
+                             + '</span><span>' + html.escape(item["guide"]) + '</span></li>' for item in guides) + '</ul>')
                 else:
-                    body += '<p>当前没有适用的迁移声明。</p>'
-        rows.append('<section><h2>' + identity + '</h2>' + body + '</section>')
-    empty = '<p>尚无项目记录。启动或恢复项目中的 Agent 会话后刷新此页。</p>'
-    return ('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>' + title + '</title>'
-            '<style>body{font:15px system-ui;max-width:1100px;margin:30px auto;padding:0 20px;color:#202124}section{border:1px solid #ccd3db;border-radius:8px;padding:18px;margin:18px 0}h2{font-size:18px;overflow-wrap:anywhere}li{margin:10px 0}a{color:#245ec7}</style>'
-            '<nav>' + nav + '</nav><h1>' + title + '</h1><p>只读视图。刷新仅重新读取记录，不运行检查、安装、修复或迁移。检查发现已显示不等于已修复；静态 MCP 就绪不等于运行健康。</p>'
-            + ("".join(rows) or empty) + '</html>').encode("utf-8")
+                    body += '<p class="message">当前没有适用的迁移声明。</p>'
+        rows.append('<section class="project-card"><div class="project-heading"><h2>' + identity
+                    + '</h2><span class="badge ' + tone + '">' + icon(symbol) + html.escape(status)
+                    + '</span></div>' + body + '</section>')
+    empty = '<p class="empty">尚无项目记录。启动或恢复项目中的 Agent 会话后刷新此页。</p>'
+    body = ('<h1>' + title + '</h1><aside class="notice">' + icon("info")
+            + '<div><p>只读视图。刷新仅重新读取记录，不运行检查、安装、修复或迁移。</p>'
+            '<p>检查发现已显示不等于已修复；静态 MCP 就绪不等于运行健康。</p></div></aside>'
+            + ("".join(rows) or empty))
+    return page(title, body, label="项目状态", navigation=nav)
 
 
 def record_project(project: Path, harness: str, readiness: Optional[dict] = None) -> None:

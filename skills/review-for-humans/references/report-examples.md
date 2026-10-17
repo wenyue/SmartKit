@@ -75,11 +75,11 @@ Previously, repeated clicks could start duplicate saves; the handler now refuses
 
 **Available actions**
 
-- **Optimize**: Implement the optional improvement.
-- **Pass and finish**: Stage the remaining reviewed changes across all groups in this report and end this review, retaining the improvement as advice.
-- **Finish**: End this review without staging remaining changes, retaining the improvement as advice.
+1. **Optimize**: Implement the optional improvement.
+2. **Pass and finish**: Stage the remaining reviewed changes across all groups in this report and end this review, retaining the improvement as advice.
+3. **Finish**: End this review without staging remaining changes, retaining the improvement as advice.
 
-🤖 **Would you like to optimize, pass and finish, or finish?**
+🤖 **Enter an operation number.**
 
 ## Example closings for different results
 
@@ -104,10 +104,10 @@ O1 remains advice, does not block completion, and is excluded from bulk fixes or
 
 **Available actions**
 
-- **Pass and finish**: Stage the remaining reviewed changes across all groups in this report and end this review, retaining O1 as advice.
-- **Finish**: End this review without staging remaining changes, retaining O1 as advice.
+1. **Pass and finish**: Stage the remaining reviewed changes across all groups in this report and end this review, retaining O1 as advice.
+2. **Finish**: End this review without staging remaining changes, retaining O1 as advice.
 
-🤖 **Would you like to pass and finish, or finish?**
+🤖 **Enter an operation number.**
 
 ### Pending findings and optional improvements
 
@@ -126,13 +126,15 @@ O1 remains advice, does not block completion, and is excluded from bulk fixes or
 
 **Available actions**
 
-- **Fix**: Repair both pending findings, or the subset you select.
-- **Ignore**: Choose which findings to ignore; other findings remain pending.
-- **Optimize**: Implement the optional improvement; the pending findings still need attention.
+1. **Fix**: Repair both pending findings, or the subset you select.
+2. **Ignore**: Choose which findings to ignore; other findings remain pending.
+3. **Optimize**: Implement the optional improvement; the pending findings still need attention.
 
-🤖 **Would you like to fix or ignore the findings, or optimize? The findings must be handled before continuing.**
+🤖 **Enter an operation number; include M IDs to select a subset.**
 
-If the user replies “continue,” respond: “M2 and M5 are still pending, so I cannot show the next group yet. Would you like to fix them or explicitly ignore them?”
+If the user replies “1, M2,” repair only M2; M5 remains pending. If the user replies “2,” clarify which findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation numbers choose actions; M IDs choose their items.
+
+If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the numbered available actions and number-entry prompt above.
 
 ### PR repaired locally and ready for completion
 
@@ -140,10 +142,10 @@ If the user replies “continue,” respond: “M2 and M5 are still pending, so 
 
 **Available actions**
 
-- **Pass and continue**: Commit and push the two fixes, verify the PR version, mark the four displayed reviewed files Viewed and verify every readback, then show the next group.
-- **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
+1. **Pass and continue**: Commit and push the two fixes, verify the PR version, mark the four displayed reviewed files Viewed and verify every readback, then show the next group.
+2. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
 
-🤖 **Would you like to pass and continue, or continue with the fixes kept local?**
+🤖 **Enter an operation number.**
 
 ### Publication scope is not safe
 
@@ -153,9 +155,9 @@ If the user replies “continue,” respond: “M2 and M5 are still pending, so 
 
 **Available actions**
 
-- **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
+1. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
 
-🤖 **Would you like to continue with the fixes kept local?**
+🤖 **Enter an operation number.**
 
 ### Resume partially completed PR recording
 
@@ -165,9 +167,9 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 **Available actions**
 
-- **Pass and continue**: Resume by marking the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed marking will be reused.
+1. **Pass and continue**: Resume by marking the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed marking will be reused.
 
-🤖 **Would you like to resume pass and continue?**
+🤖 **Enter an operation number.**
 
 ### Final group of a PR review
 
@@ -179,8 +181,8 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 **Available actions**
 
-- **Optimize**: Implement the optional improvement.
-- **Pass and finish**: Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
-- **Finish**: End this review without marking the remaining files Viewed, retaining the improvement as advice.
+1. **Optimize**: Implement the optional improvement.
+2. **Pass and finish**: Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
+3. **Finish**: End this review without marking the remaining files Viewed, retaining the improvement as advice.
 
-🤖 **Would you like to optimize, pass and finish, or finish?**
+🤖 **Enter an operation number.**

@@ -22,6 +22,7 @@ class Target:
     github: Optional[str] = None
     head: Optional[str] = None
     base_path: Optional[str] = None
+    base_commit: Optional[str] = None
 
     def query(self) -> str:
         values = {"repo": str(self.repo), "path": self.path, "base": self.base}
@@ -31,6 +32,8 @@ class Target:
             values["head"] = self.head
         if self.base_path:
             values["base_path"] = self.base_path
+        if self.base_commit:
+            values["base_commit"] = self.base_commit
         return urlencode(values)
 
     def url(self, *, html_only: bool = False) -> str:
@@ -69,8 +72,8 @@ def github_pr_url(repository: str, number: int) -> str:
 
 
 def target_from_fields(fields: Mapping[str, str]) -> Target:
-    if set(fields) - {"repo", "path", "base", "github", "head", "base_path"} or not {"repo", "path", "base"} <= set(fields):
-        raise ValueError("diff needs repo, path, base, and optional github/head/base_path context")
+    if set(fields) - {"repo", "path", "base", "github", "head", "base_path", "base_commit"} or not {"repo", "path", "base"} <= set(fields):
+        raise ValueError("diff needs repo, path, base, and optional github/head/base_path/base_commit context")
     if not all(isinstance(value, str) and value and not any(ord(c) < 32 for c in value) for value in fields.values()):
         raise ValueError("diff parameters must be nonempty single-line strings")
     repo = Path(fields["repo"])
@@ -82,8 +85,11 @@ def target_from_fields(fields: Mapping[str, str]) -> Target:
             raise ValueError("path must be a confined worktree-relative file")
     base = fields["base"]
     validate_base(base)
-    if "base_path" in fields and not (base == "index" or base.startswith("commit:")):
-        raise ValueError("base_path only applies to an index or commit baseline")
+    base_commit = fields.get("base_commit")
+    if base_commit and (re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", base_commit) is None or not base.startswith("blob:")):
+        raise ValueError("base_commit needs a full commit OID and a pinned blob baseline")
+    if "base_path" in fields and not (base == "index" or base.startswith("commit:") or base_commit):
+        raise ValueError("base_path needs an index, commit, or a blob with base_commit")
     github = fields.get("github")
     if github:
         parsed = urlsplit(github)
@@ -93,11 +99,11 @@ def target_from_fields(fields: Mapping[str, str]) -> Target:
     head = fields.get("head")
     if head and (re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", head) is None or not github or base == "index"):
         raise ValueError("PR head needs a full commit OID, github URL, and a fixed baseline")
-    return Target(repo, fields["path"], base, github, head, fields.get("base_path"))
+    return Target(repo, fields["path"], base, github, head, fields.get("base_path"), base_commit)
 
 
 def target_from_query(query: str) -> Target:
-    fields = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=6)
+    fields = parse_qs(query, keep_blank_values=True, strict_parsing=True, max_num_fields=7)
     if any(len(values) != 1 for values in fields.values()):
         raise ValueError("duplicate diff parameter")
     target = target_from_fields({name: values[0] for name, values in fields.items()})
@@ -111,7 +117,8 @@ def git(repo: Path, *arguments: str) -> bytes:
     try:
         result = subprocess.run(["git", "--no-replace-objects", "-C", str(repo)] + list(arguments),
                                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                env=environment, timeout=10)
+                                env=environment, timeout=10,
+                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     except subprocess.TimeoutExpired as error:
         raise TimeoutError("Git comparison timed out") from error
     if result.returncode:
@@ -161,7 +168,18 @@ def pin_baseline(target: Target) -> Target:
                 raise ValueError("baseline path is not a file")
             oid = parts[2]
         base = "blob:" + oid.decode("ascii")
-    return replace(target, base=base, base_path=None)
+    bound = replace(target, base=base, base_path=None)
+    if base == "absent":
+        return bound
+    if target.base.startswith("commit:"):
+        return replace(bound, base_commit=commit, base_path=target.base_path)
+    try:
+        head = git(root, "rev-parse", "--verify", "HEAD^{commit}").decode("ascii").strip()
+        committed = pin_baseline(replace(target, base="commit:" + head))
+    except (OSError, ValueError):
+        # Native positioning is optional; the captured index blob remains authoritative.
+        return bound
+    return committed if committed.base == base else bound
 
 
 def pr_worktrees(target: Target) -> List[Path]:

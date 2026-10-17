@@ -14,10 +14,12 @@ import sys
 import threading
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Sequence
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from .. import artifacts
 from ..storage import prepare_state, redirected
-from .comparisons import (Comparison, Target, github_pr_url, read_comparison, resolve_targets,
+from .presentation import icon, page
+from .comparisons import (Comparison, Target, git, github_pr_url, pin_baseline, read_comparison, resolve_targets,
                           target_from_fields, target_from_query, validate_base)
 
 
@@ -132,21 +134,35 @@ def render_diff(comparison: Comparison) -> bytes:
 
 
 def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
-    github = ('<a href="' + html.escape(target.github, quote=True) + '">查看 GitHub PR diff</a> · ') if target.github else ""
+    github = ('<a class="github-link" href="' + html.escape(target.github, quote=True) + '">'
+              + icon("external") + '查看 GitHub PR diff</a>') if target.github else ""
     endpoint = "/api/diff/open?" + target.query()
     encoded = json.dumps(endpoint).replace("<", "\\u003c")
     initial = "正在尝试打开 VS Code…" if automatic else "点击按钮尝试打开 VS Code，或选择网页 diff。"
-    return ('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>打开 Diff</title>'
-            '<style>body{font:16px system-ui;max-width:900px;margin:40px auto;padding:0 20px;overflow-wrap:anywhere}a{color:#245ec7}</style>'
-            '<h1>' + html.escape(target.path) + '</h1><p id="status">' + initial + '</p><button id="open">打开 VS Code</button><p>' + github
-            + '<a href="' + html.escape(target.url(html_only=True), quote=True) + '">查看当前工作区 HTML diff</a></p>'
+    body = ('<div id="opening"' + (' class="is-opening"' if automatic else '') + '>'
+            '<div class="opening-heading"><span class="spinner" aria-hidden="true"'
+            + ('' if automatic else ' hidden') + '></span><h1 id="opening-title">'
+            + ('正在打开 VS Code' if automatic else '打开文件对比') + '</h1></div>'
+            '<p id="status" class="opening-status" role="status" aria-live="polite">' + initial + '</p>'
+            '<div class="file-context">' + icon("file") + '<div><p class="file-path">'
+            + html.escape(target.path) + '</p><p class="project-name">' + html.escape(target.repo.name)
+            + '</p></div></div><div class="actions"><button id="open" class="button primary" type="button">'
+            '<span class="spinner" aria-hidden="true" hidden></span><span id="open-label">打开 VS Code</span></button>'
+            '<a class="button" href="' + html.escape(target.url(html_only=True), quote=True) + '">'
+            + icon("browser") + '在网页中查看</a></div>' + github
+            + '<footer class="closing-note">' + icon("info") + '<div><p>请求发出后将尝试自动关闭本页。</p>'
+            '<p>若页面未关闭，可使用上方网页入口查看。</p></div></footer></div>'
             '<script>const automatic=' + ('true' if automatic else 'false') + ';let started=false;async function openDiff(){if(started||document.prerendering||document.visibilityState!=="visible"||window.top!==window.self)return;started=true;document.getElementById("open").disabled=true;'
+            'document.getElementById("opening").classList.add("is-opening");document.querySelectorAll(".spinner").forEach(item=>item.hidden=false);document.getElementById("open-label").textContent="正在打开…";document.getElementById("opening-title").textContent="正在打开 VS Code";'
             'try{const response=await fetch(' + encoded + ',{method:"POST",credentials:"omit"});const result=await response.json();'
             'document.getElementById("status").textContent=result.message;'
             'if(response.ok&&result.url)location.replace(result.url);'
-            'else if(response.ok&&result.viewer==="vscode")window.close();'
-            '}catch(error){document.getElementById("status").textContent="启动请求未完成，请使用下方入口查看 diff。";}}'
-            'document.getElementById("open").addEventListener("click",openDiff);if(automatic){document.addEventListener("prerenderingchange",openDiff);document.addEventListener("visibilitychange",openDiff);openDiff();}</script></html>').encode("utf-8")
+            'else if(response.ok&&result.viewer==="vscode"){document.getElementById("opening-title").textContent="已发送打开请求";document.getElementById("open-label").textContent="已发送请求";window.close();}'
+            'else{document.getElementById("opening-title").textContent="打开请求未完成";document.getElementById("open-label").textContent="请求未完成";}'
+            '}catch(error){document.getElementById("status").textContent="启动请求未完成，请使用下方入口查看 diff。";document.getElementById("opening-title").textContent="打开请求未完成";document.getElementById("open-label").textContent="请求未完成";}'
+            'finally{document.getElementById("opening").classList.remove("is-opening");document.querySelectorAll(".spinner").forEach(item=>item.hidden=true);}}'
+            'document.getElementById("open").addEventListener("click",openDiff);if(automatic){document.addEventListener("prerenderingchange",openDiff);document.addEventListener("visibilitychange",openDiff);openDiff();}</script>')
+    return page("打开 Diff", body, label="文件对比", compact=True)
 
 
 def find_vscode() -> Optional[Path]:
@@ -179,6 +195,35 @@ def find_vscode() -> Optional[Path]:
     return None
 
 
+def git_base_uri(comparison: Comparison) -> Optional[str]:
+    """Use the built-in Git provider only when it reproduces the pinned blob."""
+    target = comparison.target
+    if not target.base_commit or comparison.before is None:
+        return None
+    name = target.base_path or target.path
+    try:
+        history = target.repo.resolve(strict=True)
+        for part in name.split("/"):
+            history /= part
+            if redirected(history):
+                return None
+        committed = pin_baseline(replace(target, base="commit:" + target.base_commit, base_commit=None))
+        if committed.base != target.base or git(target.repo, "replace", "-l").strip():
+            return None
+        attributes = git(target.repo, "check-attr", "-z", "diff", "--", name).split(b"\0")
+        if len(attributes) != 4 or attributes[1] != b"diff":
+            return None
+        driver = os.fsdecode(attributes[2])
+        # VS Code runs textconv; keep converters and their cache writes off the fixed-blob path.
+        if driver not in ("unspecified", "set", "unset") and git(
+                target.repo, "config", "--get", "--default", "", "diff." + driver + ".textconv").strip():
+            return None
+    except (OSError, ValueError):
+        return None
+    query = quote(json.dumps({"path": str(history), "ref": target.base_commit}, ensure_ascii=False), safe="")
+    return urlunsplit(("git", "", urlsplit(history.as_uri()).path, query, ""))
+
+
 def open_editor(target: Target) -> Dict[str, str]:
     """Dispatch a fixed launcher, or return the contracted GitHub/HTML fallback."""
     if target.head or target.base.startswith("commit:"):
@@ -200,12 +245,24 @@ def open_editor(target: Target) -> Dict[str, str]:
         return {"viewer": "web", "url": fallback, "message": "未找到 VS Code，正在打开网页 diff。"}
     suffix = Path(target.path).suffix
     try:
-        payloads = {"before" + suffix: comparison.before or b""}
+        before_uri = git_base_uri(comparison)
+        payloads = {}  # type: Dict[str, bytes]
+        if before_uri is None:
+            payloads["before" + suffix] = comparison.before or b""
         if comparison.after is None:
             payloads["after" + suffix] = b""
-        captured = artifacts.create_artifact(payloads)
-        before = captured.files["before" + suffix].path
-        after = captured.files["after" + suffix].path if comparison.after is None else comparison.worktree_file
+        after = comparison.worktree_file
+        if payloads:
+            captured = artifacts.create_artifact(payloads)
+            if before_uri is None:
+                before = captured.files["before" + suffix].path
+            if comparison.after is None:
+                after = captured.files["after" + suffix].path
+        if before_uri is None:
+            arguments = [str(before), str(after)]
+        else:
+            # Windows Chromium filters standalone URL arguments before VS Code parses them.
+            arguments = ["--file-uri=" + before_uri, "--file-uri=" + after.as_uri()]
         environment = dict(os.environ)
         environment.pop("ELECTRON_RUN_AS_NODE", None)
         log_path = prepare_state() / "vscode-launch.log"
@@ -213,7 +270,7 @@ def open_editor(target: Target) -> Dict[str, str]:
             raise ValueError("editor launch log redirects")
         descriptor = os.open(str(log_path), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "wb") as log:
-            process = subprocess.Popen([str(launcher), "--reuse-window", "--diff", str(before), str(after)],
+            process = subprocess.Popen([str(launcher), "--reuse-window", "--diff"] + arguments,
                                        env=environment, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                        start_new_session=True)
             try:
