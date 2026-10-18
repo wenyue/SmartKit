@@ -9,7 +9,7 @@
             "command": "sh \"${PLUGIN_ROOT}/runtime/recommended-tools/check_recommended_tools.sh\" hook --harness codex",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\recommended-tools\\check_recommended_tools.ps1\" hook --harness codex",
             "timeout": 30,
-            "statusMessage": "Checking Python and daily project readiness"
+            "statusMessage": "Checking Python and daily readiness and session CodeGraph health"
           },
           {
             "type": "command",
@@ -27,7 +27,7 @@
           {
             "type": "command",
             "command": "sh \"${PLUGIN_ROOT}/runtime/local_web/dispatch.sh\" hook --harness codex",
-            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\web\\dispatch.ps1\" hook --harness codex",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}\\runtime\\local_web\\dispatch.ps1\" hook --harness codex",
             "timeout": 15,
             "statusMessage": "Starting shared SmartKit HTTP service"
           }

@@ -9,7 +9,7 @@
             "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/recommended-tools/check_recommended_tools.sh\" hook --harness qoder",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\recommended-tools\\check_recommended_tools.ps1\" hook --harness qoder",
             "timeout": 30,
-            "statusMessage": "Checking daily project readiness"
+            "statusMessage": "Checking daily readiness and session CodeGraph health"
           },
           {
             "type": "command",
@@ -22,7 +22,7 @@
           {
             "type": "command",
             "command": "sh \"${QODER_PLUGIN_ROOT}/runtime/local_web/dispatch.sh\" hook --harness qoder",
-            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\web\\dispatch.ps1\" hook --harness qoder",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${QODER_PLUGIN_ROOT}\\runtime\\local_web\\dispatch.ps1\" hook --harness qoder",
             "timeout": 15,
             "statusMessage": "Starting shared SmartKit HTTP service"
           }

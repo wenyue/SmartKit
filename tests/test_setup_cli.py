@@ -50,7 +50,7 @@ class SetupCliTest(unittest.TestCase):
         return [
             '--source-root', str(REPO_ROOT),
             '--source-commit', self.source_commit,
-            '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+            '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
         ]
 
     def private_session(self, root: Path) -> Path:
@@ -494,7 +494,7 @@ class SetupCliTest(unittest.TestCase):
             target.mkdir()
             source_args = [
                 '--source-root', str(source), '--source-commit', self.source_commit,
-                '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+                '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
             ]
 
             def sync():
@@ -576,7 +576,7 @@ class SetupCliTest(unittest.TestCase):
             source_args = [
                 '--source-root', str(source),
                 '--source-commit', self.source_commit,
-                '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+                '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
             ]
             self.assertEqual(
                 setup_project_agents.main([
@@ -695,6 +695,208 @@ class SetupCliTest(unittest.TestCase):
                 moved.parent.mkdir()
                 agent.rename(moved)
                 self.assertNotEqual(fingerprint(), added)
+
+    def test_referenced_agent_content_and_reference_changes_are_frozen(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'target'
+            native = target / 'team/special.toml'
+            native.parent.mkdir(parents=True)
+            native.write_bytes(b'model = "current"\n')
+            host = target / '.codex/config.toml'
+            host.parent.mkdir()
+            host.write_text('[agents.local]\nconfig_file = "../team/special.toml"\n', encoding='utf-8')
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            config = setup_project_agents.inspect_project(target, catalog=catalog).config
+            def fingerprint():
+                return setup_project_agents._target_fingerprint(target, source_root=REPO_ROOT, catalog=catalog, config=config)
+            before = fingerprint()
+            native.write_bytes(b'model = "changed"\n')
+            self.assertNotEqual(fingerprint(), before)
+            before = fingerprint()
+            host.write_text('[agents.local]\nconfig_file = "../team/missing.toml"\n', encoding='utf-8')
+            self.assertNotEqual(fingerprint(), before)
+            session = self.private_session(Path(directory))
+            with redirect_stderr(StringIO()) as error:
+                self.assertEqual(self.prepare(target, session), 2)
+            self.assertIn('missing or not a regular file', error.getvalue())
+            self.assertFalse((session / 'request.json').exists())
+
+    def test_writer_inputs_rejects_empty_plan_registration_and_source_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            plan = root / 'plan.md'
+            command = ['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()]
+            plan.write_bytes(b'   \n')
+            with redirect_stderr(StringIO()) as error:
+                self.assertEqual(setup_project_agents.main(command), 2)
+            self.assertIn('nonempty UTF-8', error.getvalue())
+            plan.write_bytes(b'Reconcile all requested artifacts.\n')
+            with mock.patch.object(setup_project_agents, '_source_fingerprint', return_value='0' * 64), redirect_stderr(StringIO()) as error:
+                self.assertEqual(setup_project_agents.main(command), 2)
+            self.assertIn('source changed after start', error.getvalue())
+            self.write_generated_outputs(session)
+            with redirect_stderr(StringIO()) as error:
+                self.assertEqual(setup_project_agents.main(command), 2)
+            self.assertIn('before registration', error.getvalue())
+            self.assertEqual(list(session.glob('writer-inputs-*')), [])
+
+    def test_fileless_codex_role_allows_prepare_and_its_declaration_is_frozen(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            host = target / '.codex/config.toml'
+            host.parent.mkdir(parents=True)
+            host.write_bytes(b'[agents.reviewer]\ndescription = "Review code"\n')
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            request = (session / 'request.json').read_bytes()
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Preserve the role and assess every blueprint.\n')
+            command = ['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()]
+            with redirect_stdout(StringIO()):
+                self.assertEqual(setup_project_agents.main(command), 0)
+            host.write_bytes(b'[agents.reviewer]\ndescription = "Changed responsibility"\n')
+            with redirect_stderr(StringIO()) as error:
+                self.assertEqual(setup_project_agents.main(command), 2)
+            self.assertIn('target changed after start', error.getvalue())
+            self.assertEqual((session / 'request.json').read_bytes(), request)
+
+    def test_unreadable_skill_support_refuses_prepare_and_writer_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            skill = target / '.agents/skills/change-set-verification'
+            support = skill / 'references/private/must-preserve.md'
+            support.parent.mkdir(parents=True)
+            support.write_bytes(b'Project obligation that must remain visible.\n')
+            (skill / 'SKILL.md').write_bytes(b'Existing project Skill.\n')
+            before = self.snapshot_tree(target)
+            session = self.private_session(root)
+            scandir = os.scandir
+
+            def denied(path):
+                if Path(path) == support.parent:
+                    raise PermissionError(f'cannot enumerate Skill support: {path}')
+                return scandir(path)
+
+            with mock.patch.object(os, 'scandir', side_effect=denied), redirect_stderr(StringIO()) as error:
+                self.assertEqual(self.prepare(target, session), 2)
+            self.assertIn(str(support.parent), error.getvalue())
+            self.assertFalse((session / 'request.json').exists())
+            self.assertEqual(self.prepare(target, session), 0)
+            request = (session / 'request.json').read_bytes()
+            registration = (session / 'generated/.setup-generation.json').read_bytes()
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Preserve every existing project obligation.\n')
+            with mock.patch.object(os, 'scandir', side_effect=denied), redirect_stderr(StringIO()) as error:
+                status = setup_project_agents.main(['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()])
+            self.assertEqual(status, 2)
+            self.assertIn(str(support.parent), error.getvalue())
+            self.assertEqual(list(session.glob('writer-inputs-*')), [])
+            self.assertEqual((session / 'request.json').read_bytes(), request)
+            self.assertEqual((session / 'generated/.setup-generation.json').read_bytes(), registration)
+            self.assertEqual(self.snapshot_tree(target), before)
+
+    def test_agent_reference_traversal_components_remain_frozen_after_normalization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            native = target / '.codex/agents/local.toml'
+            native.parent.mkdir(parents=True)
+            native.write_bytes(b'model = "working"\n')
+            traversed = target / 'traversed'
+            traversed.mkdir()
+            (target / '.codex/config.toml').write_text('[agents.local]\nconfig_file = "../traversed/../.codex/agents/local.toml"\n', encoding='utf-8')
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            config = setup_project_agents.inspect_project(target, catalog=catalog).config
+            def fingerprint():
+                return setup_project_agents._target_fingerprint(target, source_root=REPO_ROOT, catalog=catalog, config=config)
+            before = fingerprint()
+            traversed.rmdir()
+            self.assertNotEqual(fingerprint(), before)
+
+    def test_writer_inputs_discards_partial_bundle_on_final_drift_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Reconcile all requested artifacts.\n')
+            write_json = setup_project_agents._write_json
+            def changed(path, document):
+                write_json(path, document)
+                if path.name == 'inputs.json':
+                    source = target / '.agents/rules/added.md'
+                    source.parent.mkdir(parents=True)
+                    source.write_bytes(b'External concurrent work\n')
+            with mock.patch.object(setup_project_agents, '_write_json', side_effect=changed), redirect_stderr(StringIO()) as error:
+                status = setup_project_agents.main(['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()])
+            self.assertEqual(status, 2)
+            self.assertIn('target changed after start', error.getvalue())
+            self.assertEqual(list(session.glob('writer-inputs-*')), [])
+            self.assertEqual((target / '.agents/rules/added.md').read_bytes(), b'External concurrent work\n')
+
+    def test_writer_inputs_include_recorded_and_unrecorded_files_of_renamed_skill(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            old = PurePosixPath('.agents/skills/old-verifier/SKILL.md')
+            helper = old.parent / 'scripts/keep.py'
+            extra = old.parent / 'references/project.bin'
+            for relative, content in ((old, b'old entry\r\n'), (helper, b'print("keep")\n'), (extra, b'\x00\xff')):
+                path = target / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            current = next(item for item in setup_project_agents.generation_requests(REPO_ROOT, target, catalog, None) if item['id'] == 'blueprint-change-set-verification')
+            (target / '.agents/smartkit.lock.json').write_text(json.dumps({
+                'sources': [], 'assets': [], 'contracts': [{
+                    'id': current['id'], 'source': current['source'], 'target': str(old),
+                    'fingerprint': 'a' * 64, 'outputs': [str(old), str(helper)],
+                }],
+            }), encoding='utf-8')
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Retain valid older Skill support.\n')
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(setup_project_agents.main(['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()]), 0)
+            bundle = Path(json.loads(output.getvalue())['bundle'])
+            inputs = json.loads((bundle / 'inputs.json').read_bytes())
+            selected = next(item for item in inputs['inputs'] if item['request']['id'] == current['id'])
+            self.assertTrue(any(item['path'] == current['target'] and item['missing'] for item in selected['existing']))
+            for relative in (old, helper, extra):
+                self.assertEqual((bundle / 'existing' / relative).read_bytes(), (target / relative).read_bytes())
+            # Even unrecorded support consumed from the old directory belongs to this session's evidence.
+            (target / extra).write_bytes(b'changed')
+            with redirect_stderr(StringIO()) as error:
+                self.assertEqual(setup_project_agents.main(['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()]), 2)
+            self.assertIn('target changed after start', error.getvalue())
+
+    def test_writer_inputs_cleanup_failure_preserves_primary_error_and_residual_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            self.assertEqual(self.prepare(target, session), 0)
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Reconcile all requested artifacts.\n')
+            with mock.patch.object(setup_project_agents, '_write_json', side_effect=OSError('write fault')), \
+                 mock.patch.object(setup_project_agents.shutil, 'rmtree', side_effect=OSError('cleanup fault')), \
+                 redirect_stderr(StringIO()) as error:
+                self.assertEqual(setup_project_agents.main(['writer-inputs', '--target', str(target), '--session', str(session), '--plan', str(plan), *self.source_args()]), 2)
+            remaining = list(session.glob('writer-inputs-*'))
+            self.assertEqual(len(remaining), 1)
+            self.assertIn('write fault', error.getvalue())
+            self.assertIn('cleanup fault', error.getvalue())
+            self.assertIn(str(remaining[0]), error.getvalue())
 
     def test_finish_refuses_an_undeclared_native_agent_added_after_prepare(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1494,7 +1696,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(
                 bootstrap.main([
                     'prepare', '--target', str(target), '--session', str(session),
-                    '--completion-protocol', 'setup-version-v1',
+                    '--completion-protocol', 'setup-version-codegraph-v1',
                 ]),
                 0,
             )
@@ -1508,7 +1710,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 str(source_root / 'skills/setup-project-agents/scripts/setup_project_agents.py'),
                 'finish', '--target', str(target), '--session', str(session),
                 '--source-root', str(source_root),
-                '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+                '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
             ),
             check=False,
             stdout=subprocess.PIPE,
@@ -1523,7 +1725,7 @@ class SetupEndToEndTest(unittest.TestCase):
         return setup_project_agents.main([
             'finish', '--target', str(target), '--session', str(session),
             '--source-root', request['source_root'],
-            '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+            '--source-commit', request['source_commit'] or 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
         ])
 
     def test_remote_master_upgrade_is_idempotent_and_keeps_setup_control_plane_out_of_snapshot(self):
@@ -1618,7 +1820,7 @@ class SetupEndToEndTest(unittest.TestCase):
                 self.assertEqual(
                     bootstrap.main([
                         'prepare', '--target', str(offline_target), '--session', str(offline_session),
-                        '--completion-protocol', 'setup-version-v1',
+                        '--completion-protocol', 'setup-version-codegraph-v1',
                     ]),
                     0,
                 )
@@ -1630,7 +1832,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(target), '--session', str(baseline_session),
                 '--source-root', str(source),
-                '--source-commit', 'a' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+                '--source-commit', 'a' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
             ]), 0)
             self.write_generated_outputs(baseline_session)
             self.assertEqual(self.finish_pinned(target, baseline_session)[0], 0)
@@ -1645,7 +1847,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(collision_target), '--session', str(collision_session),
                 '--source-root', str(source),
-                '--source-commit', 'a' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+                '--source-commit', 'a' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
             ]), 0)
             self.write_generated_outputs(collision_session)
             self.assertEqual(self.finish_pinned(collision_target, collision_session)[0], 2)
@@ -1672,7 +1874,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(target), '--session', str(rollback_session),
                 '--source-root', str(source),
-                '--source-commit', 'b' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+                '--source-commit', 'b' * 40, '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
             ]), 0)
             self.write_generated_outputs(rollback_session)
             before_rollback = self.snapshot_tree(target)

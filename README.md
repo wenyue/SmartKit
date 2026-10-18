@@ -136,13 +136,15 @@ SmartKit includes selected Skills from the following projects, with SmartKit-spe
 
 ### Tools
 
-SmartKit configures or recommends the following tools. CodeGraph and Tokscale are installed separately; follow their upstream installation instructions and expose their commands to your coding assistant. The plugin owns the MCP configuration for CodeGraph and Playwright: at session start, SmartKit removes same-named entries from your user-level MCP configuration.
+SmartKit configures or recommends the following tools. Full project setup prepares CodeGraph on the current machine: it installs the tool when missing, initializes or synchronizes the project's index, and verifies the running service. Setup requires authorization for those effects. Every session in an initialized SmartKit project checks CodeGraph again and reminds you when it needs attention. Tokscale is installed separately. The plugin owns the MCP configuration for CodeGraph and Playwright: at session start, SmartKit removes same-named entries from your user-level MCP configuration.
 
 | Tool | Purpose | Installation and use |
 | --- | --- | --- |
-| [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Make `codegraph` available on PATH; the plugin includes MCP configuration. Choose which repositories to initialize and index. |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Required for projects initialized by SmartKit. Full setup prepares the local installation, index and service; the plugin includes MCP configuration. Index databases remain local to each working tree. |
 | [Tokscale](https://github.com/junhoyeo/tokscale) | Supplies token usage and estimated cost evidence for `diagnose-agent-session`. | Make `tokscale` available on PATH; available diagnostic data depends on the client and its recorded usage. |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Provides browser automation. | The plugin includes MCP configuration; the client uses `npx` to obtain and launch `@playwright/mcp`. Requires Node.js 18 or newer and `npx` on PATH. |
+
+Hook launchers warn on stderr when execution exceeds 0.2 seconds. Timing includes the Python preflight and handler; it preserves the original output and exit status and never blocks a task because of elapsed time.
 
 ## Install the plugin
 

@@ -33,6 +33,11 @@ def run_git(directory: Path, *args: str) -> None:
 
 class SetupWorkflowTest(unittest.TestCase):
 
+    def setUp(self):
+        readiness = mock.patch.object(workflow, '_verify_codegraph', return_value={'ready': True, 'message': 'test MCP responds'})
+        readiness.start()
+        self.addCleanup(readiness.stop)
+
 
     @staticmethod
     def make_origin(root: Path) -> Path:
@@ -87,6 +92,113 @@ class SetupWorkflowTest(unittest.TestCase):
             ) + '\n',
             encoding='utf-8',
         )
+
+    def test_inspect_is_read_only_for_fresh_and_initialized_targets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_matt_context(target)
+            (target / '.codex').mkdir()
+            (target / '.codex/config.toml').write_bytes(b'[agents.reviewer]\ndescription = "Review code"\n')
+            for initialized in (False, True):
+                if initialized:
+                    (target / '.agents').mkdir()
+                    (target / '.agents/smartkit.lock.json').write_text('{"sources":[],"assets":[]}', encoding='utf-8')
+                    (target / '.agents/config.json').write_text('{"setupVersion":"1.0.0"}', encoding='utf-8')
+                before = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in target.rglob('*') if path.is_file()}
+                output = StringIO()
+                with mock.patch.object(workflow, '_create_session') as create, \
+                     mock.patch.object(bootstrap, 'main') as bootstrap_main, \
+                     mock.patch.object(workflow, '_setup_codegraph') as setup_runtime, \
+                     redirect_stdout(output):
+                    self.assertEqual(workflow.main(['inspect', '--target', str(target)]), 0)
+                result = json.loads(output.getvalue())
+                self.assertEqual(result['phase'], 'inspect')
+                self.assertEqual(result['ownership']['initialized'], initialized)
+                self.assertTrue(result['migrations']['provisional'])
+                self.assertIn('.agents/rules/structure.md', [item['target'] for item in result['project_discovery']['generation_requests']])
+                self.assertIn('additional_rules', result['project_discovery'])
+                self.assertTrue(result['pending_assessment'])
+                self.assertEqual(result['agents']['role_declarations'][0]['id'], 'reviewer')
+                self.assertEqual(result['agents']['issues'], [])
+                self.assertNotIn('ready', result)
+                self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in target.rglob('*') if path.is_file()})
+                create.assert_not_called()
+                bootstrap_main.assert_not_called()
+                setup_runtime.assert_not_called()
+
+    def test_inspect_aggregates_missing_prerequisites_and_malformed_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / '.agents').mkdir()
+            (target / '.agents/config.json').write_bytes(b'{broken')
+            (target / '.agents/smartkit.lock.json').write_bytes(b'{broken')
+            output = StringIO()
+            with mock.patch.object(workflow, '_verify_codegraph', side_effect=workflow.WorkflowError('runtime missing')), redirect_stdout(output):
+                self.assertEqual(workflow.main(['inspect', '--target', str(target)]), 2)
+            result = json.loads(output.getvalue())
+            for section in ('matt', 'configuration', 'ownership', 'codegraph'):
+                self.assertIn('error', result[section])
+            self.assertGreaterEqual(len(result['errors']), 4)
+            self.assertEqual((target / '.agents/config.json').read_bytes(), b'{broken')
+
+    def test_writer_inputs_public_session_preserves_request_target_and_registration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'target'
+            self.write_matt_context(target)
+            support = target / '.agents/skills/change-set-verification/references/custom.bin'
+            support.parent.mkdir(parents=True)
+            support.write_bytes(b'\x00\xffexact bytes\r\n')
+            plan = Path(directory) / 'plan.md'
+            plan.write_bytes(b'Preserve valid project obligations; assess every blueprint.\n')
+            output = StringIO()
+            with mock.patch.object(bootstrap, 'fetch_canonical', side_effect=bootstrap.SourceUnavailable('offline')), \
+                 redirect_stdout(output), redirect_stderr(StringIO()):
+                self.assertEqual(workflow.main(['start', '--target', str(target)]), 0)
+            session = Path(json.loads(output.getvalue())['session'])
+            self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
+            request_bytes = (session / 'request.json').read_bytes()
+            registration = session / 'generated/.setup-generation.json'
+            registration_bytes = registration.read_bytes()
+            before = {path: path.read_bytes() for path in target.rglob('*') if path.is_file()}
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(workflow.main(['writer-inputs', '--session', str(session), '--plan', str(plan)]), 0)
+            result = json.loads(output.getvalue())
+            inputs = json.loads(Path(result['inputs']).read_bytes())
+            bundle = Path(result['bundle'])
+            request = json.loads(request_bytes)
+            self.assertEqual(inputs['request'], request)
+            self.assertEqual(len(inputs['inputs']), len(request['generation_requests']))
+            self.assertEqual(inputs['writer'], str(REPO_ROOT / 'skills/write-rules-and-skills/SKILL.md'))
+            self.assertEqual((bundle / 'common-plan.md').read_bytes(), plan.read_bytes())
+            self.assertEqual((bundle / 'existing' / support.relative_to(target)).read_bytes(), support.read_bytes())
+            self.assertEqual((session / 'request.json').read_bytes(), request_bytes)
+            self.assertEqual(registration.read_bytes(), registration_bytes)
+            self.assertEqual(before, {path: path.read_bytes() for path in target.rglob('*') if path.is_file()})
+            self.assertFalse((session / workflow._SESSION_CLAIM).exists())
+            workflow._claim_session(session)
+            with redirect_stderr(StringIO()):
+                self.assertEqual(workflow.main(['writer-inputs', '--session', str(session), '--plan', str(plan)]), 2)
+            (session / workflow._SESSION_CLAIM).unlink()
+            support.write_bytes(b'changed after start')
+            error = StringIO()
+            with redirect_stderr(error):
+                self.assertEqual(workflow.main(['writer-inputs', '--session', str(session), '--plan', str(plan)]), 2)
+            self.assertIn('target changed after start', error.getvalue())
+            self.assertEqual(list(session.glob('writer-inputs-*')), [bundle])
+            self.assertFalse((session / workflow._SESSION_CLAIM).exists())
+
+    def test_writer_inputs_reports_old_pinned_cli_without_falling_back(self):
+        session = workflow._create_session()
+        self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
+        with mock.patch.object(workflow, '_request_context', return_value=({}, REPO_ROOT, REPO_ROOT, 'offline')), \
+             mock.patch.object(workflow.subprocess, 'run', return_value=subprocess.CompletedProcess([], 2, '', 'unknown writer-inputs command\n')) as run, \
+             redirect_stderr(StringIO()) as error:
+            self.assertEqual(workflow.main(['writer-inputs', '--session', str(session), '--plan', 'plan.md']), 2)
+        self.assertEqual(run.call_count, 1)
+        self.assertIn('unknown writer-inputs', error.getvalue())
+        self.assertFalse((session / workflow._SESSION_CLAIM).exists())
+        self.assertTrue(session.exists())
 
     def test_public_start_refuses_incomplete_generation_from_pinned_implementation(self):
         import setup_project_agents as setup
@@ -720,6 +832,9 @@ class SetupWorkflowTest(unittest.TestCase):
 
 class SetupVersionCommitTest(unittest.TestCase):
     def setUp(self):
+        readiness = mock.patch.object(workflow, '_verify_codegraph', return_value={'ready': True, 'message': 'test MCP responds'})
+        readiness.start()
+        self.addCleanup(readiness.stop)
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.target = Path(self.temporary.name)
@@ -759,6 +874,7 @@ class SetupVersionCommitTest(unittest.TestCase):
         version = workflow.load_catalog(REPO_ROOT).plugin_version
         self.assertEqual(json.loads(self.config.read_bytes()), {'setupVersion': version, 'agents': [], 'mcp': []})
         self.assertEqual(json.loads(output)['setup_version'], version)
+        self.assertTrue(json.loads(output)['codegraph']['ready'])
         self.assertFalse(self.session.exists())
         before = self.config.read_bytes()
         modified = self.config.stat().st_mtime_ns
@@ -768,6 +884,14 @@ class SetupVersionCommitTest(unittest.TestCase):
         self.assertEqual(self.config.read_bytes(), before)
         self.assertEqual(self.config.stat().st_mtime_ns, modified)
         self.assertNotIn('.agents/config.json', json.loads(output)['changed_paths'])
+
+    def test_codegraph_not_ready_prevents_finish_and_version_advance(self):
+        with mock.patch.object(workflow, '_verify_codegraph', side_effect=workflow.WorkflowError('CodeGraph not ready')):
+            status, _, error = self.run_finish()
+        self.assertEqual(status, 2)
+        self.assertIn('CodeGraph not ready', error)
+        self.assertEqual(self.config.read_bytes(), self.before)
+        self.assertFalse(self.session.exists())
 
     def test_cleanup_failure_preserves_version(self):
         status, _, error = self.run_finish(cleanup=OSError('cleanup fault'))

@@ -19,7 +19,7 @@ import threading
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -1504,7 +1504,7 @@ def _acquire_lock(path: Path) -> str:
     return 'owned'
 
 
-def run_hook(
+def _run_daily_hook(
     harness: str,
     policy_path: Path,
     cache_root: Path | None = None,
@@ -1545,9 +1545,13 @@ def run_hook(
             else:
                 latest_smartkit_version = _start_latest_smartkit_version_fetch()
                 checks = (
-                    lambda: check_policy(policy),
+                    lambda: check_policy({**policy, 'tools': [
+                        tool for tool in policy['tools'] if tool.get('id') != 'codegraph'
+                    ]}),
                     lambda: check_config_requirements(policy, project_root),
-                    lambda: check_mcp_readiness(harness, project_root, mcp_registry_path),
+                    lambda: [finding for finding in check_mcp_readiness(
+                        harness, project_root, mcp_registry_path,
+                    ) if finding.tool != 'codegraph MCP'],
                     lambda: check_setup_migrations(project_root),
                     lambda: check_smartkit_version(harness, latest_smartkit_version()),
                 )
@@ -1588,6 +1592,54 @@ def run_hook(
                     pass
     except Exception:
         return HookResult(True, internal_error=True)
+
+
+def check_project_codegraph(project_root: Path, harness: str) -> tuple[str, ...]:
+    """An initialized SmartKit project needs a fresh runtime observation each session."""
+    scripts = str(Path(__file__).resolve().parents[2] / 'skills/setup-project-agents/scripts')
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    from agents_setup.migrations import SetupStatus, project_setup_version
+
+    try:
+        setup = project_setup_version(project_root, Path(__file__).resolve().parents[2])
+        if setup is SetupStatus.UNINITIALIZED:
+            return ()
+        support = str(Path(__file__).resolve().parent)
+        if support not in sys.path:
+            sys.path.insert(0, support)
+        from codegraph_runtime import check
+        readiness = check(project_root)
+    except (OSError, ValueError) as error:
+        return ('[smartkit] CodeGraph project readiness could not be established: ' + str(error),)
+    if readiness.ready:
+        return ()
+    return (
+        '[smartkit] CodeGraph is not ready for this SmartKit project: ' + readiness.message
+        + '. Complete CodeGraph setup for this working tree with the Agent. '
+        'This reminder does not pause the task or authorize installation, indexing or startup.',
+    )
+
+
+def run_hook(
+    harness: str,
+    policy_path: Path,
+    cache_root: Path | None = None,
+    now: datetime | None = None,
+    *,
+    project_root: Path | None = None,
+    mcp_registry_path: Path | None = None,
+    force: bool = False,
+    evaluator: Callable[[dict[str, Any]], list[Finding]] | None = None,
+) -> HookResult:
+    result = _run_daily_hook(
+        harness, policy_path, cache_root, now, project_root=project_root,
+        mcp_registry_path=mcp_registry_path, force=force, evaluator=evaluator,
+    )
+    if evaluator is not None:
+        return result
+    notices = check_project_codegraph(resolve_project_root(project_root), harness)
+    return replace(result, notices=(*result.notices, *notices))
 
 
 def render_findings(findings: list[Finding] | tuple[Finding, ...]) -> str:
@@ -1711,7 +1763,9 @@ def render_hook_result(
             }
         )
     if result.internal_error:
-        message = '[smartkit] Recommended-tool check could not complete; continuing.'
+        message = '\n'.join(part for part in (
+            '[smartkit] Recommended-tool check could not complete; continuing.', rendered,
+        ) if part)
     else:
         message = rendered
     if not message:

@@ -9,6 +9,7 @@ import sys
 from pathlib import Path, PurePosixPath
 
 from agents_setup.catalog import load_catalog, load_project_config, parse_project_agents
+from agents_setup.agent_discovery import CODEX_CONFIG, HOST_PATHS as _HOST_PATHS, discover_native_agents
 from agents_setup.external_contract import is_link_like
 from agents_setup.models import DesiredFile
 from agents_setup.ownership import OWNERSHIP_PATH, load_ownership, verify_ownership
@@ -18,12 +19,6 @@ from agents_setup.structured import parse_document
 from agents_setup.transaction import TransactionError, apply_plan
 
 
-_HOST_PATHS = {
-    'codex': ('.codex/agents', '.toml'),
-    'cursor': ('.cursor/agents', '.md'),
-    'copilot': ('.github/agents', '.agent.md'),
-    'qoder': ('.qoder/agents', '.md'),
-}
 _CONFIG = PurePosixPath('.agents/config.json')
 
 
@@ -41,26 +36,28 @@ def inspect(target: Path) -> dict[str, object]:
     state = load_ownership(target, catalog=load_catalog(source))
     roles = {asset.path: asset.role for asset in state.assets} if state else {}
     candidates = []
-    for host, (directory, suffix) in _HOST_PATHS.items():
-        root = confined_target(target, PurePosixPath(directory))
-        if not root.exists():
-            continue
-        for path in sorted(root.rglob('*')):
-            if is_link_like(path):
-                raise ValueError(f'Agent discovery encountered a link: {path}')
-            if path.is_file() and path.name.endswith(suffix):
-                relative = PurePosixPath(path.relative_to(target).as_posix())
-                agent_id = path.name[:-len(suffix)]
-                canonical = PurePosixPath(
-                    f'.agents/agents/{agent_id}.{host}.{"toml" if host == "codex" else "md"}'
-                )
-                candidates.append({
-                    'id': agent_id, 'harness': host, 'path': relative.as_posix(),
-                    'sha256': _digest(path.read_bytes()), 'ownership': roles.get(relative, 'unmanaged'),
-                    'canonical_path': canonical.as_posix(),
-                    'canonical_sha256': _digest(_read(target, canonical)),
-                })
-    return {'config_sha256': _digest(_read(target, _CONFIG)), 'agents': candidates}
+    discovery = discover_native_agents(target)
+    for agent in discovery.agents:
+        directory, suffix = _HOST_PATHS[agent.harness]
+        canonical = PurePosixPath(
+            f'.agents/agents/{agent.id}.{agent.harness}.{"toml" if agent.harness == "codex" else "md"}'
+        )
+        candidates.append({
+            'id': agent.id, 'harness': agent.harness, 'path': agent.path.as_posix(),
+            'sha256': _digest(_read(target, agent.path)), 'ownership': roles.get(agent.path, 'unmanaged'),
+            'canonical_path': canonical.as_posix(),
+            'canonical_sha256': _digest(_read(target, canonical)),
+            'references': list(agent.references),
+            'requires_relocation': agent.path != PurePosixPath(f'{directory}/{agent.id}{suffix}'),
+        })
+    return {
+        'config_sha256': _digest(_read(target, _CONFIG)), 'agents': candidates,
+        'role_declarations': [
+            {'id': identity, 'harness': 'codex', 'path': CODEX_CONFIG.as_posix(), 'field': f'agents.{identity}'}
+            for identity in discovery.codex_roles_without_config_file
+        ],
+        'issues': list(discovery.issues),
+    }
 
 
 def apply(target: Path, manifest: dict[str, object]) -> list[str]:
@@ -69,6 +66,9 @@ def apply(target: Path, manifest: dict[str, object]) -> list[str]:
         raise ValueError('adoption manifest requires config_sha256 and agents')
     source = Path(__file__).resolve().parents[3]
     catalog = load_catalog(source)
+    discovery = discover_native_agents(target)
+    if discovery.issues:
+        raise ValueError('; '.join(discovery.issues))
     ownership_content = _read(target, OWNERSHIP_PATH)
     state = load_ownership(target, catalog=catalog)
     verify_ownership(target, state)
@@ -193,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
             manifest = json.loads(args.manifest.read_text(encoding='utf-8'))
             result = {'changed_paths': apply(target, manifest)}
         print(json.dumps(result, ensure_ascii=False))
-        return 0
+        return 2 if result.get('issues') else 0
     except (OSError, ValueError, TransactionError) as error:
         print(f'ERROR: {error}', file=sys.stderr)
         return 2

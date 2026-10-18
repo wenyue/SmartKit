@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / 'skills/setup-project-agents/scripts'))
 
 import adopt_project_agents as adoption
+from agents_setup import agent_discovery
 from agents_setup.catalog import load_catalog
 from agents_setup.generation import current_contracts
 from agents_setup.planner import build_plan
@@ -74,6 +75,119 @@ class AgentAdoptionTest(unittest.TestCase):
             delete_paths=rendered.delete_paths, replace_roots=rendered.replace_roots,
         ))
         return rendered
+
+    def test_inspect_follows_codex_config_relative_references_without_adopting_them(self):
+        config = self.target / '.codex/config.toml'
+        config.parent.mkdir()
+        config.write_text('[agents.local]\nconfig_file = "../team/translated.toml"\n', encoding='utf-8')
+        native = self.target / 'team/translated.toml'
+        native.parent.mkdir()
+        native.write_bytes(b'model = "current"\n# preserve\n')
+        inspected = adoption.inspect(self.target)
+        self.assertEqual(inspected['issues'], [])
+        self.assertEqual(len(inspected['agents']), 1)
+        entry = inspected['agents'][0]
+        self.assertEqual(entry['id'], 'local')
+        self.assertEqual(entry['path'], 'team/translated.toml')
+        self.assertTrue(entry['requires_relocation'])
+        self.assertEqual(entry['references'], ['.codex/config.toml:agents.local.config_file'])
+        before = config.read_bytes(), native.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'explicit relocation'):
+            adoption.apply(self.target, self.manifest())
+        self.assertEqual((config.read_bytes(), native.read_bytes()), before)
+        self.assertFalse((self.target / '.agents/config.json').exists())
+
+    def test_inspect_deduplicates_default_reference_and_reports_competing_identity(self):
+        self.native('codex', b'model = "working"\n')
+        config = self.target / '.codex/config.toml'
+        config.write_text('[agents]\nmax_threads = 4\n[agents.local]\nconfig_file = "agents/local.toml"\n', encoding='utf-8')
+        inspected = adoption.inspect(self.target)
+        self.assertEqual(inspected['issues'], [])
+        self.assertEqual(len(inspected['agents']), 1)
+        self.assertFalse(inspected['agents'][0]['requires_relocation'])
+        other = self.target / 'other.toml'
+        other.write_bytes(b'model = "different"\n')
+        config.write_text('[agents.local]\nconfig_file = "../other.toml"\n', encoding='utf-8')
+        inspected = adoption.inspect(self.target)
+        self.assertEqual(len(inspected['agents']), 2)
+        self.assertIn('multiple definitions', inspected['issues'][0])
+
+    def test_fileless_codex_role_is_inventoried_and_preserved_during_adoption(self):
+        self.native('codex', b'model = "working"\n')
+        config = self.target / '.codex/config.toml'
+        content = b'[agents.reviewer]\ndescription = "Review code with inherited settings"\n'
+        config.write_bytes(content)
+        inspected = adoption.inspect(self.target)
+        self.assertEqual(inspected['issues'], [])
+        self.assertEqual(inspected['role_declarations'], [{
+            'id': 'reviewer', 'harness': 'codex', 'path': '.codex/config.toml',
+            'field': 'agents.reviewer',
+        }])
+        self.assertEqual([item['id'] for item in inspected['agents']], ['local'])
+        adoption.apply(self.target, self.manifest())
+        self.assertEqual(config.read_bytes(), content)
+        self.assertFalse((self.target / '.codex/agents/reviewer.toml').exists())
+
+    def test_explicit_invalid_codex_file_references_still_refuse_adoption(self):
+        self.native('codex', b'model = "working"\n')
+        manifest = self.manifest()
+        config = self.target / '.codex/config.toml'
+        for value in ('""', '"   "', '42', 'false', '[]', '{}'):
+            with self.subTest(value=value):
+                content = f'[agents.reviewer]\nconfig_file = {value}\n'.encode('utf-8')
+                config.write_bytes(content)
+                inspected = adoption.inspect(self.target)
+                self.assertEqual(inspected['role_declarations'], [])
+                self.assertIn('expected a nonempty file reference', inspected['issues'][0])
+                with self.assertRaisesRegex(ValueError, 'expected a nonempty file reference'):
+                    adoption.apply(self.target, manifest)
+                self.assertEqual(config.read_bytes(), content)
+                self.assertFalse((self.target / '.agents/config.json').exists())
+
+    def test_inspect_surfaces_missing_unsafe_and_unsupported_references_without_external_reads(self):
+        config = self.target / '.codex/config.toml'
+        config.parent.mkdir()
+        outside = self.root / 'outside.toml'
+        outside.write_bytes(b'do not read')
+        for reference, message in (
+            ('../../outside.toml', 'outside the target'),
+            ('~/private.toml', 'unsupported path'),
+            ('missing.toml', 'missing or not a regular file'),
+        ):
+            with self.subTest(reference=reference):
+                config.write_text('[agents.local]\nconfig_file = ' + json.dumps(reference) + '\n', encoding='utf-8')
+                original = Path.read_bytes
+                def read(path):
+                    self.assertNotEqual(path, outside)
+                    return original(path)
+                with mock.patch.object(Path, 'read_bytes', read):
+                    inspected = adoption.inspect(self.target)
+                self.assertEqual(inspected['agents'], [])
+                self.assertIn(message, inspected['issues'][0])
+        config.write_text('[agents.local]\nconfig_file = "../unsafe/local.toml"\n', encoding='utf-8')
+        unsafe = self.target / 'unsafe'
+        unsafe.mkdir()
+        (unsafe / 'local.toml').write_bytes(b'model = "current"\n')
+        with mock.patch('agents_setup.project._is_link_like', side_effect=lambda path: path == unsafe):
+            inspected = adoption.inspect(self.target)
+        self.assertEqual(inspected['agents'], [])
+        self.assertIn('symlink', inspected['issues'][0])
+        config.write_text('[agents.local]\nconfig_file = "../unsafe/../normal.toml"\n', encoding='utf-8')
+        (self.target / 'normal.toml').write_bytes(b'model = "would hide traversal"\n')
+        with mock.patch.object(agent_discovery, 'is_link_like', side_effect=lambda path: path == unsafe):
+            inspected = adoption.inspect(self.target)
+        self.assertEqual(inspected['agents'], [])
+        self.assertIn('symlink', inspected['issues'][0])
+
+    def test_invalid_host_config_keeps_independent_native_inventory_visible(self):
+        self.native('cursor', b'Prompt\n')
+        config = self.target / '.codex/config.toml'
+        config.parent.mkdir()
+        config.write_bytes(b'[agents.local\n')
+        inspected = adoption.inspect(self.target)
+        self.assertEqual(inspected['agents'][0]['harness'], 'cursor')
+        self.assertIn('invalid toml', inspected['issues'][0])
+        self.assertIn(PurePosixPath('.codex/config.toml'), agent_discovery.discover_native_agents(self.target).evidence_paths)
 
     def test_generated_wrapper_references_still_require_rendered_or_preserved_targets(self):
         self.native('codex', b'model = "working"\n')

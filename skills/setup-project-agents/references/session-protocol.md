@@ -1,69 +1,67 @@
 # Full Session Protocol
 
-Read this before full setup. The public workflow owns one immutable private session from source selection through registration and one terminal `finish` or `cancel`. Explicit local synchronization uses separate commands and does not enter this protocol.
+Full setup owns one immutable private session from source selection through registration, ending with one terminal `finish` or `cancel`. Explicit local synchronization does not enter this protocol.
 
 ## Preflight
 
-Resolve material choices affecting shipped defaults, project-owned inputs or effects. Use qualified repository evidence and ask only for genuinely unresolved choices.
+Resolve material project-input choices and effect authority before dependent work. Accepted setup intent may already authorize effects; do not repeat settled confirmations.
 
-`start` checks project-owned Matt context. When it reports incomplete setup, end this invocation and ask the user to invoke `setup-matt-pocock-skills` in the target. Begin a fresh setup invocation after that workflow completes. Setup neither creates nor owns Matt context.
+Private system-temporary storage, one read-only canonical SmartKit `master` fetch, configured external Skill fetches, CodeGraph installation and target-local runtime preparation, generated authoring and target mutations are distinct grants. They do not authorize commit, push, release, unrelated dependency installation or downstream effects of generated authoring.
 
-Before each effect, establish its authority: private system-temporary storage, one read-only fetch of canonical SmartKit `master`, configured external Skill fetches, generated authoring and target mutations are distinct grants. Accepted setup intent may already supply them; do not repeat settled confirmations. Downstream effects of generated authoring still need their own authority. Stop before any unauthorized effect.
+`start` requires project-owned Matt context. If incomplete, end this invocation and ask the user to invoke `setup-matt-pocock-skills` in the target; start a fresh setup invocation after it completes. Setup neither creates nor owns that context.
 
-Fetches contact only their declared repositories and may create and remove private temporary checkouts. They run non-interactively without ambient Git configuration, credential helpers, proxies, SSH or askpass state. These grants do not include dependency installation, publication, Git-history changes or unrelated target writes. If the canonical fetch is unavailable, `start` may use the validated installed plugin root and reports `source_commit: null`. Configured external sources still need their own network authority.
+Prepare CodeGraph before `start` using `setup-codegraph` for the accepted target and active harness. Its `--approved` flag records existing authority for installation, indexing and startup; it does not create authority or require renewed consent. Readiness requires installation, a usable target index and an actually responsive runtime. Preserve existing data and independently owned host configuration; an obsolete or incomplete index needs separate repair. Use this scoped route instead of a broad host installer. Failed preparation leaves full setup incomplete, even when local progress remains.
 
-Before preparation or target mutation, the selected source requires the public launcher to declare support for the completion protocol: private-session cleanup followed by the final `setupVersion` commit. Fetching a newer source does not upgrade the launcher that owns those steps. If the source rejects launcher compatibility, end this invocation, update the installed SmartKit plugin and start a fresh setup invocation.
+### Source selection
 
-Scripts validate external source declarations, licenses, Skill trees, names, destination collisions and recorded tag stability before target mutation. If `start` rejects input or a source, correct the reported cause within accepted authority and begin a fresh invocation.
+Fetches contact only declared repositories and may create/remove private temporary checkouts. They run non-interactively without ambient Git configuration, credential helpers, proxies, SSH or askpass state. If the canonical fetch is unavailable, `start` may use the validated installed plugin root and reports a null `source_commit`; external sources retain their own network prerequisites.
+
+The selected source requires the public launcher to support live CodeGraph verification, private-session cleanup and final `setupVersion` commit before preparation or mutation. Fetching a newer source does not upgrade the launcher. If compatibility is rejected, end the invocation, update the installed plugin and start fresh. Other source/schema/external-input rejection likewise requires correction within accepted authority and a fresh invocation.
 
 ## Start one frozen session
-
-Use the public entry:
 
 ```text
 python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 
-The session commands are `start`, `register`, `finish` and `cancel`; inspect each command's `--help` for its arguments. `sync-project` and `sync-project-rules` are separate local operations.
+Stop on nonzero status. Retain `session` as `SESSION`, `generated` as `GENERATED`, and the returned request, `source_root`, `source_commit`, `source_fingerprint`, setup versions and selected migrations. Confirm the complete blueprint request against accepted intent; read selected guides from that source before authoring.
 
-Stop on a nonzero result. Retain returned `session` as `SESSION`, `generated` as `GENERATED`, and `request`, `source_root`, `source_commit` and `source_fingerprint`. The request freezes setup inputs, external snapshots, generation requests, source evidence and setup-relevant target fingerprints. The public launcher refuses a pinned source that does not request every current catalog blueprint. Confirm the complete request against accepted intent before authoring.
-
-A canonical source is pinned by commit and fingerprint. An installed fallback is identified by its root, null commit and fingerprint. Keep this source and request immutable throughout the session.
+The canonical source is pinned by commit and fingerprint; an installed fallback by root, null commit and fingerprint. Keep source and request immutable. The session commands are `writer-inputs`, `register`, `finish` and `cancel`; [Generated Authoring](generated-authoring.md) owns writer and registration order. Inspect each command's `--help` when needed. `inspect`, `setup-codegraph` and local synchronization are separate operations.
 
 ### Distinguish frozen setup evidence from unrelated work
 
-The target fingerprint covers evidence setup consumes: project setup config, ownership and managed assets, generated destinations, project Rule and rule-led Skill metadata, project Agent sources, native Agent discovery membership and definition content, and touched native host configuration. Git history/index state, caches, logs and other project-owned work are outside that boundary.
+The request freezes setup inputs, external snapshots, generation requests and source evidence. Its target fingerprint covers consumed project config, ownership/managed assets, current and recorded generated Skill directories and destinations, project Rule and rule-led Skill metadata, project Agent sources, native Agent membership/content, project Codex declarations and in-target references, and touched native configuration.
 
-Any change after `start` inside the frozen setup-relevant surface ends the session, even when a separate authoring grant authorized that change. Cancel and restart from the accepted resulting target. Changes outside that surface do not restart generation; preserve them as unrelated state. This keeps separately authorized effects from being silently absorbed into an old setup request.
+Git history/index state, CodeGraph index/runtime state, caches, logs and unconsumed project work remain outside that boundary. Preserve unrelated changes. Any frozen-surface change after `start` ends the session, even if separately authorized: cancel and restart from accepted inputs. Setup-relevant changes made during runtime preparation therefore belong before `start`.
 
-Keep exactly the returned private session until its terminal operation. If another operation holds the session claim, preserve it and stop rather than competing for the same attempt.
+Keep the returned private session until its terminal operation. If another operation holds its claim, preserve it and stop rather than competing for the attempt.
 
 ## Finish once
 
-After every request has its final registered outputs, invoke:
+After every request has its final registered outputs, confirm CodeGraph readiness. If the daemon idle-exited, rerun authorized `setup-codegraph` for the same target/harness before the first finish attempt. Runtime-only changes do not invalidate the freeze; setup-relevant changes do.
 
 ```text
 python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
-Finish validates complete outputs, frozen evidence, ownership and plan, then applies the plan and clean postcondition within one rollback boundary. The public workflow then removes the private session and atomically commits `setupVersion` as the final success marker. This final guarded write preserves every other project configuration value; it refuses concurrent config drift. Local synchronization does not perform that write. Keep exclusive access to every planned target path through completion or failure handling. A filesystem check cannot prevent an uncooperative writer from being overwritten between the check and mutation.
+Finish rechecks CodeGraph without preparing it, then validates complete outputs, frozen evidence and ownership, applies the plan and checks convergence within one rollback boundary. Failed readiness prevents application and version advancement while normal session cleanup still applies.
 
-Success requires exit 0 and JSON containing `phase: finish` and `check: clean`, with the private session removed and the source release recorded as the successful setup version. Use the complete result; target convergence alone cannot establish successful session cleanup.
+The launcher removes the private session, then atomically records the source release as `setupVersion`, preserving other config values and refusing concurrent config drift. Success requires exit 0, `phase: finish`, `check: clean`, `codegraph.ready: true`, the reported successful setup version and completed cleanup. Configuration convergence alone is insufficient. CodeGraph preparation occurred outside this transaction and is not rolled back by a later setup failure.
+
+Keep exclusive access to planned target paths through apply and recovery. Guards cannot prevent an uncooperative writer from changing a path between check and mutation.
 
 ## Stop and recover
 
-When work stops after `start` but before any `finish` attempt, cancel:
+Before any finish attempt, unresolved declarations, ownership/digest conflicts, drift or blocked generation require cancellation:
 
 ```text
 python "<skill-root>/scripts/workflow.py" cancel --session "<SESSION>"
 ```
 
-Unresolved declarations, ownership/digest conflicts or setup-relevant target drift before finish require cancellation and a fresh session after correction. A cancel failure is terminal; report it unchanged.
+Correct the cause through its owner before a fresh session. Cancel failure is terminal; report it unchanged.
 
-After a pinned finish or transaction failure, preserve the original error. The transaction attempts to restore pre-finish setup state. Its guards refuse rollback mutations when they detect concurrent third-party changes; reported rollback failure identifies residual target state for human inspection. Exclusive access remains necessary through recovery because a third-party writer can still act between a rollback check and mutation.
+After a pinned finish or transaction failure, preserve the primary error. Rollback attempts to restore pre-finish setup state; guards refuse rollback mutations over detected third-party changes. Report rollback failure and residual target state for inspection.
 
-Finish then attempts private-session cleanup. If cleanup fails, it must report the exact residual session path. This can happen after target convergence or after a failed transaction; infer neither a successful operation nor rollback from the target's appearance.
+Finish attempts session cleanup even after failure. Failed cleanup reports the exact residual session; never reuse, finish or cancel it. Keep its claim/contents as evidence, resolve the cause and any verified workflow-owned residue under recovery authority, then start fresh. Limit cleanup to verified residue; target appearance proves neither success nor rollback.
 
-Never reuse, finish or cancel such a residual session. Keep its remaining claim or partial contents as failure evidence, and report the target and exact session path. Resolve the original cause and any verified workflow-owned residue under appropriate recovery authority before a fresh session. Limit cleanup to that verified residue.
-
-If private-session cleanup fails after configuration convergence, the previous `setupVersion` remains. If its final version commit fails, configuration may already be updated and the session removed, but the version commit retains or restores the previous baseline under the transaction's guards. Report that failed outcome and any rollback failure; preserve conflicting third-party changes. Resolve the cause and use a fresh full session. Do not claim the earlier configuration transaction rolled back.
+Cleanup failure after configuration convergence leaves the previous `setupVersion`. Final version-commit failure may leave updated configuration and a removed session, while the guarded transaction retains or restores the prior baseline. Report failure and any rollback failure, preserve conflicting third-party changes, and use a fresh full session. Do not claim the earlier configuration transaction rolled back.

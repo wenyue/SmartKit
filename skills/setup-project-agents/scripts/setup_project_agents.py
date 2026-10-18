@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import stat
 import sys
 import tempfile
@@ -20,6 +21,7 @@ from agents_setup.catalog import (
     parse_project_agents,
     safe_relative,
 )
+from agents_setup.agent_discovery import discover_native_agents
 from agents_setup.discovery import DiscoveryError, discover_project_rules, discover_project_skills
 from agents_setup.generation import generation_requests
 from agents_setup.external import ExternalSkillError, snapshot_external_skills
@@ -34,7 +36,7 @@ from agents_setup.ownership import (
     verify_ownership,
 )
 from agents_setup.planner import PlanningError, build_plan
-from agents_setup.project import ProjectError, inspect_project
+from agents_setup.project import ProjectError, confined_target, inspect_project
 from agents_setup.renderer import RenderError, render_desired_state
 from agents_setup.project_rules import validate_project_rule_index
 from agents_setup.skill_registry import load_skill_registry
@@ -477,8 +479,13 @@ def _add_target_tree(
     target = root.joinpath(*relative.parts)
     if not target.exists() or not target.is_dir():
         return
+
+    def fail(error: OSError) -> None:
+        # Both frozen evidence and writer inputs require the complete consumed tree.
+        raise error
+
     for directory, directories, files in os.walk(
-        target, topdown=True, followlinks=False,
+        target, topdown=True, followlinks=False, onerror=fail,
     ):
         parent = Path(directory)
         retained: list[str] = []
@@ -525,6 +532,8 @@ def _target_evidence_paths(
         for contract in previous.contracts:
             for output in contract.outputs:
                 add(output)
+            if contract.target.name == 'SKILL.md':
+                _add_target_tree(root, contract.target.parent, paths)
         for asset in previous.assets:
             if asset.kind == 'tree':
                 _add_target_tree(root, asset.path, paths)
@@ -603,27 +612,9 @@ def _target_evidence_paths(
             add(PurePosixPath('.github/agents') / f'{agent.id}.agent.md')
         if agent.qoder is not None:
             add(PurePosixPath('.qoder/agents') / f'{agent.id}.md')
-    # Full setup consumes undeclared native Agents too; freeze their discovery surface.
-    for directory, suffix in (
-        ('.codex/agents', '.toml'), ('.cursor/agents', '.md'),
-        ('.github/agents', '.agent.md'), ('.qoder/agents', '.md'),
-    ):
-        relative_root = PurePosixPath(directory)
-        add(relative_root, content=False)
-        native_root = root.joinpath(*relative_root.parts)
-        if _target_link_boundary(root, relative_root) is not None or not native_root.is_dir():
-            continue
-        for parent, directories, files in os.walk(native_root, followlinks=False):
-            parent_path = Path(parent)
-            for name in tuple(directories):
-                child = parent_path / name
-                if _is_link_like(child):
-                    add(PurePosixPath(child.relative_to(root).as_posix()), content=False)
-                    directories.remove(name)
-            for name in files:
-                child = parent_path / name
-                if name.endswith(suffix) or _is_link_like(child):
-                    add(PurePosixPath(child.relative_to(root).as_posix()))
+    # Use the inventory's exact source set so referenced Agents cannot drift unnoticed.
+    for relative, content in discover_native_agents(root).evidence_paths.items():
+        add(relative, content=content)
     for skill in config.external_skills:
         _add_target_tree(
             root,
@@ -851,7 +842,7 @@ def build_parser() -> argparse.ArgumentParser:
         allow_abbrev=False,
     )
     phases = parser.add_subparsers(dest='phase', required=True)
-    for phase in ('prepare', 'register', 'finish'):
+    for phase in ('prepare', 'writer-inputs', 'register', 'finish'):
         command = phases.add_parser(phase, allow_abbrev=False)
         command.add_argument('--target', type=Path, required=True)
         command.add_argument('--session', type=Path, required=True)
@@ -863,6 +854,8 @@ def build_parser() -> argparse.ArgumentParser:
         if phase == 'register':
             command.add_argument('--request-id', required=True)
             command.add_argument('--output', action='append', required=True)
+        elif phase == 'writer-inputs':
+            command.add_argument('--plan', type=Path, required=True)
     return parser
 
 
@@ -876,6 +869,9 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
         catalog=catalog,
     )
     config = project.config
+    discovery = discover_native_agents(project.root)
+    if discovery.issues:
+        raise SetupError('; '.join(discovery.issues))
     validate_project_rule_index(project.root)
     discover_project_skills(project.root, catalog)
     try:
@@ -1011,6 +1007,114 @@ def _register(args: argparse.Namespace, session: Path, source_commit: str | None
     }))
 
 
+def _external_snapshot(session: Path, request: Mapping[str, object], config: ProjectConfig) -> Path:
+    external_root = session / 'external-skills'
+    expected_snapshot_digest = request['external_snapshot_sha256']
+    if bool(config.external_sources) != (expected_snapshot_digest is not None):
+        raise SetupError('session request external Skill snapshot binding is invalid')
+    if expected_snapshot_digest is not None:
+        try:
+            actual_snapshot_digest = hashlib.sha256(
+                confined_target(session, PurePosixPath('external-skills/sources.json')).read_bytes()
+            ).hexdigest()
+        except OSError as error:
+            raise SetupError('external Skill source metadata is missing') from error
+        if actual_snapshot_digest != expected_snapshot_digest:
+            raise SetupError('external Skill source metadata changed after prepare')
+    return external_root
+
+
+def _writer_inputs(args: argparse.Namespace, session: Path, source_commit: str | None) -> None:
+    """Copy mechanical writer inputs; the caller still qualifies the plan and each handoff."""
+    catalog, project, request, config = _session_inputs(
+        args, session, source_commit, verify_target_fingerprint=True,
+    )
+    _external_snapshot(session, request, config)
+    generated = session / _GENERATED_NAME
+    if _is_link_like(generated) or not generated.is_dir():
+        raise SetupError('generated output directory is missing or unsafe')
+    manifest = _read_json(generated / _GENERATION_MANIFEST, 'generation manifest')
+    _manifest_outputs(manifest, request['generation_requests'], complete=False)
+    if manifest['requests']:
+        raise SetupError('writer inputs must be prepared before registration; cancel and restart for semantic corrections')
+    plan_path = args.plan.absolute()
+    plan_path = confined_target(Path(plan_path.anchor), PurePosixPath(*plan_path.parts[1:]))
+    plan = plan_path.read_bytes()
+    if not plan.decode('utf-8').strip():
+        raise SetupError('common plan must be nonempty UTF-8')
+    previous = load_ownership(project.root, catalog=catalog)
+    contracts = {item.id: item for item in previous.contracts} if previous else {}
+    content: dict[PurePosixPath, bytes] = {}
+    inputs: list[dict[str, object]] = []
+    for item in request['generation_requests']:
+        primary = safe_relative(item['target'], 'writer target')
+        paths: dict[PurePosixPath, bool] = {primary: True}
+        old = contracts.get(item['id'])
+        if old is not None:
+            paths.update({path: True for path in old.outputs})
+        for entry in (primary, old.target if old else primary):
+            if entry.name == 'SKILL.md':
+                _add_target_tree(project.root, entry.parent, paths)
+        existing: list[dict[str, object]] = []
+        for relative in sorted(paths):
+            path = confined_target(project.root, relative)
+            if path.is_dir():
+                continue
+            if not path.exists():
+                existing.append({'path': relative.as_posix(), 'missing': True})
+                continue
+            if not path.is_file():
+                raise SetupError(f'writer input is not a regular file: {relative}')
+            value = path.read_bytes()
+            content[relative] = value
+            existing.append({
+                'path': relative.as_posix(), 'copy': f'existing/{relative.as_posix()}',
+                'sha256': hashlib.sha256(value).hexdigest(),
+            })
+        inputs.append({
+            'request': dict(item),
+            'blueprint': str(args.source_root / item['source']),
+            'candidate': str(session / _GENERATED_NAME / primary),
+            'existing': existing,
+        })
+    writer = args.source_root / 'skills/write-rules-and-skills/SKILL.md'
+    dependency = args.source_root / 'skills/writing-for-agents/SKILL.md'
+    if not writer.is_file() or not dependency.is_file():
+        raise SetupError('pinned public writer or its writing-for-agents dependency is missing')
+    document = {
+        'request': dict(request), 'request_path': str(session / _REQUEST_NAME),
+        'request_sha256': hashlib.sha256((session / _REQUEST_NAME).read_bytes()).hexdigest(),
+        'plan': 'common-plan.md', 'plan_sha256': hashlib.sha256(plan).hexdigest(),
+        'writer': str(writer), 'writing_for_agents': str(dependency),
+        'generated': str(session / _GENERATED_NAME), 'inputs': inputs,
+        'evidence': [
+            {'path': str(project.root / path), 'content_frozen': frozen}
+            for path, frozen in sorted(_target_evidence_paths(
+                project.root, source_root=args.source_root, catalog=catalog, config=config,
+            ).items())
+        ],
+        'external_snapshot': str(session / 'external-skills/sources.json') if config.external_sources else None,
+    }
+    bundle = Path(tempfile.mkdtemp(prefix='writer-inputs-', dir=session))
+    try:
+        (bundle / 'common-plan.md').write_bytes(plan)
+        for relative, value in content.items():
+            destination = bundle / 'existing' / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(value)
+        _write_json(bundle / 'inputs.json', document)
+        _session_inputs(args, session, source_commit, verify_target_fingerprint=True)
+        _external_snapshot(session, request, config)
+    except BaseException as error:
+        # This operation owns only the new private bundle; failed input preparation is unusable.
+        try:
+            shutil.rmtree(bundle)
+        except OSError as cleanup_error:
+            raise SetupError(f'{error}; cannot remove incomplete writer inputs {bundle}: {cleanup_error}') from error
+        raise
+    print(json.dumps({'phase': 'writer-inputs', 'bundle': str(bundle), 'inputs': str(bundle / 'inputs.json')}))
+
+
 def _plan(
     args: argparse.Namespace,
     session: Path,
@@ -1021,19 +1125,7 @@ def _plan(
     catalog, project, request, config = _session_inputs(
         args, session, source_commit, verify_target_fingerprint=verify_target_fingerprint,
     )
-    external_root = session / 'external-skills'
-    expected_snapshot_digest = request['external_snapshot_sha256']
-    if bool(config.external_sources) != (expected_snapshot_digest is not None):
-        raise SetupError('session request external Skill snapshot binding is invalid')
-    if expected_snapshot_digest is not None:
-        try:
-            actual_snapshot_digest = hashlib.sha256(
-                (external_root / 'sources.json').read_bytes()
-            ).hexdigest()
-        except OSError as error:
-            raise SetupError('external Skill source metadata is missing') from error
-        if actual_snapshot_digest != expected_snapshot_digest:
-            raise SetupError('external Skill source metadata changed after prepare')
+    external_root = _external_snapshot(session, request, config)
     if verify_target_fingerprint and request['generation_requests'] != generation_requests(
         args.source_root, project.root, catalog,
         load_ownership(project.root, catalog=catalog),
@@ -1070,9 +1162,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return int(error.code)
     try:
         # The installed launcher owns cleanup and the final version write, even with a newer source.
-        if args.completion_protocol != 'setup-version-v1':
+        if args.completion_protocol != 'setup-version-codegraph-v1':
             raise SetupError(
-                'setup source requires a launcher that records the successful setup version; '
+                'setup source requires a launcher that records the successful setup version and verifies CodeGraph readiness; '
                 'update the installed SmartKit plugin and start a fresh setup invocation'
             )
         session = _private_session(args.session)
@@ -1083,6 +1175,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.phase == 'register':
             _register(args, session, source_commit)
+            return 0
+        if args.phase == 'writer-inputs':
+            _writer_inputs(args, session, source_commit)
             return 0
         plan, target, config, rendered = _plan(
             args,

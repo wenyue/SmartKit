@@ -17,7 +17,7 @@
       {
         "type": "command",
         "bash": "sh \"${CLAUDE_PLUGIN_ROOT}/runtime/local_web/dispatch.sh\" hook --harness copilot",
-        "powershell": "& \"$env:CLAUDE_PLUGIN_ROOT\\runtime\\web\\dispatch.ps1\" hook --harness copilot",
+        "powershell": "& \"$env:CLAUDE_PLUGIN_ROOT\\runtime\\local_web\\dispatch.ps1\" hook --harness copilot",
         "timeoutSec": 15
       }
     ],

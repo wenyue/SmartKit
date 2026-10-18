@@ -1,3 +1,6 @@
+. (Join-Path $PSScriptRoot '../hook-monitor/monitor.ps1')
+$smartkitHookTimer = [System.Diagnostics.Stopwatch]::StartNew()
+try {
 $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path $PSScriptRoot 'dispatch.py'
 
@@ -22,3 +25,7 @@ if ($pythonReady) {
     'ERROR: Python 3.8 or newer is required; checked python.'
 )
 exit 2
+}
+finally {
+    Write-SmartKitHookDuration -Name 'rules' -Timer $smartkitHookTimer
+}

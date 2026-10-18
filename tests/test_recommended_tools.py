@@ -1844,7 +1844,9 @@ class PythonLauncherContractTest(unittest.TestCase):
                         else:
                             self.assertEqual(result.returncode, 2, result.stderr)
                             self.assertEqual(result.stdout, '')
-                            self.assertEqual(result.stderr.strip(), failure)
+                            diagnostics = result.stderr.strip().splitlines()
+                            self.assertEqual(diagnostics[0], failure)
+                            self.assertTrue(all(line.startswith('[smartkit] WARNING:') for line in diagnostics[1:]))
                         if launcher.stem == 'check_recommended_tools':
                             result = subprocess.run(command + ['hook', '--harness', 'codex'],
                                                     env=environment, cwd=root, capture_output=True, text=True)

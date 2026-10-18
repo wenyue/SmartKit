@@ -1,3 +1,6 @@
+. (Join-Path $PSScriptRoot '../hook-monitor/monitor.ps1')
+$smartkitHookTimer = [System.Diagnostics.Stopwatch]::StartNew()
+try {
 $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path $PSScriptRoot '__main__.py'
 
@@ -23,3 +26,9 @@ if ($pythonReady) {
 )
 if ($args.Count -gt 0 -and $args[0] -eq 'hook') { exit 0 }
 exit 2
+}
+finally {
+    if ($args.Count -gt 0 -and $args[0] -eq 'hook') {
+        Write-SmartKitHookDuration -Name 'local-web' -Timer $smartkitHookTimer
+    }
+}

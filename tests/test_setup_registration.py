@@ -18,6 +18,9 @@ import workflow
 
 class SetupRegistrationTest(unittest.TestCase):
     def setUp(self):
+        readiness = mock.patch.object(workflow, '_verify_codegraph', return_value={'ready': True, 'message': 'ready'})
+        readiness.start()
+        self.addCleanup(readiness.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.target = Path(self.temp.name) / 'target'
@@ -30,7 +33,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
         self.arguments = [
             '--target', str(self.target), '--session', str(session),
-            '--source-root', str(REPO_ROOT), '--source-commit', 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-v1',
+            '--source-root', str(REPO_ROOT), '--source-commit', 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1',
         ]
         self.assertEqual(setup.main(['prepare', *self.arguments]), 0)
         request_path = session / 'request.json'

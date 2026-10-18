@@ -3,7 +3,7 @@
   "hooks": {
     "sessionStart": [
       {
-        "name": "smartkit Python and daily project readiness check",
+        "name": "smartkit Python and daily readiness and session CodeGraph health check",
         "command": "\"${CURSOR_PLUGIN_ROOT}/runtime/recommended-tools/run_recommended_tools.cmd\" hook --harness cursor --delivery context"
       },
       {
