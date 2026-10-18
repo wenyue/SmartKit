@@ -136,11 +136,11 @@ SmartKit includes selected Skills from the following projects, with SmartKit-spe
 
 ### Tools
 
-SmartKit configures or recommends the following tools. CodeGraph and Tokscale are installed separately; follow their upstream installation instructions and expose their commands to your coding assistant.
+SmartKit configures or recommends the following tools. CodeGraph and Tokscale are installed separately; follow their upstream installation instructions and expose their commands to your coding assistant. The plugin owns the MCP configuration for CodeGraph and Playwright: at session start, SmartKit removes same-named entries from your user-level Codex, Copilot CLI, or Cursor MCP configuration.
 
 | Tool | Purpose | Installation and use |
 | --- | --- | --- |
-| [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Make `codegraph` available on PATH; choose which repositories to initialize and index. |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Make `codegraph` available on PATH; the plugin includes MCP configuration. Choose which repositories to initialize and index. |
 | [Tokscale](https://github.com/junhoyeo/tokscale) | Supplies token usage and estimated cost evidence for `diagnose-agent-session`. | Make `tokscale` available on PATH; available diagnostic data depends on the client and its recorded usage. |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Provides browser automation. | The plugin includes MCP configuration; the client uses `npx` to obtain and launch `@playwright/mcp`. Requires Node.js 18 or newer and `npx` on PATH. |
 

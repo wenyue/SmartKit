@@ -27,7 +27,7 @@ class SyncMcpAdaptersTest(unittest.TestCase):
     def test_repository_registry_generates_four_current_adapters(self):
         servers = self.module.load_registry(REPO_ROOT / 'mcp/registry.json')
 
-        self.assertEqual([server['id'] for server in servers], ['playwright'])
+        self.assertEqual([server['id'] for server in servers], ['playwright', 'codegraph'])
         for harness, relative in self.module.OUTPUTS.items():
             with self.subTest(harness=harness):
                 self.assertEqual(
@@ -48,6 +48,10 @@ class SyncMcpAdaptersTest(unittest.TestCase):
         self.assertEqual(cursor['mcpServers']['playwright']['type'], 'stdio')
         self.assertEqual(copilot['mcpServers']['playwright']['type'], 'local')
         self.assertEqual(copilot['mcpServers']['playwright']['tools'], ['*'])
+        self.assertEqual(codex['mcpServers']['codegraph']['args'], ['serve', '--mcp'])
+        self.assertEqual(servers[1]['readiness']['checks'], [
+            {'kind': 'command-exists', 'command': 'codegraph'},
+        ])
 
     def test_check_reports_drift_without_writing(self):
         with tempfile.TemporaryDirectory() as directory:

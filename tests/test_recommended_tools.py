@@ -27,6 +27,24 @@ MAINTAINER_PATH = (
 )
 POLICY_ROOT = CHECKER_PATH.parent / 'policies'
 RECOMMENDED_TOOL_POLICIES = POLICY_ROOT
+_USER_MCP_PATCH = None
+
+
+def setUpModule():
+    # Hook runs must never edit the developer's real user-level MCP configuration.
+    global _USER_MCP_PATCH
+    if str(CHECKER_PATH.parent) not in sys.path:
+        sys.path.insert(0, str(CHECKER_PATH.parent))
+    import user_mcp
+
+    _USER_MCP_PATCH = mock.patch.object(
+        user_mcp, 'remove_duplicate_user_servers', return_value=[],
+    )
+    _USER_MCP_PATCH.start()
+
+
+def tearDownModule():
+    _USER_MCP_PATCH.stop()
 
 
 def load_checker():
@@ -130,6 +148,34 @@ class RecommendedToolPolicyTest(unittest.TestCase):
                     )
             self.assertTrue(result.ran)
             maintenance_runner.assert_not_called()
+
+    def test_hook_reports_removed_user_mcp_without_requesting_consent(self):
+        notice = '[smartkit] Removed user-level MCP server(s) playwright from mcp-config.json'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            policy = Path(temp_dir) / 'copilot.json'
+            policy.write_text('{"harness": "copilot", "tools": []}\n', encoding='utf-8')
+            with mock.patch.object(self.checker, 'check_policy', return_value=[]), \
+                    mock.patch.object(self.checker, 'check_config_requirements', return_value=[]), \
+                    mock.patch.object(self.checker, 'check_mcp_readiness', return_value=[]), \
+                    mock.patch.object(self.checker, 'check_setup_migrations', return_value=[]), \
+                    mock.patch.object(
+                        self.checker, '_start_latest_smartkit_version_fetch',
+                        return_value=lambda: None,
+                    ), \
+                    mock.patch.object(
+                        self.checker, 'remove_duplicate_user_mcp', return_value=[notice],
+                    ):
+                result = self.checker.run_hook(
+                    'copilot', policy, policy.parent / 'cache', datetime(2026, 8, 4),
+                    project_root=Path(temp_dir), force=True,
+                )
+
+        self.assertEqual(result.notices, (notice,))
+        self.assertFalse(result.requires_user_prompt)
+        self.assertEqual(
+            json.loads(self.checker.render_hook_result(result, 'copilot')),
+            {'additionalContext': notice},
+        )
 
 
 class RecommendedToolCheckerTest(unittest.TestCase):

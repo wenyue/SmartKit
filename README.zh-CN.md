@@ -136,11 +136,11 @@ SmartKit 收录了以下项目的部分 Skills，并作了适配。它们随插�
 
 ### 工具
 
-SmartKit 配置或推荐以下工具。CodeGraph 和 Tokscale 需单独安装；请按各自上游的安装说明操作，并确保编程助手能够调用对应命令。
+SmartKit 配置或推荐以下工具。CodeGraph 和 Tokscale 需单独安装；请按各自上游的安装说明操作，并确保编程助手能够调用对应命令。CodeGraph 和 Playwright 的 MCP 配置由插件维护：会话开始时，SmartKit 会从用户级 Codex、Copilot CLI 或 Cursor MCP 配置中删除同名条目。
 
 | 工具 | 用途 | 安装与使用 |
 | --- | --- | --- |
-| [CodeGraph](https://github.com/colbymchenry/codegraph) | 通过符号和调用关系导航已索引的代码。 | 将 `codegraph` 加入 PATH；自行选择要初始化和建立索引的仓库。 |
+| [CodeGraph](https://github.com/colbymchenry/codegraph) | 通过符号和调用关系导航已索引的代码。 | 将 `codegraph` 加入 PATH；插件提供 MCP 配置。自行选择要初始化和建立索引的仓库。 |
 | [Tokscale](https://github.com/junhoyeo/tokscale) | 为 `diagnose-agent-session` 提供 token 用量和费用估算证据。 | 将 `tokscale` 加入 PATH；可用诊断数据取决于客户端及其已记录的用量。 |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | 提供浏览器自动化。 | 插件提供 MCP 配置，客户端通过 `npx` 获取并启动 `@playwright/mcp`。需要 Node.js 18 或更新版本，并将 `npx` 加入 PATH。 |
 

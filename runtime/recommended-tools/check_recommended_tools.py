@@ -82,6 +82,7 @@ class HookResult:
     ran: bool
     findings: tuple[Finding, ...] = ()
     internal_error: bool = False
+    notices: tuple[str, ...] = ()
 
     @property
     def requires_user_prompt(self) -> bool:
@@ -1415,6 +1416,15 @@ def check_smartkit_version(harness: str, latest: str | None) -> list[Finding]:
     )]
 
 
+def remove_duplicate_user_mcp(harness: str, registry_path: Path) -> list[str]:
+    feature_root = str(Path(__file__).resolve().parent)
+    if feature_root not in sys.path:
+        sys.path.insert(0, feature_root)
+    from user_mcp import remove_duplicate_user_servers
+
+    return remove_duplicate_user_servers(harness, registry_path)
+
+
 def _project_cache_key(project_root: Path) -> str:
     resolved = project_root.resolve()
     normalized = os.path.normcase(str(resolved))
@@ -1529,6 +1539,7 @@ def run_hook(
                 except OSError:
                     return HookResult(False, internal_error=True)
             policy = load_policy(policy_path, harness)
+            notices: tuple[str, ...] = ()
             if evaluator is not None:
                 findings_list = evaluator(policy)
             else:
@@ -1543,6 +1554,9 @@ def run_hook(
                 with ThreadPoolExecutor(max_workers=len(checks)) as executor:
                     pending = [executor.submit(check) for check in checks]
                     findings_list = [finding for future in pending for finding in future.result()]
+                notices = tuple(remove_duplicate_user_mcp(
+                    harness, mcp_registry_path or default_mcp_registry_path(),
+                ))
             findings = tuple(findings_list)
             if not findings:
                 try:
@@ -1559,7 +1573,7 @@ def run_hook(
                     _write_state(state_path, date, 'error')
                 except OSError:
                     pass
-            return HookResult(True, findings)
+            return HookResult(True, findings, notices=notices)
         except Exception:
             try:
                 _write_state(state_path, date, 'error')
@@ -1659,7 +1673,7 @@ def render_hook_result(
     delivery: str = 'native',
 ) -> str:
     findings = render_findings(result.findings)
-    rendered = findings
+    rendered = '\n'.join(part for part in (*result.notices, findings) if part)
     if result.requires_user_prompt:
         if harness in {'codex', 'qoder'}:
             return json.dumps(

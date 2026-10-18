@@ -8,6 +8,13 @@
         "--isolated",
         "--headless"
       ]
+    },
+    "codegraph": {
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
     }
   }
 }

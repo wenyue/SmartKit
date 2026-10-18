@@ -30,6 +30,30 @@
           }
         ]
       }
+    },
+    {
+      "id": "codegraph",
+      "transport": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ],
+      "harnesses": [
+        "codex",
+        "cursor",
+        "copilot",
+        "qoder"
+      ],
+      "tools": ["*"],
+      "readiness": {
+        "checks": [
+          {
+            "kind": "command-exists",
+            "command": "codegraph"
+          }
+        ]
+      }
     }
   ]
 }

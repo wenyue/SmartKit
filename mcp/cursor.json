@@ -9,6 +9,14 @@
         "--isolated",
         "--headless"
       ]
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
     }
   }
 }
