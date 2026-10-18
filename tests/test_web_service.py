@@ -20,16 +20,17 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENTRY = ROOT / 'runtime/local_web/__main__.py'
 sys.path.insert(0, str(ROOT / 'runtime'))
 from local_web import service as web, artifacts, storage, http_server
 from local_web.apps import status as apps
 from local_web.apps import diff
+from local_web_test_support import isolate_local_web
 
 
 class WebServiceTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='smartkit-web-test-')
+        self.addCleanup(self.temporary.cleanup)
         self.base = Path(self.temporary.name)
         self.environment = patch.dict(os.environ, {
             'HOME': str(self.base), 'USERPROFILE': str(self.base),
@@ -38,15 +39,11 @@ class WebServiceTests(unittest.TestCase):
             'LOCALAPPDATA': str(self.base / 'local'),
         })
         self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.entry = isolate_local_web(self, self.base)
+        self.addCleanup(web.stop_service)
         self.project = self.base / 'project_with_underscores'
         self.project.mkdir()
-
-    def tearDown(self):
-        try:
-            web.stop_service()
-        finally:
-            self.environment.stop()
-            self.temporary.cleanup()
 
 
     def request(self, url, headers=None):
@@ -113,7 +110,7 @@ class WebServiceTests(unittest.TestCase):
 
     def test_running_service_triggers_periodic_cleanup_without_a_request(self):
         storage.prepare_state()
-        state = {'schema': web.SERVICE_SCHEMA, 'port': 47821, 'key': 'a' * 64, 'mode': 'applications', 'pid': 0}
+        state = {'schema': web.SERVICE_SCHEMA, 'port': web.PORT, 'key': 'a' * 64, 'mode': 'applications', 'pid': 0}
         ticks = [0]
         calls = [0]
         handlers = {}
@@ -145,7 +142,7 @@ class WebServiceTests(unittest.TestCase):
         for harness in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(harness=harness):
                 apps.record_project(self.project, harness, observation)
-                result = subprocess.run([sys.executable, '-B', str(ENTRY), 'hook', '--harness', harness],
+                result = subprocess.run([sys.executable, '-B', str(self.entry), 'hook', '--harness', harness],
                                         input=json.dumps({'cwd': str(self.project)}), capture_output=True, text=True, timeout=15)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 payload = json.loads(result.stdout)
@@ -162,7 +159,7 @@ class WebServiceTests(unittest.TestCase):
         self.assertEqual(apps.hook_page_links(self.project, 'codex', web.ensure_service()['apps']), {})
 
     def test_reuse_detached_hook_and_restart_return_current_origin(self):
-        result = subprocess.run([sys.executable, '-B', str(ENTRY), 'hook', '--harness', 'codex'],
+        result = subprocess.run([sys.executable, '-B', str(self.entry), 'hook', '--harness', 'codex'],
                                 input=json.dumps({'cwd': str(self.project)}), text=True, capture_output=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, '')
@@ -195,7 +192,7 @@ class WebServiceTests(unittest.TestCase):
         self.assertTrue(second['apps']['setup'].startswith(second['origin'] + '/setup/'))
         refreshed_artifact = second['origin'] + urlsplit(artifact).path
         self.assertEqual(self.request(refreshed_artifact)[0], 200)
-        result = subprocess.run([sys.executable, '-B', str(ENTRY), 'status'], text=True, capture_output=True, timeout=5)
+        result = subprocess.run([sys.executable, '-B', str(self.entry), 'status'], text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['service']['origin'], second['origin'])
 
@@ -211,7 +208,7 @@ class WebServiceTests(unittest.TestCase):
         self.assertEqual(web.load_state()['port'], int(restarted['origin'].rsplit(':', 1)[1]))
 
     def test_concurrent_ensure_returns_one_server(self):
-        processes = [subprocess.Popen([sys.executable, '-B', str(ENTRY), 'ensure'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        processes = [subprocess.Popen([sys.executable, '-B', str(self.entry), 'ensure'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                      for _ in range(4)]
         try:
             results = []
@@ -244,13 +241,13 @@ class WebServiceTests(unittest.TestCase):
         with socket.socket() as other:
             if os.name != 'nt':
                 other.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            other.bind(('127.0.0.1', 47821))
+            other.bind((web.HOST, web.PORT))
             other.listen()
             with self.assertRaisesRegex(OSError, 'unverified'):
                 web.ensure_service()
             with self.assertRaisesRegex(OSError, 'unverified'):
                 web.stop_service()
-            self.assertEqual(other.getsockname()[1], 47821)
+            self.assertEqual(other.getsockname()[1], web.PORT)
             self.assertEqual(state_file.read_bytes(), original)
 
     def test_invalid_state_is_preserved_instead_of_replaced(self):

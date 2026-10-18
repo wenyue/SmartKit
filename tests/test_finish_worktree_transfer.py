@@ -9,10 +9,13 @@ from pathlib import Path
 from typing import Dict, Optional
 
 
-def git(repository: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+def git(repository: Path, *args: str, check: bool = True,
+        global_config: Optional[Path] = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", "--no-optional-locks", "-C", str(repository), *args],
         check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        env=dict(os.environ, GIT_CONFIG_GLOBAL=str(global_config) if global_config else os.devnull,
+                 GIT_CONFIG_NOSYSTEM="1"),
     )
 
 
@@ -48,7 +51,8 @@ class NativeTransferTests(unittest.TestCase):
                 (self.target / ".git/index").read_bytes(),
                 shared_path.read_bytes() if shared_path else None)
 
-    def prepare(self, outputs: Dict[str, Optional[bytes]]) -> None:
+    def prepare(self, outputs: Dict[str, Optional[bytes]], *,
+                global_config: Optional[Path] = None) -> None:
         for name, content in outputs.items():
             current = self.target / name
             if current.exists():
@@ -61,12 +65,13 @@ class NativeTransferTests(unittest.TestCase):
                 output.write_bytes(content)
                 if current.exists():
                     output.chmod(current.stat().st_mode & 0o777)
-        self.make_patch()
+        self.make_patch(global_config=global_config)
 
-    def make_patch(self) -> None:
-        result = git(self.operation, "-c", "diff.noprefix=true", "diff", "--no-index",
+    def make_patch(self, *, global_config: Optional[Path] = None) -> None:
+        result = git(self.operation, "-c", "diff.noprefix=true", "-c", "core.autocrlf=false", "diff", "--no-index",
                      "--binary", "--no-renames", "--no-ext-diff", "--no-textconv", "--no-color",
-                     "--src-prefix=a/", "--dst-prefix=b/", "--", "before", "after", check=False)
+                     "--src-prefix=a/", "--dst-prefix=b/", "--", "before", "after", check=False,
+                     global_config=global_config)
         self.assertIn(result.returncode, (0, 1), result.stderr)
         self.patch.write_bytes(result.stdout)
 
@@ -124,16 +129,28 @@ class NativeTransferTests(unittest.TestCase):
             self.assertIn(text, merged)
         self.assertEqual(self.boundary(), boundary)
 
-    def test_raw_crlf_and_binary_with_autocrlf_disabled_for_application(self) -> None:
+    def test_raw_crlf_and_binary_with_external_autocrlf_input(self) -> None:
         git(self.target, "config", "core.autocrlf", "true")
         (self.target / "text.txt").write_bytes(b"before\r\n")
         outputs = {"text.txt": b"after\r\nextra\r\n", "new.bin": b"\x00\xff\r\n"}
         boundary = self.boundary()
-        self.prepare(outputs)
-        self.apply_patch()
+        source = git(self.source, "status", "--porcelain=v1", "-z").stdout
+        mode = (self.target / "text.txt").stat().st_mode
+        outside_config = self.root / "outside.gitconfig"
+        outside_config.write_text("[core]\n\tautocrlf = input\n", encoding="utf-8")
+        config = outside_config.read_bytes()
+        self.assertEqual(git(self.operation, "config", "--get", "core.autocrlf",
+                             global_config=outside_config).stdout.strip(), b"input")
+        self.prepare(outputs, global_config=outside_config)
+        result = self.apply_patch(check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
         for name, content in outputs.items():
             self.assertEqual((self.target / name).read_bytes(), content)
+        self.assertEqual((self.before / "text.txt").read_bytes(), b"before\r\n")
+        self.assertEqual((self.target / "text.txt").stat().st_mode, mode)
         self.assertEqual(self.boundary(), boundary)
+        self.assertEqual(git(self.source, "status", "--porcelain=v1", "-z").stdout, source)
+        self.assertEqual(outside_config.read_bytes(), config)
 
     def test_working_file_application_still_consults_filters(self) -> None:
         git(self.target, "config", "filter.forbidden.clean", "exit 97")

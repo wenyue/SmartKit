@@ -633,7 +633,7 @@ def _target_evidence_paths(
     native_mcp = {
         Harness.CODEX: PurePosixPath('.codex/config.toml'),
         Harness.CURSOR: PurePosixPath('.cursor/mcp.json'),
-        Harness.COPILOT: PurePosixPath('.vscode/mcp.json'),
+        Harness.COPILOT: PurePosixPath('.mcp.json'),
         Harness.QODER: PurePosixPath('.qoder/mcp.json'),
     }
     for server in config.mcp_servers:

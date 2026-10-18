@@ -19,8 +19,9 @@ from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
-from local_web import ORIGIN, HOST, PORT, artifacts, cli, http_server, service, storage
+from local_web import ORIGIN, HOST, artifacts, cli, http_server, service, storage
 from local_web.apps import diff
+from local_web_test_support import isolate_local_web
 
 
 class DiffFixture:
@@ -615,7 +616,9 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
 class DiffHttpTests(DiffFixture, unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.server = http_server.WebServer((HOST, PORT), http_server.WebHandler)
+        isolate_local_web(self, self.base)
+        self.origin = service.ORIGIN
+        self.server = http_server.WebServer((HOST, service.PORT), http_server.WebHandler)
         self.server.web_state = {"key": "a" * 64, "mode": "applications"}
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -648,11 +651,11 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
             self.assertIn(b"const automatic=true", self.request(self.target.url(), headers={"Sec-Fetch-Site": "cross-site", "Sec-Fetch-User": "?1"})[2])
             self.assertIn(b"const automatic=false", self.request(self.target.url(), headers={"Sec-Fetch-Site": "cross-site"})[2])
             launch.assert_not_called()
-            endpoint = ORIGIN + "/api/diff/open?" + self.target.query()
+            endpoint = self.origin + "/api/diff/open?" + self.target.query()
             self.assertEqual(self.request(endpoint, post=True)[0], 403)
             self.assertEqual(self.request(endpoint, post=True, headers={"Origin": "https://evil.example"})[0], 403)
             launch.assert_not_called()
-            result = self.request(endpoint, post=True, headers={"Origin": ORIGIN, "Sec-Fetch-Site": "same-origin"})
+            result = self.request(endpoint, post=True, headers={"Origin": self.origin, "Sec-Fetch-Site": "same-origin"})
             self.assertEqual(result[0], 200)
             self.assertEqual(json.loads(result[2])["viewer"], "vscode")
             launch.assert_called_once_with(self.target)
@@ -671,8 +674,8 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
     def test_native_locator_survives_the_web_launch_endpoint(self):
         target = replace(self.target, base_commit="a" * 40, base_path="old.py")
         with patch.object(diff, "open_editor", return_value={"viewer": "vscode", "message": "dispatched"}) as launch:
-            code, _, body = self.request(ORIGIN + "/api/diff/open?" + target.query(),
-                                         post=True, headers={"Origin": ORIGIN})
+            code, _, body = self.request(self.origin + "/api/diff/open?" + target.query(),
+                                         post=True, headers={"Origin": self.origin})
         self.assertEqual(code, 200)
         self.assertEqual(json.loads(body)["viewer"], "vscode")
         launch.assert_called_once_with(target)

@@ -24,10 +24,10 @@ W 等于 B 时使用 S。保留目标独有修改，相同修改只包含一次�
 
 使用能够保留已确认权限的原生文件操作：创建时检查预期不存在，替换或删除前检查确切前态。工作文件 Git 补丁是普通文件的一种选择。先检查适用的 Git 属性：即使不暂存，过滤器、文本转换、`ident` 和 `working-tree-encoding` 也可能转换字节。存在这些转换或补丁无法表达的权限变化时，改用直接保留字节的文件操作。
 
-选择补丁方式时，在操作目录中执行以下命令，以保留原始字节的方式将标准输出保存为补丁文件，放在两个目录树之外：
+选择补丁方式时，在生成和应用补丁时都关闭换行转换，避免外部 `core.autocrlf` 设置将快照字节规范化。在操作目录中执行以下命令，以保留原始字节的方式将标准输出保存为补丁文件，放在两个目录树之外：
 
 ```text
-git diff --no-index --binary --no-renames --no-ext-diff --no-textconv --no-color --src-prefix=a/ --dst-prefix=b/ -- before after
+git -c core.autocrlf=false diff --no-index --binary --no-renames --no-ext-diff --no-textconv --no-color --src-prefix=a/ --dst-prefix=b/ -- before after
 ```
 
 退出码 1 表示发现差异；0 表示没有变化。其它失败会停止准备。检查补丁的确切路径集合和输出，包括新增与删除。两个命名的快照目录额外增加了一级路径，因此在物理目标检出目录中执行：

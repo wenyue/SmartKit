@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -21,7 +22,7 @@ class RenderError(ValueError):
 _MCP_NATIVE = {
     Harness.CODEX: (PurePosixPath('.codex/config.toml'), 'mcp_servers'),
     Harness.CURSOR: (PurePosixPath('.cursor/mcp.json'), 'mcpServers'),
-    Harness.COPILOT: (PurePosixPath('.vscode/mcp.json'), 'servers'),
+    Harness.COPILOT: (PurePosixPath('.mcp.json'), 'mcpServers'),
     Harness.QODER: (PurePosixPath('.qoder/mcp.json'), 'mcpServers'),
 }
 
@@ -268,6 +269,7 @@ def _render_mcp_entry(
     server: McpServerSpec,
     harness: Harness,
     operating_system: OperatingSystem | None,
+    target_root: Path,
 ) -> dict[str, object]:
     command, args, cwd, env, url = _effective_mcp_server(
         server, harness, operating_system
@@ -277,6 +279,7 @@ def _render_mcp_entry(
         return {
             **({'type': 'http'} if harness not in (Harness.CODEX, Harness.QODER) else {}),
             'url': url,
+            **({'tools': ['*']} if harness is Harness.COPILOT else {}),
         }
     assert command is not None
     entry: dict[str, object] = {
@@ -289,8 +292,31 @@ def _render_mcp_entry(
     if env:
         if harness is Harness.CODEX:
             entry['env_vars'] = list(env)
+        elif harness is Harness.COPILOT:
+            entry['env'] = {name: '${' + name + '}' for name in env}
         else:
             entry['env'] = {name: '${env:' + name + '}' for name in env}
+    if harness is Harness.COPILOT:
+        # Copilot does not resolve VS Code workspace variables in portable configs.
+        replacements = {
+            '${workspaceFolder}': str(target_root),
+            '${workspaceRoot}': str(target_root),
+            '${workspaceFolderBasename}': target_root.name,
+            '${workspaceRootFolderName}': target_root.name,
+            '${cwd}': str(target_root),
+            '${pathSeparator}': os.sep,
+        }
+
+        def resolve(value: str) -> str:
+            for variable, replacement in replacements.items():
+                value = value.replace(variable, replacement)
+            return value
+
+        entry['command'] = resolve(command)
+        entry['args'] = [resolve(argument) for argument in args]
+        if cwd is not None:
+            entry['cwd'] = resolve(cwd)
+        entry['tools'] = ['*']
     return entry
 
 
@@ -337,7 +363,7 @@ def _render_project_mcp(
         for harness in server.harnesses:
             path, root = _MCP_NATIVE[harness]
             key = f'{root}.{server.id}'
-            desired = _render_mcp_entry(server, harness, operating_system)
+            desired = _render_mcp_entry(server, harness, operating_system, target_root)
             document = native_document(path)
             desired_fields = dict(_safe_leaves(desired, key))
             for owned_path, owned_key in previous_owned_fields:

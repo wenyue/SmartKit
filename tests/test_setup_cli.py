@@ -289,6 +289,31 @@ class SetupCliTest(unittest.TestCase):
             )
             self.assertNotEqual(fingerprint(), baseline)
 
+    def test_target_fingerprint_tracks_portable_copilot_mcp(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir)
+            catalog = setup_project_agents.load_catalog(REPO_ROOT)
+            config = setup_project_agents.inspect_project(target, catalog=catalog).config
+            config = setup_project_agents.ProjectConfig(
+                config.selected_rules, config.selected_skills,
+                mcp_servers=setup_project_agents.parse_mcp_servers([{
+                    'id': 'local', 'command': 'python', 'harnesses': ['copilot'],
+                }]),
+            )
+
+            def fingerprint():
+                return setup_project_agents._target_fingerprint(
+                    target, source_root=REPO_ROOT, catalog=catalog, config=config,
+                )
+
+            before = fingerprint()
+            path = target / '.mcp.json'
+            path.write_text('{"mcpServers": {}}', encoding='utf-8')
+            self.assertNotEqual(fingerprint(), before)
+            before = fingerprint()
+            path.write_text('{"mcpServers": {"user-owned": {"command": "keep"}}}', encoding='utf-8')
+            self.assertNotEqual(fingerprint(), before)
+
     def test_prepare_rejects_preexisting_ownership_conflict_before_generation(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -924,10 +949,10 @@ class SetupCliTest(unittest.TestCase):
                 {'type': 'http', 'url': 'https://cursor.sentry.dev/mcp'},
             )
             self.assertEqual(
-                json.loads((target / '.vscode/mcp.json').read_text())[
-                    'servers'
+                json.loads((target / '.mcp.json').read_text())[
+                    'mcpServers'
                 ]['sentry'],
-                {'type': 'http', 'url': 'https://mcp.sentry.dev/mcp'},
+                {'type': 'http', 'url': 'https://mcp.sentry.dev/mcp', 'tools': ['*']},
             )
             self.assertEqual(
                 json.loads((target / '.qoder/mcp.json').read_text())[
@@ -943,7 +968,8 @@ class SetupCliTest(unittest.TestCase):
             }
             self.assertTrue(any(key.startswith('mcp_servers.sentry.') for key in keys))
             self.assertTrue(any(key.startswith('mcpServers.sentry.') for key in keys))
-            self.assertTrue(any(key.startswith('servers.sentry.') for key in keys))
+            self.assertFalse(any(key.startswith('servers.sentry.') for key in keys))
+            self.assertFalse((target / '.vscode/mcp.json').exists())
 
     def test_finish_rejects_cross_target_replay(self):
         with tempfile.TemporaryDirectory() as temp_dir:

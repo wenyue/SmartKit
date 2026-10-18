@@ -172,7 +172,7 @@ class SetupRendererTest(unittest.TestCase):
             )
             codex = tomllib.loads(rendered.files_by_path['.codex/config.toml'].decode())
             cursor = json.loads(rendered.files_by_path['.cursor/mcp.json'])
-            copilot = json.loads(rendered.files_by_path['.vscode/mcp.json'])
+            copilot = json.loads(rendered.files_by_path['.mcp.json'])
             lock = json.loads(rendered.files_by_path['.agents/smartkit.lock.json'])
 
             self.assertEqual(
@@ -202,14 +202,17 @@ class SetupRendererTest(unittest.TestCase):
                 'cache/inspector.exe',
             )
             self.assertNotIn('type', codex['mcp_servers']['inspector'])
-            self.assertEqual(copilot['servers']['inspector']['type'], 'stdio')
+            self.assertNotIn('.vscode/mcp.json', rendered.files_by_path)
+            self.assertEqual(copilot['mcpServers']['inspector']['type'], 'stdio')
+            self.assertEqual(copilot['mcpServers']['inspector']['tools'], ['*'])
+            self.assertEqual(copilot['mcpServers']['sentry']['tools'], ['*'])
             self.assertEqual(
-                copilot['servers']['inspector']['env'],
-                {'INSPECTOR_TOKEN': '${env:INSPECTOR_TOKEN}'},
+                copilot['mcpServers']['inspector']['env'],
+                {'INSPECTOR_TOKEN': '${INSPECTOR_TOKEN}'},
             )
             self.assertEqual(
-                copilot['servers']['inspector']['command'],
-                '${workspaceFolder}/cache/inspector.exe',
+                copilot['mcpServers']['inspector']['command'],
+                str(target) + '/cache/inspector.exe',
             )
             linux_rendered = self.render_with_config(
                 target, generated, config, OperatingSystem.LINUX
@@ -223,7 +226,7 @@ class SetupRendererTest(unittest.TestCase):
             for path, prefix in (
                 ('.codex/config.toml', 'mcp_servers'),
                 ('.cursor/mcp.json', 'mcpServers'),
-                ('.vscode/mcp.json', 'servers'),
+                ('.mcp.json', 'mcpServers'),
             ):
                 self.assertTrue(any(
                     asset['path'] == path and asset['key'].startswith(f'{prefix}.sentry.')
@@ -233,6 +236,58 @@ class SetupRendererTest(unittest.TestCase):
                     asset['path'] == path and asset['key'].startswith(f'{prefix}.inspector.')
                     for asset in mcp_assets
                 ))
+
+    def test_copilot_portable_paths_resolve_workspace_variables(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            config = self.mcp_config(target, [{
+                'id': 'local', 'harnesses': ['copilot'],
+                'command': '${workspaceFolder}${pathSeparator}server',
+                'args': ['${workspaceFolderBasename}', '${workspaceRootFolderName}', '${cwd}'],
+                'cwd': '${workspaceRoot}/cache',
+            }])
+            rendered = self.render_with_config(target, self.generated_tree(root), config)
+            entry = json.loads(rendered.files_by_path['.mcp.json'])['mcpServers']['local']
+            self.assertEqual(entry['command'], str(target / 'server'))
+            self.assertEqual(entry['args'], ['target', 'target', str(target)])
+            self.assertEqual(entry['cwd'], str(target) + '/cache')
+
+    def test_full_setup_migrates_only_recorded_legacy_copilot_fields(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / 'target'
+            config = self.mcp_config(target, [{
+                'id': 'local', 'harnesses': ['copilot'],
+                'command': 'python', 'env': ['TOKEN'],
+            }])
+            legacy = target / '.vscode/mcp.json'
+            legacy.parent.mkdir()
+            entry = {'type': 'stdio', 'command': 'python', 'args': [],
+                     'env': {'TOKEN': '${env:TOKEN}'}}
+            legacy.write_text(json.dumps({'servers': {
+                'local': entry, 'user-owned': {'type': 'http', 'url': 'https://keep.invalid/mcp'},
+            }, 'inputs': []}), encoding='utf-8')
+            lock = {'sources': [], 'assets': [{
+                'kind': 'field', 'role': 'project-mcp', 'path': '.vscode/mcp.json',
+                'key': key, 'digest': ownership_module._value_digest(value),
+            } for key, value in _safe_leaves(entry, 'servers.local')], 'project_sync': 1}
+            (target / '.agents/smartkit.lock.json').write_text(json.dumps(lock), encoding='utf-8')
+            generated = self.generated_tree(root)
+            rendered = self.render_with_config(target, generated, config)
+            self.assertEqual(json.loads(rendered.files_by_path['.vscode/mcp.json']), {
+                'servers': {'user-owned': {'type': 'http', 'url': 'https://keep.invalid/mcp'}},
+                'inputs': [],
+            })
+            self.assertEqual(json.loads(rendered.files_by_path['.mcp.json'])['mcpServers']['local'], {
+                'type': 'stdio', 'command': 'python', 'args': [],
+                'env': {'TOKEN': '${TOKEN}'}, 'tools': ['*'],
+            })
+            self.materialize(target, rendered.files)
+            converged = self.render_with_config(target, generated, config)
+            plan = build_plan(target, converged.files, converged.fields,
+                              delete_paths=converged.delete_paths)
+            self.assertTrue(all(change.kind is ChangeKind.UNCHANGED for change in plan.changes))
 
     def test_project_mcp_adopts_equal_entry_but_rejects_unmanaged_conflict(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -16,7 +16,7 @@ import workflow
 from agents_setup import project_sync
 from agents_setup.catalog import load_catalog
 from agents_setup.generation import current_contracts
-from agents_setup.ownership import OWNERSHIP_PATH, _actual_tree_digest, load_ownership
+from agents_setup.ownership import OWNERSHIP_PATH, _actual_tree_digest, _value_digest, load_ownership
 from agents_setup.planner import build_plan
 from agents_setup.project import inspect_project
 from agents_setup.renderer import render_desired_state
@@ -83,6 +83,65 @@ class SyncProjectTest(unittest.TestCase):
     def sync(self, check=False):
         return project_sync.synchronize_project(REPO_ROOT, self.target, check_only=check)
 
+    def legacy_copilot_mcp(self):
+        entry = {'type': 'stdio', 'command': 'python', 'args': ['-m', 'local']}
+        self.write('.vscode/mcp.json', json.dumps({'servers': {
+            'local': entry,
+            'user-owned': {'type': 'http', 'url': 'https://keep.invalid/mcp'},
+        }, 'inputs': []}))
+        (self.target / '.mcp.json').unlink()
+        lock_path = self.target / OWNERSHIP_PATH
+        lock = json.loads(lock_path.read_bytes())
+        lock['assets'] = [asset for asset in lock['assets'] if asset['path'] != '.mcp.json']
+        lock['assets'].extend({
+            'kind': 'field', 'role': 'project-mcp', 'path': '.vscode/mcp.json',
+            'key': 'servers.local.' + key, 'digest': _value_digest(value),
+        } for key, value in entry.items())
+        lock_path.write_text(json.dumps(lock), encoding='utf-8')
+
+    def test_local_sync_migrates_legacy_copilot_config_and_converges(self):
+        self.legacy_copilot_mcp()
+        before = self.snapshot()
+        self.assertEqual(self.sync(True).check, 'drift')
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.sync().check, 'clean')
+        self.assertEqual(json.loads((self.target / '.vscode/mcp.json').read_bytes()), {
+            'servers': {'user-owned': {'type': 'http', 'url': 'https://keep.invalid/mcp'}},
+            'inputs': [],
+        })
+        self.assertEqual(json.loads((self.target / '.mcp.json').read_bytes()), {
+            'mcpServers': {'local': {
+                'type': 'stdio', 'command': 'python', 'args': ['-m', 'local'], 'tools': ['*'],
+            }},
+        })
+        self.assertFalse(any(asset.path.as_posix() == '.vscode/mcp.json'
+                             for asset in load_ownership(self.target).assets))
+        self.assertEqual(self.sync(True).changed_paths, ())
+        after = self.snapshot()
+        self.assertEqual(self.sync().changed_paths, ())
+        self.assertEqual(self.snapshot(), after)
+
+    def test_legacy_copilot_migration_refuses_destination_conflicts_without_writes(self):
+        self.legacy_copilot_mcp()
+        self.write('.mcp.json', json.dumps({'mcpServers': {
+            'local': {'command': 'user-command'},
+        }}))
+        before = self.snapshot()
+        with self.assertRaisesRegex(project_sync.ProjectSyncError, 'conflicts with user configuration'):
+            self.sync()
+        self.assertEqual(self.snapshot(), before)
+
+    def test_legacy_copilot_migration_refuses_modified_owned_fields_without_writes(self):
+        self.legacy_copilot_mcp()
+        path = self.target / '.vscode/mcp.json'
+        document = json.loads(path.read_bytes())
+        document['servers']['local']['command'] = 'user-command'
+        path.write_text(json.dumps(document), encoding='utf-8')
+        before = self.snapshot()
+        with self.assertRaisesRegex(project_sync.ProjectSyncError, 'modified outside setup'):
+            self.sync()
+        self.assertEqual(self.snapshot(), before)
+
     def add_external(self):
         self.config['skills'] = [{'source': 'example/repository', 'ref': 'main',
                                  'include': ['skills/external-check']}]
@@ -127,7 +186,7 @@ class SyncProjectTest(unittest.TestCase):
             self.assertFalse((self.target / path.replace('renamed', 'local')).exists())
         for path, fmt, key in (('.codex/config.toml', 'toml', 'mcp_servers'),
                                ('.cursor/mcp.json', 'json', 'mcpServers'),
-                               ('.vscode/mcp.json', 'json', 'servers'),
+                               ('.mcp.json', 'json', 'mcpServers'),
                                ('.qoder/mcp.json', 'json', 'mcpServers')):
             doc = parse_document((self.target / path).read_bytes(), fmt)
             self.assertEqual(doc[key]['renamed']['command'], 'python')

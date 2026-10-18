@@ -24,10 +24,10 @@ Use ordinary regular files in real directories. Check both ends of renames and a
 
 Use native file operations that preserve the admitted permissions, with an expected-absence check for creation and an exact pre-state check before replacement or deletion. A working-file Git patch is one option for ordinary files. Check applicable Git attributes first: filters, text conversion, `ident` and `working-tree-encoding` can transform bytes even without staging. Use direct byte-preserving file operations instead when those transformations or unrepresented permission changes apply.
 
-For the patch option, from the operation directory capture stdout as a binary-safe patch file outside both trees:
+For the patch option, disable line-ending conversion during generation and application so external `core.autocrlf` settings cannot normalize the snapshot bytes. From the operation directory capture stdout as a binary-safe patch file outside both trees:
 
 ```text
-git diff --no-index --binary --no-renames --no-ext-diff --no-textconv --no-color --src-prefix=a/ --dst-prefix=b/ -- before after
+git -c core.autocrlf=false diff --no-index --binary --no-renames --no-ext-diff --no-textconv --no-color --src-prefix=a/ --dst-prefix=b/ -- before after
 ```
 
 Exit 1 means differences were found; exit 0 means no changes. Other failures stop preparation. Inspect the patch's exact path set and outputs, including additions and deletions. The two named snapshot directories add one path component, so run in the physical target checkout:
