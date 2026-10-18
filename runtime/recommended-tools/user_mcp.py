@@ -27,11 +27,15 @@ def _load_toml(text: str) -> dict:
     try:
         import tomllib
     except ModuleNotFoundError:
-        scripts = str(_SOURCE_ROOT / 'skills' / 'setup-project-agents' / 'scripts')
-        if scripts not in sys.path:
-            sys.path.insert(0, scripts)
+        _use_setup_scripts()
         from _vendor import tomli as tomllib
     return tomllib.loads(text)
+
+
+def _use_setup_scripts() -> None:
+    scripts = str(_SOURCE_ROOT / 'skills' / 'setup-project-agents' / 'scripts')
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
 
 
 def _codex_server_ids(path: Path) -> set[str]:
@@ -71,7 +75,18 @@ def _remove_from_codex(
 def _remove_from_json(path: Path, ids: list[str]) -> list[str]:
     if not path.is_file():
         return []
-    document = json.loads(path.read_text(encoding='utf-8'))
+    text = path.read_text(encoding='utf-8')
+    try:
+        document = json.loads(text)
+    except json.JSONDecodeError:
+        _use_setup_scripts()
+        from agents_setup.structured import parse_jsonc
+
+        parsed = parse_jsonc(text)
+        servers = parsed.get('mcpServers') if isinstance(parsed, dict) else None
+        if isinstance(servers, dict) and any(server_id in servers for server_id in ids):
+            raise ValueError('the file contains comments that a rewrite would discard')
+        return []
     servers = document.get('mcpServers') if isinstance(document, dict) else None
     if not isinstance(servers, dict):
         return []
@@ -111,6 +126,8 @@ def remove_duplicate_user_servers(
         path = Path(os.environ.get('COPILOT_HOME') or home / '.copilot') / 'mcp-config.json'
     elif harness == 'cursor':
         path = home / '.cursor' / 'mcp.json'
+    elif harness == 'qoder':
+        path = Path(os.environ.get('QODER_CONFIG_DIR') or home / '.qoder') / 'settings.json'
     else:
         return []
     try:

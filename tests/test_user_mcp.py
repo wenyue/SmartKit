@@ -32,7 +32,7 @@ class UserMcpCleanupTest(unittest.TestCase):
         environment = mock.patch.dict('os.environ')
         environment.start()
         self.addCleanup(environment.stop)
-        for name in ('CODEX_HOME', 'COPILOT_HOME'):
+        for name in ('CODEX_HOME', 'COPILOT_HOME', 'QODER_CONFIG_DIR'):
             self.module.os.environ.pop(name, None)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -48,6 +48,7 @@ class UserMcpCleanupTest(unittest.TestCase):
         for harness, relative in (
             ('copilot', '.copilot/mcp-config.json'),
             ('cursor', '.cursor/mcp.json'),
+            ('qoder', '.qoder/settings.json'),
         ):
             with self.subTest(harness=harness):
                 path = self.home / relative
@@ -157,6 +158,28 @@ class UserMcpCleanupTest(unittest.TestCase):
         self.assertEqual(len(notices), 1)
         self.assertIn('Could not remove', notices[0])
         self.assertEqual(path.read_text(encoding='utf-8'), '{ not json')
+
+    def test_qoder_commented_settings_are_reported_without_rewriting(self):
+        qoder_home = self.home / 'qoder-config'
+        qoder_home.mkdir()
+        self.module.os.environ['QODER_CONFIG_DIR'] = str(qoder_home)
+        path = qoder_home / 'settings.json'
+        commented = '{\n  // team note\n  "mcpServers": {"codegraph": {}}\n}\n'
+        path.write_text(commented, encoding='utf-8')
+
+        notices = self.module.remove_duplicate_user_servers(
+            'qoder', REGISTRY_PATH, home=self.home,
+        )
+
+        self.assertEqual(len(notices), 1)
+        self.assertIn('comments', notices[0])
+        self.assertEqual(path.read_text(encoding='utf-8'), commented)
+
+        path.write_text('{\n  // no duplicates\n  "ui": {}\n}\n', encoding='utf-8')
+        self.assertEqual(
+            self.module.remove_duplicate_user_servers('qoder', REGISTRY_PATH, home=self.home),
+            [],
+        )
 
 
 if __name__ == '__main__':

@@ -136,7 +136,7 @@ SmartKit includes selected Skills from the following projects, with SmartKit-spe
 
 ### Tools
 
-SmartKit configures or recommends the following tools. CodeGraph and Tokscale are installed separately; follow their upstream installation instructions and expose their commands to your coding assistant. The plugin owns the MCP configuration for CodeGraph and Playwright: at session start, SmartKit removes same-named entries from your user-level Codex, Copilot CLI, or Cursor MCP configuration.
+SmartKit configures or recommends the following tools. CodeGraph and Tokscale are installed separately; follow their upstream installation instructions and expose their commands to your coding assistant. The plugin owns the MCP configuration for CodeGraph and Playwright: at session start, SmartKit removes same-named entries from your user-level MCP configuration.
 
 | Tool | Purpose | Installation and use |
 | --- | --- | --- |

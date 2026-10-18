@@ -136,7 +136,7 @@ SmartKit 收录了以下项目的部分 Skills，并作了适配。它们随插�
 
 ### 工具
 
-SmartKit 配置或推荐以下工具。CodeGraph 和 Tokscale 需单独安装；请按各自上游的安装说明操作，并确保编程助手能够调用对应命令。CodeGraph 和 Playwright 的 MCP 配置由插件维护：会话开始时，SmartKit 会从用户级 Codex、Copilot CLI 或 Cursor MCP 配置中删除同名条目。
+SmartKit 配置或推荐以下工具。CodeGraph 和 Tokscale 需单独安装；请按各自上游的安装说明操作，并确保编程助手能够调用对应命令。CodeGraph 和 Playwright 的 MCP 配置由插件维护：会话开始时，SmartKit 会从用户级 MCP 配置中删除同名条目。
 
 | 工具 | 用途 | 安装与使用 |
 | --- | --- | --- |
