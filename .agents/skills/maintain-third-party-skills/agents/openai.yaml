@@ -1,0 +1,7 @@
+interface:
+  display_name: "Maintain Third-Party Skills"
+  short_description: "评估并按授权接入或升级第三方技能，说明风险、取舍和必要适配。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $maintain-third-party-skills，评估我指定的第三方技能接入或升级并说明风险、取舍和必要适配。"

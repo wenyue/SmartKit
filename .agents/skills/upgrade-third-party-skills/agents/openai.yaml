@@ -1,7 +1,0 @@
-interface:
-  display_name: "Upgrade Third-Party Skills"
-  short_description: "评估或执行第三方技能升级，说明采用风险、取舍和必要适配。"
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
-  brand_color: "#15803D"
-  default_prompt: "使用 $upgrade-third-party-skills，评估我指定的第三方技能升级并说明风险、取舍和必要适配。"

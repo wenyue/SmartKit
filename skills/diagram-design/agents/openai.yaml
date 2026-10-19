@@ -1,0 +1,7 @@
+interface:
+  display_name: "Diagram Design"
+  short_description: "绘制架构图、流程图等 SVG 图解，支持品牌样式和已有图表导入。"
+  icon_small: "./assets/diagram-design.svg"
+  icon_large: "./assets/diagram-design.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $diagram-design，将我提供的内容绘制成清晰的图解。"

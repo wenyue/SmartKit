@@ -6,7 +6,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 ## Skill 一览
 
-包含 SmartKit 工作流、Matt Pocock 技能集和 ponytail 系列。各组按用途组织，方便按当前任务查找所需 Skill。
+包含 SmartKit 工作流、Matt Pocock 技能集、ponytail 系列和 Diagram Design。各组按用途组织，方便按当前任务查找所需 Skill。
 
 ### 必须由用户手动调用
 
@@ -43,6 +43,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | --- | --- | --- |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | 用户要求执行累积较多或跨度较大的修改时，先核对范围，再询问是否开始实施；也可以明确指定调用。 |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | 对照可信的一手资料调查问题，将结论保存为仓库中的 Markdown 文档。 |
+| `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | 绘制架构图、流程图等 HTML/SVG 图解，支持 PNG 导出和已有图表导入；未配置或指定品牌时直接使用默认样式。 |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | 构建可丢弃的原型，验证设计、状态模型或界面是否可行。 |
 | `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | 逐步诊断故障或性能回退，找到原因并验证修复。 |
 | `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | 按“先写失败测试，再实现，再重构”的方式开发功能或修复问题。 |
@@ -133,6 +134,7 @@ SmartKit 收录了以下项目的部分 Skills，并作了适配。它们随插�
 | --- | --- | --- |
 | [Matt Pocock Skills](https://github.com/mattpocock/skills) | 计划、规格、实现、研究与审查工作流。 | [MIT](licenses/mattpocock-skills-LICENSE.txt) |
 | [ponytail](https://github.com/DietrichGebert/ponytail) | 简洁的编码方案、改动审查、代码库审计与技术债跟踪。 | [MIT](licenses/DietrichGebert-ponytail-LICENSE.txt) |
+| [Diagram Design](https://github.com/cathrynlavery/diagram-design) | 品牌图解、已有图表导入，以及 HTML/SVG/PNG 输出。 | [MIT](licenses/cathrynlavery-diagram-design-LICENSE.txt) |
 
 ### 工具
 

@@ -66,6 +66,15 @@
         {"id": "DietrichGebert/ponytail-audit", "path": "skills/ponytail-audit", "patches": ["vendor/patches/ponytail/ponytail-audit.patch", "vendor/patches/ponytail/ponytail-audit.openai.patch"]},
         {"id": "DietrichGebert/ponytail-debt", "path": "skills/ponytail-debt", "patches": ["vendor/patches/ponytail/ponytail-debt.patch", "vendor/patches/ponytail/ponytail-debt.openai.patch"]}
       ]
+    },
+    {
+      "id": "cathrynlavery/diagram-design",
+      "url": "https://github.com/cathrynlavery/diagram-design",
+      "ref": "550fd66edff058bc73056c3416b76d69cfe865ba",
+      "license": {"spdx": "MIT", "path": "LICENSE"},
+      "skills": [
+        {"id": "cathrynlavery/diagram-design", "path": "skills/diagram-design", "patches": ["vendor/patches/diagram-design/diagram-design.patch", "vendor/patches/diagram-design/diagram-design.openai.patch"]}
+      ]
     }
   ]
 }

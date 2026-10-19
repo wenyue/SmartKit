@@ -7,6 +7,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from pathlib import Path
+import re
 import secrets
 import signal
 import socket
@@ -25,6 +26,30 @@ from .apps.status import hook_page_links, record_project
 
 START_TIMEOUT = 8.0
 CLEANUP_INTERVAL = 60.0
+PLUGIN_MANIFEST = Path(__file__).resolve().parents[2] / ".claude-plugin/plugin.json"
+_SEMVER = re.compile(
+    r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+    r"(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+)
+
+
+def _version_key(value: object) -> tuple:
+    """Order SemVer releases and prereleases; build metadata has no precedence."""
+    if not isinstance(value, str) or _SEMVER.fullmatch(value) is None:
+        raise ValueError("local host plugin version must be a semantic version")
+    release, _, prerelease = value.split("+", 1)[0].partition("-")
+    identifiers = tuple((0, int(part)) if part.isdigit() else (1, part)
+                        for part in prerelease.split(".") if part)
+    return tuple(int(part) for part in release.split(".")), not prerelease, identifiers
+
+
+def _installed_version() -> str:
+    manifest = read_json(PLUGIN_MANIFEST)
+    version = manifest.get("version") if isinstance(manifest, dict) else None
+    _version_key(version)
+    return version
 
 
 def load_state() -> Optional[dict]:
@@ -43,13 +68,14 @@ def load_state() -> Optional[dict]:
 
 
 @contextlib.contextmanager
-def start_lock() -> Iterator[None]:
+def start_lock(*, deadline: Optional[float] = None) -> Iterator[None]:
+    if deadline is None:
+        deadline = time.monotonic() + START_TIMEOUT
     path = prepare_state() / "start.lock"
     if redirected(path):
         raise ValueError("local host startup lock redirects")
     descriptor = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
     with os.fdopen(descriptor, "r+b") as stream:
-        deadline = time.monotonic() + START_TIMEOUT
         if os.name == "nt":
             import msvcrt
             if not path.stat().st_size:
@@ -135,32 +161,44 @@ def ensure_service(mode: str = "applications") -> dict:
     """Return a verified fixed-origin host; an unknown port owner is never stopped.
 
     Native failures may leave a child host running, but never return an unverified
-    URL. Preview callers cannot downgrade a permanent application host.
+    URL. Older and legacy authenticated peers are replaced while retaining their
+    credential and mode; newer compatible peers are reused. Invalid versions fail
+    before replacement. Preview callers cannot downgrade an application host.
     """
     if mode not in ("applications", "previews"):
         raise ValueError("unknown local host mode")
-    with start_lock():
+    deadline = time.monotonic() + START_TIMEOUT
+    required_version = _version_key(_installed_version())
+    with start_lock(deadline=deadline):
         prepare_cache()
         cleanup_artifacts()
+        if time.monotonic() >= deadline:
+            raise TimeoutError("local host startup deadline expired")
         state = load_state()
         running = health(state) if state else None
         if running:
             state["pid"] = running["pid"]
-            if mode == "applications":
-                state["mode"] = mode
-            write_json(state_dir() / "service.json", state)
-            deadline = time.monotonic() + START_TIMEOUT
-            while running["mode"] != state["mode"]:
-                if time.monotonic() >= deadline:
-                    raise TimeoutError("local host did not activate permanent applications")
-                time.sleep(0.05)
-                running = health(state)
-                if running is None:
-                    raise OSError("local host stopped during mode activation")
-            return service_info(state)
+            state["mode"] = ("applications" if "applications" in (mode, state["mode"], running["mode"])
+                             else "previews")
+            if "plugin_version" not in running or _version_key(running["plugin_version"]) < required_version:
+                _stop_owned(state, running, deadline=min(deadline, time.monotonic() + 4))
+                state["pid"] = 0
+            else:
+                write_json(state_dir() / "service.json", state)
+                while running["mode"] != state["mode"]:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError("local host did not activate permanent applications")
+                    time.sleep(0.05)
+                    running = health(state)
+                    if running is None:
+                        raise OSError("local host stopped during mode activation")
+                return service_info(state)
+        else:
+            state = {"schema": SERVICE_SCHEMA, "port": PORT, "key": secrets.token_hex(32), "mode": mode, "pid": 0}
         if not port_available():
             raise OSError("127.0.0.1:47821 is occupied by an unverified process; it was not stopped")
-        state = {"schema": SERVICE_SCHEMA, "port": PORT, "key": secrets.token_hex(32), "mode": mode, "pid": 0}
+        if time.monotonic() >= deadline:
+            raise TimeoutError("local host startup deadline expired")
         write_json(state_dir() / "service.json", state)
         log_path = state_dir() / "server.log"
         if redirected(log_path):
@@ -172,20 +210,28 @@ def ensure_service(mode: str = "applications") -> dict:
             process = subprocess.Popen([sys.executable, "-B", str(Path(__file__).with_name("__main__.py")), "serve"],
                                        stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                        cwd=str(state_dir()), close_fds=True, **options)
-        deadline = time.monotonic() + START_TIMEOUT
-        while time.monotonic() < deadline:
-            current = load_state()
-            running = health(current) if current else None
-            if running and running["pid"] == process.pid:
-                threading.Thread(target=process.wait, daemon=True).start()
-                return service_info(current)
-            if process.poll() is not None:
-                raise OSError("SmartKit local host startup failed; inspect " + str(log_path))
-            time.sleep(0.05)
-        # Only a process created by this operation may be terminated on timeout.
-        process.terminate()
-        process.wait(timeout=3)
-        raise TimeoutError("SmartKit local host startup timed out; inspect " + str(log_path))
+        try:
+            while time.monotonic() < deadline:
+                current = load_state()
+                running = health(current) if current else None
+                if (running and running["pid"] == process.pid and "plugin_version" in running
+                        and _version_key(running["plugin_version"]) >= required_version):
+                    threading.Thread(target=process.wait, daemon=True).start()
+                    return service_info(current)
+                if process.poll() is not None:
+                    raise OSError("SmartKit local host startup failed; inspect " + str(log_path))
+                time.sleep(0.05)
+            raise TimeoutError("SmartKit local host startup timed out; inspect " + str(log_path))
+        except BaseException:
+            # Only our child is eligible for cleanup after any readiness failure or cancellation.
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired as error:
+                    threading.Thread(target=process.wait, daemon=True).start()
+                    raise TimeoutError("local host startup failed and its child did not stop; inspect " + str(log_path)) from error
+            raise
 
 
 def cleanup_artifacts() -> None:
@@ -209,18 +255,30 @@ def stop_service() -> bool:
             if not port_available():
                 raise OSError("refusing to stop an unverified process on the local host port")
             return False
-        os.kill(running["pid"], signal.SIGTERM)
-        deadline = time.monotonic() + 4
-        while health(state):
-            if time.monotonic() >= deadline:
-                raise TimeoutError("verified local host process did not stop")
-            time.sleep(0.05)
+        _stop_owned(state, running, deadline=time.monotonic() + 4)
         return True
+
+
+def _stop_owned(state: dict, running: dict, *, deadline: float) -> None:
+    """Stop an authenticated peer while the caller holds the startup lock."""
+    if time.monotonic() >= deadline:
+        raise TimeoutError("local host stop deadline expired")
+    try:
+        os.kill(running["pid"], signal.SIGTERM)
+    except ProcessLookupError:
+        # The authenticated peer may exit between its health response and SIGTERM.
+        pass
+    # A missed health response alone does not prove the listener has closed.
+    while health(state) is not None or not port_available():
+        if time.monotonic() >= deadline:
+            raise TimeoutError("verified local host did not release its port")
+        time.sleep(0.05)
 
 
 def serve() -> None:
     from .http_server import WebServer, WebHandler
 
+    plugin_version = _installed_version()
     state = load_state()
     if state is None:
         raise ValueError("start the local host through ensure, not serve")
@@ -232,6 +290,8 @@ def serve() -> None:
             state["pid"] = os.getpid()
             write_json(state_dir() / "service.json", state)
             server.web_state = state
+            # Keep this outside service.json: legacy callers reject extra state fields.
+            server.plugin_version = plugin_version
             server.timeout = 0.5
             stopping = False
 

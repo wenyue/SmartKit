@@ -1,4 +1,5 @@
 """Run the real local host on a private test origin, including child processes."""
+import json
 import socket
 import sys
 import unittest
@@ -24,6 +25,8 @@ def isolate_local_web(test: unittest.TestCase, directory: Path) -> Path:
     origin = f'http://{local_web.HOST}:{port}'
     entry = directory / 'local_web_cli' / '__main__.py'
     entry.parent.mkdir()
+    manifest = directory / 'plugin.json'
+    manifest.write_text(json.dumps({'version': '1.2.21'}), encoding='utf-8')
     # Initialize the endpoint before imports; ensure/serve then relaunch this same entry.
     entry.write_text(
         'import sys\n'
@@ -33,6 +36,8 @@ def isolate_local_web(test: unittest.TestCase, directory: Path) -> Path:
         f'local_web.ORIGIN = {origin!r}\n'
         'from local_web import service\n'
         'service.__file__ = __file__\n'
+        'from pathlib import Path\n'
+        f'service.PLUGIN_MANIFEST = Path({str(manifest)!r})\n'
         'from local_web.cli import main\n'
         'raise SystemExit(main())\n',
         encoding='utf-8',
@@ -46,6 +51,9 @@ def isolate_local_web(test: unittest.TestCase, directory: Path) -> Path:
         patcher.start()
         test.addCleanup(patcher.stop)
     patcher = patch.object(service, '__file__', str(entry))
+    patcher.start()
+    test.addCleanup(patcher.stop)
+    patcher = patch.object(service, 'PLUGIN_MANIFEST', manifest)
     patcher.start()
     test.addCleanup(patcher.stop)
     return entry

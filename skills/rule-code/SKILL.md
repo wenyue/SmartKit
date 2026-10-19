@@ -13,6 +13,8 @@ Before making decisions in any coding task, read [ponytail](../ponytail/SKILL.md
 
 Give every behavior, state, invariant, and lifecycle one clear owner. Keep owner-local logic with its owner; move logic only when its reuse or boundary is real.
 
+Keep failure handling with its owning operation. Catch/log/default repetition alone does not justify a callback wrapper, even across callers. Require a coherent responsibility beyond the template, such as cleanup, transaction completion, required failure-contract translation, or substantive recovery; judge that responsibility rather than function length.
+
 Align public interfaces with stable product or domain capabilities. Meet test and call-site needs through the owning contract rather than widening APIs, moving owner-local logic, or adding indirection solely for convenience.
 
 ## Make State and Dependencies Explicit

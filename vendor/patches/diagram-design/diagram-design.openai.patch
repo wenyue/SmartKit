@@ -1,0 +1,19 @@
+--- /dev/null
++++ b/agents/openai.yaml
+@@ -0,0 +1,7 @@
++interface:
++  display_name: "Diagram Design"
++  short_description: "绘制架构图、流程图等 SVG 图解，支持品牌样式和已有图表导入。"
++  icon_small: "./assets/diagram-design.svg"
++  icon_large: "./assets/diagram-design.svg"
++  brand_color: "#15803D"
++  default_prompt: "使用 $diagram-design，将我提供的内容绘制成清晰的图解。"
+--- /dev/null
++++ b/assets/diagram-design.svg
+@@ -0,0 +1,6 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="#15803D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
++  <path d="M32 24v10H14v8m18-8h18v8"/>
++  <rect x="22" y="8" width="20" height="16" rx="3"/>
++  <rect x="5" y="42" width="18" height="14" rx="3"/>
++  <rect x="41" y="42" width="18" height="14" rx="3"/>
++</svg>

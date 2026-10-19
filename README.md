@@ -6,7 +6,7 @@ WenYue SmartKit is a plugin for Codex, Cursor, GitHub Copilot, and Qoder. It pro
 
 ## Skills at a glance
 
-Includes SmartKit workflows, Matt Pocock's skills, and the ponytail series. Each group is organized by purpose to help you find the Skill for your current task.
+Includes SmartKit workflows, Matt Pocock's skills, the ponytail series, and Diagram Design. Each group is organized by purpose to help you find the Skill for your current task.
 
 ### Requires manual invocation
 
@@ -43,6 +43,7 @@ Use these Skills for a specific task. Ask for them by name, or let the assistant
 | --- | --- | --- |
 | `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | When you ask to execute many accumulated edits or broad changes, reviews the intended scope and asks whether to begin implementation; you can also invoke it by name. |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | Investigates a question against trusted primary sources and saves the findings as a Markdown document in the repo. |
+| `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | Creates architecture diagrams, flowcharts, and other HTML/SVG figures, with PNG export and diagram imports; uses the default style immediately unless a brand is configured or requested. |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds a throwaway prototype to check a design, state model, or interface. |
 | `diagnosing-bugs` | [Matt Pocock](https://github.com/mattpocock/skills) | Diagnoses bugs or performance regressions, finds the cause, and verifies the fix. |
 | `tdd` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds features or fixes bugs by writing a failing test, implementing, then refactoring. |
@@ -133,6 +134,7 @@ SmartKit includes selected Skills from the following projects, with SmartKit-spe
 | --- | --- | --- |
 | [Matt Pocock Skills](https://github.com/mattpocock/skills) | Planning, specifications, implementation, research, and review workflows. | [MIT](licenses/mattpocock-skills-LICENSE.txt) |
 | [ponytail](https://github.com/DietrichGebert/ponytail) | Simple coding solutions, change reviews, codebase audits, and technical debt tracking. | [MIT](licenses/DietrichGebert-ponytail-LICENSE.txt) |
+| [Diagram Design](https://github.com/cathrynlavery/diagram-design) | Branded diagrams, diagram imports, and HTML/SVG/PNG output. | [MIT](licenses/cathrynlavery-diagram-design-LICENSE.txt) |
 
 ### Tools
 

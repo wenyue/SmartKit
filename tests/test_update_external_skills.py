@@ -2,6 +2,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import difflib
+import hashlib
 import json
 import os
 import tempfile
@@ -30,9 +31,8 @@ def load_module():
 def write_skill(root: Path, relative: str, name: str, marker: str) -> None:
     skill = root / relative
     skill.mkdir(parents=True)
-    (skill / 'SKILL.md').write_text(
-        f'---\nname: {name}\ndescription: Test fixture.\n---\n\n# {name}\n\n{marker}\n',
-        encoding='utf-8',
+    (skill / 'SKILL.md').write_bytes(
+        f'---\nname: {name}\ndescription: Test fixture.\n---\n\n# {name}\n\n{marker}\n'.encode('utf-8')
     )
 
 
@@ -170,10 +170,10 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         adapted = original.replace('version one', 'SmartKit adaptation')
         patch = project / 'vendor/patches/alpha.patch'
         patch.parent.mkdir(parents=True)
-        patch.write_text(''.join(difflib.unified_diff(
+        patch.write_bytes((''.join(difflib.unified_diff(
             original.splitlines(keepends=True), adapted.splitlines(keepends=True),
             fromfile='a/SKILL.md', tofile='b/SKILL.md',
-        )), encoding='utf-8')
+        ))).encode('utf-8'))
         registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
         (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
         resolve = lambda source: checkouts[source.id]
@@ -222,6 +222,131 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
             ['--check', '--root', str(project)], resolver=resolve,
         ), 1)
 
+    def test_update_normalizes_text_and_license_without_changing_upstream(self):
+        project, upstream, _, _, checkouts = self.prepare_two_source_project()
+        skill = upstream / 'skills/alpha'
+        originals = {
+            'SKILL.md': (skill / 'SKILL.md').read_bytes().replace(b'\n', b'\r\n'),
+            'assets/mixed.html': b'<html>\r\n<body>\nhello\r\n</body></html>\r\n',
+            'references/format.md': b'first  \r\nsecond\ncarriage\rreturn\r\n',
+            'references/bom.md': b'\xef\xbb\xbfheading\r\n',
+            'assets/binary.bin': b'\x00\xfffirst\r\nsecond',
+            'assets/non-utf8.bin': b'\xfffirst\r\nsecond',
+            'assets/utf16.bin': 'first\r\nsecond'.encode('utf-16'),
+        }
+        for relative, content in originals.items():
+            target = skill / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        license_bytes = MIT_LICENSE.encode().replace(b'\n', b'\r\n')
+        (upstream / 'LICENSE').write_bytes(license_bytes)
+        before_lock = json.loads((project / 'vendor/external-skills.lock.json').read_bytes())
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(
+                ['--update', '--source', 'acme/alpha-source', '--root', str(project)],
+                resolver=lambda source: checkouts[source.id],
+            ), 0)
+        lock = json.loads((project / 'vendor/external-skills.lock.json').read_bytes())
+        files = lock['sources'][0]['skills'][0]['files']
+        for relative, original in originals.items():
+            with self.subTest(relative=relative):
+                expected = original if relative.endswith('.bin') else original.replace(b'\r\n', b'\n')
+                self.assertEqual((project / 'skills/alpha' / relative).read_bytes(), expected)
+                self.assertEqual(files[relative], hashlib.sha256(expected).hexdigest())
+                self.assertEqual((skill / relative).read_bytes(), original)
+        expected_license = license_bytes.replace(b'\r\n', b'\n')
+        self.assertEqual((project / 'licenses/acme-alpha-source-LICENSE.txt').read_bytes(), expected_license)
+        self.assertEqual(lock['sources'][0]['license']['sha256'], hashlib.sha256(expected_license).hexdigest())
+        self.assertEqual((upstream / 'LICENSE').read_bytes(), license_bytes)
+        self.assertEqual(lock['sources'][1], before_lock['sources'][1])
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(
+                ['--check', '--root', str(project)], resolver=lambda source: checkouts[source.id],
+            ), 0)
+
+    def test_lf_patch_applies_to_crlf_upstream_and_normalizes_patch_outputs(self):
+        project, upstream, _, registry, checkouts = self.prepare_two_source_project()
+        source_file = upstream / 'skills/alpha/SKILL.md'
+        original = source_file.read_bytes()
+        source_file.write_bytes(original.replace(b'\n', b'\r\n'))
+        adapted = original.replace(b'version one', b'SmartKit adaptation')
+        patch = project / 'vendor/patches/alpha.patch'
+        patch.parent.mkdir(parents=True)
+        patch.write_bytes(''.join(difflib.unified_diff(
+            original.decode().splitlines(keepends=True), adapted.decode().splitlines(keepends=True),
+            fromfile='a/SKILL.md', tofile='b/SKILL.md',
+        )).encode() + b'--- /dev/null\n+++ b/references/added.md\n@@ -0,0 +1,2 @@\n+first\r\n+second\r\n')
+        registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
+        (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(
+                ['--update', '--root', str(project)], resolver=lambda source: checkouts[source.id],
+            ), 0)
+        self.assertEqual((project / 'skills/alpha/SKILL.md').read_bytes(), adapted)
+        self.assertEqual((project / 'skills/alpha/references/added.md').read_bytes(), b'first\nsecond\n')
+        self.assertEqual(source_file.read_bytes(), original.replace(b'\n', b'\r\n'))
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(
+                ['--check', '--root', str(project)], resolver=lambda source: checkouts[source.id],
+            ), 0)
+
+    def test_normalization_failure_preserves_installed_skills_lock_and_upstream(self):
+        project, upstream, _, _, checkouts = self.prepare_two_source_project()
+        installed = project / 'skills/alpha/SKILL.md'
+        source = upstream / 'skills/alpha/SKILL.md'
+        source.write_bytes(source.read_bytes().replace(b'\n', b'\r\n'))
+        original_source = source.read_bytes()
+        original_installed = installed.read_bytes()
+        original_lock = (project / 'vendor/external-skills.lock.json').read_bytes()
+        write_bytes = Path.write_bytes
+
+        def fail_normalization(path, content):
+            if path.name == 'SKILL.md' and any(part.startswith('smartkit-external-derived-') for part in path.parts):
+                raise PermissionError('injected normalization failure')
+            return write_bytes(path, content)
+
+        errors = io.StringIO()
+        with mock.patch.object(Path, 'write_bytes', autospec=True, side_effect=fail_normalization), \
+                redirect_stdout(io.StringIO()), redirect_stderr(errors):
+            self.assertEqual(self.module.main(
+                ['--update', '--root', str(project)], resolver=lambda item: checkouts[item.id],
+            ), 2)
+        self.assertIn('cannot normalize external Skill resource', errors.getvalue())
+        self.assertEqual(installed.read_bytes(), original_installed)
+        self.assertEqual(source.read_bytes(), original_source)
+        self.assertEqual((project / 'vendor/external-skills.lock.json').read_bytes(), original_lock)
+
+    def test_normalized_snapshots_are_repeatable_across_git_line_ending_settings(self):
+        project, upstream, _, _, checkouts = self.prepare_two_source_project()
+        resource = upstream / 'skills/alpha/example.html'
+        resource.write_bytes(b'<html>\r\n<body>\ntext\r\n</body></html>\r\n')
+        binary = upstream / 'skills/alpha/binary.html'
+        binary.write_bytes(b'\xffbinary\r\n')
+        resolve = lambda source: checkouts[source.id]
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(['--update', '--root', str(project)], resolver=resolve), 0)
+        lock_bytes = (project / 'vendor/external-skills.lock.json').read_bytes()
+        resource.write_bytes(resource.read_bytes().replace(b'\r\n', b'\n'))
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(['--check', '--root', str(project)], resolver=resolve), 0)
+            self.assertEqual(self.module.main(['--update', '--root', str(project)], resolver=resolve), 0)
+        self.assertEqual((project / 'vendor/external-skills.lock.json').read_bytes(), lock_bytes)
+        (project / '.gitattributes').write_bytes((REPO_ROOT / '.gitattributes').read_bytes())
+        self.module._run_git(('init', '--quiet', str(project)))
+        self.module._run_git(('-C', str(project), 'add', '--all'))
+        self.module._run_git(('-C', str(project), '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+                              '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'fixture'))
+        for setting in ('true', 'false'):
+            with self.subTest(autocrlf=setting):
+                (project / 'skills/alpha/example.html').unlink()
+                (project / 'skills/alpha/binary.html').unlink()
+                self.module._run_git(('-C', str(project), '-c', 'core.autocrlf=' + setting,
+                                      'checkout-index', '--all', '--force'))
+                self.assertEqual((project / 'skills/alpha/example.html').read_bytes(), resource.read_bytes())
+                self.assertEqual((project / 'skills/alpha/binary.html').read_bytes(), binary.read_bytes())
+                with redirect_stdout(io.StringIO()):
+                    self.assertEqual(self.module.main(['--check', '--root', str(project)], resolver=resolve), 0)
+
     def test_patch_adds_chinese_interface_metadata_to_snapshot_and_lock(self):
         project, upstream, _, registry, checkouts = self.prepare_two_source_project()
         metadata = (
@@ -231,11 +356,8 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         )
         patch = project / 'vendor/patches/alpha-openai.patch'
         patch.parent.mkdir(parents=True)
-        patch.write_text(
-            '--- /dev/null\n+++ b/agents/openai.yaml\n@@ -0,0 +1,3 @@\n'
-            + ''.join('+' + line for line in metadata.splitlines(keepends=True)),
-            encoding='utf-8',
-        )
+        patch.write_bytes(('--- /dev/null\n+++ b/agents/openai.yaml\n@@ -0,0 +1,3 @@\n'
+            + ''.join('+' + line for line in metadata.splitlines(keepends=True))).encode('utf-8'))
         registry['external_sources'][0]['skills'][0]['patches'] = [
             'vendor/patches/alpha-openai.patch'
         ]
@@ -302,8 +424,8 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         project, alpha, _, registry, checkouts = self.prepare_two_source_project()
         patch = project / 'vendor/patches/alpha.patch'
         patch.parent.mkdir(parents=True)
-        patch.write_text('--- a/SKILL.md\n+++ b/SKILL.md\n@@ -1 +1 @@\n'
-                         '-missing upstream text\n+adapted\n', encoding='utf-8')
+        patch.write_bytes(('--- a/SKILL.md\n+++ b/SKILL.md\n@@ -1 +1 @@\n'
+                         '-missing upstream text\n+adapted\n').encode('utf-8'))
         registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
         (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
         paths = ['skills/alpha/SKILL.md', 'skills/beta/SKILL.md', 'vendor/external-skills.lock.json']
@@ -318,8 +440,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         project, _, _, registry, checkouts = self.prepare_two_source_project()
         patch = project / 'vendor/patches/alpha.patch'
         patch.parent.mkdir(parents=True)
-        patch.write_text('--- /dev/null\n+++ b/../escaped.md\n@@ -0,0 +1 @@\n+escaped\n',
-                         encoding='utf-8')
+        patch.write_bytes(('--- /dev/null\n+++ b/../escaped.md\n@@ -0,0 +1 @@\n+escaped\n').encode('utf-8'))
         registry['external_sources'][0]['skills'][0]['patches'] = ['vendor/patches/alpha.patch']
         (project / 'skills/registry.json').write_text(json.dumps(registry), encoding='utf-8')
         lock = (project / 'vendor/external-skills.lock.json').read_bytes()
@@ -353,7 +474,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         registry = self.module.load_registry(project)
         checkout = self.module.ResolvedCheckout(upstream, 'main', 'b' * 40)
         snapshots = {'acme/skills': self.module.load_source_snapshot(
-            registry.external_sources[0], checkout
+            registry.external_sources[0], checkout, staging_root=self.root / 'initial-derived'
         )}
         desired_lock = self.module._desired_lock(
             registry, snapshots, None, selected_source=None
@@ -411,7 +532,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         registry = self.module.load_registry(project)
         checkout = self.module.ResolvedCheckout(upstream, 'main', 'd' * 40)
         initial_snapshots = {'acme/skills': self.module.load_source_snapshot(
-            registry.external_sources[0], checkout
+            registry.external_sources[0], checkout, staging_root=self.root / 'initial-derived'
         )}
         initial_lock = self.module._desired_lock(
             registry, initial_snapshots, None, selected_source=None
@@ -432,7 +553,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
             )
         updated_checkout = self.module.ResolvedCheckout(upstream, 'main', 'e' * 40)
         updated_snapshots = {'acme/skills': self.module.load_source_snapshot(
-            registry.external_sources[0], updated_checkout
+            registry.external_sources[0], updated_checkout, staging_root=self.root / 'updated-derived'
         )}
         updated_lock = self.module._desired_lock(
             registry, updated_snapshots, initial_lock, selected_source=None
@@ -630,7 +751,7 @@ class ExternalSkillsUpdaterTest(unittest.TestCase):
         )
         checkout = self.module.ResolvedCheckout(upstream, 'main', 'c' * 40)
         with self.assertRaisesRegex(self.module.UpdateError, 'contains a symlink'):
-            self.module.load_source_snapshot(source, checkout)
+            self.module.load_source_snapshot(source, checkout, staging_root=self.root / 'derived')
 
 
 if __name__ == '__main__':

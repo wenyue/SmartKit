@@ -23,9 +23,14 @@ Run `python scripts/update_external_skills.py --update` to derive all selected s
 of `--update` to verify the derived contents and lock. These operations resolve upstream sources
 and may require network access; `--check` is not an offline-only lock check.
 
-The updater validates upstream content, applies patches in staging, validates the result, and
-records final file hashes together with patch paths and hashes. Installation preserves the
-existing transaction boundary across Skills, licenses, and lock. A patch conflict leaves the
+The updater validates upstream content and copies selected Skills into staging. It normalizes
+CRLF to LF in UTF-8 resources without NUL bytes before applying patches, normalizes patch outputs
+again, validates the result, and records hashes of the final bytes together with patch paths and
+hashes. Text licenses use the same normalization. Binary resources, other whitespace and the
+upstream checkout remain unchanged; patches target the normalized text. Repository Git attributes
+keep recognized source-text formats at LF. Skill trees and licenses disable Git newline conversion
+so opaque resources with text suffixes retain their recorded bytes as well.
+Installation preserves the existing transaction boundary across Skills, licenses, and lock. A patch conflict leaves the
 previous installation intact. Unrecorded edits in managed output stop an update: first preserve
 and express the intended change in the owning patch, then restore the corresponding generated
 output to its recorded state before updating. Never discard another person's changes to make an

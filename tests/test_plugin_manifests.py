@@ -251,7 +251,7 @@ class PluginManifestTest(unittest.TestCase):
         private_names = {
             'translate-agent-artifacts',
             'upgrade-smartkit',
-            'upgrade-third-party-skills',
+            'maintain-third-party-skills',
             'write-setup-authoring-blueprints',
             'write-shared-rules-and-skills',
         }
@@ -553,7 +553,10 @@ class PluginManifestTest(unittest.TestCase):
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
         }
-        self.assertEqual(plugin_skills, {*custom, *MATT_PROMOTED, *PONYTAIL_PROMOTED})
+        self.assertEqual(
+            plugin_skills,
+            {*custom, *MATT_PROMOTED, *PONYTAIL_PROMOTED, 'diagram-design'},
+        )
         lock = load_json('vendor/external-skills.lock.json')
         self.assertEqual(set(lock), {'sources'})
         matt = lock['sources'][0]

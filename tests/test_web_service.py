@@ -55,6 +55,231 @@ class WebServiceTests(unittest.TestCase):
         with response:
             return response.status, response.headers, response.read()
 
+    def set_plugin_version(self, version):
+        web.PLUGIN_MANIFEST.write_text(json.dumps({'version': version}), encoding='utf-8')
+
+    def start_protocol_server(self, fields=None, *, legacy=False):
+        """Start a real peer with an older or incompatible health response."""
+        storage.prepare_state()
+        storage.prepare_cache()
+        storage.write_json(storage.state_dir() / 'service.json', {
+            'schema': web.SERVICE_SCHEMA, 'port': web.PORT, 'key': 'a' * 64,
+            'mode': 'applications', 'pid': 0,
+        })
+        original = self.entry.read_text(encoding='utf-8')
+        override = (
+            'from local_web.http_server import WebHandler\n'
+            'original_json = WebHandler.json\n'
+            'def peer_json(self, code, value):\n'
+            '    if self.path == "/api/service/health":\n'
+            '        value = dict(value)\n'
+            f'        value.update({fields or {}!r})\n'
+            + ('        value.pop("plugin_version", None)\n' if legacy else '')
+            + '    return original_json(self, code, value)\n'
+            'WebHandler.json = peer_json\n'
+        )
+        self.entry.write_text(original.replace('from local_web.cli import main', override + 'from local_web.cli import main'), encoding='utf-8')
+        process = subprocess.Popen([sys.executable, '-B', str(self.entry), 'serve'],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+        def cleanup():
+            if process.poll() is None:
+                process.terminate()
+            process.wait(timeout=5)
+            process.stderr.close()
+
+        self.addCleanup(cleanup)
+        try:
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                if process.poll() is not None:
+                    self.fail(process.stderr.read().decode())
+                try:
+                    code, _, _ = self.request(web.ORIGIN + '/api/service/health', {'Authorization': 'Bearer ' + 'a' * 64})
+                    if code == 200:
+                        return process
+                except OSError:
+                    pass
+                time.sleep(0.05)
+            self.fail('peer did not start')
+        finally:
+            self.entry.write_text(original, encoding='utf-8')
+
+    def test_health_freezes_plugin_version_at_startup(self):
+        first = web.ensure_service()
+        self.assertEqual(web.health(web.load_state()).get('plugin_version'), '1.2.21')
+        self.set_plugin_version('1.2.22')
+        self.assertEqual(web.health(web.load_state()).get('plugin_version'), '1.2.21')
+        self.assertEqual(web.load_state()['pid'], first['pid'])
+        self.assertEqual(set(web.load_state()), {'schema', 'port', 'key', 'mode', 'pid'})
+
+    def test_diff_generation_upgrades_service_and_preserves_existing_links(self):
+        first = web.ensure_service()
+        first_key = web.load_state()['key']
+        artifact = artifacts.create_artifact({'diff.html': b'captured'}, public_files=['diff.html'])
+        artifact_url = web.publish_artifact(artifact.id)['diff.html']
+        subprocess.run(['git', '-C', str(self.project), 'init'], capture_output=True, check=True)
+        sample = self.project / 'sample.py'
+        sample.write_bytes(b'baseline\n')
+        subprocess.run(['git', '-C', str(self.project), 'add', 'sample.py'], capture_output=True, check=True)
+        subprocess.run(['git', '-C', str(self.project), '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+                        '-c', 'commit.gpgsign=false', 'commit', '-m', 'baseline'], capture_output=True, check=True)
+        commit = subprocess.run(['git', '-C', str(self.project), 'rev-parse', 'HEAD'], capture_output=True, check=True).stdout.decode().strip()
+        batch = {'repo': str(self.project), 'base': 'commit:' + commit, 'files': [{'id': 'F1', 'path': 'sample.py'}]}
+        old_url = diff.links(batch)[0]['url'].replace('/diff?', '/diff/html?')
+        self.assertIn('base_commit=', old_url)
+        self.set_plugin_version('1.2.22')
+        sample.write_bytes(b'after upgrade\n')
+        diff.links(batch)
+        second = web.ensure_service('previews')
+        self.assertNotEqual(second['pid'], first['pid'])
+        self.assertEqual(second['origin'], first['origin'])
+        self.assertEqual(second['mode'], 'applications')
+        self.assertEqual(web.load_state()['key'], first_key)
+        self.assertEqual(self.request(first['apps']['setup'])[0], 200)
+        self.assertEqual(self.request(artifact_url)[2], b'captured')
+        self.assertEqual(artifacts.load_artifact(artifact.id).expires_at, artifact.expires_at)
+        code, _, content = self.request(old_url)
+        self.assertEqual(code, 200)
+        self.assertIn(b'after&nbsp;upgrade', content)
+
+    def test_version_ordering_reuses_equal_or_newer_peers(self):
+        cases = [
+            ('1.2.21', '1.2.21', True),
+            ('1.10.0', '1.9.0', True),
+            ('1.9.0', '1.10.0', False),
+            ('1.2.22-rc.2', '1.2.22-rc.10', False),
+            ('1.2.22', '1.2.22-rc.10', True),
+            ('1.2.22-rc.10', '1.2.22', False),
+            ('1.2.22+first', '1.2.22+second', True),
+        ]
+        for running, installed, reuse in cases:
+            with self.subTest(running=running, installed=installed):
+                self.set_plugin_version(running)
+                first = web.ensure_service()
+                try:
+                    self.set_plugin_version(installed)
+                    second = web.ensure_service('previews')
+                    self.assertEqual(first['pid'] == second['pid'], reuse)
+                    self.assertEqual(second['mode'], 'applications')
+                finally:
+                    web.stop_service()
+
+    def test_legacy_authenticated_peer_is_replaced(self):
+        old = self.start_protocol_server(legacy=True)
+        state = web.load_state()
+        result = subprocess.run([sys.executable, '-B', str(self.entry), 'hook', '--harness', 'codex'],
+                                input=json.dumps({'cwd': str(self.project)}), text=True, capture_output=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        second = web.ensure_service()
+        self.assertNotEqual(second['pid'], old.pid)
+        self.assertEqual(web.load_state()['key'], state['key'])
+        self.assertEqual(web.health(web.load_state()).get('plugin_version'), '1.2.21')
+
+    def test_invalid_peer_version_is_not_treated_as_legacy(self):
+        old = self.start_protocol_server({'plugin_version': None})
+        state_file = storage.state_dir() / 'service.json'
+        before = state_file.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'version'):
+            web.ensure_service()
+        self.assertIsNone(old.poll())
+        self.assertEqual(state_file.read_bytes(), before)
+
+    def test_invalid_installed_version_preserves_running_peer(self):
+        first = web.ensure_service()
+        state_file = storage.state_dir() / 'service.json'
+        before = state_file.read_bytes()
+        for version in ('1.02.3', '1.2', '1.2.3-01', '', None):
+            with self.subTest(version=version):
+                self.set_plugin_version(version)
+                with self.assertRaisesRegex(ValueError, 'version'):
+                    web.ensure_service()
+                self.assertEqual(web.health(web.load_state())['pid'], first['pid'])
+                self.assertEqual(state_file.read_bytes(), before)
+
+    def test_incompatible_peer_remains_untouched(self):
+        old = self.start_protocol_server({'schema': 'smartkit.local-web/v999', 'plugin_version': '999.0.0'})
+        state_file = storage.state_dir() / 'service.json'
+        before = state_file.read_bytes()
+        with self.assertRaisesRegex(OSError, 'unverified'):
+            web.ensure_service()
+        self.assertIsNone(old.poll())
+        self.assertEqual(state_file.read_bytes(), before)
+
+    def test_concurrent_upgrade_returns_one_replacement(self):
+        first = web.ensure_service()
+        self.set_plugin_version('1.2.22')
+        processes = [subprocess.Popen([sys.executable, '-B', str(self.entry), 'ensure'],
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE) for _ in range(4)]
+        try:
+            results = []
+            for process in processes:
+                stdout, stderr = process.communicate(timeout=15)
+                self.assertEqual(process.returncode, 0, stderr.decode())
+                results.append(json.loads(stdout))
+            self.assertEqual(len({value['pid'] for value in results}), 1)
+            self.assertNotEqual(results[0]['pid'], first['pid'])
+        finally:
+            for process in processes:
+                if process.poll() is None:
+                    process.kill()
+                process.wait()
+
+    def test_failed_upgrade_stop_keeps_state_and_honors_deadline(self):
+        first = web.ensure_service()
+        self.set_plugin_version('1.2.22')
+        state_file = storage.state_dir() / 'service.json'
+        before = state_file.read_bytes()
+        started = time.monotonic()
+        with patch.object(web, 'START_TIMEOUT', 0.2), patch.object(web.os, 'kill'):
+            with self.assertRaises(TimeoutError):
+                web.ensure_service()
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertEqual(web.health(web.load_state())['pid'], first['pid'])
+        self.assertEqual(state_file.read_bytes(), before)
+
+    def test_upgrade_waits_for_port_after_health_disappears(self):
+        web.ensure_service()
+        self.set_plugin_version('1.2.22')
+        state_file = storage.state_dir() / 'service.json'
+        before = state_file.read_bytes()
+        running = web.health(web.load_state())
+        responses = iter([running])
+        with patch.object(web, 'START_TIMEOUT', 0.2), patch.object(web.os, 'kill'), \
+                patch.object(web, 'health', side_effect=lambda _: next(responses, None)), \
+                patch.object(web, 'port_available', return_value=False):
+            with self.assertRaises(TimeoutError):
+                web.ensure_service()
+        self.assertEqual(state_file.read_bytes(), before)
+
+    def test_failed_upgrade_start_does_not_return_urls(self):
+        web.ensure_service()
+        self.set_plugin_version('1.2.22')
+        with patch.object(web.subprocess, 'Popen', side_effect=OSError('launch denied')):
+            with self.assertRaisesRegex(OSError, 'launch denied'):
+                web.ensure_service()
+        self.assertTrue(web.port_available())
+
+    def test_replacement_with_wrong_startup_version_never_becomes_ready(self):
+        for reported in ('1.2.20', 'invalid'):
+            with self.subTest(reported=reported):
+                web.ensure_service()
+                self.set_plugin_version('1.2.22')
+                original = self.entry.read_text(encoding='utf-8')
+                self.entry.write_text(original.replace(
+                    'from local_web.cli import main',
+                    f'service._installed_version = lambda: {reported!r}\nfrom local_web.cli import main',
+                ), encoding='utf-8')
+                try:
+                    with patch.object(web, 'START_TIMEOUT', 0.6):
+                        with self.assertRaises((TimeoutError, ValueError)):
+                            web.ensure_service()
+                    self.assertTrue(web.port_available())
+                finally:
+                    self.entry.write_text(original, encoding='utf-8')
+                    web.stop_service()
+                    self.set_plugin_version('1.2.21')
+
     def test_publish_only_declared_immutable_files_and_private_pages(self):
         artifact = artifacts.create_artifact({'0001/diff.html': b'<!doctype html><title>fixed_diff</title>',
                                                'raw/before.txt': b'secret before'}, public_files=['0001/diff.html'])

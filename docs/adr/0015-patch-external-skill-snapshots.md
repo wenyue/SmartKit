@@ -49,5 +49,6 @@ and leaves the external Skill decision unchanged.
 This decision replaces only the requirement in
 [ADR 0004](0004-harness-adaptation-and-contract-versioning.md) that external snapshots retain
 unmodified upstream wording. Its requirement to use the owning updater remains. Snapshots
-without patches continue to retain upstream content. The selected Skills, their public names,
-and their activation behavior are separate adoption decisions.
+without patches continue to retain upstream content, apart from the canonical LF text
+normalization described in [ADR 0016](0016-external-skill-delivery-and-ponytail-state.md).
+The selected Skills, their public names, and their activation behavior are separate adoption decisions.

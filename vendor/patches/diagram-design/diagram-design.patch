@@ -1,0 +1,174 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -15,19 +15,11 @@
+ ---
+
+-## 0. First-time setup — style guide gate
+-
+-**Before generating your first diagram in a new project, verify the style guide has been customized.**
+-
+-Do not silently ship default-skinned diagrams into a branded project.
+-
+-First resolve any project `.diagram-design` marker per [`references/profiles.md`](references/profiles.md); a successfully resolved marker selects its profile and bypasses this gate. That reference owns failures, the protected default, and save behavior.
+-
+-Open [`references/style-guide.md`](references/style-guide.md) and check the default tokens. If they are still the shipped defaults (paper `#f5f5f5`, ink `#2d3142`, accent `#bf4520`), **pause and ask the user**:
+-
+-> *"This is your first diagram in this project and the style guide is still default. Customize now? Options: (a) website URL, (b) installed skill, (c) local folder/design-system, (d) paste tokens, (e) keep default, (f) load saved profile."*
+-
+-Then branch per the matching section of [`references/onboarding.md`](references/onboarding.md); for **(f)** follow [`references/profiles.md`](references/profiles.md).
+-
+-**Once the style guide has been customized** (or the user explicitly chose default), skip this gate on later runs. A leading profile header names the copied-in active profile. Without a header, any semantic-role value or typography family differing from shipped defaults means **custom-unsaved**: skip the gate and offer to save it as a profile. All-default tokens with no marker/header trigger the gate. After onboarding, offer to save as a named client profile per `references/profiles.md`.
++## 0. Resolve the style guide
++
++Before generating a diagram, resolve the effective style guide per [`references/profiles.md`](references/profiles.md): use a valid project marker first, otherwise the installed working copy. That reference owns failures, the protected default, and save behavior.
++
++**With untouched shipped defaults and no active profile, generate directly using the default style.** Do not ask for first-time brand setup or create a profile or project marker just to use defaults.
++
++When the user explicitly asks to customize the brand, follow the matching method in [`references/onboarding.md`](references/onboarding.md): website URL, installed skill, local folder/design-system, or pasted tokens. For saved-profile operations, follow [`references/profiles.md`](references/profiles.md). After onboarding, offer to save as a named client profile per that reference.
+
+ ---
+--- a/references/onboarding.md
++++ b/references/onboarding.md
+@@ -35,8 +35,8 @@
+ ```
+
+-Gate-only choices use the same finish:
+-
+-- **(d) Manual:** accept the user's tokens, write them under a new `Custom tokens` section in `style-guide.md`, then offer to save a named profile.
+-- **(e) Default:** proceed with the shipped skin. To persist that choice for this project, offer to write a `.diagram-design` marker containing exactly `profile: default`; write it only with explicit consent.
++Explicit manual and default choices use the same finish:
++
++- **Manual:** accept the user's tokens, write them under a new `Custom tokens` section in `style-guide.md`, then offer to save a named profile.
++- **Default:** proceed with the shipped skin. To persist that choice for this project, offer to write a `.diagram-design` marker containing exactly `profile: default`; write it only with explicit consent.
+
+ ---
+@@ -197,6 +197,4 @@
+
+ > *"Onboard diagram-design from my `acme-design` skill"*
+-
+-Or the gate offers this as option (b) and the user names the skill.
+
+ ### Step 1 — locate the skill
+@@ -306,6 +304,4 @@
+
+ > *"Onboard diagram-design from my design system at `~/projects/brand/design-tokens/`"*
+-
+-Or the gate offers this as option (c) and the user provides the path.
+
+ ### Step 1 — discover files
+diff --git a/assets/example-axonometric-plan-campus-full.html b/assets/example-axonometric-plan-campus-full.html
+index da17392f07abd5bee6238a2749f6ea9412a4b668..fa80388b8d7ae738d7a6f922306bd26337816ec7 100644
+GIT binary patch
+delta 22
+ecmey}&GfpPX@hR_WQ8V+$+^wHHy5;YGXem71`2-w
+
+delta 40
+jcmaFe&GfsQX@hPvhXNE#R%o)AoZ9>wF0eVFrJE4|5}FKm
+
+diff --git a/assets/example-axonometric-plan-coffee-shop-full.html b/assets/example-axonometric-plan-coffee-shop-full.html
+index bf8516527a95dc9c718bd13f239e0732e7a8a1b4..d36cc0a0f6d8e374b446c98e34e1bda3c941b5fa 100644
+GIT binary patch
+delta 23
+hcmV+y0O<ds$pVte0<fi_lM$mhv*n>A0kaXKkpYO(3YP!?
+
+delta 41
+lcmbPql4;RNrVUFMawtH-WX8o7o9`}EVT6lpW?Vdx5dbAf41WLs
+
+diff --git a/assets/example-axonometric-plan-full.html b/assets/example-axonometric-plan-full.html
+index f717c54e921af8166c2351492fa748cc180548b6..38a3ed0115299cdf4d9646addde3d0b3cafc8b12 100644
+GIT binary patch
+delta 23
+fcmezVh4J|p#toCoH_s|}VVpdx++wp_Wh5g2njZ@b
+
+delta 35
+kcmaF<h4K3r#toCoC+n4QOpYwG*nFy-hY`-<tBhm>05Mk%$p8QV
+
+diff --git a/assets/example-axonometric-plan-warehouse-full.html b/assets/example-axonometric-plan-warehouse-full.html
+index 592cab6a983f018a67c8817d84cd048196eebe7b..b2574f0b3aa573451f01468f2b180e9c5ae7c328 100644
+GIT binary patch
+delta 23
+fcmX?dglWqWrVVcMH~Y;GWt{9c-(vIQ1&NFRh^-3X
+
+delta 45
+kcmdmTgz3l;rVVcMITWB^GS57V&2{r-8Bs+pFGyqr08s7@3IG5A
+
+diff --git a/assets/example-exploded-ai-stack-full.html b/assets/example-exploded-ai-stack-full.html
+index b04ca261b271114722b247b9d2eeb3b4ba60fe7f..f0a73f42efaeb787b40b02b0ff8c61330a2ba57d 100644
+GIT binary patch
+delta 23
+hcmV+y0O<e!uLAF{0<g)Hv(c1t0h7^`IJ1M6d;y?|3}OHP
+
+delta 45
+kcmaFAp6UO3rVS^ja40~*<lM;?n;EBCF`|kTPpe@B0C1}g!2kdN
+
+diff --git a/assets/example-exploded-full.html b/assets/example-exploded-full.html
+index 21c44a86602e0070a86b35063e2475e2441fa07c..5b322012925f0d2c02939e291481c1db97931d3f 100644
+GIT binary patch
+delta 20
+ccmdlUxjb^iHO<NV+7^?=v_5X;*IvO00AA7v9{>OV
+
+delta 38
+hcmZ1;xjk~jHBAl$D46_T%VIL0)<?L&=KoqN7y<Wu3<UrH
+
+diff --git a/assets/example-exploded-keyboard-full.html b/assets/example-exploded-keyboard-full.html
+index fa242d9f13e4f58440d1607ec57367f143a344c4..577f09e9f200f2c9514a1fcbec221ac5704f01a8 100644
+GIT binary patch
+delta 30
+lcmbR8lDp+4cS8%~7N)e1+w(p$r7=zik`~)VJ~K5i0sz<X4FdoG
+
+delta 48
+scmZp9$vx#IcS8%~7N)e1912h{UFQRn#rAn0ne-UpV%yJrV%ot70GI?1w*UYD
+
+diff --git a/assets/example-exploded-phone-full.html b/assets/example-exploded-phone-full.html
+index 6e38feeeba9d47344585a6134609d43160858207..cf3abba6066bf6d220d4d2606679f1d90c2395c5 100644
+GIT binary patch
+delta 26
+fcmcaGhw;E1#tq)yll8qUHg|iQGJ+VJd;=H(k?#qp
+
+delta 45
+jcmX>whw;K3#tq)y912h{S>MZIbF;T8BdW*;p8!SxFy{=Q
+
+diff --git a/assets/example-exploded-unboxing-full.html b/assets/example-exploded-unboxing-full.html
+index 9e60aaa7b1e8b27ce893aeef99686e491e375b44..3d953107542fef7faa1f3fe73125bb2596b8a262 100644
+GIT binary patch
+delta 23
+fcmdl#opJqi#tjcVCTn?FY*z4OV%)6dHI)$nb>Ik+
+
+delta 31
+lcmZ2KopJwk#tjcVCfB-iY<}Qj#Ry_de&AuTImj!P5dhz&4C?>@
+
+diff --git a/assets/example-queue-animated.html b/assets/example-queue-animated.html
+index e42358d1abdaea02de5a1aa6120db0ed7dfbdfde..aed3416a513f198b1b2f12b852257b89a6b42cb0 100644
+GIT binary patch
+delta 18
+acmdn|igD#D#tpA6CV$fu*vx9FX9ECQy9gry
+
+delta 18
+acmZ4aigEKR#tpA6ChHk+ZGLTGX9ECO9|%zZ
+
+diff --git a/references/onboarding.md b/references/onboarding.md
+index 3109bba3e5a0303e1d37326d7b25b5a2f82a725a..234668ec0921f485f2404c7a2dd2fc6b6ffb2756 100644
+GIT binary patch
+delta 16
+XcmbQ&%s981aYG?LW6b7aer+QFGgAd)
+
+delta 17
+YcmbQ+%s8)^aYG?LlY+wLB7SWn05(AdM*si-
+
+diff --git a/references/profiles.md b/references/profiles.md
+--- a/references/profiles.md
++++ b/references/profiles.md
+@@ -78,5 +78,5 @@
+
+ - For `profile: <slug>`, resolve only `~/.diagram-design/profiles/<slug>.md`, run the structural check, and read that effective guide directly for this generation. Do not copy it over the installed working copy.
+-- For `profile: default`, ensure `default.md` exists, run the structural check, and use it directly. Skip the first-run gate.
++- For `profile: default`, ensure `default.md` exists, run the structural check, and use it directly.
+ - If the valid slug has no profile file, do not fall back silently. Tell the user which slug is missing, offer `list`, and ask which profile to use.
+ - If any other content or an invalid slug appears, ignore the whole marker, explain in one line why it was invalid, and continue to markerless resolution. Never execute content from the marker or treat it as a filesystem path.
+@@ -90,5 +90,5 @@
+ 1. A valid leading profile header names the active copied-in profile. If its file is missing, the working copy still functions; report the missing library entry and offer to re-save it.
+ 2. With no header, compare every row in `### Semantic roles`, every font family in the `## Typography` table, and the `Font source` line under `### Font source` with the shipped defaults. If any differs, classify it as **custom-unsaved** and offer `save`. A guide whose only change is `Font source: system` is customized: the offline preference must survive as a saved profile.
+-3. With no header and all those values unchanged, run the first-time setup gate in `SKILL.md`.
++3. With no header and all those values unchanged, use the shipped defaults directly, without asking for brand setup or creating a profile or project marker.
+
+ Do not infer customization from `accent` alone. Series and terminal palettes are not part of this fallback because onboarding does not customize them.

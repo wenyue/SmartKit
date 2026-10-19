@@ -122,7 +122,8 @@ class WebHandler(BaseHTTPRequestHandler):
             state = self.server.web_state
             if path == "/api/service/health":
                 self.json(200, {"schema": SERVICE_SCHEMA, "pid": os.getpid(), "mode": state["mode"],
-                                "artifact_cache_schema": artifacts.SCHEMA})
+                                "artifact_cache_schema": artifacts.SCHEMA,
+                                "plugin_version": self.server.plugin_version})
                 return
             parts = path.strip("/").split("/")
             api = parts[0] == "api"

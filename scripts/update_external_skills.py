@@ -87,7 +87,7 @@ class SourceSnapshot(NamedTuple):
     checkout: ResolvedCheckout
     license_bytes: bytes
     lock: dict[str, object]
-    tree_root: Path | None = None
+    tree_root: Path
 
 
 class UpdateResult(NamedTuple):
@@ -145,7 +145,7 @@ def patch_report(snapshots: Mapping[str, SourceSnapshot]) -> str:
         for skill in snapshot.source.skills:
             stats = patch_stats(
                 snapshot.checkout.root.joinpath(*skill.path.parts),
-                (snapshot.tree_root or snapshot.checkout.root).joinpath(*skill.path.parts),
+                snapshot.tree_root.joinpath(*skill.path.parts),
             )
             totals = PatchStats(*(a + b for a, b in zip(totals, stats)))
             rows.append(_patch_report_row(skill.id, stats))
@@ -373,9 +373,31 @@ def _license_destination(source_id: str) -> PurePosixPath:
     return PurePosixPath('licenses') / f'{source_id.replace("/", "-")}-LICENSE.txt'
 
 
+def _normalize_text(content: bytes) -> bytes:
+    """Use LF for UTF-8 text, preserving binary data and standalone carriage returns."""
+    if b'\r\n' not in content or b'\0' in content:
+        return content
+    try:
+        content.decode('utf-8')
+    except UnicodeDecodeError:
+        return content
+    return content.replace(b'\r\n', b'\n')
+
+
+def _normalize_tree(root: Path) -> None:
+    for path in _regular_files(root, 'external Skill'):
+        try:
+            original = path.read_bytes()
+            normalized = _normalize_text(original)
+            if normalized != original:
+                path.write_bytes(normalized)
+        except OSError as error:
+            raise UpdateError(f'cannot normalize external Skill resource: {path}') from error
+
+
 def load_source_snapshot(
     source: ExternalSource, checkout: ResolvedCheckout, *,
-    patch_root: Path | None = None, staging_root: Path | None = None,
+    staging_root: Path, patch_root: Path | None = None,
 ) -> SourceSnapshot:
     root = checkout.root
     if COMMIT.fullmatch(checkout.commit) is None:
@@ -395,40 +417,36 @@ def load_source_snapshot(
             f'external source license does not match {source.license.spdx}: {source.id}'
         )
 
+    license_bytes = _normalize_text(license_bytes)
     skill_records: list[dict[str, object]] = []
-    tree_root = root
-    if any(skill.patches for skill in source.skills):
-        if patch_root is None or staging_root is None:
-            raise UpdateError('patched Skills require an owned staging directory and patch root')
-        tree_root = staging_root.joinpath(*source.id.split('/'))
+    tree_root = staging_root.joinpath(*source.id.split('/'))
     for skill in source.skills:
         try:
-            tree = snapshot_skill_tree(
-                root, skill.path, skill.name, f'external Skill {skill.id}'
-            )
+            snapshot_skill_tree(root, skill.path, skill.name, f'external Skill {skill.id}')
         except ExternalContractError as error:
             raise UpdateError(str(error)) from error
+        destination = tree_root.joinpath(*skill.path.parts)
+        shutil.copytree(root.joinpath(*skill.path.parts), destination)
+        # Patch context and final hashes use canonical text; the upstream checkout stays pristine.
+        _normalize_tree(destination)
         patches: list[dict[str, str]] = []
-        if tree_root != root:
-            destination = tree_root.joinpath(*skill.path.parts)
-            shutil.copytree(root.joinpath(*skill.path.parts), destination)
-            for relative in skill.patches:
-                try:
-                    patch = source_path(patch_root, relative, f'Skill patch {skill.id}')
-                    digest = _sha256(patch)
-                    _run_git(('-C', str(destination), 'apply', '--no-index', '--', str(patch)))
-                    # Revalidate each step, so a later patch cannot traverse a link created
-                    # by an earlier one. Only regular Skill resources may leave staging.
-                    _regular_files(destination, f'patched Skill {skill.id}')
-                except (ExternalContractError, OSError, UpdateError) as error:
-                    raise UpdateError(f'cannot apply {relative} to {skill.id}: {error}') from error
-                patches.append({'path': relative.as_posix(), 'sha256': digest})
+        for relative in skill.patches:
+            if patch_root is None:
+                raise UpdateError('patched Skills require a patch root')
             try:
-                tree = snapshot_skill_tree(
-                    tree_root, skill.path, skill.name, f'patched Skill {skill.id}',
-                )
-            except ExternalContractError as error:
-                raise UpdateError(str(error)) from error
+                patch = source_path(patch_root, relative, f'Skill patch {skill.id}')
+                digest = _sha256(patch)
+                _run_git(('-C', str(destination), 'apply', '--no-index', '--', str(patch)))
+                # Revalidate each step before another patch can traverse a newly created link.
+                _regular_files(destination, f'patched Skill {skill.id}')
+            except (ExternalContractError, OSError, UpdateError) as error:
+                raise UpdateError(f'cannot apply {relative} to {skill.id}: {error}') from error
+            patches.append({'path': relative.as_posix(), 'sha256': digest})
+        _normalize_tree(destination)
+        try:
+            tree = snapshot_skill_tree(tree_root, skill.path, skill.name, f'normalized Skill {skill.id}')
+        except ExternalContractError as error:
+            raise UpdateError(str(error)) from error
         skill_records.append(
             {
                 'id': skill.id,
@@ -599,8 +617,8 @@ def _snapshot_map(
     *,
     resolver: Resolver,
     selected_source: str | None,
+    staging_root: Path,
     patch_root: Path | None = None,
-    staging_root: Path | None = None,
 ) -> dict[str, SourceSnapshot]:
     snapshots: dict[str, SourceSnapshot] = {}
     owned_checkouts: list[ResolvedCheckout] = []
@@ -728,7 +746,7 @@ def update_repository(
             if snapshot is None:
                 continue
             for skill in snapshot.source.skills:
-                source_root = (snapshot.tree_root or snapshot.checkout.root).joinpath(*skill.path.parts)
+                source_root = snapshot.tree_root.joinpath(*skill.path.parts)
                 staged = staging / 'skills' / skill.name
                 shutil.copytree(source_root, staged)
                 operations.append((staged, root / 'skills' / skill.name, f'skills/{skill.name}'))

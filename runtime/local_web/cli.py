@@ -105,9 +105,14 @@ expired groups; unknown/altered/redirected groups are preserved. Cleanup failure
 stops dependent creation, preserving diagnostics and completed removals.
 Publication failure retains the complete group; publish its ID to retry.
 
-ensure/hook reuse one authenticated fixed-port host. Unknown port occupation
-fails without stopping its owner. status starts no process. stop ends only the
-verified shared instance, when requested, never merely because a chat ends.
+ensure/hook reuse the same or a newer compatible plugin version at the fixed port.
+Older authenticated hosts, including legacy hosts without a version, are replaced
+while retaining private-page credentials and application mode. Versions are fixed
+at process startup; same-version code edits require a manual restart. Invalid
+versions and unknown port occupation fail without stopping the existing host.
+status starts no process. stop ends only the verified shared instance, when
+requested, never merely because a chat ends.
+Manual stop followed by ensure creates a new private-page credential.
 Private readiness/setup URLs contain an instance credential; keep them private.
 They read owner-produced observations/source state without checks or repair.
 Hook/CLI startup is bounded recovery, not URL-click or login startup. Diff URLs
