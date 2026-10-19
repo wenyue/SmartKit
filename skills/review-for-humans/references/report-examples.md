@@ -75,11 +75,11 @@ Previously, repeated clicks could start duplicate saves; the handler now refuses
 
 **Available actions**
 
-1. **Optimize**: Implement the optional improvement.
-2. **Pass and finish**: Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
-3. **Finish**: End this review without committing, retaining the improvement as advice.
+- **A**. **Optimize**: Implement the optional improvement.
+- **B**. **Pass and finish**: Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
+- **C**. **Finish**: End this review without committing, retaining the improvement as advice.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 ## Example closings for different results
 
@@ -104,10 +104,10 @@ O1 remains advice, does not block completion, and is excluded from bulk fixes or
 
 **Available actions**
 
-1. **Pass and finish**: Commit all three branch changes, verify the result, and end this review without pushing, retaining O1 as advice.
-2. **Finish**: End this review without committing, retaining O1 as advice.
+- **A**. **Pass and finish**: Commit all three branch changes, verify the result, and end this review without pushing, retaining O1 as advice.
+- **B**. **Finish**: End this review without committing, retaining O1 as advice.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 ### Dedicated re-review after an O repair
 
@@ -127,10 +127,10 @@ Previously, a rejected export left the button disabled because restoration occur
 
 **Available actions**
 
-1. **Pass and finish**: Commit all branch changes, including the three reviewed text files and O1's checked, re-reviewed repair, verify the result, and end this review without pushing.
-2. **Finish**: End this review without committing.
+- **A**. **Pass and finish**: Commit all branch changes, including the three reviewed text files and O1's checked, re-reviewed repair, verify the result, and end this review without pushing.
+- **B**. **Finish**: End this review without committing.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 If O1's check or re-review is incomplete or fails, retain its unresolved status and leave completion that would include the repair unavailable. Confirmation to include branch content does not replace this re-review.
 
@@ -151,15 +151,15 @@ If O1's check or re-review is incomplete or fails, retain its unresolved status 
 
 **Available actions**
 
-1. **Fix**: Repair both pending findings, or the subset you select.
-2. **Ignore**: Choose which findings to ignore; other findings remain pending.
-3. **Optimize**: Implement the optional improvement; the pending findings still need attention.
+- **A**. **Fix**: Repair both pending findings, or the subset you select.
+- **B**. **Ignore**: Choose which findings to ignore; other findings remain pending.
+- **C**. **Optimize**: Implement the optional improvement; the pending findings still need attention.
 
-🤖 **Enter an operation number; include M IDs to select a subset.**
+🤖 **Enter an operation letter; include M IDs to select a subset.**
 
-If the user replies “1, M2,” repair only M2; M5 remains pending. If the user replies “2,” clarify which findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation numbers choose actions; M IDs choose their items.
+If the user replies “A, M2” or “a, M2,” repair only M2; M5 remains pending. If the user replies “B” or “b,” clarify which findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation letters choose actions; M IDs choose their items.
 
-If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the numbered available actions and number-entry prompt above.
+If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the lettered available actions and letter-entry prompt above.
 
 ### Local partial staging with extra content
 
@@ -169,12 +169,12 @@ The branch commit will include all staged, unstaged, and untracked changes: the 
 
 **Available actions**
 
-1. **Confirm inclusion and pass and continue**: Include the extra “Save draft” label change, commit the full branch inventory above, verify the result, then show the next group without pushing.
-2. **Continue**: Show the next group without staging or committing.
+- **A**. **Confirm inclusion and pass and continue**: Include the extra “Save draft” label change, commit the full branch inventory above, verify the result, then show the next group without pushing.
+- **B**. **Continue**: Show the next group without staging or committing.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
-If the user declines the extra content, leave full-branch completion pending; do not silently commit only the save-handler fix. If option 1 completes, display the remaining two source files from the retained review snapshot even though the worktree is now clean. They were included in the commit but have not yet been displayed or counted as reviewed.
+If the user declines the extra content, leave full-branch completion pending; do not silently commit only the save-handler fix. If option A completes, display the remaining two source files from the retained review snapshot even though the worktree is now clean. They were included in the commit but have not yet been displayed or counted as reviewed.
 
 ### Clean branch without a PR
 
@@ -182,10 +182,10 @@ If the user declines the extra content, leave full-branch completion pending; do
 
 **Available actions**
 
-1. **Pass and finish**: Reuse the verified commits and end this review, with no empty commit or push.
-2. **Finish**: End this review without further writes.
+- **A**. **Pass and finish**: Reuse the verified commits and end this review, with no empty commit or push.
+- **B**. **Finish**: End this review without further writes.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 ### PR repaired locally and ready for completion
 
@@ -193,10 +193,10 @@ If the user declines the extra content, leave full-branch completion pending; do
 
 **Available actions**
 
-1. **Pass and continue**: Commit and push all branch changes listed above, including the tests and release note, verify the PR version, mark only the four displayed reviewed files Viewed and verify every readback, then show the next group.
-2. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
+- **A**. **Pass and continue**: Commit and push all branch changes listed above, including the tests and release note, verify the PR version, mark only the four displayed reviewed files Viewed and verify every readback, then show the next group.
+- **B**. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 ### Extra unpushed content needs confirmation
 
@@ -206,10 +206,10 @@ The normal push would publish the two local fixes and existing unpushed commit `
 
 **Available actions**
 
-1. **Confirm inclusion and pass and continue**: Include `a1b2c3d` in publication, commit all outstanding branch changes, push the complete branch delta, verify the PR version, mark only the four displayed reviewed files Viewed, verify readbacks, then show the next group.
-2. **Continue**: Show the next group, retaining the local fixes and unpushed commit without publishing or marking Viewed.
+- **A**. **Confirm inclusion and pass and continue**: Include `a1b2c3d` in publication, commit all outstanding branch changes, push the complete branch delta, verify the PR version, mark only the four displayed reviewed files Viewed, verify readbacks, then show the next group.
+- **B**. **Continue**: Show the next group, retaining the local fixes and unpushed commit without publishing or marking Viewed.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 If the commit's origin cannot be established, say so and request the same explicit inclusion decision. If inclusion is declined, preserve the branch and leave completion pending until the user chooses a revised outcome; do not automatically cherry-pick only the fixes, rewrite history, or publish a smaller delta.
 
@@ -229,9 +229,9 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 **Available actions**
 
-1. **Pass and continue**: Resume by marking the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed marking will be reused.
+- **A**. **Pass and continue**: Resume by marking the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed marking will be reused.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
 
 ### Final group of a PR review
 
@@ -243,8 +243,8 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 **Available actions**
 
-1. **Optimize**: Implement the optional improvement.
-2. **Pass and finish**: Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
-3. **Finish**: End this review without marking the remaining files Viewed, retaining the improvement as advice.
+- **A**. **Optimize**: Implement the optional improvement.
+- **B**. **Pass and finish**: Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
+- **C**. **Finish**: End this review without marking the remaining files Viewed, retaining the improvement as advice.
 
-🤖 **Enter an operation number.**
+🤖 **Enter an operation letter.**
