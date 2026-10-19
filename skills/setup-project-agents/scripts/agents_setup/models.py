@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import PurePosixPath
-from typing import Mapping
+from typing import Mapping, Literal
 
 
 class ContractError(ValueError):
@@ -120,12 +120,22 @@ class AssetSpec:
 
 
 @dataclass(frozen=True)
+class MaintenanceConfig:
+    mode: Literal['local', 'repository']
+    repository: str | None = None
+    branch: str | None = None
+    entry: str | None = None
+
+
+@dataclass(frozen=True)
 class ProjectConfig:
     selected_rules: tuple[str, ...]
     selected_skills: tuple[str, ...]
     external_sources: tuple[ExternalSourceSpec, ...] = ()
     mcp_servers: tuple[McpServerSpec, ...] = ()
     agents: tuple[ProjectAgentSpec, ...] = ()
+    maintenance: MaintenanceConfig | None = None
+    settings: tuple[DesiredField, ...] = ()
 
     @property
     def external_skills(self) -> tuple[ExternalSkillSpec, ...]:

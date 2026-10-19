@@ -21,7 +21,7 @@ from .models import (
 from .project import ProjectError, confined_target
 from .project_rendering import (
     RenderError, _MCP_NATIVE, _safe_leaves, _load_structured, _copy_file,
-    _render_project_agents, _remove_dotted_field, _render_project_mcp,
+    _render_project_agents, _remove_dotted_field, _render_project_mcp, _render_project_settings,
 )
 from .project_rules import (
     ENTRY_PATH,
@@ -372,6 +372,7 @@ def render_desired_state(
                 raise RenderError(f'external Skill is missing SKILL.md: {skill.name}')
             _copy_asset(files, source, PurePosixPath('.agents/skills') / skill.name)
             replace_roots.add(PurePosixPath('.agents/skills') / skill.name)
+    _render_project_settings(target_root, config, native_documents, native_templates, previous_owned_fields)
     _render_project_mcp(
         target_root,
         config,
@@ -416,6 +417,7 @@ def render_desired_state(
             previous=previous_ownership,
             contracts=contracts,
             project_files=tuple(project_files),
+            project_setting_fields=tuple((field.path, field.key) for field in config.settings),
             project_fields=tuple(
                 (field.path, field.key) for field in desired_fields
                 if any(

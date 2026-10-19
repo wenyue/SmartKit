@@ -520,6 +520,7 @@ def reconcile_ownership(
     contracts: Sequence[GeneratedContract] = (),
     project_files: Sequence[PurePosixPath] = (),
     project_fields: Sequence[tuple[PurePosixPath, str]] = (),
+    project_setting_fields: Sequence[tuple[PurePosixPath, str]] = (),
 ) -> OwnershipResult:
     previous = previous if previous is not None else load_ownership(target_root)
     verify_ownership(target_root, previous)
@@ -533,7 +534,8 @@ def reconcile_ownership(
         frozenset(unmanaged_paths),
     )
     desired_assets = tuple(
-        replace(asset, role='project-agent') if asset.path in project_files
+        replace(asset, role='project-setting') if (asset.path, asset.key) in project_setting_fields
+        else replace(asset, role='project-agent') if asset.path in project_files
         else replace(asset, role='project-mcp')
         if (asset.path, asset.key) in project_fields else asset
         for asset in desired_assets

@@ -1,0 +1,9 @@
+interface:
+  display_name: "Maintain Project Config"
+  short_description: "维护项目 Agent 配置，并将已验证的配置同步到个人配置库。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $maintain-project-config，按我提供的要求维护并同步当前项目的 Agent 配置。"
+policy:
+  allow_implicit_invocation: false

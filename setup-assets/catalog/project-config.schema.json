@@ -5,6 +5,81 @@
   "properties": {
     "$schema": {"type": "string"},
     "setupVersion": {"type": "string", "description": "SmartKit release used by the last successful full setup; written only by finish.", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},
+    "maintenance": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "local"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "repository",
+            "branch",
+            "entry"
+          ],
+          "properties": {
+            "mode": {
+              "const": "repository"
+            },
+            "repository": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9_.-]*$"
+            },
+            "branch": {
+              "type": "string",
+              "minLength": 1
+            },
+            "entry": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+            }
+          }
+        }
+      ]
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "key",
+          "value"
+        ],
+        "properties": {
+          "path": {
+            "enum": [
+              ".codex/config.toml",
+              ".cursor/cli.json"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "array"
+            ]
+          }
+        }
+      }
+    },
     "skills": {
       "type": "array",
       "items": {

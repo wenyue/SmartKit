@@ -50,6 +50,27 @@ class SetupRendererTest(unittest.TestCase):
     def setUp(self) -> None:
         self.catalog = load_catalog(REPO_ROOT)
 
+    def test_project_setting_updates_owned_leaf_and_preserves_unrelated_fields(self):
+        from agents_setup.transaction import apply_plan
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / '.agents').mkdir()
+            config_path = target / '.agents/config.json'
+            config_path.write_text(json.dumps({'settings': [{'path': '.codex/config.toml', 'key': 'model', 'value': 'model-a'}]}))
+            (target / '.codex').mkdir()
+            (target / '.codex/config.toml').write_text('custom_choice = "keep"\n')
+            generated = self.generated_tree(target)
+            for model in ('model-a', 'model-b'):
+                document = json.loads(config_path.read_text())
+                document['settings'] = [{'path': '.codex/config.toml', 'key': 'model', 'value': model}]
+                config_path.write_text(json.dumps(document))
+                rendered = render_desired_state(REPO_ROOT, target, self.catalog,
+                                               load_project_config(config_path, catalog=self.catalog), generated)
+                apply_plan(target, build_plan(target, rendered.files, rendered.fields, delete_paths=rendered.delete_paths))
+                native = tomllib.loads((target / '.codex/config.toml').read_text())
+                self.assertEqual(native['model'], model)
+                self.assertEqual(native['custom_choice'], 'keep')
+
     def config(self) -> ProjectConfig:
         return ProjectConfig(
             (),

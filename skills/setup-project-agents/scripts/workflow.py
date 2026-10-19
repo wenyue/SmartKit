@@ -15,6 +15,7 @@ from pathlib import Path, PurePosixPath
 
 import bootstrap
 import adopt_project_agents
+from agents_setup import project_configuration, project_configuration_cli
 from agents_setup.external_contract import is_link_like as _is_link_like
 from agents_setup.markdown import live_headings
 from agents_setup.catalog import load_catalog
@@ -371,6 +372,7 @@ def _inspect(args: argparse.Namespace) -> int:
         }
 
     check('configuration', configuration)
+    check('maintenance', lambda: project_configuration.inspect(target, catalog))
     check('ownership', ownership)
     check('project_discovery', project_discovery)
     check('agents', lambda: adopt_project_agents.inspect(target))
@@ -570,6 +572,15 @@ def _finish(args: argparse.Namespace) -> int:
         finish_result = _run_pinned(
             'finish', session=session, target=target, source=source, commit=commit
         )
+        personal_tracked = []
+        selected = project_configuration.binding(target)
+        if selected is not None and selected.mode == 'repository':
+            owned = load_ownership(target)
+            source_files, _ = project_configuration.read_entry(project_configuration.entry_root(target), load_catalog(source))
+            personal_paths = {str(asset.path) for asset in owned.assets} if owned else set()
+            personal_paths.update(source_files)
+            personal_paths.update((str(project_configuration.CONFIG), str(project_configuration.STATE), '.agents/smartkit.lock.json', 'AGENTS.md'))
+            personal_tracked = project_configuration_cli.exclude_local(target, sorted(personal_paths))
         config_relative = PurePosixPath('.agents/config.json')
         config_path = confined_target(target, config_relative)
         config_content = config_path.read_bytes()
@@ -605,6 +616,7 @@ def _finish(args: argparse.Namespace) -> int:
             'check': 'clean',
             'setup_version': setup_version,
             'codegraph': codegraph,
+            'tracked_personal_paths': personal_tracked,
         }
         _remove_session(session)
         # This success marker must remain old when either the pinned finish or cleanup fails.
@@ -653,12 +665,13 @@ def _sync_project_rules(args: argparse.Namespace) -> int:
     source = Path(__file__).resolve().parents[3]
     target = Path(args.target).absolute()
     try:
+        project_configuration.require_converged(target, load_catalog(source))
         result = synchronize_project_rules(
             source,
             target,
             check_only=args.check,
         )
-    except ProjectRuleSyncError as error:
+    except (OSError, ValueError) as error:
         print(f'ERROR: {error}', file=sys.stderr)
         return 2
     _emit({
@@ -671,10 +684,11 @@ def _sync_project_rules(args: argparse.Namespace) -> int:
 
 def _sync_project(args: argparse.Namespace) -> int:
     try:
+        project_configuration.require_converged(Path(args.target).absolute(), load_catalog(Path(__file__).resolve().parents[3]))
         result = synchronize_project(
             Path(__file__).resolve().parents[3], Path(args.target).absolute(), check_only=args.check,
         )
-    except ProjectSyncError as error:
+    except (OSError, ValueError) as error:
         print(f'ERROR: {error}', file=sys.stderr)
         return 2
     _emit({
@@ -690,6 +704,7 @@ def build_parser() -> argparse.ArgumentParser:
         allow_abbrev=False,
     )
     phases = parser.add_subparsers(dest='phase', required=True)
+    project_configuration_cli.add_arguments(phases.add_parser('project-config', help='Explicit personal configuration repository operations', allow_abbrev=False))
     inspect = phases.add_parser(
         'inspect', help='Read-only preflight using the loaded source', allow_abbrev=False,
         description='Check existing project state without fetching, creating a session, installing tools or preparing CodeGraph.',
@@ -749,6 +764,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         args = build_parser().parse_args(argv)
     except SystemExit as error:
         return int(error.code)
+    if args.phase == 'project-config':
+        return project_configuration_cli.run(args)
     if args.phase == 'setup-codegraph':
         return _setup_codegraph(args)
     if args.phase == 'inspect':

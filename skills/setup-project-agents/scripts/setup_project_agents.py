@@ -10,7 +10,7 @@ import stat
 import sys
 import tempfile
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path, PurePosixPath
 
 from agents_setup.catalog import (
@@ -42,6 +42,8 @@ from agents_setup.project_rules import validate_project_rule_index
 from agents_setup.skill_registry import load_skill_registry
 from agents_setup.source import InvalidFetchedSource, validate_source
 from agents_setup.transaction import TransactionError, apply_plan
+from agents_setup import project_configuration
+from agents_setup.catalog import parse_maintenance, parse_project_settings
 from agents_setup.migrations import load_migrations
 from agents_setup.validation import validate_rendered_state
 
@@ -138,6 +140,9 @@ def _request(
         'source_fingerprint': source_fingerprint,
         'external_snapshot_sha256': external_snapshot_sha256,
         'target_fingerprint': target_fingerprint,
+        'configuration_fingerprint': project_configuration.require_converged(target, catalog),
+        'maintenance': project_configuration.binding_document(config.maintenance) if config.maintenance else None,
+        'settings': [{'path': str(item.path), 'key': item.key, 'value': item.value} for item in config.settings],
         'harnesses': [item.value for item in _HARNESSES],
         'selected_rules': list(config.selected_rules),
         'selected_skills': list(config.selected_skills),
@@ -263,7 +268,7 @@ def _request_config(
         'target', 'source_root', 'source_commit', 'harnesses', 'selected_rules',
         'selected_skills', 'external_sources', 'mcp_servers', 'generation_requests',
         'external_snapshot_sha256', 'project_agents', 'source_fingerprint',
-        'target_fingerprint',
+        'target_fingerprint', 'configuration_fingerprint', 'maintenance', 'settings',
     }
     if set(request) != required:
         raise SetupError('session request has an invalid shape')
@@ -330,6 +335,7 @@ def _request_config(
         project_agents = parse_project_agents(request['project_agents'])
         config = ProjectConfig(
             *selections, external_sources, mcp_servers, project_agents,
+            parse_maintenance(request['maintenance']), parse_project_settings(request['settings']),
         )
     except (KeyError, TypeError, ValueError, SetupError) as error:
         raise SetupError('session request has invalid setup choices') from error
@@ -630,6 +636,8 @@ def _target_evidence_paths(
     for server in config.mcp_servers:
         for harness in server.harnesses:
             add(native_mcp[harness])
+    for setting in config.settings:
+        add(setting.path)
     for relative in tuple(paths):
         for parent in relative.parents:
             if parent != PurePosixPath('.'):
@@ -755,6 +763,7 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
         root / 'skills/setup-project-agents',
         root / 'skills/write-rules-and-skills',
         root / 'skills/writing-for-agents',
+        root / 'runtime/project_config',
     ))
     for source in sources:
         if source.is_file():
@@ -869,6 +878,7 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
         catalog=catalog,
     )
     config = project.config
+    project_configuration.require_converged(project.root, catalog)
     discovery = discover_native_agents(project.root)
     if discovery.issues:
         raise SetupError('; '.join(discovery.issues))
@@ -959,6 +969,8 @@ def _session_inputs(
         raise SetupError('target changed after start; cancel and restart from current state')
     if request['source_fingerprint'] != _source_fingerprint(args.source_root, catalog):
         raise SetupError('setup source changed after start; cancel and restart')
+    if verify_target_fingerprint and request['configuration_fingerprint'] != project_configuration.require_converged(project.root, catalog):
+        raise SetupError('project configuration source changed after start; cancel and restart')
     return catalog, project, request, config
 
 
@@ -1227,6 +1239,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
 
         def postcondition() -> None:
+            project_configuration.require_converged(target, catalog)
             check_plan, _, _, _ = _plan(
                 args,
                 session,
@@ -1252,6 +1265,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             ):
                 raise SetupError('target changed during finish')
 
+        # Canonical generated inputs survive a later target failure for explicit recovery.
+        _, generated_outputs = _generated_outputs(session, request['generation_requests'])
+        receipt = project_configuration.save_generated(
+            target, catalog,
+            {str(path): (session / _GENERATED_NAME / path).read_bytes() for path in generated_outputs},
+            [str(path) for path in rendered.delete_paths],
+        )
+        if receipt is not None:
+            receipt_plan = build_plan(target, [receipt])
+            plan = replace(plan, changes=(*plan.changes, *receipt_plan.changes))
+            changed_paths.extend(str(item.path) for item in receipt_plan.changes if item.kind.value != 'unchanged')
         apply_plan(target, plan, postcondition=postcondition)
         _emit_result(
             phase=args.phase,

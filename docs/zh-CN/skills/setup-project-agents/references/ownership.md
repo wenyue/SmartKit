@@ -4,17 +4,21 @@
 
 ## 确定项目输入
 
-随附目录启用 Codex、Cursor、Copilot 和 Qoder。它安装声明的共享 Rule 和 Skill、Codex Plugin Agent 默认项，以及每个目录声明的项目蓝图。可选项目配置添加外部 Skill、项目 Agent 和 MCP 服务器。
+随附目录启用 Codex、Cursor、Copilot 和 Qoder。它安装声明的共享 Rule 和 Skill、Codex Plugin Agent 默认项，以及每个目录声明的项目蓝图。可选项目配置添加外部 Skill、项目 Agent、MCP 服务器和受支持的项目级宿主设置。
 
-当 `.agents/config.json` 存在，或已接受意图需要非默认输入时，在 `start` 前使用已加载插件的 schema 协调或创建该项目自有文件：`<skill-root>/../../setup-assets/catalog/project-config.schema.json`。缺失意味着使用随附默认值。同一 schema 约束本地同步，并定义外部 Skill 来源、项目 Agent 映射和 MCP 声明。
+当 `.agents/config.json` 存在，或已接受意图需要非默认输入时，在 `start` 前使用已加载插件的 schema 协调或创建该项目自有文件：`<skill-root>/../../setup-assets/catalog/project-config.schema.json`。缺失意味着使用随附默认值；缺少 `maintenance` 选择时仍可读取，并在明确调用的完整 setup 中解决。同一 schema 约束本地同步，并定义外部 Skill 来源、项目 Agent 映射、MCP 声明和受支持的宿主设置。设置目前针对 `.codex/config.toml` 和 `.cursor/cli.json` 中的结构化字段；其渲染器保留未声明字段。
+
+目标的 `maintenance` 声明选择可移植配置的编写位置。本地模式保留现有项目权威输入。仓库模式选择一个个人私有 GitHub 仓库、分支和条目；源条目拥有其声明的配置文件，以及可移植的 `skills`、`agents`、`mcp` 和 `settings` 值。绑定或使用仓库来源前，阅读 [项目配置维护](../../../runtime/project_config/maintenance.md)。编辑该来源时以业务项目证据为依据，再通过受支持路径应用。
+
+绑定、`setupVersion`、所有权记录和运行时状态仍保留在目标本地。`.agents/project-config-state.json` 记录已应用来源的证据；它不授权替换 setup 自有资产。源文件可以包括生成的项目 Rule 和 Skill 源，但排除已交付插件资产、外部快照、原生适配文件和生成索引。`AGENTS.md` 的源副本不包含 setup 生成的 `Project rules` 章节；负责该章节的渲染器在目标中维护它。
 
 `setupVersion` 是上次成功完整 setup 使用的 SmartKit 发布版本，不是当前已安装插件的版本，也不记录该用户的运行时状态。公开工作流只有在 CodeGraph 就绪、配置收敛和私有会话清理完成后，才写入这一个字段。准备、失败和本地同步均保留原值。保留其他项目配置值；绝不能手动推进该字段来消除 hook 提示。会话 hook 根据项目 setup 记录要求重新检查本地 CodeGraph，不会把这个持久版本当作运行时仍然就绪的证明。
 
 完整设置中，`start` 在冻结请求前，根据选定规范来源或已安装回退来源验证输入。如果该来源拒绝按已加载 schema 准备的输入，遵循[预检](session-protocol.md#preflight)：在已接受权限内修正报告的原因，并启动新调用。返回来源和请求保持不可变。
 
-`.agents/rules/` 和 `.agents/skills/` 下的项目本地 Rule、Skill 内容，包括生成源及其支持文件，属于项目，可在会话之间编辑。Setup 发现并保护额外项目自有 Rule 和 Skill。项目 Agent 源也保持项目所有。Codex Plugin Agent 默认项是回退项，不是项目 Agent 声明。原生 Cursor、Copilot 和 Qoder Plugin Agent，以及原生插件 Rule、Skill 和 MCP，都在本工作流之外。
+`.agents/rules/` 和 `.agents/skills/` 下的项目 Rule、Skill 内容，包括生成源及其支持文件，属于项目。本地模式下可在会话之间直接编辑；仓库模式下应编辑声明的源副本，再应用回来。Setup 发现并保护额外项目自有 Rule 和 Skill。项目 Agent 源也遵循相同的已选编写位置。目标编辑在明确采纳前作为差异保留，不会自动更新来源。Codex Plugin Agent 默认项是回退项，不是项目 Agent 声明。原生 Cursor、Copilot 和 Qoder Plugin Agent，以及原生插件 Rule、Skill 和 MCP，都在本工作流之外。
 
-完整 setup 必须协调原生宿主目录中发现的项目自定义 Agents，包括尚未声明的 Agents。`native_source` 宿主分支在 `.agents/agents/` 下保留完整原生文档，并逐字节复制到适配文件；只有该源拥有提示词和设置。同一宿主不能同时使用这个分支和结构化设置。仅使用结构化分支的宿主需要共享提示词 `source`。已经记录的插件默认项保留其所有者。纳管工具的受保护导入保留独立权威内容和现有适配文件摘要保护；它不授权改写所有权记录。
+完整 setup 必须协调原生宿主目录中发现的项目自定义 Agents，包括尚未声明的 Agents。`native_source` 宿主分支在 `.agents/agents/` 下保留完整原生文档，并逐字节复制到适配文件；只有该源拥有提示词和设置。同一宿主不能同时使用这个分支和结构化设置。仅使用结构化分支的宿主需要共享提示词 `source`。已经记录的插件默认项保留其所有者。纳管工具的受保护导入保留独立权威内容和现有适配文件摘要保护；它不授权改写所有权记录。在仓库模式下，该工具先将已接受的权威原生源和可移植 Agent 声明保存到条目，再执行受保护的目标事务，需要恢复目标时保留源证据。
 
 ## 保留策略的加载含义
 
@@ -36,7 +40,7 @@
 
 ## 保留非自有字节和结构化字段
 
-SmartKit 只拥有 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及 `AGENTS.md` 中一个 `## Project rules` 章节。完整设置将该章节渲染到下一个一级或二级标题之前，或文件末尾；缺失时追加。围栏内标题不定义章节边界。重复 Project rules 章节、所有权冲突或摘要冲突会在替换前停止设置。
+Setup 只拥有 `.agents/smartkit.lock.json` 中记录的文件和结构化字段，以及 `AGENTS.md` 中一个 `## Project rules` 章节。配置源声明仍受这些所有者约束；它不能把已交付或已渲染的资产变成可以独立替换的来源。完整设置将该章节渲染到下一个一级或二级标题之前，或文件末尾；缺失时追加。围栏内标题不定义章节边界。重复 Project rules 章节、所有权冲突或摘要冲突会在替换前停止设置。
 
 保留自有章节之外的每个字节，以及每个未声明文件、字段、目录和秘密值。MCP 环境字段命名环境变量；URL、命令、参数和覆盖字面量仍是项目输入。任意字符串不是秘密的证据。合格仓库证据识别出真实敏感字面量时，在渲染前停止，请其项目所有者替换为受支持的间接引用。
 

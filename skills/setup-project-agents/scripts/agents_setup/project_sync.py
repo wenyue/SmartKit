@@ -16,7 +16,7 @@ from .planner import _read_current, build_plan
 from .project import confined_target, inspect_project
 from .project_rendering import (
     _MCP_NATIVE, _load_structured, _remove_dotted_field, _render_project_agents,
-    _render_project_mcp, _safe_leaves,
+    _render_project_mcp, _render_project_settings, _safe_leaves,
 )
 from .project_rules import _plan_project_rule_sync
 from .structured import dump_document, field_value, format_for_path
@@ -88,14 +88,14 @@ def _plan(source: Path, target: Path, catalog):
     config = inspect_project(target, catalog=catalog).config
     if _external_declarations(config) != _recorded_declarations(state):
         raise ProjectSyncError('external Skill declarations changed; run full setup')
-    managed = tuple(asset for asset in state.assets if asset.role in {'project-agent', 'project-mcp'})
+    managed = tuple(asset for asset in state.assets if asset.role in {'project-agent', 'project-mcp', 'project-setting'})
     retained = tuple(asset for asset in state.assets if asset not in managed)
     project_state = OwnershipState((), managed)
     files = {}
     agents = _render_project_agents(files, target, config)
     project_files = tuple(files)
     observed_paths = {OWNERSHIP_PATH, PurePosixPath('AGENTS.md'), *project_files,
-                      *(asset.path for asset in managed),
+                      *(asset.path for asset in managed), *(field.path for field in config.settings),
                       *(_MCP_NATIVE[harness][0] for server in config.mcp_servers for harness in server.harnesses)}
     observed = {path: _read_current(target, path) for path in observed_paths}
     verify_ownership(target, project_state)
@@ -109,6 +109,7 @@ def _plan(source: Path, target: Path, catalog):
         if path not in documents:
             documents[path] = _load_structured(confined_target(target, path), format_name)
         _remove_dotted_field(documents[path], key)
+    _render_project_settings(target, config, documents, templates, previous_fields)
     _render_project_mcp(target, config, documents, templates, deletes, frozenset(), None)
     fields = []
     for path, document in documents.items():
@@ -138,6 +139,7 @@ def _plan(source: Path, target: Path, catalog):
     result = reconcile_ownership(
         target, tuple(DesiredFile(path, content) for path, content in files.items()),
         fields, (), previous=project_state, structured_paths=tuple(documents),
+        project_setting_fields=tuple((field.path, field.key) for field in config.settings),
         project_files=project_files, project_fields=tuple((field.path, field.key) for field in fields),
     )
     next_assets = _parse_ownership_document(json.loads(result.manifest)).assets

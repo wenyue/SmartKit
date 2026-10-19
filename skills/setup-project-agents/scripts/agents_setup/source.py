@@ -74,11 +74,15 @@ _SOURCE_CONTRACT_FILES = (
     PurePosixPath('setup-assets/catalog/assets.json'),
     PurePosixPath('setup-assets/catalog/harnesses.json'),
     PurePosixPath('setup-assets/catalog/project-config.schema.json'),
+    PurePosixPath('runtime/project_config/__init__.py'),
+    PurePosixPath('runtime/project_config/repository.py'),
+    PurePosixPath('runtime/project_config/maintenance.md'),
 )
 _AUTHORING_DEPENDENCY_TREES = (
     PurePosixPath('skills/setup-project-agents'),
     PurePosixPath('skills/write-rules-and-skills'),
     PurePosixPath('skills/writing-for-agents'),
+    PurePosixPath('runtime/project_config'),
 )
 _ROOT_FIELDS = frozenset({'skills', 'rules', 'agents'})
 _INCOMPLETE_MARKER = '.agents-setup-incomplete-v1'

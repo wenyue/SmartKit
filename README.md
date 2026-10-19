@@ -33,6 +33,7 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `to-questionnaire` | [Matt Pocock](https://github.com/mattpocock/skills) | Turns an unresolved decision into a questionnaire for someone else to supply missing information. |
 | `wayfinder` | [Matt Pocock](https://github.com/mattpocock/skills) | Maps large work spanning multiple sessions into decision tickets and resolves the path to implementation. |
 | `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | Sets up or updates a repository's coding assistants; use when adopting SmartKit or refreshing project agent setup. |
+| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | Checks, edits and synchronizes personal project Agent configuration with its bound private GitHub repository. |
 | `setup-matt-pocock-skills` | [Matt Pocock](https://github.com/mattpocock/skills) | Configures the issue tracker, triage labels, and domain docs; run before first using Matt Pocock's engineering skills. |
 
 ### User-invokable task Skills
@@ -99,6 +100,12 @@ Example: “Use `collect-todos` to record the cache cleanup we discussed for lat
 Manually invoke this Skill when adopting SmartKit or updating a project's agent configuration. A full setup checks project Rules, Skills, custom Agents, and MCP mappings while preserving valid project decisions. Run `setup-matt-pocock-skills` first if the required tracker and domain context is missing. State an explicit limit when you only want local synchronization or a Rule-index update.
 
 Example: “Use `setup-project-agents` to update this repository's agent configuration.”
+
+### `maintain-project-config`
+
+Manually invoke this Skill to check configuration, maintain and synchronize it, or explicitly adopt selected project edits into its source. First use `setup-project-agents` to choose local maintenance or bind a private personal GitHub repository; one repository can serve multiple projects. Repository maintenance verifies the applied configuration and saves only the accepted changes to GitHub.
+
+Example: “Use `maintain-project-config` to update this project’s Rules and synchronize the accepted changes.”
 
 ### `what-changes`
 

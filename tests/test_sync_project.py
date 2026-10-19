@@ -99,6 +99,22 @@ class SyncProjectTest(unittest.TestCase):
         } for key, value in entry.items())
         lock_path.write_text(json.dumps(lock), encoding='utf-8')
 
+    def test_native_settings_sync_update_and_retirement_preserve_unrelated_fields(self):
+        path = self.target / '.codex/config.toml'
+        path.write_bytes(path.read_bytes() + b'\n[features]\nkeep_local = true\n')
+        self.config['settings'] = [{'path': '.codex/config.toml', 'key': 'features.project_value', 'value': 'first'}]
+        self.save_config()
+        self.assertEqual(self.sync().check, 'clean')
+        self.assertEqual(parse_document(path.read_bytes(), 'toml')['features'], {'keep_local': True, 'project_value': 'first'})
+        self.config['settings'][0]['value'] = 'second'
+        self.save_config()
+        self.assertEqual(self.sync().check, 'clean')
+        self.assertEqual(parse_document(path.read_bytes(), 'toml')['features']['project_value'], 'second')
+        del self.config['settings']
+        self.save_config()
+        self.assertEqual(self.sync().check, 'clean')
+        self.assertEqual(parse_document(path.read_bytes(), 'toml')['features'], {'keep_local': True})
+
     def test_local_sync_migrates_legacy_copilot_config_and_converges(self):
         self.legacy_copilot_mcp()
         before = self.snapshot()

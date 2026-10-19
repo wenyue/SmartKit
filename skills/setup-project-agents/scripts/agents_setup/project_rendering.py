@@ -394,3 +394,21 @@ def _render_project_mcp(
             delete_paths.discard(path)
 
     return None
+
+
+def _render_project_settings(
+    target_root: Path, config: ProjectConfig, documents: dict[PurePosixPath, dict[str, object]],
+    templates: dict[PurePosixPath, dict[str, object]],
+    previous_owned_fields: frozenset[tuple[PurePosixPath, str]],
+) -> None:
+    """Overlay declared native leaves; unrelated host settings retain their owner."""
+    for setting in config.settings:
+        path, key = setting.path, setting.key
+        if path not in documents:
+            documents[path] = _load_structured(confined_target(target_root, path), setting.format)
+        actual = _load_structured(confined_target(target_root, path), setting.format)
+        present, value = field_value(actual, key)
+        if present and value != setting.value and (path, key) not in previous_owned_fields:
+            raise RenderError(f'Project setting conflicts with user configuration: {path}:{key}')
+        _set_dotted_field(documents[path], key, setting.value)
+        _set_dotted_field(templates.setdefault(path, {}), key, setting.value)

@@ -66,6 +66,9 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
         'skills/write-rules-and-skills/SKILL.md',
         'skills/write-rules-and-skills/references/author.md',
         'skills/writing-for-agents/SKILL.md',
+        'runtime/project_config/__init__.py',
+        'runtime/project_config/repository.py',
+        'runtime/project_config/maintenance.md',
     ):
         dependency = root / relative
         dependency.parent.mkdir(parents=True, exist_ok=True)
@@ -337,6 +340,16 @@ class SetupSourceTest(unittest.TestCase):
                 InvalidFetchedSource, 'only direct TOML adapters'
             ):
                 validate_source(source)
+
+    def test_validate_source_requires_complete_project_configuration_runtime(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for index, filename in enumerate(('__init__.py', 'repository.py', 'maintenance.md')):
+                with self.subTest(filename=filename):
+                    source = Path(temp_dir) / f'source-{index}'
+                    write_valid_source(source)
+                    (source / 'runtime/project_config' / filename).unlink()
+                    with self.assertRaises(InvalidFetchedSource):
+                        validate_source(source)
 
     def test_validate_source_requires_complete_vendored_tomli(self):
         with tempfile.TemporaryDirectory() as temp_dir:

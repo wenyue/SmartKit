@@ -162,13 +162,14 @@ class PluginManifestTest(unittest.TestCase):
             'rules',
             'setup-assets/blueprints',
             'skills/setup-project-agents',
+            'runtime/project_config',
         ):
             source_paths.update(
                 path.relative_to(REPO_ROOT)
                 for path in (REPO_ROOT / root_name).rglob('*.md')
             )
         for name in (
-            'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
+            'maintain-project-config', 'create-worktree', 'refactor-code', 'rename-code', 'diagnose-agent-session',
             'what-changes', 'review-for-humans', 'collect-todos', 'what-if',
             'finish-worktree',
             'write-rules-and-skills',
@@ -546,7 +547,7 @@ class PluginManifestTest(unittest.TestCase):
             if path.is_dir()
         }
         custom = {
-            'setup-project-agents', 'create-worktree', 'refactor-code', 'rename-code',
+            'setup-project-agents', 'maintain-project-config', 'create-worktree', 'refactor-code', 'rename-code',
             'diagnose-agent-session', 'what-changes', 'review-for-humans', 'collect-todos',
             'what-if', 'finish-worktree',
             'write-rules-and-skills',

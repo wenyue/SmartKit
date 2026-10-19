@@ -34,9 +34,23 @@ An MCP server distributed with the SmartKit plugin and made available through ea
 host's plugin integration.
 _Avoid_: Global MCP, shared project MCP
 
+**Project Configuration（项目配置）** :
+A user-owned set of agent instructions, Skills, custom Agents, MCP declarations, and project-level
+Harness settings selected for a target project.
+_Avoid_: External Skill, plugin configuration
+
+**Project Configuration Repository（项目配置库）** :
+A user-owned repository that holds the canonical Project Configurations for multiple target projects.
+_Avoid_: External Skill repository, target repository
+
+**Project Configuration Binding（项目配置绑定）** :
+A target project's selection of a Project Configuration Repository, a revision selector, and a
+configuration entry within that repository.
+_Avoid_: Local checkout path, Project Setup Version
+
 **Project MCP（项目 MCP）** :
-An MCP server declared by a target repository as canonical project configuration and rendered by
-setup into the native configuration of each enabled host.
+An MCP server declared as canonical configuration for a target project and rendered by setup into
+the native configuration of each enabled host.
 _Avoid_: Plugin MCP, hard-coded project template
 
 **MCP Adapter（MCP 配置适配器）** :

@@ -7,6 +7,8 @@ import hashlib
 import json
 import sys
 from pathlib import Path, PurePosixPath
+from dataclasses import replace
+from agents_setup import project_configuration
 
 from agents_setup.catalog import load_catalog, load_project_config, parse_project_agents
 from agents_setup.agent_discovery import CODEX_CONFIG, HOST_PATHS as _HOST_PATHS, discover_native_agents
@@ -166,11 +168,19 @@ def apply(target: Path, manifest: dict[str, object]) -> list[str]:
             raise ValueError(f'Agent adoption input changed during planning: {path}')
 
     def postcondition() -> None:
+        project_configuration.require_converged(target, catalog)
         for path, before in guards.items():
             expected_content = files.get(path, before)
             if _read(target, path) != expected_content:
                 raise ValueError(f'Agent adoption did not converge: {path}')
 
+    receipt = project_configuration.save_generated(
+        target, catalog,
+        {str(path): content for path, content in files.items() if path.parts[:2] == ('.agents', 'agents')},
+        [], portable_config=config,
+    )
+    if receipt is not None:
+        plan = replace(plan, changes=(*plan.changes, *build_plan(target, [receipt]).changes))
     apply_plan(target, plan, postcondition=postcondition)
     return [change.path.as_posix() for change in plan.changes if change.kind.value != 'unchanged']
 

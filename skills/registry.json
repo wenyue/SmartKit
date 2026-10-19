@@ -1,6 +1,7 @@
 {
   "custom": [
     {"id": "smartkit/setup-project-agents", "path": "setup-project-agents"},
+    {"id": "smartkit/maintain-project-config", "path": "maintain-project-config"},
     {"id": "smartkit/create-worktree", "path": "create-worktree"},
     {"id": "smartkit/refactor-code", "path": "refactor-code"},
     {"id": "smartkit/rename-code", "path": "rename-code"},

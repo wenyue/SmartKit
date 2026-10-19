@@ -25,6 +25,8 @@ from .models import (
     ProjectConfig,
     QoderAgentConfig,
     NativeAgentConfig,
+    MaintenanceConfig,
+    DesiredField,
 )
 from .external_contract import (
     ExternalContractError,
@@ -54,7 +56,7 @@ _ASSET_FIELDS = frozenset({
 })
 _CATALOG_FIELDS = frozenset({'plugin', 'assets'})
 _PLUGIN_FIELDS = frozenset({'id', 'version', 'repository', 'ref'})
-_PROJECT_CONFIG_FIELDS = frozenset({'$schema', 'skills', 'mcp', 'agents', 'setupVersion'})
+_PROJECT_CONFIG_FIELDS = frozenset({'$schema', 'skills', 'mcp', 'agents', 'setupVersion', 'maintenance', 'settings'})
 _EXTERNAL_SOURCE_FIELDS = frozenset({'source', 'ref', 'include'})
 _MCP_SERVER_FIELDS = frozenset({
     'id', 'harnesses', 'command', 'args', 'cwd', 'env', 'url', 'overrides',
@@ -753,6 +755,59 @@ def parse_project_agents(value: object) -> tuple[ProjectAgentSpec, ...]:
     return tuple(result)
 
 
+def parse_maintenance(value: object) -> MaintenanceConfig | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise ContractError('maintenance must be an object')
+    if value == {'mode': 'local'}:
+        return MaintenanceConfig('local')
+    if set(value) != {'mode', 'repository', 'branch', 'entry'} or value.get('mode') != 'repository':
+        raise ContractError('maintenance requires local mode or a complete repository binding')
+    repository, branch, entry = value['repository'], value['branch'], value['entry']
+    if not isinstance(repository, str) or not re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9_.-]*', repository) or repository.endswith('.git'):
+        raise ContractError('maintenance repository must be a GitHub owner/repo')
+    if (not isinstance(branch, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', branch)
+            or any(part in {'', '.', '..'} or part.startswith('.') or part.endswith('.lock') for part in branch.split('/'))
+            or '..' in branch or branch.endswith('.')):
+        raise ContractError('maintenance branch must be a safe branch name')
+    if not isinstance(entry, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', entry):
+        raise ContractError('maintenance entry must be a single project slug')
+    safe_relative(entry, 'maintenance entry')
+    return MaintenanceConfig('repository', repository, branch, entry)
+
+
+SETTING_PATHS = frozenset({'.codex/config.toml', '.cursor/cli.json'})
+
+
+def parse_project_settings(value: object) -> tuple[DesiredField, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise ContractError('settings must be an array of project-native fields')
+    result = []
+    for item in value:
+        if not isinstance(item, dict) or set(item) != {'path', 'key', 'value'}:
+            raise ContractError('setting requires path, key and value')
+        if not isinstance(item['path'], str) or item['path'] not in SETTING_PATHS:
+            raise ContractError('setting path must be a supported project-native configuration')
+        key = safe_field_key(item['key'], 'setting key')
+        if key.split('.')[0] in {'agents', 'mcp_servers', 'mcpServers'}:
+            raise ContractError('Agent and MCP settings belong to their canonical declarations')
+        if item['value'] is None or isinstance(item['value'], dict):
+            raise ContractError('settings must declare non-null leaf values')
+        try:
+            json.dumps(item['value'], allow_nan=False)
+        except (TypeError, ValueError) as error:
+            raise ContractError('setting value must be finite JSON') from error
+        path = PurePosixPath(item['path'])
+        for prior in result:
+            if path == prior.path and (key == prior.key or key.startswith(prior.key + '.') or prior.key.startswith(key + '.')):
+                raise ContractError('settings contain overlapping keys')
+        result.append(DesiredField(path, key, item['value'], 'toml' if path.suffix == '.toml' else 'json'))
+    return tuple(result)
+
+
 def load_project_config(
     path: Path | None,
     *,
@@ -768,6 +823,8 @@ def load_project_config(
         setup_version = document['setupVersion']
         if not isinstance(setup_version, str) or _SEMVER.fullmatch(setup_version) is None:
             raise ContractError('project config setupVersion must be a semantic version')
+    if 'maintenance' in document and document['maintenance'] is None:
+        raise ContractError('maintenance must be an object when present')
     project_external_skills = parse_external_skills(document.get('skills'), catalog)
     mcp_servers = parse_mcp_servers(document.get('mcp'))
     agents = parse_project_agents(document.get('agents'))
@@ -777,4 +834,6 @@ def load_project_config(
         project_external_skills,
         mcp_servers,
         agents,
+        parse_maintenance(document.get('maintenance')),
+        parse_project_settings(document.get('settings')),
     )

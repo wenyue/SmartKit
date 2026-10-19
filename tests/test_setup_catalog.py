@@ -19,6 +19,36 @@ from agents_setup.catalog import (  # noqa: E402
 
 
 class SetupCatalogTest(unittest.TestCase):
+    def test_maintenance_binding_is_optional_and_validated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'config.json'
+            for binding in ({'mode': 'local'}, {'mode': 'repository', 'repository': 'owner/config',
+                                             'branch': 'main', 'entry': 'app'}):
+                path.write_text(json.dumps({'maintenance': binding}), encoding='utf-8')
+                config = load_project_config(path, catalog=load_catalog(REPO_ROOT))
+                self.assertEqual(config.maintenance.mode, binding['mode'])
+            for binding in ({'mode': 'other'}, {'mode': 'local', 'entry': 'x'},
+                            {'mode': 'repository', 'repository': 'owner/config', 'branch': '../x', 'entry': 'a'},
+                            {'mode': 'repository', 'repository': 'https://secret@github.com/a/b', 'branch': 'main', 'entry': 'a'}):
+                path.write_text(json.dumps({'maintenance': binding}), encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    load_project_config(path, catalog=load_catalog(REPO_ROOT))
+
+    def test_project_settings_are_scoped_native_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'config.json'
+            path.write_text(json.dumps({'settings': [{'path': '.codex/config.toml',
+                                                      'key': 'model', 'value': 'chosen-model'}]}), encoding='utf-8')
+            config = load_project_config(path, catalog=load_catalog(REPO_ROOT))
+            self.assertEqual(config.settings[0].key, 'model')
+            for setting in ({'path': [], 'key': 'model', 'value': 'x'},
+                            {'path': '../config.toml', 'key': 'model', 'value': 'x'},
+                            {'path': '.codex/config.toml', 'key': 'agents.worker', 'value': 'x'},
+                            {'path': '.codex/config.toml', 'key': 'mcp_servers.x', 'value': 'x'}):
+                path.write_text(json.dumps({'settings': [setting]}), encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    load_project_config(path, catalog=load_catalog(REPO_ROOT))
+
     def test_project_config_parses_typed_project_agents(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / 'config.json'
