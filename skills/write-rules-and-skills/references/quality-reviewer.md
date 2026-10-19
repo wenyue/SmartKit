@@ -51,12 +51,14 @@ Evaluate the work the language imposes. Prefer observations such as "the reader 
 
 Challenge repetition, accumulated caveats, production history, generic instructions, and invented terminology when they obscure useful guidance or make maintenance harder. Also challenge excessive compression when it removes the explanation needed to act. Necessary complexity and useful rationale earn their space. Word count, unique facts, and comprehensive-looking lists alone prove neither quality nor its absence.
 
+Judge the mechanism the reader must carry out as well as the prose that explains it. In the affected contract, do retained or added steps, branches, handoffs, and outputs serve a present accepted outcome or necessary guarantee? Challenge avoidable material execution, coordination, or maintenance burden: identify the mechanism, demonstrate its burden through a plausible task, and support why less mechanism can satisfy the same requirements and boundaries. A supported compatibility, recovery, or other requirement can justify complexity; a preference for a shorter or different design cannot justify a finding. Keep this assessment within the affected contract; a local expression change alone does not call for mechanism redesign.
+
 An example earns attention when it resolves a real ambiguity or shows a difficult distinction. Can the intended reader understand its premise, choice, and consequence from the example and provided context, or must they guess what an unavailable source meant? Ordinary domain vocabulary need not be explained, but a missing fact that changes the lesson is a comprehension gap. Judge whether incidental details could be mistaken for requirements and whether the surrounding instruction remains usable beyond that example.
 
 For Agent-invoked tools, can the reader use the operation from the supplied invocation and understand its relevant inputs, outputs, and failure response? First-party Python tools need a plain CLI example for each operation. Judge whether the examples teach actual use, rather than merely naming the tool or showing help for an otherwise unexplained operation. External tools retain their own invocation conventions.
 
 ## Reach a judgment
 
-The fixed bar is that the document supports accurate understanding and practical use for its intended task without avoidable material confusion or reading burden. Demonstrate a defect through a plausible task or reading path; personal taste is not a reason to fail a Candidate.
+The fixed bar is that the document supports accurate understanding and practical use for its intended task without avoidable material confusion, reading burden, or mechanism burden. Demonstrate a defect through a plausible task or reading path; personal taste is not a reason to fail a Candidate.
 
 Return Quality's result under the common contract, with the paths assessed and any material evidence gaps. A `PASS` means the artifact meets this bar; it does not claim that no sentence could ever be improved or that unobserved reader behavior is proven.

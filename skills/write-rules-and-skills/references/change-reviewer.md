@@ -20,10 +20,12 @@ Check changes to judgment as well as explicit requirements. Turning a contextual
 
 Use unchanged context when a local edit changes how other parts work. Inspect affected discovery, initial reading, and conditional paths, including transitive dependencies. A policy moved out of the entry remains effective only if its intended readers reach the full requirement and exceptions before the relevant decision. Current-session availability does not establish a supported future loading route.
 
+Trace an accepted retirement or replacement through its dependent instructions and supporting resources. Check that handling whose sole purpose was the superseded requirement retires with it; a removed handoff may otherwise leave waiting, retry, or recording duties that no longer serve the contract. Retained handling needs a remaining supported requirement, such as compatibility or recovery.
+
 Check affected links and fragments against their targets, including incoming references to changed headings or relocated content. Check supporting resources, metadata, and executable interfaces when the revision touches their contract. Recognize a necessary outside-scope change as a dependency; review authority does not make it an editable target.
 
 ## Reach a judgment
 
-Report material unintended loss, expansion, contradiction, or broken integration. Tie each finding to the accepted decision or baseline meaning, the changed location, and the resulting consequence. An extensive rewrite is acceptable when the required meaning survives coherently; resemblance to the old organization is not an acceptance criterion.
+Report material unintended loss, expansion, contradiction, incomplete retirement, or broken integration. Tie each finding to the accepted decision or baseline meaning, the changed location, and the resulting consequence. An extensive rewrite is acceptable when the required meaning survives coherently; resemblance to the old organization is not an acceptance criterion.
 
 Return Change's result under the common contract, briefly accounting for the consequential meaning preserved or deliberately changed and any surface that could not be assessed. Apply the same semantic threshold in every round against the original baseline.
