@@ -457,6 +457,18 @@ class WebServiceTests(unittest.TestCase):
             time.sleep(0.05)
             self.assertEqual(web.ensure_service()['pid'], info['pid'])
 
+    def test_startup_returns_verified_pid_when_loaded_snapshot_still_has_zero(self):
+        load_state = web.load_state
+        def lagging_snapshot():
+            state = load_state()
+            if state is not None and web.health(state):
+                return {**state, 'pid': 0}
+            return state
+        with patch.object(web, 'load_state', side_effect=lagging_snapshot):
+            info = web.ensure_service()
+        self.assertGreater(info['pid'], 0)
+        self.assertEqual(info['pid'], web.health(load_state())['pid'])
+
 
     def test_fixed_port_conflict_preserves_state_and_unknown_process(self):
         web.ensure_service()

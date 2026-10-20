@@ -216,6 +216,7 @@ def ensure_service(mode: str = "applications") -> dict:
                 running = health(current) if current else None
                 if (running and running["pid"] == process.pid and "plugin_version" in running
                         and _version_key(running["plugin_version"]) >= required_version):
+                    current["pid"] = running["pid"]
                     threading.Thread(target=process.wait, daemon=True).start()
                     return service_info(current)
                 if process.poll() is not None:
