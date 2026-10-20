@@ -30,11 +30,11 @@ def add_arguments(parser: argparse.ArgumentParser, *, include_sync: bool = False
                           'Hold exclusive access to source and target during writes. Exit 0: phase complete; 2: refusal/failure.')
     commands = parser.add_subparsers(dest='configuration_command', required=True)
     for name, help_text in (
-        ('inspect', 'Show binding, source/target diff and conflict evidence without fetching'),
+        ('inspect', 'Show backup binding, scope and source/target differences without fetching'),
         ('bind', 'Record a chosen mode; connect/create private source and explicitly import selected files'),
         ('update', 'Fetch and safely fast-forward the persistent source before editing'),
-        ('apply', 'Apply canonical inputs; follow with sync-project or full setup for native outputs'),
-        ('adopt', 'Copy selected target changes to an unchanged source; follow with apply and publication'),
+        ('apply', 'Restore complete backup files; no MCP generation or full setup'),
+        ('adopt', 'Back up selected complete target files/directories into the source'),
         ('publish', 'Commit exact accepted source paths then normal-push, or retry a verified retained commit'),
     ):
         command = commands.add_parser(name, help=help_text, description=help_text, allow_abbrev=False)
@@ -46,13 +46,15 @@ def add_arguments(parser: argparse.ArgumentParser, *, include_sync: bool = False
             command.add_argument('--branch', help='Explicit branch; confirm the remote default if desired')
             command.add_argument('--entry', help='One project slug within projects/')
             command.add_argument('--create-repository', action='store_true', help='Record existing user authorization to create this named private repository')
-            command.add_argument('--file', action='append', default=[], help='Exact target-relative canonical file to import into a new entry; repeat for support files')
+            command.add_argument('--file', action='append', default=[], help='Target-relative file or directory to back up; repeat. Omit to select existing default configuration paths')
             command.add_argument('--replace-binding', action='store_true', help='Record an explicit maintenance-mode/source switch; current source must converge first')
         if name == 'apply':
-            command.add_argument('--accept-existing', help='Exact inspect fingerprint accepting initial target collisions; never overwrites later recorded edits')
+            command.add_argument('--accept-existing', help='Exact inspect fingerprint accepting the first restoration over existing files')
+            command.add_argument('--auto-sync', choices=('on', 'off'), help='Record local permission for future session update/restore; default off')
         if name == 'adopt':
-            command.add_argument('--file', action='append', default=[], help='Exact selected canonical target-relative file')
-            command.add_argument('--field', action='append', default=[], choices=sorted(configuration.PORTABLE), help='Selected portable config field')
+            command.add_argument('--file', action='append', default=[], help='Selected complete target-relative file or directory')
+            command.add_argument('--all', action='store_true', help='Refresh the backup scope; upgrade a legacy entry to a complete backup')
+            command.add_argument('--field', action='append', default=[], choices=sorted(configuration.PORTABLE), help='Legacy version-one portable field only')
         if name == 'publish':
             command.add_argument('--path', action='append', default=[], help='Exact repository-relative changed file owned by this maintenance request; repeat')
             command.add_argument('--message', help='Commit message for the selected scope')
@@ -155,6 +157,12 @@ def sync_git_exclusions(target: Path, catalog: Catalog, paths: list[str] | None 
     if selected.mode == 'local':
         return exclude_local(target, [], enabled=False)
     personal = {'.agents/', 'AGENTS.md', 'CLAUDE.md', *(paths or [])}
+    if selected.mode == 'repository' and configuration.is_complete_backup(target):
+        entry = configuration.entry_root(target)
+        files, _ = configuration.read_entry(entry, catalog)
+        personal.update(files)
+        personal.update(configuration._manifest(entry)['directories'])
+        return exclude_local(target, sorted(personal))
     config = load_project_config(target / configuration.CONFIG, catalog=catalog)
     personal.update(str(path) for agent in config.agents for path in agent.source_paths)
     personal.update(str(field.path) for field in config.settings)
@@ -191,15 +199,16 @@ def _bind(args: argparse.Namespace, catalog: Catalog) -> dict:
         entry = confined_target(root, PurePosixPath('projects') / args.entry)
         if not (entry / 'manifest.json').exists():
             entry.mkdir(parents=True, exist_ok=True)
-            configuration.initialize_entry(target, entry, args.file, catalog)
+            configuration.initialize_entry(target, entry, args.file, catalog,
+                                           config_content=configuration._json({**current, 'maintenance': selected}))
         elif args.file:
-            raise ValueError('initial --file import is only valid for a new entry; explicitly adopt later edits')
+            raise ValueError('initial file import is only valid for a new entry; explicitly adopt later edits')
         configuration.read_entry(entry, catalog)
         result['source'] = str(entry)
     if configuration._json(configuration._document(target, configuration.CONFIG, missing=True)) != config_before:
         raise ValueError('project config changed while binding was prepared; source work is retained')
     current['maintenance'] = selected
-    deletes = [configuration.STATE] if switching else []
+    deletes = [configuration.STATE, configuration.backup.LEGACY_SYNC_PATH] if switching else []
     plan = build_plan(target, [DesiredFile(configuration.CONFIG, configuration._json(current))], delete_paths=deletes)
     apply_plan(target, plan)
     result['bound'] = True
@@ -224,16 +233,18 @@ def _publish(args: argparse.Namespace, catalog: Catalog) -> dict:
         if prefix not in path.parents:
             raise ValueError('publication scope must stay inside the bound project entry')
     configuration.require_converged(target, catalog)
-    checked = synchronize_project(Path(__file__).resolve().parents[4], target, check_only=True)
-    if checked.check != 'clean':
-        raise ValueError('native project configuration has drift; synchronize it before publication')
+    if not configuration.is_complete_backup(target):
+        checked = synchronize_project(Path(__file__).resolve().parents[4], target, check_only=True)
+        if checked.check != 'clean':
+            raise ValueError('native project configuration has drift; synchronize it before publication')
     commit = args.commit or repository.commit_scope(checkout, selected.branch, args.path, args.message)
     try:
         # Hooks may modify source inputs; those bytes must reach the target before publication.
         configuration.require_converged(target, catalog)
-        checked = synchronize_project(Path(__file__).resolve().parents[4], target, check_only=True)
-        if checked.check != 'clean':
-            raise ValueError('target needs synchronization after commit hooks')
+        if not configuration.is_complete_backup(target):
+            checked = synchronize_project(Path(__file__).resolve().parents[4], target, check_only=True)
+            if checked.check != 'clean':
+                raise ValueError('target needs synchronization after commit hooks')
         return {'local_applied': True, **repository.publish(checkout, selected.branch, commit)}
     except (OSError, ValueError, subprocess.SubprocessError):
         # Supply retained-effect evidence; run() still owns the final failure diagnostic.
@@ -248,8 +259,10 @@ def run_sync(args: argparse.Namespace, command: str) -> int:
     target = args.target.absolute()
     try:
         configuration.require_converged(target, load_catalog(source))
-        synchronize = synchronize_project if command == 'sync-project' else synchronize_project_rules
-        result = synchronize(source, target, check_only=args.check)
+        if command == 'sync-project':
+            result = synchronize_project(source, target, check_only=args.check)
+        else:
+            result = synchronize_project_rules(source, target, check_only=args.check)
         tracked = [] if args.check else sync_git_exclusions(target, load_catalog(source))
         selected = configuration.binding(target)
     except (OSError, ValueError, subprocess.SubprocessError, TransactionError) as error:
@@ -276,10 +289,11 @@ def run(args: argparse.Namespace) -> int:
         elif command == 'inspect':
             result = configuration.inspect(target, catalog)
         elif command == 'apply':
-            result = configuration.apply(target, catalog, accept_existing=args.accept_existing)
+            result = configuration.apply(target, catalog, accept_existing=args.accept_existing,
+                                         automatic=None if args.auto_sync is None else args.auto_sync == 'on')
             result['tracked_paths'] = sync_git_exclusions(target, catalog, result['managed_paths'])
         elif command == 'adopt':
-            result = configuration.adopt(target, catalog, args.file, args.field)
+            result = configuration.adopt(target, catalog, args.file, args.field, all_paths=args.all)
         elif command == 'update':
             selected = configuration.binding(target)
             if selected is None or selected.mode != 'repository':

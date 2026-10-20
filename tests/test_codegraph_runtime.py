@@ -234,7 +234,8 @@ class CodeGraphSessionTest(unittest.TestCase):
         self.assertIn('CodeGraph stopped', rendered['systemMessage'])
 
     def test_runtime_check_runs_again_when_daily_gate_is_cached(self):
-        with mock.patch.object(checker, '_run_daily_hook', return_value=checker.HookResult(False)), \
+        with mock.patch.object(checker, 'check_project_configuration', return_value=((), '')), \
+             mock.patch.object(checker, '_run_daily_hook', return_value=checker.HookResult(False)), \
              mock.patch.object(checker, 'check_project_codegraph', side_effect=[(), ('CodeGraph stopped',)]) as check:
             first = checker.run_hook('codex', Path('unused'), project_root=ROOT)
             second = checker.run_hook('codex', Path('unused'), project_root=ROOT)

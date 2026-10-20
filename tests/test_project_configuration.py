@@ -55,19 +55,16 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertEqual(config['setupVersion'], '1.2.21')
         self.assertEqual(config['maintenance'], self.binding)
         self.assertEqual((self.target / 'notes.txt').read_text(), 'keep')
-        self.assertNotIn('maintenance', json.loads((self.entry / 'config.json').read_text()))
+        self.assertFalse((self.entry / 'config.json').exists())
 
-    def test_target_edit_refuses_application_without_changing_either_side(self):
+    def test_established_backup_overwrites_target_edits(self):
         self.initialize()
         self.write(self.target, '.agents/rules/personal.md', '# Local edit\n')
         self.write(self.entry, 'files/.agents/rules/personal.md', '# Remote edit\n')
-        before = (self.target / '.agents/project-config-state.json').read_bytes()
-        with self.assertRaisesRegex(ValueError, 'conflict'):
-            self.module.apply(self.target, self.catalog)
-        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Local edit\n')
-        self.assertEqual((self.target / '.agents/project-config-state.json').read_bytes(), before)
+        self.module.apply(self.target, self.catalog)
+        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Remote edit\n')
 
-    def test_adoption_requires_unchanged_source_and_explicit_selection(self):
+    def test_adoption_backs_up_explicitly_selected_local_content(self):
         self.initialize()
         self.write(self.target, '.agents/rules/personal.md', '# Accepted local\n')
         self.module.adopt(self.target, self.catalog, ['.agents/rules/personal.md'], [])
@@ -75,16 +72,18 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.module.apply(self.target, self.catalog)
         self.write(self.entry, 'files/.agents/rules/personal.md', '# New remote\n')
         self.write(self.target, '.agents/rules/personal.md', '# Different local\n')
-        with self.assertRaisesRegex(ValueError, 'source changed'):
-            self.module.adopt(self.target, self.catalog, ['.agents/rules/personal.md'], [])
+        self.module.adopt(self.target, self.catalog, ['.agents/rules/personal.md'], [])
+        self.assertEqual((self.entry / 'files/.agents/rules/personal.md').read_text(), '# Different local\n')
+        with self.assertRaisesRegex(ValueError, 'requires explicit'):
+            self.module.adopt(self.target, self.catalog, [], [])
 
     def test_unmodified_recorded_deletion_is_applied(self):
         self.initialize()
-        self.write(self.entry, 'manifest.json', '{"version":1,"files":[]}')
+        self.write(self.entry, 'manifest.json', '{"version":2,"files":[],"directories":[]}')
         self.module.apply(self.target, self.catalog)
         self.assertFalse((self.target / '.agents/rules/personal.md').exists())
 
-    def test_retirement_does_not_delete_a_file_now_owned_by_setup(self):
+    def test_backup_retirement_does_not_consult_setup_ownership(self):
         import hashlib
         from pathlib import PurePosixPath
         from project_state.ownership import OwnedAsset, OwnershipState
@@ -94,35 +93,48 @@ class ProjectConfigurationTest(unittest.TestCase):
         content = (self.target / relative).read_bytes()
         state = OwnershipState((), (OwnedAsset('file', 'rule', relative, hashlib.sha256(content).hexdigest()),))
         (self.target / '.agents/smartkit.lock.json').write_bytes(serialize_ownership(state))
-        self.write(self.entry, 'manifest.json', '{"version":1,"files":[]}')
-        with self.assertRaisesRegex(ValueError, 'owned by setup'):
-            self.module.apply(self.target, self.catalog)
-        self.assertEqual((self.target / relative).read_bytes(), content)
+        self.write(self.entry, 'manifest.json', '{"version":2,"files":[],"directories":[]}')
+        lock_before = (self.target / '.agents/smartkit.lock.json').read_bytes()
+        self.module.apply(self.target, self.catalog)
+        self.assertFalse((self.target / relative).exists())
+        self.assertEqual((self.target / '.agents/smartkit.lock.json').read_bytes(), lock_before)
 
-    def test_config_field_retirement_preserves_other_fields(self):
+    def test_configuration_is_backed_up_and_restored_as_a_complete_file(self):
         self.write(self.target, '.agents/config.json', json.dumps({'maintenance': self.binding, 'setupVersion': '1.2.21', 'mcp': []}))
         self.module.initialize_entry(self.target, self.entry, [], self.catalog)
         self.module.apply(self.target, self.catalog)
-        self.write(self.entry, 'config.json', '{}')
+        self.write(self.entry, 'files/.agents/config.json', json.dumps({'maintenance': self.binding, 'replacement': True}))
         self.module.apply(self.target, self.catalog)
         config = json.loads((self.target / '.agents/config.json').read_text())
         self.assertNotIn('mcp', config)
         self.assertIn('maintenance', config)
+        self.assertNotIn('setupVersion', config)
+        self.assertTrue(config['replacement'])
 
-    def test_agents_generated_section_is_preserved(self):
+    def test_equivalent_git_addresses_restore_original_bytes_and_keep_receipt_valid(self):
+        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
+        self.module.apply(self.target, self.catalog)
+        source = (self.entry / 'files/.agents/config.json').read_bytes()
+        alias = {**self.binding, 'repository': 'https://github.com/user/config.git'}
+        self.write(self.target, '.agents/config.json', json.dumps({'maintenance': alias}))
+        (self.target / '.agents/project-config-sync.json').unlink()
+        report = self.module.inspect(self.target, self.catalog)
+        self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
+        self.assertEqual((self.target / '.agents/config.json').read_bytes(), source)
+        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+
+    def test_agents_generated_section_is_part_of_the_complete_backup(self):
         self.write(self.target, 'AGENTS.md', '# Instructions\n\n## Project rules\n\nOld index\n\n## Personal\n\nUser rules\n')
         self.module.initialize_entry(self.target, self.entry, ['AGENTS.md'], self.catalog)
         self.module.apply(self.target, self.catalog)
         self.write(self.entry, 'files/AGENTS.md', '# Instructions\n\n## Personal\n\nUpdated personal rules\n')
         self.module.apply(self.target, self.catalog)
         text = (self.target / 'AGENTS.md').read_text()
-        self.assertIn('Old index', text)
-        self.assertIn('Updated personal rules', text)
-        self.assertEqual(text.count('## Project rules'), 1)
+        self.assertEqual(text, '# Instructions\n\n## Personal\n\nUpdated personal rules\n')
 
     def test_initial_collision_requires_matching_review_token(self):
         self.initialize()
-        (self.target / '.agents/project-config-state.json').unlink()
+        (self.target / '.agents/project-config-sync.json').unlink()
         self.write(self.target, '.agents/rules/personal.md', '# Existing independent\n')
         observation = self.module.inspect(self.target, self.catalog)
         self.assertTrue(observation['conflicts'])
@@ -133,30 +145,26 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.module.apply(self.target, self.catalog, accept_existing=observation['fingerprint'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
 
-    def test_source_cannot_export_local_state_or_unsafe_paths(self):
+    def test_source_cannot_export_unsafe_paths_or_its_own_receipt(self):
         self.initialize()
-        for path in ('../escape', '.agents/smartkit.lock.json', '.codex/config.toml', '.git/config'):
-            self.write(self.entry, 'manifest.json', json.dumps({'version': 1, 'files': [path]}))
+        for path in ('../escape', '.agents/project-config-sync.json', '.codegraph/state', '.git/config'):
+            self.write(self.entry, 'manifest.json', json.dumps({'version': 2, 'files': [path], 'directories': []}))
             with self.assertRaises(ValueError):
                 self.module.inspect(self.target, self.catalog)
-        self.write(self.entry, 'manifest.json', '{"version":1,"files":[]}')
-        self.write(self.entry, 'config.json', '{"setupVersion":"9.0.0"}')
-        with self.assertRaises(ValueError):
-            self.module.inspect(self.target, self.catalog)
 
-    def test_empty_receipt_is_invalid_and_prior_empty_application_cannot_accept_collisions(self):
+    def test_invalid_receipt_is_refused_and_established_empty_scope_can_expand(self):
         self.initialize()
-        self.write(self.target, '.agents/project-config-state.json', '{}')
-        with self.assertRaisesRegex(ValueError, 'state is invalid'):
+        self.write(self.target, '.agents/project-config-sync.json', '{}')
+        with self.assertRaisesRegex(ValueError, 'record is invalid'):
             self.module.inspect(self.target, self.catalog)
-        (self.target / '.agents/project-config-state.json').unlink()
-        self.write(self.entry, 'manifest.json', '{"version":1,"files":[]}')
+        (self.target / '.agents/project-config-sync.json').unlink()
+        self.write(self.entry, 'manifest.json', '{"version":2,"files":[],"directories":[]}')
         self.module.apply(self.target, self.catalog)
-        self.write(self.entry, 'manifest.json', '{"version":1,"files":[".agents/rules/personal.md"]}')
+        self.write(self.entry, 'manifest.json', '{"version":2,"files":[".agents/rules/personal.md"],"directories":[]}')
         self.write(self.target, '.agents/rules/personal.md', '# Later target work\n')
         report = self.module.inspect(self.target, self.catalog)
-        with self.assertRaisesRegex(ValueError, 'conflict'):
-            self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
+        self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
+        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
 
     def test_source_symlink_is_refused(self):
         self.initialize()
@@ -177,7 +185,151 @@ class ProjectConfigurationTest(unittest.TestCase):
         state_file = self.module.save_generated(self.target, self.catalog, generated, [])
         self.assertEqual((self.entry / 'files/.agents/rules/personal.md').read_bytes(), generated['.agents/rules/personal.md'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
-        self.assertEqual(state_file.path.as_posix(), '.agents/project-config-state.json')
+        self.assertEqual(state_file.path.as_posix(), '.agents/project-config-sync.json')
+
+    def test_native_files_and_generated_sections_are_backed_up_without_parsing(self):
+        content = b'{"mcpServers":{"custom":{"command":"private-tool","unknownOption":true}},"extra":42}\r\n'
+        self.write(self.target, '.cursor/mcp.json', '')
+        (self.target / '.cursor/mcp.json').write_bytes(content)
+        self.write(self.target, '.agents/smartkit.lock.json', 'opaque lock: backup must not parse this')
+        self.module.initialize_entry(self.target, self.entry, ['.cursor/mcp.json'], self.catalog)
+        self.module.apply(self.target, self.catalog)
+        self.assertEqual((self.entry / 'files/.cursor/mcp.json').read_bytes(), content)
+        self.write(self.target, '.cursor/mcp.json', '{"local":"discard"}')
+        self.module.apply(self.target, self.catalog)
+        self.assertEqual((self.target / '.cursor/mcp.json').read_bytes(), content)
+        self.assertEqual((self.target / '.agents/smartkit.lock.json').read_text(),
+                         'opaque lock: backup must not parse this')
+        import maintain
+        from project_config import project_configuration_cli as cli
+        from contextlib import redirect_stdout
+        from io import StringIO
+        with mock.patch.object(cli, 'synchronize_project', side_effect=AssertionError('no rendering')):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(maintain.main(['apply', '--target', str(self.target)]), 0)
+
+    def test_directory_backup_restores_binary_files_and_removes_only_scoped_extras(self):
+        self.write(self.target, '.agents/skills/example/SKILL.md', '# Example\n')
+        asset = self.target / '.agents/skills/example/icon.bin'
+        asset.write_bytes(b'\x00\xff\r\n')
+        self.module.initialize_entry(self.target, self.entry, ['.agents/skills'], self.catalog)
+        self.module.apply(self.target, self.catalog)
+        asset.write_bytes(b'local')
+        self.write(self.target, '.agents/skills/local-only.txt', 'discard within scope')
+        self.write(self.target, 'outside.txt', 'keep')
+        self.module.apply(self.target, self.catalog)
+        self.assertEqual(asset.read_bytes(), b'\x00\xff\r\n')
+        self.assertFalse((self.target / '.agents/skills/local-only.txt').exists())
+        self.assertEqual((self.target / 'outside.txt').read_text(), 'keep')
+        (self.entry / 'files/.agents/skills/example/icon.bin').unlink()
+        self.module.apply(self.target, self.catalog)
+        self.assertFalse(asset.exists())
+
+    def test_source_fingerprint_skips_writes_but_repairs_local_drift(self):
+        self.initialize()
+        path = self.target / '.agents/rules/personal.md'
+        state = self.target / '.agents/project-config-sync.json'
+        before = (path.stat().st_mtime_ns, state.stat().st_mtime_ns, state.read_bytes())
+        self.assertTrue(self.module.apply(self.target, self.catalog)['skipped'])
+        self.assertEqual((path.stat().st_mtime_ns, state.stat().st_mtime_ns, state.read_bytes()), before)
+        receipt = json.loads(state.read_bytes())
+        self.assertNotIn('files', receipt)
+        self.assertNotIn('config', receipt)
+        self.assertEqual(receipt['appliedPaths'], ['.agents/rules/personal.md'])
+        self.write(self.target, '.agents/rules/personal.md', '# Drift\n')
+        self.assertFalse(self.module.apply(self.target, self.catalog)['skipped'])
+        self.assertEqual(path.read_text(), '# Personal\n')
+        self.assertEqual(json.loads(state.read_bytes())['sourceFingerprint'], receipt['sourceFingerprint'])
+
+    def test_receipt_changes_only_after_successful_apply_and_old_receipt_is_retired(self):
+        from project_config import project_configuration as configuration
+        from project_config.transaction import TransactionError
+        self.initialize()
+        receipt = self.target / '.agents/project-config-sync.json'
+        previous = receipt.read_bytes()
+        self.write(self.entry, 'files/.agents/rules/personal.md', '# New source\n')
+        apply_plan = configuration.apply_plan
+        def with_late_source_change(root, plan, **kwargs):
+            self.write(self.entry, 'files/.agents/rules/personal.md', '# Concurrent\n')
+            return apply_plan(root, plan, **kwargs)
+        with mock.patch.object(configuration, 'apply_plan', side_effect=with_late_source_change):
+            with self.assertRaisesRegex(TransactionError, 'configuration changed'):
+                self.module.apply(self.target, self.catalog)
+        self.assertEqual(receipt.read_bytes(), previous)
+        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
+        receipt.unlink()
+        self.write(self.target, '.agents/project-config-state.json', json.dumps({
+            'version': 1, 'binding': self.binding, 'files': {'.agents/rules/personal.md': '0' * 64}, 'config': {}}))
+        report = self.module.inspect(self.target, self.catalog)
+        self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
+        self.assertFalse((self.target / '.agents/project-config-state.json').exists())
+        self.assertTrue(receipt.exists())
+
+    def test_legacy_entry_and_receipt_can_upgrade_to_full_backup(self):
+        self.write(self.target, '.agents/rules/personal.md', '# Legacy\n')
+        self.write(self.entry, 'manifest.json', '{"version":1,"files":[".agents/rules/personal.md"]}')
+        self.write(self.entry, 'config.json', '{}')
+        self.write(self.entry, 'files/.agents/rules/personal.md', '# Legacy\n')
+        self.module.apply(self.target, self.catalog)
+        self.write(self.target, '.cursor/mcp.json', '{"mcpServers":{},"custom":true}\n')
+        self.module.adopt(self.target, self.catalog, [], [], all_paths=True)
+        self.module.apply(self.target, self.catalog)
+        manifest = json.loads((self.entry / 'manifest.json').read_bytes())
+        self.assertEqual(manifest['version'], 2)
+        self.assertIn('.cursor/mcp.json', manifest['files'])
+        self.assertIn('.agents/rules', manifest['directories'])
+        self.assertFalse((self.entry / 'config.json').exists())
+        self.assertEqual((self.entry / 'files/.agents/config.json').read_bytes(),
+                         (self.target / '.agents/config.json').read_bytes())
+
+    def test_default_scope_and_local_automatic_preference(self):
+        self.write(self.target, '.codex/config.toml', '# native file with custom content\r\n')
+        self.write(self.target, '.agents/project-config-sync.json', 'not part of a backup')
+        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
+        self.assertFalse((self.entry / 'files/.agents/project-config-sync.json').exists())
+        (self.target / '.agents/project-config-sync.json').unlink()
+        self.module.apply(self.target, self.catalog, automatic=True)
+        receipt = json.loads((self.target / '.agents/project-config-sync.json').read_bytes())
+        self.assertTrue(receipt['automatic'])
+        self.assertTrue(self.module.apply(self.target, self.catalog)['skipped'])
+        self.module.apply(self.target, self.catalog, automatic=False)
+        self.assertFalse(json.loads((self.target / '.agents/project-config-sync.json').read_bytes())['automatic'])
+
+    def test_first_binding_includes_the_new_complete_config_in_default_and_explicit_scope(self):
+        from project_config import project_configuration_cli as cli
+        import maintain
+        from contextlib import redirect_stdout
+        from io import StringIO
+        for extra in ([], ['--file', '.agents/config.json']):
+            with self.subTest(extra=extra):
+                target = self.root / ('fresh-explicit' if extra else 'fresh-default')
+                target.mkdir()
+                checkout = self.root / ('repo-explicit' if extra else 'repo-default')
+                checkout.mkdir()
+                with mock.patch.object(cli.repository, 'checkout', return_value=checkout), \
+                        mock.patch.object(cli.repository, 'open_checkout', return_value=checkout), \
+                        mock.patch.object(cli, 'sync_git_exclusions', return_value=[]):
+                    with redirect_stdout(StringIO()):
+                        status = maintain.main(['bind', '--target', str(target), '--mode', 'repository',
+                            '--repository', 'alice/config', '--branch', 'main', '--entry', 'app', *extra])
+                self.assertEqual(status, 0)
+                source = checkout / 'projects/app'
+                self.assertEqual((source / 'files/.agents/config.json').read_bytes(),
+                                 (target / '.agents/config.json').read_bytes())
+                self.assertIn('.agents/config.json', json.loads((source / 'manifest.json').read_bytes())['files'])
+
+    def test_directory_and_file_adoption_refresh_only_accepted_scope(self):
+        self.initialize()
+        self.write(self.target, '.cursor/mcp.json', '{"extra":true}\n')
+        self.write(self.target, 'notes.txt', 'outside scope')
+        self.module.adopt(self.target, self.catalog, ['.cursor/mcp.json'], [])
+        self.module.apply(self.target, self.catalog)
+        self.write(self.target, '.cursor/mcp.json', '{"extra":false}\n')
+        self.module.adopt(self.target, self.catalog, [], [], all_paths=True)
+        self.module.apply(self.target, self.catalog)
+        self.assertEqual((self.entry / 'files/.cursor/mcp.json').read_bytes(),
+                         (self.target / '.cursor/mcp.json').read_bytes())
+        self.assertFalse((self.entry / 'files/notes.txt').exists())
 
     def test_full_setup_saves_generated_sources_and_freezes_source_drift(self):
         from contextlib import redirect_stdout, redirect_stderr
@@ -208,6 +360,24 @@ class ProjectConfigurationTest(unittest.TestCase):
                 '--session', str(session), *helper.source_args()]), 2)
         self.assertIn('configuration', errors.getvalue())
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
+
+    def test_full_setup_keeps_complete_config_and_native_snapshots_converged(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from test_setup_cli import SetupCliTest
+        import setup_project_agents
+        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
+        self.module.apply(self.target, self.catalog)
+        helper = SetupCliTest()
+        session = helper.private_session(self.root)
+        with redirect_stdout(StringIO()):
+            self.assertEqual(helper.prepare(self.target, session), 0)
+            helper.write_generated_outputs(session)
+            self.assertEqual(setup_project_agents.main(['finish', '--target', str(self.target),
+                '--session', str(session), *helper.source_args()]), 0)
+        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+        for relative in ('.agents/config.json', '.codex/config.toml', '.cursor/cli.json', 'AGENTS.md'):
+            self.assertEqual((self.entry / 'files' / relative).read_bytes(), (self.target / relative).read_bytes())
 
     def test_full_setup_retains_source_and_rolls_back_target_on_late_source_drift(self):
         from contextlib import redirect_stdout, redirect_stderr

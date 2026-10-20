@@ -21,7 +21,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
 
@@ -83,12 +83,13 @@ class HookResult:
     findings: tuple[Finding, ...] = ()
     internal_error: bool = False
     notices: tuple[str, ...] = ()
+    configuration_context: str = ''
 
     @property
     def requires_user_prompt(self) -> bool:
-        return not self.internal_error and any(
+        return any(finding.code.startswith('project-config-') for finding in self.findings) or (not self.internal_error and any(
             finding.code != 'detector-error' for finding in self.findings
-        )
+        ))
 
 
 def parse_version(value: str) -> tuple[int, ...]:
@@ -1634,8 +1635,62 @@ def run_hook(
     )
     if evaluator is not None:
         return result
-    notices = check_project_codegraph(resolve_project_root(project_root), harness)
-    return replace(result, notices=(*result.notices, *notices))
+    project = resolve_project_root(project_root)
+    notices = check_project_codegraph(project, harness)
+    configuration_findings, context = check_project_configuration(project)
+    return replace(result, findings=(*result.findings, *configuration_findings),
+                   notices=(*result.notices, *notices), configuration_context=context)
+
+
+def check_project_configuration(project_root: Path) -> tuple[tuple[Finding, ...], str]:
+    """Inspect each session independently of the daily gate; never fetch or restore."""
+    runtime = str(Path(__file__).resolve().parents[1])
+    if runtime not in sys.path:
+        sys.path.insert(0, runtime)
+    from project_state import config_backup as backup
+    try:
+        config_path = PurePosixPath('.agents/config.json')
+        content = backup.read_file(project_root, config_path)
+        config = backup.read_object(project_root, config_path) if content is not None else {}
+        selected = config.get('maintenance')
+        if selected is None:
+            if content is not None or not (project_root / '.git').exists():
+                return (), ''
+            receipt = None
+        elif not isinstance(selected, dict) or selected.get('mode') not in {'local', 'local-only', 'repository'}:
+            raise ValueError('invalid project configuration maintenance binding')
+        elif selected['mode'] != 'repository':
+            return (), ''
+        else:
+            receipt = backup.read_receipt(project_root, selected)
+        if receipt is None:
+            return ((Finding('project-config-restore', 'Project configuration backup',
+                'this checkout has no successful configuration restoration record',
+                'Provide the configuration-repository Git address, branch and project entry; '
+                'choose restore with automatic synchronization, restore once, or defer and continue.'),),
+                _prompt('configuration-restore.md', target=json.dumps(str(project_root))))
+        context = _prompt('configuration-sync.md', target=json.dumps(str(project_root)),
+                          automatic='true' if receipt['automatic'] else 'false')
+        if receipt['automatic']:
+            return (), context
+        entry = Path(receipt['source'])
+        manifest = backup.read_object(entry, PurePosixPath('manifest.json'))
+        if manifest.get('version') == 1:
+            return (), ''
+        manifest, files = backup.read_backup(entry)
+        current = backup.collect(project_root, manifest)
+        retired = any(backup.read_file(project_root, backup.backup_path(path)) is not None
+                      for path in set(receipt['appliedPaths']) - set(files))
+        if (files == current and not retired
+                and backup.fingerprint(manifest, files) == receipt['sourceFingerprint']):
+            return (), ''
+        return ((Finding('project-config-sync', 'Project configuration backup',
+            'the selected backup or local configuration differs from the last restoration',
+            'Offer restoration from the recorded configuration repository or defer and continue the task.'),), context)
+    except (OSError, ValueError) as error:
+        return ((Finding('project-config-error', 'Project configuration backup',
+            f'cannot establish configuration synchronization: {error}',
+            'Inspect the binding, backup and local synchronization record before changing configuration.'),), '')
 
 
 def render_findings(findings: list[Finding] | tuple[Finding, ...]) -> str:
@@ -1701,6 +1756,9 @@ def render_hook_result(
 ) -> str:
     findings = render_findings(result.findings)
     rendered = '\n'.join(part for part in (*result.notices, findings) if part)
+    context = result.configuration_context
+    if result.internal_error and result.requires_user_prompt:
+        rendered = '[smartkit] Recommended-tool daily check could not complete.\n' + rendered
     if result.requires_user_prompt:
         if harness in {'codex', 'qoder'}:
             return json.dumps(
@@ -1711,7 +1769,7 @@ def render_hook_result(
                         'hookEventName': 'SessionStart',
                         'additionalContext': _agent_consent_request(
                             rendered, result.findings, harness
-                        ),
+                        ) + ('\n' + context if context else ''),
                     },
                 }
             )
@@ -1721,7 +1779,7 @@ def render_hook_result(
                     {
                         'additional_context': _agent_consent_request(
                             rendered, result.findings, harness
-                        )
+                        ) + ('\n' + context if context else '')
                     }
                 )
             return json.dumps(
@@ -1734,7 +1792,7 @@ def render_hook_result(
             {
                 'additionalContext': _agent_consent_request(
                     rendered, result.findings, harness
-                )
+                ) + ('\n' + context if context else '')
             }
         )
     if result.internal_error:
@@ -1743,6 +1801,12 @@ def render_hook_result(
         ) if part)
     else:
         message = rendered
+    if context:
+        if harness in {'codex', 'qoder'}:
+            return json.dumps({'continue': True, 'systemMessage': message,
+                'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': context}})
+        return json.dumps({'additional_context' if harness == 'cursor' and delivery == 'context'
+                           else 'additionalContext': '\n'.join(part for part in (message, context) if part)})
     if not message:
         return ''
     if harness in {'codex', 'qoder'}:

@@ -152,6 +152,9 @@ class RecommendedToolPolicyTest(unittest.TestCase):
     def test_hook_reports_removed_user_mcp_without_requesting_consent(self):
         notice = '[smartkit] Removed user-level MCP server(s) playwright from mcp-config.json'
         with tempfile.TemporaryDirectory() as temp_dir:
+            (Path(temp_dir) / '.git').mkdir()
+            (Path(temp_dir) / '.agents').mkdir()
+            (Path(temp_dir) / '.agents/config.json').write_text('{"maintenance":{"mode":"local"}}')
             policy = Path(temp_dir) / 'copilot.json'
             policy.write_text('{"harness": "copilot", "tools": []}\n', encoding='utf-8')
             with mock.patch.object(self.checker, 'check_policy', return_value=[]), \
@@ -1000,6 +1003,8 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             project = root / 'project'
             project.mkdir()
             (project / '.git').mkdir()
+            (project / '.agents').mkdir()
+            (project / '.agents/config.json').write_text('{"maintenance":{"mode":"local"}}')
             policy = root / 'codex.json'
             policy.write_text('{"harness":"codex","tools":[]}\n', encoding='utf-8')
             tool_finding = checker.Finding('tool-missing', 'tool', 'missing', 'install')
@@ -1123,6 +1128,8 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             root = Path(temp_dir)
             project = root / 'project'
             (project / '.git').mkdir(parents=True)
+            (project / '.agents').mkdir()
+            (project / '.agents/config.json').write_text('{"maintenance":{"mode":"local"}}')
             policy = root / 'copilot.json'
             policy.write_text('{"harness":"copilot","tools":[]}\n', encoding='utf-8')
             try:

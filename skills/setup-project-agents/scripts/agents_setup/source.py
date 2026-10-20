@@ -49,7 +49,7 @@ _RUNTIME_VENDORED_FILES = tuple(
 _PROJECT_STATE_FILES = tuple(
     PurePosixPath('runtime/project_state') / name
     for name in (
-        '__init__.py', 'catalog.py', 'migrations.py', 'models.py', 'ownership.py',
+        '__init__.py', 'catalog.py', 'config_backup.py', 'migrations.py', 'models.py', 'ownership.py',
         'paths.py', 'skill_metadata.py', 'skill_registry.py', 'sources.py', 'structured.py',
     )
 )

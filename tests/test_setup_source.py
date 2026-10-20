@@ -65,6 +65,7 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
     for relative in (
         'runtime/project_state/__init__.py',
         'runtime/project_state/catalog.py',
+        'runtime/project_state/config_backup.py',
         'runtime/project_state/migrations.py',
         'runtime/project_state/models.py',
         'runtime/project_state/ownership.py',

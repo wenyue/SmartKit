@@ -1264,6 +1264,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             target, catalog,
             {str(path): (session / _GENERATED_NAME / path).read_bytes() for path in generated_outputs},
             [str(path) for path in rendered.delete_paths],
+            target_outputs={str(change.path): change.content for change in plan.changes
+                            if change.content is not None},
         )
         if receipt is not None:
             receipt_plan = build_plan(target, [receipt])

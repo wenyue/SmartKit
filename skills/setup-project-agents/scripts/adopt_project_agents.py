@@ -184,7 +184,7 @@ def apply(target: Path, manifest: dict[str, object]) -> list[str]:
     receipt = project_configuration.save_generated(
         target, catalog,
         {str(path): content for path, content in files.items() if path.parts[:2] == ('.agents', 'agents')},
-        [], portable_config=config,
+        [], portable_config=config, target_outputs={str(path): content for path, content in files.items()},
     )
     if receipt is not None:
         plan = replace(plan, changes=(*plan.changes, *build_plan(target, [receipt]).changes))

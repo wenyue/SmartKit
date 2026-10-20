@@ -635,6 +635,9 @@ def _finish(args: argparse.Namespace) -> int:
             result['changed_paths'] = sorted({
                 *(result['changed_paths'] or []), config_relative.as_posix(),
             })
+        if project_configuration.is_complete_backup(target):
+            project_configuration.adopt(target, load_catalog(source), [], [], all_paths=True)
+            project_configuration.apply(target, load_catalog(source))
         _emit(result)
         return 0
     except BaseException as error:
