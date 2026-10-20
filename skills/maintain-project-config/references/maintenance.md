@@ -6,7 +6,7 @@ This Skill owns the shared configuration maintenance contract and command interf
 python "<maintain>" --help
 ```
 
-The command help owns arguments and output details. The project schema at `<plugin-root>/setup-assets/catalog/project-config.schema.json` owns supported declarations. Maintenance commands own source access, binding, application and local synchronization under existing ownership checks; full setup retains initialization, delivery, migrations and successful local setup version updates. The consuming workflow establishes intent, accepted changes, permission and completion.
+The command help owns arguments and output details. The project schema at `<plugin-root>/setup-assets/catalog/project-config.schema.json` owns supported declarations. Maintenance commands own source access, binding, application and local synchronization under existing ownership checks; full setup retains initialization, delivery, migrations and successful local setup version updates. The consuming workflow establishes intent, accepted changes and local completion; the common publication contract below governs its configuration-repository publication.
 
 ## Resolve the authoring source
 
@@ -124,14 +124,18 @@ Adoption is a repository-mode operation and requires the user's explicit choice 
 
 ## Publish an exact verified scope
 
-Only an explicit maintenance-and-sync or adoption request includes the scoped commit and normal push. Setup by itself and ordinary project edits leave publication pending. Collect exact repository-relative source files changed for this request, including a changed manifest or portable config when applicable; whole directories and unrelated entry changes are not a commit scope.
+In repository mode, an authorized configuration-writing operation, including full setup, maintenance or accepted adoption, includes the exact scoped commit and normal push by default after its required local work succeeds. Proceed without a separate publication confirmation unless the user explicitly requests a local result or forbids publication. This is one publication at the end of the operation, not at each file save. It grants no publication for inspection, ordinary business-project editing, other project entries or startup behavior, and no release, force push or history rewrite. The `local` and `local-only` maintenance modes have no configuration-repository publication step; an explicit local-result instruction also applies to an operation that retains its `repository` binding.
+
+Establish the operation's accepted source changes and outgoing commits before publishing. Include accepted initial imports and retained current-operation source work with confirmed provenance, plus changed manifests or portable config when applicable. An unborn branch still has accepted new source files to publish. Collect exact repository-relative files, preserving unrelated staged, unstaged and untracked work; whole directories, unaccepted preexisting content and unrelated entry changes are not a commit scope. If this operation has neither accepted pending source changes nor a retained verified commit of its own, finish without an empty commit or publication of earlier pending work.
+
+Publish only after source validation, accepted target application, required local synchronization and all applicable checks succeed; full setup must first reach its own successful local finish. Verify that source and applied target agree and that the local synchronization check is clean. A local-result instruction leaves the accepted source work available and reports intentional publication deferral.
 
 ```text
 python "<maintain>" publish --help
 python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.agents/rules/example.md" --message "Update project configuration"
 ```
 
-Use repeated `--path` arguments for the complete accepted scope. Verify source and applied target agreement and a clean local synchronization check before publication. Commit hooks run normally: a hook-altered source must be revalidated, reapplied and synchronized as needed before it can be published. Preserve preexisting staged and unselected work; an ambiguous selected path or an outgoing commit without verified scope requires resolution, not broadening the commit.
+Use repeated `--path` arguments for the complete accepted scope. Commit hooks run normally: a hook-altered source must be revalidated, reapplied and synchronized as needed before it can be published. Preserve the retained commit and diagnostic if publication is refused. An ambiguous selected path, an outgoing commit without verified scope or additional outgoing commits requires explicit resolution, not broadening this operation's scope; a prior scope receipt alone does not authorize publishing earlier work.
 
 A publish failure can leave a valid local commit and an already applied target. Inspect the actual outcome first. To retry a retained verified commit, use the command's `--commit` route after confirming that the source and applied evidence still agree:
 
@@ -141,4 +145,4 @@ python "<maintain>" publish --target "<target-root>" --commit "<verified-commit>
 
 Remote advancement or divergence requires preserving the local commit and resolving the branch state before a protected retry. Normal publication must confirm that the intended commit is reachable on the selected remote branch; a successful-looking push message alone is insufficient.
 
-Report source editing and validation, target application and local synchronization, Git-exclusion status and tracked configuration paths, unmet prerequisites, and remote publication separately. Repository-mode maintenance is complete only after its required target checks and remote confirmation succeed; neither local mode has a source-repository publication step. `setupVersion` changes only after successful local full setup; maintenance and publication preserve that value.
+Report source editing and validation, target application and local synchronization, Git-exclusion status and tracked configuration paths, unmet prerequisites, and remote publication separately. Repository-mode completion requires successful local work and verified remote publication of the intended scope, except for an explicitly requested local result or an operation with neither owned source changes nor a retained verified commit to publish. A failed push preserves saved source, the local commit, applied target and any successful local `setupVersion`; report local success and incomplete remote synchronization. `setupVersion` changes only after successful local full setup; maintenance and publication preserve that value.

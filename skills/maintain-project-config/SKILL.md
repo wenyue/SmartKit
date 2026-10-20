@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Maintain Project Config
 
-Maintain the project's agent configuration using the business project's evidence. Edit its selected source, verify what the target receives, and finish the publication requested for this operation. This Skill owns configuration binding, inspection, application, explicit adoption of target edits, local synchronization and source publication.
+Maintain the project's agent configuration using the business project's evidence. Edit its selected source, verify what the target receives, and complete the operation under the shared publication contract. This Skill owns configuration binding, inspection, application, explicit adoption of target edits, local synchronization and source publication.
 
 Resolve this directory as `<skill-root>`, its containing plugin as `<plugin-root>`, and the business project as `<target-root>`. Read [Project Configuration Maintenance](references/maintenance.md) before using the commands below. It supplies the source layout, supported entry points, authentication, difference protection and publication recovery. Use `<skill-root>/scripts/maintain.py` as `<maintain>`; resolve resources from the loaded plugin, not from the business project's working directory. Other plugin workflows may consume this reference and command interface without invoking this user-only Skill.
 
@@ -15,10 +15,10 @@ Resolve this directory as `<skill-root>`, its containing plugin as `<plugin-root
 | Request | Work and completion |
 | --- | --- |
 | Inspect configuration or explain differences | Read available binding, source and target state; report findings and unavailable evidence. Inspection performs no update, edit, apply, commit or push. |
-| Maintain and synchronize project configuration | Make accepted source changes, validate and apply them, and normally publish the exact source scope when repository mode is selected. |
+| Maintain and synchronize project configuration | Make accepted source changes, validate and apply them, and normally publish the exact source scope in repository mode unless the user requests a local result. |
 | Adopt specified target edits into the source | Compare the last application, current source and target; adopt only accepted files or portable fields, then validate, apply and publish under the same maintenance contract. |
 
-An explicit maintenance-and-sync or adoption request includes the source repository's scoped commit and normal push. That authority belongs to this operation; it does not extend to ordinary project editing, other entries, the business repository or startup behavior. A request limited to inspection stays read-only. If the requested configuration change is unclear, inspect first and resolve that change before editing.
+The shared reference owns the operation's publication default and explicit local-result exception. A request limited to inspection stays read-only. If the requested configuration change is unclear, inspect first and resolve that change before editing.
 
 ```text
 python "<maintain>" inspect --target "<target-root>"
@@ -82,18 +82,18 @@ Continue only when source validation, target application and all required checks
 
 ## 5. Publish the verified source scope
 
-In repository mode, use the shared reference's publish route after confirming that the applied target agrees with the accepted source. Supply only exact files changed for this request:
+In repository mode, follow the shared reference's publication decision after the required local checks succeed. An explicit local-result instruction defers publication. When the operation has neither accepted pending source changes nor a retained verified commit of its own, finish without publication. For accepted pending source changes, use the publish route with only the operation's exact accepted source files:
 
 ```text
 python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.agents/rules/example.md" --message "Update project configuration"
 ```
 
-Repeat `--path` for the complete accepted scope. Preserve unrelated index entries and working changes. If a selected file includes preexisting work whose inclusion is not accepted, resolve that scope before publication. Commit hooks can change source content; revalidate and reapply any such change before publishing, retaining the commit and diagnostic if the command refuses.
+Repeat `--path` for the complete accepted scope, including accepted initial imports and retained work whose provenance belongs to this operation. Follow the shared reference's scope protection and commit-hook recovery; preserve unrelated index entries and working changes.
 
-For a failed or uncertain push, inspect actual local and remote state before retrying the retained verified commit through `publish --commit`. Preserve the applied target and local commit when the remote advances or diverges. The shared reference defines the protected retry boundary; ordinary maintenance grants no force push or destructive history repair.
+For a retained verified commit, including after a failed or uncertain push, inspect actual local and remote state before retrying through `publish --commit`. Preserve the applied target and local commit when the remote advances or diverges. The shared reference defines the protected retry boundary; ordinary maintenance grants no force push or destructive history repair.
 
-Repository-mode maintenance completes only when required target work succeeded and the intended scoped commit is confirmed on the selected remote branch. Both local modes complete after their source, target and applicable Git-exclusion checks succeed, with no remote publication step. Neither ordinary maintenance nor a push advances `setupVersion`; only a completed local full setup does.
+Repository-mode maintenance completes after required target work succeeds and the shared reference's publication outcome is established: verified remote publication, an explicitly requested local result, or no publication needed for this operation. Both local modes complete after their source, target and applicable Git-exclusion checks succeed, with no remote publication step. Neither ordinary maintenance nor a push advances `setupVersion`; only a completed local full setup does.
 
 ## Report the actual result
 
-Report the user-facing maintenance mode and source, accepted changed and preserved paths, validation, application and local synchronization results, Git-exclusion status and any configuration paths that remain tracked, and the exact source commit and verified remote result when applicable. For incomplete work, distinguish saved source edits, a retained local commit, target application, cleanup or rollback status, unmet prerequisites and remote synchronization. Successful target work followed by a failed push is useful local progress and incomplete repository maintenance.
+Report the user-facing maintenance mode and source, accepted changed and preserved paths, validation, application and local synchronization results, Git-exclusion status and any configuration paths that remain tracked, and the exact source commit and verified remote result when applicable. Identify an explicitly requested local result or the absence of owned source changes when publication is unnecessary. For incomplete work, distinguish saved source edits, a retained local commit, target application, cleanup or rollback status, unmet prerequisites and remote synchronization. Successful target work followed by a failed push is useful local progress and incomplete repository maintenance.

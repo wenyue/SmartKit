@@ -43,21 +43,21 @@ Identify existing project instructions, personal configuration and independent o
 | This machine only | `local-only` | Keep configuration in the business project and locally exclude it from business Git; no GitHub source is needed. |
 | Separate configuration repository | `repository` | Maintain configuration in a personal private GitHub repository and locally exclude target configuration from business Git. |
 
-Record the accepted choice through the maintenance command's `bind` route. Follow the shared reference for Git exclusion behavior and already tracked files; mode selection does not itself change existing tracked status.
+Record the accepted choice through the maintenance command's `bind` route. For repository mode, communicate that setup includes the exact scoped source commit and normal push after successful local finish under the shared publication contract, unless the user requests a local result. Follow that reference for Git exclusion behavior and already tracked files; mode selection does not itself change existing tracked status.
 
 For repository maintenance, establish the personal repository identity, branch and project entry. Connect an existing private repository or create one only with the user's specified owner and name. Different projects can use distinct entries in the same repository. Import only identified and accepted existing personal files; preserve tracked business-project content and independently owned configuration. Connecting an existing entry on another machine requires comparing its source with the current target before initial application.
 
-Continue when the maintenance choice is recorded, the selected source is available, and initial imports or collisions have an accepted resolution. First setup completes only after the common full setup finish succeeds; an established binding alone is insufficient.
+Continue when the maintenance choice is recorded, the selected source is available, and initial imports or collisions have an accepted resolution. First setup completes only after successful local finish and the publication outcome required by step 8; an established binding alone is insufficient.
 
 ### Upgrade an existing project
 
 Establish the last successful setup version and collect every applicable migration without guessing missing history. An initialized project without a successful version keeps its ownership record and content while full setup establishes the baseline. If inspection reports `selection_required`, present the same three complete choices above and record the answer once; otherwise retain the recorded mode, repository, branch and entry. Existing `local` means Project shared, not an unresolved choice. Switch modes or entries only when the user requests that change, after comparing and preserving the old source and target work.
 
-In repository mode, update the persistent source checkout before editing it. When binding or earlier maintenance already refreshed it and produced accepted pending changes, verify and retain that evidence and continue from those changes instead of running the clean-checkout update again. Read relevant migration decisions against both the business project and its source entry, and make portable configuration corrections in that entry first. Refresh the applied target through the maintenance command before freezing a session. Upgrade completes only when all selected migrations and the common full setup finish succeed; source publication has its own result.
+In repository mode, communicate the same publication default and update the persistent source checkout before editing it. When binding or earlier maintenance already refreshed it and produced accepted pending changes, verify and retain that evidence and continue from those changes instead of running the clean-checkout update again. Read relevant migration decisions against both the business project and its source entry, and make portable configuration corrections in that entry first. Refresh the applied target through the maintenance command before freezing a session. Upgrade completes only after all selected migrations, successful local finish and the publication outcome required by step 8.
 
 ### Prepare accepted inputs for the full run
 
-Reconcile configuration under the schema identified in Ownership, preserving unrelated work. In either local mode, edit the project's canonical inputs. In repository mode, use the source paths reported by inspection, with business-project evidence, and apply accepted source changes before `start`. Keep binding and local state with their target owners. The shared reference explains how initial collision acceptance differs from adopting a later target edit.
+Reconcile configuration under the schema identified in Ownership, preserving unrelated work. In either local mode, edit the project's canonical inputs. In repository mode, use the source paths reported by inspection, with business-project evidence, and apply accepted source changes before `start`. Carry accepted initial imports and preparatory source changes with their provenance into final publication, including the full accepted import on an unborn branch rather than only the later generated delta. Keep binding and local state with their target owners. The shared reference explains how initial collision acceptance differs from adopting a later target edit.
 
 Preflight migrations come from the loaded plugin source; step 4 confirms the SmartKit source selected for the session. Continue when project state, source choice, input decisions, migration requirements and prerequisite gaps are accounted for.
 
@@ -130,15 +130,24 @@ python "<skill-root>/scripts/workflow.py" register --session "<SESSION>" --reque
 python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
-Before the first `finish` attempt, confirm CodeGraph readiness and follow the protocol's runtime-refresh branch if its daemon idle-exited. In repository mode, finish saves accepted generated project sources to the entry before applying the ordinary target plan; preserve both source and target evidence if either part fails. Accept only the protocol's successful local finish result, including cleanup and the final setup-version record. Failure follows its original-attempt recovery route.
+Before the first `finish` attempt, confirm CodeGraph readiness and follow the protocol's runtime-refresh branch if its daemon idle-exited. In repository mode, finish saves accepted generated project sources to the entry before applying the ordinary target plan; preserve both source and target evidence if either part fails. Accept only the protocol's successful local finish result, including cleanup and the final setup-version record, before proceeding to publication. A failed finish blocks this operation's publication and follows the original-attempt recovery route.
 
-## 8. Hand off the verified result
+## 8. Publish and hand off the verified result
+
+After successful local finish, complete repository-mode publication under [Publish an exact verified scope](../maintain-project-config/references/maintenance.md#publish-an-exact-verified-scope). That contract governs the accepted scope, required checks, publication exceptions, normal push verification and retained-commit recovery. Neither local maintenance mode has a configuration-repository push. Use the supported command directly, without invoking the user-only maintenance Skill:
+
+```text
+python "<maintain>" publish --help
+python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/manifest.json" --path "projects/<entry>/files/.agents/rules/example.md" --message "Set up project configuration"
+```
+
+Replace the example paths with the complete exact accepted source-file scope retained through this setup; repeat `--path` for each file. A verified retained commit uses the command's `--commit` route and the shared recovery contract instead. Confirm the remote result before reporting repository-mode completion. A publication failure preserves the successful local `setupVersion` and requires reporting local setup success with incomplete remote synchronization.
 
 Assess the complete direct project Rule set's always-loaded context cost. Recommend native `rule-<domain>` Skills only for substantial policy conditional on identifiable cases; size alone does not justify moving unconditional policy.
 
 Report the configuration maintenance mode and repository source entry when applicable, SmartKit source provenance, previous and resulting setup versions, migrations, enabled hosts, changed/preserved paths, custom Agent/model decisions and external provenance. Include actual configuration checks, Git exclusion results and already tracked paths, CodeGraph installation/index/runtime results, context assessment, incomplete verification and recovery evidence.
 
-Report local setup and remote publication separately. Setup alone leaves source changes available for review and later publication; it does not authorize a commit or push. Include exact saved source changes and local finish evidence so any separately authorized maintenance can reassess the current state and continue from that progress. A later push failure does not invalidate a successful local `setupVersion`, but leaves remote synchronization incomplete.
+Report local setup and remote publication separately, including the exact saved source scope, local finish evidence, and verified remote result or the shared contract's applicable publication exception. Distinguish a failed required publication from intentional local-result deferral or a setup with neither owned source changes nor a retained verified commit to publish; preserve saved source and retained commits for recovery.
 
 ## Local synchronization
 
