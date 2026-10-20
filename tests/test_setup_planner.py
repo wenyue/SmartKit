@@ -6,11 +6,12 @@ from pathlib import Path, PurePosixPath
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'))
 
-from agents_setup.models import ChangeKind, DesiredField, DesiredFile  # noqa: E402
-from agents_setup.planner import PlanningError, build_plan  # noqa: E402
-from agents_setup.transaction import apply_plan  # noqa: E402
+from project_config.models import ChangeKind, DesiredField, DesiredFile  # noqa: E402
+from project_config.planner import PlanningError, build_plan  # noqa: E402
+from project_config.transaction import apply_plan  # noqa: E402
 
 
 class SetupPlannerTest(unittest.TestCase):

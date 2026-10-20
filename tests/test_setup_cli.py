@@ -16,17 +16,19 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 SCRIPTS_ROOT = REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
 try:
     import tomllib
 except ModuleNotFoundError:
-    from _vendor import tomli as tomllib
+    from project_state._vendor import tomli as tomllib
 
 import setup_project_agents  # noqa: E402
 import bootstrap  # noqa: E402
-from agents_setup import transaction  # noqa: E402
+from project_config import transaction  # noqa: E402
 
 
 CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
@@ -624,6 +626,11 @@ class SetupCliTest(unittest.TestCase):
                 'skills/write-rules-and-skills/SKILL.md',
                 'setup-assets/catalog/migrations.json',
                 'skills/setup-project-agents/scripts/adopt_project_agents.py',
+                'skills/maintain-project-config/scripts/maintain.py',
+                'skills/maintain-project-config/scripts/project_config/repository.py',
+                'runtime/project_state/migrations.py',
+                'runtime/project_state/_vendor/tomli/_parser.py',
+                'skills/maintain-project-config/references/maintenance.md',
             ):
                 with self.subTest(relative=relative):
                     contract = source / relative

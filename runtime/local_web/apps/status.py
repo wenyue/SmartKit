@@ -44,14 +44,14 @@ def hook_page_links(project: Path, harness: str, urls: Mapping[str, str]) -> Dic
 
 
 def setup_snapshot(project: Path) -> dict:
-    """Use the setup owner's readers; never run setup, synchronization, or tool checks."""
-    scripts = SOURCE_ROOT / "skills/setup-project-agents/scripts"
-    if str(scripts) not in sys.path:
-        sys.path.insert(0, str(scripts))
-    from agents_setup.catalog import load_catalog
-    from agents_setup.migrations import SetupStatus, applicable_migrations, project_setup_version
-    from agents_setup.models import ContractError
-    from agents_setup.project import ProjectError
+    """Read project evidence without running setup, synchronization, or tool checks."""
+    runtime = SOURCE_ROOT / "runtime"
+    if str(runtime) not in sys.path:
+        sys.path.insert(0, str(runtime))
+    from project_state.migrations import SetupStatus, applicable_migrations, project_setup_version
+    from project_state.catalog import load_catalog
+    from project_state.models import ContractError
+    from project_state.paths import ProjectError
 
     try:
         if not project.is_dir():

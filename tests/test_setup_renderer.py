@@ -13,30 +13,24 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'))
 
 try:
     import tomllib
 except ModuleNotFoundError:
-    from _vendor import tomli as tomllib
+    from project_state._vendor import tomli as tomllib
 
-from agents_setup.catalog import load_catalog, load_project_config  # noqa: E402
-from agents_setup import ownership as ownership_module  # noqa: E402
-from agents_setup.models import (  # noqa: E402
-    AssetSpec,
-    Catalog,
-    ChangeKind,
-    OperatingSystem,
-    Harness,
-    ProjectConfig,
-)
-from agents_setup.planner import build_plan  # noqa: E402
-from agents_setup.ownership import (  # noqa: E402
-    OwnershipError,
-    _actual_tree_digest,
-    reconcile_ownership,
-)
-from agents_setup.project import inspect_project  # noqa: E402
+from project_state.catalog import load_catalog
+from project_config.catalog import load_project_config
+from project_config import ownership as ownership_module  # noqa: E402
+from project_state.models import AssetSpec, Catalog, Harness
+from project_config.models import ChangeKind, OperatingSystem, ProjectConfig
+from project_config.planner import build_plan  # noqa: E402
+from project_state.ownership import OwnershipError
+from project_config.ownership import _actual_tree_digest, reconcile_ownership
+from project_config.project import inspect_project  # noqa: E402
 from agents_setup.renderer import (  # noqa: E402
     RenderError,
     _copy_asset,
@@ -51,7 +45,7 @@ class SetupRendererTest(unittest.TestCase):
         self.catalog = load_catalog(REPO_ROOT)
 
     def test_project_setting_updates_owned_leaf_and_preserves_unrelated_fields(self):
-        from agents_setup.transaction import apply_plan
+        from project_config.transaction import apply_plan
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             (target / '.agents').mkdir()

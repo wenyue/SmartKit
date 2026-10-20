@@ -10,18 +10,21 @@ from pathlib import Path, PurePosixPath
 from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills/setup-project-agents/scripts'))
 
 import workflow
-from agents_setup import project_sync
-from agents_setup.catalog import load_catalog
+from project_config import project_sync
+from project_state.catalog import load_catalog
 from agents_setup.generation import current_contracts
-from agents_setup.ownership import OWNERSHIP_PATH, _actual_tree_digest, _value_digest, load_ownership
-from agents_setup.planner import build_plan
-from agents_setup.project import inspect_project
+from project_state.ownership import OWNERSHIP_PATH
+from project_config.ownership import _actual_tree_digest, _value_digest, load_ownership
+from project_config.planner import build_plan
+from project_config.project import inspect_project
 from agents_setup.renderer import render_desired_state
-from agents_setup.transaction import apply_plan
-from agents_setup.structured import parse_document
+from project_config.transaction import apply_plan
+from project_state.structured import parse_document
 
 
 class SyncProjectTest(unittest.TestCase):

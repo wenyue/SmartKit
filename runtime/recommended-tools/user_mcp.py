@@ -24,18 +24,15 @@ def plugin_server_ids(registry_path: Path, harness: str) -> list[str]:
 
 
 def _load_toml(text: str) -> dict:
-    try:
-        import tomllib
-    except ModuleNotFoundError:
-        _use_setup_scripts()
-        from _vendor import tomli as tomllib
+    _use_runtime()
+    from project_state.structured import tomllib
     return tomllib.loads(text)
 
 
-def _use_setup_scripts() -> None:
-    scripts = str(_SOURCE_ROOT / 'skills' / 'setup-project-agents' / 'scripts')
-    if scripts not in sys.path:
-        sys.path.insert(0, scripts)
+def _use_runtime() -> None:
+    runtime = str(_SOURCE_ROOT / 'runtime')
+    if runtime not in sys.path:
+        sys.path.insert(0, runtime)
 
 
 def _codex_server_ids(path: Path) -> set[str]:
@@ -79,8 +76,8 @@ def _remove_from_json(path: Path, ids: list[str]) -> list[str]:
     try:
         document = json.loads(text)
     except json.JSONDecodeError:
-        _use_setup_scripts()
-        from agents_setup.structured import parse_jsonc
+        _use_runtime()
+        from project_state.structured import parse_jsonc
 
         parsed = parse_jsonc(text)
         servers = parsed.get('mcpServers') if isinstance(parsed, dict) else None

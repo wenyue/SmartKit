@@ -34,7 +34,8 @@
             },
             "repository": {
               "type": "string",
-              "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9_.-]*$"
+              "description": "GitHub owner/repo for github.com, or a credential-free HTTPS repository URL for GitHub Enterprise; an optional URL .git suffix is accepted.",
+              "pattern": "^(?:(?!.*\\.git$)[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9_.-]*|(?!.*\\.git\\.git$)https://[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*/[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9_.-]*)$"
             },
             "branch": {
               "type": "string",

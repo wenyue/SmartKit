@@ -6,9 +6,9 @@ import os
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
-from .external_contract import is_link_like
-from .project import confined_target
-from .structured import parse_document
+from project_state.paths import is_link_like
+from project_state.paths import confined_target
+from project_state.structured import parse_document
 
 
 HOST_PATHS = {

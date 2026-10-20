@@ -13,38 +13,30 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, replace
 from pathlib import Path, PurePosixPath
 
-from agents_setup.catalog import (
-    ContractError,
-    load_catalog,
-    parse_external_skills,
-    parse_mcp_servers,
-    parse_project_agents,
-    safe_relative,
-)
+import agents_setup  # Expose the supported maintenance engine.
+from project_state.models import ContractError
+from project_state.catalog import load_catalog, safe_relative
+from project_config.catalog import parse_external_skills, parse_mcp_servers, parse_project_agents
 from agents_setup.agent_discovery import discover_native_agents
-from agents_setup.discovery import DiscoveryError, discover_project_rules, discover_project_skills
+from project_config.discovery import DiscoveryError, discover_project_rules, discover_project_skills
 from agents_setup.generation import generation_requests
 from agents_setup.external import ExternalSkillError, snapshot_external_skills
-from agents_setup.external_contract import (
-    is_link_like as _is_link_like,
-)
-from agents_setup.models import Catalog, ChangeKind, Harness, NativeAgentConfig, Plan, ProjectConfig
-from agents_setup.ownership import (
-    OWNERSHIP_PATH,
-    OwnershipError,
-    load_ownership,
-    verify_ownership,
-)
-from agents_setup.planner import PlanningError, build_plan
-from agents_setup.project import ProjectError, confined_target, inspect_project
+from project_state.paths import is_link_like as _is_link_like
+from project_state.models import Catalog, Harness
+from project_config.models import ChangeKind, NativeAgentConfig, Plan, ProjectConfig
+from project_state.ownership import OWNERSHIP_PATH, OwnershipError
+from project_config.ownership import load_ownership, verify_ownership
+from project_config.planner import PlanningError, build_plan
+from project_state.paths import ProjectError, confined_target
+from project_config.project import inspect_project
 from agents_setup.renderer import RenderError, render_desired_state
-from agents_setup.project_rules import validate_project_rule_index
-from agents_setup.skill_registry import load_skill_registry
+from project_config.project_rules import validate_project_rule_index
+from project_state.skill_registry import load_skill_registry
 from agents_setup.source import InvalidFetchedSource, validate_source
-from agents_setup.transaction import TransactionError, apply_plan
-from agents_setup import project_configuration
-from agents_setup.catalog import parse_maintenance, parse_project_settings
-from agents_setup.migrations import load_migrations
+from project_config.transaction import TransactionError, apply_plan
+from project_config import project_configuration
+from project_config.catalog import parse_maintenance, parse_project_settings
+from project_state.migrations import load_migrations
 from agents_setup.validation import validate_rendered_state
 
 
@@ -760,10 +752,11 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
     )
     sources = [root / asset.source.as_posix() for asset in catalog.assets]
     sources.extend((
+        root / 'runtime/project_state',
         root / 'skills/setup-project-agents',
         root / 'skills/write-rules-and-skills',
         root / 'skills/writing-for-agents',
-        root / 'runtime/project_config',
+        root / 'skills/maintain-project-config',
     ))
     for source in sources:
         if source.is_file():

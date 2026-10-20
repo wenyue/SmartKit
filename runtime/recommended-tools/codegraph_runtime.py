@@ -1,17 +1,14 @@
-"""Prepare CodeGraph and inspect its project-specific runtime without starting it."""
+"""Inspect CodeGraph installation, project index, and existing service without starting it."""
 from __future__ import annotations
 
 import argparse
 import json
 import os
-import queue
 import re
 import shutil
 import socket
 import subprocess
 import sys
-import threading
-import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import BinaryIO
@@ -23,7 +20,7 @@ class Readiness:
     message: str
 
 
-def _run(arguments: list[str], target: Path, timeout: float) -> subprocess.CompletedProcess:
+def run_command(arguments: list[str], target: Path, timeout: float) -> subprocess.CompletedProcess:
     return subprocess.run(
         arguments, cwd=target, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace',
@@ -32,8 +29,8 @@ def _run(arguments: list[str], target: Path, timeout: float) -> subprocess.Compl
     )
 
 
-def _status(target: Path, executable: str) -> dict:
-    result = _run([executable, 'status', str(target), '--json'], target, 15)
+def index_status(target: Path, executable: str) -> dict:
+    result = run_command([executable, 'status', str(target), '--json'], target, 15)
     if result.returncode:
         raise ValueError('index status failed: ' + result.stderr.strip()[-1000:])
     status = json.loads(result.stdout)
@@ -47,7 +44,7 @@ def _status(target: Path, executable: str) -> dict:
     return status
 
 
-def _index_problem(status: dict) -> str:
+def index_problem(status: dict) -> str:
     index = status.get('index')
     if not isinstance(index, dict) or index.get('state') != 'complete':
         return 'index is incomplete; complete CodeGraph indexing'
@@ -80,7 +77,7 @@ def _rpc(reader: BinaryIO, writer: BinaryIO, identity: int, method: str, params:
     raise ValueError('CodeGraph did not answer the health request')
 
 
-def _health(reader: BinaryIO, writer: BinaryIO, target: Path) -> None:
+def verify_health(reader: BinaryIO, writer: BinaryIO, target: Path) -> None:
     _rpc(reader, writer, 1, 'initialize', {
         'protocolVersion': '2024-11-05', 'capabilities': {},
         'clientInfo': {'name': 'smartkit-readiness', 'version': '1'},
@@ -136,7 +133,7 @@ def _verify_daemon(reader: BinaryIO, writer: BinaryIO, target: Path, record: dic
     pid = record.get('pid')
     if type(pid) is not int or pid <= 0 or not isinstance(hello, dict) or hello.get('pid') != pid or hello.get('protocol') != 1:
         raise ValueError('CodeGraph daemon identity does not match its record')
-    _health(reader, writer, target)
+    verify_health(reader, writer, target)
 
 
 def check(target: Path) -> Readiness:
@@ -148,13 +145,13 @@ def check(target: Path) -> Readiness:
     if not (target / '.codegraph/codegraph.db').is_file():
         return Readiness(False, 'CodeGraph index is not initialized in this working tree')
     try:
-        status = _status(target, executable)
-        problem = _index_problem(status)
+        status = index_status(target, executable)
+        problem = index_problem(status)
         if problem:
             return Readiness(False, problem)
         # A separate bounded process prevents an unresponsive Windows named pipe
         # from pinning a Hook thread; it only connects and cannot launch a daemon.
-        result = _run([sys.executable, str(Path(__file__).resolve()), '_probe', '--target', str(target)], target, 6)
+        result = run_command([sys.executable, str(Path(__file__).resolve()), '_probe', '--target', str(target)], target, 6)
         if result.returncode:
             return Readiness(False, 'CodeGraph is stopped or unhealthy: ' + result.stderr.strip()[-1500:])
         return Readiness(True, 'CodeGraph index is complete and its project MCP service responds')
@@ -162,109 +159,16 @@ def check(target: Path) -> Readiness:
         return Readiness(False, 'CodeGraph readiness could not be verified: ' + str(error))
 
 
-def _start_and_verify(target: Path, executable: str) -> None:
-    messages: queue.Queue = queue.Queue()
-    deadline = time.monotonic() + 30
-    with subprocess.Popen(
-        [executable, 'serve', '--mcp', '--path', str(target)], cwd=target,
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
-    ) as process:
-        def collect() -> None:
-            assert process.stdout is not None
-            for _ in range(64):
-                line = process.stdout.readline(1_048_577)
-                messages.put(line)
-                if not line or len(line) > 1_048_576:
-                    break
-
-        threading.Thread(target=collect, daemon=True).start()
-        # Drain bounded diagnostics concurrently so a verbose startup cannot
-        # deadlock before the MCP response. Keep only the tail for failures.
-        diagnostics = bytearray()
-
-        def drain() -> None:
-            assert process.stderr is not None
-            while True:
-                chunk = process.stderr.read(1024)
-                if not chunk:
-                    break
-                diagnostics.extend(chunk)
-                del diagnostics[:-4096]
-
-        threading.Thread(target=drain, daemon=True).start()
-
-        class Replies:
-            def readline(self, limit: int) -> bytes:
-                try:
-                    return messages.get(timeout=max(0, deadline - time.monotonic()))
-                except queue.Empty as error:
-                    raise ValueError('CodeGraph startup timed out: ' + diagnostics.decode('utf-8', errors='replace')) from error
-
-        try:
-            assert process.stdin is not None
-            _health(Replies(), process.stdin, target)
-        finally:
-            if process.stdin:
-                process.stdin.close()
-            try:
-                process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=3)
-
-
-def setup(target: Path, harness: str, *, approved: bool) -> Readiness:
-    """Install when absent, prepare the local index, and verify a real MCP query."""
-    if not approved:
-        raise ValueError('CodeGraph setup requires authorization for installation, indexing and startup')
-    target = target.resolve(strict=True)
-    executable = shutil.which('codegraph')
-    if executable is None:
-        # Capture installer output so the public setup command keeps JSON stdout.
-        result = _run([
-            sys.executable, str(Path(__file__).with_name('maintain_recommended_tools.py')),
-            'apply', '--harness', harness, '--tool', 'codegraph', '--action', 'install', '--approved',
-        ], target, 1200)
-        if result.returncode:
-            raise ValueError('CodeGraph installation did not complete: ' + (result.stderr or result.stdout).strip()[-1500:])
-        executable = shutil.which('codegraph')
-        if executable is None:
-            raise ValueError('CodeGraph was installed but PATH must be refreshed before setup can continue')
-    database = target / '.codegraph/codegraph.db'
-    if not database.is_file():
-        action = 'init'
-    else:
-        status = _status(target, executable)
-        index = status.get('index', {})
-        if not isinstance(index, dict) or index.get('state') != 'complete' or index.get('reindexRecommended') or status.get('worktreeMismatch'):
-            raise ValueError('Existing CodeGraph index needs repair or rebuilding; preserve it and resolve before continuing')
-        action = 'sync' if _index_problem(status) else None
-    if action:
-        result = _run([executable, action, str(target)], target, 1200)
-        if result.returncode:
-            raise ValueError('CodeGraph ' + action + ' failed: ' + result.stderr.strip()[-1500:])
-    readiness = check(target)
-    if not readiness.ready:
-        _start_and_verify(target, executable)
-        readiness = check(target)
-    if not readiness.ready:
-        raise ValueError(readiness.message)
-    return readiness
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=('check', 'setup', '_probe'))
+    parser.add_argument('operation', choices=('check', '_probe'))
     parser.add_argument('--target', type=Path, required=True)
-    parser.add_argument('--harness', choices=('codex', 'cursor', 'copilot', 'qoder'), default='codex')
-    parser.add_argument('--approved', action='store_true')
     args = parser.parse_args()
     try:
         if args.operation == '_probe':
             _probe(args.target)
             return 0
-        result = setup(args.target, args.harness, approved=args.approved) if args.operation == 'setup' else check(args.target)
+        result = check(args.target)
         print(json.dumps(asdict(result)))
         return 0 if result.ready else 1
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:

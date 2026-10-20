@@ -29,12 +29,12 @@ import setup_project_agents  # noqa: E402
 
 CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
 VENDORED_TOMLI_FILES = (
-    'skills/setup-project-agents/scripts/_vendor/__init__.py',
-    'skills/setup-project-agents/scripts/_vendor/tomli/LICENSE',
-    'skills/setup-project-agents/scripts/_vendor/tomli/__init__.py',
-    'skills/setup-project-agents/scripts/_vendor/tomli/_parser.py',
-    'skills/setup-project-agents/scripts/_vendor/tomli/_re.py',
-    'skills/setup-project-agents/scripts/_vendor/tomli/_types.py',
+    'runtime/project_state/_vendor/__init__.py',
+    'runtime/project_state/_vendor/tomli/LICENSE',
+    'runtime/project_state/_vendor/tomli/__init__.py',
+    'runtime/project_state/_vendor/tomli/_parser.py',
+    'runtime/project_state/_vendor/tomli/_re.py',
+    'runtime/project_state/_vendor/tomli/_types.py',
 )
 
 
@@ -63,12 +63,26 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
         vendored_file.parent.mkdir(parents=True, exist_ok=True)
         vendored_file.write_text('test\n', encoding='utf-8')
     for relative in (
+        'runtime/project_state/__init__.py',
+        'runtime/project_state/catalog.py',
+        'runtime/project_state/migrations.py',
+        'runtime/project_state/models.py',
+        'runtime/project_state/ownership.py',
+        'runtime/project_state/paths.py',
+        'runtime/project_state/skill_metadata.py',
+        'runtime/project_state/skill_registry.py',
+        'runtime/project_state/sources.py',
+        'runtime/project_state/structured.py',
         'skills/write-rules-and-skills/SKILL.md',
         'skills/write-rules-and-skills/references/author.md',
         'skills/writing-for-agents/SKILL.md',
-        'runtime/project_config/__init__.py',
-        'runtime/project_config/repository.py',
-        'runtime/project_config/maintenance.md',
+        'skills/maintain-project-config/SKILL.md',
+        'skills/maintain-project-config/scripts/maintain.py',
+        'skills/maintain-project-config/scripts/project_config/__init__.py',
+        'skills/maintain-project-config/scripts/project_config/project_configuration.py',
+        'skills/maintain-project-config/scripts/project_config/project_configuration_cli.py',
+        'skills/maintain-project-config/scripts/project_config/repository.py',
+        'skills/maintain-project-config/references/maintenance.md',
     ):
         dependency = root / relative
         dependency.parent.mkdir(parents=True, exist_ok=True)
@@ -341,13 +355,18 @@ class SetupSourceTest(unittest.TestCase):
             ):
                 validate_source(source)
 
-    def test_validate_source_requires_complete_project_configuration_runtime(self):
+    def test_validate_source_requires_complete_maintenance_resources(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            for index, filename in enumerate(('__init__.py', 'repository.py', 'maintenance.md')):
+            for index, filename in enumerate((
+                'SKILL.md', 'scripts/maintain.py', 'scripts/project_config/__init__.py',
+                'scripts/project_config/project_configuration.py',
+                'scripts/project_config/project_configuration_cli.py',
+                'scripts/project_config/repository.py', 'references/maintenance.md',
+            )):
                 with self.subTest(filename=filename):
                     source = Path(temp_dir) / f'source-{index}'
                     write_valid_source(source)
-                    (source / 'runtime/project_config' / filename).unlink()
+                    (source / 'skills/maintain-project-config' / filename).unlink()
                     with self.assertRaises(InvalidFetchedSource):
                         validate_source(source)
 

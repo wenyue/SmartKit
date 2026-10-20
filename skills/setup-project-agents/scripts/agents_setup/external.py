@@ -9,21 +9,17 @@ import subprocess
 from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 
-from .models import ExternalSourceSpec
-from .ownership import (
-    OwnershipError,
-    load_ownership_file,
-    normalize_external_sources,
-)
-from .external_contract import (
-    ExternalContractError,
+from project_config.models import ExternalSourceSpec
+from project_state.ownership import OwnershipError, load_ownership_file, normalize_external_sources
+from project_state.sources import ExternalContractError
+from project_config.external_contract import (
     discover_license,
     COMMIT,
     isolated_git_environment,
-    is_link_like as _is_link_like,
     resolve_ref,
     snapshot_skill_tree,
 )
+from project_state.paths import is_link_like as _is_link_like
 
 
 class ExternalSkillError(ValueError):

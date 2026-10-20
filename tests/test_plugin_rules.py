@@ -20,17 +20,40 @@ class PluginRuleContractTest(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.state_root = Path(self.temporary.name) / 'state'
 
-    def run_raw_dispatch(self, harness, event, payload, *, root=ROOT, cwd=ROOT):
+    def run_raw_dispatch(self, harness, event, payload, *, root=ROOT, cwd=ROOT, dispatcher=None):
         environment = dict(os.environ)
         environment['PLUGIN_DATA'] = str(self.state_root)
         environment['PLUGIN_ROOT'] = str(root)
         return subprocess.run(
             [
-                sys.executable, str(ROOT / 'runtime/rules/dispatch.py'),
+                sys.executable, str(dispatcher or ROOT / 'runtime/rules/dispatch.py'),
                 '--harness', harness, '--event', event,
             ],
             input=payload, capture_output=True, cwd=cwd, env=environment, check=False,
         )
+
+    def test_missing_restoration_prompt_keeps_generation_pending(self):
+        support = Path(self.temporary.name) / 'rule support'
+        shutil.copytree(ROOT / 'runtime/rules', support)
+        prompt = support / 'prompts/restore-before-tool.md'
+        original = prompt.read_bytes()
+        for harness in ('copilot', 'cursor'):
+            with self.subTest(harness=harness):
+                payload = json.dumps({'session_id': 'missing-prompt'}).encode()
+                dispatcher = support / 'dispatch.py'
+                compact = self.run_raw_dispatch(harness, 'compact', payload, dispatcher=dispatcher)
+                self.assertEqual(compact.returncode, 0, compact.stderr)
+                prompt.unlink()
+                failed = self.run_raw_dispatch(harness, 'tool', payload, dispatcher=dispatcher)
+                self.assertEqual(failed.returncode, 1)
+                self.assertIn(b'restore-before-tool.md', failed.stderr)
+                self.assertFalse(failed.stdout)
+                prompt.write_bytes(original)
+                restored = self.run_raw_dispatch(harness, 'tool', payload, dispatcher=dispatcher)
+                self.assertEqual(restored.returncode, 0, restored.stderr)
+                self.assertIn('retry the same tool call', restored.stdout.decode())
+                repeated = self.run_raw_dispatch(harness, 'tool', payload, dispatcher=dispatcher)
+                self.assertEqual(json.loads(repeated.stdout), {})
 
     def run_dispatch(self, harness, event, payload, **kwargs):
         result = self.run_raw_dispatch(harness, event, json.dumps(payload).encode(), **kwargs)

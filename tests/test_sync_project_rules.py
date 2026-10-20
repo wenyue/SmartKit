@@ -11,11 +11,12 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 SCRIPTS_ROOT = REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import workflow  # noqa: E402
-from agents_setup import project_rules  # noqa: E402
+from project_config import project_rules  # noqa: E402
 
 
 class SyncProjectRulesTest(unittest.TestCase):

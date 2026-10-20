@@ -11,10 +11,12 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'))
 
 MIT_LICENSE = (
-    REPO_ROOT / 'skills/setup-project-agents/scripts/_vendor/tomli/LICENSE'
+    REPO_ROOT / 'runtime/project_state/_vendor/tomli/LICENSE'
 ).read_text(encoding='utf-8')
 APACHE_LICENSE_SAMPLE = '''
 Apache License Version 2.0, January 2004
@@ -30,12 +32,10 @@ END OF TERMS AND CONDITIONS
 
 from agents_setup import external  # noqa: E402
 from agents_setup.external import ExternalSkillError, snapshot_external_skills  # noqa: E402
-from agents_setup.external_contract import (  # noqa: E402
-    ExternalContractError,
-    is_link_like,
-    license_matches,
-)
-from agents_setup.models import (  # noqa: E402
+from project_state.sources import ExternalContractError
+from project_state.paths import is_link_like
+from project_config.external_contract import license_matches
+from project_config.models import (  # noqa: E402
     ExternalSkillSpec,
     ExternalSourceSpec,
 )

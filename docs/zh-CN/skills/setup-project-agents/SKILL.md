@@ -6,11 +6,11 @@ disable-model-invocation: true
 
 # 设置项目 Agents
 
-初始化或升级项目的 Agent 配置，同时保留仍然有用的决定。完整 setup 会评估每份已声明蓝图和每个项目自定义 Agent，即使指纹一致，并为本地目标准备 CodeGraph。有效工件可以逐字节保留。明确请求的 `maintain-project-config` 操作可以将必要升级委托到这里，作为该维护的一部分；适用相同的完整 setup 契约。
+初始化或升级项目的 Agent 配置，同时保留仍然有用的决定。完整 setup 会评估每份已声明蓝图和每个项目自定义 Agent，即使指纹一致，并为本地目标准备 CodeGraph。有效工件可以逐字节保留。本 Skill 必须由用户明确调用。
 
 ## 1. 选择请求的操作
 
-将本目录解析为 `<skill-root>`，将仓库解析为 `<target-root>`。在获取来源或改变项目输入前，选择执行路径：
+将本目录解析为 `<skill-root>`，将相邻的维护入口 `<skill-root>/../maintain-project-config/scripts/maintain.py` 解析为 `<maintain>`，将仓库解析为 `<target-root>`。在获取来源或改变项目输入前，选择执行路径：
 
 | 意图 | 路径 |
 | --- | --- |
@@ -23,19 +23,19 @@ disable-model-invocation: true
 
 ## 2. 确定项目状态及其配置来源
 
-阅读 [完整会话协议](references/session-protocol.md)，了解效果权限、Matt 上下文、来源选择和恢复；阅读 [项目迁移](references/migrations.md)，了解基线和发布版本特定的义务。阅读共享的 [项目配置维护](../../runtime/project_config/maintenance.md) 参考，了解来源绑定、私有仓库访问、应用和发布边界。先运行两项只读检查；其帮助说明报告的检查和退出码：
+阅读 [完整会话协议](references/session-protocol.md)，了解效果权限、Matt 上下文、来源选择和恢复；阅读 [项目迁移](references/migrations.md)，了解基线和发布版本特定的义务。阅读 [项目配置维护](../maintain-project-config/references/maintenance.md)，了解来源绑定、私有仓库访问、应用和发布边界。Setup 使用该 Skill 支持的参考文档、命令接口和配置引擎，不调用这个仅限用户调用的维护 Skill。先运行两项只读检查；其帮助说明报告的检查和退出码：
 
 ```text
 python "<skill-root>/scripts/workflow.py" inspect --help
 python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
-python "<skill-root>/scripts/workflow.py" project-config inspect --target "<target-root>"
+python "<maintain>" inspect --target "<target-root>"
 ```
 
 结合检查结果，以及通过项目文档约定取得的完整项目配置、所有权、既有生成内容和决策记录进行判断。在受影响步骤前解决前置条件错误；setup 检查退出码为 0 时，返回的 `pending_assessment` 仍由 Setup 处理。缺少 Matt 上下文时，遵循协议的重新调用路径。
 
 ### 首次 setup
 
-选择 setup 管理的内容前，识别现有项目指令、个人配置和独立所有者。仅缺少维护声明不能说明这是新项目。询问一次用户希望在项目本地维护，还是使用个人私有 GitHub 配置仓库；按共享参考的说明，通过 `project-config bind` 记录已接受的选择。
+选择 setup 管理的内容前，识别现有项目指令、个人配置和独立所有者。仅缺少维护声明不能说明这是新项目。询问一次用户希望在项目本地维护，还是使用个人私有 GitHub 配置仓库；按共享参考的说明，通过维护命令的 `bind` 路径记录已接受的选择。
 
 采用仓库维护时，确定个人仓库身份、分支和项目条目。连接现有私有仓库；仅在用户指定所有者和名称后，才能创建仓库。不同项目可以使用同一仓库中的不同条目。只导入已识别且已接受的现有个人文件；保留业务项目中已跟踪的内容和独立所有者的配置。在另一台机器上连接现有条目时，首次应用前必须比较其来源和当前目标。
 
@@ -45,7 +45,7 @@ python "<skill-root>/scripts/workflow.py" project-config inspect --target "<targ
 
 确定上次成功的 setup 版本，收集每项适用迁移，不猜测缺失历史。已初始化但没有成功版本的项目保留其所有权记录和内容，由完整 setup 建立基线。如果检查报告 `selection_required`，询问一次维护选择并保存；否则保留已记录的模式、仓库、分支和条目。只有用户请求变更时，才切换模式或条目，且必须先比较并保留旧来源和目标中的工作。
 
-在仓库模式下，编辑持久源检出前先更新它。如果绑定或委托升级的维护操作已经刷新该检出，并产生了已接受的待处理改动，就保留这些证据，基于这些改动继续，不再运行要求干净检出的更新。结合业务项目及其源条目读取相关迁移决策，先在该条目中修正可移植配置。冻结会话前，通过共享路径刷新已应用的目标。只有全部选定迁移和共用的完整 setup 结束流程成功，升级才算完成；来源发布有独立结果。
+在仓库模式下，编辑持久源检出前先更新它。如果绑定或先前维护已经刷新该检出，并产生了已接受的待处理改动，就核验并保留这些证据，基于这些改动继续，不再运行要求干净检出的更新。结合业务项目及其源条目读取相关迁移决策，先在该条目中修正可移植配置。冻结会话前，通过维护命令刷新已应用的目标。只有全部选定迁移和共用的完整 setup 结束流程成功，升级才算完成；来源发布有独立结果。
 
 ### 为完整运行准备已接受的输入
 
@@ -130,16 +130,16 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 
 报告配置维护模式和源条目、SmartKit 来源信息、之前和最终的 setup 版本、迁移、启用宿主、改动及保留路径、自定义 Agent/模型决策和外部来源。包含实际配置检查、CodeGraph 安装/索引/运行时结果、上下文评估、未完成验证和恢复证据。
 
-分别报告本地 setup 和远端发布。单独执行 Setup 会保留源改动，供审查和以后发布；它不授权提交或推送。若本次升级由明确的维护并同步操作委托，将确切源改动和本地结束证据交回该操作，供其按限定范围发布。后续推送失败不会使成功的本地 `setupVersion` 失效，但整体维护仍未完成。
+分别报告本地 setup 和远端发布。单独执行 Setup 会保留源改动，供审查和以后发布；它不授权提交或推送。提供已保存的确切源改动和本地结束证据，供另行授权的维护重新评估当前状态并从已有进展继续。后续推送失败不会使成功的本地 `setupVersion` 失效，但远端同步仍未完成。
 
 ## 本地同步
 
-使用已加载插件根目录。此路径不执行获取、生成、模型评估、蓝图/共享/外部更新或 CodeGraph 准备。“所有权”定义前置条件及保留边界；`clean` 只证明配置收敛。
+使用已加载插件中的 `<maintain>`，同步前阅读其 [项目配置维护](../maintain-project-config/references/maintenance.md) 参考。这些命令使用维护拥有的引擎；setup 工作流中的 `project-config`、`sync-project` 和 `sync-project-rules` 阶段仍是转发至同一所有者的入口。此路径不执行获取、生成、模型评估、蓝图/共享/外部更新或 CodeGraph 准备。“所有权”定义前置条件及保留边界；`clean` 只证明配置收敛。
 
 1. 检查请求的范围：
 
    ```text
-   python "<skill-root>/scripts/workflow.py" sync-project --target "<target-root>" --check
+   python "<maintain>" sync-project --target "<target-root>" --check
    ```
 
    广泛同步需要已有的项目映射所有权，且外部 Skill 声明没有变化。报告完整 setup 依赖，不扩大请求。仅处理 Rule 索引时，使用 `sync-project-rules --check`；完整 setup 之前也可使用。
@@ -147,8 +147,8 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 2. 省略 `--check`，应用获准范围。Rule 索引路径为：
 
    ```text
-   python "<skill-root>/scripts/workflow.py" sync-project-rules --target "<target-root>" --check
-   python "<skill-root>/scripts/workflow.py" sync-project-rules --target "<target-root>"
+   python "<maintain>" sync-project-rules --target "<target-root>" --check
+   python "<maintain>" sync-project-rules --target "<target-root>"
    ```
 
    应用和回滚期间保持独占访问。退出码 0 且 `check: clean` 表示收敛；退出码 1 且 `check: drift` 列出计划改动；退出码 2 表示拒绝或失败。重试前解决报告的原因。

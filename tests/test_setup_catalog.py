@@ -7,15 +7,13 @@ from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'))
 
-from agents_setup.catalog import (  # noqa: E402
-    ContractError,
-    load_catalog,
-    load_project_config,
-    parse_asset,
-    safe_relative,
-)
+from project_state.models import ContractError
+from project_state.catalog import load_catalog, parse_asset, safe_relative
+from project_config.catalog import load_project_config
 
 
 class SetupCatalogTest(unittest.TestCase):
@@ -23,13 +21,21 @@ class SetupCatalogTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'config.json'
             for binding in ({'mode': 'local'}, {'mode': 'repository', 'repository': 'owner/config',
-                                             'branch': 'main', 'entry': 'app'}):
+                                             'branch': 'main', 'entry': 'app'},
+                            {'mode': 'repository', 'repository': 'https://enterprise.example/owner/config.git',
+                             'branch': 'main', 'entry': 'app'}):
                 path.write_text(json.dumps({'maintenance': binding}), encoding='utf-8')
                 config = load_project_config(path, catalog=load_catalog(REPO_ROOT))
                 self.assertEqual(config.maintenance.mode, binding['mode'])
             for binding in ({'mode': 'other'}, {'mode': 'local', 'entry': 'x'},
                             {'mode': 'repository', 'repository': 'owner/config', 'branch': '../x', 'entry': 'a'},
-                            {'mode': 'repository', 'repository': 'https://secret@github.com/a/b', 'branch': 'main', 'entry': 'a'}):
+                            *({'mode': 'repository', 'repository': repo, 'branch': 'main', 'entry': 'a'}
+                              for repo in ('https://secret@github.com/a/b',
+                                           'https://-enterprise.example/a/b',
+                                           'https://enterprise..example/a/b',
+                                           'https://enterprise.example/a/b?token=secret',
+                                           'https://enterprise.example:443/a/b',
+                                           'https://enterprise.example/a/b.git.git'))):
                 path.write_text(json.dumps({'maintenance': binding}), encoding='utf-8')
                 with self.assertRaises(ValueError):
                     load_project_config(path, catalog=load_catalog(REPO_ROOT))
@@ -779,12 +785,12 @@ class SetupCatalogTest(unittest.TestCase):
 
 class SetupMigrationTest(unittest.TestCase):
     def test_migration_guides_must_use_the_declared_version_file(self):
-        from agents_setup.migrations import load_migrations
+        from project_state.migrations import load_migrations
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
             declarations = source / 'setup-assets/catalog/migrations.json'
             declarations.parent.mkdir(parents=True)
-            with mock.patch('agents_setup.migrations.load_catalog', return_value=load_catalog(REPO_ROOT)):
+            with mock.patch('project_state.migrations.load_catalog', return_value=load_catalog(REPO_ROOT)):
                 for guide in (
                     None,
                     'references/migrations.md#project-refresh-and-version-baseline',
@@ -801,7 +807,7 @@ class SetupMigrationTest(unittest.TestCase):
                             load_migrations(source)
 
     def test_missing_or_unreadable_version_guide_stops_migration_loading(self):
-        from agents_setup.migrations import load_migrations
+        from project_state.migrations import load_migrations
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
             declarations = source / 'setup-assets/catalog/migrations.json'
@@ -811,7 +817,7 @@ class SetupMigrationTest(unittest.TestCase):
             ]}), encoding='utf-8')
             guide = source / 'skills/setup-project-agents/references/migrations/1.2.19.md'
             guide.parent.mkdir(parents=True)
-            with mock.patch('agents_setup.migrations.load_catalog', return_value=load_catalog(REPO_ROOT)):
+            with mock.patch('project_state.migrations.load_catalog', return_value=load_catalog(REPO_ROOT)):
                 for content in (None, b'\xff'):
                     with self.subTest(content=content):
                         if content is not None:
@@ -820,7 +826,7 @@ class SetupMigrationTest(unittest.TestCase):
                             load_migrations(source)
 
     def test_release_declarations_select_all_crossed_migrations_not_every_new_version(self):
-        from agents_setup.migrations import applicable_migrations, load_migrations, version_key
+        from project_state.migrations import applicable_migrations, load_migrations, version_key
         migrations = load_migrations(REPO_ROOT)
         self.assertEqual([item.version for item in applicable_migrations(REPO_ROOT, '1.0.0')],
                          [item.version for item in migrations])
@@ -831,7 +837,7 @@ class SetupMigrationTest(unittest.TestCase):
         self.assertEqual(version_key('1.2.19+build'), version_key('1.2.19'))
 
     def test_project_setup_baseline_is_not_inferred_from_plugin_version(self):
-        from agents_setup.migrations import SetupStatus, SetupVersion, project_setup_version
+        from project_state.migrations import SetupStatus, SetupVersion, project_setup_version
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
             self.assertIs(project_setup_version(target, REPO_ROOT), SetupStatus.UNINITIALIZED)
@@ -848,8 +854,8 @@ class SetupMigrationTest(unittest.TestCase):
                 project_setup_version(target, REPO_ROOT)
 
     def test_native_source_is_exclusive_and_shared_prompt_only_required_for_mapped_hosts(self):
-        from agents_setup.catalog import parse_project_agents
-        from agents_setup.models import NativeAgentConfig
+        from project_config.catalog import parse_project_agents
+        from project_config.models import NativeAgentConfig
         item = {'id':'local','description':'Local agent','harnesses':{
             'codex': {'native_source': '.agents/agents/local.codex.toml'}}}
         parsed = parse_project_agents([item])[0]

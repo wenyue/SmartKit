@@ -18,26 +18,24 @@ from pathlib import Path, PurePosixPath
 from typing import Callable, NamedTuple, Optional
 
 
-SETUP_SCRIPTS = Path(__file__).resolve().parents[1] / 'skills/setup-project-agents/scripts'
-if str(SETUP_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SETUP_SCRIPTS))
+MAINTENANCE_SCRIPTS = Path(__file__).resolve().parents[1] / 'skills/maintain-project-config/scripts'
+if str(MAINTENANCE_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(MAINTENANCE_SCRIPTS))
 
-from agents_setup.external_contract import (  # noqa: E402
+from project_config.external_contract import (
     COMMIT,
-    LICENSE_MARKERS,
-    ExternalContractError,
     license_matches,
     resolve_ref,
     snapshot_skill_tree,
     source_path,
+)
+from project_state.sources import (
+    LICENSE_MARKERS,
+    ExternalContractError,
     validate_ref,
     validate_source_identity,
 )
-from agents_setup.skill_registry import (  # noqa: E402
-    CustomSkill,
-    SkillRegistryError,
-    load_skill_registry,
-)
+from project_state.skill_registry import CustomSkill, SkillRegistryError, load_skill_registry
 
 
 LOCK_PATH = PurePosixPath('vendor/external-skills.lock.json')

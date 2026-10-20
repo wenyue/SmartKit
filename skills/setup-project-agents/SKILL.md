@@ -6,11 +6,11 @@ disable-model-invocation: true
 
 # Setup Project Agents
 
-Initialize or upgrade the project's agent configuration while preserving decisions that still serve it. Full setup assesses every declared blueprint and project custom Agent, even when fingerprints match, and prepares CodeGraph for the local target. Valid artifacts may remain byte-for-byte intact. An explicitly requested `maintain-project-config` operation may delegate a required upgrade here as part of that maintenance; apply the same full setup contract.
+Initialize or upgrade the project's agent configuration while preserving decisions that still serve it. Full setup assesses every declared blueprint and project custom Agent, even when fingerprints match, and prepares CodeGraph for the local target. Valid artifacts may remain byte-for-byte intact. This Skill requires the user's explicit invocation.
 
 ## 1. Choose the requested operation
 
-Resolve this directory as `<skill-root>` and the repository as `<target-root>`. Select the route before fetching sources or changing project inputs:
+Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the repository as `<target-root>`. Select the route before fetching sources or changing project inputs:
 
 | Intent | Route |
 | --- | --- |
@@ -23,19 +23,19 @@ Before either route, read [Ownership](references/ownership.md) for canonical inp
 
 ## 2. Establish project state and its configuration source
 
-Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, source selection and recovery, and [Project Migrations](references/migrations.md) for baseline and release-specific obligations. Read the shared [Project Configuration Maintenance](../../runtime/project_config/maintenance.md) reference for source binding, private repository access, application and publication boundaries. Begin with both read-only inspections; their help explains the reported checks and exits:
+Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, source selection and recovery, and [Project Migrations](references/migrations.md) for baseline and release-specific obligations. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for source binding, private repository access, application and publication boundaries. Setup consumes that Skill's supported reference, command interface and configuration engine without invoking the user-only maintenance Skill. Begin with both read-only inspections; their help explains the reported checks and exits:
 
 ```text
 python "<skill-root>/scripts/workflow.py" inspect --help
 python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
-python "<skill-root>/scripts/workflow.py" project-config inspect --target "<target-root>"
+python "<maintain>" inspect --target "<target-root>"
 ```
 
 Use the findings alongside complete project configuration, ownership, existing generated content and decision records reached through the project's documentation conventions. Resolve prerequisite errors before the affected step; exit 0 from setup inspection leaves the returned `pending_assessment` to Setup. Missing Matt context follows the protocol's fresh-invocation route.
 
 ### First setup
 
-Identify existing project instructions, personal configuration and independent owners before choosing what setup will manage. A missing maintenance declaration alone does not identify a new project. Ask once whether the user wants project-local maintenance or a personal private GitHub configuration repository; record the accepted choice through `project-config bind` as described in the shared reference.
+Identify existing project instructions, personal configuration and independent owners before choosing what setup will manage. A missing maintenance declaration alone does not identify a new project. Ask once whether the user wants project-local maintenance or a personal private GitHub configuration repository; record the accepted choice through the maintenance command's `bind` route as described in the shared reference.
 
 For repository maintenance, establish the personal repository identity, branch and project entry. Connect an existing private repository or create one only with the user's specified owner and name. Different projects can use distinct entries in the same repository. Import only identified and accepted existing personal files; preserve tracked business-project content and independently owned configuration. Connecting an existing entry on another machine requires comparing its source with the current target before initial application.
 
@@ -45,7 +45,7 @@ Continue when the maintenance choice is recorded, the selected source is availab
 
 Establish the last successful setup version and collect every applicable migration without guessing missing history. An initialized project without a successful version keeps its ownership record and content while full setup establishes the baseline. If inspection reports `selection_required`, ask for the maintenance choice once and save it; otherwise retain the recorded mode, repository, branch and entry. Switch modes or entries only when the user requests that change, after comparing and preserving the old source and target work.
 
-In repository mode, update the persistent source checkout before editing it. When binding or the delegating maintenance operation already refreshed it and produced accepted pending changes, retain that evidence and continue from those changes instead of running the clean-checkout update again. Read relevant migration decisions against both the business project and its source entry, and make portable configuration corrections in that entry first. Refresh the applied target through the shared route before freezing a session. Upgrade completes only when all selected migrations and the common full setup finish succeed; source publication has its own result.
+In repository mode, update the persistent source checkout before editing it. When binding or earlier maintenance already refreshed it and produced accepted pending changes, verify and retain that evidence and continue from those changes instead of running the clean-checkout update again. Read relevant migration decisions against both the business project and its source entry, and make portable configuration corrections in that entry first. Refresh the applied target through the maintenance command before freezing a session. Upgrade completes only when all selected migrations and the common full setup finish succeed; source publication has its own result.
 
 ### Prepare accepted inputs for the full run
 
@@ -130,16 +130,16 @@ Assess the complete direct project Rule set's always-loaded context cost. Recomm
 
 Report the configuration maintenance mode and source entry, SmartKit source provenance, previous and resulting setup versions, migrations, enabled hosts, changed/preserved paths, custom Agent/model decisions and external provenance. Include actual configuration checks, CodeGraph installation/index/runtime results, context assessment, incomplete verification and recovery evidence.
 
-Report local setup and remote publication separately. Setup alone leaves source changes available for review and later publication; it does not authorize a commit or push. When an explicit maintenance-and-sync operation delegated this upgrade, return the exact source changes and local finish evidence to that operation for its scoped publication. A later push failure does not invalidate a successful local `setupVersion`, but leaves overall maintenance incomplete.
+Report local setup and remote publication separately. Setup alone leaves source changes available for review and later publication; it does not authorize a commit or push. Include exact saved source changes and local finish evidence so any separately authorized maintenance can reassess the current state and continue from that progress. A later push failure does not invalidate a successful local `setupVersion`, but leaves remote synchronization incomplete.
 
 ## Local synchronization
 
-Use the loaded plugin root. This route performs no fetch, generation, model assessment, blueprint/shared/external refresh or CodeGraph preparation. Ownership defines the prerequisites and retained boundaries; `clean` establishes configuration convergence only.
+Use `<maintain>` from the loaded plugin and read its [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) reference before synchronization. These commands use the maintenance-owned engine; setup's `project-config`, `sync-project` and `sync-project-rules` workflow phases remain forwarding entry points to that same owner. This route performs no fetch, generation, model assessment, blueprint/shared/external refresh or CodeGraph preparation. Ownership defines the prerequisites and retained boundaries; `clean` establishes configuration convergence only.
 
 1. Check the requested scope:
 
    ```text
-   python "<skill-root>/scripts/workflow.py" sync-project --target "<target-root>" --check
+   python "<maintain>" sync-project --target "<target-root>" --check
    ```
 
    Broad sync requires established project-mapping ownership and unchanged external Skill declarations. Report a full-setup dependency without widening the request. For the Rule index alone, use `sync-project-rules --check`; it is available before full setup.
@@ -147,8 +147,8 @@ Use the loaded plugin root. This route performs no fetch, generation, model asse
 2. Apply the authorized scope by omitting `--check`. The Rule-index route is:
 
    ```text
-   python "<skill-root>/scripts/workflow.py" sync-project-rules --target "<target-root>" --check
-   python "<skill-root>/scripts/workflow.py" sync-project-rules --target "<target-root>"
+   python "<maintain>" sync-project-rules --target "<target-root>" --check
+   python "<maintain>" sync-project-rules --target "<target-root>"
    ```
 
    Keep exclusive access through apply and rollback. Exit 0 with `check: clean` establishes convergence; exit 1 with `check: drift` lists proposed changes; exit 2 is refusal or failure. Resolve reported causes before retrying.

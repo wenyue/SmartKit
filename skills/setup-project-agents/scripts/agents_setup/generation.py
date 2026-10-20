@@ -5,8 +5,8 @@ import json
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-from .models import Catalog, ContractError
-from .ownership import GeneratedContract, OwnershipState
+from project_state.models import Catalog, ContractError
+from project_state.ownership import GeneratedContract, OwnershipState
 
 
 def current_contracts(source_root: Path, catalog: Catalog) -> tuple[GeneratedContract, ...]:

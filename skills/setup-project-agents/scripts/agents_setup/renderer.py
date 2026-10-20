@@ -5,40 +5,31 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from .external import ExternalSkillError, validated_snapshot_metadata
-from .discovery import (
+from project_config.discovery import (
     DiscoveryError,
     discover_generated_skill_resources,
     discover_project_rules,
     discover_project_skills,
 )
-from .models import (
-    Catalog,
-    DesiredField,
-    DesiredFile,
-    OperatingSystem,
-    ProjectConfig,
-)
-from .project import ProjectError, confined_target
-from .project_rendering import (
+from project_state.models import Catalog
+from project_config.models import DesiredField, DesiredFile, OperatingSystem, ProjectConfig
+from project_state.paths import ProjectError, confined_target
+from project_config.project_rendering import (
     RenderError, _MCP_NATIVE, _safe_leaves, _load_structured, _copy_file,
     _render_project_agents, _remove_dotted_field, _render_project_mcp, _render_project_settings,
 )
-from .project_rules import (
+from project_config.project_rules import (
     ENTRY_PATH,
     ProjectRuleSyncError,
     render_entry_agents,
     render_project_rule_index,
 )
 from .generation import reconcile_contracts
-from .rule_metadata import RuleMetadataError, reject_conditional_rule, validate_rule_skill
-from .ownership import (
-    OWNERSHIP_PATH,
-    OwnershipError,
-    load_ownership,
-    reconcile_ownership,
-    verify_ownership,
-)
-from .structured import (
+from project_state.skill_metadata import RuleMetadataError, validate_rule_skill
+from project_config.rule_metadata import reject_conditional_rule
+from project_state.ownership import OWNERSHIP_PATH, OwnershipError
+from project_config.ownership import load_ownership, reconcile_ownership, verify_ownership
+from project_config.structured import (
     dump_document as _dump_structured,
     format_for_path as _format_for,
 )

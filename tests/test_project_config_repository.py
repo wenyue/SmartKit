@@ -1,6 +1,8 @@
 """Exercise project configuration Git operations with local disposable remotes."""
 
+import hashlib
 import json
+import re
 import os
 import subprocess
 import sys
@@ -11,7 +13,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'runtime'))
+sys.path.insert(0, str(ROOT / 'skills/maintain-project-config/scripts'))
 from project_config import repository
 
 
@@ -20,7 +22,7 @@ class RepositoryValidationTests(unittest.TestCase):
         self.assertEqual(repository.validate_repository('alice/project-config'), 'alice/project-config')
         self.assertEqual(repository.validate_branch('config/main'), 'config/main')
         self.assertEqual(repository.validate_entry('my.app-2'), 'my.app-2')
-        for value in ('https://github.com/alice/config', 'alice/config.git', '-alice/config', 'a/b/c', None):
+        for value in ('alice/config.git', '-alice/config', 'a/b/c', None):
             with self.subTest(repository=value), self.assertRaises(ValueError):
                 repository.validate_repository(value)
         for value in ('--help', 'main\n', 'a..b', '@{-1}', '', None):
@@ -35,6 +37,38 @@ class RepositoryValidationTests(unittest.TestCase):
         if os.name != 'nt':
             with mock.patch.dict(os.environ, {'SMARTKIT_PROJECT_CONFIG_HOME': '', 'XDG_DATA_HOME': 'relative-cache'}):
                 self.assertEqual(repository.state_root(), Path.home() / '.local' / 'share' / 'smartkit' / 'project-config')
+
+    def test_https_repository_identity_preserves_legacy_storage_and_separates_hosts(self):
+        schema = json.loads((ROOT / 'setup-assets/catalog/project-config.schema.json').read_text())
+        pattern = schema['properties']['maintenance']['oneOf'][1]['properties']['repository']['pattern']
+        for value, expected in (
+            ('https://github.com/alice/config.git', 'alice/config'),
+            ('https://enterprise.example/alice/config.git', 'https://enterprise.example/alice/config'),
+            ('https://ENTERPRISE.example/alice/config', 'https://enterprise.example/alice/config'),
+        ):
+            with self.subTest(repository=value):
+                self.assertEqual(repository.validate_repository(value), expected)
+                self.assertEqual(repository.validate_repository(expected), expected)
+                self.assertIsNotNone(re.fullmatch(pattern, value))
+        legacy = hashlib.sha256(b'alice/config\0main').hexdigest()[:32]
+        self.assertEqual(repository._checkout_path('alice/config', 'main').name, legacy)
+        self.assertEqual(repository._checkout_path('https://github.com/alice/config.git', 'main').name, legacy)
+        self.assertNotEqual(repository._checkout_path('https://enterprise.example/alice/config', 'main').name, legacy)
+        for value in ('https://token@enterprise.example/alice/config',
+                      'https://enterprise.example:443/alice/config',
+                      'https://enterprise.example/alice/config?token=secret',
+                      'https://enterprise.example/alice/config#fragment',
+                      'https://enterprise.example/alice/config/extra',
+                      'https://-enterprise.example/alice/config',
+                      'https://enterprise..example/alice/config',
+                      'https://enterprise.example/alice/../config',
+                      'http://enterprise.example/alice/config',
+                      'ssh://git@enterprise.example/alice/config',
+                      'https://enterprise.example/alice/config.git.git', 'alice/config.git'):
+            with self.subTest(repository=value):
+                with self.assertRaises(ValueError):
+                    repository.validate_repository(value)
+                self.assertIsNone(re.fullmatch(pattern, value))
 
 
 class RepositoryGitTests(unittest.TestCase):
@@ -66,11 +100,13 @@ class RepositoryGitTests(unittest.TestCase):
         self.exists = True
         self.created = False
         self.owner = 'alice'
+        self.github_hosts = []
         original_run = subprocess.run
 
         def run(arguments, **kwargs):
             if arguments[0] != 'gh':
                 return original_run(arguments, **kwargs)
+            self.github_hosts.append(kwargs['env']['GH_HOST'])
             if list(arguments[:3]) == ['gh', 'api', 'user']:
                 return subprocess.CompletedProcess(arguments, 0, json.dumps({'login': 'alice'}), '')
             if list(arguments[:2]) == ['gh', 'api']:
@@ -85,7 +121,8 @@ class RepositoryGitTests(unittest.TestCase):
                 self.created = True
                 return subprocess.CompletedProcess(arguments, 0, '', '')
             if list(arguments[:3]) == ['gh', 'repo', 'clone']:
-                return original_run(['git', 'clone', '--no-checkout', 'https://github.com/alice/config.git', arguments[4]], **kwargs)
+                url = 'https://' + kwargs['env']['GH_HOST'] + '/alice/config.git'
+                return original_run(['git', 'clone', '--no-checkout', url, arguments[4]], **kwargs)
             raise AssertionError(arguments)
 
         patcher = mock.patch.object(subprocess, 'run', side_effect=run)
@@ -380,6 +417,59 @@ class RepositoryGitTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {'GH_HOST': 'enterprise.example'}):
             with mock.patch.object(subprocess, 'run', side_effect=check_host):
                 self.connect()
+
+    def test_enterprise_checkout_update_publish_and_host_drift_guards(self):
+        host = 'enterprise.example'
+        url = 'https://' + host + '/alice/config.git'
+        self.git(self.root, 'config', '--global', '--add', 'url.' + self.remote.as_uri() + '.insteadOf', url)
+        public = self.connect()
+        original_run = subprocess.run
+
+        def selected_host(arguments, **kwargs):
+            if arguments[0] == 'gh':
+                self.assertEqual(kwargs['env']['GH_HOST'], host)
+            if arguments[0] == 'git' and any(value in arguments for value in ('fetch', 'push', 'ls-remote')):
+                self.assertIn('credential.https://' + host + '.helper=!gh auth git-credential', arguments)
+            return original_run(arguments, **kwargs)
+
+        with mock.patch.dict(os.environ, {'GH_HOST': 'github.com'}), \
+                mock.patch.object(subprocess, 'run', side_effect=selected_host):
+            path = repository.checkout(url, 'main')
+            self.assertNotEqual(path, public)
+            self.assertEqual(repository.checkout(url, 'main'), path)
+            (path / 'selected.txt').write_text('enterprise change\n')
+            commit = repository.commit_scope(path, 'main', ['selected.txt'], 'enterprise change')
+            self.assertTrue(repository.publish(path, 'main', commit)['published'])
+            self.assertEqual(repository.update(path, 'main')['commit'], commit)
+
+        self.assertEqual(self.git(self.remote, 'rev-parse', 'main'), commit)
+        for origin in (url, 'git@' + host + ':alice/config.git', 'ssh://git@' + host + '/alice/config'):
+            self.git(path, 'remote', 'set-url', 'origin', origin)
+            with mock.patch.object(repository, '_personal_repository', side_effect=AssertionError('must remain offline')):
+                self.assertEqual(repository.open_checkout(url, 'main'), path)
+        self.git(path, 'remote', 'set-url', 'origin', 'https://github.com/alice/config.git')
+        with mock.patch.object(repository, '_fetch', side_effect=AssertionError('must refuse before fetching')):
+            with self.assertRaisesRegex(ValueError, 'origin changed'):
+                repository.update(path, 'main')
+        self.assertEqual(repository.open_checkout('alice/config', 'main'), public)
+
+    def test_enterprise_creation_and_private_owner_checks_use_selected_host(self):
+        url = 'https://enterprise.example/alice/config.git'
+        self.git(self.root, 'config', '--global', '--add', 'url.' + self.remote.as_uri() + '.insteadOf', url)
+        self.exists = False
+        with self.assertRaises(OSError):
+            repository.checkout(url, 'main')
+        self.assertFalse(self.created)
+        repository.checkout(url, 'main', create=True)
+        self.assertTrue(self.created)
+        self.private = False
+        with self.assertRaises(ValueError):
+            repository.checkout(url, 'main')
+        self.private = True
+        self.owner = 'other'
+        with self.assertRaises(ValueError):
+            repository.checkout(url, 'main')
+        self.assertEqual(set(self.github_hosts), {'enterprise.example'})
 
     def test_open_checkout_needs_no_github_access(self):
         path = self.connect()

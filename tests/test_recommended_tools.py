@@ -22,7 +22,7 @@ CHECKER_PATH = (
     / 'check_recommended_tools.py'
 )
 MAINTAINER_PATH = (
-    REPO_ROOT / 'runtime' / 'recommended-tools'
+    REPO_ROOT / 'skills/setup-project-agents/scripts'
     / 'maintain_recommended_tools.py'
 )
 POLICY_ROOT = CHECKER_PATH.parent / 'policies'
@@ -182,6 +182,23 @@ class RecommendedToolCheckerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.checker = load_recommended_tool_checker_module()
+
+    def test_missing_prompt_reports_failure_before_running_or_marking_daily_checks(self):
+        checker = self.checker
+        with tempfile.TemporaryDirectory() as directory:
+            entry = Path(directory) / 'check_recommended_tools.py'
+            with mock.patch.object(checker, '__file__', str(entry)), \
+                    mock.patch.object(checker, 'run_hook') as run, \
+                    mock.patch.object(checker, 'record_readiness_snapshot') as record, \
+                    mock.patch('sys.stdout', new_callable=io.StringIO) as output, \
+                    mock.patch('sys.stderr', new_callable=io.StringIO) as errors:
+                result = checker.main(['hook', '--harness', 'codex',
+                                       '--policy', str(POLICY_ROOT / 'codex.json')])
+            self.assertEqual(result, 0)
+            run.assert_not_called()
+            self.assertTrue(record.call_args.args[0].internal_error)
+            self.assertIn('readiness-consent.md', errors.getvalue())
+            self.assertIn('could not complete', json.loads(output.getvalue())['systemMessage'])
 
     def test_version_comparison_is_strict_and_suffix_tolerant(self):
         cases = (
@@ -1472,7 +1489,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             self.assertIn('Do not show the underlying maintenance commands', message)
             self.assertIn('maintain_recommended_tools.py', message)
             self.assertIn('--tool example --action install --approved', message)
-            self.assertIn('plugin Hook support, not an exposed Skill', message)
+            self.assertIn('This bundled setup helper performs only the approved tool actions.', message)
         self.assertIn(
             'the named tool is a Codex plugin',
             messages[0],

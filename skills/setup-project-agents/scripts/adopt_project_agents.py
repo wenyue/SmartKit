@@ -8,17 +8,24 @@ import json
 import sys
 from pathlib import Path, PurePosixPath
 from dataclasses import replace
-from agents_setup import project_configuration
+import agents_setup  # Expose the supported maintenance engine.
+from project_config import project_configuration
 
-from agents_setup.catalog import load_catalog, load_project_config, parse_project_agents
-from agents_setup.agent_discovery import CODEX_CONFIG, HOST_PATHS as _HOST_PATHS, discover_native_agents
-from agents_setup.external_contract import is_link_like
-from agents_setup.models import DesiredFile
-from agents_setup.ownership import OWNERSHIP_PATH, load_ownership, verify_ownership
-from agents_setup.planner import build_plan
-from agents_setup.project import confined_target
-from agents_setup.structured import parse_document
-from agents_setup.transaction import TransactionError, apply_plan
+from project_state.catalog import load_catalog
+from project_config.catalog import load_project_config, parse_project_agents
+from agents_setup.agent_discovery import (
+    CODEX_CONFIG,
+    HOST_PATHS as _HOST_PATHS,
+    discover_native_agents,
+)
+from project_state.paths import is_link_like
+from project_config.models import DesiredFile
+from project_state.ownership import OWNERSHIP_PATH
+from project_config.ownership import load_ownership, verify_ownership
+from project_config.planner import build_plan
+from project_state.paths import confined_target
+from project_state.structured import parse_document
+from project_config.transaction import TransactionError, apply_plan
 
 
 _CONFIG = PurePosixPath('.agents/config.json')

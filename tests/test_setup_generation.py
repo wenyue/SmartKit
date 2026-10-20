@@ -9,15 +9,18 @@ from dataclasses import replace
 from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills/setup-project-agents/scripts'))
 
-from agents_setup.catalog import load_catalog
+from project_state.catalog import load_catalog
 from agents_setup.generation import generation_requests
-from agents_setup.models import ProjectConfig
-from agents_setup.ownership import OwnershipError, load_ownership
-from agents_setup.planner import build_plan
+from project_config.models import ProjectConfig
+from project_state.ownership import OwnershipError
+from project_config.ownership import load_ownership
+from project_config.planner import build_plan
 from agents_setup.renderer import RenderError, render_desired_state
-from agents_setup.transaction import apply_plan
+from project_config.transaction import apply_plan
 from agents_setup.validation import validate_rendered_state
 
 

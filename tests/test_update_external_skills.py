@@ -15,7 +15,7 @@ from unittest import mock
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / 'scripts' / 'update_external_skills.py'
 MIT_LICENSE = (
-    REPO_ROOT / 'skills/setup-project-agents/scripts/_vendor/tomli/LICENSE'
+    REPO_ROOT / 'runtime/project_state/_vendor/tomli/LICENSE'
 ).read_text(encoding='utf-8')
 
 

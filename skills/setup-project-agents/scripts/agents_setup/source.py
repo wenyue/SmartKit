@@ -22,13 +22,12 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Mapping
 
-from .catalog import ContractError, load_catalog
-from .external_contract import (
-    isolated_git_environment,
-    is_link_like as _is_link_like,
-)
-from .models import AssetSpec, Catalog
-from .rule_metadata import RuleMetadataError, read_policy, validate_rule_skill
+from project_state.models import ContractError
+from project_state.catalog import load_catalog
+from project_config.external_contract import isolated_git_environment
+from project_state.paths import is_link_like as _is_link_like
+from project_state.models import AssetSpec, Catalog
+from project_state.skill_metadata import RuleMetadataError, read_policy, validate_rule_skill
 
 
 CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
@@ -36,8 +35,8 @@ CANONICAL_REF = 'master'
 _COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
 _CONTROL_PLANE_SKILL_ID = 'smartkit/setup-project-agents'
 _CONTROL_PLANE_ENTRYPOINT = PurePosixPath('scripts/setup_project_agents.py')
-_CONTROL_PLANE_VENDORED_FILES = tuple(
-    PurePosixPath('scripts/_vendor') / relative
+_RUNTIME_VENDORED_FILES = tuple(
+    PurePosixPath('runtime/project_state/_vendor') / relative
     for relative in (
         '__init__.py',
         'tomli/LICENSE',
@@ -45,6 +44,13 @@ _CONTROL_PLANE_VENDORED_FILES = tuple(
         'tomli/_parser.py',
         'tomli/_re.py',
         'tomli/_types.py',
+    )
+)
+_PROJECT_STATE_FILES = tuple(
+    PurePosixPath('runtime/project_state') / name
+    for name in (
+        '__init__.py', 'catalog.py', 'migrations.py', 'models.py', 'ownership.py',
+        'paths.py', 'skill_metadata.py', 'skill_registry.py', 'sources.py', 'structured.py',
     )
 )
 _MANIFESTS = (
@@ -69,20 +75,26 @@ _MANIFESTS = (
     ),
 )
 _SOURCE_CONTRACT_FILES = (
+    *_PROJECT_STATE_FILES,
     PurePosixPath('VERSION'),
     PurePosixPath('skills/registry.json'),
     PurePosixPath('setup-assets/catalog/assets.json'),
     PurePosixPath('setup-assets/catalog/harnesses.json'),
     PurePosixPath('setup-assets/catalog/project-config.schema.json'),
-    PurePosixPath('runtime/project_config/__init__.py'),
-    PurePosixPath('runtime/project_config/repository.py'),
-    PurePosixPath('runtime/project_config/maintenance.md'),
+    PurePosixPath('skills/maintain-project-config/SKILL.md'),
+    PurePosixPath('skills/maintain-project-config/scripts/maintain.py'),
+    PurePosixPath('skills/maintain-project-config/scripts/project_config/__init__.py'),
+    PurePosixPath('skills/maintain-project-config/scripts/project_config/project_configuration.py'),
+    PurePosixPath('skills/maintain-project-config/scripts/project_config/project_configuration_cli.py'),
+    PurePosixPath('skills/maintain-project-config/scripts/project_config/repository.py'),
+    PurePosixPath('skills/maintain-project-config/references/maintenance.md'),
 )
 _AUTHORING_DEPENDENCY_TREES = (
+    PurePosixPath('runtime/project_state'),
     PurePosixPath('skills/setup-project-agents'),
     PurePosixPath('skills/write-rules-and-skills'),
     PurePosixPath('skills/writing-for-agents'),
-    PurePosixPath('runtime/project_config'),
+    PurePosixPath('skills/maintain-project-config'),
 )
 _ROOT_FIELDS = frozenset({'skills', 'rules', 'agents'})
 _INCOMPLETE_MARKER = '.agents-setup-incomplete-v1'
@@ -291,8 +303,8 @@ def _validate_source(source_root: Path, *, fd_root: bool) -> Path:
         _validate_source_tree(root, relative)
     control_plane_source = _control_plane_source(catalog)
     _safe_required(root, control_plane_source / _CONTROL_PLANE_ENTRYPOINT)
-    for relative in _CONTROL_PLANE_VENDORED_FILES:
-        _safe_required(root, control_plane_source / relative)
+    for relative in _RUNTIME_VENDORED_FILES:
+        _safe_required(root, relative)
     return root
 
 

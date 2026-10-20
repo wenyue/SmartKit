@@ -1,0 +1,215 @@
+from __future__ import annotations
+
+import stat
+from collections.abc import Sequence
+from pathlib import Path, PurePosixPath
+
+from project_state.catalog import safe_field_key
+from project_state.models import ContractError
+from project_state.paths import is_link_like as _is_link_like, ProjectError, confined_target
+
+from .models import Change, ChangeKind, DesiredField, DesiredFile, ExpectedEntry, Plan
+
+
+class PlanningError(ValueError):
+    """Raised when a desired project state cannot be planned safely."""
+
+
+def _path_key(path: PurePosixPath) -> str:
+    return path.as_posix()
+
+
+def _desired_files(files: Sequence[DesiredFile]) -> dict[PurePosixPath, DesiredFile]:
+    result: dict[PurePosixPath, DesiredFile] = {}
+    for desired in files:
+        if not isinstance(desired.content, bytes):
+            raise PlanningError(
+                f'desired file content must be bytes: {_path_key(desired.path)}'
+            )
+        if desired.path in result:
+            raise PlanningError(f'duplicate desired file path: {_path_key(desired.path)}')
+        result[desired.path] = desired
+    return result
+
+
+def _validate_fields(
+    fields: Sequence[DesiredField], files: dict[PurePosixPath, DesiredFile]
+) -> None:
+    seen: set[tuple[PurePosixPath, str]] = set()
+    for field in fields:
+        try:
+            key = safe_field_key(field.key, 'desired field key')
+        except ContractError as error:
+            raise PlanningError(str(error)) from error
+        identity = (field.path, key)
+        if identity in seen:
+            raise PlanningError(
+                f'duplicate desired field: {_path_key(field.path)}:{field.key}'
+            )
+        if field.path not in files:
+            raise PlanningError(
+                f'desired field requires a rendered desired file: {_path_key(field.path)}'
+            )
+        seen.add(identity)
+
+
+def _read_current(
+    target: Path,
+    path: PurePosixPath,
+) -> tuple[bytes | None, ExpectedEntry | None]:
+    try:
+        current = confined_target(target, path)
+    except ProjectError as error:
+        raise PlanningError(str(error)) from error
+    if not current.exists():
+        return None, None
+    try:
+        before = current.lstat()
+    except OSError as error:
+        raise PlanningError(f'cannot inspect target path: {_path_key(path)}') from error
+    if _is_link_like(current) or not stat.S_ISREG(before.st_mode):
+        raise PlanningError(f'target path is not a regular file: {_path_key(path)}')
+    try:
+        content = current.read_bytes()
+        after = current.lstat()
+    except OSError as error:
+        raise PlanningError(f'cannot read target path: {_path_key(path)}') from error
+    before_identity = (before.st_dev, before.st_ino)
+    after_identity = (after.st_dev, after.st_ino)
+    if (
+        not stat.S_ISREG(after.st_mode)
+        or before_identity != after_identity
+        or stat.S_IMODE(before.st_mode) != stat.S_IMODE(after.st_mode)
+    ):
+        raise PlanningError(f'target changed while planning: {_path_key(path)}')
+    return content, ExpectedEntry(
+        content,
+        stat.S_IMODE(after.st_mode),
+        after_identity,
+    )
+
+
+def _directory_expected(target: Path, path: PurePosixPath) -> ExpectedEntry:
+    try:
+        current = confined_target(target, path)
+        entry = current.lstat()
+    except (OSError, ProjectError) as error:
+        raise PlanningError(f'target changed while planning: {_path_key(path)}') from error
+    if _is_link_like(current) or not stat.S_ISDIR(entry.st_mode):
+        raise PlanningError(f'target path is not a regular directory: {_path_key(path)}')
+    return ExpectedEntry(
+        None,
+        stat.S_IMODE(entry.st_mode),
+        (entry.st_dev, entry.st_ino),
+    )
+
+
+def _files_under(target: Path, root: PurePosixPath) -> set[PurePosixPath]:
+    try:
+        directory = confined_target(target, root)
+    except ProjectError as error:
+        raise PlanningError(str(error)) from error
+    if not directory.exists():
+        return set()
+    if not directory.is_dir():
+        raise PlanningError(f'managed root is not a directory: {_path_key(root)}')
+    result: set[PurePosixPath] = set()
+    for path in directory.rglob('*'):
+        if _is_link_like(path):
+            raise PlanningError(f'managed root contains a symlink: {path}')
+        if path.is_file():
+            result.add(root / path.relative_to(directory).as_posix())
+    return result
+
+
+def _retired_entries(
+    target: Path, root: PurePosixPath
+) -> tuple[set[PurePosixPath], set[PurePosixPath]]:
+    try:
+        current = confined_target(target, root)
+    except ProjectError as error:
+        raise PlanningError(str(error)) from error
+    if _is_link_like(current):
+        raise PlanningError(f'retired path contains a symlink: {_path_key(root)}')
+    if not current.exists():
+        return set(), set()
+    if current.is_file():
+        return {root}, set()
+    if not current.is_dir():
+        raise PlanningError(f'retired path is not a file or directory: {_path_key(root)}')
+
+    files: set[PurePosixPath] = set()
+    directories = {root}
+    for path in current.rglob('*'):
+        relative = root / path.relative_to(current).as_posix()
+        if _is_link_like(path):
+            raise PlanningError(f'retired path contains a symlink: {_path_key(relative)}')
+        if path.is_file():
+            files.add(relative)
+        elif path.is_dir():
+            directories.add(relative)
+        else:
+            raise PlanningError(
+                f'retired path is not a file or directory: {_path_key(relative)}'
+            )
+    return files, directories
+
+
+def build_plan(
+    target_root: Path,
+    desired_files: Sequence[DesiredFile],
+    desired_fields: Sequence[DesiredField] = (),
+    *,
+    delete_paths: Sequence[PurePosixPath] = (),
+    replace_roots: Sequence[PurePosixPath] = (),
+) -> Plan:
+    """Build a deterministic force-convergence plan from current and desired content."""
+    files = _desired_files(desired_files)
+    _validate_fields(desired_fields, files)
+    removals: set[PurePosixPath] = set()
+    directory_removals: set[PurePosixPath] = set()
+    retired_roots = set(delete_paths)
+    for path in delete_paths:
+        retired_files, retired_directories = _retired_entries(target_root, path)
+        removals.update(retired_files)
+        directory_removals.update(retired_directories)
+    for root in replace_roots:
+        removals.update(_files_under(target_root, root) - set(files))
+    overlap = removals.intersection(files)
+    overlap.update(
+        desired
+        for desired in files
+        if any(
+            desired == retired or retired in desired.parents or desired in retired.parents
+            for retired in retired_roots
+        )
+    )
+    if overlap:
+        path = min(overlap, key=_path_key)
+        raise PlanningError(f'desired and deleted path overlap: {_path_key(path)}')
+
+    changes: list[Change] = []
+    for path in sorted(set(files) | removals, key=_path_key):
+        current, expected = _read_current(target_root, path)
+        desired = files.get(path)
+        if desired is None:
+            if current is not None:
+                changes.append(Change(ChangeKind.DELETE, path, None, expected))
+            continue
+        if current is None:
+            changes.append(Change(ChangeKind.CREATE, path, desired.content))
+        elif current == desired.content:
+            changes.append(Change(ChangeKind.UNCHANGED, path, desired.content, expected))
+        else:
+            changes.append(Change(ChangeKind.UPDATE, path, desired.content, expected))
+    for path in sorted(
+        directory_removals,
+        key=lambda item: (-len(item.parts), _path_key(item)),
+    ):
+        changes.append(Change(
+            ChangeKind.DELETE_DIRECTORY,
+            path,
+            None,
+            _directory_expected(target_root, path),
+        ))
+    return Plan(tuple(changes))

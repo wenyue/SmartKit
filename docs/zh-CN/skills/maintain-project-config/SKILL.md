@@ -6,9 +6,9 @@ disable-model-invocation: true
 
 # 维护项目配置
 
-以业务项目证据为依据维护项目的 Agent 配置。编辑其选定来源，验证目标收到的内容，并完成本次操作请求的发布。本 Skill 处理检查、维护和同步，以及明确采纳目标编辑。Setup 负责初始维护选择、绑定和完整升级。
+以业务项目证据为依据维护项目的 Agent 配置。编辑其选定来源，验证目标收到的内容，并完成本次操作请求的发布。本 Skill 负责配置绑定、检查、应用、明确采纳目标编辑、本地同步和来源发布。
 
-将本目录解析为 `<skill-root>`，将其所在插件解析为 `<plugin-root>`，将业务项目解析为 `<target-root>`。使用下列命令前，阅读共享的 [项目配置维护](../../runtime/project_config/maintenance.md) 参考。它提供来源布局、受支持入口、认证、差异保护和发布恢复说明。使用 `<plugin-root>/skills/setup-project-agents/scripts/workflow.py` 作为 `<workflow>`；从已加载插件解析资源，不要从业务项目的工作目录解析。
+将本目录解析为 `<skill-root>`，将其所在插件解析为 `<plugin-root>`，将业务项目解析为 `<target-root>`。使用下列命令前，阅读 [项目配置维护](references/maintenance.md)。它提供来源布局、受支持入口、认证、差异保护和发布恢复说明。使用 `<skill-root>/scripts/maintain.py` 作为 `<maintain>`；从已加载插件解析资源，不要从业务项目的工作目录解析。其他插件工作流可以使用这个参考文档和命令接口，无需调用这个仅限用户调用的 Skill。
 
 ## 1. 确定请求的结果
 
@@ -21,10 +21,10 @@ disable-model-invocation: true
 明确的维护并同步或采纳请求，包含源仓库的限定范围提交和常规推送。这项权限属于本次操作，不扩展到普通项目编辑、其他条目、业务仓库或启动行为。仅请求检查时保持只读。如果请求的配置变更不清楚，先检查，并在编辑前明确该变更。
 
 ```text
-python "<workflow>" project-config inspect --target "<target-root>"
+python "<maintain>" inspect --target "<target-root>"
 ```
 
-从结果中识别维护模式、源条目、当前应用差异和未完成工作。未绑定项目需要由 setup 选择并记录维护来源；报告该前置条件，并引导用户使用 `setup-project-agents`。不要从无关远端推断仓库身份，也不要暗中建立绑定。仅检查的请求在此返回结果。
+从结果中识别维护模式、源条目、当前应用差异和未完成工作。仅检查的请求在此返回结果。对于未绑定项目，报告缺失的维护选择，并在依赖该选择的工作开始前明确用户期望的模式和来源；只有用户明确选择后，才使用参考文档的绑定路径。不要从无关远端推断仓库身份，也不要暗中建立绑定。
 
 ## 2. 在不丢失现有工作的前提下确定可用来源
 
@@ -33,12 +33,12 @@ python "<workflow>" project-config inspect --target "<target-root>"
 在仓库模式下，编辑前更新持久检出：
 
 ```text
-python "<workflow>" project-config update --target "<target-root>"
+python "<maintain>" update --target "<target-root>"
 ```
 
 只有仓库身份、分支状态和所需访问均已验证，才能继续。对于不干净的检出、分叉、未完成操作或访问失败，遵循共享参考的保留和恢复路径。更新失败不能证明工作副本是最新状态。解决原因时保留独有的本地工作。
 
-在本地模式下，业务项目的权威输入仍是编写来源。在那里采用相同的范围、所有权和验证要求；该模式没有配置仓库提交或推送。变更维护模式属于单独的 setup 选择。
+在本地模式下，业务项目的权威输入仍是编写来源。在那里采用相同的范围、所有权和验证要求；该模式没有配置仓库提交或推送。变更维护模式需要用户有意选择来源，并遵守参考文档的绑定保护措施。
 
 ## 3. 编写已接受改动或采纳选定目标编辑
 
@@ -49,36 +49,43 @@ python "<workflow>" project-config update --target "<target-root>"
 对于明确的采纳请求，选择文件或字段前，检查上次应用的内容、当前来源和当前目标之间的差异。如果来源和目标都改动了同一内容，说明重叠并取得预期的解决方案，不能暗中选择一方。使用已接受的选择，例如：
 
 ```text
-python "<workflow>" project-config adopt --target "<target-root>" --file ".agents/rules/example.md" --field settings
+python "<maintain>" adopt --target "<target-root>" --file ".agents/rules/example.md" --field settings
 ```
 
 阅读 `adopt --help` 了解受支持的选择器。将示例替换为实际接受的范围；保留每项未选中的差异。采纳既有文本仍需在发布前完成适用的内容评估和验证。
 
 完整的拟议源改动与请求一致、所有权已确定，且所需的公共 writer 交接已接受后，继续执行。记录确切的仓库相对改动文件供以后发布，包括必要的清单或可移植配置改动。
 
-## 4. 通过现有所有者验证并应用
+## 4. 验证、应用并同步目标
 
 运行来源适用的检查，检查拟议目标差异。在仓库模式下，通过共享路径应用已接受的源配置：
 
 ```text
-python "<workflow>" project-config inspect --target "<target-root>"
-python "<workflow>" project-config apply --target "<target-root>"
+python "<maintain>" inspect --target "<target-root>"
+python "<maintain>" apply --target "<target-root>"
 ```
 
-保留尚未采纳的目标编辑。初始冲突接受仅适用于已接受的、对确切检查状态的首次应用，不能用来忽略后续目标漂移。setup 生成的 `Project rules` 章节、原生适配文件、已交付资产和本地状态仍由各自所有者负责。
+保留尚未采纳的目标编辑。初始冲突接受仅适用于已接受的、对确切检查状态的首次应用，不能用来忽略后续目标漂移。生成章节和原生适配文件受同步命令的所有权检查约束，保留已交付资产和本地状态。
 
-变更需要完整 setup 或迁移时，将升级委托给 [设置项目 Agents](../setup-project-agents/SKILL.md)，作为本次明确请求维护的一部分。读取并执行其完整适用契约，保留绑定并先编辑来源。这是已接受维护操作的必要部分，不是启动时的新调用，也不是重复已确定审批的理由。缺少 Matt 上下文以及重大模型或成本选择，仍遵守 setup 既有的前置条件和决策边界。
+应用仓库来源后，或在本地模式下编辑权威输入后，通过维护命令同步原生输出：
 
-对于适合既有本地同步的改动，使用 setup 支持的本地路径，并遵守任何要求完整 setup 的拒绝。本地维护在编辑权威输入后，也使用相同的目标所有者。配置收敛证明了渲染结果；还须完成实际改动所需的语义或项目检查。
+```text
+python "<maintain>" sync-project --target "<target-root>"
+python "<maintain>" sync-project --target "<target-root>" --check
+```
 
-只有来源验证、目标应用和所有必需检查都成功，才能继续。若需要完整 setup，保留其结束、清理和实际 `setupVersion` 证据。如果源改动保存后应用失败，保留它们，并单独报告目标恢复情况；不能声称发生了跨仓库回滚。
+只有生成的 `Project rules` 章节需要同步时，使用参考文档中范围更窄的 `sync-project-rules` 路径。配置收敛证明了渲染结果；还须完成实际改动所需的语义或项目检查。
+
+如果命令报告需要完整 setup 或迁移，保留已保存的源编辑和目标进度，报告尚未满足的前置条件，维护仍保持未完成。完整 setup 必须由用户明确调用所属 Skill；本工作流既不调用它，也不通过回调委托它。只有前置条件满足，且重新核验了当前源和目标证据后，才能继续依赖该条件的维护。
+
+只有来源验证、目标应用和所有必需检查都成功，才能继续。如果源改动保存后应用失败，保留它们，并单独报告目标恢复情况；不能声称发生了跨仓库回滚。
 
 ## 5. 发布已验证的源范围
 
 在仓库模式下，确认已应用目标与已接受来源一致后，使用共享参考中的发布路径。只提供本次请求改动的确切文件：
 
 ```text
-python "<workflow>" project-config publish --target "<target-root>" --path "projects/<entry>/files/.agents/rules/example.md" --message "Update project configuration"
+python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.agents/rules/example.md" --message "Update project configuration"
 ```
 
 重复 `--path` 以提供完整已接受范围。保留无关暂存区条目和工作区改动。如果选定文件包含尚未获准纳入的既有工作，在发布前明确该范围。提交 hook 可能改变源内容；发布前重新验证并应用此类改动，若命令拒绝，则保留提交和诊断。
@@ -89,4 +96,4 @@ python "<workflow>" project-config publish --target "<target-root>" --path "proj
 
 ## 报告实际结果
 
-报告维护模式和来源、已接受的改动及保留路径、验证与应用结果、任何完整 setup 结果和版本，以及适用时的确切源提交和已验证远端结果。工作未完成时，区分已保存源编辑、保留的本地提交、目标应用、清理或回滚状态，以及远端同步。本地 setup 成功而后续推送失败，意味着取得了有用的本地进展，但仓库维护仍未完成。
+报告维护模式和来源、已接受的改动及保留路径、验证、应用和本地同步结果，以及适用时的确切源提交和已验证远端结果。工作未完成时，区分已保存源编辑、保留的本地提交、目标应用、清理或回滚状态、未满足的前置条件，以及远端同步。目标工作成功而后续推送失败，意味着取得了有用的本地进展，但仓库维护仍未完成。

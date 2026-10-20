@@ -1,0 +1,1 @@
+CodeGraph is not ready for this SmartKit project: {message}. Complete CodeGraph setup for this working tree with the Agent. This reminder does not pause the task or authorize installation, indexing or startup.

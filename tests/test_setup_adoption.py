@@ -9,18 +9,20 @@ from pathlib import Path, PurePosixPath
 from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills/setup-project-agents/scripts'))
 
 import adopt_project_agents as adoption
 from agents_setup import agent_discovery
-from agents_setup.catalog import load_catalog
+from project_state.catalog import load_catalog
 from agents_setup.generation import current_contracts
-from agents_setup.planner import build_plan
-from agents_setup.project import inspect_project
-from agents_setup.project_sync import synchronize_project
+from project_config.planner import build_plan
+from project_config.project import inspect_project
+from project_config.project_sync import synchronize_project
 from agents_setup.renderer import RenderError, render_desired_state
-from agents_setup.models import DesiredFile
-from agents_setup.transaction import apply_plan
+from project_config.models import DesiredFile
+from project_config.transaction import apply_plan
 from agents_setup.validation import validate_rendered_state
 
 
@@ -168,7 +170,7 @@ class AgentAdoptionTest(unittest.TestCase):
         unsafe = self.target / 'unsafe'
         unsafe.mkdir()
         (unsafe / 'local.toml').write_bytes(b'model = "current"\n')
-        with mock.patch('agents_setup.project._is_link_like', side_effect=lambda path: path == unsafe):
+        with mock.patch('project_state.paths.is_link_like', side_effect=lambda path: path == unsafe):
             inspected = adoption.inspect(self.target)
         self.assertEqual(inspected['agents'], [])
         self.assertIn('symlink', inspected['issues'][0])

@@ -9,10 +9,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY_POINTS = (
+    'skills/maintain-project-config/scripts/maintain.py',
+    'runtime/recommended-tools/codegraph_runtime.py',
     'runtime/rules/dispatch.py',
     'runtime/local_web/__main__.py',
     'runtime/recommended-tools/check_recommended_tools.py',
-    'runtime/recommended-tools/maintain_recommended_tools.py',
+    'skills/setup-project-agents/scripts/maintain_recommended_tools.py',
     'skills/write-rules-and-skills/scripts/candidate_evidence.py',
     'skills/diagnose-agent-session/scripts/timing.py',
     'skills/setup-project-agents/scripts/workflow.py',

@@ -14,6 +14,9 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORT = ROOT / 'runtime/recommended-tools'
 sys.path.insert(0, str(SUPPORT))
+SETUP = ROOT / 'skills/setup-project-agents/scripts'
+sys.path.insert(0, str(SETUP))
+import codegraph_setup as setup
 import codegraph_runtime as runtime
 import check_recommended_tools as checker
 
@@ -44,7 +47,7 @@ class CodeGraphRuntimeTest(unittest.TestCase):
     def test_tracked_ignore_directory_does_not_mean_initialized(self):
         (self.data / '.gitignore').write_text('*\n!.gitignore\n')
         with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-             mock.patch.object(runtime, '_run') as run:
+             mock.patch.object(runtime, 'run_command') as run:
             result = runtime.check(self.target)
         self.assertFalse(result.ready)
         self.assertIn('not initialized', result.message)
@@ -59,7 +62,7 @@ class CodeGraphRuntimeTest(unittest.TestCase):
     def test_check_combines_index_and_existing_daemon_response(self):
         self.index()
         with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-             mock.patch.object(runtime, '_run', side_effect=[completed(json.dumps(status(self.target))), completed()]) as run:
+             mock.patch.object(runtime, 'run_command', side_effect=[completed(json.dumps(status(self.target))), completed()]) as run:
             self.assertTrue(runtime.check(self.target).ready)
         self.assertEqual(run.call_count, 2)
         self.assertEqual(run.call_args.args[0][2], '_probe')
@@ -79,7 +82,7 @@ class CodeGraphRuntimeTest(unittest.TestCase):
         for changed in scenarios:
             with self.subTest(changed=changed), \
                  mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-                 mock.patch.object(runtime, '_run', return_value=completed(json.dumps({**status(self.target), **changed}))):
+                 mock.patch.object(runtime, 'run_command', return_value=completed(json.dumps({**status(self.target), **changed}))):
                 self.assertFalse(runtime.check(self.target).ready)
 
     def test_stopped_or_hung_daemon_is_not_ready(self):
@@ -87,7 +90,7 @@ class CodeGraphRuntimeTest(unittest.TestCase):
         for failure in (completed(code=1), subprocess.TimeoutExpired('probe', 6)):
             with self.subTest(failure=failure), \
                  mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-                 mock.patch.object(runtime, '_run', side_effect=[completed(json.dumps(status(self.target))), failure]):
+                 mock.patch.object(runtime, 'run_command', side_effect=[completed(json.dumps(status(self.target))), failure]):
                 self.assertFalse(runtime.check(self.target).ready)
 
     def test_actual_health_response_and_degraded_watcher(self):
@@ -99,31 +102,31 @@ class CodeGraphRuntimeTest(unittest.TestCase):
             ]) + '\n').encode())
             output = io.BytesIO()
             if expected:
-                runtime._health(replies, output, self.target)
+                runtime.verify_health(replies, output, self.target)
                 sent = [json.loads(line) for line in output.getvalue().splitlines()]
                 self.assertEqual(sent[-1]['params']['arguments']['projectPath'], str(self.target))
             else:
                 with self.assertRaisesRegex(ValueError, 'synchronization'):
-                    runtime._health(replies, output, self.target)
+                    runtime.verify_health(replies, output, self.target)
 
     def test_probe_refuses_mismatched_daemon_identity(self):
         with self.assertRaisesRegex(ValueError, 'identity'):
             runtime._verify_daemon(io.BytesIO(b'{"pid": 2, "protocol":1}\n'), io.BytesIO(), self.target, {'pid': 3})
 
     def test_setup_requires_authority_before_any_effect(self):
-        with mock.patch.object(runtime.shutil, 'which') as which:
+        with mock.patch.object(setup.shutil, 'which') as which:
             with self.assertRaisesRegex(ValueError, 'authorization'):
-                runtime.setup(self.target, 'codex', approved=False)
+                setup.setup(self.target, 'codex', approved=False)
         which.assert_not_called()
 
     def test_setup_installs_initializes_starts_and_verifies(self):
-        with mock.patch.object(runtime.shutil, 'which', side_effect=[None, 'codegraph']), \
-             mock.patch.object(runtime, '_run', return_value=completed()) as run, \
-             mock.patch.object(runtime, 'check', side_effect=[runtime.Readiness(False, 'stopped'), runtime.Readiness(True, 'ready')]), \
-             mock.patch.object(runtime, '_start_and_verify') as start:
-            self.assertTrue(runtime.setup(self.target, 'codex', approved=True).ready)
+        with mock.patch.object(setup.shutil, 'which', side_effect=[None, 'codegraph']), \
+             mock.patch.object(setup, 'run_command', return_value=completed()) as run, \
+             mock.patch.object(setup, 'check', side_effect=[setup.Readiness(False, 'stopped'), setup.Readiness(True, 'ready')]), \
+             mock.patch.object(setup, '_start_and_verify') as start:
+            self.assertTrue(setup.setup(self.target, 'codex', approved=True).ready)
         self.assertEqual(run.call_args_list[0].args[0], [
-            sys.executable, str(SUPPORT / 'maintain_recommended_tools.py'),
+            sys.executable, str(SETUP / 'maintain_recommended_tools.py'),
             'apply', '--harness', 'codex', '--tool', 'codegraph', '--action', 'install', '--approved',
         ])
         self.assertEqual(run.call_count, 2)
@@ -132,32 +135,32 @@ class CodeGraphRuntimeTest(unittest.TestCase):
 
     def test_setup_reuses_healthy_index_and_service(self):
         self.index()
-        with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-             mock.patch.object(runtime, '_status', return_value=status(self.target)), \
-             mock.patch.object(runtime, 'check', return_value=runtime.Readiness(True, 'ready')), \
-             mock.patch.object(runtime, '_run') as run, \
-             mock.patch.object(runtime, '_start_and_verify') as start:
-            self.assertTrue(runtime.setup(self.target, 'codex', approved=True).ready)
+        with mock.patch.object(setup.shutil, 'which', return_value='codegraph'), \
+             mock.patch.object(setup, 'index_status', return_value=status(self.target)), \
+             mock.patch.object(setup, 'check', return_value=setup.Readiness(True, 'ready')), \
+             mock.patch.object(setup, 'run_command') as run, \
+             mock.patch.object(setup, '_start_and_verify') as start:
+            self.assertTrue(setup.setup(self.target, 'codex', approved=True).ready)
         run.assert_not_called()
         start.assert_not_called()
         self.assertEqual((self.data / 'codegraph.db').read_bytes(), b'existing index')
 
     def test_setup_reports_installer_refusal_through_its_failure_contract(self):
-        with mock.patch.object(runtime.shutil, 'which', return_value=None), \
-             mock.patch.object(runtime, '_run', return_value=completed(code=1)) as run:
+        with mock.patch.object(setup.shutil, 'which', return_value=None), \
+             mock.patch.object(setup, 'run_command', return_value=completed(code=1)) as run:
             with self.assertRaisesRegex(ValueError, 'installation did not complete: diagnostic'):
-                runtime.setup(self.target, 'codex', approved=True)
+                setup.setup(self.target, 'codex', approved=True)
         run.assert_called_once()
 
     def test_setup_syncs_changes_without_replacing_existing_index(self):
         self.index()
         document = status(self.target)
         document['pendingChanges']['modified'] = 1
-        with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-             mock.patch.object(runtime, '_status', return_value=document), \
-             mock.patch.object(runtime, '_run', return_value=completed()) as run, \
-             mock.patch.object(runtime, 'check', return_value=runtime.Readiness(True, 'ready')):
-            runtime.setup(self.target, 'codex', approved=True)
+        with mock.patch.object(setup.shutil, 'which', return_value='codegraph'), \
+             mock.patch.object(setup, 'index_status', return_value=document), \
+             mock.patch.object(setup, 'run_command', return_value=completed()) as run, \
+             mock.patch.object(setup, 'check', return_value=setup.Readiness(True, 'ready')):
+            setup.setup(self.target, 'codex', approved=True)
         self.assertEqual(run.call_args.args[0][1], 'sync')
 
     def test_setup_preserves_incomplete_existing_index(self):
@@ -165,20 +168,20 @@ class CodeGraphRuntimeTest(unittest.TestCase):
         document = status(self.target)
         for changed in ({'index': {'state': 'partial'}}, {'index': None}, {'worktreeMismatch': {'indexRoot': '/another'}}):
             with self.subTest(changed=changed), \
-                 mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-                 mock.patch.object(runtime, '_status', return_value={**document, **changed}), \
-                 mock.patch.object(runtime, '_run') as run:
+                 mock.patch.object(setup.shutil, 'which', return_value='codegraph'), \
+                 mock.patch.object(setup, 'index_status', return_value={**document, **changed}), \
+                 mock.patch.object(setup, 'run_command') as run:
                 with self.assertRaisesRegex(ValueError, 'preserve'):
-                    runtime.setup(self.target, 'codex', approved=True)
+                    setup.setup(self.target, 'codex', approved=True)
             run.assert_not_called()
         self.assertEqual((self.data / 'codegraph.db').read_bytes(), b'existing index')
 
     def test_setup_reports_initialization_failure_without_starting(self):
-        with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
-             mock.patch.object(runtime, '_run', return_value=completed(code=1)), \
-             mock.patch.object(runtime, '_start_and_verify') as start:
+        with mock.patch.object(setup.shutil, 'which', return_value='codegraph'), \
+             mock.patch.object(setup, 'run_command', return_value=completed(code=1)), \
+             mock.patch.object(setup, '_start_and_verify') as start:
             with self.assertRaisesRegex(ValueError, 'init failed'):
-                runtime.setup(self.target, 'codex', approved=True)
+                setup.setup(self.target, 'codex', approved=True)
         start.assert_not_called()
 
     def test_real_stdio_startup_probe_and_failed_query_cleanup(self):
@@ -202,12 +205,12 @@ class CodeGraphRuntimeTest(unittest.TestCase):
                 processes.append(process)
                 return process
 
-            with mock.patch.object(runtime.subprocess, 'Popen', side_effect=launch):
+            with mock.patch.object(setup.subprocess, 'Popen', side_effect=launch):
                 if is_error:
                     with self.assertRaisesRegex(ValueError, 'health tool failed'):
-                        runtime._start_and_verify(self.target, 'fake-codegraph')
+                        setup._start_and_verify(self.target, 'fake-codegraph')
                 else:
-                    runtime._start_and_verify(self.target, 'fake-codegraph')
+                    setup._start_and_verify(self.target, 'fake-codegraph')
             self.assertTrue(all(process.poll() is not None for process in processes))
 
     def test_public_setup_command_requires_existing_authorization(self):

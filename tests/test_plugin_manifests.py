@@ -162,7 +162,6 @@ class PluginManifestTest(unittest.TestCase):
             'rules',
             'setup-assets/blueprints',
             'skills/setup-project-agents',
-            'runtime/project_config',
         ):
             source_paths.update(
                 path.relative_to(REPO_ROOT)
@@ -180,6 +179,10 @@ class PluginManifestTest(unittest.TestCase):
                 path.relative_to(REPO_ROOT)
                 for path in (REPO_ROOT / 'skills' / name).rglob('*.md')
             )
+        source_paths.update(
+            path.relative_to(REPO_ROOT)
+            for path in (REPO_ROOT / 'runtime').glob('*/prompts/**/*.md')
+        )
 
         translated_paths = {
             path.relative_to(chinese_root)
@@ -211,6 +214,12 @@ class PluginManifestTest(unittest.TestCase):
                 self.assertEqual(fenced_code_blocks(translation), fenced_code_blocks(source))
                 self.assertEqual(inline_code_literals(translation), inline_code_literals(source))
                 self.assertEqual(markdown_link_targets(translation), markdown_link_targets(source))
+
+                if source_path.match('runtime/*/prompts/*.md'):
+                    self.assertEqual(
+                        sorted(re.findall(r'\{[^{}]+\}', translation)),
+                        sorted(re.findall(r'\{[^{}]+\}', source)),
+                    )
 
                 if source.startswith('---\n'):
                     source_frontmatter = source.split('---\n', 2)[1]
@@ -590,7 +599,7 @@ class PluginManifestTest(unittest.TestCase):
         self.assertTrue(
             (
                 REPO_ROOT
-                / 'skills/setup-project-agents/scripts/_vendor/tomli/__init__.py'
+                / 'runtime/project_state/_vendor/tomli/__init__.py'
             ).is_file()
         )
         self.assertTrue((REPO_ROOT / 'agents/registry.json').is_file())

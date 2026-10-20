@@ -9,15 +9,17 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
+sys.path.insert(0, str(ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(ROOT / 'skills/setup-project-agents/scripts'))
-from agents_setup.catalog import load_catalog
+from project_state.catalog import load_catalog
 
 
 class ProjectConfigurationTest(unittest.TestCase):
     def setUp(self):
-        self.assertTrue((ROOT / 'skills/setup-project-agents/scripts/agents_setup/project_configuration.py').is_file(),
+        self.assertTrue((ROOT / 'skills/maintain-project-config/scripts/project_config/project_configuration.py').is_file(),
                         'project configuration projection is not implemented')
-        self.module = importlib.import_module('agents_setup.project_configuration')
+        self.module = importlib.import_module('project_config.project_configuration')
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -85,7 +87,8 @@ class ProjectConfigurationTest(unittest.TestCase):
     def test_retirement_does_not_delete_a_file_now_owned_by_setup(self):
         import hashlib
         from pathlib import PurePosixPath
-        from agents_setup.ownership import OwnedAsset, OwnershipState, serialize_ownership
+        from project_state.ownership import OwnedAsset, OwnershipState
+        from project_config.ownership import serialize_ownership
         self.initialize()
         relative = PurePosixPath('.agents/rules/personal.md')
         content = (self.target / relative).read_bytes()
@@ -263,7 +266,7 @@ class ProjectConfigurationTest(unittest.TestCase):
 
     def test_publish_failure_reports_retained_commit_and_preserves_local_application(self):
         import workflow
-        from agents_setup import project_configuration_cli as cli
+        from project_config import project_configuration_cli as cli
         from contextlib import redirect_stdout, redirect_stderr
         from io import StringIO
         self.initialize()
@@ -271,7 +274,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         runtime = mock.Mock()
         runtime.commit_scope.return_value = commit
         runtime.publish.side_effect = OSError('remote unavailable')
-        with mock.patch.object(cli.configuration, 'repository_runtime', return_value=runtime), \
+        with mock.patch.object(cli, 'repository', runtime), \
                 mock.patch.object(cli, 'synchronize_project', return_value=mock.Mock(check='clean')):
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
                 result = workflow.main(['project-config', 'publish', '--target', str(self.target),
@@ -284,7 +287,7 @@ class ProjectConfigurationTest(unittest.TestCase):
     def test_local_excludes_ignore_inherited_git_routing(self):
         import os
         import subprocess
-        from agents_setup.project_configuration_cli import exclude_local
+        from project_config.project_configuration_cli import exclude_local
         subprocess.run(['git', '-C', str(self.target), 'init'], check=True, capture_output=True)
         unrelated = self.root / 'unrelated'
         unrelated.mkdir()
@@ -295,27 +298,63 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertIn('/.agents/config.json', (self.target / '.git/info/exclude').read_text())
         self.assertEqual((unrelated / '.git/info/exclude').read_bytes(), before)
 
+    def test_subdirectory_excludes_are_scoped_and_reuse_existing_ignores(self):
+        import subprocess
+        from project_config.project_configuration_cli import exclude_local
+        monorepo = self.root / 'monorepo'
+        service = monorepo / 'services/app'
+        sibling = monorepo / 'services/other'
+        service.mkdir(parents=True)
+        sibling.mkdir(parents=True)
+        def git(*arguments):
+            return subprocess.run(['git', '-C', str(monorepo), *arguments], capture_output=True, text=True, check=True)
+        git('init')
+        self.write(service, '.gitignore', '.agents/\n')
+        self.write(service, '.agents/config.json', '{}')
+        exclude = monorepo / '.git/info/exclude'
+        before = exclude.read_bytes()
+        self.assertEqual(exclude_local(service, ['.agents/config.json']), [])
+        self.assertEqual(exclude.read_bytes(), before)
+        self.assertEqual(exclude_local(service, ['AGENTS.md']), [])
+        self.assertIn('/services/app/AGENTS.md', exclude.read_text())
+        git('check-ignore', 'services/app/AGENTS.md')
+        result = subprocess.run(['git', '-C', str(monorepo), 'check-ignore', 'services/other/AGENTS.md'], capture_output=True)
+        self.assertEqual(result.returncode, 1)
+        self.write(service, 'tracked.md', 'business document')
+        git('add', 'services/app/tracked.md')
+        before = exclude.read_bytes()
+        self.assertEqual(exclude_local(service, ['tracked.md']), ['tracked.md'])
+        self.assertEqual(exclude.read_bytes(), before)
+
     def test_public_maintenance_round_trip_with_real_local_git(self):
+        self.maintenance_round_trip('alice/config')
+
+    def test_enterprise_maintenance_round_trip_with_real_local_git(self):
+        self.maintenance_round_trip('https://enterprise.example/alice/config.git')
+
+    def maintenance_round_trip(self, repository):
         from test_project_config_repository import RepositoryGitTests
         from test_setup_cli import SetupCliTest
         from contextlib import redirect_stdout, redirect_stderr
         from io import StringIO
         import setup_project_agents
-        import workflow
+        import maintain
         fixture = RepositoryGitTests()
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         self.resolve.stop()
+        if repository.startswith('https://'):
+            fixture.git(fixture.root, 'config', '--global', '--add', 'url.' + fixture.remote.as_uri() + '.insteadOf', repository)
         fixture.git(self.target, 'init', '--initial-branch=main')
         self.write(self.target, '.agents/config.json', '{}')
         self.write(self.target, '.agents/rules/personal.md', '# Imported\n')
         def command(*arguments):
             out, err = StringIO(), StringIO()
             with redirect_stdout(out), redirect_stderr(err):
-                code = workflow.main(['project-config', *arguments, '--target', str(self.target)])
+                code = maintain.main([*arguments, '--target', str(self.target)])
             self.assertEqual(code, 0, err.getvalue())
             return json.loads(out.getvalue())
-        result = command('bind', '--mode', 'repository', '--repository', 'alice/config', '--branch', 'main',
+        result = command('bind', '--mode', 'repository', '--repository', repository, '--branch', 'main',
                          '--entry', 'app', '--file', '.agents/rules/personal.md')
         entry = Path(result['source'])
         command('apply')

@@ -1335,13 +1335,13 @@ def default_cache_root() -> Path:
 
 
 def check_setup_migrations(project_root: Path) -> list[Finding]:
-    """Reuse setup's declaration reader without running setup or changing project state."""
+    """Read migration declarations without running setup or changing project state."""
     source_root = Path(__file__).resolve().parents[2]
-    scripts = str(source_root / 'skills/setup-project-agents/scripts')
-    if scripts not in sys.path:
-        sys.path.insert(0, scripts)
+    runtime = str(source_root / 'runtime')
+    if runtime not in sys.path:
+        sys.path.insert(0, runtime)
     try:
-        from agents_setup.migrations import SetupStatus, SetupVersion, applicable_migrations, project_setup_version
+        from project_state.migrations import SetupStatus, SetupVersion, applicable_migrations, project_setup_version
         setup = project_setup_version(project_root, source_root)
         if setup is SetupStatus.UNINITIALIZED:
             return []
@@ -1596,10 +1596,10 @@ def _run_daily_hook(
 
 def check_project_codegraph(project_root: Path, harness: str) -> tuple[str, ...]:
     """An initialized SmartKit project needs a fresh runtime observation each session."""
-    scripts = str(Path(__file__).resolve().parents[2] / 'skills/setup-project-agents/scripts')
-    if scripts not in sys.path:
-        sys.path.insert(0, scripts)
-    from agents_setup.migrations import SetupStatus, project_setup_version
+    runtime = str(Path(__file__).resolve().parents[1])
+    if runtime not in sys.path:
+        sys.path.insert(0, runtime)
+    from project_state.migrations import SetupStatus, project_setup_version
 
     try:
         setup = project_setup_version(project_root, Path(__file__).resolve().parents[2])
@@ -1614,11 +1614,7 @@ def check_project_codegraph(project_root: Path, harness: str) -> tuple[str, ...]
         return ('[smartkit] CodeGraph project readiness could not be established: ' + str(error),)
     if readiness.ready:
         return ()
-    return (
-        '[smartkit] CodeGraph is not ready for this SmartKit project: ' + readiness.message
-        + '. Complete CodeGraph setup for this working tree with the Agent. '
-        'This reminder does not pause the task or authorize installation, indexing or startup.',
-    )
+    return ('[smartkit] ' + _prompt('codegraph-not-ready.md', message=readiness.message),)
 
 
 def run_hook(
@@ -1649,6 +1645,14 @@ def render_findings(findings: list[Finding] | tuple[Finding, ...]) -> str:
     )
 
 
+def _prompt(name: str, **values: str) -> str:
+    path = Path(__file__).resolve().parent / 'prompts' / name
+    try:
+        return path.read_text(encoding='utf-8').rstrip('\r\n').format(**values)
+    except (OSError, UnicodeError, KeyError, ValueError) as error:
+        raise PolicyError(f'readiness prompt unavailable or invalid: {path}: {error}') from error
+
+
 def _user_consent_request(findings: str) -> str:
     return (
         f'{findings}\n'
@@ -1664,17 +1668,8 @@ def _agent_consent_request(
     actionable_findings: tuple[Finding, ...],
     harness: str,
 ) -> str:
-    maintenance_runner = Path(__file__).resolve().with_name(
-        'maintain_recommended_tools.py'
-    )
-    plugin_fallback = (
-        ' If the runner reports that manual action is required and the named tool is a '
-        'Codex plugin, use an available Codex plugin-management tool for that plugin. If '
-        'no such tool is available, tell the user to complete the action in the Codex '
-        'Plugins interface.'
-        if harness == 'codex'
-        else ''
-    )
+    maintenance_runner = Path(__file__).resolve().parents[2] / 'skills/setup-project-agents/scripts/maintain_recommended_tools.py'
+    plugin_fallback = ' ' + _prompt('codex-plugin-fallback.md') if harness == 'codex' else ''
     approved_actions = []
     for finding in actionable_findings:
         if finding.target_kind == 'tool':
@@ -1689,32 +1684,12 @@ def _agent_consent_request(
             )
     action_text = '; '.join(approved_actions)
     runner_instruction = (
-        'After a subsequent user message grants consent, invoke the bundled internal '
-        f'maintenance runner at {maintenance_runner}. Treat each semicolon-separated '
-        'entry as a separate action and invoke only the entries the user approved: '
-        f'{action_text}. '
-        if action_text
-        else ''
+        _prompt('approved-actions.md', maintenance_runner=str(maintenance_runner), action_text=action_text) + ' '
+        if action_text else ''
     )
-    return (
-        f'{findings}\n'
-        '[smartkit] All reported readiness findings use the same temporary pause, including '
-        'required project setup or migration. If the user explicitly declines or defers all '
-        'listed readiness actions, do not ask again or run maintenance; continue the original '
-        'task. Keep deferred findings unresolved; bypassing the pause neither repairs them '
-        'nor advances the successful project setup version. Continue an already authorized '
-        'action that addresses these findings without asking for approval again. Otherwise, '
-        'stop the current task now. Tell the user which checks reported problems, their '
-        'consequences and proposed actions. Ask whether they approve those actions or prefer '
-        'to defer them and continue the original task. Execute only approved actions and '
-        'leave explicitly deferred items unresolved. Do '
-        'not show the underlying maintenance commands. Do not mutate tools or '
-        'configuration before the user consents. End this turn after requesting consent '
-        'and wait for the next user message. If the runner reports manual action required, '
-        'relay its guidance, ask the user to complete that action in the current session, '
-        'and wait for confirmation without claiming completion. '
-        f'{runner_instruction}This runner is plugin '
-        f'Hook support, not an exposed Skill.{plugin_fallback}'
+    return findings + '\n[smartkit] ' + _prompt(
+        'readiness-consent.md',
+        runner_instruction=runner_instruction, plugin_fallback=plugin_fallback,
     )
 
 
@@ -1823,23 +1798,30 @@ def main(argv: list[str] | None = None) -> int:
     policy_path = args.policy or default_policy_path(args.harness)
     if args.command == 'hook':
         try:
+            _prompt('readiness-consent.md', runner_instruction='', plugin_fallback='')
+            _prompt('approved-actions.md', maintenance_runner='', action_text='')
+            _prompt('codegraph-not-ready.md', message='')
+            if args.harness == 'codex':
+                _prompt('codex-plugin-fallback.md')
             load_user_shell_path()
             result = run_hook(
                 args.harness,
                 policy_path,
                 force=args.force,
             )
-        except PolicyError:
+        except PolicyError as error:
+            print('[smartkit] ' + str(error), file=sys.stderr)
             result = HookResult(True, internal_error=True)
+        try:
+            output = render_hook_result(result, args.harness, delivery=args.delivery)
+        except PolicyError as error:
+            print('[smartkit] ' + str(error), file=sys.stderr)
+            result = replace(result, internal_error=True)
+            output = render_hook_result(result, args.harness, delivery=args.delivery)
         try:
             record_readiness_snapshot(result, args.harness)
         except (OSError, ValueError) as error:
             print('[smartkit] Readiness snapshot unavailable: ' + str(error), file=sys.stderr)
-        output = render_hook_result(
-            result,
-            args.harness,
-            delivery=args.delivery,
-        )
         if output:
             print(output)
         return 0

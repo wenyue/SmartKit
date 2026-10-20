@@ -15,21 +15,27 @@ from pathlib import Path, PurePosixPath
 
 import bootstrap
 import adopt_project_agents
-from agents_setup import project_configuration, project_configuration_cli
-from agents_setup.external_contract import is_link_like as _is_link_like
-from agents_setup.markdown import live_headings
-from agents_setup.catalog import load_catalog
+import agents_setup  # Expose the supported maintenance engine.
+from project_config import project_configuration, project_configuration_cli
+from project_state.paths import is_link_like as _is_link_like
+from project_config.markdown import live_headings
+from project_state.catalog import load_catalog
 from agents_setup.generation import generation_requests
-from agents_setup.migrations import SetupStatus, SetupVersion, applicable_migrations, project_setup_version
-from agents_setup.models import DesiredFile
-from agents_setup.planner import build_plan
-from agents_setup.project import confined_target, inspect_project
-from agents_setup.discovery import discover_project_rules, discover_project_skills
-from agents_setup.project_rules import validate_project_rule_index
-from agents_setup.transaction import TransactionError, apply_plan
-from agents_setup.project_sync import ProjectSyncError, synchronize_project
-from agents_setup.ownership import OwnershipError, load_ownership, normalize_external_sources, verify_ownership
-from agents_setup.project_rules import ProjectRuleSyncError, synchronize_project_rules
+from project_state.migrations import (
+    SetupStatus,
+    SetupVersion,
+    applicable_migrations,
+    project_setup_version,
+)
+from project_config.models import DesiredFile
+from project_config.planner import build_plan
+from project_state.paths import confined_target
+from project_config.project import inspect_project
+from project_config.discovery import discover_project_rules, discover_project_skills
+from project_config.project_rules import validate_project_rule_index
+from project_config.transaction import TransactionError, apply_plan
+from project_state.ownership import OwnershipError, normalize_external_sources
+from project_config.ownership import load_ownership, verify_ownership
 from agents_setup.source import InvalidFetchedSource, setup_entrypoint
 
 
@@ -72,8 +78,10 @@ def _verify_codegraph(target: Path) -> dict[str, object]:
 
 def _setup_codegraph(args: argparse.Namespace) -> int:
     try:
-        readiness = _codegraph_runtime().setup(args.target, args.harness, approved=args.approved)
-    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        _codegraph_runtime()
+        import codegraph_setup
+        readiness = codegraph_setup.setup(args.target, args.harness, approved=args.approved)
+    except (ImportError, OSError, ValueError, subprocess.TimeoutExpired) as error:
         print(f'ERROR: {error}', file=sys.stderr)
         return 2
     _emit({'phase': 'setup-codegraph', 'ready': readiness.ready, 'message': readiness.message})
@@ -662,40 +670,11 @@ def _cancel(args: argparse.Namespace) -> int:
 
 
 def _sync_project_rules(args: argparse.Namespace) -> int:
-    source = Path(__file__).resolve().parents[3]
-    target = Path(args.target).absolute()
-    try:
-        project_configuration.require_converged(target, load_catalog(source))
-        result = synchronize_project_rules(
-            source,
-            target,
-            check_only=args.check,
-        )
-    except (OSError, ValueError) as error:
-        print(f'ERROR: {error}', file=sys.stderr)
-        return 2
-    _emit({
-        'phase': 'sync-project-rules',
-        'check': result.check,
-        'changed_paths': result.changed_paths,
-    })
-    return 1 if result.check == 'drift' else 0
+    return project_configuration_cli.run_sync(args, 'sync-project-rules')
 
 
 def _sync_project(args: argparse.Namespace) -> int:
-    try:
-        project_configuration.require_converged(Path(args.target).absolute(), load_catalog(Path(__file__).resolve().parents[3]))
-        result = synchronize_project(
-            Path(__file__).resolve().parents[3], Path(args.target).absolute(), check_only=args.check,
-        )
-    except (OSError, ValueError) as error:
-        print(f'ERROR: {error}', file=sys.stderr)
-        return 2
-    _emit({
-        'phase': 'sync-project', 'check': result.check,
-        'changed_paths': result.changed_paths, 'preserved_paths': result.preserved_paths,
-    })
-    return 1 if result.check == 'drift' else 0
+    return project_configuration_cli.run_sync(args, 'sync-project')
 
 
 def build_parser() -> argparse.ArgumentParser:

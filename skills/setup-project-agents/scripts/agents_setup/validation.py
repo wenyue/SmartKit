@@ -4,7 +4,8 @@ import re
 from pathlib import PurePosixPath
 
 from .renderer import RenderError, RenderedState
-from .structured import format_for_path, parse_document
+from project_config.structured import format_for_path
+from project_state.structured import parse_document
 
 
 _REFERENCE = re.compile(r'(?:Apply @|Follow `)(\.agents/[^`\s]+)')

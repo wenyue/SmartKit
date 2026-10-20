@@ -26,16 +26,15 @@ def plugin_root() -> Path:
     return Path(configured).resolve() if configured else Path(__file__).resolve().parents[2]
 
 
+def _prompt(name: str) -> str:
+    return (Path(__file__).resolve().parent / 'prompts' / name).read_text(encoding='utf-8').rstrip('\r\n')
+
+
 def context_for(root: Path) -> str:
     """Deliver registered inline bodies and precise pointers for indexed Rules."""
     rules = load_registry(root)
     blocks = [
-        '## SmartKit Rule files\n\n'
-        'Each `<smartkit-rule-file>` block below represents one independent Rule source file. '
-        'Interpret the enclosed Markdown as the complete contents of the file named by `path`. '
-        'Resolve '
-        'relative file references from that file\'s path. The wrapper is delivery metadata, not '
-        'part of the Rule, and delivery order does not determine Rule precedence.',
+        _prompt('context-introduction.md'),
         '## SmartKit plugin resources\n\n'
         'Resource locations from this loaded installation (availability remains a prerequisite):\n\n'
         '```json\n' + json.dumps({
@@ -63,14 +62,7 @@ def context_for(root: Path) -> str:
         )
     if indexed:
         rows = [
-            '## SmartKit Rule index',
-            '',
-            'The inline Rules are included above. The indexed Rules are plugin-owned. '
-            'Use the descriptions and current task to decide which Rules to read before '
-            'related work. Read a Rule to check its relevance when uncertain, and re-read '
-            'it whenever useful, including after context compaction. Apply the Rule '
-            'precedence defined above. If a required Rule '
-            'cannot be read, report the failure before continuing the dependent work.',
+            _prompt('rule-index-introduction.md'),
             '',
             '| Description | Rule ID | Source |',
             '| --- | --- | --- |',
@@ -150,6 +142,11 @@ def delivery(
             return {}
 
     context = context_for(root)
+    # Load the complete response before acknowledging this restoration.
+    reason = ''
+    if event in {'tool', 'stop'}:
+        name = 'restore-before-tool.md' if event == 'tool' else 'restore-before-answer.md'
+        reason = context + '\n' + _prompt(name)
     if harness in {'copilot', 'cursor'} and restore_required:
         state['restored_generation'] = state['context_generation']
         _store_session_state(state_path, state)
@@ -167,18 +164,9 @@ def delivery(
         original = str(payload.get('transformedPrompt') or payload.get('prompt') or '')
         return {'modifiedTransformedPrompt': f'{context}\n{original}'}
     if event == 'tool':
-        reason = (
-            f'{context}\nSmartKit restored core Rules and the Rule index after context '
-            'compaction. Read the applicable Rules, then retry the same tool call.'
-        )
         if harness == 'cursor':
             return {'permission': 'deny', 'agent_message': reason}
         return {'permissionDecision': 'deny', 'permissionDecisionReason': reason}
-    reason = (
-        f'{context}\nSmartKit restored core Rules and the Rule index after context '
-        'compaction. Read the applicable Rules, review the proposed answer against them, '
-        'revise it if needed, and then finish the turn.'
-    )
     if harness == 'cursor':
         return {'followup_message': reason}
     return {'decision': 'block', 'reason': reason}
