@@ -19,8 +19,8 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from .. import artifacts
 from ..storage import prepare_state, redirected
 from .presentation import icon, page
-from .comparisons import (Comparison, Target, git, github_pr_url, pin_baseline, read_comparison, resolve_targets,
-                          target_from_fields, target_from_query, validate_base)
+from .comparisons import (Comparison, Target, git, github_pr_url, inspect_worktrees, parse_pr, pin_baseline,
+                          read_comparison, resolve_targets, target_from_fields, target_from_query, validate_base)
 
 
 class DiffPage(NamedTuple):
@@ -30,41 +30,65 @@ class DiffPage(NamedTuple):
 
 def render_choices(target: Target, choices: Sequence[Target], *, html_only: bool = False) -> bytes:
     entries = ''.join('<li><a href="' + html.escape(choice.url(html_only=html_only), quote=True)
-                      + '">' + html.escape(str(choice.repo)) + '</a></li>' for choice in choices)
-    github = ('<p><a href="' + html.escape(target.github, quote=True) + '">查看 GitHub PR diff</a></p>') if target.github else ''
+                      + '">' + html.escape(str(choice.repo)) + '</a><p>'
+                      + html.escape(target_description(choice)) + '</p></li>' for choice in choices)
+    github = ('<li><a href="' + html.escape(target.github, quote=True) + '">查看 GitHub PR diff</a></li>') if target.github else ''
     return ('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>选择工作区</title>'
             '<style>body{font:16px system-ui;max-width:900px;margin:40px auto;padding:0 20px;overflow-wrap:anywhere}li{margin:16px 0}</style>'
-            '<h1>' + html.escape(target.path) + '</h1><p>找到多个对应评审提交的工作区，请选择要查看的工作区。各工作区可能有不同的本地编辑。</p><ul>'
-            + entries + '</ul>' + github + '</html>').encode('utf-8')
+            '<h1>' + html.escape(target.path) + '</h1><p>找到多个对应的工作区，请选择要查看的工作区。各工作区可能有不同的本地编辑。</p><ol type="A">'
+            + entries + github + '</ol></html>').encode('utf-8')
 
 
 def render_page(target: Target, *, html_only: bool = False, automatic: bool = True) -> DiffPage:
-    if target.head or target.base.startswith("commit:"):
+    if (target.head and target.view == "auto") or target.base.startswith("commit:"):
         resolution = resolve_targets(target)
         if not resolution.targets:
-            return DiffPage(b"", target.github)
+            return DiffPage(render_unavailable(target, resolution.message))
         if len(resolution.targets) > 1:
             return DiffPage(render_choices(target, resolution.targets, html_only=html_only))
         target = resolution.targets[0]
-    content = render_diff(read_comparison(target)) if html_only else render_open_page(target, automatic=automatic)
+    try:
+        comparison = read_comparison(target)
+        content = render_diff(comparison) if html_only else render_open_page(target, automatic=automatic)
+    except (OSError, ValueError) as error:
+        if not target.github:
+            raise
+        return DiffPage(render_unavailable(target, str(error)))
     return DiffPage(content)
+
+
+def render_unavailable(target: Target, message: str) -> bytes:
+    github = ('<p><a href="' + html.escape(target.github, quote=True) + '">A. 查看 GitHub PR diff</a></p>') if target.github else ''
+    return page("比较不可用", '<h1>无法读取比较</h1><p>' + html.escape(message) + '</p>' + github,
+                label="文件对比", compact=True)
+
+
+def inspect(batch: object) -> Dict[str, object]:
+    """Expose shared discovery to the review preflight without starting the host."""
+    if not isinstance(batch, dict) or set(batch) != {"repo", "pr"} or not isinstance(batch["repo"], str):
+        raise ValueError("diff --inspect input needs exactly repo and pr")
+    repo = Path(batch["repo"])
+    if not repo.is_absolute():
+        raise ValueError("repo must be an absolute worktree root")
+    return inspect_worktrees(repo, parse_pr(batch["pr"]))
 
 
 
 def links(batch: object) -> List[Dict[str, str]]:
     """Validate a complete batch, then ensure one host without persisting link records."""
     if (not isinstance(batch, dict) or not {"repo", "files"} <= set(batch)
-            or set(batch) - {"repo", "base", "pr", "files"}):
-        raise ValueError("diff input needs repo, files, and optional base/pr context")
+            or set(batch) - {"repo", "base", "pr", "files", "view"}):
+        raise ValueError("diff input needs repo, files, and optional base/pr/view context")
     entries = batch["files"]
     if not isinstance(entries, list) or not entries:
         raise ValueError("files must be a nonempty JSON array")
     if "base" in batch:
         validate_base(batch["base"])
-    pr = batch.get("pr")
-    if "pr" in batch and (not isinstance(pr, dict) or set(pr) != {"repository", "number", "head"}):
-        raise ValueError("pr needs exactly repository, number, and the fixed reviewed head")
-    github = github_pr_url(pr["repository"], pr["number"]) if pr is not None else None
+    pr = parse_pr(batch["pr"]) if "pr" in batch else None
+    github = github_pr_url(pr.repository, pr.number) if pr is not None else None
+    view = batch.get("view", "auto")
+    if view not in ("auto", "snapshot", "worktree") or ("view" in batch and pr is None):
+        raise ValueError("batch view is auto, snapshot, or worktree and requires PR context")
     results = []  # type: List[Dict[str, str]]
     identities = set()
     for entry in entries:
@@ -82,7 +106,9 @@ def links(batch: object) -> List[Dict[str, str]]:
         if "base_path" in entry:
             fields["base_path"] = entry["base_path"]
         if pr is not None:
-            fields.update(github=github, head=pr["head"])
+            fields.update(github=github, head=pr.head, view=view)
+            if pr.branch:
+                fields.update(branch=pr.branch, source_repository=pr.source_repository)
         if "github_anchor" in entry:
             anchor = entry["github_anchor"]
             if pr is None or not isinstance(anchor, str) or re.fullmatch(r"diff-[A-Za-z0-9_-]+", anchor) is None:
@@ -117,7 +143,8 @@ def render_diff(comparison: Comparison) -> bytes:
     before = comparison.before.decode("utf-8") if comparison.before is not None else ""
     after = comparison.after.decode("utf-8") if comparison.after is not None else ""
     table = difflib.HtmlDiff(tabsize=4, wrapcolumn=120).make_table(
-        before.splitlines(), after.splitlines(), fromdesc="评审基线", todesc="当前工作区", context=False)
+        before.splitlines(), after.splitlines(), fromdesc="评审基线",
+        todesc="固定 PR head" if comparison.target.view == "snapshot" else "当前工作区", context=False)
     newline_note = ("<p>仅换行符或文件末尾换行发生变化。</p>"
                     if before != after and before.splitlines() == after.splitlines() else "")
     title = html.escape(comparison.target.path)
@@ -128,9 +155,25 @@ def render_diff(comparison: Comparison) -> bytes:
             "td,th{padding:3px 8px;vertical-align:top}.diff_header{background:#e8ebef}"
             ".diff_add{background:#d6f5dd}.diff_sub{background:#ffd9d9}"
             ".diff_chg{background:#fff0b3}.diff_next{background:#eee}a{color:#245ec7}</style>"
-            "<h1>" + title + "</h1><p>固定评审基线 → 当前工作区</p>"
-            "<p>评审基线：" + describe(comparison.before) + "<br>当前工作区：" + describe(comparison.after)
+            "<h1>" + title + "</h1><p>" + html.escape(target_description(comparison.target)) + "</p>"
+            "<p>评审基线：" + describe(comparison.before) + "<br>比较右侧：" + describe(comparison.after)
             + "</p>" + newline_note + "<div style=\"overflow:auto\">" + table + "</div></html>").encode("utf-8")
+
+
+def target_description(target: Target) -> str:
+    baseline = target.base_commit or target.base
+    if target.view == "snapshot":
+        return "固定 PR 快照：" + baseline + " → " + target.head
+    description = "固定评审基线 → 当前本地工作区；基线：" + baseline
+    try:
+        head = git(target.repo, "rev-parse", "--verify", "HEAD^{commit}").decode().strip()
+        dirty = bool(git(target.repo, "status", "--porcelain=v1", "-z", "--untracked-files=normal"))
+        description += "；当前提交：" + head + ("；存在未提交修改" if dirty else "；工作区干净")
+    except (OSError, ValueError) as error:
+        description += "；当前版本状态不可用：" + str(error)
+    if target.head:
+        description += "；评审 PR head：" + target.head
+    return description
 
 
 def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
@@ -146,7 +189,7 @@ def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
             '<p id="status" class="opening-status" role="status" aria-live="polite">' + initial + '</p>'
             '<div class="file-context">' + icon("file") + '<div><p class="file-path">'
             + html.escape(target.path) + '</p><p class="project-name">' + html.escape(target.repo.name)
-            + '</p></div></div><div class="actions"><button id="open" class="button primary" type="button">'
+            + '</p></div></div><p>' + html.escape(target_description(target)) + '</p><div class="actions"><button id="open" class="button primary" type="button">'
             '<span class="spinner" aria-hidden="true" hidden></span><span id="open-label">打开 VS Code</span></button>'
             '<a class="button" href="' + html.escape(target.url(html_only=True), quote=True) + '">'
             + icon("browser") + '在网页中查看</a></div>' + github
@@ -226,38 +269,42 @@ def git_base_uri(comparison: Comparison) -> Optional[str]:
 
 def open_editor(target: Target) -> Dict[str, str]:
     """Dispatch a fixed launcher, or return the contracted GitHub/HTML fallback."""
-    if target.head or target.base.startswith("commit:"):
+    if (target.head and target.view == "auto") or target.base.startswith("commit:"):
         resolution = resolve_targets(target)
         if not resolution.targets:
-            return {"viewer": "web", "url": target.github, "message": resolution.message + "正在打开 GitHub diff。"}
+            return {"viewer": "web", "url": target.url(), "message": resolution.message}
         if len(resolution.targets) > 1:
             return {"viewer": "web", "url": target.url(), "message": "请选择要查看的工作区。"}
         target = resolution.targets[0]
-    fallback = target.github or target.url(html_only=True)
+    fallback = target.url(html_only=True) if target.view == "snapshot" else target.github or target.url(html_only=True)
     try:
         comparison = read_comparison(target)
     except (OSError, ValueError) as error:
         if target.github:
-            return {"viewer": "web", "url": target.github, "message": "本地比较不可用，转到 GitHub：" + str(error)}
+            return {"viewer": "web", "url": target.url(), "message": "本地比较不可用：" + str(error)}
         raise
     launcher = find_vscode()
     if launcher is None:
         return {"viewer": "web", "url": fallback, "message": "未找到 VS Code，正在打开网页 diff。"}
     suffix = Path(target.path).suffix
     try:
-        before_uri = git_base_uri(comparison)
+        before_uri = git_base_uri(comparison) if comparison.worktree_file is not None else None
         payloads = {}  # type: Dict[str, bytes]
+        before_name, after_name = "before" + suffix, "after" + suffix
+        if target.view == "snapshot":
+            before_name = "base-" + (target.base_commit or target.base.split(":", 1)[-1])[:12] + suffix
+            after_name = "head-" + target.head[:12] + suffix
         if before_uri is None:
-            payloads["before" + suffix] = comparison.before or b""
-        if comparison.after is None:
-            payloads["after" + suffix] = b""
+            payloads[before_name] = comparison.before or b""
+        if comparison.worktree_file is None or comparison.after is None:
+            payloads[after_name] = comparison.after or b""
         after = comparison.worktree_file
         if payloads:
             captured = artifacts.create_artifact(payloads)
             if before_uri is None:
-                before = captured.files["before" + suffix].path
-            if comparison.after is None:
-                after = captured.files["after" + suffix].path
+                before = captured.files[before_name].path
+            if comparison.worktree_file is None or comparison.after is None:
+                after = captured.files[after_name].path
         if before_uri is None:
             arguments = [str(before), str(after)]
         else:
