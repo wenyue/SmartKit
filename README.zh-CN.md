@@ -33,7 +33,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `to-questionnaire` | [Matt Pocock](https://github.com/mattpocock/skills) | 将尚不能回答的决策整理成问卷，供其他人补充信息。 |
 | `wayfinder` | [Matt Pocock](https://github.com/mattpocock/skills) | 将跨多个会话的大型工作整理成决策工单地图，逐项明确实施路径。 |
 | `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | 配置或更新仓库中的编程助手；接入 SmartKit 或更新项目 Agent 配置时使用。 |
-| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | 检查、修改个人项目 Agent 配置，并与绑定的私有 GitHub 配置库同步。 |
+| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | 维护项目共享、仅本机保存，或通过独立配置仓库同步的项目 Agent 配置。 |
 | `setup-matt-pocock-skills` | [Matt Pocock](https://github.com/mattpocock/skills) | 配置任务跟踪器、分诊标签和领域文档布局；首次使用 Matt Pocock 工程技能前运行。 |
 
 ### 用户可主动调用的任务 Skill
@@ -103,7 +103,7 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 
 ### `maintain-project-config`
 
-手动调用此 Skill 来检查配置、维护并同步配置，或明确采纳项目中的选定修改到配置源。首次使用时，先通过 `setup-project-agents` 选择本地维护或绑定个人私有 GitHub 仓库；一个配置库可以服务多个项目。配置库维护会核验应用结果，并将本次接受的修改保存到 GitHub。
+手动调用此 Skill 来检查配置、维护并同步配置，或明确采纳项目中的选定修改到配置源。首次使用时，先通过 `setup-project-agents` 选择“项目共享”“仅本机”或“独立配置仓库”。最后一种使用个人私有 GitHub 仓库，一个配置库可以服务多个项目；维护时会核验应用结果，并将本次接受的修改保存到 GitHub。
 
 例子：“用 `maintain-project-config` 更新这个项目的 Rules，并同步本次接受的修改。”
 

@@ -6,7 +6,7 @@ Personal project configuration needs to remain outside business repositories and
 
 For projects using the configuration repository, setup continues inspecting the business project and writes revised source configuration in the configuration repository before applying it to the target. Target `.agents/config.json` holds the binding and target-local setup state; applying portable configuration preserves those fields.
 
-Setup guidance distinguishes first setup from upgrades. First setup asks whether to maintain configuration locally or in the configuration repository. An existing project without a recorded mode is asked once during its first upgrade to this capability; later upgrades retain the recorded choice.
+Setup guidance distinguishes first setup from upgrades. First setup presents three complete choices: Project shared (configuration in the business repository), This machine only (local configuration excluded from business Git), or Separate configuration repository (a personal private GitHub source with target configuration excluded from business Git). Local exclusions use Git's `info/exclude`, preserving shared `.gitignore` rules and already tracked files. An existing project without a recorded mode is asked once during its first upgrade to this capability; later upgrades retain the recorded choice. Existing local bindings retain project-shared behavior.
 
 Maintenance runs on explicit invocation. Invoking maintenance and synchronization includes updating the source working copy, editing source configuration, validating and applying it, committing the scoped changes, and pushing normally. Successful publication is required for complete maintenance; partial local success must be distinguished from remote synchronization.
 

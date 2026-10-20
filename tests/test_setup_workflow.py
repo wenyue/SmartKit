@@ -893,6 +893,30 @@ class SetupVersionCommitTest(unittest.TestCase):
         self.assertEqual(self.config.read_bytes(), self.before)
         self.assertFalse(self.session.exists())
 
+    def test_machine_only_finish_excludes_owned_outputs_without_a_source_repository(self):
+        import hashlib
+        from project_state.ownership import OwnedAsset, OwnershipState
+        from project_config.ownership import serialize_ownership
+        run_git(self.target, 'init')
+        self.config.write_text(json.dumps({'setupVersion': '1.0.0', 'maintenance': {'mode': 'local-only'}}), encoding='utf-8')
+        native = self.target / '.codex/agents/generated.toml'
+        native.parent.mkdir(parents=True)
+        native.write_bytes(b'model = "retained"\n')
+        state = OwnershipState((), (OwnedAsset(
+            'file', 'project-agent', PurePosixPath('.codex/agents/generated.toml'),
+            hashlib.sha256(native.read_bytes()).hexdigest(),
+        ),))
+        (self.target / '.agents/smartkit.lock.json').write_bytes(serialize_ownership(state))
+        with mock.patch.object(workflow.project_configuration, 'entry_root', side_effect=AssertionError('unexpected source repository')):
+            status, output, error = self.run_finish()
+        self.assertEqual(status, 0, error)
+        self.assertEqual(json.loads(output)['tracked_personal_paths'], [])
+        for relative in ('.agents/config.json', '.agents/skills/future/SKILL.md', '.codex/agents/generated.toml'):
+            run_git(self.target, 'check-ignore', '--quiet', relative)
+        self.assertEqual(native.read_bytes(), b'model = "retained"\n')
+        self.assertEqual(json.loads(self.config.read_text())['maintenance'], {'mode': 'local-only'})
+        self.assertFalse((self.target / '.agents/project-config-state.json').exists())
+
     def test_cleanup_failure_preserves_version(self):
         status, _, error = self.run_finish(cleanup=OSError('cleanup fault'))
         self.assertEqual(status, 2)

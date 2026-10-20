@@ -1,6 +1,6 @@
 ---
 name: setup-project-agents
-description: Initialize or upgrade project agent configuration, choose its maintenance source, and prepare supported development tools.
+description: Initialize or upgrade project agent configuration, choose its maintenance mode, and prepare supported development tools.
 disable-model-invocation: true
 ---
 
@@ -14,14 +14,14 @@ Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-
 
 | Intent | Route |
 | --- | --- |
-| First setup | Establish the project and choose its maintenance source in step 2, then complete steps 3 through 8. |
+| First setup | Establish the project and choose its maintenance mode in step 2, then complete steps 3 through 8. |
 | Upgrade, an unqualified setup/update of an existing project, or required project migration | Preserve the existing baseline and maintenance choice in step 2, then complete steps 3 through 8. |
 | Explicitly limited to local Rule/Skill discovery and declared Agent/MCP mappings | Local synchronization below. |
 | Explicitly limited to the `AGENTS.md` Rule index | The Rule-index branch under Local synchronization. |
 
 Before either route, read [Ownership](references/ownership.md) for canonical inputs, discovery, loading meaning and replacement boundaries. Catalog and schema own supported input shapes; scripts own validation and application; Setup owns project decisions, author coordination and whole-set coherence. Resolve material scope choices before dependent effects.
 
-## 2. Establish project state and its configuration source
+## 2. Establish project state and its maintenance mode
 
 Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, source selection and recovery, and [Project Migrations](references/migrations.md) for baseline and release-specific obligations. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for source binding, private repository access, application and publication boundaries. Setup consumes that Skill's supported reference, command interface and configuration engine without invoking the user-only maintenance Skill. Begin with both read-only inspections; their help explains the reported checks and exits:
 
@@ -35,7 +35,15 @@ Use the findings alongside complete project configuration, ownership, existing g
 
 ### First setup
 
-Identify existing project instructions, personal configuration and independent owners before choosing what setup will manage. A missing maintenance declaration alone does not identify a new project. Ask once whether the user wants project-local maintenance or a personal private GitHub configuration repository; record the accepted choice through the maintenance command's `bind` route as described in the shared reference.
+Identify existing project instructions, personal configuration and independent owners before choosing what setup will manage. A missing maintenance declaration alone does not identify a new project. Retain an existing recorded choice. When inspection reports `selection_required`, ask once in the user's language, presenting these three complete choices together:
+
+| Choice | Recorded mode | User-facing result |
+| --- | --- | --- |
+| Project shared | `local` | Keep configuration in the business project for versioning with its repository. |
+| This machine only | `local-only` | Keep configuration in the business project and locally exclude it from business Git; no GitHub source is needed. |
+| Separate configuration repository | `repository` | Maintain configuration in a personal private GitHub repository and locally exclude target configuration from business Git. |
+
+Record the accepted choice through the maintenance command's `bind` route. Follow the shared reference for Git exclusion behavior and already tracked files; mode selection does not itself change existing tracked status.
 
 For repository maintenance, establish the personal repository identity, branch and project entry. Connect an existing private repository or create one only with the user's specified owner and name. Different projects can use distinct entries in the same repository. Import only identified and accepted existing personal files; preserve tracked business-project content and independently owned configuration. Connecting an existing entry on another machine requires comparing its source with the current target before initial application.
 
@@ -43,13 +51,13 @@ Continue when the maintenance choice is recorded, the selected source is availab
 
 ### Upgrade an existing project
 
-Establish the last successful setup version and collect every applicable migration without guessing missing history. An initialized project without a successful version keeps its ownership record and content while full setup establishes the baseline. If inspection reports `selection_required`, ask for the maintenance choice once and save it; otherwise retain the recorded mode, repository, branch and entry. Switch modes or entries only when the user requests that change, after comparing and preserving the old source and target work.
+Establish the last successful setup version and collect every applicable migration without guessing missing history. An initialized project without a successful version keeps its ownership record and content while full setup establishes the baseline. If inspection reports `selection_required`, present the same three complete choices above and record the answer once; otherwise retain the recorded mode, repository, branch and entry. Existing `local` means Project shared, not an unresolved choice. Switch modes or entries only when the user requests that change, after comparing and preserving the old source and target work.
 
 In repository mode, update the persistent source checkout before editing it. When binding or earlier maintenance already refreshed it and produced accepted pending changes, verify and retain that evidence and continue from those changes instead of running the clean-checkout update again. Read relevant migration decisions against both the business project and its source entry, and make portable configuration corrections in that entry first. Refresh the applied target through the maintenance command before freezing a session. Upgrade completes only when all selected migrations and the common full setup finish succeed; source publication has its own result.
 
 ### Prepare accepted inputs for the full run
 
-Reconcile configuration under the schema identified in Ownership, preserving unrelated work. In local mode, edit the project's canonical inputs. In repository mode, use the source paths reported by inspection, with business-project evidence, and apply accepted source changes before `start`. Keep binding and local state with their target owners. The shared reference explains how initial collision acceptance differs from adopting a later target edit.
+Reconcile configuration under the schema identified in Ownership, preserving unrelated work. In either local mode, edit the project's canonical inputs. In repository mode, use the source paths reported by inspection, with business-project evidence, and apply accepted source changes before `start`. Keep binding and local state with their target owners. The shared reference explains how initial collision acceptance differs from adopting a later target edit.
 
 Preflight migrations come from the loaded plugin source; step 4 confirms the SmartKit source selected for the session. Continue when project state, source choice, input decisions, migration requirements and prerequisite gaps are accounted for.
 
@@ -69,7 +77,7 @@ Assess model and reasoning settings on every full run using current official pro
 
 Use Ownership's `native_source` route when retaining a complete native document. An inventory item marked `requires_relocation` needs an explicit source-preserving relocation before adoption: resolve the active host reference and keep relative prompt/config references meaningful at the installed location. Copying a file alone does not redirect the host.
 
-For first adoption, prepare complete final native content and a manifest from the inventory's captured hashes. Explain model changes and preservation of other behavior, then use the guarded import in either maintenance mode:
+For first adoption, prepare complete final native content and a manifest from the inventory's captured hashes. Explain model changes and preservation of other behavior, then use the guarded import in any maintenance mode:
 
 ```text
 python "<skill-root>/scripts/adopt_project_agents.py" apply --help
@@ -128,7 +136,7 @@ Before the first `finish` attempt, confirm CodeGraph readiness and follow the pr
 
 Assess the complete direct project Rule set's always-loaded context cost. Recommend native `rule-<domain>` Skills only for substantial policy conditional on identifiable cases; size alone does not justify moving unconditional policy.
 
-Report the configuration maintenance mode and source entry, SmartKit source provenance, previous and resulting setup versions, migrations, enabled hosts, changed/preserved paths, custom Agent/model decisions and external provenance. Include actual configuration checks, CodeGraph installation/index/runtime results, context assessment, incomplete verification and recovery evidence.
+Report the configuration maintenance mode and repository source entry when applicable, SmartKit source provenance, previous and resulting setup versions, migrations, enabled hosts, changed/preserved paths, custom Agent/model decisions and external provenance. Include actual configuration checks, Git exclusion results and already tracked paths, CodeGraph installation/index/runtime results, context assessment, incomplete verification and recovery evidence.
 
 Report local setup and remote publication separately. Setup alone leaves source changes available for review and later publication; it does not authorize a commit or push. Include exact saved source changes and local finish evidence so any separately authorized maintenance can reassess the current state and continue from that progress. A later push failure does not invalidate a successful local `setupVersion`, but leaves remote synchronization incomplete.
 

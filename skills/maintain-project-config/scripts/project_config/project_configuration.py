@@ -227,7 +227,7 @@ def _observe(target: Path, catalog: Catalog) -> tuple[Path, dict, dict, dict, di
 def inspect(target: Path, catalog: Catalog) -> dict:
     """Read source/target drift without Git access, fetching, or target writes."""
     selected = binding(target)
-    if selected is None or selected.mode == 'local':
+    if selected is None or selected.mode != 'repository':
         return {'mode': selected.mode if selected else 'unselected', 'selection_required': selected is None}
     return {'mode': 'repository', **_observe(target, catalog)[4]}
 

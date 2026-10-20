@@ -580,15 +580,7 @@ def _finish(args: argparse.Namespace) -> int:
         finish_result = _run_pinned(
             'finish', session=session, target=target, source=source, commit=commit
         )
-        personal_tracked = []
-        selected = project_configuration.binding(target)
-        if selected is not None and selected.mode == 'repository':
-            owned = load_ownership(target)
-            source_files, _ = project_configuration.read_entry(project_configuration.entry_root(target), load_catalog(source))
-            personal_paths = {str(asset.path) for asset in owned.assets} if owned else set()
-            personal_paths.update(source_files)
-            personal_paths.update((str(project_configuration.CONFIG), str(project_configuration.STATE), '.agents/smartkit.lock.json', 'AGENTS.md'))
-            personal_tracked = project_configuration_cli.exclude_local(target, sorted(personal_paths))
+        personal_tracked = project_configuration_cli.sync_git_exclusions(target, load_catalog(source))
         config_relative = PurePosixPath('.agents/config.json')
         config_path = confined_target(target, config_relative)
         config_content = config_path.read_bytes()

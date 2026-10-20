@@ -487,10 +487,10 @@ def parse_maintenance(value: object) -> MaintenanceConfig | None:
         return None
     if not isinstance(value, dict):
         raise ContractError('maintenance must be an object')
-    if value == {'mode': 'local'}:
-        return MaintenanceConfig('local')
+    if value in ({'mode': 'local'}, {'mode': 'local-only'}):
+        return MaintenanceConfig(value['mode'])
     if set(value) != {'mode', 'repository', 'branch', 'entry'} or value.get('mode') != 'repository':
-        raise ContractError('maintenance requires local mode or a complete repository binding')
+        raise ContractError('maintenance requires local, local-only, or a complete repository binding')
     repository, branch, entry = value['repository'], value['branch'], value['entry']
     repository_pattern = (r'(?:https://[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?'
                           r'(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*/)?'

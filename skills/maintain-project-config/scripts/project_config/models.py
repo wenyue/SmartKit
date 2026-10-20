@@ -100,7 +100,7 @@ class ProjectAgentSpec:
 
 @dataclass(frozen=True)
 class MaintenanceConfig:
-    mode: Literal['local', 'repository']
+    mode: Literal['local', 'local-only', 'repository']
     repository: str | None = None
     branch: str | None = None
     entry: str | None = None

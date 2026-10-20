@@ -1,6 +1,6 @@
 interface:
   display_name: "Maintain Project Config"
-  short_description: "维护项目 Agent 配置，并将已验证的配置同步到个人配置库。"
+  short_description: "维护项目 Agent 配置，支持项目共享、仅本机保存或独立配置仓库同步。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
   brand_color: "#15803D"

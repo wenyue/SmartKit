@@ -20,14 +20,14 @@ class SetupCatalogTest(unittest.TestCase):
     def test_maintenance_binding_is_optional_and_validated(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'config.json'
-            for binding in ({'mode': 'local'}, {'mode': 'repository', 'repository': 'owner/config',
+            for binding in ({'mode': 'local'}, {'mode': 'local-only'}, {'mode': 'repository', 'repository': 'owner/config',
                                              'branch': 'main', 'entry': 'app'},
                             {'mode': 'repository', 'repository': 'https://enterprise.example/owner/config.git',
                              'branch': 'main', 'entry': 'app'}):
                 path.write_text(json.dumps({'maintenance': binding}), encoding='utf-8')
                 config = load_project_config(path, catalog=load_catalog(REPO_ROOT))
                 self.assertEqual(config.maintenance.mode, binding['mode'])
-            for binding in ({'mode': 'other'}, {'mode': 'local', 'entry': 'x'},
+            for binding in ({'mode': 'other'}, {'mode': 'local', 'entry': 'x'}, {'mode': 'local-only', 'repository': 'owner/config'},
                             {'mode': 'repository', 'repository': 'owner/config', 'branch': '../x', 'entry': 'a'},
                             *({'mode': 'repository', 'repository': repo, 'branch': 'main', 'entry': 'a'}
                               for repo in ('https://secret@github.com/a/b',

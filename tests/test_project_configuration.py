@@ -264,6 +264,37 @@ class ProjectConfigurationTest(unittest.TestCase):
         config = json.loads((self.target / '.agents/config.json').read_text())
         self.assertEqual(config, {'setupVersion': '1.2.21', 'mcp': [], 'maintenance': {'mode': 'local'}})
 
+    def test_repository_switch_refuses_unadopted_target_edits_and_keeps_receipt(self):
+        import maintain
+        from contextlib import redirect_stdout, redirect_stderr
+        from io import StringIO
+        self.initialize()
+        self.write(self.target, '.agents/rules/personal.md', '# Pending target edit\n')
+        before = {str(path.relative_to(self.target)): path.read_bytes()
+                  for path in self.target.rglob('*') if path.is_file()}
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
+            status = maintain.main(['bind', '--target', str(self.target), '--mode', 'local-only', '--replace-binding'])
+        self.assertEqual(status, 2)
+        self.assertIn('differs from its source', errors.getvalue())
+        self.assertEqual(before, {str(path.relative_to(self.target)): path.read_bytes()
+                                 for path in self.target.rglob('*') if path.is_file()})
+
+    def test_repository_switch_to_machine_only_retires_receipt_and_keeps_both_sources(self):
+        import maintain
+        from contextlib import redirect_stdout, redirect_stderr
+        from io import StringIO
+        self.initialize()
+        source = {str(path.relative_to(self.entry)): path.read_bytes()
+                  for path in self.entry.rglob('*') if path.is_file()}
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
+            status = maintain.main(['bind', '--target', str(self.target), '--mode', 'local-only', '--replace-binding'])
+        self.assertEqual(status, 0, errors.getvalue())
+        self.assertFalse((self.target / '.agents/project-config-state.json').exists())
+        self.assertEqual(self.module.inspect(self.target, self.catalog)['mode'], 'local-only')
+        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
+        self.assertEqual(source, {str(path.relative_to(self.entry)): path.read_bytes()
+                                  for path in self.entry.rglob('*') if path.is_file()})
+
     def test_publish_failure_reports_retained_commit_and_preserves_local_application(self):
         import workflow
         from project_config import project_configuration_cli as cli
@@ -376,6 +407,141 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertEqual(command('inspect')['changes'], [])
         self.assertEqual(fixture.git(self.target, 'check-ignore', '.agents/rules/personal.md'), '.agents/rules/personal.md')
         command('update')
+
+
+class MaintenanceModeTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.target = self.root / 'services/app'
+        self.target.mkdir(parents=True)
+        self.git('init')
+        self.exclude = self.root / '.git/info/exclude'
+        self.write('.agents/config.json', '{}')
+        self.write('.agents/rules/example.md', '# Project rule\n')
+        self.write('AGENTS.md', '# Project\n')
+        self.write('.gitignore', 'keep-local.txt\n')
+
+    def git(self, *arguments, check=True):
+        import subprocess
+        return subprocess.run(['git', '-C', str(self.root), *arguments],
+                              capture_output=True, text=True, check=check)
+
+    def write(self, relative, content):
+        path = self.target / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding='utf-8')
+
+    def command(self, *arguments):
+        from contextlib import redirect_stdout, redirect_stderr
+        from io import StringIO
+        import maintain
+        output, errors = StringIO(), StringIO()
+        with redirect_stdout(output), redirect_stderr(errors):
+            code = maintain.main([*arguments, '--target', str(self.target)])
+        return code, json.loads(output.getvalue()) if output.getvalue() else {}, errors.getvalue()
+
+    def bind(self, mode, *arguments):
+        code, result, error = self.command('bind', '--mode', mode, *arguments)
+        self.assertEqual(code, 0, error)
+        return result
+
+    def assert_ignored(self, relative, expected=True):
+        result = self.git('check-ignore', '--quiet', '--', 'services/app/' + relative, check=False)
+        self.assertEqual(result.returncode, 0 if expected else 1, result.stderr)
+
+    def test_shared_and_machine_only_are_complete_choices_without_repository_access(self):
+        from project_config import project_configuration_cli as cli
+        original = self.exclude.read_bytes()
+        with mock.patch.object(cli.repository, 'checkout', side_effect=AssertionError('unexpected repository access')):
+            self.bind('local')
+            self.assertEqual(self.exclude.read_bytes(), original)
+            self.assert_ignored('.agents/config.json', False)
+            self.bind('local-only', '--replace-binding')
+            code, result, error = self.command('inspect')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(result['mode'], 'local-only')
+        self.assertFalse(result['selection_required'])
+        self.assert_ignored('.agents/config.json')
+        self.assert_ignored('AGENTS.md')
+        self.write('.agents/skills/later/references/support.md', 'Future support\n')
+        self.assert_ignored('.agents/skills/later/references/support.md')
+        self.assertEqual((self.target / '.gitignore').read_text(), 'keep-local.txt\n')
+        self.assertEqual(self.git('check-ignore', '--quiet', 'services/other/.agents/config.json', check=False).returncode, 1)
+
+    def test_tracked_configuration_is_reported_and_index_is_preserved(self):
+        self.git('add', 'services/app/.agents/rules/example.md')
+        before = (self.root / '.git/index').read_bytes()
+        result = self.bind('local-only')
+        self.assertEqual(result['tracked_paths'], ['.agents/rules/example.md'])
+        self.assertEqual((self.root / '.git/index').read_bytes(), before)
+        self.assert_ignored('.agents/rules/example.md', False)
+        self.write('.agents/rules/new.md', '# New local rule\n')
+        self.assert_ignored('.agents/rules/new.md')
+
+    def test_switch_to_shared_removes_only_owned_excludes_and_is_repeatable(self):
+        before = self.exclude.read_bytes() + b'\n/services/app/keep-local.txt\n'
+        self.exclude.write_bytes(before)
+        self.bind('local-only')
+        private = self.exclude.read_bytes()
+        self.bind('local-only')
+        self.assertEqual(self.exclude.read_bytes(), private)
+        self.bind('local', '--replace-binding')
+        self.assertEqual(self.exclude.read_bytes(), before)
+        self.assert_ignored('.agents/config.json', False)
+        self.assert_ignored('AGENTS.md', False)
+        self.assert_ignored('keep-local.txt')
+
+    def test_unapproved_switch_and_edited_exclude_block_refuse_before_binding_changes(self):
+        self.bind('local-only')
+        before = (self.target / '.agents/config.json').read_bytes()
+        excluded = self.exclude.read_bytes()
+        code, _, error = self.command('bind', '--mode', 'local')
+        self.assertEqual(code, 2)
+        self.assertIn('--replace-binding', error)
+        self.assertEqual(self.exclude.read_bytes(), excluded)
+        self.exclude.write_bytes(excluded.replace(b'/services/app/AGENTS.md', b'/services/app/other.md'))
+        edited = self.exclude.read_bytes()
+        code, _, error = self.command('bind', '--mode', 'local', '--replace-binding')
+        self.assertEqual(code, 2)
+        self.assertIn('block was edited', error)
+        self.assertEqual((self.target / '.agents/config.json').read_bytes(), before)
+        self.assertEqual(self.exclude.read_bytes(), edited)
+
+    def test_read_only_routes_leave_excludes_unchanged_and_rule_sync_restores_them(self):
+        self.bind('local-only')
+        self.exclude.write_text('# User ignore\n', encoding='utf-8')
+        before = self.exclude.read_bytes()
+        code, _, error = self.command('inspect')
+        self.assertEqual(code, 0, error)
+        code, _, error = self.command('sync-project-rules', '--check')
+        self.assertIn(code, (0, 1), error)
+        self.assertEqual(self.exclude.read_bytes(), before)
+        code, _, error = self.command('sync-project-rules')
+        self.assertEqual(code, 0, error)
+        self.assert_ignored('AGENTS.md')
+        self.assert_ignored('.agents/config.json')
+        self.assertTrue(self.exclude.read_bytes().startswith(before))
+
+    def test_machine_only_rejects_repository_arguments_without_writes(self):
+        before = (self.target / '.agents/config.json').read_bytes()
+        excluded = self.exclude.read_bytes()
+        code, _, error = self.command('bind', '--mode', 'local-only', '--repository', 'user/config')
+        self.assertEqual(code, 2)
+        self.assertIn('do not accept repository arguments', error)
+        self.assertEqual((self.target / '.agents/config.json').read_bytes(), before)
+        self.assertEqual(self.exclude.read_bytes(), excluded)
+
+    def test_exclusion_update_failure_is_reported_after_local_sync(self):
+        from project_config import project_configuration_cli as cli
+        self.bind('local-only')
+        before = self.exclude.read_bytes()
+        with mock.patch.object(cli, 'sync_git_exclusions', side_effect=OSError('exclude is read-only')):
+            code, _, error = self.command('sync-project-rules')
+        self.assertEqual(code, 2)
+        self.assertIn('exclude is read-only', error)
+        self.assertEqual(self.exclude.read_bytes(), before)
 
 
 if __name__ == '__main__':

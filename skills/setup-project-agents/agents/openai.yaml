@@ -1,6 +1,6 @@
 interface:
   display_name: "Setup Project Agents"
-  short_description: "初始化或升级项目 Agent 配置，并选择本地或个人配置库维护。"
+  short_description: "初始化或升级项目 Agent 配置，支持项目共享、仅本机和独立配置仓库三种维护模式。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
   brand_color: "#15803D"

@@ -43,6 +43,10 @@ _Avoid_: External Skill, plugin configuration
 A user-owned repository that holds the canonical Project Configurations for multiple target projects.
 _Avoid_: External Skill repository, target repository
 
+**Project Configuration Maintenance Mode（项目配置维护模式）** :
+The user's choice to share Project Configuration with the business project, keep it only on this machine, or maintain it in a separate personal configuration repository.
+_Avoid_: Source location alone, Git tracking switch
+
 **Project Configuration Binding（项目配置绑定）** :
 A target project's selection of a Project Configuration Repository, a revision selector, and a
 configuration entry within that repository.

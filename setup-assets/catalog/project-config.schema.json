@@ -15,7 +15,8 @@
           ],
           "properties": {
             "mode": {
-              "const": "local"
+              "enum": ["local", "local-only"],
+              "description": "local: project shared through business Git; local-only: this machine only, locally excluded from business Git."
             }
           }
         },
@@ -30,7 +31,8 @@
           ],
           "properties": {
             "mode": {
-              "const": "repository"
+              "const": "repository",
+              "description": "Separate personal configuration repository; target configuration is locally excluded from business Git."
             },
             "repository": {
               "type": "string",
