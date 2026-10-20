@@ -67,13 +67,35 @@ diff- fragment from SHA-256 of the current UTF-8 path; do not pass a complete UR
 Optional file github_anchor overrides that default with an already-observed
 diff- fragment without #. No GitHub lookup is needed to generate file links.
 Non-PR batches omit pr and github_anchor. Every effective PR base must be fixed,
-not index. Supply review context, not a preselected PR checkout. The tool searches
-this repository's existing worktrees and verifies matching commits: one binds automatically,
-multiple show a selection page, none or unavailable local data goes to GitHub.
-It never fetches, checks out, clones, or creates worktrees. Bound URLs keep the
-selected worktree even after later edits/commits; they do not reselect by head.
-Unresolved PR URLs retain the context for selection/fallback on opening.
+not index. Add paired pr.branch (short source branch name) and
+pr.source_repository (owner/name of the source, including a fork). The tool searches
+Git-registered worktrees, including the current checkout, preferring the primary
+project's .worktrees directory and then other registered locations. Matching uses
+the actual branch and verified source remote, not folder names or commit equality.
+Tracking identifies the source; without tracking all configured remotes must identify
+that one source. Unverifiable source identity is not a branch match. Head-only input
+can still locate an exact-head checkout. One match binds automatically; multiple
+matches show a selection page. No usable match compares fixed base to fixed PR head
+using existing Git objects. Optional batch view="snapshot" forces that fixed comparison
+even when a local worktree exists. Missing objects show diagnostics and a GitHub link.
+Batch view="worktree" explicitly binds repo to a user-selected or newly prepared
+worktree, including a local branch alias; validate that target in the review preflight.
+It never fetches, checks out, clones, or creates worktrees. Bound worktree URLs keep
+the selected path after edits/commits; they do not reselect. Snapshot URLs keep both
+fixed versions. Unresolved URLs retain discovery context for opening.
 Validate the entire batch before starting the service.
+
+Before PR review, run diff --inspect --input context.json with exactly
+{"repo":"/absolute/worktree", "pr":{...the same complete PR context...}}.
+This read-only operation starts no host and makes no network request. Output has
+reviewed_head, branch, source_repository, worktrees, and message. Each matching
+worktree reports repo, branch, head, status (same/ahead/behind/diverged/unknown),
+dirty (boolean, or null if unavailable), ahead/behind counts when known, and a
+diagnostic message on failure. The supplied head must come from current authoritative
+PR metadata; this operation cannot establish remote freshness from a stale input.
+An empty list means no verified match. Errors in discovery fail with diagnostics,
+not an empty/clean result. The review Skill owns lettered create/sync choices and
+verification of authorized effects; browser opening never performs those effects.
 Output: per-file id, title, url, markdown. url and markdown identify the same
 localhost /diff entry. Use that entry for every filename link; local_web owns
 VS Code detection and GitHub/HTML fallback when the browser opens it.
@@ -81,15 +103,19 @@ Alternate viewer destinations remain inside local_web's pages and responses.
 No legacy localhost-link formats or alternative output fields are maintained.
 No registration, URL signature, baseline backup, Git write or seven-day link
 expiry is created.
-The URL compares the fixed blob with the current on-disk path; deletion is an
-absent current side, rename needs a new link, and missing Git data is an error.
+Live URLs compare the fixed blob with the current on-disk path; deletion is an
+absent current side and rename needs a new link. Snapshot URLs read the current
+path at the fixed PR head, using base_path only for the before side. An absent
+path at an existing commit is absence; missing commits/blobs are errors.
 VS Code prefers a validated fixed-commit Git URI; otherwise it uses temporary
 baseline files. Present current files are opened directly; absent sides use empty
 temporary files. A Git locator never replaces the pinned blob as the baseline.
-VS Code may show unsaved editor contents; HTML reads the current on-disk file.
+Snapshot editor comparisons materialize both fixed sides as private temporary files.
+Live VS Code may show unsaved editor contents; live HTML reads the on-disk file.
 One editor mode is chosen before dispatch, without automatic relaunch or retries.
 VS Code is attempted from a visible page; explicit launch failure falls back
-to GitHub or HTML in the same tab. A dispatched request tries to close the tab;
+to GitHub for live PRs or HTML for fixed snapshots/non-PRs, in the same tab.
+A dispatched request tries to close the tab;
 if browser policy blocks closing, the page keeps manual fallback links.
 GitHub may show the remote PR version. CLI exit does not prove editor display.
 
@@ -122,6 +148,7 @@ Failures print diagnostics and exit 1; hook failures exit 0 to preserve sessions
 
 Examples (<entry> is the loaded local_web resource):
   python "<entry>" diff --input batch.json
+  python "<entry>" diff --inspect --input context.json
   python "<entry>" create --input files.json
   python "<entry>" publish --id artifact-ID
   python "<entry>" ensure
@@ -141,6 +168,7 @@ Examples (<entry> is the loaded local_web resource):
     capture.add_argument("--retention-seconds", type=float, default=artifacts.DEFAULT_RETENTION.total_seconds())
     compare = commands.add_parser("diff", help="Validate a batch and return self-contained live diff URLs.")
     compare.add_argument("--input", required=True, help="JSON batch path, or - for stdin")
+    compare.add_argument("--inspect", action="store_true", help="Inspect PR worktree identity/freshness without starting the host")
     hook = commands.add_parser("hook", help="Record the project and restore the host from a session hook.")
     hook.add_argument("--harness", required=True, choices=("codex", "cursor", "copilot", "qoder"))
     commands.add_parser("serve", help=argparse.SUPPRESS)
@@ -163,7 +191,8 @@ Examples (<entry> is the loaded local_web resource):
             value = service.publish_artifact(args.id)
         elif args.command == "diff":
             content = sys.stdin.read() if args.input == "-" else Path(args.input).read_bytes().decode("utf-8")
-            value = diff.links(json.loads(content, object_pairs_hook=artifacts._unique_object))
+            batch = json.loads(content, object_pairs_hook=artifacts._unique_object)
+            value = diff.inspect(batch) if args.inspect else diff.links(batch)
         elif args.command == "hook":
             context = service.hook_project(args.harness)
             if not context:

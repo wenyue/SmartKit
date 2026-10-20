@@ -1,6 +1,7 @@
 """Exercise live Git comparisons without link registrations or baseline writes."""
 import json
 import io
+import html
 import os
 from contextlib import contextmanager
 from dataclasses import replace
@@ -20,7 +21,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 from local_web import ORIGIN, HOST, artifacts, cli, http_server, service, storage
-from local_web.apps import diff
+from local_web.apps import comparisons, diff
 from local_web_test_support import isolate_local_web
 
 
@@ -142,10 +143,12 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         missing = diff.Target(self.base / "missing", self.name, self.target.base)
         with self.assertRaises(FileNotFoundError):
             diff.read_comparison(missing)
+        remote = diff.Target(missing.repo, missing.path, missing.base, "https://github.com/o/r/pull/1/files")
         with patch.object(diff, "find_vscode") as find:
-            value = diff.open_editor(diff.Target(missing.repo, missing.path, missing.base, "https://github.com/o/r/pull/1/files"))
+            value = diff.open_editor(remote)
         find.assert_not_called()
-        self.assertEqual(value["url"], "https://github.com/o/r/pull/1/files")
+        self.assertEqual(value["url"], remote.url())
+        self.assertIn(remote.github.encode(), diff.render_page(remote).content)
 
     def test_validation_rejects_ambiguous_parameters_and_unsafe_paths(self):
         for fields in ({"repo": str(self.repo), "path": path, "base": self.target.base}
@@ -328,7 +331,9 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
             self.assertEqual(set(result), {"id", "title", "url", "markdown"})
             self.assertEqual(target.github, github)
             self.assertEqual(target.head, pr["head"])
-            self.assertEqual(diff.render_page(target).redirect, github)
+            page = diff.render_page(target)
+            self.assertIsNone(page.redirect)
+            self.assertIn(github.encode(), page.content)
 
     def test_default_pr_anchors_match_observed_github_file_fragments(self):
         entries = [
@@ -351,6 +356,10 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
             "https://github.com/o/r/pull/507.diff", "o", "o/r/extra", "o/..", "o/r#fragment", "o/r?query"))
         invalid.extend(dict(pr, number=value) for value in (0, -1, True, "507", 1.5))
         invalid.extend(dict(pr, head=value) for value in ("HEAD", "abc", None))
+        invalid.extend((dict(pr, branch="topic"), dict(pr, source_repository="o/r"),
+                        dict(pr, branch=None, source_repository=None),
+                        dict(pr, branch="../topic", source_repository="o/r"),
+                        dict(pr, branch="topic", source_repository="https://github.com/o/r")))
         for context in invalid:
             with self.subTest(pr=context), patch.object(service, "ensure_service") as ensure:
                 with self.assertRaises(ValueError):
@@ -411,8 +420,11 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
             entry["base_path"] = target.base_path
         if urllib.parse.urlsplit(target.github).fragment:
             entry["github_anchor"] = urllib.parse.urlsplit(target.github).fragment
+        pr = {"repository": "o/r", "number": 1, "head": target.head}
+        if target.branch:
+            pr.update(branch=target.branch, source_repository=target.source_repository)
         batch = self.batch(entry, repo=str(target.repo), base=target.base,
-                           pr={"repository": "o/r", "number": 1, "head": target.head})
+                           pr=pr, view=target.view)
         with patch.object(service, "ensure_service"):
             result = diff.links(batch)[0]
         return diff.target_from_query(result["url"].split("?", 1)[1])
@@ -512,27 +524,39 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(target.repo, self.repo.resolve())
         self.assertEqual(target.base, "blob:" + self.oid)
         self.assertEqual(target.base_commit, self.before)
-        self.assertIsNone(target.head)
+        self.assertEqual(target.head, self.head)
+        self.assertEqual(target.view, "worktree")
         self.assertEqual(diff.read_comparison(target).before, b"baseline\n")
         self.assertEqual(self.run_git("ls-files", "--stage"), index)
         self.assertEqual(self.run_git("count-objects", "-v"), objects)
 
-    def test_pr_objects_and_branch_without_checkout_go_to_github(self):
+    def test_pr_without_checkout_compares_fixed_sides_without_reading_current_file(self):
         self.run_git("checkout", "--detach", self.before)
         self.assertEqual(self.run_git("cat-file", "-t", self.head).strip(), b"commit")
         target = self.prepare()
         self.assertEqual(target.head, self.head)
-        self.assertEqual(diff.render_page(target).redirect, self.github_file)
-        with patch.object(diff, "find_vscode") as find:
-            self.assertEqual(diff.open_editor(target)["url"], self.github_file)
-        find.assert_not_called()
+        self.assertEqual(target.view, "snapshot")
+        self.file.write_bytes(b"unrelated local content\n")
+        comparison = diff.read_comparison(target)
+        self.assertEqual((comparison.before, comparison.after), (b"baseline\n", b"first edit\n"))
+        self.assertIsNone(comparison.worktree_file)
+        self.assertIn("固定 PR 快照".encode(), diff.render_page(target, html_only=True).content)
+        with self.editor_dispatch() as launch:
+            self.assertEqual(diff.open_editor(target)["viewer"], "vscode")
+        command = launch.call_args[0][0]
+        self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
+        self.assertEqual(Path(command[4]).read_bytes(), b"first edit\n")
+        self.assertNotEqual(Path(command[4]), self.file)
+        with patch.object(diff, "find_vscode", return_value=None):
+            self.assertEqual(diff.open_editor(target)["url"], target.url(html_only=True))
 
     def test_linked_detached_checkout_is_found_and_binding_survives_later_commits(self):
         self.run_git("checkout", "--detach", self.before)
         linked = self.linked("linked & checkout")
         target = self.prepare()
         self.assertEqual(target.repo, linked.resolve())
-        self.assertIsNone(target.head)
+        self.assertEqual(target.head, self.head)
+        self.assertEqual(target.view, "worktree")
         file = linked / self.name
         file.write_bytes(b"later committed content\n")
         for args in (("add", "--", self.name), ("commit", "-m", "later local commit")):
@@ -571,7 +595,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(len(local), 2)
         selected = [diff.target_from_query(url.split("?", 1)[1]) for url in local]
         self.assertEqual({choice.repo for choice in selected}, {self.repo.resolve(), linked.resolve()})
-        self.assertTrue(all(choice.head is None for choice in selected))
+        self.assertTrue(all(choice.view == "worktree" and choice.head == self.head for choice in selected))
         self.assertTrue(all("/diff/html?" in url for url in local))
         self.assertIn(self.github_file, parser.urls)
 
@@ -595,13 +619,149 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(target.base, "absent")
         self.assertIsNone(diff.read_comparison(target).before)
 
-    def test_missing_before_commit_or_repository_uses_github_not_empty_content(self):
+    def test_missing_before_commit_or_repository_explains_and_offers_github(self):
         for target in (replace(self.context, base="commit:" + "f" * 40),
                        replace(self.context, repo=self.base / "missing")):
             with self.subTest(target=target):
                 prepared = self.prepare(target)
-                self.assertEqual(diff.render_page(prepared).redirect, self.github_file)
-                self.assertEqual(diff.open_editor(prepared)["url"], self.github_file)
+                page = diff.render_page(prepared)
+                self.assertIsNone(page.redirect)
+                self.assertIn("无法读取比较".encode(), page.content)
+                self.assertIn(self.github_file.encode(), page.content)
+                self.assertEqual(diff.open_editor(prepared)["url"], prepared.url())
+
+    def source_context(self):
+        self.run_git("branch", "-M", "review/target")
+        self.run_git("remote", "add", "origin", "https://github.com/o/r.git")
+        return replace(self.context, branch="review/target", source_repository="o/r")
+
+    def inspect_context(self, context):
+        return {"repo": str(context.repo), "pr": {"repository": "o/r", "number": 1,
+                "head": context.head, "branch": context.branch, "source_repository": context.source_repository}}
+
+    def test_source_branch_discovery_allows_newer_commits_and_dirty_worktree(self):
+        context = self.source_context()
+        self.file.write_bytes(b"newer committed fix\n")
+        self.run_git("add", "--", self.name)
+        self.run_git("commit", "-m", "local fix")
+        self.file.write_bytes(b"dirty fix\n")
+        index = self.run_git("ls-files", "--stage")
+        objects = self.run_git("count-objects", "-v")
+        prepared = self.prepare(context)
+        self.assertEqual(prepared.view, "worktree")
+        self.assertEqual(prepared.head, self.head)
+        self.assertEqual(diff.read_comparison(prepared).after, b"dirty fix\n")
+        output = diff.inspect(self.inspect_context(context))
+        observed = output["worktrees"][0]
+        self.assertEqual((observed["status"], observed["ahead"], observed["behind"], observed["dirty"]),
+                         ("ahead", 1, 0, True))
+        self.assertEqual(self.run_git("ls-files", "--stage"), index)
+        self.assertEqual(self.run_git("count-objects", "-v"), objects)
+
+    def test_inspect_current_checkout_same_behind_diverged_and_unknown(self):
+        context = self.source_context()
+        request = self.inspect_context(context)
+        self.assertEqual(diff.inspect(request)["worktrees"][0]["status"], "same")
+        self.run_git("reset", "--hard", self.before)
+        self.assertEqual(diff.inspect(request)["worktrees"][0]["status"], "behind")
+        self.file.write_bytes(b"different history\n")
+        self.run_git("add", "--", self.name)
+        self.run_git("commit", "-m", "diverged local commit")
+        observed = diff.inspect(request)["worktrees"][0]
+        self.assertEqual((observed["status"], observed["ahead"], observed["behind"]), ("diverged", 1, 1))
+        request["pr"]["head"] = "f" * 40
+        observed = diff.inspect(request)["worktrees"][0]
+        self.assertEqual(observed["status"], "unknown")
+        self.assertFalse(observed["dirty"])
+        self.assertIn("message", observed)
+
+    def test_inspect_cli_is_read_only_and_starts_no_host(self):
+        context = self.source_context()
+        output = io.StringIO()
+        with patch("sys.stdin", io.StringIO(json.dumps(self.inspect_context(context)))), patch("sys.stdout", output), patch.object(service, "ensure_service") as ensure:
+            self.assertEqual(cli.main(["diff", "--inspect", "--input", "-"]), 0)
+        ensure.assert_not_called()
+        self.assertEqual(json.loads(output.getvalue())["worktrees"][0]["status"], "same")
+
+    def test_inspection_failure_is_not_reported_as_no_matching_worktree(self):
+        context = self.source_context()
+        output, diagnostics = io.StringIO(), io.StringIO()
+        with patch("sys.stdin", io.StringIO(json.dumps(self.inspect_context(context)))), patch("sys.stdout", output), patch("sys.stderr", diagnostics), patch.object(comparisons, "registered_worktrees", side_effect=PermissionError("lookup denied")), patch.object(service, "ensure_service") as ensure:
+            self.assertEqual(cli.main(["diff", "--inspect", "--input", "-"]), 1)
+        ensure.assert_not_called()
+        self.assertEqual(output.getvalue(), "")
+        self.assertIn("lookup denied", diagnostics.getvalue())
+
+    def test_source_identity_rejects_same_name_branch_from_another_fork(self):
+        context = self.source_context()
+        self.run_git("remote", "add", "fork", "git@github.com:other/r.git")
+        self.run_git("config", "branch.review/target.remote", "fork")
+        self.run_git("config", "branch.review/target.merge", "refs/heads/review/target")
+        self.assertEqual(diff.inspect(self.inspect_context(context))["worktrees"], [])
+        self.assertEqual(self.prepare(context).view, "snapshot")
+
+    def test_tracking_identifies_local_branch_alias_and_external_worktree(self):
+        context = self.source_context()
+        self.run_git("checkout", "--detach", self.before)
+        linked = self.base / "external checkout"
+        self.run_git("worktree", "add", "-b", "local-alias", str(linked), self.head)
+        self.run_git("config", "branch.local-alias.remote", "origin")
+        self.run_git("config", "branch.local-alias.merge", "refs/heads/review/target")
+        prepared = self.prepare(context)
+        self.assertEqual(prepared.repo, linked.resolve())
+        self.assertEqual(prepared.view, "worktree")
+
+    def test_registered_worktrees_prefer_project_directory_and_show_lettered_choices(self):
+        context = self.source_context()
+        preferred = self.repo / ".worktrees" / "arbitrary-folder"
+        self.run_git("worktree", "add", "--force", str(preferred), "review/target")
+        prepared = self.prepare(context)
+        page = diff.render_page(prepared).content.decode()
+        self.assertLess(page.index(html.escape(str(preferred.resolve()))), page.index(html.escape(str(self.repo.resolve())) + "</a>"))
+        self.assertIn('<ol type="A">', page)
+        self.assertEqual(page.count("<li>"), 3)
+        self.assertIn("存在未提交修改", page)
+
+    def test_forced_snapshot_and_explicit_worktree_preserve_the_users_selection(self):
+        context = self.source_context()
+        self.file.write_bytes(b"local live edit\n")
+        snapshot = self.prepare(replace(context, view="snapshot"))
+        self.assertEqual(diff.read_comparison(snapshot).after, b"first edit\n")
+        self.run_git("branch", "-M", "user-selected-alias")
+        bound = self.prepare(replace(context, view="worktree"))
+        self.assertEqual(bound.view, "worktree")
+        self.assertEqual(diff.read_comparison(bound).after, b"local live edit\n")
+
+    def test_snapshot_rename_addition_and_deletion_use_committed_paths(self):
+        self.run_git("mv", self.name, "renamed.py")
+        (self.repo / "new.py").write_bytes(b"new committed file\n")
+        self.run_git("add", "--", "new.py")
+        self.run_git("commit", "-m", "rename and add")
+        head = self.run_git("rev-parse", "HEAD").decode().strip()
+        context = replace(self.context, head=head, view="snapshot")
+        renamed = self.prepare(replace(context, path="renamed.py", base_path=self.name))
+        self.assertEqual((diff.read_comparison(renamed).before, diff.read_comparison(renamed).after),
+                         (b"baseline\n", b"first edit\n"))
+        added = diff.read_comparison(self.prepare(replace(context, path="new.py")))
+        self.assertEqual((added.before, added.after), (None, b"new committed file\n"))
+        deleted = diff.read_comparison(self.prepare(context))
+        self.assertEqual((deleted.before, deleted.after), (b"baseline\n", None))
+
+    def test_discovery_failure_can_still_display_a_fixed_snapshot(self):
+        with patch.object(comparisons, "pr_worktrees", side_effect=OSError("worktree read failed")):
+            target = self.prepare()
+        self.assertEqual(target.view, "snapshot")
+        self.assertEqual(diff.read_comparison(target).after, b"first edit\n")
+
+    def test_bound_pr_link_retains_diagnostics_when_objects_become_unavailable(self):
+        target = self.prepare()
+        with patch.object(diff, "read_comparison", side_effect=OSError("retained blob unavailable")), patch.object(diff, "find_vscode") as find:
+            page = diff.render_page(target)
+            self.assertIn(b"retained blob unavailable", page.content)
+            self.assertIn(target.github.encode(), page.content)
+            self.assertNotIn(b"fetch(", page.content)
+            self.assertEqual(diff.open_editor(target)["url"], target.url())
+        find.assert_not_called()
 
     def test_pr_context_requires_fixed_head_github_and_safe_before_path(self):
         fields = dict(repo=str(self.repo), path=self.name, base=self.context.base, head=self.head, github=self.github)
@@ -680,7 +840,37 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
         self.assertEqual(json.loads(body)["viewer"], "vscode")
         launch.assert_called_once_with(target)
 
-    def test_no_pr_checkout_redirects_in_same_page_without_editor_or_network_lookup(self):
+    def test_fixed_snapshot_get_and_editor_post_preserve_both_committed_sides(self):
+        self.run_git("config", "user.name", "Diff Test")
+        self.run_git("config", "user.email", "diff@example.test")
+        self.run_git("config", "core.autocrlf", "false")
+        self.run_git("commit", "-m", "fixed before")
+        before = self.run_git("rev-parse", "HEAD").decode().strip()
+        self.run_git("add", "--", self.name)
+        self.run_git("commit", "-m", "fixed after")
+        head = self.run_git("rev-parse", "HEAD").decode().strip()
+        self.file.write_bytes(b"unrelated current contents\n")
+        target = diff.Target(self.repo, self.name, self.target.base, "https://github.com/o/r/pull/1/files",
+                             head, base_commit=before, view="snapshot")
+        with patch.object(diff, "find_vscode") as find:
+            status, _, body = self.request(target.url(html_only=True))
+        find.assert_not_called()
+        self.assertEqual(status, 200)
+        self.assertIn(b"baseline", body)
+        self.assertIn(b"first", body)
+        self.assertNotIn(b"unrelated", body)
+        with self.editor_dispatch() as launch:
+            status, _, body = self.request(self.origin + "/api/diff/open?" + target.query(),
+                                           post=True, headers={"Origin": self.origin})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["viewer"], "vscode")
+        command = launch.call_args[0][0]
+        self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
+        self.assertEqual(Path(command[4]).read_bytes(), b"first edit\n")
+        self.assertIn(before[:12], Path(command[3]).name)
+        self.assertIn(head[:12], Path(command[4]).name)
+
+    def test_missing_pr_objects_show_reason_and_manual_github_without_editor(self):
         class NoRedirect(urllib.request.HTTPRedirectHandler):
             def redirect_request(self, req, fp, code, msg, headers, newurl):
                 return None
@@ -690,12 +880,12 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
         with patch.object(diff, "find_vscode") as find:
             for url in (target.url(), target.url(html_only=True)):
-                with self.assertRaises(urllib.error.HTTPError) as raised:
-                    opener.open(url, timeout=5)
-                with raised.exception as response:
-                    self.assertEqual(response.code, 303)
-                    self.assertEqual(response.headers["Location"], github)
-                    self.assertEqual(response.headers["Referrer-Policy"], "no-referrer")
+                with opener.open(url, timeout=5) as response:
+                    self.assertEqual(response.code, 200)
+                    body = response.read()
+                    self.assertIn("无法读取比较".encode(), body)
+                    self.assertIn(github.encode(), body)
+                    self.assertNotIn(b"fetch(", body)
         find.assert_not_called()
 
 
