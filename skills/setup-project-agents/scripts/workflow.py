@@ -230,8 +230,9 @@ def _require_matt_context(target: Path) -> None:
     context_paths = tuple(target / relative for relative in _MATT_CONTEXT_PATHS)
     if any(_is_link_like(path) or not path.is_file() for path in context_paths):
         raise WorkflowError(
-            'Matt repository setup is incomplete; explicitly invoke '
-            'setup-matt-pocock-skills before setup-project-agents'
+            'Matt repository setup is incomplete; complete the shared workflow at '
+            'skills/setup-matt-pocock-skills/references/project-context.md in the loaded plugin '
+            'before starting a full setup session'
         )
     references = tuple(relative.as_posix() for relative in _MATT_CONTEXT_PATHS)
     for relative in _MATT_ENTRY_PATHS:
@@ -246,8 +247,9 @@ def _require_matt_context(target: Path) -> None:
         if section is not None and all(reference in section for reference in references):
             return
     raise WorkflowError(
-        'Matt repository setup is incomplete; explicitly invoke '
-        'setup-matt-pocock-skills before setup-project-agents'
+        'Matt repository setup is incomplete; complete the shared workflow at '
+        'skills/setup-matt-pocock-skills/references/project-context.md in the loaded plugin '
+        'before starting a full setup session'
     )
 
 

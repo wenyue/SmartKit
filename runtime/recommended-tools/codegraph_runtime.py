@@ -11,6 +11,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from time import monotonic
 from typing import BinaryIO
 
 
@@ -122,7 +123,8 @@ def _probe(target: Path) -> None:
         if Path(endpoint) not in allowed or not re.fullmatch(r'(daemon|codegraph-[0-9a-f]{16})\.sock', Path(endpoint).name):
             raise ValueError('CodeGraph daemon endpoint is not a local CodeGraph socket')
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
-            connection.settimeout(4)
+            # CodeGraph may spend eight seconds measuring pending changes.
+            connection.settimeout(10)
             connection.connect(endpoint)
             with connection.makefile('rwb', buffering=0) as stream:
                 _verify_daemon(stream, stream, target, record)
@@ -145,13 +147,18 @@ def check(target: Path) -> Readiness:
     if not (target / '.codegraph/codegraph.db').is_file():
         return Readiness(False, 'CodeGraph index is not initialized in this working tree')
     try:
+        # Bound both serial checks to twenty seconds, leaving Hook headroom.
+        deadline = monotonic() + 20
         status = index_status(target, executable)
         problem = index_problem(status)
         if problem:
             return Readiness(False, problem)
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired('CodeGraph readiness check', 20)
         # A separate bounded process prevents an unresponsive Windows named pipe
         # from pinning a Hook thread; it only connects and cannot launch a daemon.
-        result = run_command([sys.executable, str(Path(__file__).resolve()), '_probe', '--target', str(target)], target, 6)
+        result = run_command([sys.executable, str(Path(__file__).resolve()), '_probe', '--target', str(target)], target, min(12, remaining))
         if result.returncode:
             return Readiness(False, 'CodeGraph is stopped or unhealthy: ' + result.stderr.strip()[-1500:])
         return Readiness(True, 'CodeGraph index is complete and its project MCP service responds')

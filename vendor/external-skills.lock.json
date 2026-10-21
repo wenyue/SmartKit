@@ -116,19 +116,24 @@
           "source_path": "skills/engineering/setup-matt-pocock-skills",
           "destination": "skills/setup-matt-pocock-skills",
           "files": {
-            "SKILL.md": "9a0c21694be19fa3eefc39343355d3af7414716ba364882c7432c2f821eac3e9",
+            "SKILL.md": "1a52599d5dfa261ed7db2027eaee31f91133043cc267b4c4a3c4a23d0400e344",
             "agents/openai.yaml": "34180db7cf7d077e79c0c4af3276bc01cc9b52b4db6f3a1ddfd8d4e314640d13",
             "assets/icon.svg": "63647c44c5f883a08a06f5785c06297f8defdc3e87c27372671076e1803297ea",
             "domain.md": "593a7042218689f1d24df89df14eaf0a20e19e0d0a7d479a01947ac78f0784b9",
             "issue-tracker-github.md": "afd6852a80185217bd28aa5cbe456bef1e85be25be7bd1fba382d5b8ee428325",
             "issue-tracker-gitlab.md": "ea175f73d193b3f55819c0ed9bbccf6ee0e70ad8f928e3d7607596c53380acd6",
             "issue-tracker-local.md": "7dcda20a2eb4bdc89b95d1143423c0691309921cadae3132e6424f371030506e",
+            "references/project-context.md": "88a374ecc65ea025c43d263c7b03ad43d9e02833c328ac6b1b1433932ea26e51",
             "triage-labels.md": "4f53c9b40ce2651e3611aa090eaedbd6dbc9b71ef8c5f7e65eac0d8263190d0d"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch",
               "sha256": "371cc2c546debf77ff26693b303ebb668924656c32b354b865c423b3de7aaa1c"
+            },
+            {
+              "path": "vendor/patches/mattpocock/setup-matt-pocock-skills.workflow.patch",
+              "sha256": "89fd35a0a09a4ef24fb0461672ac453b912e445d395d85111552e4224eb717ad"
             }
           ]
         },

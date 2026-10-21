@@ -65,7 +65,7 @@ python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
 python "<maintain>" inspect --target "<target-root>"
 ```
 
-Use the findings alongside complete project configuration, ownership, existing generated content and decision records reached through the project's documentation conventions. Resolve prerequisite errors before the affected step; exit 0 from setup inspection leaves the returned `pending_assessment` to Setup. Missing Matt context follows the protocol's fresh-invocation route.
+Use the findings alongside complete project configuration, ownership, existing generated content and decision records reached through the project's documentation conventions. Resolve prerequisite errors before the affected step; exit 0 from setup inspection leaves the returned `pending_assessment` to Setup. Missing Matt context is completed below within this invocation, after the maintenance source is settled.
 
 ### First setup
 
@@ -88,6 +88,14 @@ Continue when the maintenance choice is recorded, the selected source is availab
 Establish the last successful setup version and collect every applicable migration without guessing missing history. An initialized project without a successful version keeps its ownership record and content while full setup establishes the baseline. If inspection reports `selection_required`, present the same three complete choices above and record the answer once; otherwise retain the recorded mode, repository, branch and entry. Existing `local` means Project shared, not an unresolved choice. Switch modes or entries only when the user requests that change, after comparing and preserving the old source and target work.
 
 In repository mode, communicate the same publication default and update the persistent source checkout before editing it. When binding or earlier maintenance already refreshed it and produced accepted pending changes, verify and retain that evidence and continue from those changes instead of running the clean-checkout update again. Read relevant migration decisions against both the business project and its source entry, and make configuration corrections in that entry first. Refresh the applied target through the maintenance command before freezing a session. Upgrade completes only after all selected migrations, successful local finish and the publication outcome required by step 8.
+
+### Complete missing Matt context
+
+After the maintenance choice, source and initial collisions are settled and accepted source changes are applied, rerun the read-only setup inspection and use its current `matt` result. When context is present, preserve it and continue. When it is incomplete, read and follow the complete shared reference at `<skill-root>/../setup-matt-pocock-skills/references/project-context.md` to initialize or supplement the missing configuration as part of this full setup, without invoking the user-only Matt Skill. Reuse accepted project decisions, preserve existing content and obtain the reference's draft acceptance for new or changed writes.
+
+Supply the business target for exploration and the authoritative output paths for writing. Both local modes use project canonical inputs. In repository mode, edit selected source copies, resolve any needed backup-scope addition under the maintenance contract, and apply accepted changes through its guarded route before checking the target again. This prerequisite does not expand backup or replacement authority.
+
+Rerun the read-only setup inspection after application and continue this same invocation once `matt.present` is true. Other findings retain their own readiness requirements. If the shared reference or its required resources are unavailable, a material choice is unresolved, or a required write is declined or fails, report the remaining gap and leave dependent full setup incomplete; independent inspection may continue. Restoration, local synchronization and Rule-index-only operations do not enter this prerequisite.
 
 ### Prepare accepted inputs for the full run
 

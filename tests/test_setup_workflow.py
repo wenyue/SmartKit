@@ -274,7 +274,7 @@ class SetupWorkflowTest(unittest.TestCase):
                 )
 
             create_session.assert_not_called()
-            self.assertIn('explicitly invoke setup-matt-pocock-skills', error.getvalue())
+            self.assertIn('setup-matt-pocock-skills/references/project-context.md', error.getvalue())
 
     def test_matt_context_entry_may_be_in_claude(self):
         with tempfile.TemporaryDirectory() as temp_dir:

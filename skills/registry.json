@@ -32,7 +32,7 @@
         {"id": "mattpocock/grill-with-docs", "path": "skills/engineering/grill-with-docs", "patches": ["vendor/patches/mattpocock/grill-with-docs.openai.patch", "vendor/patches/mattpocock/grill-with-docs.harness.patch"]},
         {"id": "mattpocock/triage", "path": "skills/engineering/triage", "patches": ["vendor/patches/mattpocock/triage.openai.patch", "vendor/patches/mattpocock/triage.harness.patch"]},
         {"id": "mattpocock/improve-codebase-architecture", "path": "skills/engineering/improve-codebase-architecture", "patches": ["vendor/patches/mattpocock/improve-codebase-architecture.openai.patch", "vendor/patches/mattpocock/improve-codebase-architecture.harness.patch"]},
-        {"id": "mattpocock/setup-matt-pocock-skills", "path": "skills/engineering/setup-matt-pocock-skills", "patches": ["vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch"]},
+        {"id": "mattpocock/setup-matt-pocock-skills", "path": "skills/engineering/setup-matt-pocock-skills", "patches": ["vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch", "vendor/patches/mattpocock/setup-matt-pocock-skills.workflow.patch"]},
         {"id": "mattpocock/tdd", "path": "skills/engineering/tdd", "patches": ["vendor/patches/mattpocock/tdd.openai.patch", "vendor/patches/mattpocock/tdd.harness.patch"]},
         {"id": "mattpocock/to-spec", "path": "skills/engineering/to-spec", "patches": ["vendor/patches/mattpocock/to-spec.openai.patch"]},
         {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.openai.patch"]},

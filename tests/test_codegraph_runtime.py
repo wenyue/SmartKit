@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest import mock
 
@@ -67,6 +71,64 @@ class CodeGraphRuntimeTest(unittest.TestCase):
         self.assertEqual(run.call_count, 2)
         self.assertEqual(run.call_args.args[0][2], '_probe')
         self.assertNotIn('serve', str(run.call_args_list))
+
+    @unittest.skipUnless(os.name != 'nt' and hasattr(socket, 'AF_UNIX'), 'Unix socket probe is unavailable')
+    def test_check_accepts_status_response_slower_than_four_seconds(self):
+        self.index()
+        endpoint = self.data / 'daemon.sock'
+        identity = {'pid': os.getpid(), 'protocol': 1}
+        (self.data / 'daemon.pid').write_text(json.dumps({**identity, 'socketPath': str(endpoint)}))
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
+            server.bind(str(endpoint))
+            server.listen(1)
+            server.settimeout(15)
+
+            def respond() -> None:
+                connection, _ = server.accept()
+                with connection, connection.makefile('rwb', buffering=0) as stream:
+                    connection.settimeout(15)
+                    stream.write((json.dumps(identity) + '\n').encode())
+                    for line in stream:
+                        request = json.loads(line)
+                        if 'id' not in request:
+                            continue
+                        result = {}
+                        if request['method'] == 'tools/call':
+                            time.sleep(4.5)
+                            result = {'content': [{'type': 'text', 'text': '**CodeGraph Status**'}]}
+                        stream.write((json.dumps({'id': request['id'], 'result': result}) + '\n').encode())
+                        if request['method'] == 'tools/call':
+                            return
+
+            with ThreadPoolExecutor(max_workers=1) as worker:
+                response = worker.submit(respond)
+                with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
+                     mock.patch.object(runtime, 'index_status', return_value=status(self.target)):
+                    result = runtime.check(self.target)
+                self.assertTrue(result.ready, result.message)
+                response.result(timeout=15)
+
+    def test_slow_index_reduces_probe_budget(self):
+        self.index()
+        for elapsed, expected in ((0, 12), (14, 6)):
+            with self.subTest(elapsed=elapsed), \
+                 mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
+                 mock.patch.object(runtime, 'index_status', return_value=status(self.target)), \
+                 mock.patch.object(runtime, 'monotonic', side_effect=[100, 100 + elapsed]), \
+                 mock.patch.object(runtime, 'run_command', return_value=completed()) as run:
+                self.assertTrue(runtime.check(self.target).ready)
+            self.assertEqual(run.call_args.args[2], expected)
+
+    def test_exhausted_check_budget_does_not_start_probe(self):
+        self.index()
+        with mock.patch.object(runtime.shutil, 'which', return_value='codegraph'), \
+             mock.patch.object(runtime, 'index_status', return_value=status(self.target)), \
+             mock.patch.object(runtime, 'monotonic', side_effect=[100, 120]), \
+             mock.patch.object(runtime, 'run_command', return_value=completed()) as run:
+            result = runtime.check(self.target)
+        self.assertFalse(result.ready)
+        self.assertIn('timed out', result.message)
+        run.assert_not_called()
 
     def test_check_detects_incomplete_stale_or_wrong_worktree_indexes(self):
         self.index()
