@@ -8,7 +8,7 @@
 
 当 `.agents/config.json` 存在，或已接受意图需要非默认输入时，在 `start` 前使用已加载插件的 schema 协调或创建该项目自有文件：`<skill-root>/../../setup-assets/catalog/project-config.schema.json`。缺失意味着使用随附默认值；缺少 `maintenance` 选择时仍可读取，并在明确调用的完整 setup 中解决。同一 schema 约束本地同步，并定义外部 Skill 来源、项目 Agent 映射、MCP 声明和受支持的宿主设置。设置目前针对 `.codex/config.toml` 和 `.cursor/cli.json` 中的结构化字段；其渲染器保留未声明字段。
 
-目标的 `maintenance` 声明选择项目共享（`local`）、仅本机（`local-only`）或独立配置仓库（`repository`）。两种本地模式都保留现有项目权威输入。仓库模式为其声明的整文件备份选择一个个人私有 GitHub 仓库、分支和条目。绑定或使用仓库来源前，阅读 [项目配置维护](../../maintain-project-config/references/maintenance.md)。该参考负责备份范围、旧条目行为、恢复、本地同步和发布，包括其中的状态与 Git 排除约定；setup 使用其受支持命令和引擎，不调用仅限用户调用的 Skill。编辑仓库来源时以业务项目证据为依据，再通过受支持路径应用。
+目标的 `maintenance` 声明选择项目共享（`local`）、仅本机（`local-only`）或独立配置仓库（`repository`）。两种本地模式都保留现有项目权威输入。仓库模式为其声明的整文件备份选择一个个人私有 GitHub 仓库、分支和条目。绑定或使用仓库来源前，阅读 [项目配置维护](../../maintain-project-config/references/maintenance.md)。该参考负责备份范围、恢复、本地同步和发布，包括其中的状态与 Git 排除约定；setup 使用其受支持命令和引擎，不调用仅限用户调用的 Skill。编辑仓库来源时以业务项目证据为依据，再通过受支持路径应用。
 
 整文件恢复与 setup 渲染是独立操作。按照维护参考的范围规则，备份可以保留完整原生配置、选中的生成文件，以及包含生成章节的 `AGENTS.md`。恢复不使用 lock 所有权筛选这些文件，也不重新生成其内容。目标本地同步记录仍不纳入备份。恢复的 `.agents/config.json` 可以包含绑定和 `setupVersion`；复制来的记录既不能证明当前 checkout 已成功初始化，也不能证明运行时就绪。
 

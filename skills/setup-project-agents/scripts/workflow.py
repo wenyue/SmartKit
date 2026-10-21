@@ -27,13 +27,11 @@ from project_state.migrations import (
     applicable_migrations,
     project_setup_version,
 )
-from project_config.models import DesiredFile
-from project_config.planner import build_plan
 from project_state.paths import confined_target
 from project_config.project import inspect_project
 from project_config.discovery import discover_project_rules, discover_project_skills
 from project_config.project_rules import validate_project_rule_index
-from project_config.transaction import TransactionError, apply_plan
+from project_config.transaction import TransactionError
 from project_state.ownership import OwnershipError, normalize_external_sources
 from project_config.ownership import load_ownership, verify_ownership
 from agents_setup.source import InvalidFetchedSource, setup_entrypoint
@@ -380,7 +378,7 @@ def _inspect(args: argparse.Namespace) -> int:
         }
 
     check('configuration', configuration)
-    check('maintenance', lambda: project_configuration.inspect(target, catalog))
+    check('maintenance', lambda: project_configuration.inspect(target))
     check('ownership', ownership)
     check('project_discovery', project_discovery)
     check('agents', lambda: adopt_project_agents.inspect(target))
@@ -594,8 +592,8 @@ def _finish(args: argparse.Namespace) -> int:
         else:
             config['setupVersion'] = setup_version
             version_content = (json.dumps(config, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
-        version_plan = build_plan(target, [DesiredFile(config_relative, version_content)])
-        config_preimage = version_plan.changes[0].expected
+        version_update = project_configuration.prepare_config_update(target, version_content)
+        config_preimage = next(change.expected for change in version_update.plan.changes if change.path == config_relative)
         if config_preimage is None or config_preimage.content != config_content:
             raise WorkflowError('project config changed during setup version planning')
         result = {
@@ -619,25 +617,17 @@ def _finish(args: argparse.Namespace) -> int:
             'tracked_personal_paths': personal_tracked,
         }
         _remove_session(session)
-        # This success marker must remain old when either the pinned finish or cleanup fails.
-        def version_postcondition() -> None:
-            if confined_target(target, config_relative).read_bytes() != version_content:
-                raise WorkflowError('setup version commit did not converge')
-
         try:
-            apply_plan(target, version_plan, postcondition=version_postcondition)
+            final_changed_paths = version_update.apply()
         except TransactionError as error:
             raise WorkflowError(
                 f'configuration applied but setup version commit failed: {error}; '
-                'preserve the target state and start a fresh full setup'
+                'preserve source, target and synchronization receipt state and start a fresh full setup'
             ) from error
-        if any(change.kind.value != 'unchanged' for change in version_plan.changes):
+        if final_changed_paths:
             result['changed_paths'] = sorted({
-                *(result['changed_paths'] or []), config_relative.as_posix(),
+                *(result['changed_paths'] or []), *final_changed_paths,
             })
-        if project_configuration.is_complete_backup(target):
-            project_configuration.adopt(target, load_catalog(source), [], [], all_paths=True)
-            project_configuration.apply(target, load_catalog(source))
         _emit(result)
         return 0
     except BaseException as error:

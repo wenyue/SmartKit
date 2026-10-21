@@ -35,12 +35,12 @@ class ConfigurationBackupHookTest(unittest.TestCase):
 
     def established(self, automatic=False):
         self.write(self.target, '.agents/config.json', json.dumps({'maintenance': self.binding}).encode())
-        manifest = {'version': 2, 'files': ['.cursor/mcp.json'], 'directories': []}
+        manifest = {'files': ['.cursor/mcp.json'], 'directories': []}
         content = b'{"mcpServers":{},"custom":true}\r\n'
         self.write(self.entry, 'manifest.json', json.dumps(manifest).encode())
         self.write(self.entry, 'files/.cursor/mcp.json', content)
         self.write(self.target, '.cursor/mcp.json', content)
-        state = {'version': 1, 'binding': self.binding, 'source': str(self.entry),
+        state = {'binding': self.binding, 'source': str(self.entry),
                  'sourceFingerprint': backup.fingerprint(manifest, {'.cursor/mcp.json': content}),
                  'appliedPaths': ['.cursor/mcp.json'], 'automatic': automatic}
         self.write(self.target, str(backup.SYNC_PATH), json.dumps(state).encode())
@@ -113,6 +113,17 @@ class ConfigurationBackupHookTest(unittest.TestCase):
         self.write(self.target, str(backup.SYNC_PATH), content)
         findings, _ = self.checker.check_project_configuration(self.target)
         self.assertEqual(findings[0].code, 'project-config-error')
+        self.assertEqual((self.target / backup.SYNC_PATH).read_bytes(), content)
+
+    def test_versioned_enabled_receipt_is_reported_without_changing_it(self):
+        self.established(automatic=True)
+        state = json.loads((self.target / backup.SYNC_PATH).read_bytes())
+        state['version'] = 1
+        content = json.dumps(state).encode()
+        self.write(self.target, str(backup.SYNC_PATH), content)
+        findings, context = self.checker.check_project_configuration(self.target)
+        self.assertEqual(findings[0].code, 'project-config-error')
+        self.assertEqual(context, '')
         self.assertEqual((self.target / backup.SYNC_PATH).read_bytes(), content)
 
     def test_enabled_receipt_cannot_authorize_another_binding(self):

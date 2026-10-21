@@ -10,7 +10,6 @@ from .catalog import safe_relative
 from .paths import confined_target, is_link_like
 
 SYNC_PATH = PurePosixPath('.agents/project-config-sync.json')
-LEGACY_SYNC_PATH = PurePosixPath('.agents/project-config-state.json')
 DEFAULT_FILES = (
     'AGENTS.md', 'CLAUDE.md', '.agents/config.json', '.codex/config.toml',
     '.cursor/cli.json', '.cursor/mcp.json', '.mcp.json', '.qoder/mcp.json', '.vscode/mcp.json',
@@ -24,7 +23,7 @@ DEFAULT_DIRECTORIES = (
 def backup_path(value: str) -> PurePosixPath:
     path = safe_relative(value, 'configuration backup path')
     if (any(part in {'.git', '.codegraph', '__pycache__'} for part in path.parts)
-            or path in {SYNC_PATH, LEGACY_SYNC_PATH}):
+            or path == SYNC_PATH):
         raise ValueError(f'not a configuration backup path: {path}')
     return path
 
@@ -49,7 +48,7 @@ def read_object(root: Path, path: PurePosixPath) -> dict:
 
 
 def manifest_paths(manifest: dict) -> tuple[list[str], list[str]]:
-    if (set(manifest) != {'version', 'files', 'directories'} or manifest['version'] != 2
+    if (set(manifest) != {'files', 'directories'}
             or not isinstance(manifest['files'], list) or not isinstance(manifest['directories'], list)):
         raise ValueError('invalid complete configuration backup manifest')
     files = [str(backup_path(value)) for value in manifest['files']]
@@ -59,7 +58,7 @@ def manifest_paths(manifest: dict) -> tuple[list[str], list[str]]:
         raise ValueError('duplicate or case-colliding backup paths')
     for directory in directories:
         root = PurePosixPath(directory)
-        if any(root in protected.parents for protected in (SYNC_PATH, LEGACY_SYNC_PATH)):
+        if root in SYNC_PATH.parents:
             raise ValueError('a backup directory cannot include its local synchronization record')
         if any(root in PurePosixPath(other).parents for other in paths if other != directory):
             raise ValueError('overlapping backup paths')
@@ -126,7 +125,7 @@ def selected_manifest(target: Path, paths: Sequence[str]) -> dict:
                 raise ValueError(f'selected backup path does not exist: {path}')
             continue
         (directories if destination.is_dir() else files).append(str(path))
-    manifest = {'version': 2, 'files': sorted(files), 'directories': sorted(directories)}
+    manifest = {'files': sorted(files), 'directories': sorted(directories)}
     manifest_paths(manifest)
     return manifest
 
@@ -135,8 +134,8 @@ def read_receipt(target: Path, selected: dict) -> dict | None:
     if read_file(target, SYNC_PATH) is None:
         return None
     state = read_object(target, SYNC_PATH)
-    if (set(state) != {'version', 'binding', 'source', 'sourceFingerprint', 'appliedPaths', 'automatic'}
-            or state['version'] != 1 or state['binding'] != selected
+    if (set(state) != {'binding', 'source', 'sourceFingerprint', 'appliedPaths', 'automatic'}
+            or state['binding'] != selected
             or not isinstance(state['source'], str) or not Path(state['source']).is_absolute()
             or not isinstance(state['automatic'], bool) or not isinstance(state['appliedPaths'], list)):
         raise ValueError('project configuration synchronization record is invalid or belongs to another binding')

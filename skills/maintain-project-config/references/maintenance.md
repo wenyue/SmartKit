@@ -28,23 +28,22 @@ Inspection reads available binding, source, target and synchronization state wit
 
 ## Back up complete files and directories
 
-A new entry has `manifest.json` and `files/`. Its version-2 manifest declares exact target-relative files in `files` and recursive directory roots in `directories`:
+An entry has `manifest.json` and `files/`. Its manifest declares exact target-relative files in `files` and recursive directory roots in `directories`:
 
 ```json
 {
-  "version": 2,
   "files": [".agents/config.json", ".cursor/mcp.json", ".codex/config.toml"],
   "directories": [".agents/rules", ".agents/skills"]
 }
 ```
 
+Only `files` and `directories` are supported manifest fields. Versioned manifests are unsupported; report the format error and preserve the source rather than converting it.
+
 The snapshot under `files/` preserves selected files byte for byte and selected directories recursively. Native MCP and settings files, project instructions and selected generated files can be backed up in full. Backup neither splits fields nor uses `smartkit.lock.json` to decide which bytes to copy. The lock and existing setup mechanisms retain their separate behavior; restoring a full-file snapshot requires no MCP regeneration. An explicit scope may include the lock as an ordinary complete file; defaults omit it and runtime state.
 
-Select the paths needed to restore the user's configuration. Review their full content before accepting the scope: the backup copies credentials and machine paths if those appear in selected files, and performs no secret filtering. Keep credential values in their existing credential facilities. The target-local `.agents/project-config-sync.json` and legacy `.agents/project-config-state.json` receipts stay outside the backup. When selected, `.agents/config.json` is also copied in full, including binding and `setupVersion`; a copied setup marker is not evidence that this checkout completed setup. Its repository binding must match the selected source; resolve a mismatch rather than silently rewriting snapshot bytes. Snapshots support regular files and directories; symlinks and paths rejected by command validation require resolution before proceeding. Report unavailable source content rather than treating it as an empty backup.
+Select the paths needed to restore the user's configuration. Review their full content before accepting the scope: the backup copies credentials and machine paths if those appear in selected files, and performs no secret filtering. Keep credential values in their existing credential facilities. Target-local synchronization state stays outside the backup. When selected, `.agents/config.json` is also copied in full, including binding and `setupVersion`; a copied setup marker is not evidence that this checkout completed setup. Its repository binding must match the selected source; resolve a mismatch rather than silently rewriting snapshot bytes. Snapshots support regular files and directories; symlinks and paths rejected by command validation require resolution before proceeding. Report unavailable source content rather than treating it as an empty backup.
 
 Repeated `--file` arguments to binding and adoption accept files or directories. When creating an entry without explicit selections, the command selects existing default project configuration paths and directories; inspect that actual scope and the complete selected content before publication. The command help and inspection report provide the current selection. Defaults include project entry files, `.agents/config.json`, native MCP/settings files and project Rule, Skill and Agent directories; a default list is a starting scope, not evidence that every project-specific configuration is covered.
-
-Legacy version-1 entries containing individual `files` plus a separate portable `config.json` remain readable with their portable-field projection and generated `AGENTS.md` section handling. `adopt --all` refreshes the complete selected/default snapshot and upgrades a legacy entry to full-file backup. Review that replacement before publication. The old `--field` selector remains only for legacy portable fields; new snapshots use complete files and directories.
 
 ## Bind or deliberately change a source
 
@@ -91,9 +90,9 @@ python "<maintain>" apply --target "<target-root>"
 
 In repository mode, validate the accepted source and inspect its target effects. A first application over differing existing target files requires case-specific analysis and the user's accepted plan. Then pass `--accept-existing <inspect-fingerprint>` for the exact inspected state; a stale token is refused. Subsequent restoration directly overwrites local differences within the declared scope. To preserve an intended target edit in the backup, explicitly adopt it before applying; no saved per-file history or three-way conflict resolution is involved.
 
-Repository mode records successful restoration in the target-local `.agents/project-config-sync.json`: format version, binding, local source entry, `sourceFingerprint`, `appliedPaths` and the automatic synchronization preference. The source fingerprint covers the selected entry's scope and actual snapshot contents, including accepted unpublished edits, rather than the entire repository commit. Changes to another project do not invalidate this receipt.
+Repository mode records successful restoration in the target-local `.agents/project-config-sync.json` with `binding`, `source`, `sourceFingerprint`, `appliedPaths` and `automatic`, without a format version. The source fingerprint covers the selected entry's scope and actual snapshot contents, including accepted unpublished edits, rather than the entire repository commit. Changes to another project do not invalidate this receipt. Versioned receipts are unsupported; report the format error and preserve the state rather than migrating it.
 
-The command may skip content writes only when the saved source fingerprint matches and the local selected contents also agree. A changed or missing local file still requires alignment even when the source is unchanged; deciding whether the remote changed still requires updating the repository. `appliedPaths` supports deleting formerly applied files that the backup has removed, without authorizing unrelated target deletion. Record the new fingerprint and applied paths only after successful application; preserve the prior receipt on failure. The legacy receipt is readable for migration and is removed only after successful application of its replacement.
+The command may skip content writes only when the saved source fingerprint matches and the local selected contents also agree. A changed or missing local file still requires alignment even when the source is unchanged; deciding whether the remote changed still requires updating the repository. `appliedPaths` supports deleting formerly applied files that the backup has removed, without authorizing unrelated target deletion. Record the new fingerprint and applied paths only after successful application; preserve the prior receipt on failure.
 
 Set the checkout's subsequent startup preference explicitly through the supported application route:
 
@@ -112,7 +111,7 @@ python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --f
 python "<maintain>" adopt --target "<target-root>" --all
 ```
 
-Adoption is a repository-mode operation that deliberately replaces selected backup content with accepted target content. Inspect current source and target, resolve the intended result and update before adoption. Use repeated exact `--file` selections or `--all` for the complete selected/default scope. Preserve unselected content and unrelated source work. Validate, apply and verify the accepted result before publication; successful adoption alone establishes none of those outcomes.
+Adoption is a repository-mode operation that deliberately replaces selected backup content with accepted target content. Inspect current source and target, resolve the intended result and update before adoption. Use repeated exact `--file` selections, or `--all` to refresh the files and directories already declared in the manifest without adding default paths. With `--all`, missing declared files are removed from the backup and manifest; directory declarations remain. Preserve unselected content and unrelated source work. Validate, apply and verify the accepted result before publication; successful adoption alone establishes none of those outcomes.
 
 ## Render local configuration only when required
 

@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
+from project_state import config_backup as backup
 from project_state.catalog import load_catalog, safe_relative
 from project_state.models import Catalog
 from project_state.paths import confined_target
@@ -53,8 +54,7 @@ def add_arguments(parser: argparse.ArgumentParser, *, include_sync: bool = False
             command.add_argument('--auto-sync', choices=('on', 'off'), help='Record local permission for future session update/restore; default off')
         if name == 'adopt':
             command.add_argument('--file', action='append', default=[], help='Selected complete target-relative file or directory')
-            command.add_argument('--all', action='store_true', help='Refresh the backup scope; upgrade a legacy entry to a complete backup')
-            command.add_argument('--field', action='append', default=[], choices=sorted(configuration.PORTABLE), help='Legacy version-one portable field only')
+            command.add_argument('--all', action='store_true', help='Refresh all files and directories in the backup scope')
         if name == 'publish':
             command.add_argument('--path', action='append', default=[], help='Exact repository-relative changed file owned by this maintenance request; repeat')
             command.add_argument('--message', help='Commit message for the selected scope')
@@ -157,11 +157,11 @@ def sync_git_exclusions(target: Path, catalog: Catalog, paths: list[str] | None 
     if selected.mode == 'local':
         return exclude_local(target, [], enabled=False)
     personal = {'.agents/', 'AGENTS.md', 'CLAUDE.md', *(paths or [])}
-    if selected.mode == 'repository' and configuration.is_complete_backup(target):
+    if selected.mode == 'repository':
         entry = configuration.entry_root(target)
-        files, _ = configuration.read_entry(entry, catalog)
+        manifest, files = backup.read_backup(entry)
         personal.update(files)
-        personal.update(configuration._manifest(entry)['directories'])
+        personal.update(manifest['directories'])
         return exclude_local(target, sorted(personal))
     config = load_project_config(target / configuration.CONFIG, catalog=catalog)
     personal.update(str(path) for agent in config.agents for path in agent.source_paths)
@@ -169,9 +169,6 @@ def sync_git_exclusions(target: Path, catalog: Catalog, paths: list[str] | None 
     owned = load_ownership(target)
     if owned is not None:
         personal.update(str(asset.path) for asset in owned.assets)
-    if selected.mode == 'repository':
-        files, _ = configuration.read_entry(configuration.entry_root(target), catalog)
-        personal.update(files)
     return exclude_local(target, sorted(personal))
 
 
@@ -191,7 +188,7 @@ def _bind(args: argparse.Namespace, catalog: Catalog) -> dict:
         raise ValueError('maintenance binding already exists; an explicit switch requires --replace-binding')
     exclude_local(target, [], enabled=False, check_only=True)
     if switching:
-        configuration.require_converged(target, catalog)
+        configuration.require_converged(target)
     config_before = configuration._json(current)
     result = {'mode': args.mode}
     if args.mode == 'repository':
@@ -199,16 +196,16 @@ def _bind(args: argparse.Namespace, catalog: Catalog) -> dict:
         entry = confined_target(root, PurePosixPath('projects') / args.entry)
         if not (entry / 'manifest.json').exists():
             entry.mkdir(parents=True, exist_ok=True)
-            configuration.initialize_entry(target, entry, args.file, catalog,
+            configuration.initialize_entry(target, entry, args.file,
                                            config_content=configuration._json({**current, 'maintenance': selected}))
         elif args.file:
             raise ValueError('initial file import is only valid for a new entry; explicitly adopt later edits')
-        configuration.read_entry(entry, catalog)
+        backup.read_backup(entry)
         result['source'] = str(entry)
     if configuration._json(configuration._document(target, configuration.CONFIG, missing=True)) != config_before:
         raise ValueError('project config changed while binding was prepared; source work is retained')
     current['maintenance'] = selected
-    deletes = [configuration.STATE, configuration.backup.LEGACY_SYNC_PATH] if switching else []
+    deletes = [configuration.STATE] if switching else []
     plan = build_plan(target, [DesiredFile(configuration.CONFIG, configuration._json(current))], delete_paths=deletes)
     apply_plan(target, plan)
     result['bound'] = True
@@ -216,7 +213,7 @@ def _bind(args: argparse.Namespace, catalog: Catalog) -> dict:
     return result
 
 
-def _publish(args: argparse.Namespace, catalog: Catalog) -> dict:
+def _publish(args: argparse.Namespace) -> dict:
     target = args.target.absolute()
     selected = configuration.binding(target)
     if selected is None or selected.mode != 'repository':
@@ -232,19 +229,11 @@ def _publish(args: argparse.Namespace, catalog: Catalog) -> dict:
         path = safe_relative(value, 'publication path')
         if prefix not in path.parents:
             raise ValueError('publication scope must stay inside the bound project entry')
-    configuration.require_converged(target, catalog)
-    if not configuration.is_complete_backup(target):
-        checked = synchronize_project(Path(__file__).resolve().parents[4], target, check_only=True)
-        if checked.check != 'clean':
-            raise ValueError('native project configuration has drift; synchronize it before publication')
+    configuration.require_converged(target)
     commit = args.commit or repository.commit_scope(checkout, selected.branch, args.path, args.message)
     try:
         # Hooks may modify source inputs; those bytes must reach the target before publication.
-        configuration.require_converged(target, catalog)
-        if not configuration.is_complete_backup(target):
-            checked = synchronize_project(Path(__file__).resolve().parents[4], target, check_only=True)
-            if checked.check != 'clean':
-                raise ValueError('target needs synchronization after commit hooks')
+        configuration.require_converged(target)
         return {'local_applied': True, **repository.publish(checkout, selected.branch, commit)}
     except (OSError, ValueError, subprocess.SubprocessError):
         # Supply retained-effect evidence; run() still owns the final failure diagnostic.
@@ -258,7 +247,7 @@ def run_sync(args: argparse.Namespace, command: str) -> int:
     source = Path(__file__).resolve().parents[4]
     target = args.target.absolute()
     try:
-        configuration.require_converged(target, load_catalog(source))
+        configuration.require_converged(target)
         if command == 'sync-project':
             result = synchronize_project(source, target, check_only=args.check)
         else:
@@ -287,20 +276,20 @@ def run(args: argparse.Namespace) -> int:
         if command == 'bind':
             result = _bind(args, catalog)
         elif command == 'inspect':
-            result = configuration.inspect(target, catalog)
+            result = configuration.inspect(target)
         elif command == 'apply':
-            result = configuration.apply(target, catalog, accept_existing=args.accept_existing,
+            result = configuration.apply(target, accept_existing=args.accept_existing,
                                          automatic=None if args.auto_sync is None else args.auto_sync == 'on')
             result['tracked_paths'] = sync_git_exclusions(target, catalog, result['managed_paths'])
         elif command == 'adopt':
-            result = configuration.adopt(target, catalog, args.file, args.field, all_paths=args.all)
+            result = configuration.adopt(target, args.file, all_paths=args.all)
         elif command == 'update':
             selected = configuration.binding(target)
             if selected is None or selected.mode != 'repository':
                 raise ValueError('update needs a repository maintenance binding')
             result = repository.update(repository.open_checkout(selected.repository, selected.branch), selected.branch)
         else:
-            result = _publish(args, catalog)
+            result = _publish(args)
         print(json.dumps({'operation': command, **result}, ensure_ascii=False))
         return 0
     except (OSError, ValueError, subprocess.SubprocessError, TransactionError) as error:

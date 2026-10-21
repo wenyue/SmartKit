@@ -12,7 +12,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
 sys.path.insert(0, str(ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(ROOT / 'skills/setup-project-agents/scripts'))
-from project_state.catalog import load_catalog
 
 
 class ProjectConfigurationTest(unittest.TestCase):
@@ -27,7 +26,6 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.entry = self.root / 'entry'
         self.target.mkdir()
         self.entry.mkdir()
-        self.catalog = load_catalog(ROOT)
         self.binding = {'mode': 'repository', 'repository': 'user/config', 'branch': 'main', 'entry': 'app'}
         self.write(self.target, '.agents/config.json', json.dumps({'maintenance': self.binding, 'setupVersion': '1.2.21'}))
         self.resolve = mock.patch.object(self.module, 'entry_root', return_value=self.entry)
@@ -42,14 +40,14 @@ class ProjectConfigurationTest(unittest.TestCase):
 
     def initialize(self):
         self.write(self.target, '.agents/rules/personal.md', '# Personal\n')
-        self.module.initialize_entry(self.target, self.entry, ['.agents/rules/personal.md'], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, ['.agents/rules/personal.md'])
+        self.module.apply(self.target)
 
     def test_import_and_apply_preserve_local_records_and_unselected_files(self):
         self.initialize()
         self.write(self.entry, 'files/.agents/rules/personal.md', '# Changed\n')
         self.write(self.target, 'notes.txt', 'keep')
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Changed\n')
         config = json.loads((self.target / '.agents/config.json').read_text())
         self.assertEqual(config['setupVersion'], '1.2.21')
@@ -61,26 +59,26 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.initialize()
         self.write(self.target, '.agents/rules/personal.md', '# Local edit\n')
         self.write(self.entry, 'files/.agents/rules/personal.md', '# Remote edit\n')
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Remote edit\n')
 
     def test_adoption_backs_up_explicitly_selected_local_content(self):
         self.initialize()
         self.write(self.target, '.agents/rules/personal.md', '# Accepted local\n')
-        self.module.adopt(self.target, self.catalog, ['.agents/rules/personal.md'], [])
+        self.module.adopt(self.target, ['.agents/rules/personal.md'])
         self.assertEqual((self.entry / 'files/.agents/rules/personal.md').read_text(), '# Accepted local\n')
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.write(self.entry, 'files/.agents/rules/personal.md', '# New remote\n')
         self.write(self.target, '.agents/rules/personal.md', '# Different local\n')
-        self.module.adopt(self.target, self.catalog, ['.agents/rules/personal.md'], [])
+        self.module.adopt(self.target, ['.agents/rules/personal.md'])
         self.assertEqual((self.entry / 'files/.agents/rules/personal.md').read_text(), '# Different local\n')
         with self.assertRaisesRegex(ValueError, 'requires explicit'):
-            self.module.adopt(self.target, self.catalog, [], [])
+            self.module.adopt(self.target, [])
 
     def test_unmodified_recorded_deletion_is_applied(self):
         self.initialize()
-        self.write(self.entry, 'manifest.json', '{"version":2,"files":[],"directories":[]}')
-        self.module.apply(self.target, self.catalog)
+        self.write(self.entry, 'manifest.json', '{"files":[],"directories":[]}')
+        self.module.apply(self.target)
         self.assertFalse((self.target / '.agents/rules/personal.md').exists())
 
     def test_backup_retirement_does_not_consult_setup_ownership(self):
@@ -93,18 +91,18 @@ class ProjectConfigurationTest(unittest.TestCase):
         content = (self.target / relative).read_bytes()
         state = OwnershipState((), (OwnedAsset('file', 'rule', relative, hashlib.sha256(content).hexdigest()),))
         (self.target / '.agents/smartkit.lock.json').write_bytes(serialize_ownership(state))
-        self.write(self.entry, 'manifest.json', '{"version":2,"files":[],"directories":[]}')
+        self.write(self.entry, 'manifest.json', '{"files":[],"directories":[]}')
         lock_before = (self.target / '.agents/smartkit.lock.json').read_bytes()
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.assertFalse((self.target / relative).exists())
         self.assertEqual((self.target / '.agents/smartkit.lock.json').read_bytes(), lock_before)
 
     def test_configuration_is_backed_up_and_restored_as_a_complete_file(self):
         self.write(self.target, '.agents/config.json', json.dumps({'maintenance': self.binding, 'setupVersion': '1.2.21', 'mcp': []}))
-        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
         self.write(self.entry, 'files/.agents/config.json', json.dumps({'maintenance': self.binding, 'replacement': True}))
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         config = json.loads((self.target / '.agents/config.json').read_text())
         self.assertNotIn('mcp', config)
         self.assertIn('maintenance', config)
@@ -112,23 +110,23 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertTrue(config['replacement'])
 
     def test_equivalent_git_addresses_restore_original_bytes_and_keep_receipt_valid(self):
-        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
         source = (self.entry / 'files/.agents/config.json').read_bytes()
         alias = {**self.binding, 'repository': 'https://github.com/user/config.git'}
         self.write(self.target, '.agents/config.json', json.dumps({'maintenance': alias}))
         (self.target / '.agents/project-config-sync.json').unlink()
-        report = self.module.inspect(self.target, self.catalog)
-        self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
+        report = self.module.inspect(self.target)
+        self.module.apply(self.target, accept_existing=report['fingerprint'])
         self.assertEqual((self.target / '.agents/config.json').read_bytes(), source)
-        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
 
     def test_agents_generated_section_is_part_of_the_complete_backup(self):
         self.write(self.target, 'AGENTS.md', '# Instructions\n\n## Project rules\n\nOld index\n\n## Personal\n\nUser rules\n')
-        self.module.initialize_entry(self.target, self.entry, ['AGENTS.md'], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, ['AGENTS.md'])
+        self.module.apply(self.target)
         self.write(self.entry, 'files/AGENTS.md', '# Instructions\n\n## Personal\n\nUpdated personal rules\n')
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         text = (self.target / 'AGENTS.md').read_text()
         self.assertEqual(text, '# Instructions\n\n## Personal\n\nUpdated personal rules\n')
 
@@ -136,34 +134,34 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.initialize()
         (self.target / '.agents/project-config-sync.json').unlink()
         self.write(self.target, '.agents/rules/personal.md', '# Existing independent\n')
-        observation = self.module.inspect(self.target, self.catalog)
+        observation = self.module.inspect(self.target)
         self.assertTrue(observation['conflicts'])
         with self.assertRaisesRegex(ValueError, 'conflict'):
-            self.module.apply(self.target, self.catalog)
+            self.module.apply(self.target)
         with self.assertRaises(ValueError):
-            self.module.apply(self.target, self.catalog, accept_existing='stale')
-        self.module.apply(self.target, self.catalog, accept_existing=observation['fingerprint'])
+            self.module.apply(self.target, accept_existing='stale')
+        self.module.apply(self.target, accept_existing=observation['fingerprint'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
 
     def test_source_cannot_export_unsafe_paths_or_its_own_receipt(self):
         self.initialize()
         for path in ('../escape', '.agents/project-config-sync.json', '.codegraph/state', '.git/config'):
-            self.write(self.entry, 'manifest.json', json.dumps({'version': 2, 'files': [path], 'directories': []}))
+            self.write(self.entry, 'manifest.json', json.dumps({'files': [path], 'directories': []}))
             with self.assertRaises(ValueError):
-                self.module.inspect(self.target, self.catalog)
+                self.module.inspect(self.target)
 
     def test_invalid_receipt_is_refused_and_established_empty_scope_can_expand(self):
         self.initialize()
         self.write(self.target, '.agents/project-config-sync.json', '{}')
         with self.assertRaisesRegex(ValueError, 'record is invalid'):
-            self.module.inspect(self.target, self.catalog)
+            self.module.inspect(self.target)
         (self.target / '.agents/project-config-sync.json').unlink()
-        self.write(self.entry, 'manifest.json', '{"version":2,"files":[],"directories":[]}')
-        self.module.apply(self.target, self.catalog)
-        self.write(self.entry, 'manifest.json', '{"version":2,"files":[".agents/rules/personal.md"],"directories":[]}')
+        self.write(self.entry, 'manifest.json', '{"files":[],"directories":[]}')
+        self.module.apply(self.target)
+        self.write(self.entry, 'manifest.json', '{"files":[".agents/rules/personal.md"],"directories":[]}')
         self.write(self.target, '.agents/rules/personal.md', '# Later target work\n')
-        report = self.module.inspect(self.target, self.catalog)
-        self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
+        report = self.module.inspect(self.target)
+        self.module.apply(self.target, accept_existing=report['fingerprint'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
 
     def test_source_symlink_is_refused(self):
@@ -177,12 +175,12 @@ class ProjectConfigurationTest(unittest.TestCase):
         except OSError:
             self.skipTest('symlinks unavailable')
         with self.assertRaises(ValueError):
-            self.module.inspect(self.target, self.catalog)
+            self.module.inspect(self.target)
 
     def test_generated_outputs_reach_source_before_target(self):
         self.initialize()
         generated = {'.agents/rules/personal.md': b'# Generated replacement\n'}
-        state_file = self.module.save_generated(self.target, self.catalog, generated, [])
+        state_file = self.module.save_generated(self.target, generated, [])
         self.assertEqual((self.entry / 'files/.agents/rules/personal.md').read_bytes(), generated['.agents/rules/personal.md'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
         self.assertEqual(state_file.path.as_posix(), '.agents/project-config-sync.json')
@@ -192,11 +190,11 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.write(self.target, '.cursor/mcp.json', '')
         (self.target / '.cursor/mcp.json').write_bytes(content)
         self.write(self.target, '.agents/smartkit.lock.json', 'opaque lock: backup must not parse this')
-        self.module.initialize_entry(self.target, self.entry, ['.cursor/mcp.json'], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, ['.cursor/mcp.json'])
+        self.module.apply(self.target)
         self.assertEqual((self.entry / 'files/.cursor/mcp.json').read_bytes(), content)
         self.write(self.target, '.cursor/mcp.json', '{"local":"discard"}')
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.assertEqual((self.target / '.cursor/mcp.json').read_bytes(), content)
         self.assertEqual((self.target / '.agents/smartkit.lock.json').read_text(),
                          'opaque lock: backup must not parse this')
@@ -212,17 +210,17 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.write(self.target, '.agents/skills/example/SKILL.md', '# Example\n')
         asset = self.target / '.agents/skills/example/icon.bin'
         asset.write_bytes(b'\x00\xff\r\n')
-        self.module.initialize_entry(self.target, self.entry, ['.agents/skills'], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, ['.agents/skills'])
+        self.module.apply(self.target)
         asset.write_bytes(b'local')
         self.write(self.target, '.agents/skills/local-only.txt', 'discard within scope')
         self.write(self.target, 'outside.txt', 'keep')
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.assertEqual(asset.read_bytes(), b'\x00\xff\r\n')
         self.assertFalse((self.target / '.agents/skills/local-only.txt').exists())
         self.assertEqual((self.target / 'outside.txt').read_text(), 'keep')
         (self.entry / 'files/.agents/skills/example/icon.bin').unlink()
-        self.module.apply(self.target, self.catalog)
+        self.module.apply(self.target)
         self.assertFalse(asset.exists())
 
     def test_source_fingerprint_skips_writes_but_repairs_local_drift(self):
@@ -230,18 +228,18 @@ class ProjectConfigurationTest(unittest.TestCase):
         path = self.target / '.agents/rules/personal.md'
         state = self.target / '.agents/project-config-sync.json'
         before = (path.stat().st_mtime_ns, state.stat().st_mtime_ns, state.read_bytes())
-        self.assertTrue(self.module.apply(self.target, self.catalog)['skipped'])
+        self.assertTrue(self.module.apply(self.target)['skipped'])
         self.assertEqual((path.stat().st_mtime_ns, state.stat().st_mtime_ns, state.read_bytes()), before)
         receipt = json.loads(state.read_bytes())
         self.assertNotIn('files', receipt)
         self.assertNotIn('config', receipt)
         self.assertEqual(receipt['appliedPaths'], ['.agents/rules/personal.md'])
         self.write(self.target, '.agents/rules/personal.md', '# Drift\n')
-        self.assertFalse(self.module.apply(self.target, self.catalog)['skipped'])
+        self.assertFalse(self.module.apply(self.target)['skipped'])
         self.assertEqual(path.read_text(), '# Personal\n')
         self.assertEqual(json.loads(state.read_bytes())['sourceFingerprint'], receipt['sourceFingerprint'])
 
-    def test_receipt_changes_only_after_successful_apply_and_old_receipt_is_retired(self):
+    def test_receipt_changes_only_after_successful_apply(self):
         from project_config import project_configuration as configuration
         from project_config.transaction import TransactionError
         self.initialize()
@@ -254,45 +252,64 @@ class ProjectConfigurationTest(unittest.TestCase):
             return apply_plan(root, plan, **kwargs)
         with mock.patch.object(configuration, 'apply_plan', side_effect=with_late_source_change):
             with self.assertRaisesRegex(TransactionError, 'configuration changed'):
-                self.module.apply(self.target, self.catalog)
+                self.module.apply(self.target)
         self.assertEqual(receipt.read_bytes(), previous)
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
-        receipt.unlink()
-        self.write(self.target, '.agents/project-config-state.json', json.dumps({
-            'version': 1, 'binding': self.binding, 'files': {'.agents/rules/personal.md': '0' * 64}, 'config': {}}))
-        report = self.module.inspect(self.target, self.catalog)
-        self.module.apply(self.target, self.catalog, accept_existing=report['fingerprint'])
-        self.assertFalse((self.target / '.agents/project-config-state.json').exists())
-        self.assertTrue(receipt.exists())
 
-    def test_legacy_entry_and_receipt_can_upgrade_to_full_backup(self):
-        self.write(self.target, '.agents/rules/personal.md', '# Legacy\n')
-        self.write(self.entry, 'manifest.json', '{"version":1,"files":[".agents/rules/personal.md"]}')
-        self.write(self.entry, 'config.json', '{}')
-        self.write(self.entry, 'files/.agents/rules/personal.md', '# Legacy\n')
-        self.module.apply(self.target, self.catalog)
-        self.write(self.target, '.cursor/mcp.json', '{"mcpServers":{},"custom":true}\n')
-        self.module.adopt(self.target, self.catalog, [], [], all_paths=True)
-        self.module.apply(self.target, self.catalog)
-        manifest = json.loads((self.entry / 'manifest.json').read_bytes())
-        self.assertEqual(manifest['version'], 2)
-        self.assertIn('.cursor/mcp.json', manifest['files'])
-        self.assertIn('.agents/rules', manifest['directories'])
-        self.assertFalse((self.entry / 'config.json').exists())
-        self.assertEqual((self.entry / 'files/.agents/config.json').read_bytes(),
-                         (self.target / '.agents/config.json').read_bytes())
+    def test_versioned_manifests_are_rejected_without_changing_target(self):
+        self.initialize()
+        original = json.loads((self.entry / 'manifest.json').read_bytes())
+        self.assertEqual(set(original), {'files', 'directories'})
+        before = {path.relative_to(self.target): path.read_bytes()
+                  for path in self.target.rglob('*') if path.is_file()}
+        for manifest in ({**original, 'version': 2},
+                         {'version': 1, 'files': original['files']}):
+            with self.subTest(manifest=manifest):
+                content = json.dumps(manifest)
+                self.write(self.entry, 'manifest.json', content)
+                with self.assertRaisesRegex(ValueError, 'invalid complete configuration backup manifest'):
+                    self.module.apply(self.target)
+                self.assertEqual((self.entry / 'manifest.json').read_text(), content)
+                self.assertEqual({path.relative_to(self.target): path.read_bytes()
+                                  for path in self.target.rglob('*') if path.is_file()}, before)
+
+    def test_versioned_receipt_is_rejected_without_changing_files(self):
+        self.initialize()
+        receipt = self.target / '.agents/project-config-sync.json'
+        state = json.loads(receipt.read_bytes())
+        self.assertNotIn('version', state)
+        state['version'] = 1
+        content = json.dumps(state)
+        receipt.write_text(content)
+        self.write(self.entry, 'files/.agents/rules/personal.md', '# New source\n')
+        with self.assertRaisesRegex(ValueError, 'record is invalid'):
+            self.module.apply(self.target)
+        self.assertEqual(receipt.read_text(), content)
+        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
+
+    def test_removed_field_selector_is_rejected_by_public_cli(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        import maintain
+        self.initialize()
+        before = (self.entry / 'manifest.json').read_bytes()
+        with redirect_stderr(StringIO()) as errors:
+            result = maintain.main(['adopt', '--target', str(self.target), '--field', 'skills'])
+        self.assertEqual(result, 2)
+        self.assertIn('unrecognized arguments: --field skills', errors.getvalue())
+        self.assertEqual((self.entry / 'manifest.json').read_bytes(), before)
 
     def test_default_scope_and_local_automatic_preference(self):
         self.write(self.target, '.codex/config.toml', '# native file with custom content\r\n')
         self.write(self.target, '.agents/project-config-sync.json', 'not part of a backup')
-        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
+        self.module.initialize_entry(self.target, self.entry, [])
         self.assertFalse((self.entry / 'files/.agents/project-config-sync.json').exists())
         (self.target / '.agents/project-config-sync.json').unlink()
-        self.module.apply(self.target, self.catalog, automatic=True)
+        self.module.apply(self.target, automatic=True)
         receipt = json.loads((self.target / '.agents/project-config-sync.json').read_bytes())
         self.assertTrue(receipt['automatic'])
-        self.assertTrue(self.module.apply(self.target, self.catalog)['skipped'])
-        self.module.apply(self.target, self.catalog, automatic=False)
+        self.assertTrue(self.module.apply(self.target)['skipped'])
+        self.module.apply(self.target, automatic=False)
         self.assertFalse(json.loads((self.target / '.agents/project-config-sync.json').read_bytes())['automatic'])
 
     def test_first_binding_includes_the_new_complete_config_in_default_and_explicit_scope(self):
@@ -322,11 +339,11 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.initialize()
         self.write(self.target, '.cursor/mcp.json', '{"extra":true}\n')
         self.write(self.target, 'notes.txt', 'outside scope')
-        self.module.adopt(self.target, self.catalog, ['.cursor/mcp.json'], [])
-        self.module.apply(self.target, self.catalog)
+        self.module.adopt(self.target, ['.cursor/mcp.json'])
+        self.module.apply(self.target)
         self.write(self.target, '.cursor/mcp.json', '{"extra":false}\n')
-        self.module.adopt(self.target, self.catalog, [], [], all_paths=True)
-        self.module.apply(self.target, self.catalog)
+        self.module.adopt(self.target, [], all_paths=True)
+        self.module.apply(self.target)
         self.assertEqual((self.entry / 'files/.cursor/mcp.json').read_bytes(),
                          (self.target / '.cursor/mcp.json').read_bytes())
         self.assertFalse((self.entry / 'files/notes.txt').exists())
@@ -349,7 +366,7 @@ class ProjectConfigurationTest(unittest.TestCase):
                 '--session', str(session), *helper.source_args()]), 0)
         self.assertEqual((self.entry / 'files/.agents/rules/tools.md').read_bytes(),
                          (self.target / '.agents/rules/tools.md').read_bytes())
-        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
         session = helper.private_session(self.root)
         with redirect_stdout(StringIO()):
             self.assertEqual(helper.prepare(self.target, session), 0)
@@ -361,13 +378,152 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertIn('configuration', errors.getvalue())
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
 
+    def final_update(self):
+        config = json.loads((self.target / '.agents/config.json').read_bytes())
+        config['setupVersion'] = '1.2.23'
+        content = json.dumps(config).encode()
+        return self.module.prepare_config_update(self.target, content)
+
+    def final_files(self):
+        return [self.target / '.agents/config.json', self.target / '.agents/project-config-sync.json',
+                self.entry / 'files/.agents/config.json']
+
+    def test_final_update_commits_matching_config_and_receipt_without_rewriting_scope(self):
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target, automatic=True)
+        manifest = (self.entry / 'manifest.json').read_bytes()
+        self.final_update().apply()
+        target, receipt, source = self.final_files()
+        self.assertEqual(target.read_bytes(), source.read_bytes())
+        self.assertEqual(json.loads(target.read_bytes())['setupVersion'], '1.2.23')
+        self.assertTrue(json.loads(receipt.read_bytes())['automatic'])
+        scope, files = self.module.backup.read_backup(self.entry)
+        self.assertEqual(json.loads(receipt.read_bytes())['sourceFingerprint'], self.module.backup.fingerprint(scope, files))
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
+        self.assertEqual((self.entry / 'manifest.json').read_bytes(), manifest)
+        before = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in self.final_files()}
+        self.assertEqual(self.final_update().apply(), [])
+        self.assertEqual({path: (path.read_bytes(), path.stat().st_mtime_ns) for path in self.final_files()}, before)
+
+    def test_final_update_write_failures_restore_all_three_files(self):
+        from project_config import transaction
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
+        before = {path: path.read_bytes() for path in self.final_files()}
+        replace = transaction._replace
+        for secure in dict.fromkeys((transaction._SECURE_DIR_FDS, False)):
+            for failing_write in (1, 2, 3):
+                with self.subTest(secure=secure, failing_write=failing_write):
+                    calls = []
+                    def fail(*args, **kwargs):
+                        calls.append(args)
+                        if len(calls) == failing_write:
+                            raise OSError('injected final write failure')
+                        return replace(*args, **kwargs)
+                    with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                            mock.patch.object(transaction, '_replace', side_effect=fail):
+                        with self.assertRaisesRegex(transaction.TransactionError, 'injected final write failure'):
+                            self.final_update().apply()
+                    self.assertEqual({path: path.read_bytes() for path in self.final_files()}, before)
+
+    def test_final_update_late_failure_or_interruption_compensates_source(self):
+        from project_config.transaction import TransactionError
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
+        before = {path: path.read_bytes() for path in self.final_files()}
+        apply_plan = self.module.apply_plan
+        for failure in (ValueError('late validation failed'), KeyboardInterrupt('interrupted')):
+            with self.subTest(failure=type(failure).__name__):
+                def apply(root, plan, *, postcondition=None):
+                    if root != self.target:
+                        return apply_plan(root, plan, postcondition=postcondition)
+                    def after_source():
+                        postcondition()
+                        raise failure
+                    return apply_plan(root, plan, postcondition=after_source)
+                with mock.patch.object(self.module, 'apply_plan', side_effect=apply):
+                    with self.assertRaises(TransactionError) as caught:
+                        self.final_update().apply()
+                self.assertIs(caught.exception.original_error, failure)
+                self.assertEqual(caught.exception.rollback_errors, ())
+                self.assertEqual({path: path.read_bytes() for path in self.final_files()}, before)
+
+    def test_final_update_compensation_preserves_concurrent_source_edit(self):
+        from project_config.transaction import TransactionError
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
+        target, receipt, source = self.final_files()
+        before = {path: path.read_bytes() for path in (target, receipt)}
+        external = b'concurrent source content\n'
+        apply_plan = self.module.apply_plan
+        def apply(root, plan, *, postcondition=None):
+            if root != self.target:
+                return apply_plan(root, plan, postcondition=postcondition)
+            def after_source():
+                postcondition()
+                source.write_bytes(external)
+                raise ValueError('late validation failed')
+            return apply_plan(root, plan, postcondition=after_source)
+        with mock.patch.object(self.module, 'apply_plan', side_effect=apply):
+            with self.assertRaisesRegex(TransactionError, 'late validation failed.*rollback failed') as caught:
+                self.final_update().apply()
+        self.assertTrue(caught.exception.rollback_errors)
+        self.assertEqual(source.read_bytes(), external)
+        self.assertEqual({path: path.read_bytes() for path in (target, receipt)}, before)
+
+    def test_final_update_retains_nested_source_rollback_failure(self):
+        from project_config.transaction import TransactionError
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
+        target, receipt, source = self.final_files()
+        before = {path: path.read_bytes() for path in (target, receipt)}
+        external = b'concurrent source content\n'
+        apply_plan = self.module.apply_plan
+        def apply(root, plan, *, postcondition=None):
+            if root != self.entry:
+                return apply_plan(root, plan, postcondition=postcondition)
+            def source_failure():
+                postcondition()
+                source.write_bytes(external)
+                raise ValueError('source validation failed')
+            return apply_plan(root, plan, postcondition=source_failure)
+        with mock.patch.object(self.module, 'apply_plan', side_effect=apply):
+            with self.assertRaisesRegex(TransactionError, 'source validation failed.*rollback failed') as caught:
+                self.final_update().apply()
+        self.assertTrue(caught.exception.rollback_errors)
+        self.assertEqual(source.read_bytes(), external)
+        self.assertEqual({path: path.read_bytes() for path in (target, receipt)}, before)
+
+    def test_final_update_preserves_backup_scope_without_selected_config(self):
+        self.initialize()
+        manifest = (self.entry / 'manifest.json').read_bytes()
+        self.final_update().apply()
+        self.assertFalse((self.entry / 'files/.agents/config.json').exists())
+        self.assertEqual((self.entry / 'manifest.json').read_bytes(), manifest)
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
+
+    def test_final_update_refuses_source_drift_without_adopting_it(self):
+        from project_config.transaction import TransactionError
+        self.write(self.target, '.agents/rules/personal.md', '# Personal\n')
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
+        before = {path: path.read_bytes() for path in self.final_files()}
+        update = self.final_update()
+        external = '# Changed after preparation\n'
+        self.write(self.entry, 'files/.agents/rules/personal.md', external)
+        with self.assertRaisesRegex(TransactionError, 'differs from its source'):
+            update.apply()
+        self.assertEqual({path: path.read_bytes() for path in self.final_files()}, before)
+        self.assertEqual((self.entry / 'files/.agents/rules/personal.md').read_text(), external)
+        self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
+
     def test_full_setup_keeps_complete_config_and_native_snapshots_converged(self):
         from contextlib import redirect_stdout
         from io import StringIO
         from test_setup_cli import SetupCliTest
         import setup_project_agents
-        self.module.initialize_entry(self.target, self.entry, [], self.catalog)
-        self.module.apply(self.target, self.catalog)
+        self.module.initialize_entry(self.target, self.entry, [])
+        self.module.apply(self.target)
         helper = SetupCliTest()
         session = helper.private_session(self.root)
         with redirect_stdout(StringIO()):
@@ -375,7 +531,7 @@ class ProjectConfigurationTest(unittest.TestCase):
             helper.write_generated_outputs(session)
             self.assertEqual(setup_project_agents.main(['finish', '--target', str(self.target),
                 '--session', str(session), *helper.source_args()]), 0)
-        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
         for relative in ('.agents/config.json', '.codex/config.toml', '.cursor/cli.json', 'AGENTS.md'):
             self.assertEqual((self.entry / 'files' / relative).read_bytes(), (self.target / relative).read_bytes())
 
@@ -417,7 +573,7 @@ class ProjectConfigurationTest(unittest.TestCase):
             return original_apply(target, plan, **kwargs)
         with mock.patch.object(adoption, 'apply_plan', side_effect=observed_apply):
             adoption.apply(self.target, manifest)
-        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
 
     def test_public_inspection_and_local_binding_preserve_config(self):
         import workflow
@@ -459,8 +615,8 @@ class ProjectConfigurationTest(unittest.TestCase):
         with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
             status = maintain.main(['bind', '--target', str(self.target), '--mode', 'local-only', '--replace-binding'])
         self.assertEqual(status, 0, errors.getvalue())
-        self.assertFalse((self.target / '.agents/project-config-state.json').exists())
-        self.assertEqual(self.module.inspect(self.target, self.catalog)['mode'], 'local-only')
+        self.assertFalse((self.target / '.agents/project-config-sync.json').exists())
+        self.assertEqual(self.module.inspect(self.target)['mode'], 'local-only')
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
         self.assertEqual(source, {str(path.relative_to(self.entry)): path.read_bytes()
                                   for path in self.entry.rglob('*') if path.is_file()})
@@ -475,15 +631,14 @@ class ProjectConfigurationTest(unittest.TestCase):
         runtime = mock.Mock()
         runtime.commit_scope.return_value = commit
         runtime.publish.side_effect = OSError('remote unavailable')
-        with mock.patch.object(cli, 'repository', runtime), \
-                mock.patch.object(cli, 'synchronize_project', return_value=mock.Mock(check='clean')):
+        with mock.patch.object(cli, 'repository', runtime):
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
                 result = workflow.main(['project-config', 'publish', '--target', str(self.target),
                     '--path', 'projects/app/manifest.json', '--message', 'Update source'])
         self.assertEqual(result, 2)
         self.assertIn(commit, errors.getvalue())
         self.assertIn('remote unavailable', errors.getvalue())
-        self.assertEqual(self.module.inspect(self.target, self.catalog)['changes'], [])
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
 
     def test_local_excludes_ignore_inherited_git_routing(self):
         import os

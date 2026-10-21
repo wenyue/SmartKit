@@ -36,14 +36,14 @@ python "<maintain>" update --target "<target-root>"
 
 在仓库中编写时，编辑条目 `files/` 下选中的文件；已接受的范围变化时同时修改清单。完整保留每个选定文件，包括原生 MCP 和设置文件；备份不查阅 `smartkit.lock.json`，也不重新生成这些文件。本地同步记录不纳入备份。编写或修订 Rule 或 Skill 时，以来源文件作为 Candidate，并提供合格的业务项目证据，使用[编写 Rule 和 Skill](../write-rules-and-skills/SKILL.md)；保留其中的作者与评审职责。
 
-采纳操作会有意将已接受的目标内容写入备份。先检查当前来源和目标，再选择要替换的内容；可以使用精确文件或目录，也可以刷新完整选定范围：
+采纳操作会有意将已接受的目标内容写入备份。先检查当前来源和目标，再选择要替换的内容；可以使用精确文件或目录，也可以刷新整个已声明范围：
 
 ```text
 python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --file ".agents/rules"
 python "<maintain>" adopt --target "<target-root>" --all
 ```
 
-阅读 `adopt --help`，了解当前选项和旧版条目处理。保留未选中的来源工作。采纳只保存来源内容，之后仍需验证、恢复和发布。记录精确的仓库相对改动文件，包括清单变更和删除，供最终发布使用。
+阅读 `adopt --help`，了解当前选项。`--all` 只刷新清单中已声明的文件和目录。保留未选中的来源工作。采纳只保存来源内容，之后仍需验证、恢复和发布。记录精确的仓库相对改动文件，包括清单变更和删除，供最终发布使用。
 
 ## 4. 验证并恢复
 

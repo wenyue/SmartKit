@@ -175,16 +175,16 @@ def apply(target: Path, manifest: dict[str, object]) -> list[str]:
             raise ValueError(f'Agent adoption input changed during planning: {path}')
 
     def postcondition() -> None:
-        project_configuration.require_converged(target, catalog)
+        project_configuration.require_converged(target)
         for path, before in guards.items():
             expected_content = files.get(path, before)
             if _read(target, path) != expected_content:
                 raise ValueError(f'Agent adoption did not converge: {path}')
 
     receipt = project_configuration.save_generated(
-        target, catalog,
+        target,
         {str(path): content for path, content in files.items() if path.parts[:2] == ('.agents', 'agents')},
-        [], portable_config=config, target_outputs={str(path): content for path, content in files.items()},
+        [], target_outputs={str(path): content for path, content in files.items()},
     )
     if receipt is not None:
         plan = replace(plan, changes=(*plan.changes, *build_plan(target, [receipt]).changes))

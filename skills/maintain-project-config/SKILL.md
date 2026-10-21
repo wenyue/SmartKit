@@ -36,14 +36,14 @@ Use business-project evidence to decide what configuration should say. The confi
 
 For repository authoring, edit the selected files under the entry's `files/` and its manifest when the accepted scope changes. Preserve each selected file in full, including native MCP and settings files; backup does not consult `smartkit.lock.json` or regenerate those files. Keep the local synchronization receipt outside the backup. When writing or revising a Rule or Skill, use [Write Rules and Skills](../write-rules-and-skills/SKILL.md) with the source files as its Candidate and qualified business-project evidence; preserve its author and review responsibilities.
 
-Adoption deliberately carries accepted target content into the backup. Inspect current source and target before choosing what to replace, then use exact files or directories, or refresh the complete selected scope:
+Adoption deliberately carries accepted target content into the backup. Inspect current source and target before choosing what to replace, then use exact files or directories, or refresh the entire declared scope:
 
 ```text
 python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --file ".agents/rules"
 python "<maintain>" adopt --target "<target-root>" --all
 ```
 
-Read `adopt --help` for current options and legacy-entry handling. Preserve unselected source work. Adoption saves source content; validation, restoration and publication still follow. Record the exact changed repository-relative files, including manifest changes and deletions, for the final publication.
+Read `adopt --help` for current options. `--all` refreshes only the files and directories already declared in the manifest. Preserve unselected source work. Adoption saves source content; validation, restoration and publication still follow. Record the exact changed repository-relative files, including manifest changes and deletions, for the final publication.
 
 ## 4. Validate and restore
 

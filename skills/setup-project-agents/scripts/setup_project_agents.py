@@ -132,7 +132,7 @@ def _request(
         'source_fingerprint': source_fingerprint,
         'external_snapshot_sha256': external_snapshot_sha256,
         'target_fingerprint': target_fingerprint,
-        'configuration_fingerprint': project_configuration.require_converged(target, catalog),
+        'configuration_fingerprint': project_configuration.require_converged(target),
         'maintenance': project_configuration.binding_document(config.maintenance) if config.maintenance else None,
         'settings': [{'path': str(item.path), 'key': item.key, 'value': item.value} for item in config.settings],
         'harnesses': [item.value for item in _HARNESSES],
@@ -871,7 +871,7 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
         catalog=catalog,
     )
     config = project.config
-    project_configuration.require_converged(project.root, catalog)
+    project_configuration.require_converged(project.root)
     discovery = discover_native_agents(project.root)
     if discovery.issues:
         raise SetupError('; '.join(discovery.issues))
@@ -962,7 +962,7 @@ def _session_inputs(
         raise SetupError('target changed after start; cancel and restart from current state')
     if request['source_fingerprint'] != _source_fingerprint(args.source_root, catalog):
         raise SetupError('setup source changed after start; cancel and restart')
-    if verify_target_fingerprint and request['configuration_fingerprint'] != project_configuration.require_converged(project.root, catalog):
+    if verify_target_fingerprint and request['configuration_fingerprint'] != project_configuration.require_converged(project.root):
         raise SetupError('project configuration source changed after start; cancel and restart')
     return catalog, project, request, config
 
@@ -1232,7 +1232,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
 
         def postcondition() -> None:
-            project_configuration.require_converged(target, catalog)
+            project_configuration.require_converged(target)
             check_plan, _, _, _ = _plan(
                 args,
                 session,
@@ -1261,7 +1261,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Canonical generated inputs survive a later target failure for explicit recovery.
         _, generated_outputs = _generated_outputs(session, request['generation_requests'])
         receipt = project_configuration.save_generated(
-            target, catalog,
+            target,
             {str(path): (session / _GENERATED_NAME / path).read_bytes() for path in generated_outputs},
             [str(path) for path in rendered.delete_paths],
             target_outputs={str(change.path): change.content for change in plan.changes

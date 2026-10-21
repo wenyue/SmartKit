@@ -313,6 +313,70 @@ class SetupWorkflowTest(unittest.TestCase):
 
             workflow._require_matt_context(target)
 
+    def test_canonical_repository_finish_commits_or_restores_final_config_and_receipt(self):
+        import os
+        from project_config import repository
+        from project_config.transaction import TransactionError
+        configuration = workflow.project_configuration
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            origin = self.make_origin(root)
+            for fail_backup in (False, True):
+                with self.subTest(fail_backup=fail_backup), mock.patch.dict(
+                        os.environ, {'SMARTKIT_PROJECT_CONFIG_HOME': str(root / str(fail_backup) / 'storage')}):
+                    target = root / str(fail_backup) / 'target'
+                    target.mkdir(parents=True)
+                    self.write_matt_context(target)
+                    binding = {'mode': 'repository', 'repository': 'review/config', 'branch': 'main', 'entry': 'app'}
+                    config_path = target / '.agents/config.json'
+                    config_path.parent.mkdir()
+                    config_path.write_text(json.dumps({'maintenance': binding, 'setupVersion': '1.2.22'}), encoding='utf-8')
+                    checkout = repository._checkout_path('review/config', 'main')
+                    checkout.mkdir(parents=True)
+                    run_git(checkout, 'init', '--quiet')
+                    run_git(checkout, 'checkout', '--quiet', '-b', 'main')
+                    run_git(checkout, 'remote', 'add', 'origin', 'https://github.com/review/config.git')
+                    (checkout / '.git/smartkit-project-config.json').write_text(
+                        json.dumps({'repository': 'review/config', 'branch': 'main'}), encoding='utf-8')
+                    entry = checkout / 'projects/app'
+                    entry.mkdir(parents=True)
+                    configuration.initialize_entry(target, entry, [])
+                    configuration.apply(target)
+                    output = StringIO()
+                    with mock.patch.object(bootstrap, 'CANONICAL_REPOSITORY', origin.as_uri()), redirect_stdout(output):
+                        self.assertEqual(workflow.main(['start', '--target', str(target)]), 0)
+                    start = json.loads(output.getvalue())
+                    self.assertIsNotNone(start['source_commit'])
+                    session = Path(start['session'])
+                    self.addCleanup(lambda session=session: workflow._remove_session(session) if session.exists() else None)
+                    self.write_generated_outputs(session)
+                    apply_plan = configuration.apply_plan
+                    def apply(root, plan, *, postcondition=None):
+                        if fail_backup and root == entry:
+                            raise TransactionError(OSError('injected final backup write failure'))
+                        return apply_plan(root, plan, postcondition=postcondition)
+                    output, error = StringIO(), StringIO()
+                    with mock.patch.object(configuration, 'apply_plan', side_effect=apply), \
+                            redirect_stdout(output), redirect_stderr(error):
+                        status = workflow.main(['finish', '--session', str(session)])
+                    self.assertEqual(status, 2 if fail_backup else 0, error.getvalue())
+                    self.assertFalse(session.exists())
+                    self.assertEqual(config_path.read_bytes(), (entry / 'files/.agents/config.json').read_bytes())
+                    expected_version = '1.2.22' if fail_backup else workflow.load_catalog(REPO_ROOT).plugin_version
+                    self.assertEqual(json.loads(config_path.read_bytes())['setupVersion'], expected_version)
+                    self.assertEqual(configuration.inspect(target)['changes'], [])
+                    scope, files = configuration.backup.read_backup(entry)
+                    receipt = json.loads((target / '.agents/project-config-sync.json').read_bytes())
+                    self.assertEqual(receipt['sourceFingerprint'], configuration.backup.fingerprint(scope, files))
+                    self.assertTrue((entry / 'files/.agents/rules/tools.md').is_file())
+                    if fail_backup:
+                        self.assertIn('injected final backup write failure', error.getvalue())
+                        self.assertEqual(output.getvalue(), '')
+                    else:
+                        finish = json.loads(output.getvalue())
+                        self.assertEqual(finish['check'], 'clean')
+                        self.assertIn('.agents/project-config-sync.json', finish['changed_paths'])
+
     def test_start_and_finish_own_session_apply_check_summary_and_cleanup(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -862,7 +926,7 @@ class SetupVersionCommitTest(unittest.TestCase):
             if cleanup is not None:
                 stack.enter_context(mock.patch.object(workflow, '_remove_session', side_effect=cleanup))
             if commit is not None:
-                stack.enter_context(mock.patch.object(workflow, 'apply_plan', side_effect=commit))
+                stack.enter_context(mock.patch.object(workflow.project_configuration, 'apply_plan', side_effect=commit))
             stack.enter_context(redirect_stdout(output))
             stack.enter_context(redirect_stderr(error))
             status = workflow.main(['finish', '--session', str(self.session)])
@@ -915,7 +979,7 @@ class SetupVersionCommitTest(unittest.TestCase):
             run_git(self.target, 'check-ignore', '--quiet', relative)
         self.assertEqual(native.read_bytes(), b'model = "retained"\n')
         self.assertEqual(json.loads(self.config.read_text())['maintenance'], {'mode': 'local-only'})
-        self.assertFalse((self.target / '.agents/project-config-state.json').exists())
+        self.assertFalse((self.target / '.agents/project-config-sync.json').exists())
 
     def test_cleanup_failure_preserves_version(self):
         status, _, error = self.run_finish(cleanup=OSError('cleanup fault'))
@@ -952,23 +1016,23 @@ class SetupVersionCommitTest(unittest.TestCase):
         self.assertIn('changed after pinned finish', error)
 
     def test_version_plan_refuses_a_new_config_preimage(self):
-        build = workflow.build_plan
+        build = workflow.project_configuration.build_plan
         external = b'{"setupVersion":"1.0.0","agents":[],"$schema":"external-edit"}\n'
         def changed(*args, **kwargs):
             self.config.write_bytes(external)
             return build(*args, **kwargs)
-        with mock.patch.object(workflow, 'build_plan', side_effect=changed):
+        with mock.patch.object(workflow.project_configuration, 'build_plan', side_effect=changed):
             status, _, error = self.run_finish()
         self.assertEqual(status, 2)
         self.assertEqual(self.config.read_bytes(), external)
         self.assertIn('changed during setup version planning', error)
 
     def test_version_plan_refuses_config_removed_after_receipt(self):
-        build = workflow.build_plan
+        build = workflow.project_configuration.build_plan
         def removed(*args, **kwargs):
             self.config.unlink()
             return build(*args, **kwargs)
-        with mock.patch.object(workflow, 'build_plan', side_effect=removed):
+        with mock.patch.object(workflow.project_configuration, 'build_plan', side_effect=removed):
             status, _, error = self.run_finish()
         self.assertEqual(status, 2)
         self.assertFalse(self.config.exists())
