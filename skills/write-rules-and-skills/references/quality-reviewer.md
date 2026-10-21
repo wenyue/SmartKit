@@ -2,7 +2,7 @@
 
 Judge the artifact as a working document for its intended reader. Does it supply useful guidance, organize that guidance around the task, and make important choices easier to get right? Apply the [common Reviewer conduct](reviewer.md); leave preservation across versions to Change and final intent and behavioral correctness to Correctness.
 
-Read the complete current Candidate, its intended purpose and readers, accepted expression constraints, and relevant domain and owner evidence. Read authoritative `writing-for-agents` and, for a Skill, `SKILL-MECHANICS.md`. Use the actual sources to understand what this document can rely on. You need the reader's job and the resulting artifact, not the Author's writing method.
+Read the complete current Candidate, its intended purpose and readers, accepted expression constraints, and relevant domain and owner evidence. For a revision, also read the baseline, diff, accepted task scope and preservation decisions. Read authoritative `writing-for-agents` and, for a Skill, `SKILL-MECHANICS.md`. Use the actual sources to understand what this document can rely on. You need the reader's job and the resulting artifact, not the Author's writing method.
 
 ## Follow the reader's task
 
@@ -56,6 +56,29 @@ Judge the mechanism the reader must carry out as well as the prose that explains
 An example earns attention when it resolves a real ambiguity or shows a difficult distinction. Can the intended reader understand its premise, choice, and consequence from the example and provided context, or must they guess what an unavailable source meant? Ordinary domain vocabulary need not be explained, but a missing fact that changes the lesson is a comprehension gap. Judge whether incidental details could be mistaken for requirements and whether the surrounding instruction remains usable beyond that example.
 
 For Agent-invoked tools, can the reader use the operation from the supplied invocation and understand its relevant inputs, outputs, and failure response? First-party Python tools need a plain CLI example for each operation. Judge whether the examples teach actual use, rather than merely naming the tool or showing help for an otherwise unexplained operation. External tools retain their own invocation conventions.
+
+## Recognize opportunities to redesign
+
+While reviewing an existing Rule or Skill, look for concrete gains from rebuilding its design around the current goal, reader decisions and valid constraints instead of retaining the old outline. An opportunity means an evidenced problem has a materially better organization, allocation of responsibilities or method; a preferred style alone is insufficient. Preserve supported meaning and permission boundaries unless changing them is separately authorized. Assess the Candidate already under review, without scanning unrelated artifacts.
+
+Useful signals include the following; they illustrate possibilities rather than form a mandatory checklist:
+
+- Substantial Agent-irrelevant or repeated content can be removed while preserving needed meaning, with an estimated reduction of at least 20% of the affected document's length. Identify the removable material and count still-required references with it; moving mandatory reading to another file is not a saving.
+- A clearer decision order can keep prerequisites, actions, exceptions and completion conditions together, improving readability even at the same length.
+- Scattered or cyclic references can be replaced by coherent knowledge boundaries and fewer necessary jumps, while retaining a single authoritative home for each meaning.
+- Determinate matching, validation or formatting belongs in a suitable supported tool, leaving guidance to own decisions, authorization and result interpretation; weigh the tool and migration cost against the benefit.
+- Accumulated exceptions or near-identical branches can give way to a classification that reflects the cases still supported.
+- Uncommon-case detail can move behind recognizable conditions so the ordinary path stays complete and readable.
+- Duplicated handoffs, checks or unused reports can be combined or retired while retaining necessary independent judgment and verification.
+
+Use the baseline, diff and accepted task scope to decide how to route what you find. Send a redesign proposal to the Controller for a user choice only when **both** conditions hold:
+
+1. The issue predates the Author's changes, was not caused by them, and lies outside the current task's accepted goal.
+2. Resolving it requires redesigning a whole file's organization, responsibilities or method; a local correction is insufficient.
+
+Whole-file redesign concerns the design affected, not the number of changed lines: formatting throughout a file, merging a few repeated passages or achieving a 20% reduction may still be local work. Neither a percentage nor the opportunity itself changes the review grade or requires redesign. For a proposal, name the old problem, illustrate the better structure or method, explain why local repair is insufficient, and state the likely benefit and meanings to preserve. A short structural sketch is enough; leave an unapproved rewrite unwritten.
+
+Route other observations to the Author under the common finding and suggestion grades, including local improvements to pre-existing material. An Author-caused regression or an issue within the accepted task belongs in the normal repair path even when its correction affects the whole file. Suggestions remain optional; existing requirements, permissions and frozen file boundaries still govern any repair. If evidence cannot establish attribution or scope, resolve that gap through the Controller before choosing the dependent route, and continue clear review work.
 
 ## Reach a judgment
 

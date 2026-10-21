@@ -1643,50 +1643,28 @@ def run_hook(
 
 
 def check_project_configuration(project_root: Path) -> tuple[tuple[Finding, ...], str]:
-    """Inspect each session independently of the daily gate; never fetch or restore."""
+    """Deliver opted-in synchronization each session; never discover, fetch or restore."""
     runtime = str(Path(__file__).resolve().parents[1])
     if runtime not in sys.path:
         sys.path.insert(0, runtime)
     from project_state import config_backup as backup
     try:
+        if backup.read_file(project_root, backup.SYNC_PATH) is None:
+            return (), ''
+        local = backup.read_object(project_root, backup.SYNC_PATH)
+        if local.get('automatic') is not True:
+            return (), ''
         config_path = PurePosixPath('.agents/config.json')
-        content = backup.read_file(project_root, config_path)
-        config = backup.read_object(project_root, config_path) if content is not None else {}
+        config = backup.read_object(project_root, config_path)
         selected = config.get('maintenance')
-        if selected is None:
-            if content is not None or not (project_root / '.git').exists():
-                return (), ''
-            receipt = None
-        elif not isinstance(selected, dict) or selected.get('mode') not in {'local', 'local-only', 'repository'}:
-            raise ValueError('invalid project configuration maintenance binding')
-        elif selected['mode'] != 'repository':
-            return (), ''
-        else:
-            receipt = backup.read_receipt(project_root, selected)
+        if not isinstance(selected, dict) or selected.get('mode') != 'repository':
+            raise ValueError('automatic synchronization requires a repository maintenance binding')
+        receipt = backup.read_receipt(project_root, selected)
         if receipt is None:
-            return ((Finding('project-config-restore', 'Project configuration backup',
-                'this checkout has no successful configuration restoration record',
-                'Provide the configuration-repository Git address, branch and project entry; '
-                'choose restore with automatic synchronization, restore once, or defer and continue.'),),
-                _prompt('configuration-restore.md', target=json.dumps(str(project_root))))
-        context = _prompt('configuration-sync.md', target=json.dumps(str(project_root)),
-                          automatic='true' if receipt['automatic'] else 'false')
-        if receipt['automatic']:
-            return (), context
-        entry = Path(receipt['source'])
-        manifest = backup.read_object(entry, PurePosixPath('manifest.json'))
-        if manifest.get('version') == 1:
+            raise ValueError('automatic synchronization record disappeared while reading')
+        if not receipt['automatic']:
             return (), ''
-        manifest, files = backup.read_backup(entry)
-        current = backup.collect(project_root, manifest)
-        retired = any(backup.read_file(project_root, backup.backup_path(path)) is not None
-                      for path in set(receipt['appliedPaths']) - set(files))
-        if (files == current and not retired
-                and backup.fingerprint(manifest, files) == receipt['sourceFingerprint']):
-            return (), ''
-        return ((Finding('project-config-sync', 'Project configuration backup',
-            'the selected backup or local configuration differs from the last restoration',
-            'Offer restoration from the recorded configuration repository or defer and continue the task.'),), context)
+        return (), _prompt('configuration-sync.md', target=json.dumps(str(project_root)))
     except (OSError, ValueError) as error:
         return ((Finding('project-config-error', 'Project configuration backup',
             f'cannot establish configuration synchronization: {error}',

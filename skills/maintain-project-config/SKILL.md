@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Maintain the project's agent configuration using the business project's evidence. In repository mode, the selected configuration files and directories form a complete backup: author the accepted snapshot, restore it to the target and publish the exact verified scope. Local modes retain their existing authoring and synchronization routes.
 
-Resolve this directory as `<skill-root>`, its containing plugin as `<plugin-root>`, and the business project as `<target-root>`. Read [Project Configuration Maintenance](references/maintenance.md) before using `<skill-root>/scripts/maintain.py` as `<maintain>`. That shared reference owns binding, backup scope, restoration, local synchronization and publication recovery. Other workflows, including startup recovery, may consume the reference and supported commands without invoking this user-only Skill. Resolve resources from the loaded plugin, independently of the target's working directory.
+Resolve this directory as `<skill-root>`, its containing plugin as `<plugin-root>`, and the business project as `<target-root>`. Read [Project Configuration Maintenance](references/maintenance.md) before using `<skill-root>/scripts/maintain.py` as `<maintain>`. That shared reference owns binding, backup scope, restoration, local synchronization and publication recovery. Explicit setup restoration and enabled startup synchronization consume the reference and supported commands without invoking this user-only Skill. Resolve resources from the loaded plugin, independently of the target's working directory.
 
 ## 1. Establish the requested result and source
 
@@ -18,7 +18,7 @@ python "<maintain>" inspect --target "<target-root>"
 
 Inspection is read-only. Establish the maintenance mode, selected entry, backup scope, target differences and unfinished work. An inspection-only request ends with those findings and unavailable evidence; it authorizes no update, restoration, edit or publication.
 
-For an unbound project, present the three modes together: project shared, this machine only, or a separate configuration repository. Establish the user's choice before binding. When recovering configuration for a new checkout, ask the user for the configuration-repository Git address each time, then establish the branch, entry and accepted restoration. Reuse a valid binding for later maintenance of the same checkout; infer no repository identity from business remotes or other local checkouts. For initialization over existing configuration, analyze its actual contents and differences, propose the concrete plan and obtain the user's decision before replacement.
+For an unbound project, present the three modes together: project shared, this machine only, or a separate configuration repository. Establish the user's choice before binding. For an explicit restoration, follow the reference's source-selection route: reuse a valid binding with a matching successful local restoration receipt, or ask for the repository, branch and entry. A copied binding alone does not establish this checkout's source. Reuse a valid binding for later maintenance of the same checkout; infer no repository identity from business remotes or other local checkouts. For initialization over existing configuration, analyze its actual contents and differences, propose the concrete plan and obtain the user's decision before replacement.
 
 ## 2. Update before editing
 
@@ -58,13 +58,13 @@ In either local mode, canonical inputs already reside in the target. Continue di
 
 For a first repository application over differing existing files, follow the reference's exact inspected-state acceptance route after the user's decision. Later restoration treats the configuration repository as authoritative within the declared scope: local differences are overwritten, without a three-way conflict workflow. Source content and local content must both agree before the command may skip writes; a matching saved source fingerprint alone is insufficient. The receipt advances only after successful application.
 
-Restoring a full-file snapshot ends with exact target agreement. It requires no MCP regeneration or automatic full setup. If the requested change also requires deliberate local rendering, use the reference's established `sync-project` or narrower `sync-project-rules` route and its ownership checks. Adopt any intentionally changed backed-up outputs into the source and re-establish agreement before publication. Neither restoration nor maintenance establishes full setup success; unmet setup or migration prerequisites remain for the user to explicitly invoke through the owning Skill.
+Restoring a full-file snapshot ends with exact target agreement and checks of local prerequisites. A restore-only request performs no source authoring, generation, full setup or publication. If the requested configuration change also requires deliberate local rendering, use the reference's established `sync-project` or narrower `sync-project-rules` route and its ownership checks. Adopt any intentionally changed backed-up outputs into the source and re-establish agreement before publication. Neither restoration nor maintenance establishes full setup success; unmet setup or migration prerequisites remain for the user to explicitly invoke through the owning Skill.
 
 Verify the selected mode's Git treatment, including paths already tracked by business Git, and complete the semantic or project checks needed for the change. Preserve saved source and target progress if a later step fails; report the actual recovery state rather than claiming a cross-repository rollback.
 
 ## 5. Publish the verified source scope
 
-Repository-mode configuration-writing operations follow the shared reference's exact-scope publication default, unless the user requests a local result. Startup restoration is separate and never publishes. If this operation has no accepted pending source changes and no retained verified commit of its own, finish without publication.
+Repository-mode configuration-writing operations follow the shared reference's exact-scope publication default, unless the user requests a local result. Restore-only operations, whether manual or automatic, never publish. If this operation has no accepted pending source changes and no retained verified commit of its own, finish without publication.
 
 ```text
 python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"

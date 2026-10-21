@@ -1,12 +1,12 @@
 # Project Configuration Maintenance
 
-This reference owns the shared maintenance contract and command interface used by setup, explicit maintenance and approved startup restoration. Resolve `<plugin-root>` from the loaded Skill installation, `<target-root>` as the business project, and `<plugin-root>/skills/maintain-project-config/scripts/maintain.py` as `<maintain>`. Resources must come from the same supported plugin distribution; an unavailable command or required resource leaves dependent work incomplete. Reading this reference and using its supported commands does not invoke the user-only maintenance Skill.
+This reference owns the shared maintenance contract and command interface used by setup, explicit maintenance and enabled startup synchronization. Resolve `<plugin-root>` from the loaded Skill installation, `<target-root>` as the business project, and `<plugin-root>/skills/maintain-project-config/scripts/maintain.py` as `<maintain>`. Resources must come from the same supported plugin distribution; an unavailable command or required resource leaves dependent work incomplete. Reading this reference and using its supported commands invokes neither user-only Skill.
 
 ```text
 python "<maintain>" --help
 ```
 
-Command help owns arguments and output details. The project schema at `<plugin-root>/setup-assets/catalog/project-config.schema.json` owns supported project declarations. Full setup retains initialization, delivery, migrations and successful local setup completion; maintenance owns bindings, snapshots, application, deliberate local synchronization and configuration-repository publication. A restored snapshot does not establish successful setup of a fresh checkout.
+Command help owns arguments and output details. The project schema at `<plugin-root>/setup-assets/catalog/project-config.schema.json` owns supported project declarations. Setup owns the initial choice between initialization/upgrade and restoring an existing configuration repository; full setup retains initialization, delivery, migrations and successful local setup completion. Maintenance owns bindings, snapshots, application, deliberate local synchronization and configuration-repository publication. A restored snapshot does not establish successful setup of a fresh checkout.
 
 ## Choose the maintenance mode
 
@@ -63,13 +63,13 @@ For a new entry, inspect existing target content and accept its backup scope bef
 
 Use `--replace-binding` only for a deliberate mode or source switch. Inspect the old source, target and proposed source, preserve unpublished work, and establish the intended content before retrying a refused switch. A routine upgrade retains the binding. Switching neither deletes the old source nor authorizes discarding pending work; the binding command owns retirement of obsolete local synchronization state.
 
-## Restore a new checkout through startup guidance
+## Restore explicitly or synchronize at startup
 
-The session-start hook checks configuration restoration each session, independently of the daily readiness cache. The hook inspects and supplies guidance; the Agent executes only the restoration the user has approved or already enabled for that checkout. It never publishes source changes or invokes full setup.
+For an explicit restoration, reuse an existing repository binding only when a matching local receipt records successful restoration in this checkout. Otherwise ask the user for the configuration-repository Git address, branch and existing project entry before binding the selected source. A copied binding without a successful local receipt requires this selection too. Infer no source from business remotes, known repositories or other local checkouts. Inspect concrete target differences and obtain acceptance before the first replacement through the application route below.
 
-When a new checkout has no local synchronization record and needs restoration, ask the user for the configuration-repository Git address each time, then establish the branch, entry and accepted target. Do not discover a source by scanning known repositories or matching the business Git remote. Offer restoration with subsequent automatic synchronization, restoration once, or deferral. For existing target configuration, inspect the concrete differences and present the proposed treatment before accepting replacement. Deferral continues the original task and leaves restoration unresolved.
+Restore-only operations use binding, update, inspection and application to restore the selected backup's exact bytes, then check local prerequisites and Git treatment. They author no source, generate no configuration, invoke no full setup and publish no source changes. Report missing local tools, credentials or services separately from restored content; their absence does not authorize rewriting the snapshot. Setup's restore branch and explicit maintenance use this same contract without invoking one another.
 
-A valid local binding and receipt let later maintenance reuse the source without asking for its address again. Automatic synchronization is an explicit local preference, defaulting to off. A permitted startup restoration updates the repository before applying. If fetching, authentication or update fails, report the failure and preserve existing state; do not apply a stale checkout as if the update succeeded. Without automatic authorization, request approval for the needed restoration and continue only the accepted actions. Other readiness findings retain their own consent and setup requirements.
+Automatic startup synchronization is an explicit local preference, defaulting to off. The session-start hook supplies synchronization guidance only for an already bound repository checkout with a matching successful receipt and automatic synchronization enabled; the Agent performs the authorized update and application. An unbound checkout or one without enabled automatic synchronization remains silent: startup performs no source discovery and asks no restoration or deferral question. An invalid enabled binding or receipt is an error to report, not a reason to start discovery. Explicit manual restoration remains available while automatic synchronization is off. Other readiness findings retain their own consent and setup requirements.
 
 ## Update before authoring or restoring
 
@@ -77,7 +77,7 @@ A valid local binding and receipt let later maintenance reuse the source without
 python "<maintain>" update --target "<target-root>"
 ```
 
-The repository support verifies the personal private repository and persistent checkout identity, then fetches and safely fast-forwards supported states. Preserve existing staged, unstaged, untracked and unpublished work before updating. Dirty, divergent or unfinished states may be refused; resolve the reported condition without reset, automatic stash, force push or history rewrite. A failed update supplies no evidence that the checkout is current.
+The repository support verifies the personal private repository and persistent checkout identity, then fetches and safely fast-forwards supported states. Preserve existing staged, unstaged, untracked and unpublished work before updating. Dirty, divergent or unfinished states may be refused; resolve the reported condition without reset, automatic stash, force push or history rewrite. If authentication, fetching or update fails, preserve existing state and stop before application; a stale checkout cannot stand in for a successful update.
 
 After a successful update, edit or adopt the accepted source scope. Initial import, authoring or deliberate local generation can leave accepted source changes in the same operation; retain their provenance through validation, application and publication without requiring another clean-checkout update between those steps.
 
@@ -152,7 +152,7 @@ The first command reports tracked paths; the second identifies the matching igno
 
 ## Publish an exact verified scope
 
-In repository mode, an authorized configuration-writing operation, including full setup, maintenance or accepted adoption, includes one exact-scope commit and normal push after required local work succeeds. Proceed without a separate publication confirmation unless the user requests a local result or forbids publication. This default grants no publication for inspection, ordinary business-project editing, other entries or startup restoration, and grants no release, force push or history rewrite. Neither local mode publishes to a configuration repository.
+In repository mode, an authorized configuration-writing operation, including full setup, maintenance or accepted adoption, includes one exact-scope commit and normal push after required local work succeeds. Proceed without a separate publication confirmation unless the user requests a local result or forbids publication. This default grants no publication for inspection, ordinary business-project editing, other entries or any restore-only operation, whether manual or automatic, and grants no release, force push or history rewrite. Neither local mode publishes to a configuration repository.
 
 Establish the operation's accepted source changes and outgoing commits before publication, including accepted initial imports and retained current-operation work with verified provenance. An unborn branch can have new source files to publish. Collect exact repository-relative files, including changed manifests and deletions; whole directories, unrelated index entries and unaccepted preexisting content are outside the commit scope. If the operation owns neither pending source changes nor a retained verified commit, finish without an empty commit or publication of earlier work.
 

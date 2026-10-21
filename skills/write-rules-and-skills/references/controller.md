@@ -64,7 +64,7 @@ Every Reviewer assignment includes its common and professional instructions, the
 
 | Role | Additional evidence |
 | --- | --- |
-| Quality | Intended purpose and readers, expression constraints, relevant domain and owner evidence. |
+| Quality | Intended purpose and readers, expression constraints, relevant domain and owner evidence, original baseline and derived diff, accepted task scope and preservation decisions. |
 | Change | Original baseline, derived diff, accepted change and preservation decisions, Author's semantic summary. |
 | Correctness | Original user-intent record and brief as separate inputs, baseline and diff, critical behavior decisions, check results, execution authority and bounds. |
 
@@ -113,13 +113,15 @@ Reviewers send findings and Candidate questions directly to the Author. Track th
 
 ### Close a round
 
-A round closes when all perspectives have returned. If they all pass, tell the Author that no repair follows and proceed to handoff; non-blocking suggestions alone do not start another round. If a material defect remains, continue only within the remaining budget and with a plausible correction. Report `BLOCKED` when the bound is reached or no progress is possible. Do not spend further rounds on unsupported preferences or treat elapsed effort as evidence of quality.
+A round closes when all perspectives have returned. Resolve any pending scope decision before releasing affected work or finalizing it. If all perspectives pass, finish unless the Author elects worthwhile local suggestions or the user has authorized broader work still to be done. Release optional local work only when its required checks and review fit the remaining budget; otherwise leave it unapplied and hand off the accepted version. A selected improvement may share one coherent repair with blocking findings, and every changed version goes through the same checks and all perspectives. If a material defect remains, continue only within the remaining budget and with a plausible correction; report `BLOCKED` when the bound is reached or no progress is possible. Do not spend further rounds on unsupported preferences or treat elapsed effort as evidence of quality.
 
 ## Resolve questions faithfully
 
 A material question can arise during any phase. Pause its dependent work and continue unrelated clear work. Establish recoverable facts first, then route the remaining decision to its owner. When a Reviewer asks for user input, preserve the exact question; label your own explanation or recommendation separately. Explain plausible interpretations and consequences so the user can make the actual decision. Silence and the brief itself are not approval.
 
 When the answer changes meaning, update the intent record and brief and send the correction to affected roles. A fact resolved under an unchanged brief needs no rewrite. If Correctness identifies a brief distortion, correct it from the cited user evidence; an unresolved interpretation still belongs to the user. Recheck scope, dependencies, and validation when a decision changes them.
+
+When Quality sends a whole-file redesign proposal for a pre-existing issue outside the accepted task, check whether existing authorization already covers it. If not, present the concrete problem, proposed direction, benefit and preservation boundaries with lettered choices: **A. Include the redesign** or **B. Keep the current task limited**. Accept an unambiguous natural-language answer too. Do not repeat an unchanged pending or declined proposal; continue independent work while awaiting a decision. Approval enters the normal scope, baseline and iteration-bound process before further writing. Decline leaves the current task and ordinary review results intact; any independently blocking defect still needs resolution under its existing acceptance bar.
 
 ## Finalize and hand off
 

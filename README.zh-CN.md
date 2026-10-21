@@ -32,7 +32,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `improve-codebase-architecture` | [Matt Pocock](https://github.com/mattpocock/skills) | 扫描代码库中的结构改进机会，展示可视化报告，并深入讨论选中的目标。 |
 | `to-questionnaire` | [Matt Pocock](https://github.com/mattpocock/skills) | 将尚不能回答的决策整理成问卷，供其他人补充信息。 |
 | `wayfinder` | [Matt Pocock](https://github.com/mattpocock/skills) | 将跨多个会话的大型工作整理成决策工单地图，逐项明确实施路径。 |
-| `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | 配置或更新仓库中的编程助手；接入 SmartKit 或更新项目 Agent 配置时使用。 |
+| `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | 初始化或升级项目 Agent 配置，或从已有配置仓库备份恢复。 |
 | `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | 维护项目共享、仅本机保存，或通过独立配置仓库同步的项目 Agent 配置。 |
 | `setup-matt-pocock-skills` | [Matt Pocock](https://github.com/mattpocock/skills) | 配置任务跟踪器、分诊标签和领域文档布局；首次使用 Matt Pocock 工程技能前运行。 |
 
@@ -97,9 +97,11 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 
 ### `setup-project-agents`
 
-接入 SmartKit 或更新项目 Agent 配置时，手动调用。完整配置会检查项目 Rule、Skill、自定义 Agent 和 MCP 映射，并保留仍然有效的项目决定。缺少必需的任务跟踪器和领域上下文时，先运行 `setup-matt-pocock-skills`。只需要本地同步或更新 Rule 索引时，明确限定范围。
+手动调用此 Skill，选择初始化／升级项目 Agent 配置，或从已有配置仓库备份恢复。完整 setup 会检查项目 Rule、Skill、自定义 Agent 和 MCP 映射，并保留仍然有效的项目决定。首次 setup 选择随项目共享、仅保留本机或备份到独立私有仓库；升级时保留已有选择。完整 setup 缺少必需的任务跟踪器和领域上下文时，先运行 `setup-matt-pocock-skills`。只需要本地同步或更新 Rule 索引时，明确限定范围。
 
-例子：“用 `setup-project-agents` 更新这个仓库的 Agent 配置。”
+新 checkout 需主动调用 setup，选择恢复即可取回已保存配置，无需重新生成或发布。恢复会检查本地前置条件并报告缺口，不代表完整 setup 已完成。启动自动同步可选，默认关闭。会话启动不会发现缺失配置或询问是否恢复。
+
+例子：“用 `setup-project-agents` 更新这个仓库的 Agent 配置。”或者：“用 `setup-project-agents` 在这台机器上恢复我的配置备份。”
 
 ### `maintain-project-config`
 

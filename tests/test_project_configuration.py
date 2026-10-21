@@ -567,7 +567,7 @@ class ProjectConfigurationTest(unittest.TestCase):
             self.assertEqual(setup_project_agents.main(['finish', '--target', str(self.target),
                              '--session', str(session), *helper.source_args()]), 0)
         self.assertTrue(command('update')['localChanges'])
-        selected = sorted(str(path.relative_to(entry.parent.parent)) for path in entry.rglob('*') if path.is_file())
+        selected = sorted(path.relative_to(entry.parent.parent).as_posix() for path in entry.rglob('*') if path.is_file())
         arguments = ['publish', '--message', 'Maintain personal project configuration']
         for path in selected:
             arguments.extend(['--path', path])

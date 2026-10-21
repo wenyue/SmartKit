@@ -23,6 +23,6 @@ After the Author returns a complete draft and required checks pass, review it fr
 
 Reviewers follow the [common conduct](references/reviewer.md) and their own professional contracts. They identify evidenced defects; the Author chooses a coherent repair. The Controller arranges independent identities when the job needs them, keeps all judgments tied to the same version, and resolves questions that belong to the user. When behavior needs observation, Correctness may commission a bounded [Runner](references/runner.md).
 
-Repeat writing, checks, and review while material defects remain and the agreed iteration budget allows useful progress. Acceptance standards stay fixed. Completion means the same final Candidate has passed the required checks and all three reviews; a promising draft or an exhausted budget is not that result.
+Repeat writing, checks, and review for material defects or accepted improvements within the agreed iteration budget. Acceptance standards stay fixed; optional improvements need not delay an otherwise accepted result. Completion means the same final Candidate has passed the required checks and all three reviews; a promising draft or an exhausted budget is not that result.
 
 The workflow returns `COMPLETE`, `NEEDS_INPUT`, or `BLOCKED`, with exact files and supporting evidence. It operates within the task's authority. Publishing, installing, translating, committing, and other downstream actions retain their own authorization. When this Skill is itself being rewritten, its pre-write instructions govern the current invocation.

@@ -1,25 +1,59 @@
 ---
 name: setup-project-agents
-description: Initialize or upgrade project agent configuration, choose its maintenance mode, and prepare supported development tools.
+description: Initialize or upgrade project agent configuration, or restore it from a configuration repository.
 disable-model-invocation: true
 ---
 
 # Setup Project Agents
 
-Initialize or upgrade the project's agent configuration while preserving decisions that still serve it. Full setup assesses every declared blueprint and project custom Agent, even when fingerprints match, and prepares CodeGraph for the local target. Valid artifacts may remain byte-for-byte intact. This Skill requires the user's explicit invocation.
+Choose a full setup or restore an existing configuration backup. Full setup assesses every declared blueprint and project custom Agent, even when fingerprints match, and prepares CodeGraph for the local target. Restoration copies the accepted backup and checks this machine's prerequisites without regenerating configuration. This Skill requires the user's explicit invocation.
 
 ## 1. Choose the requested operation
 
-Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the repository as `<target-root>`. Select the route before fetching sources or changing project inputs:
+Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the repository as `<target-root>`. Follow an explicit operation request; otherwise present these two choices in the user's language before fetching sources or changing project inputs:
 
-| Intent | Route |
+| Choice | Result and route |
 | --- | --- |
-| First setup | Establish the project and choose its maintenance mode in step 2, then complete steps 3 through 8. |
-| Upgrade, an unqualified setup/update of an existing project, or required project migration | Preserve the existing baseline and maintenance choice in step 2, then complete steps 3 through 8. |
-| Explicitly limited to local Rule/Skill discovery and declared Agent/MCP mappings | Local synchronization below. |
-| Explicitly limited to the `AGENTS.md` Rule index | The Rule-index branch under Local synchronization. |
+| A. Initialize or upgrade configuration | Establish or preserve the maintenance mode in step 2, then complete steps 3 through 8, including every required migration and full-set assessment. |
+| B. Restore from a configuration repository | Follow Restore from a configuration repository below, then end this operation. |
 
-Before either route, read [Ownership](references/ownership.md) for canonical inputs, discovery, loading meaning and replacement boundaries. Catalog and schema own supported input shapes; scripts own validation and application; Setup owns project decisions, author coordination and whole-set coherence. Resolve material scope choices before dependent effects.
+An explicitly limited request for local Rule/Skill discovery and declared Agent/MCP mappings follows Local synchronization below; an `AGENTS.md` Rule-index-only request uses its narrower branch. These existing limits do not require the full-setup/restore menu. An explicit initialization, upgrade or migration request selects A; an unqualified invocation leaves the choice open.
+
+Read [Ownership](references/ownership.md) before the selected operation for canonical inputs and replacement boundaries. Catalog and schema own supported input shapes; scripts own validation and application; Setup owns operation selection, project decisions, author coordination and whole-set coherence. New checkouts invoke this Skill manually: session hooks neither discover missing configuration nor ask to restore it. Configuration startup handling is limited to explicitly enabled synchronization of a valid existing checkout binding; other readiness checks retain their owners.
+
+## Restore from a configuration repository
+
+Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for binding, backup scope, restoration, Git exclusions and failure recovery. Use its supported commands directly without invoking the user-only maintenance Skill. This branch needs neither full-session preflight nor Matt context, migrations, custom-Agent reassessment or generated authoring.
+
+1. Inspect the selected checkout and establish the existing backup source:
+
+   ```text
+   python "<maintain>" inspect --target "<target-root>"
+   python "<maintain>" bind --help
+   ```
+
+   Reuse the repository address, branch and entry from an established checkout binding with a matching successful local synchronization receipt. A copied binding without that receipt is a source proposal to confirm, not proof of this checkout's restoration or automatic-sync authority. Ask only for missing information, source confirmation or a deliberately requested source change. Without a binding, obtain those values from the user; never infer them from the business Git remote or scan known repositories. Verify that the selected entry exists and is the intended backup before binding it; a missing entry leaves restoration incomplete rather than creating a new backup. Use the maintenance reference's repository `bind` route only when a binding is needed, preserving existing target and source work.
+
+2. Update the bound source, then inspect the actual restoration effects:
+
+   ```text
+   python "<maintain>" update --target "<target-root>"
+   python "<maintain>" inspect --target "<target-root>"
+   ```
+
+   An authentication, fetch or update failure stops application; retain existing state and report the cause. Compare the selected complete files and directories with the target, including proposed overwrites and deletions. Obtain the user's acceptance of differing existing content before replacement. On a first application, carry the exact inspection fingerprint through `--accept-existing` as required by the shared contract; re-inspect after any drift. Preserve an intended target edit through the maintenance owner's adoption route only when separately accepted.
+
+3. Establish automatic startup synchronization as a separate local preference: A. Enable; B. Disable, default off when no preference exists. Retain a recorded choice unless the user requests a change. Explain that enabled synchronization restores the authoritative backup over later local differences in its scope. Apply with the accepted preference, adding `--accept-existing "<inspect-fingerprint>"` when required:
+
+   ```text
+   python "<maintain>" apply --help
+   python "<maintain>" apply --target "<target-root>" --auto-sync off
+   python "<maintain>" inspect --target "<target-root>"
+   ```
+
+   Use the recorded or newly accepted preference for `--auto-sync`. Verify source-target agreement, the target-local synchronization receipt and applicable Git exclusions through the shared reference's read-only Git checks. Restore the snapshot's bytes under the shared backup contract; copied `setupVersion` or ownership records establish no successful full setup or runtime readiness for this checkout.
+
+4. Check the restored configuration's local tool, credential and service requirements using their owners' supported read-only checks. Report missing or unverifiable prerequisites without installing tools, starting services or rewriting the snapshot as part of restoration. End with the source, restored/preserved paths, synchronization preference, exclusions, actual prerequisite results and any failure or recovery evidence. Report restoration separately from local readiness and explicitly state that full setup was not performed. This branch neither generates configuration, records a new successful setup version, commits nor publishes source changes; a requested initialization or upgrade is a separate A operation.
 
 ## 2. Establish project state and its maintenance mode
 
@@ -39,9 +73,9 @@ Identify existing project instructions, personal configuration and independent o
 
 | Choice | Recorded mode | User-facing result |
 | --- | --- | --- |
-| Project shared | `local` | Keep configuration in the business project for versioning with its repository. |
-| This machine only | `local-only` | Keep configuration in the business project and locally exclude it from business Git; no GitHub source is needed. |
-| Separate configuration repository | `repository` | Maintain configuration in a personal private GitHub repository and locally exclude target configuration from business Git. |
+| A. Project shared | `local` | Keep configuration in the business project for versioning with its repository. |
+| B. This machine only | `local-only` | Keep configuration in the business project and locally exclude it from business Git; no GitHub source is needed. |
+| C. Separate configuration repository | `repository` | Maintain configuration in a personal private GitHub repository and locally exclude target configuration from business Git. |
 
 Record the accepted choice through the maintenance command's `bind` route. For repository mode, communicate that setup includes the exact scoped source commit and normal push after successful local finish under the shared publication contract, unless the user requests a local result. Follow that reference for Git exclusion behavior and already tracked files; mode selection does not itself change existing tracked status.
 
@@ -58,6 +92,8 @@ In repository mode, communicate the same publication default and update the pers
 ### Prepare accepted inputs for the full run
 
 Reconcile configuration under the schema identified in Ownership, preserving unrelated work. In either local mode, edit the project's canonical inputs. In repository mode, use the source paths reported by inspection, with business-project evidence, and apply accepted source changes before `start`. Carry accepted initial imports and preparatory source changes with their provenance into final publication, including the full accepted import on an unborn branch rather than only the later generated delta. Follow the shared reference's full-file backup and target-local state boundaries. The shared reference explains how initial collision acceptance differs from adopting a later target edit.
+
+For a repository binding without a recorded startup synchronization preference, offer A. Enable; B. Disable, default off. Record the accepted choice through the maintenance command's `apply --auto-sync on|off` route after source refresh, inspection and resolution of initial collisions. Existing preferences survive routine setup and upgrade; use an explicit flag only to establish or deliberately change that choice. Both local maintenance modes have no repository synchronization preference.
 
 Preflight migrations come from the loaded plugin source; step 4 confirms the SmartKit source selected for the session. Continue when project state, source choice, input decisions, migration requirements and prerequisite gaps are accounted for.
 
