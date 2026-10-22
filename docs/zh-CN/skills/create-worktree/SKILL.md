@@ -59,7 +59,7 @@ description: 当改变仓库状态的工作需要隔离的 Git 链接工作树�
 
 ## 4. 准备环境并报告就绪状态
 
-发现所选目标的项目 `worktree-environment-setup` Skill。存在时，在已接受的配置权限内针对该目标调用，并将继承修改标为受保护。消费其 `environment-ready` 或 `environment-non-ready` 结果；复用该目标仍有效的结果，不重复配置检查。存在但不可用、失败、中断或结果不明确时，返回 `non-ready`。不存在时报告 `not-provided` 并跳过；已知必需输入或准备缺失时仍不能就绪。
+发现所选目标的项目 `prepare-worktree-environment` Skill。存在时，在已接受的配置权限内针对该目标调用，并将继承修改标为受保护。消费其 `environment-ready` 或 `environment-non-ready` 结果；复用该目标仍有效的结果，不重复配置检查。存在但不可用、失败、中断或结果不明确时，返回 `non-ready`。不存在时报告 `not-provided` 并跳过；已知必需输入或准备缺失时仍不能就绪。
 
 配置后复核目标身份和预期状态，计入其已授权修改。仅当创建或复用已验证、已有工作已保护、必需配置成功，且没有未解决选择、未授权效果或必需前提缺失时，返回 `ready`。否则返回 `non-ready`，保留工作区和部分状态，供安全继续。
 

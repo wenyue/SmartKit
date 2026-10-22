@@ -59,7 +59,7 @@ After interruption or failure, inspect what actually exists before retrying. Ret
 
 ## 4. Prepare the environment and report readiness
 
-Discover the selected target's project `worktree-environment-setup` Skill. When present, invoke it for that target within accepted setup permissions, marking inherited modifications as protected. Use its `environment-ready` or `environment-non-ready` result; reuse still-valid results for this target instead of repeating setup checks. A present but unavailable, failed, interrupted, or ambiguous setup yields `non-ready`. When absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness.
+Discover the selected target's project `prepare-worktree-environment` Skill. When present, invoke it for that target within accepted setup permissions, marking inherited modifications as protected. Use its `environment-ready` or `environment-non-ready` result; reuse still-valid results for this target instead of repeating setup checks. A present but unavailable, failed, interrupted, or ambiguous setup yields `non-ready`. When absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness.
 
 Recheck target identity and expected state after setup, accounting for its authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, required setup succeeded, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
 

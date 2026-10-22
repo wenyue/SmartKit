@@ -187,6 +187,19 @@ If the user declines the extra content, leave full-branch completion pending; do
 
 🤖 **Enter an operation letter.**
 
+### PR with no repairs and an unrelated submodule difference
+
+📊 **Progress**: **4/9 files displayed**. No unreasonable findings or unpublished changes made for this review are pending, and no selected commit or publication remains unfinished. Required review checks passed; the four displayed remote files have complete coverage at the pinned PR base/head.
+
+Read-only inspection found a local submodule checkout difference unrelated to this review. It leaves the fixed reviewed PR delta, its dependencies, and the four files' assessments valid, so it will be preserved. No commit or push is needed for this completion; the PR version, viewer, and Viewed write/readback interfaces are verified.
+
+**Available actions**
+
+- **A**. **Pass and continue**: Verify the reviewed PR version, mark the four displayed reviewed files Viewed, verify every selected file and the PR version by readback, then show the next group.
+- **B**. **Continue**: Show the next group without marking Viewed.
+
+🤖 **Enter an operation letter.**
+
 ### PR repaired locally and ready for completion
 
 📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired; required checks and re-review passed. The full local branch delta contains those two fixes, their tests, and an undisplayed release-note change introduced earlier in this conversation. All applicable checks passed and the four displayed files' assessments remain valid. The PR target, viewer, write interfaces, and full publication scope have been verified.

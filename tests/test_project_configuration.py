@@ -43,11 +43,15 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.module.initialize_entry(self.target, self.entry, ['.agents/rules/personal.md'])
         self.module.apply(self.target)
 
+    def apply_reviewed(self):
+        report = self.module.inspect(self.target)
+        return self.module.apply(self.target, accept_existing=report['fingerprint'])
+
     def test_import_and_apply_preserve_local_records_and_unselected_files(self):
         self.initialize()
         self.write(self.entry, 'files/.agents/rules/personal.md', '# Changed\n')
         self.write(self.target, 'notes.txt', 'keep')
-        self.module.apply(self.target)
+        self.apply_reviewed()
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Changed\n')
         config = json.loads((self.target / '.agents/config.json').read_text())
         self.assertEqual(config['setupVersion'], '1.2.21')
@@ -55,11 +59,21 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertEqual((self.target / 'notes.txt').read_text(), 'keep')
         self.assertFalse((self.entry / 'config.json').exists())
 
-    def test_established_backup_overwrites_target_edits(self):
+    def test_established_backup_requires_review_before_replacing_target_edits(self):
         self.initialize()
         self.write(self.target, '.agents/rules/personal.md', '# Local edit\n')
         self.write(self.entry, 'files/.agents/rules/personal.md', '# Remote edit\n')
-        self.module.apply(self.target)
+        report = self.module.inspect(self.target)
+        self.assertEqual(report['conflicts'], ['.agents/rules/personal.md'])
+        self.assertIn('-# Local edit', report['diffs']['.agents/rules/personal.md'])
+        self.assertIn('+# Remote edit', report['diffs']['.agents/rules/personal.md'])
+        before = {path: path.read_bytes() for root in (self.target, self.entry)
+                  for path in root.rglob('*') if path.is_file()}
+        with self.assertRaisesRegex(ValueError, 'configuration conflict'):
+            self.module.apply(self.target)
+        self.assertEqual({path: path.read_bytes() for root in (self.target, self.entry)
+                          for path in root.rglob('*') if path.is_file()}, before)
+        self.module.apply(self.target, accept_existing=report['fingerprint'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Remote edit\n')
 
     def test_adoption_backs_up_explicitly_selected_local_content(self):
@@ -78,7 +92,7 @@ class ProjectConfigurationTest(unittest.TestCase):
     def test_unmodified_recorded_deletion_is_applied(self):
         self.initialize()
         self.write(self.entry, 'manifest.json', '{"files":[],"directories":[]}')
-        self.module.apply(self.target)
+        self.apply_reviewed()
         self.assertFalse((self.target / '.agents/rules/personal.md').exists())
 
     def test_backup_retirement_does_not_consult_setup_ownership(self):
@@ -93,7 +107,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         (self.target / '.agents/smartkit.lock.json').write_bytes(serialize_ownership(state))
         self.write(self.entry, 'manifest.json', '{"files":[],"directories":[]}')
         lock_before = (self.target / '.agents/smartkit.lock.json').read_bytes()
-        self.module.apply(self.target)
+        self.apply_reviewed()
         self.assertFalse((self.target / relative).exists())
         self.assertEqual((self.target / '.agents/smartkit.lock.json').read_bytes(), lock_before)
 
@@ -102,7 +116,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.module.initialize_entry(self.target, self.entry, [])
         self.module.apply(self.target)
         self.write(self.entry, 'files/.agents/config.json', json.dumps({'maintenance': self.binding, 'replacement': True}))
-        self.module.apply(self.target)
+        self.apply_reviewed()
         config = json.loads((self.target / '.agents/config.json').read_text())
         self.assertNotIn('mcp', config)
         self.assertIn('maintenance', config)
@@ -126,7 +140,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.module.initialize_entry(self.target, self.entry, ['AGENTS.md'])
         self.module.apply(self.target)
         self.write(self.entry, 'files/AGENTS.md', '# Instructions\n\n## Personal\n\nUpdated personal rules\n')
-        self.module.apply(self.target)
+        self.apply_reviewed()
         text = (self.target / 'AGENTS.md').read_text()
         self.assertEqual(text, '# Instructions\n\n## Personal\n\nUpdated personal rules\n')
 
@@ -142,6 +156,98 @@ class ProjectConfigurationTest(unittest.TestCase):
             self.module.apply(self.target, accept_existing='stale')
         self.module.apply(self.target, accept_existing=observation['fingerprint'])
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
+
+    def test_every_difference_requires_acceptance_with_or_without_automatic_sync(self):
+        for automatic in (False, True):
+            for change in ('source-edit', 'source-add-empty', 'source-delete', 'target-edit',
+                           'target-add-empty', 'target-delete', 'both-edit', 'binary-edit'):
+                with self.subTest(automatic=automatic, change=change):
+                    root = self.root / f'{automatic}-{change}'
+                    self.target, self.entry = root / 'target', root / 'entry'
+                    self.target.mkdir(parents=True)
+                    self.entry.mkdir()
+                    self.resolve.stop()
+                    self.resolve = mock.patch.object(self.module, 'entry_root', return_value=self.entry)
+                    self.resolve.start()
+                    self.addCleanup(self.resolve.stop)
+                    self.write(self.target, '.agents/config.json', json.dumps({'maintenance': self.binding}))
+                    self.write(self.target, '.agents/rules/personal.md', '# Original\n')
+                    self.module.initialize_entry(self.target, self.entry, ['.agents/rules'])
+                    self.module.apply(self.target, automatic=automatic)
+                    source_path = self.entry / 'files/.agents/rules/personal.md'
+                    target_path = self.target / '.agents/rules/personal.md'
+                    if change in ('source-edit', 'both-edit'):
+                        source_path.write_text('# Source\n')
+                    if change in ('target-edit', 'both-edit'):
+                        target_path.write_text('# Local\n')
+                    if change == 'source-add-empty':
+                        self.write(self.entry, 'files/.agents/rules/new.md', '')
+                    if change == 'target-add-empty':
+                        self.write(self.target, '.agents/rules/new.md', '')
+                    if change == 'source-delete':
+                        source_path.unlink()
+                    if change == 'target-delete':
+                        target_path.unlink()
+                    if change == 'binary-edit':
+                        target_path.write_bytes(b'\x00\xff')
+                    self.write(self.target, 'outside.txt', 'preserve')
+                    report = self.module.inspect(self.target)
+                    self.assertTrue(report['changes'])
+                    self.assertEqual(report['conflicts'], report['changes'])
+                    self.assertTrue(all(report['diffs'].values()))
+                    before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                              for directory in (self.target, self.entry)
+                              for path in directory.rglob('*') if path.is_file()}
+                    with self.assertRaisesRegex(ValueError, 'configuration conflict'):
+                        self.module.apply(self.target)
+                    self.assertEqual({path: (path.read_bytes(), path.stat().st_mtime_ns)
+                                      for directory in (self.target, self.entry)
+                                      for path in directory.rglob('*') if path.is_file()}, before)
+                    self.module.apply(self.target, accept_existing=report['fingerprint'])
+                    self.assertEqual(self.module.inspect(self.target)['changes'], [])
+                    self.assertEqual((self.target / 'outside.txt').read_text(), 'preserve')
+
+    def test_reviewed_fingerprint_expires_when_either_side_changes(self):
+        self.initialize()
+        receipt = self.target / '.agents/project-config-sync.json'
+        previous = receipt.read_bytes()
+        for root, relative in ((self.entry, 'files/.agents/rules/personal.md'),
+                               (self.target, '.agents/rules/personal.md')):
+            report = self.module.inspect(self.target)
+            self.write(root, relative, '# Changed after inspection\n')
+            with self.assertRaisesRegex(ValueError, 'reviewed configuration fingerprint changed'):
+                self.module.apply(self.target, accept_existing=report['fingerprint'])
+            self.assertEqual(receipt.read_bytes(), previous)
+            self.write(root, relative, '# Personal\n')
+
+    def test_public_apply_refuses_differences_without_writes_and_accepts_reviewed_state(self):
+        from contextlib import redirect_stdout, redirect_stderr
+        from io import StringIO
+        from project_config import project_configuration_cli as cli
+        import maintain
+        import workflow
+        self.initialize()
+        self.write(self.target, '.agents/rules/personal.md', '# Keep local\n')
+        receipt = self.target / '.agents/project-config-sync.json'
+        previous = receipt.read_bytes()
+        for run, prefix in ((maintain.main, []), (workflow.main, ['project-config'])):
+            with self.subTest(prefix=prefix):
+                with redirect_stdout(StringIO()) as output:
+                    self.assertEqual(run([*prefix, 'inspect', '--target', str(self.target)]), 0)
+                report = json.loads(output.getvalue())
+                self.assertIn('-# Keep local', report['diffs']['.agents/rules/personal.md'])
+                with mock.patch.object(cli, 'sync_git_exclusions') as exclusions:
+                    with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
+                        self.assertEqual(run([*prefix, 'apply', '--target', str(self.target)]), 2)
+                    exclusions.assert_not_called()
+                self.assertIn('choose keep local or use the configuration repository', errors.getvalue())
+                self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Keep local\n')
+                self.assertEqual(receipt.read_bytes(), previous)
+        with mock.patch.object(cli, 'sync_git_exclusions', return_value=[]):
+            with redirect_stdout(StringIO()):
+                self.assertEqual(maintain.main(['apply', '--target', str(self.target),
+                                               '--accept-existing', report['fingerprint']]), 0)
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
 
     def test_source_cannot_export_unsafe_paths_or_its_own_receipt(self):
         self.initialize()
@@ -194,7 +300,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.module.apply(self.target)
         self.assertEqual((self.entry / 'files/.cursor/mcp.json').read_bytes(), content)
         self.write(self.target, '.cursor/mcp.json', '{"local":"discard"}')
-        self.module.apply(self.target)
+        self.apply_reviewed()
         self.assertEqual((self.target / '.cursor/mcp.json').read_bytes(), content)
         self.assertEqual((self.target / '.agents/smartkit.lock.json').read_text(),
                          'opaque lock: backup must not parse this')
@@ -215,15 +321,15 @@ class ProjectConfigurationTest(unittest.TestCase):
         asset.write_bytes(b'local')
         self.write(self.target, '.agents/skills/local-only.txt', 'discard within scope')
         self.write(self.target, 'outside.txt', 'keep')
-        self.module.apply(self.target)
+        self.apply_reviewed()
         self.assertEqual(asset.read_bytes(), b'\x00\xff\r\n')
         self.assertFalse((self.target / '.agents/skills/local-only.txt').exists())
         self.assertEqual((self.target / 'outside.txt').read_text(), 'keep')
         (self.entry / 'files/.agents/skills/example/icon.bin').unlink()
-        self.module.apply(self.target)
+        self.apply_reviewed()
         self.assertFalse(asset.exists())
 
-    def test_source_fingerprint_skips_writes_but_repairs_local_drift(self):
+    def test_source_fingerprint_skips_unchanged_writes_but_cannot_accept_local_drift(self):
         self.initialize()
         path = self.target / '.agents/rules/personal.md'
         state = self.target / '.agents/project-config-sync.json'
@@ -231,11 +337,14 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertTrue(self.module.apply(self.target)['skipped'])
         self.assertEqual((path.stat().st_mtime_ns, state.stat().st_mtime_ns, state.read_bytes()), before)
         receipt = json.loads(state.read_bytes())
-        self.assertNotIn('files', receipt)
-        self.assertNotIn('config', receipt)
+        self.assertEqual(set(receipt), {'binding', 'source', 'sourceFingerprint', 'appliedPaths', 'automatic'})
         self.assertEqual(receipt['appliedPaths'], ['.agents/rules/personal.md'])
         self.write(self.target, '.agents/rules/personal.md', '# Drift\n')
-        self.assertFalse(self.module.apply(self.target)['skipped'])
+        with self.assertRaisesRegex(ValueError, 'configuration conflict'):
+            self.module.apply(self.target)
+        self.assertEqual(path.read_text(), '# Drift\n')
+        self.assertEqual(state.read_bytes(), before[2])
+        self.assertFalse(self.apply_reviewed()['skipped'])
         self.assertEqual(path.read_text(), '# Personal\n')
         self.assertEqual(json.loads(state.read_bytes())['sourceFingerprint'], receipt['sourceFingerprint'])
 
@@ -246,13 +355,14 @@ class ProjectConfigurationTest(unittest.TestCase):
         receipt = self.target / '.agents/project-config-sync.json'
         previous = receipt.read_bytes()
         self.write(self.entry, 'files/.agents/rules/personal.md', '# New source\n')
+        report = self.module.inspect(self.target)
         apply_plan = configuration.apply_plan
         def with_late_source_change(root, plan, **kwargs):
             self.write(self.entry, 'files/.agents/rules/personal.md', '# Concurrent\n')
             return apply_plan(root, plan, **kwargs)
         with mock.patch.object(configuration, 'apply_plan', side_effect=with_late_source_change):
             with self.assertRaisesRegex(TransactionError, 'configuration changed'):
-                self.module.apply(self.target)
+                self.module.apply(self.target, accept_existing=report['fingerprint'])
         self.assertEqual(receipt.read_bytes(), previous)
         self.assertEqual((self.target / '.agents/rules/personal.md').read_text(), '# Personal\n')
 

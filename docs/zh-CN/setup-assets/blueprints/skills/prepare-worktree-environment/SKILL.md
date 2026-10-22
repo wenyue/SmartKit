@@ -1,15 +1,15 @@
 ---
-name: worktree-environment-setup
+name: prepare-worktree-environment
 description: 在创建或修订目标仓库中用于为已选定的 linked Git worktree 准备实现环境的 Skill 时使用。
 ---
 
-# 工作树环境准备
+# 准备工作树环境
 
 ## 目的与证据
 
-对于独立创建或修订 `.agents/skills/worktree-environment-setup/SKILL.md` 的请求，使用 `write-rules-and-skills` 编写一份归目标仓库所有、由模型调用的 Skill，供 Agent 准备所属工作流已经选定的确切 linked worktree。它提供仓库特定的环境准备和仅针对环境的结果。`create-worktree` 将此证据与当前选择及工作空间状态结合，判断即时就绪；它不运行项目基线检查。后续生命周期所有者重建当前状态，并在自身明确授权下行动。
+对于独立创建或修订 `.agents/skills/prepare-worktree-environment/SKILL.md` 的请求，使用 `write-rules-and-skills` 编写一份归目标仓库所有、由模型调用的 Skill，供 Agent 准备所属工作流已经选定的确切 linked worktree。它提供仓库特定的环境准备和仅针对环境的结果。`create-worktree` 将此证据与当前选择及工作空间状态结合，判断即时就绪；它不运行项目基线检查。后续生命周期所有者重建当前状态，并在自身明确授权下行动。
 
-使用 `name: worktree-environment-setup`，保持模型调用启用，并在 `description` 中表达准备触发条件和环境结果。`SKILL.md` 负责运行时判断；仓库所有者保留命令、依赖清单、生成映射和服务配置。
+使用 `name: prepare-worktree-environment`，保持模型调用启用，并在 `description` 中表达准备触发条件和环境结果。`SKILL.md` 负责运行时判断；仓库所有者保留命令、依赖清单、生成映射和服务配置。
 
 根据已接受请求和当前证据确立目标仓库。Author 主动发现并核实相关目标证据：Rules 和 Skills、清单和锁文件、工具链与运行时配置、所属准备和生成入口、CI、必要输入输出、不含秘密值的凭据要求、服务生命周期，以及功能性就绪检查。复用调用方提供的合格证据，直接发现缺失事实；调用方无需事先准备证据包。按所有者和来源评定资料。既有文本是回归证据，不是设计权威；可见性、可执行性和写入访问权限不授予权威。
 
@@ -54,7 +54,7 @@ description: 在创建或修订目标仓库中用于为已选定的 linked Git w
 
 ## Author 边界
 
-Author 可以查看合格目标证据，运行所有者支持的只读或非修复检查，并在本次请求授权的 Candidate 根目录下创建或替换 Skill 入口及必要的 Skill 所属脚本。入口的目标相对路径是 `.agents/skills/worktree-environment-setup/SKILL.md`；新增的 Skill 所属脚本位于其 `scripts/` 目录下。不要求固定的暂存目录。Candidate 删除或移动、实际目标写入、无关变更和外部效果需要区别于 Candidate 写入的已接受授权。
+Author 可以查看合格目标证据，运行所有者支持的只读或非修复检查，并在本次请求授权的 Candidate 根目录下创建或替换 Skill 入口及必要的 Skill 所属脚本。入口的目标相对路径是 `.agents/skills/prepare-worktree-environment/SKILL.md`；新增的 Skill 所属脚本位于其 `scripts/` 目录下。不要求固定的暂存目录。Candidate 删除或移动、实际目标写入、无关变更和外部效果需要区别于 Candidate 写入的已接受授权。
 
 复用可靠的仓库所属准备脚本。合格证据表明稳定、可重复的确定性准备缺少可靠入口时，编写能完成该准备的最小脚本。根据已接受任务和项目证据，确定其确切路径、目标支持的运行时、接口、效果范围、验证，以及保留、更新和移除所有者。写入前，通过公共编写流程的布局过程冻结确切 Candidate 路径和创建或替换操作。Author 可以在已有权限内作出这些工程选择；调用方无需提供每个字段。可发现的事实缺失时应主动调查；确实缺少访问权限、事实无法发现或存在重大选择时，使用下述停止结果。
 

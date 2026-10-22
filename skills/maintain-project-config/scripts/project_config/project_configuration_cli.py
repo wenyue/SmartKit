@@ -50,7 +50,7 @@ def add_arguments(parser: argparse.ArgumentParser, *, include_sync: bool = False
             command.add_argument('--file', action='append', default=[], help='Target-relative file or directory to back up; repeat. Omit to select existing default configuration paths')
             command.add_argument('--replace-binding', action='store_true', help='Record an explicit maintenance-mode/source switch; current source must converge first')
         if name == 'apply':
-            command.add_argument('--accept-existing', help='Exact inspect fingerprint accepting the first restoration over existing files')
+            command.add_argument('--accept-existing', help='Exact inspect fingerprint accepting all proposed source/target differences')
             command.add_argument('--auto-sync', choices=('on', 'off'), help='Record local permission for future session update/restore; default off')
         if name == 'adopt':
             command.add_argument('--file', action='append', default=[], help='Selected complete target-relative file or directory')

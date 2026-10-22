@@ -1,15 +1,15 @@
 ---
-name: worktree-environment-setup
+name: prepare-worktree-environment
 description: Use when creating or revising a target repository's Skill for preparing an already-selected linked Git worktree for implementation.
 ---
 
-# Worktree Environment Preparation
+# Prepare Worktree Environment
 
 ## Purpose and evidence
 
-For an independent request to create or revise `.agents/skills/worktree-environment-setup/SKILL.md`, use `write-rules-and-skills` to produce one target-owned, model-invoked Skill for an Agent preparing the exact linked worktree already selected by its owning workflow. It supplies repository-specific environment preparation and an environment-only result. `create-worktree` combines this evidence with current selection and workspace state to decide immediate readiness; it runs no project baseline checks. Later lifecycle owners reconstruct current state and act under their own explicit grants.
+For an independent request to create or revise `.agents/skills/prepare-worktree-environment/SKILL.md`, use `write-rules-and-skills` to produce one target-owned, model-invoked Skill for an Agent preparing the exact linked worktree already selected by its owning workflow. It supplies repository-specific environment preparation and an environment-only result. `create-worktree` combines this evidence with current selection and workspace state to decide immediate readiness; it runs no project baseline checks. Later lifecycle owners reconstruct current state and act under their own explicit grants.
 
-Use `name: worktree-environment-setup`, keep model invocation enabled, and express the preparation trigger and environment result in `description`. `SKILL.md` owns runtime judgment; repository owners retain commands, dependency inventories, generated mappings, and service configuration.
+Use `name: prepare-worktree-environment`, keep model invocation enabled, and express the preparation trigger and environment result in `description`. `SKILL.md` owns runtime judgment; repository owners retain commands, dependency inventories, generated mappings, and service configuration.
 
 Establish the target repository from the accepted request and current evidence. The Author discovers and qualifies relevant target evidence: Rules and Skills, manifests and lock files, toolchain and runtime configuration, owned preparation and generation entry points, CI, required inputs and outputs, credential requirements without secret values, service lifecycles, and functional readiness checks. Reuse qualified caller-supplied evidence and discover missing facts directly; the caller need not prepare an evidence packet. Qualify sources by owner and provenance. Existing text is regression evidence, not design authority; visibility, executability, and write access confer no authority.
 
@@ -54,7 +54,7 @@ Report the root, preparation and optional-branch dispositions, invocations and r
 
 ## Author boundary
 
-The Author may inspect qualified target evidence, run owner-supported read-only or non-fixing checks, and create or replace the Skill entry and necessary Skill-owned scripts beneath the Candidate root authorized for this request. The entry's target-relative path is `.agents/skills/worktree-environment-setup/SKILL.md`; new Skill-owned scripts belong under its `scripts/` directory. No fixed staging directory is required. Candidate deletion or moves, live-target writes, unrelated mutation, and external effects need accepted authority distinct from Candidate writing.
+The Author may inspect qualified target evidence, run owner-supported read-only or non-fixing checks, and create or replace the Skill entry and necessary Skill-owned scripts beneath the Candidate root authorized for this request. The entry's target-relative path is `.agents/skills/prepare-worktree-environment/SKILL.md`; new Skill-owned scripts belong under its `scripts/` directory. No fixed staging directory is required. Candidate deletion or moves, live-target writes, unrelated mutation, and external effects need accepted authority distinct from Candidate writing.
 
 Reuse reliable repository-owned preparation scripts. Where qualified evidence establishes stable, repeatable deterministic preparation without a reliable entry, author the smallest script that supplies it. Derive its exact path, target-supported runtime, interface, effect envelope, validation, and retention, update, and removal owner from the accepted task and project evidence. Use the public writer's layout process to freeze exact Candidate paths and create or replace operations before writing. The Author may make these engineering choices within existing authority; the caller need not supply every field. Missing discoverable facts require investigation; genuinely missing access, undiscoverable facts, or material choices use the stops below.
 

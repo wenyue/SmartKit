@@ -129,7 +129,7 @@ O items add no main-review files, modifications, progress, or Viewed eligibility
 | **fix** | Repair selected pending unreasonable findings; unqualified fix selects all displayed outstanding findings, including earlier groups. |
 | **ignore** | Mark only selected findings ignored, retaining severity and impact. If several are possible, clarify the selection unless the user explicitly chose all. |
 | **optimize** | Implement selected supported 🎨 suggestions; unqualified optimize selects all displayed outstanding suggestions. Pending unreasonable findings remain pending. |
-| **pass and continue** | Commit the full disclosed branch scope, perform disclosed PR publication and Viewed recording when applicable, verify completion, then advance. |
+| **pass and continue** | Complete any required full-branch commit and disclosed PR publication, record eligible PR files Viewed, verify completion, then advance. |
 | **continue** | Advance without staging, committing, pushing, or marking Viewed. Retain modifications and suggestions. |
 
 Localize action names and descriptions to the conversation's language. M IDs narrow an action to items; they do not select whole-group completion. Advance to the saved next group, or use **pass and finish** and **finish** when all files are displayed.
@@ -140,7 +140,7 @@ Keep these scopes distinct:
 - **Commit and publication:** all outstanding branch changes and, for a push, the full outgoing ancestry, subject to the preparation and confirmation below.
 - **Viewed:** eligible reviewed files in the current group, plus earlier files explicitly included in an intermediate completion. Final **pass and finish** covers every displayed reviewed group, including those advanced with **continue**.
 
-Inclusion in a commit or push is not review. A local or branch review needs no PR and grants no push authority. PR completion requires a verified PR and explicit authorization for the disclosed publication delta. Neither action approves or merges the PR; ignored findings remain ignored.
+Inclusion in a commit or push is not review. A local or branch review needs no PR and grants no push authority. PR completion requires a verified PR; publication also requires explicit authorization for its disclosed delta. Neither action approves or merges the PR; ignored findings remain ignored.
 
 ### Decide which actions are ready
 
@@ -157,7 +157,7 @@ Before offering completion, perform derivable read-only preparation for its actu
 | Extra content needs inclusion confirmation | Disclose it and offer a combined confirmation-and-completion choice when all other prerequisites are ready, alongside continue. |
 | Completion ready | Offer its actual remaining commit, push, and Viewed effects, alongside continue. Reuse verified completed work; no empty commit or unnecessary push. |
 
-For a ready local/branch review, completion commits outstanding changes and verifies them. For a ready PR, it also publishes unpublished changes when authorized and records eligible files Viewed. If there are no writes left, state the verified results it will reuse. Add optimize whenever supported suggestions remain.
+For a ready local/branch review, completion commits outstanding changes and verifies them. For a ready PR, completion publishes review work when needed and authorized, then records eligible files Viewed; when no commit or publication is needed, offer pass for Viewed recording alone. State any verified results it will reuse. Add optimize whenever supported suggestions remain.
 
 Every closing accounts for completion readiness, including after a repair or in a dedicated re-review. Put unavailable-action explanations outside the executable menu. After progress, use these sections in order, omitting empty ones:
 
@@ -182,11 +182,13 @@ A single fix, ignore, or optimize ends with an updated menu, without advancement
 
 ## Prepare completion
 
+For a PR with no unpublished changes made for this review and no unfinished selected commit or publication, pass can verify the pinned remote PR version and record Viewed without committing or pushing. Establish through read-only inspection that unrelated local differences, including a submodule checkout difference, leave the fixed reviewed delta, its dependencies, and complete per-file coverage valid; preserve those differences. Their presence alone does not require publication or inclusion consent. Unpublished changes made for this review, including fixes and optimizations, must reach the verified PR version before Viewed recording, and an unfinished selected commit or publication retains its full scope and remaining steps.
+
 ### Account for the whole branch
 
-Identify the exact repository, branch, and worktree to commit. Inventory all staged, unstaged, and untracked changes, plus every existing commit a proposed push would publish. Retain the branch tip, index, worktree and applicable untracked content as recovery evidence.
+When completion includes a commit or push, identify the exact repository, branch, and worktree. Inventory all staged, unstaged, and untracked changes, plus every existing commit a proposed push would publish. Retain the branch tip, index, worktree and applicable untracked content as recovery evidence.
 
-Completion commits the full outstanding branch state, including tests, supporting/generated files, staged-only changes, and undisplayed or excluded files. Honor repository restrictions on sensitive, ignored, or disposable files; resolve any unsafe inclusion with the user instead of silently narrowing the commit. For partial staging, establish the coherent final worktree content, explain any staged content it supersedes, and retain the original index. Unresolved content conflicts block completion.
+A completion commit includes the full outstanding branch state, including tests, supporting/generated files, staged-only changes, and undisplayed or excluded files. Honor repository restrictions on sensitive, ignored, or disposable files; resolve any unsafe inclusion with the user instead of silently narrowing the commit. For partial staging, establish the coherent final worktree content, explain any staged content it supersedes, and retain the original index. Unresolved content conflicts block completion.
 
 Establish provenance from this conversation's recorded actions and baseline, including mixed-origin hunks. For changes made elsewhere or of unknown origin, disclose the concrete paths or commits, behavior, and material effects, and obtain explicit inclusion confirmation before committing or publishing them. A prior confirmation covers the same content and effects; generic approval of a reviewed group does not cover undisclosed extras. If confirmation is declined or absent, preserve the changes and leave full-branch completion pending; offer continuation or a revised scope, not an automatic smaller commit.
 
@@ -194,7 +196,7 @@ Explain how the commit and push scope differ from displayed review and Viewed sc
 
 ### Prepare PR publication and Viewed recording
 
-Before offering PR completion, verify the PR-owning repository, source branch/remote, viewer, current base/head, outgoing ancestry, and available interfaces for its writes and readbacks. Disclose the entire push delta separately from the Viewed set, including existing unpushed commits. If publication cannot use a normal push to the verified source branch, explain the missing prerequisite; this action does not implicitly authorize rebasing, force-pushing, or excluding commits.
+Before offering PR completion, verify the PR-owning repository, source branch/remote, viewer, current base/head, and available interfaces for its actual writes and readbacks. For publication, also verify outgoing ancestry and disclose the entire push delta separately from the Viewed set, including existing unpushed commits. If publication cannot use a normal push to the verified source branch, explain the missing prerequisite; this action does not implicitly authorize rebasing, force-pushing, or excluding commits.
 
 Viewed covers a whole file at a PR version. Before offering to mark a path, compare its complete intended PR delta with the retained displayed assessments. Show every uncovered hunk in a dedicated re-review with both judgments, even when it is independent extra content already approved for inclusion. Preserve IDs, original group membership, and progress. An O re-review does not make an otherwise ineligible path eligible.
 
@@ -204,7 +206,7 @@ If coverage needs missing evidence or a scope decision, leave the path unmarked 
 
 Execute only the effects disclosed and authorized by the selected action. Reuse verified commits, pushes, and Viewed results instead of repeating writes.
 
-1. **Revalidate.** Compare the branch tip, index, worktree, review evidence, and any remote base/head and outgoing ancestry with the prepared state. Resolve drift with refreshed inventory, applicable checks and affected re-review; changed or new extra content needs renewed inclusion confirmation.
+1. **Revalidate.** Compare review evidence, any remote base/head, and local state relevant to the selected effects with the prepared state; include the branch tip, index, worktree, and outgoing ancestry whenever committing or publishing. Resolve relevant drift with refreshed inventory, applicable checks and affected re-review; changed or new extra content to be committed or published needs renewed inclusion confirmation.
 2. **Commit when needed.** Stage the full disclosed final content and verify the index against the intended tree. Commit through normal hooks, then verify the commit, parent, full tree, index, and remaining worktree state. Hook changes need applicable checks and affected re-review; changes beyond confirmed content also need updated consent. All intended changes must be committed without unexplained residue. A local/branch completion can now advance.
 3. **Publish when authorized and needed.** Revalidate the full outgoing delta after hooks, push normally to the verified PR source branch, and read back base/head and the complete published delta. Confirm the expected commit, checked content, and valid displayed assessments.
 4. **Record Viewed.** On the actual PR version, verify the viewer and both commit IDs and confirm complete per-path coverage for the selected set. Mark only eligible selected paths still awaiting Viewed. Read back every selected path, including reused results, and the PR version. All must be `VIEWED`, with base/head unchanged during recording.

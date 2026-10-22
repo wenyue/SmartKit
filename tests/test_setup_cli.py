@@ -229,7 +229,7 @@ class SetupCliTest(unittest.TestCase):
                     '.agents/rules/contracts.md',
                     '.agents/rules/structure.md',
                     '.agents/skills/change-set-verification/SKILL.md',
-                    '.agents/skills/worktree-environment-setup/SKILL.md',
+                    '.agents/skills/prepare-worktree-environment/SKILL.md',
                 },
             )
             self.assertTrue((session / 'generated/.agents/rules').is_dir())

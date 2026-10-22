@@ -67,10 +67,10 @@
       "target": ".agents/skills/change-set-verification/SKILL.md"
     },
     {
-      "id": "blueprint-worktree-environment-setup",
+      "id": "blueprint-prepare-worktree-environment",
       "kind": "blueprint",
-      "source": "setup-assets/blueprints/skills/worktree-environment-setup/SKILL.md",
-      "target": ".agents/skills/worktree-environment-setup/SKILL.md"
+      "source": "setup-assets/blueprints/skills/prepare-worktree-environment/SKILL.md",
+      "target": ".agents/skills/prepare-worktree-environment/SKILL.md"
     },
     {
       "id": "entry-agents",

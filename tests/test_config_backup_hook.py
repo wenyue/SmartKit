@@ -95,6 +95,12 @@ class ConfigurationBackupHookTest(unittest.TestCase):
                 self.assertIn('target ' + json.dumps(str(self.target)), context)
                 self.assertIn('update command before inspect/apply', context)
                 self.assertIn('without applying a stale copy', context)
+                self.assertIn('even when only the repository changed', context)
+                self.assertIn('show the changed paths and content differences, including additions and deletions', context)
+                self.assertIn('Wait for that choice before applying any changes', context)
+                self.assertIn('preserve target contents and the prior receipt', context)
+                self.assertIn('--accept-existing and the exact inspected fingerprint', context)
+                self.assertIn('Automatic synchronization permission alone never accepts differences', context)
                 self.assertIn('Do not adopt local drift, publish, regenerate MCP', context)
                 self.assertNotIn('ask whether to restore or defer', context)
 

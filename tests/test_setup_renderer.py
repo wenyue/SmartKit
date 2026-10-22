@@ -1620,7 +1620,7 @@ class SetupRendererTest(unittest.TestCase):
             verification_matrix.parent.mkdir(parents=True)
             verification_matrix.write_text('# local matrix\n', encoding='utf-8')
             setup_script = (
-                target / '.agents/skills/worktree-environment-setup/scripts/setup.ps1'
+                target / '.agents/skills/prepare-worktree-environment/scripts/setup.ps1'
             )
             setup_script.parent.mkdir(parents=True)
             setup_script.write_text('Write-Output ready\n', encoding='utf-8')
@@ -1632,7 +1632,7 @@ class SetupRendererTest(unittest.TestCase):
                 second.preserved_paths,
             )
             self.assertNotIn(
-                PurePosixPath('.agents/skills/worktree-environment-setup/SKILL.md'),
+                PurePosixPath('.agents/skills/prepare-worktree-environment/SKILL.md'),
                 second.preserved_paths,
             )
             self.assertIn(
@@ -1643,7 +1643,7 @@ class SetupRendererTest(unittest.TestCase):
             )
             self.assertIn(
                 PurePosixPath(
-                    '.agents/skills/worktree-environment-setup/scripts/setup.ps1'
+                    '.agents/skills/prepare-worktree-environment/scripts/setup.ps1'
                 ),
                 second.preserved_paths,
             )
@@ -1652,7 +1652,7 @@ class SetupRendererTest(unittest.TestCase):
                 second.replace_roots,
             )
             self.assertNotIn(
-                PurePosixPath('.agents/skills/worktree-environment-setup'),
+                PurePosixPath('.agents/skills/prepare-worktree-environment'),
                 second.replace_roots,
             )
 

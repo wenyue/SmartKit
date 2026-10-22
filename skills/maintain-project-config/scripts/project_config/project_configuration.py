@@ -210,12 +210,13 @@ def _observe(target: Path) -> tuple[Path, dict, dict, dict]:
         if actual == desired:
             continue
         changes.append(path)
-        if state['sourceFingerprint'] is None and actual is not None:
-            conflicts.append(path)
+        conflicts.append(path)
         try:
             diffs[path] = ''.join(difflib.unified_diff(
                 (actual or b'').decode('utf-8').splitlines(True), (desired or b'').decode('utf-8').splitlines(True),
                 fromfile='target/' + path, tofile='source/' + path))
+            if not diffs[path]:
+                diffs[path] = 'File added' if actual is None else 'File deleted'
         except UnicodeDecodeError:
             diffs[path] = 'Binary file differs'
     observation = {'source': str(entry), 'changes': changes, 'conflicts': conflicts, 'diffs': diffs,
@@ -245,12 +246,13 @@ def require_converged(target: Path) -> str | None:
 
 def apply(target: Path, *, accept_existing: str | None = None,
           automatic: bool | None = None) -> dict:
-    """Restore complete selected files; an established binding overwrites local drift."""
+    """Restore selected files only after exact inspection acceptance of any differences."""
     entry, files, state, report = _observe(target)
     if accept_existing is not None and accept_existing != report['fingerprint']:
         raise ValueError('reviewed configuration fingerprint changed')
     if report['conflicts'] and accept_existing != report['fingerprint']:
-        raise ValueError('initial project configuration conflict; inspect and accept the exact proposed restoration: '
+        raise ValueError('project configuration conflict; inspect differences and choose keep local or '
+                         'use the configuration repository before accepting the exact restoration: '
                          + ', '.join(report['conflicts']))
     automatic = state['automatic'] if automatic is None else automatic
     if (not report['changes'] and state['sourceFingerprint'] == report['source_fingerprint']
