@@ -11,7 +11,13 @@ Before making decisions in any coding task, read [ponytail](../ponytail/SKILL.md
 
 ## Keep Behavior and APIs with Their Owners
 
-Give every behavior, state, invariant, and lifecycle one clear owner. Keep owner-local logic with its owner; move logic only when its reuse or boundary is real.
+Give every behavior, state, invariant, and lifecycle one clear owner. Keep owner-local logic and the reasoning needed to understand and change it together.
+
+Keep short, straightforward, single-use logic in its caller by default. Extract when the result materially reduces the total effort needed to understand and change the behavior. Benefits can come from a distinct responsibility, invariant, or domain concept; actual production reuse; substantial branching, state, or lifecycle complexity; or dependency isolation. Weigh those benefits against added functions, types, files, APIs, and navigation.
+
+Use the smallest boundary that realizes the benefit; a private helper in the same file may be enough. Keep enough cohesive control flow in the caller to make the operation understandable.
+
+Shortening a caller, naming a small block, line counts, and hypothetical reuse do not by themselves justify extraction. Exercise private logic through its owning behavior. A test seam needs a responsibility or dependency boundary justified by the production design, independently of the wish to test private logic directly.
 
 Keep failure handling with its owning operation. Catch/log/default repetition alone does not justify a callback wrapper, even across callers. Require a coherent responsibility beyond the template, such as cleanup, transaction completion, required failure-contract translation, or substantive recovery; judge that responsibility rather than function length.
 
