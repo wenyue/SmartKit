@@ -245,6 +245,10 @@ def git_base_uri(comparison: Comparison) -> Optional[str]:
         return None
     name = target.base_path or target.path
     try:
+        # A reused VS Code window may resolve a Git-file checkout through its parent.
+        # Materialize the fixed blob instead of assuming that checkout is registered.
+        if (target.repo / ".git").is_file():
+            return None
         history = target.repo.resolve(strict=True)
         for part in name.split("/"):
             history /= part

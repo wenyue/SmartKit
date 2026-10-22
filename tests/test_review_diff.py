@@ -449,6 +449,25 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(json.loads(urllib.parse.unquote(before.query)), {"path": str(self.file), "ref": self.before})
         self.assertEqual(command[4], "--file-uri=" + self.file.as_uri())
 
+    def test_linked_checkout_uses_fixed_files_without_requiring_editor_repository_detection(self):
+        for name in (self.repo / ".worktrees" / "nested review", self.base / "external review"):
+            with self.subTest(path=name):
+                linked = self.linked(name)
+                target = self.prepare(replace(self.context, repo=linked, view="worktree"))
+                current = linked / self.name
+                current.write_bytes(b"later linked edit\n")
+                index = comparisons.git(linked, "ls-files", "--stage")
+                with self.editor_dispatch() as launch:
+                    result = diff.open_editor(target)
+                self.assertEqual(result["viewer"], "vscode")
+                launch.assert_called_once()
+                command = launch.call_args[0][0]
+                self.assertFalse(command[3].startswith("--file-uri=git:"))
+                self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
+                self.assertEqual(Path(command[4]), current)
+                self.assertEqual(current.read_bytes(), b"later linked edit\n")
+                self.assertEqual(comparisons.git(linked, "ls-files", "--stage"), index)
+
     def test_index_snapshot_uses_only_a_matching_fixed_commit(self):
         with patch.object(service, "ensure_service"):
             target = diff.target_from_query(urllib.parse.urlsplit(diff.links(self.batch(base="index"))[0]["url"]).query)
