@@ -32,7 +32,7 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `improve-codebase-architecture` | [Matt Pocock](https://github.com/mattpocock/skills) | Scans for structural improvements, presents a visual report, and explores the target you select. |
 | `to-questionnaire` | [Matt Pocock](https://github.com/mattpocock/skills) | Turns an unresolved decision into a questionnaire for someone else to supply missing information. |
 | `wayfinder` | [Matt Pocock](https://github.com/mattpocock/skills) | Maps large work spanning multiple sessions into decision tickets and resolves the path to implementation. |
-| `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | Initializes or upgrades project agent configuration, or restores an existing configuration-repository backup. |
+| `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | Initializes or upgrades project agent configuration, or updates/restores local configuration from a configuration repository, with recommendations based on local state. |
 | `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | Maintains project Agent configuration shared with the project, kept on this machine, or synchronized through a separate configuration repository. |
 | `setup-matt-pocock-skills` | [Matt Pocock](https://github.com/mattpocock/skills) | Configures the issue tracker, triage labels, and domain docs; run before first using Matt Pocock's engineering skills. |
 
@@ -97,11 +97,20 @@ Example: “Use `collect-todos` to record the cache cleanup we discussed for lat
 
 ### `setup-project-agents`
 
-Manually invoke this Skill to choose between initializing/upgrading project agent configuration and restoring an existing configuration-repository backup. Full setup checks project Rules, Skills, custom Agents, and MCP mappings while preserving valid project decisions. On first setup, choose configuration shared through the project, kept only on this machine, or backed up in a separate private repository; existing choices are retained on upgrade. When tracker, triage-label, or domain context is missing, full setup guides you through the shared Matt initialization workflow and then continues in the same invocation. Existing choices are retained, and new edits are shown before writing. State an explicit limit when you only want local synchronization or a Rule-index update.
+Manually invoke this Skill to initialize or upgrade project agent configuration, or update/restore local configuration from a configuration repository. State the operation you want, or let it inspect local state read-only and recommend one before you choose:
 
-For a new checkout, invoke setup yourself and choose restoration to recover saved configuration without regeneration or publication. Restoration checks local prerequisites and reports gaps; it does not complete full setup. Automatic startup synchronization is optional and defaults to off. Session startup does not discover missing configuration or ask to restore it.
+| Local state | Recommendation |
+| --- | --- |
+| Usable managed configuration, including in a fresh checkout | Upgrade/reassess the existing configuration. A confirmed backup also makes repository restoration available. |
+| Configuration absent or unusable, with a confirmed backup | Restore local configuration from the configuration repository. |
+| Configuration absent or unusable, with no known backup and no unresolved source evidence | Initialize configuration. You can still identify an existing backup before proceeding. |
+| Local configuration cannot yet be assessed, or absent/unusable configuration has an unresolved backup source | Clarify only the missing evidence needed for that recommendation; unavailable evidence does not mean no backup exists. |
 
-Examples: “Use `setup-project-agents` to update this repository's agent configuration.” Or: “Use `setup-project-agents` to restore my configuration backup on this machine.”
+Full setup checks project Rules, Skills, custom Agents, and MCP mappings, supplies missing tracker, triage-label and domain context, and prepares local CodeGraph. First setup establishes configuration shared through the project, kept only on this machine, or backed up in a separate private repository; existing choices are retained. State an explicit limit when you only want local synchronization or a Rule-index update.
+
+“Update or restore local configuration from the configuration repository” applies a snapshot in one direction: **configuration repository → current project**. It serves both new checkouts and existing projects. Within the selected backup scope, files may be added, overwritten or deleted; you choose whether to accept the actual differences before application. Saving local edits back to the repository is a separate operation. Restoration then checks local prerequisites without regenerating configuration, preparing services or publishing source changes; it does not complete full setup. Automatic startup synchronization is optional and defaults to off. Session startup does not discover missing configuration or ask to restore it.
+
+Examples: “Use `setup-project-agents` to upgrade this repository's agent configuration.” Or: “Use `setup-project-agents` to restore local configuration from my configuration repository.”
 
 ### `maintain-project-config`
 

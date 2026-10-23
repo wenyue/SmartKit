@@ -1,31 +1,48 @@
 ---
 name: setup-project-agents
-description: Initialize or upgrade project agent configuration, or restore it from a configuration repository.
+description: Initialize or upgrade project agent configuration, or update or restore local configuration from a configuration repository.
 disable-model-invocation: true
 ---
 
 # Setup Project Agents
 
-Choose a full setup or restore an existing configuration backup. Full setup assesses every declared blueprint and project custom Agent, even when fingerprints match, and prepares CodeGraph for the local target. Restoration copies the accepted backup and checks this machine's prerequisites without regenerating configuration. This Skill requires the user's explicit invocation.
+Choose full setup or application of a configuration-repository snapshot using the user's intent and local project evidence. Full setup assesses every declared blueprint and project custom Agent, even when fingerprints match, and prepares CodeGraph for the local target. Updating or restoring local configuration from a configuration repository copies the accepted backup into the current project and checks this machine's prerequisites without regenerating configuration. This Skill requires the user's explicit invocation.
 
 ## 1. Choose the requested operation
 
-Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the repository as `<target-root>`. Follow an explicit operation request; otherwise present these two choices in the user's language before fetching sources or changing project inputs:
+Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the repository as `<target-root>`. Read [Ownership](references/ownership.md) before the selected operation for canonical inputs and replacement boundaries. Catalog and schema own supported input shapes; scripts own validation and application; Setup owns operation selection, project decisions, author coordination and whole-set coherence.
 
-| Choice | Result and route |
-| --- | --- |
-| A. Initialize or upgrade configuration | Establish or preserve the maintenance mode in step 2, then complete steps 3 through 8, including every required migration and full-set assessment. |
-| B. Restore from a configuration repository | Follow Restore from a configuration repository below, then end this operation. |
+Follow an explicit operation request directly: initialization, upgrade or migration enters step 2; updating/restoring local configuration from a configuration repository enters the snapshot branch below. An explicitly limited request for local Rule/Skill discovery and declared Agent/MCP mappings follows Local synchronization; an `AGENTS.md` Rule-index-only request uses its narrower branch. Keep those limits and any operation already chosen in the conversation instead of asking the user to choose again.
 
-An explicitly limited request for local Rule/Skill discovery and declared Agent/MCP mappings follows Local synchronization below; an `AGENTS.md` Rule-index-only request uses its narrower branch. These existing limits do not require the full-setup/restore menu. An explicit initialization, upgrade or migration request selects A; an unqualified invocation leaves the choice open.
+For an unqualified invocation, establish local state before recommending an operation. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for binding, snapshot and local-receipt evidence, then run these read-only inspections before fetching sources or changing project inputs:
 
-Read [Ownership](references/ownership.md) before the selected operation for canonical inputs and replacement boundaries. Catalog and schema own supported input shapes; scripts own validation and application; Setup owns operation selection, project decisions, author coordination and whole-set coherence. New checkouts invoke this Skill manually: session hooks neither discover missing configuration nor ask to restore it. Configuration startup handling is limited to explicitly enabled synchronization of a valid existing checkout binding; other readiness checks retain their owners.
+```text
+python "<skill-root>/scripts/workflow.py" inspect --help
+python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
+python "<maintain>" inspect --target "<target-root>"
+```
 
-## Restore from a configuration repository
+Use the findings with existing managed content and, where needed, the target's `.agents/config.json`, `.agents/smartkit.lock.json` and `.agents/project-config-sync.json`. A lock's presence or a copied `setupVersion` alone establishes no successful setup on this checkout. Check the receipt's binding and successful-application evidence under the maintenance contract; `automatic: false` alone does not distinguish disabled synchronization from a missing receipt. A copied binding without a matching successful local receipt is a proposed source requiring confirmation. Discover no backup by guessing from business remotes or scanning known repositories or other checkouts.
 
-Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for binding, backup scope, restoration, Git exclusions and failure recovery. Use its supported commands directly without invoking the user-only maintenance Skill. This branch needs neither full-session preflight nor Matt context, migrations, custom-Agent reassessment or generated authoring.
+Classify by usable local managed configuration first, then by the known backup source. A fresh checkout can already contain usable configuration; checkout age, copied setup records and runtime readiness do not decide which operation to recommend. If configuration is incomplete or inspection leaves its usability uncertain, identify and resolve only the facts needed for that classification. Assess source confidence separately: a copied binding needs confirmation before using it for restoration, but does not invalidate independent evidence that local configuration is usable. Unavailable source evidence is not evidence that no backup exists; report that gap and leave only source-dependent decisions pending.
 
-1. Inspect the selected checkout and establish the existing backup source:
+| Local managed configuration | Backup evidence | Recommendation and applicable alternatives |
+| --- | --- | --- |
+| Usable, including in a fresh checkout | Any source state | Recommend upgrade/reassessment through step 2, retaining its maintenance choice. With an established configuration-repository binding or a user-confirmed backup source, also offer “Update or restore local configuration from the configuration repository.” Confirm a copied binding before treating it as that source. |
+| Absent or established as unusable | Confirmed source and existing backup entry | Recommend “Update or restore local configuration from the configuration repository.” Offer initialization as the alternative, preserving existing content under Ownership. |
+| Absent or established as unusable | No known backup, with no unresolved source evidence | Make initialization the primary operation. Offer “I already have a configuration backup” as a secondary entry to source confirmation rather than presenting restoration as ready to run. |
+
+Present the relevant state, recommended operation and its reason, explaining the effects before asking the user to choose. Full setup reassesses configuration and prepares local CodeGraph. For the repository operation, state the direction: **configuration repository → current project**. It applies the accepted snapshot within its declared scope and may add, overwrite or delete local files; saving local changes back to the repository is a separate adoption/publication operation. For a known source, include available changed paths and whether they come from the local snapshot; an inspection without update does not establish the remote's latest contents.
+
+Wait for the operation choice before proceeding. A recommendation neither authorizes execution nor accepts source/target differences, changes the maintenance mode or resets synchronization preferences. Once the user chooses, continue that route without another operation-selection question; source confirmation and acceptance of actual differences remain separate decisions where required.
+
+Inspection failures block only decisions that depend on the missing evidence. Report those gaps without entering full setup, Matt initialization or CodeGraph preparation merely to enable snapshot restoration. New checkouts invoke this Skill manually: session hooks neither discover missing configuration nor ask to restore it. Configuration startup handling remains limited to explicitly enabled synchronization of a valid existing checkout binding; other readiness checks retain their owners.
+
+## Update or restore local configuration from the configuration repository
+
+Use this branch for new checkouts and already configured projects: reapply the selected snapshot after local loss or drift, or bring local files into agreement with configuration-repository changes. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for binding, backup scope, restoration, Git exclusions and failure recovery. Use its supported commands directly without invoking the user-only maintenance Skill. This branch needs neither full-session preflight nor Matt context, migrations, custom-Agent reassessment or generated authoring.
+
+1. Inspect the selected checkout and establish the existing backup source, reusing still-current local findings from step 1:
 
    ```text
    python "<maintain>" inspect --target "<target-root>"
@@ -53,11 +70,11 @@ Read [Project Configuration Maintenance](../maintain-project-config/references/m
 
    Use the recorded or newly accepted preference for `--auto-sync`. Verify source-target agreement, the target-local synchronization receipt and applicable Git exclusions through the shared reference's read-only Git checks. Restore the snapshot's bytes under the shared backup contract; copied `setupVersion` or ownership records establish no successful full setup or runtime readiness for this checkout.
 
-4. Check the restored configuration's local tool, credential and service requirements using their owners' supported read-only checks. Report missing or unverifiable prerequisites without installing tools, starting services or rewriting the snapshot as part of restoration. End with the source, restored/preserved paths, synchronization preference, exclusions, actual prerequisite results and any failure or recovery evidence. Report restoration separately from local readiness and explicitly state that full setup was not performed. This branch neither generates configuration, records a new successful setup version, commits nor publishes source changes; a requested initialization or upgrade is a separate A operation.
+4. Check the restored configuration's local tool, credential and service requirements using their owners' supported read-only checks. Report missing or unverifiable prerequisites without installing tools, starting services or rewriting the snapshot as part of restoration. End with the source, restored/preserved paths, synchronization preference, exclusions, actual prerequisite results and any failure or recovery evidence. Report restoration separately from local readiness and explicitly state that full setup was not performed. This branch neither generates configuration, records a new successful setup version, commits nor publishes source changes; a requested initialization or upgrade follows the separate full-setup route.
 
 ## 2. Establish project state and its maintenance mode
 
-Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, source selection and recovery, and [Project Migrations](references/migrations.md) for baseline and release-specific obligations. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for source binding, private repository access, application and publication boundaries. Setup consumes that Skill's supported reference, command interface and configuration engine without invoking the user-only maintenance Skill. Begin with both read-only inspections; their help explains the reported checks and exits:
+Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, source selection and recovery, and [Project Migrations](references/migrations.md) for baseline and release-specific obligations. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for source binding, private repository access, application and publication boundaries. Setup consumes that Skill's supported reference, command interface and configuration engine without invoking the user-only maintenance Skill. Obtain both read-only inspections below, reusing still-current results from operation selection and refreshing affected findings after input changes. Their help explains the reported checks and exits:
 
 ```text
 python "<skill-root>/scripts/workflow.py" inspect --help
