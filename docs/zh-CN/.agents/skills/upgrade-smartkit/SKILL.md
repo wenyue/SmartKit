@@ -11,7 +11,7 @@ description: 推进本仓库的 SmartKit 发布版本，并评估这些改动是
 
 ## 1. 确定正在准备的发布版本
 
-检查工作区和暂存区、根目录的 [VERSION](../../../VERSION)，以及已有版本改动。保留无关工作和已经确定的目标版本。在修改发布输入前，明确请求的目标版本，并解决与之有关的重大不确定性。
+检查工作区和暂存区、根目录的 [VERSION](../../../../../VERSION)，以及已有版本改动。保留无关工作和已经确定的目标版本。在修改发布输入前，明确请求的目标版本，并解决与之有关的重大不确定性。
 
 根据仓库发布记录或经过验证的发布标签，确定上一个已发布版本及其提交。以该发布版本作为比较基线，将计划纳入新版本的暂存和未暂存改动都计入目标范围。当前 `HEAD`、本地版本编辑，或看起来最新的标签，都不足以单独证明项目正在使用哪个发布版本。如果无法确定基线，应先报告缺少的证据，再判断是否无需迁移。
 
@@ -29,7 +29,7 @@ description: 推进本仓库的 SmartKit 发布版本，并评估这些改动是
 
 ## 3. 只维护必要的迁移指引
 
-修改迁移记录前，读取 [setup 迁移指引](../../../skills/setup-project-agents/references/migrations.md) 和 [迁移目录](../../../setup-assets/catalog/migrations.json)。指引说明适用条件，以及如何在 `skills/setup-project-agents/references/migrations/` 下查找独立的版本指引；目录记录每次必要迁移的发布版本和指引文件。确定迁移动作前，读取每份适用的版本指引。
+修改迁移记录前，读取 [setup 迁移指引](../../../skills/setup-project-agents/references/migrations.md) 和 [迁移目录](../../../../../setup-assets/catalog/migrations.json)。指引说明适用条件，以及如何在 `skills/setup-project-agents/references/migrations/` 下查找独立的版本指引；目录记录每次必要迁移的发布版本和指引文件。确定迁移动作前，读取每份适用的版本指引。
 
 需要迁移时，将目标版本声明和一份 `skills/setup-project-agents/references/migrations/<version>.md` 文件作为一项完整改动添加。声明的 `guide` 为 `references/migrations/<version>.md`；迁移说明保留在该文件中，不在总览中添加版本条目。
 
@@ -59,7 +59,7 @@ python scripts/sync_plugin_version.py
 python scripts/sync_plugin_version.py --check
 ```
 
-运行 [CI](../../../.github/workflows/test.yml) 中适用的所有者检查；如果声明或指引有变化，还要运行迁移验证和测试。确认每项声明都能定位到对应版本指引，迁移版本符合目标发布版本，且之前的必要条目及文件仍然可用。对修改过的第一方技能引用文件，遵循项目翻译流程。
+运行 [CI](../../../../../.github/workflows/test.yml) 中适用的所有者检查；如果声明或指引有变化，还要运行迁移验证和测试。确认每项声明都能定位到对应版本指引，迁移版本符合目标发布版本，且之前的必要条目及文件仍然可用。对修改过的第一方技能引用文件，遵循项目翻译流程。
 
 结合确定的基线和已有工作记录，检查完整差异。使用 `git diff <comparison-point> --check` 检查空白问题，检查范围包括新文件，并确认源文件改动、同步后的版本字段与迁移判断一致。即使版本同步器报告成功，必需检查失败仍属于未完成工作。
 

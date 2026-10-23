@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import argparse
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
+import stat
 import sys
 import textwrap
 import unicodedata
@@ -29,10 +30,109 @@ class Document(NamedTuple):
     path: Path
     text: str
     anchors: Callable[[Path], Set[str]]
+    mapping: Optional["PathMapping"] = None
 
 
 class InputError(Exception):
-    """A file needed by a check is missing, unreadable, or not UTF-8."""
+    """A required input or path mapping cannot be checked safely."""
+
+
+def confined_path(root: Path, relative: Path) -> Path:
+    """Inspect only descendants of an explicitly selected root, without following links."""
+    current = root
+    for part in relative.parts:
+        current /= part
+        try:
+            metadata = current.lstat()
+        except FileNotFoundError:
+            break
+        except OSError as exc:
+            raise InputError(f"cannot inspect mapped path {current}: {exc}") from exc
+        if (stat.S_ISLNK(metadata.st_mode)
+                or getattr(metadata, "st_file_attributes", 0)
+                & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+            raise InputError(f"mapped path traverses a link: {current}")
+    return root / relative
+
+
+class PathMapping(NamedTuple):
+    candidate_root: Path
+    target_root: Path
+    candidate_paths: Set[Path]
+    context_paths: Set[Path]
+
+    def input_relative(self, source: Path) -> Path:
+        try:
+            relative = Path(os.path.abspath(source)).relative_to(self.candidate_root)
+        except ValueError as exc:
+            raise InputError(f"input is outside --candidate-root: {source}") from exc
+        if relative not in self.candidate_paths:
+            raise InputError(f"input is outside the exact Candidate path set: {source}")
+        confined_path(self.candidate_root, relative)
+        return relative
+
+    def resolve(self, source: Path, location: str) -> Path:
+        relative = self.input_relative(source)
+        destination = self.target_root / relative
+        if location:
+            destination = Path(os.path.abspath(destination.parent / location))
+        try:
+            final_relative = destination.relative_to(self.target_root)
+        except ValueError as exc:
+            raise InputError(f"link leaves --target-root: {location}") from exc
+        mapped_paths = self.candidate_paths | self.context_paths
+        if final_relative in mapped_paths:
+            # A frozen mapped path owns absence too; stale target bytes cannot replace it.
+            return confined_path(self.candidate_root, final_relative)
+        for mapped_path in mapped_paths:
+            if (final_relative in mapped_path.parents
+                    and confined_path(self.candidate_root, mapped_path).is_file()):
+                return confined_path(self.candidate_root, final_relative)
+        return confined_path(self.target_root, final_relative)
+
+
+def mapped_paths(root: Path, raw_paths: Sequence[str], option: str) -> Set[Path]:
+    paths: Set[Path] = set()
+    for raw in raw_paths:
+        relative = PurePosixPath(raw)
+        if (not raw or "\x00" in raw or "\\" in raw or SCHEME.match(raw)
+                or relative.is_absolute() or ".." in relative.parts or not relative.parts):
+            raise InputError(f"{option} must be a relative POSIX file path: {raw!r}")
+        path = Path(*relative.parts)
+        try:
+            candidate = confined_path(root, path)
+        except (InputError, OSError) as exc:
+            raise InputError(f"{option}: {exc}") from exc
+        if candidate.exists() and not candidate.is_file():
+            raise InputError(f"present {option} is not a regular file: {raw!r}")
+        paths.add(path)
+    return paths
+
+
+def path_mapping(args: argparse.Namespace) -> Optional[PathMapping]:
+    supplied = (args.candidate_root is not None, args.target_root is not None,
+                bool(args.candidate_path), bool(args.context_path))
+    if not any(supplied):
+        return None
+    if args.context_path and not all(supplied[:3]):
+        raise InputError(
+            "--context-path requires --candidate-root, --target-root and --candidate-path"
+        )
+    if not all(supplied[:3]):
+        raise InputError("mapping requires --candidate-root, --target-root and --candidate-path")
+    roots = [Path(os.path.abspath(raw)) for raw in (args.candidate_root, args.target_root)]
+    for root in roots:
+        if not root.is_dir():
+            raise InputError(f"mapped root is not an available directory: {root}")
+    candidate_paths = mapped_paths(roots[0], args.candidate_path, "Candidate path")
+    context_paths = mapped_paths(roots[0], args.context_path, "--context-path")
+    overlap = candidate_paths & context_paths
+    if overlap:
+        path = min(overlap, key=str)
+        raise InputError(
+            f"--context-path must be disjoint from --candidate-path: {path.as_posix()!r}"
+        )
+    return PathMapping(roots[0], roots[1], candidate_paths, context_paths)
 
 
 def read_markdown(path: Path) -> str:
@@ -375,12 +475,15 @@ def check_link(document: Document, number: int, target: str) -> Optional[Finding
     location = percent_decode(location.partition("?")[0])
     if location.startswith("/"):
         return None
-    destination = document.path.parent / location if location else document.path
     where = location or "this file"
     try:
+        if document.mapping is None:
+            destination = document.path.parent / location if location else document.path
+        else:
+            destination = document.mapping.resolve(document.path, location)
         exists = destination.exists()
         is_dir = exists and destination.is_dir()
-    except OSError as exc:
+    except (OSError, ValueError, InputError) as exc:
         return Finding(number, f"cannot inspect link target {where}: {exc}", True)
     if not exists:
         return Finding(number, f"link target does not exist: {target}")
@@ -553,7 +656,7 @@ CHECKS = (
     )),
     Check("relative-links", check_relative_links, (
         "Relative targets of inline links, images, and link reference definitions must exist, "
-        "resolved from the directory of the file that contains the link, after percent-decoding "
+        "by default resolved from the directory of the file that contains the link, after percent-decoding "
         "and dropping any ?query. A #fragment into a .md or .markdown file, including a bare "
         "#fragment into the same file, must match a heading anchor or an <a id/name> in that file. "
         "Heading anchors follow GitHub: lowercase the heading text, drop punctuation other than "
@@ -592,6 +695,23 @@ def build_parser() -> argparse.ArgumentParser:
     for check in CHECKS:
         sections.append(f"  {check.name}\n{paragraph(check.help, '    ')}")
     sections.append(paragraph(
+        "For staged or backup files retaining their final target-relative layout, supply "
+        "--candidate-root, --target-root and repeated --candidate-path for the complete frozen "
+        "Candidate scope, including missing/deleted paths. Inputs must belong to that exact "
+        "scope. When other accepted Candidates share the staging or backup root, repeat "
+        "--context-path for their exact frozen paths, including missing/deleted paths. Context paths "
+        "are authoritative over the target for link resolution, but are never inputs and their prose "
+        "is not checked. "
+        "Relative links use mapped files for declared destinations, even when absent, and retained "
+        "target files otherwise; undeclared Candidate-root files are ignored. Surviving mapped "
+        "descendants establish new directories. Anchors use the selected file. Candidate and context "
+        "paths must be disjoint. "
+        "Mapped paths must remain beneath the selected roots without symlink or reparse-point "
+        "traversal. Mapping does not grant target access or scan additional documents; the "
+        "caller supplies authorized roots and scope. Without these options, links resolve "
+        "beside their input files as before."
+    ))
+    sections.append(paragraph(
         "Pass Markdown files explicitly; directories are not traversed, and files are never "
         "changed. Document problems go to stdout as 'path:line: check-name: message'. Usage and "
         "input errors, including an unreadable input or link target, go to stderr."
@@ -606,15 +726,26 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("paths", nargs="+", help="Markdown file paths; use -- before paths starting with -")
+    parser.add_argument("--candidate-root", help="staging or backup root with target-relative layout")
+    parser.add_argument("--target-root", help="authorized final target root for retained link destinations")
+    parser.add_argument("--candidate-path", action="append", default=[],
+                        help="relative POSIX path in the exact frozen Candidate scope; repeat for all paths")
+    parser.add_argument("--context-path", action="append", default=[],
+                        help="relative POSIX path in another accepted Candidate; repeat for all paths")
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
+    try:
+        mapping = path_mapping(args)
+    except (InputError, OSError, ValueError) as exc:
+        print(f"cannot use path mapping: {exc}", file=sys.stderr)
+        return INPUT_ERROR_EXIT
     cache: Dict[Path, Union[Set[str], InputError]] = {}
 
     def anchors(path: Path) -> Set[str]:
-        key = Path(os.path.abspath(path))
+        key = path.absolute()
         if key not in cache:
             try:
                 cache[key] = heading_anchors(read_markdown(key))
@@ -629,12 +760,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     for raw in args.paths:
         path = Path(raw)
         try:
+            if mapping is not None:
+                path = mapping.candidate_root / mapping.input_relative(path)
             text = read_markdown(path)
         except InputError as exc:
             print(f"{raw}: cannot check input: {exc}", file=sys.stderr)
             input_errors = True
             continue
-        document = Document(path, text, anchors)
+        document = Document(path, text, anchors, mapping)
         results = [(finding, check.name) for check in CHECKS for finding in check.run(document)]
         for finding, name in sorted(results, key=lambda result: result[0].line):
             report = f"{raw}:{finding.line}: {name}: {finding.message}"

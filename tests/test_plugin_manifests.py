@@ -1,4 +1,5 @@
 from __future__ import annotations
+import importlib.util
 import json
 import os
 import re
@@ -6,10 +7,18 @@ import subprocess
 import unittest
 import xml.etree.ElementTree as ET
 from collections import Counter
+from collections.abc import Mapping
 from pathlib import Path
+from urllib.parse import unquote
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+CHECKER_SPEC = importlib.util.spec_from_file_location(
+    'check_candidate', REPO_ROOT / 'skills/write-rules-and-skills/scripts/check_candidate.py'
+)
+assert CHECKER_SPEC is not None and CHECKER_SPEC.loader is not None
+CHECKER = importlib.util.module_from_spec(CHECKER_SPEC)
+CHECKER_SPEC.loader.exec_module(CHECKER)
 
 MATT_PROMOTED = {
     'ask-matt': 'skills/engineering/ask-matt',
@@ -98,8 +107,25 @@ def inline_code_literals(text: str) -> Counter[str]:
     return Counter(literal.replace('\n', ' ') for literal in literals)
 
 
-def markdown_link_targets(text: str) -> Counter[str]:
-    return Counter(re.findall(r'\[[^\]]*\]\(([^)]+)\)', text))
+def markdown_link_targets(
+    text: str, document_path: Path, mirrors: Mapping[Path, Path]
+) -> Counter[tuple[Path | str, str]]:
+    targets: Counter[tuple[Path | str, str]] = Counter()
+    for _, line in CHECKER.content_lines(text):
+        for target in CHECKER.link_targets(line):
+            if CHECKER.SCHEME.match(target) or target.startswith(('/', '#')):
+                targets[(target, '')] += 1
+                continue
+            path = re.split(r'[?#]', target, maxsplit=1)[0]
+            if not path:
+                targets[(target, '')] += 1
+                continue
+            destination = (document_path.parent / unquote(path)).resolve()
+            destination = mirrors.get(destination, destination)
+            if not destination.exists():
+                raise AssertionError(f'{document_path}: link target does not exist: {target}')
+            targets[(destination, target[len(path):])] += 1
+    return targets
 
 
 class PluginManifestTest(unittest.TestCase):
@@ -206,6 +232,10 @@ class PluginManifestTest(unittest.TestCase):
 
     def test_chinese_documentation_preserves_literal_markdown_surfaces(self):
         chinese_root = REPO_ROOT / 'docs' / 'zh-CN'
+        mirrors = {
+            (REPO_ROOT / path.relative_to(chinese_root)).resolve(): path.resolve()
+            for path in chinese_root.rglob('*.md')
+        }
         for translation_path in sorted(chinese_root.rglob('*.md')):
             source_path = REPO_ROOT / translation_path.relative_to(chinese_root)
             source = source_path.read_text(encoding='utf-8')
@@ -213,7 +243,10 @@ class PluginManifestTest(unittest.TestCase):
             with self.subTest(path=source_path.relative_to(REPO_ROOT).as_posix()):
                 self.assertEqual(fenced_code_blocks(translation), fenced_code_blocks(source))
                 self.assertEqual(inline_code_literals(translation), inline_code_literals(source))
-                self.assertEqual(markdown_link_targets(translation), markdown_link_targets(source))
+                self.assertEqual(
+                    markdown_link_targets(translation, translation_path, {}),
+                    markdown_link_targets(source, source_path, mirrors),
+                )
 
                 if source_path.match('runtime/*/prompts/*.md'):
                     self.assertEqual(
@@ -234,6 +267,36 @@ class PluginManifestTest(unittest.TestCase):
                     )
                     if re.search(r'^description:', source_frontmatter, re.MULTILINE):
                         self.assertRegex(translation_frontmatter, r'(?m)^description:')
+
+    def test_translation_link_targets_resolve_mirrors_and_preserve_literals(self):
+        source_path = REPO_ROOT / '.agents/skills/upgrade-smartkit/SKILL.md'
+        canonical = REPO_ROOT / 'skills/setup-project-agents/references/ownership.md'
+        mirror = REPO_ROOT / 'docs/zh-CN/skills/setup-project-agents/references/ownership.md'
+        text = '''[Mirror](../../../skills/setup-project-agents/references/ownership.md?view=plain#owner)
+[Source](../../../VERSION?raw=1#release)
+[Reference]: ../../../skills/setup-project-agents/references/ownership.md
+[Web](https://example.com/path?q=1#section) [Root](/docs/page.md#section)
+[Network](//example.com/path) [Self](#section) [Mail](mailto:example@example.com)
+`[Literal](missing.md)`
+```markdown
+[Example](also-missing.md)
+```
+'''
+        self.assertEqual(
+            markdown_link_targets(text, source_path, {canonical: mirror}),
+            Counter({
+                (mirror, '?view=plain#owner'): 1,
+                (mirror, ''): 1,
+                (REPO_ROOT / 'VERSION', '?raw=1#release'): 1,
+                ('https://example.com/path?q=1#section', ''): 1,
+                ('/docs/page.md#section', ''): 1,
+                ('//example.com/path', ''): 1,
+                ('#section', ''): 1,
+                ('mailto:example@example.com', ''): 1,
+            }),
+        )
+        with self.assertRaisesRegex(AssertionError, 'link target does not exist'):
+            markdown_link_targets('[Missing](missing.md)', source_path, {})
 
     def test_chinese_documentation_has_no_han_separating_ascii_spaces(self):
         chinese_root = REPO_ROOT / 'docs' / 'zh-CN'

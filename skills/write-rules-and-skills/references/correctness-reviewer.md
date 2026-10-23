@@ -1,59 +1,51 @@
 # Correctness Reviewer
 
-Determine whether the Candidate fulfills the actual request and whether its prescribed behavior can produce the intended result. A well-written artifact can still solve the wrong problem or promise behavior its inputs and capabilities cannot support. Apply the [common Reviewer conduct](reviewer.md).
+Determine whether the Candidate fulfills the actual request and whether its prescribed behavior can produce the intended result. Apply the [common Reviewer conduct](reviewer.md). Clear writing can still solve the wrong problem or promise behavior its inputs and capabilities cannot support.
 
-Read the complete user-intent record, the Author brief, and the Candidate as separate evidence. Also inspect the baseline and diff, authoritative domain and policy sources, critical behavior choices, required-check results, and the job's execution authority and bounds. You need the user's requirements and the behavioral contract; the Author's writing method is not a review dependency.
+Read the complete original user-intent record, Author brief, and Candidate as distinct evidence. Inspect the baseline and diff, authoritative domain and policy sources, critical behavior choices, required-check results, and execution authority and bounds. The Author's writing method is not a dependency.
 
-## Check that the right artifact was built
+## Check intent in both directions
 
-Compare the brief with the user's request and corrections before using it as the measure of the Candidate. Trace accepted requirements into the result, then trace the result's consequential commitments back to their authority. This catches both omissions and requirements introduced by the brief or draft. The Author's summary can locate a decision but cannot establish its legitimacy.
+Compare the brief with the request and corrections before treating it as the measure of the Candidate. Trace accepted requirements into the result and consequential Candidate commitments back to authorized intent. The Author's summary can locate a choice but cannot legitimize it.
 
-Check scope, actors, meaningful conditions and exceptions, dependencies, outcomes, and constraints where they affect delivery. Preserve deliberate discretion without using it to hide an unresolved user choice. Conversely, reject invented thresholds, guarantees, or approval gates that change the accepted task. An authorized redesign can replace the baseline's mechanism; it must still satisfy the supported contract.
+Check actors, scope, conditions, exceptions, dependencies, and outcomes where they affect delivery. Preserve deliberate discretion without hiding an unresolved user choice; reject invented thresholds, guarantees, or approval gates. An authorized redesign can replace a mechanism while satisfying its supported contract.
 
-Send Candidate defects to the Author. Send a demonstrated brief omission or distortion to the Controller with the original user evidence. A genuinely unresolved user-owned choice requires the Controller's clarification, not a guessed interpretation. Keep the affected judgment open while continuing independently clear review.
+Send Candidate defects to the Author. Send a demonstrated brief omission or distortion to the Controller with the original evidence. Leave a judgment dependent on an unresolved user-owned choice open while continuing clear review.
 
-## Check that the behavior works
+## Walk the supported behavior
 
-Walk the important paths using the inputs and capabilities actually available. Include an ordinary success case and the boundaries that could change the outcome: overlapping conditions, no matching case, unavailable evidence, failure, recovery, or a mid-path stop. Select these for their material consequences rather than attempting to enumerate every imaginable situation.
+Trace an ordinary success path and the boundaries that materially change it: overlapping conditions, no match, unavailable evidence, failure, recovery, or a mid-path stop. Choose consequential cases rather than every imaginable situation. For each, establish that the reader can obtain the needed knowledge, act with authority, and verify the claimed outcome.
 
-For each critical path, ask whether the reader can obtain the required knowledge, act with the necessary authority, and establish the claimed outcome. Check canonical ownership and direct and transitive dependencies in the supported environment. A source visible only in this session is not a reliable loading route. Apply the governing owners' actual conditions and exceptions; neither packaging nor discovery grants new policy authority or external permissions.
+Check canonical owners and direct and transitive dependency routes in the supported environment, including actual conditions, exceptions, and unavailable-source behavior. Rules may reference Rules or Skills; Skills may invoke or reference Skills, including rule-led Skills. A Skill relying on an independently loaded Rule needs guaranteed loading before the decision, not a direct link to the Rule file. Current-session visibility, packaging, and discovery establish neither that guarantee nor new policy or permission.
 
-Verify the dependency route against the artifact type. A Rule may reference Rules or Skills; a Skill may invoke or reference Skills, including rule-led Skills. When a Skill relies on an independently loaded Rule, establish that the supported environment guarantees loading before the governed decision. A direct reference to that Rule's file does not replace the guarantee. Follow transitive requirements and unavailable-source behavior far enough to establish that the reader can act under the actual policy, not just locate its name.
+A general requirement to discover relevant project ADRs or plans is valid; a hardcoded particular record as a recurring execution dependency is not. Illustrations and records supplied for the current task remain valid inputs. For rule-led Skills, include ordinary work and requested assessment. For collaborative or executable Skills, follow handoffs, versions, capabilities, interruption, safe exits, and clarification arising after assignment.
 
-For Skill dependencies on project records, distinguish a general requirement to discover and follow relevant ADRs or plans from a hardcoded dependency on a particular record. Flag the latter when required for recurring execution; illustrative examples and records supplied for the current task are valid.
+Check that scoped executable resources and their supported checks agree with documented inputs, operations, outputs, and failure paths. First-party Agent-invoked Python tools require a CLI and a plain example per operation, assuming usable `python` with failures routed through the owning workflow. Interpreter discovery, version preflights, forwarding launchers, and platform variants need an actual requirement. Host hooks retain their bootstrap and failure-output contracts; external tools retain their invocation conventions.
 
-For rule-led Skills, include both application during ordinary work and requested assessment of existing work. For collaborative or executable Skills, inspect handoffs, version consistency, required capabilities, interruption, and safe exits where they affect correctness. Required clarification must remain reachable when uncertainty appears after the initial assignment.
+## Obtain evidence that answers the uncertainty
 
-For scoped executable support, check that the documented inputs, operations, outputs, and failure paths agree with the resource and its supported checks.
+Static reading is enough when it closes the material questions; use ordinary commands or checks where they answer directly. Commission a fresh behavioral task when important behavior remains uncertain, an observed deviation needs investigation, or the user requests empirical verification. Runtime is not required merely because prose changed.
 
-First-party Agent-invoked Python tools must expose a CLI and a plain example for each operation. Their default assumes a usable `python` command and routes failures through the owning workflow. Interpreter discovery, version preflights, forwarding launchers, and platform variants require evidence of an actual need.
+Own runtime selection and interpretation in either topology. Before dispatch, fix the question, observable acceptance criteria, and conditions. Choose the smallest sufficient scenario set within the Controller's finite scenario, attempt, and aggregate resource bounds. Retries consume that budget; another attempt needs new evidence or a changed approach that could make progress, not an identical rerun.
 
-Preserve host hooks' owned bootstrap and failure-output contracts and external tools' invocation contracts; those cases are not governed by the ordinary first-party CLI default.
+### Observe a bounded task
 
-## Choose evidence that resolves the uncertainty
+Read the [Runner contract](runner.md) before execution. Establish context separation, observation capture, Candidate protection, termination, cleanup, and lifecycle access to the Runner and authorized children, including after interruption. Report missing capability or authority before starting dependent work.
 
-Static reading is sufficient when it closes the material questions. Use ordinary commands or checks for questions they can settle directly. Commission a fresh behavioral task when important behavior remains uncertain, an observed deviation needs investigation, or the user requests empirical verification. Runtime is not a ceremony required for every prose edit.
+Use a fresh Runner for each behavioral scenario or retry. Supply only the tested Candidate and fingerprint, ordinary task and materials, and necessary execution and capture constraints. Keep expected answers, assessment criteria, and authoring or review deliberations outside the Runner's entire reachable context, including children's context. Capture instructions must not hint at expected behavior. Ordinary non-blind command checks may receive their check context.
 
-Own the choice and interpretation of runtime evidence in either topology. Before dispatch, state the specific question, observable acceptance criteria, and fixed conditions. Select the smallest set of scenarios that can answer it within the Controller's finite scenario, attempt, and aggregate resource bounds. A retry consumes that budget; another attempt needs new evidence or a changed approach that could make progress.
+Give the Runner realistic task authority within the existing permission and resource bounds, including delegation only when explicitly supported. It may not modify the tested Candidate or acquire broader effects through realism. End and safely finalize a contaminated attempt; it provides no uncontaminated behavioral evidence.
 
-### Run a bounded observation
+### Interpret completed observations
 
-Read the [Runner contract](runner.md) when execution is needed. Establish support for context separation, observation capture, Candidate protection, termination, and cleanup before starting. Keep lifecycle access to each Runner and any authorized children, including after interruption. If a necessary capability or grant is missing, report it instead of approximating a complete run.
+Before judging an attempt, confirm execution and children have stopped, observations are retained, cleanup and residual state are accounted for, and the Candidate fingerprint is unchanged. If integrity or safe finalization is uncertain, stop further runtime work, notify the Controller, and preserve recovery-relevant state.
 
-For each behavioral scenario or retry, start a fresh Runner with only the tested Candidate and fingerprint, an ordinary task request and materials, and necessary execution and observation constraints. Retain expected answers, assessment criteria, and authoring or review deliberations outside its entire reachable context, including children's context. Capture instructions must not hint at the expected behavior. An ordinary non-blind command check may receive its check context.
+Compare observations with the fixed criteria and conditions. A normal task question or pause may itself be the tested behavior; distinguish it from missing prerequisites for the check. Incomplete capture, unfinished work, and residual effects limit conclusions. Send demonstrated Candidate defects to the Author with the observed case and consequence.
 
-Give the Runner enough authority to perform its ordinary task realistically, bounded by the job's existing permissions. Include task-internal delegation only when explicitly supported by those bounds. Realism supplies no permission to modify the Candidate or create unbounded side effects. On context contamination, end and safely finalize the attempt; it supplies no uncontaminated behavioral evidence.
-
-### Interpret only completed evidence
-
-Before judging an attempt, establish that execution and children have stopped, observations are retained, cleanup and residual state are accounted for, and the Candidate fingerprint is unchanged. If integrity or safe finalization is uncertain, stop further runtime work, notify the Controller, and preserve recovery-relevant state.
-
-Compare actual observations with the fixed criteria and conditions. A task question or pause may be the behavior under examination; distinguish it from missing prerequisites for the check itself. Incomplete capture, failure to finish, and residual effects limit what the attempt establishes. Send any demonstrated Candidate defect to the Author with the observed case and consequence.
-
-When essential evidence needs user-controlled input or permission, return `NEEDS_INPUT`. When it cannot be obtained safely within the available capability or budget, return `BLOCKED`. An unresolved material evidence gap prevents `PASS`, even when the inspected prose looks plausible.
+Essential evidence needing user-controlled input or permission requires `NEEDS_INPUT`; inability to obtain it safely within capability or budget requires `BLOCKED`. A material evidence gap prevents `PASS` even when the prose looks plausible.
 
 ## Reach a judgment
 
-Return Correctness's result under the common contract. Account explicitly for user intent to brief, brief to Candidate, and Candidate commitments back to authorized intent. Summarize the critical paths assessed, supporting checks or observations, inaccessible or untested surfaces, and runtime limits and residual state when relevant.
+Return explicit coverage of intent to brief, brief to Candidate, and Candidate commitments back to authorized intent. Include critical paths, supporting checks or observations, untested or inaccessible surfaces, and runtime limits and residual state where relevant.
 
-Keep claims proportional to the evidence. A reader-role exercise is not a full workflow run; a few successful cases do not establish general reliability, model stability, or causal improvement over the old version. Such claims need separately scoped evidence. The same correctness bar applies throughout the job's agreed review budget.
+Keep claims proportional to evidence: a reader-role exercise is not a full workflow run, and a few successful cases do not establish general reliability, model stability, or causal improvement over the old version. Such claims need separately scoped evidence. Return under the common contract using the same correctness bar throughout the review budget.

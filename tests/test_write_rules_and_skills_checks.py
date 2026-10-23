@@ -204,6 +204,22 @@ class RelativeLinksTest(unittest.TestCase):
             3, "cannot inspect link target locked/target.md: permission denied", True
         ))
 
+    def test_unmapped_self_anchor_reads_the_same_symlink_parent_path_as_input(self):
+        outside = self.root / "outside"
+        (outside / "child").mkdir(parents=True)
+        (outside / "review.md").write_text("# Outside\n\n[Self](#outside).\n", encoding="utf-8")
+        (self.root / "review.md").write_text("# Candidate\n", encoding="utf-8")
+        try:
+            (self.root / "alias").symlink_to(outside / "child", target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"symlinks unavailable: {exc}")
+        paths = (outside / "review.md", Path("alias/../review.md"),
+                 self.root / "alias/../review.md")
+        for path in paths:
+            with self.subTest(path=path):
+                result = run_cli(self.root, "--", path)
+                self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+
     def test_unclosed_leading_rule_is_not_frontmatter(self):
         self.assertEqual(self.findings("---\n[x](missing.md)\n"), [
             (2, "link target does not exist: missing.md"),
@@ -221,6 +237,232 @@ class RelativeLinksTest(unittest.TestCase):
         for heading, slug in cases:
             with self.subTest(heading=heading):
                 self.assertEqual(CHECKER.github_slug(heading), slug)
+
+
+class MappedLinksTest(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="mapped links ")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.candidate = self.root / "generated"
+        self.target = self.root / "business"
+        self.candidate.mkdir()
+        self.target.mkdir()
+        self.document = ".agents/rules/example.md"
+
+    def write(self, root, relative, text):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def check(self, source, *scope):
+        document = self.write(self.candidate, self.document, source)
+        arguments = ["--candidate-root", self.candidate, "--target-root", self.target]
+        for path in (self.document, *scope):
+            arguments.extend(("--candidate-path", path))
+        return run_cli(self.root, *arguments, "--", document)
+
+    def test_retained_targets_supply_anchors_without_scanning_their_prose(self):
+        retained = self.write(self.target, "docs/guide.md", "# Guide\n\nWrapped\nprose\n")
+        source = "# Candidate\n\n[Guide](../../docs/guide.md?plain=1#guide) [Self](#candidate).\n"
+        self.write(self.target, self.document, "# Stale target\n")
+        result = self.check(source)
+        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+        self.assertEqual(retained.read_text(), "# Guide\n\nWrapped\nprose\n")
+        missing_anchor = self.check(source.replace("#guide", "#missing"))
+        self.assertEqual(missing_anchor.returncode, 1, missing_anchor.stderr)
+        self.assertIn("anchor #missing", missing_anchor.stdout)
+
+    def test_scoped_content_and_absence_override_stale_target_files(self):
+        guide = ".agents/rules/guide.md"
+        self.write(self.target, guide, "# Stale\n")
+        self.write(self.candidate, guide, "# Current\n")
+        source = "[Guide](guide.md#current).\n"
+        self.assertEqual(self.check(source, guide).returncode, 0)
+        stale = self.check("[Guide](guide.md#stale).\n", guide)
+        self.assertEqual(stale.returncode, 1, stale.stderr)
+        self.assertIn("anchor #stale", stale.stdout)
+        (self.candidate / guide).unlink()
+        deleted = self.check("[Guide](guide.md#stale).\n", guide)
+        self.assertEqual(deleted.returncode, 1, deleted.stderr)
+        self.assertIn("link target does not exist", deleted.stdout)
+        missing = self.check("[Missing](missing.md).\n", ".agents/rules/missing.md")
+        self.assertEqual(missing.returncode, 1, missing.stderr)
+
+    def test_unscoped_staging_files_cannot_supply_retained_targets(self):
+        self.write(self.candidate, "docs/guide.md", "# Unscoped\n")
+        result = self.check("[Guide](../../docs/guide.md#unscoped).\n")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.write(self.target, "docs/guide.md", "# Retained\n")
+        result = self.check("[Guide](../../docs/guide.md#retained).\n")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_scoped_surviving_descendants_supply_new_directory_targets(self):
+        resource = ".agents/rules/resources/image.png"
+        self.write(self.candidate, resource, "image")
+        result = self.check("[Resources](resources/).\n", resource)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        result = self.check("[Resources](resources/).\n")
+        self.assertEqual(result.returncode, 1, result.stderr)
+
+    def test_mapping_keeps_all_document_checks_and_input_error_precedence(self):
+        target = self.write(self.target, "docs/bad.md", "")
+        target.write_bytes(b"\xff")
+        result = self.check("First\nsecond [Bad](../../docs/bad.md#x).\n")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("paragraph-lines", result.stdout)
+        self.assertIn("cannot read link target", result.stderr)
+        self.document = ".agents/skills/example/SKILL.md"
+        result = self.check("# Missing metadata\n")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("skill-frontmatter", result.stdout)
+
+    def test_mapping_rejects_namespace_escape_and_incomplete_options(self):
+        self.write(self.root, "outside.md", "# Outside\n")
+        escaped = self.check("[Outside](../../../outside.md#outside).\n")
+        self.assertEqual(escaped.returncode, 2)
+        self.assertIn("link leaves --target-root", escaped.stderr)
+        encoded = self.check("[Outside](%2e%2e/%2e%2e/%2e%2e/outside.md).\n")
+        self.assertEqual(encoded.returncode, 2)
+        document = self.candidate / self.document
+        for option, value in (("--candidate-root", self.candidate),
+                              ("--target-root", self.target),
+                              ("--candidate-path", self.document)):
+            with self.subTest(option=option):
+                result = run_cli(self.root, option, value, "--", document)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("mapping requires", result.stderr)
+        for invalid in ("../outside.md", "/absolute", "C:outside.md", "a\\b", "."):
+            with self.subTest(path=invalid):
+                result = self.check("# Good\n", invalid)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("relative POSIX file path", result.stderr)
+
+    def test_explicit_inputs_must_belong_to_candidate_scope(self):
+        document = self.write(self.candidate, self.document, "# Good\n")
+        outside = self.write(self.target, "outside.md", "# Outside\n")
+        for path in (document, outside):
+            with self.subTest(path=path):
+                result = run_cli(self.root, "--candidate-root", self.candidate,
+                                 "--target-root", self.target, "--candidate-path", "other.md",
+                                 "--", path)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("input is outside", result.stderr)
+
+    def test_mapped_input_reads_the_validated_path_after_parent_normalization(self):
+        outside = self.root / "outside"
+        (outside / "child").mkdir(parents=True)
+        try:
+            (self.candidate / "alias").symlink_to(outside / "child", target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"symlinks unavailable: {exc}")
+        cases = (
+            ("broken link", "# Candidate\n\n[Self](#candidate) [Missing](missing.md).\n",
+             "# Outside\n", 1),
+            ("self anchor", "# Candidate\n\n[Self](#candidate).\n",
+             "# Outside\n\n[Self](#outside).\n", 0),
+        )
+        for label, source, outside_source, expected in cases:
+            with self.subTest(case=label):
+                document = self.write(self.candidate, "review.md", source)
+                self.write(outside, "review.md", outside_source)
+                arguments = ["--candidate-root", self.candidate, "--target-root", self.target,
+                             "--candidate-path", "review.md", "--"]
+                direct = run_cli(self.root, *arguments, document)
+                aliased = run_cli(self.root, *arguments, self.candidate / "alias/../review.md")
+                self.assertEqual(direct.returncode, expected, direct.stdout + direct.stderr)
+                self.assertEqual(aliased.returncode, expected, aliased.stdout + aliased.stderr)
+                self.assertEqual(aliased.stderr, "")
+                if expected:
+                    self.assertIn("link target does not exist: missing.md", aliased.stdout)
+                    self.assertNotIn("anchor #candidate", aliased.stdout)
+                else:
+                    self.assertEqual(aliased.stdout, "")
+
+    def test_mapped_symlinks_cannot_escape_or_alias_stale_candidate_content(self):
+        outside = self.write(self.root, "outside.md", "# Outside\n")
+        for root in (self.candidate, self.target):
+            link = root / "docs/guide.md"
+            link.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                link.symlink_to(outside)
+            except OSError as exc:
+                self.skipTest(f"symlinks unavailable: {exc}")
+            scope = ("docs/guide.md",) if root == self.candidate else ()
+            result = self.check("[Guide](../../docs/guide.md#outside).\n", *scope)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("traverses a link", result.stderr)
+            link.unlink()
+
+    # Setup reviews each generated artifact separately and applies them together later.
+    def check_with_context(self, source, *context):
+        document = self.write(self.candidate, self.document, source)
+        arguments = ["--candidate-root", self.candidate, "--target-root", self.target,
+                     "--candidate-path", self.document]
+        for path in context:
+            arguments.extend(("--context-path", path))
+        return run_cli(self.root, *arguments, "--", document)
+
+    def test_context_paths_supply_accepted_sibling_candidates(self):
+        sibling = ".agents/skills/sibling/SKILL.md"
+        self.write(self.candidate, sibling, "# Sibling\n\n## New Section\n")
+        source = "[Sibling](../skills/sibling/SKILL.md#new-section).\n"
+        without_context = self.check(source)
+        self.assertEqual(without_context.returncode, 1, without_context.stderr)
+        result = self.check_with_context(source, sibling)
+        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+        directory = self.check_with_context("[Sibling](../skills/sibling/).\n", sibling)
+        self.assertEqual(directory.returncode, 0, directory.stdout + directory.stderr)
+
+    def test_context_content_and_absence_override_stale_target_files(self):
+        sibling = ".agents/skills/sibling/SKILL.md"
+        self.write(self.target, sibling, "# Sibling\n\n## Old Section\n")
+        self.write(self.candidate, sibling, "# Sibling\n\n## Current\n")
+        current = self.check_with_context("[Now](../skills/sibling/SKILL.md#current).\n", sibling)
+        self.assertEqual(current.returncode, 0, current.stdout + current.stderr)
+        stale = self.check_with_context("[Old](../skills/sibling/SKILL.md#old-section).\n", sibling)
+        self.assertEqual(stale.returncode, 1, stale.stderr)
+        self.assertIn("anchor #old-section", stale.stdout)
+        (self.candidate / sibling).unlink()
+        deleted = self.check_with_context("[Sibling](../skills/sibling/SKILL.md).\n", sibling)
+        self.assertEqual(deleted.returncode, 1, deleted.stderr)
+        self.assertIn("link target does not exist", deleted.stdout)
+
+    def test_context_paths_are_read_only_link_context_not_inputs(self):
+        sibling = self.write(self.candidate, ".agents/rules/sibling.md", "Wrapped\nprose\n")
+        result = self.check_with_context("[Sibling](sibling.md).\n", ".agents/rules/sibling.md")
+        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+        as_input = run_cli(self.root, "--candidate-root", self.candidate, "--target-root", self.target,
+                           "--candidate-path", self.document,
+                           "--context-path", ".agents/rules/sibling.md", "--", sibling)
+        self.assertEqual(as_input.returncode, 2)
+        self.assertIn("input is outside", as_input.stderr)
+        self.assertEqual(sibling.read_text(), "Wrapped\nprose\n")
+
+    def test_context_paths_need_mapping_and_valid_paths_disjoint_from_scope(self):
+        document = self.write(self.candidate, self.document, "# Good\n")
+        alone = run_cli(self.root, "--context-path", "other.md", "--", document)
+        self.assertEqual((alone.returncode, alone.stdout), (2, ""))
+        self.assertNotIn("unrecognized arguments", alone.stderr)
+        for invalid in ("../outside.md", "/absolute", "a\\b", ".", self.document):
+            with self.subTest(path=invalid):
+                result = self.check_with_context("# Good\n", invalid)
+                self.assertEqual((result.returncode, result.stdout), (2, ""))
+                self.assertIn("--context-path", result.stderr)
+                self.assertNotIn("unrecognized arguments", result.stderr)
+
+    def test_context_path_link_traversal_names_the_option(self):
+        outside = self.write(self.root, "outside.md", "# Outside\n")
+        link = self.candidate / "docs"
+        try:
+            link.symlink_to(outside.parent)
+        except OSError as exc:
+            self.skipTest(f"symlinks unavailable: {exc}")
+        result = self.check_with_context("# Good\n", "docs/outside.md")
+        self.assertEqual((result.returncode, result.stdout), (2, ""))
+        self.assertIn("--context-path", result.stderr)
+        self.assertIn("traverses a link", result.stderr)
 
 
 class SkillFrontmatterTest(unittest.TestCase):

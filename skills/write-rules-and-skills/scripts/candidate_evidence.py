@@ -13,13 +13,12 @@ import posixpath
 import stat
 import struct
 import sys
-from typing import Any, Iterable
+from typing import Any, Iterable, NamedTuple
 
 
-SNAPSHOT_SCHEMA = "smartkit.candidate-evidence/v1"
-CAPTURE_REPORT_SCHEMA = "smartkit.candidate-evidence-capture-report/v1"
-COMPARE_REPORT_SCHEMA = "smartkit.candidate-evidence-report/v1"
-VERSION = 1
+SNAPSHOT_SCHEMA = "smartkit.candidate-evidence"
+CAPTURE_REPORT_SCHEMA = "smartkit.candidate-evidence-capture-report"
+COMPARE_REPORT_SCHEMA = "smartkit.candidate-evidence-report"
 INVALID_EXIT = 2
 PATH_BOUNDARY_EXIT = 3
 TEXT_LINE_ENDINGS = (
@@ -38,6 +37,16 @@ TEXT_LINE_ENDINGS = (
 
 class EvidenceError(Exception):
     """The requested evidence is invalid or cannot be determined."""
+
+
+class ObservedFile(NamedTuple):
+    data: bytes
+    executable_bits: int | None
+
+
+def executable_mode() -> str:
+    """Windows permission emulation does not establish POSIX executable bits."""
+    return "posix-executable-bits" if os.name == "posix" else "unsupported"
 
 
 def normalize_relative(raw: str) -> str:
@@ -132,7 +141,7 @@ def _same_stat(
     )
 
 
-def _observe_entry(root: Path, relative: str) -> bytes | None:
+def _observe_entry(root: Path, relative: str) -> ObservedFile | None:
     current = root
     chain: list[tuple[Path, os.stat_result]] = []
     parts = PurePosixPath(relative).parts
@@ -180,14 +189,15 @@ def _observe_entry(root: Path, relative: str) -> bytes | None:
             raise EvidenceError(f"Candidate path changed during observation: {relative!r}") from exc
         if not _same_stat(original, current_stat):
             raise EvidenceError(f"Candidate path changed during observation: {relative!r}")
-    return data
+    bits = before.st_mode & 0o111 if executable_mode() == "posix-executable-bits" else None
+    return ObservedFile(data, bits)
 
 
-def observe(root: Path, paths: Iterable[str]) -> dict[str, bytes | None]:
+def observe(root: Path, paths: Iterable[str]) -> dict[str, ObservedFile | None]:
     return {path: _observe_entry(root, path) for path in paths}
 
 
-def stable_observation(root: Path, paths: list[str]) -> dict[str, bytes | None]:
+def stable_observation(root: Path, paths: list[str]) -> dict[str, ObservedFile | None]:
     first = observe(root, paths)
     second = observe(root, paths)
     if first != second:
@@ -195,63 +205,68 @@ def stable_observation(root: Path, paths: list[str]) -> dict[str, bytes | None]:
     return second
 
 
-def fingerprint(paths: Iterable[str], values: dict[str, bytes | None]) -> str:
+def fingerprint(
+    paths: Iterable[str], values: dict[str, ObservedFile | None], mode: str
+) -> str:
     digest = hashlib.sha256()
-    digest.update(b"smartkit-candidate-evidence\x00v1\x00")
+    digest.update(b"smartkit-candidate-evidence\x00" + mode.encode("ascii") + b"\x00")
     for path in paths:
         path_bytes = path.encode("utf-8")
-        data = values[path]
+        observed = values[path]
         digest.update(struct.pack(">Q", len(path_bytes)))
         digest.update(path_bytes)
-        digest.update(b"\x00" if data is None else b"\x01")
-        digest.update(struct.pack(">Q", 0 if data is None else len(data)))
-        if data is not None:
-            digest.update(data)
+        digest.update(b"\x00" if observed is None else b"\x01")
+        if observed is not None:
+            digest.update(bytes([255 if observed.executable_bits is None else observed.executable_bits]))
+            digest.update(struct.pack(">Q", len(observed.data)))
+            digest.update(observed.data)
     return digest.hexdigest()
 
 
-def _metadata(data: bytes | None) -> dict[str, Any]:
-    if data is None:
-        return {"present": False, "sha256": None, "size": None}
+def _metadata(observed: ObservedFile | None) -> dict[str, Any]:
+    if observed is None:
+        return {"present": False, "sha256": None, "size": None, "executable_bits": None}
     return {
         "present": True,
-        "sha256": hashlib.sha256(data).hexdigest(),
-        "size": len(data),
+        "sha256": hashlib.sha256(observed.data).hexdigest(),
+        "size": len(observed.data),
+        "executable_bits": observed.executable_bits,
     }
 
 
-def _manifest(root: Path, paths: list[str], values: dict[str, bytes | None]) -> dict[str, Any]:
+def _manifest(root: Path, paths: list[str], values: dict[str, ObservedFile | None]) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
     for index, path in enumerate(paths):
-        data = values[path]
-        meta = _metadata(data)
+        observed = values[path]
+        meta = _metadata(observed)
         entries.append(
             {
                 "path": path,
-                "payload": f"payloads/{index:06d}.bin" if data is not None else None,
+                "payload": f"payloads/{index:06d}.bin" if observed is not None else None,
                 **meta,
             }
         )
     return {
         "entries": entries,
-        "fingerprint": fingerprint(paths, values),
+        "executable_mode": executable_mode(),
+        "fingerprint": fingerprint(paths, values, executable_mode()),
         "root": str(root),
         "schema": SNAPSHOT_SCHEMA,
-        "version": VERSION,
     }
 
 
 def _write_snapshot(
-    output: Path, manifest: dict[str, Any], values: dict[str, bytes | None]
+    output: Path, manifest: dict[str, Any], values: dict[str, ObservedFile | None]
 ) -> None:
     output.mkdir(mode=0o700)
     payloads = output / "payloads"
     payloads.mkdir(mode=0o700)
     for entry in manifest["entries"]:
-        if entry["present"]:
+        observed = values[entry["path"]]
+        if observed is not None:
             payload_path = output / entry["payload"]
             with payload_path.open("xb") as stream:
-                stream.write(values[entry["path"]])
+                stream.write(observed.data)
     encoded = json.dumps(manifest, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
     with (output / "manifest.json").open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(encoded)
@@ -276,7 +291,7 @@ def _regular_snapshot_file(path: Path, label: str) -> bytes:
 
 def _load_snapshot(
     snapshot: Path,
-) -> tuple[list[str], dict[str, bytes | None], str, Path]:
+) -> tuple[list[str], dict[str, ObservedFile | None], str, Path]:
     raw_manifest = _regular_snapshot_file(snapshot / "manifest.json", "manifest")
     try:
         manifest = json.loads(raw_manifest.decode("utf-8"))
@@ -284,19 +299,19 @@ def _load_snapshot(
         raise EvidenceError("snapshot manifest is not valid UTF-8 JSON") from exc
     if not isinstance(manifest, dict) or set(manifest) != {
         "entries",
+        "executable_mode",
         "fingerprint",
         "root",
         "schema",
-        "version",
     }:
         raise EvidenceError("snapshot manifest has an invalid shape")
-    if (
-        manifest["schema"] != SNAPSHOT_SCHEMA
-        or not isinstance(manifest["version"], int)
-        or isinstance(manifest["version"], bool)
-        or manifest["version"] != VERSION
-    ):
-        raise EvidenceError("snapshot schema or version is unsupported")
+    if manifest["schema"] != SNAPSHOT_SCHEMA:
+        raise EvidenceError("snapshot schema is unsupported")
+    mode = manifest["executable_mode"]
+    if mode not in ("posix-executable-bits", "unsupported"):
+        raise EvidenceError("snapshot executable-mode policy is invalid")
+    if mode != executable_mode():
+        raise EvidenceError("snapshot executable-mode policy is unsupported on this platform")
     captured_root_value = manifest["root"]
     if not isinstance(captured_root_value, str):
         raise EvidenceError("snapshot root information is invalid")
@@ -323,10 +338,11 @@ def _load_snapshot(
         raise EvidenceError("snapshot entries must be a non-empty list")
 
     paths: list[str] = []
-    values: dict[str, bytes | None] = {}
+    values: dict[str, ObservedFile | None] = {}
     for index, entry in enumerate(raw_entries):
         if not isinstance(entry, dict) or set(entry) != {
             "path",
+            "executable_bits",
             "payload",
             "present",
             "sha256",
@@ -339,6 +355,13 @@ def _load_snapshot(
         if not isinstance(entry["present"], bool):
             raise EvidenceError(f"snapshot presence state is invalid for {path!r}")
         if entry["present"]:
+            bits = entry["executable_bits"]
+            if mode == "posix-executable-bits":
+                if (not isinstance(bits, int) or isinstance(bits, bool)
+                        or bits < 0 or bits & ~0o111):
+                    raise EvidenceError(f"snapshot executable bits are invalid for {path!r}")
+            elif bits is not None:
+                raise EvidenceError(f"unsupported executable bits must be null for {path!r}")
             expected_payload = f"payloads/{index:06d}.bin"
             if entry["payload"] != expected_payload:
                 raise EvidenceError(f"snapshot payload mapping is invalid for {path!r}")
@@ -359,22 +382,24 @@ def _load_snapshot(
             data = _regular_snapshot_file(snapshot / expected_payload, f"payload for {path!r}")
             if len(data) != size or hashlib.sha256(data).hexdigest() != content_hash:
                 raise EvidenceError(f"snapshot payload does not match its metadata for {path!r}")
+            observed = ObservedFile(data, bits)
         else:
             if (
                 entry["payload"] is not None
                 or entry["size"] is not None
                 or entry["sha256"] is not None
+                or entry["executable_bits"] is not None
             ):
                 raise EvidenceError(f"missing snapshot entry has payload metadata for {path!r}")
-            data = None
+            observed = None
         paths.append(path)
-        values[path] = data
+        values[path] = observed
 
     if paths != sorted(set(paths)):
         raise EvidenceError("snapshot paths are not sorted and unique")
-    actual_fingerprint = fingerprint(paths, values)
+    actual_fingerprint = fingerprint(paths, values, mode)
     if actual_fingerprint != expected_fingerprint:
-        raise EvidenceError("snapshot fingerprint does not match its payloads")
+        raise EvidenceError("snapshot fingerprint does not match its contents and mode metadata")
     return paths, values, actual_fingerprint, canonical_root
 
 
@@ -392,9 +417,9 @@ def _display_lines(text: str) -> list[str]:
     return [json.dumps(line, ensure_ascii=True) for line in text.splitlines(keepends=True)]
 
 
-def _delta(path: str, before: bytes | None, after: bytes | None) -> dict[str, Any]:
-    before_text = _text(before)
-    after_text = _text(after)
+def _delta(path: str, before: ObservedFile | None, after: ObservedFile | None) -> dict[str, Any]:
+    before_text = _text(None if before is None else before.data)
+    after_text = _text(None if after is None else after.data)
     if before_text is None or after_text is None:
         return {"kind": "binary"}
     from_name = "/dev/null" if before is None else f"a/{path}"
@@ -418,7 +443,7 @@ def _delta(path: str, before: bytes | None, after: bytes | None) -> dict[str, An
     }
 
 
-def _change_kind(before: bytes | None, after: bytes | None) -> str:
+def _change_kind(before: ObservedFile | None, after: ObservedFile | None) -> str:
     if before is None:
         return "added"
     if after is None:
@@ -443,9 +468,9 @@ def capture(args: argparse.Namespace) -> int:
         json.dumps(
             {
                 "fingerprint": manifest["fingerprint"],
+                "executable_mode": manifest["executable_mode"],
                 "paths": paths,
                 "schema": CAPTURE_REPORT_SCHEMA,
-                "version": VERSION,
             },
             sort_keys=True,
         )
@@ -496,13 +521,13 @@ def compare(args: argparse.Namespace) -> int:
         "changed_paths": changed_paths,
         "changed_paths_within_allowed_subset": changed_within_subset,
         "changes": changes,
-        "current_fingerprint": fingerprint(paths, current),
+        "current_fingerprint": fingerprint(paths, current, executable_mode()),
+        "executable_mode": executable_mode(),
         "frozen_paths": paths,
         "path_boundary": "PASS" if not violations else "VIOLATION",
         "path_boundary_violations": violations,
         "schema": COMPARE_REPORT_SCHEMA,
         "snapshot_fingerprint": baseline_fingerprint,
-        "version": VERSION,
     }
     print(json.dumps(report, ensure_ascii=True, indent=2, sort_keys=True))
     return 0 if not violations else PATH_BOUNDARY_EXIT
@@ -520,7 +545,10 @@ def build_parser() -> argparse.ArgumentParser:
             "evidence is valid with no path-subset violation; exit 2: usage error or "
             "invalid/indeterminate evidence; exit 3: compare found a changed path outside "
             "--allowed-change-path. Compare reports path-subset evidence, not operation "
-            "authorization or the workflow's final Candidate boundary judgment."
+            "authorization or the workflow's final Candidate boundary judgment. Evidence binds "
+            "presence, bytes and POSIX executable bits (mode & 0111); other permission bits are "
+            "outside its scope. Windows and other non-POSIX platforms record executable mode "
+            "as unsupported with null bits. Comparing across these mode policies is refused."
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

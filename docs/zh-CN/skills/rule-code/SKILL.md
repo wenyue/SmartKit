@@ -7,7 +7,7 @@ description: 用于涉及任何语言代码的工作，包括用户要求的代�
 
 ## Ponytail 加载
 
-每项编码任务中，在作出决策前阅读 [ponytail](../ponytail/SKILL.md)。
+每项编码任务中，在作出决策前阅读 [ponytail](../../../../skills/ponytail/SKILL.md)。
 
 ## 让行为和 API 留在所属边界
 

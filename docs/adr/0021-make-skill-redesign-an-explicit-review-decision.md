@@ -1,0 +1,7 @@
+# Make Skill Redesign an Explicit Review Decision
+
+Quality reviews the whole Skill, focusing on the diff and its consequences. Every round uses rhetorical questions to challenge whether the current design remains justified and reports whether redesign is warranted and why; concrete uncertainties may prompt questions to the Author. This makes the redesign check deliberate rather than incidental, while existing acceptance, scope, and escalation contracts continue to govern action.
+
+A rewrite reconsiders content, structure, and mechanisms from current goals and necessary constraints. It can retain sound design, but local polishing alone does not establish that the redesign task was done. Dependable understanding and accepted meaning take priority over brevity; substantial simplification is an opportunity, not a reduction quota.
+
+Keep otherwise hard-to-recover authoring decisions and their reasons in an optional AUTHORING.md beside the target Skill. The writing workflow reads the target's file when present and creates or updates it when a consequential decision could otherwise be mistaken for expendable detail; ordinary Skill execution does not load it. These records explain choices, including the deliberate use of rhetorical questions to keep redesign from being overlooked, without becoming a hidden contract or making past choices permanent. Keep current requirements in their operative owners and update the record when its decisions change.

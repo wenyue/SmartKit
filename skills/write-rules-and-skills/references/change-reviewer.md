@@ -1,31 +1,25 @@
 # Change Reviewer
 
-Judge the meaning of the baseline-to-current change. The question is whether the revision changes what it should and preserves what it should, regardless of how much prose was rewritten. Apply the [common Reviewer conduct](reviewer.md).
+Judge whether the revision changes what it should and preserves what it should, regardless of how much prose was rewritten. Apply the [common Reviewer conduct](reviewer.md).
 
-Read the original baseline, complete current Candidate, derived diff, accepted change and preservation decisions, and the Author's semantic summary. Inspect governing evidence when a change could alter a contract. The baseline is regression evidence; accepted authority determines whether a difference is intended.
+Read the original baseline, complete current Candidate, diff, accepted change and preservation decisions, and Author's semantic summary. Inspect governing evidence where a difference could alter a contract. The baseline supplies regression evidence; accepted authority determines whether a change is intended.
 
-## Follow consequential meaning
+## Trace consequential meaning
 
-For each materially affected behavior or obligation, identify where it now lives and what happens to its conditions, exceptions, and outcome. An accepted retirement needs no replacement. A move to a different owner needs a working route to that owner. Similar wording alone proves neither preservation nor correctness.
+For each materially affected behavior or obligation, locate its current meaning, conditions, exceptions, and outcome. An accepted retirement needs no replacement; a move to another owner needs a working route. Similar wording proves neither preservation nor correctness.
 
-Consider the consequences of changes in both directions:
+Look in both directions: required behavior or useful guidance may disappear, new restrictions or promises may enter without authority, and an accepted change may remain missing beneath rewritten prose. Include judgments as well as explicit requirements. Turning contextual judgment into a threshold, a settled choice into discretion, or a routine action into a user approval materially changes behavior.
 
-- What required behavior, guidance, or supported use might have disappeared or weakened?
-- What new behavior, restriction, approval, dependency, or promise might have appeared without authorization?
-- What accepted change is still missing even though the surrounding prose looks different?
+Trace replacements and retirements through dependent handling. Waiting, retry, or reporting duties whose sole purpose disappeared should retire with it. Retained complexity must still serve a remaining supported requirement, such as compatibility or recovery; naming a purpose does not preserve handling after its requirement is gone.
 
-Check changes to judgment as well as explicit requirements. Turning a contextual decision into a fixed threshold, weakening a settled choice into discretion, or introducing routine user approval can materially change behavior. Distinguish these changes from harmless differences in expression.
+## Follow the affected connections
 
-## Follow affected connections
+Inspect unchanged context when a local change affects it: discovery, initial reading, conditional paths, and transitive dependencies. Readers must reach a moved requirement and its exceptions before the governed decision; current-session availability does not establish future loading.
 
-Use unchanged context when a local edit changes how other parts work. Inspect affected discovery, initial reading, and conditional paths, including transitive dependencies. A policy moved out of the entry remains effective only if its intended readers reach the full requirement and exceptions before the relevant decision. Current-session availability does not establish a supported future loading route.
-
-Trace an accepted retirement or replacement through its dependent instructions and supporting resources. Check that handling whose sole purpose was the superseded requirement retires with it; a removed handoff may otherwise leave waiting, retry, or recording duties that no longer serve the contract. Retained handling needs a remaining supported requirement, such as compatibility or recovery.
-
-Check affected links and fragments against their targets, including incoming references to changed headings or relocated content. Check supporting resources, metadata, and executable interfaces when the revision touches their contract. Recognize a necessary outside-scope change as a dependency; review authority does not make it an editable target.
+Check affected links and fragments, including incoming references when headings or locations change. Inspect supporting resources, metadata, and executable interfaces when their contract is touched. A necessary outside-scope change remains a dependency, not an editable target supplied by review authority.
 
 ## Reach a judgment
 
-Report material unintended loss, expansion, contradiction, incomplete retirement, or broken integration. Tie each finding to the accepted decision or baseline meaning, the changed location, and the resulting consequence. An extensive rewrite is acceptable when the required meaning survives coherently; resemblance to the old organization is not an acceptance criterion.
+Report material unintended loss, expansion, contradiction, incomplete retirement, or broken integration. Connect each finding to the accepted decision or baseline meaning, changed location, and practical consequence. Extensive rewriting is acceptable when the required meaning survives coherently; resemblance to the old outline is not the bar.
 
-Return Change's result under the common contract, briefly accounting for the consequential meaning preserved or deliberately changed and any surface that could not be assessed. Apply the same semantic threshold in every round against the original baseline.
+Return the consequential meanings preserved or deliberately changed and any unassessed surfaces under the common contract. Apply the same semantic threshold against the original baseline every round.

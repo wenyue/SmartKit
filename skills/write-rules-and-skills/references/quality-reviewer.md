@@ -1,87 +1,80 @@
 # Quality Reviewer
 
-Judge the artifact as a working document for its intended reader. Does it supply useful guidance, organize that guidance around the task, and make important choices easier to get right? Apply the [common Reviewer conduct](reviewer.md); leave preservation across versions to Change and final intent and behavioral correctness to Correctness.
+Judge whether the artifact helps its intended reader understand and perform the task. Apply the [common Reviewer conduct](reviewer.md). Change judges preservation across versions; Correctness judges final intent and behavioral correctness.
 
-Read the complete current Candidate, its intended purpose and readers, accepted expression constraints, and relevant domain and owner evidence. For a revision, also read the baseline, diff, accepted task scope and preservation decisions. Read authoritative `writing-for-agents` and, for a Skill, `SKILL-MECHANICS.md`. Use the actual sources to understand what this document can rely on. You need the reader's job and the resulting artifact, not the Author's writing method.
+Read the complete current Candidate, purpose and readers, accepted expression constraints, and relevant domain and owner evidence. For revisions, read the baseline, diff, accepted scope, and preservation decisions too. Read authoritative `writing-for-agents` and, for a Skill, `SKILL-MECHANICS.md`. Use actual sources to establish what the artifact can rely on; the Author's writing method is not a review dependency.
 
-## Follow the reader's task
+Review the whole artifact while focusing on the diff and its consequences. The wider reading establishes whether the changed design works in context; it does not expand the Candidate, editing authority, or required checks to unrelated resources.
 
-Trace an ordinary use from discovering the artifact to making its key decisions and reaching a result. Then follow the branches that materially change what the reader needs. Judge the whole reading path before polishing sentences: individually clear paragraphs can still form a document that is difficult to use.
+## Follow a realistic reading
 
-Look especially at the task's difficult decisions. Does the artifact provide knowledge that changes how the reader handles them, or merely name desirable qualities? "Choose the appropriate strategy" is useful only if the reader already has the criteria. Necessary definitions, causal explanations, and examples should make those criteria available in time.
+Trace ordinary use from discovery through the difficult decisions to a result, then the branches that materially change the reader's needs. Judge that path as a whole: clear individual paragraphs can still leave the reader unable to use the document.
 
-Match the judgment to the work:
+Look for knowledge that helps decide rather than merely names a desirable quality. "Choose the appropriate strategy" works only if its criteria are already available. Definitions, causal explanations, and examples should supply missing criteria before the choice.
 
-- A Rule should make its applicability, requirement, ownership, and consequential exceptions clear enough to apply to real cases.
-- A Skill centered on judgment should explain evidence, priorities, and trade-offs while retaining discretion where circumstances matter.
-- A procedural Skill should make necessary order and meaningful transitions apparent, including how to recognize completion and handle a failed prerequisite.
-- A reference should let a recognizable question lead to the needed answer.
+Match the assessment to the artifact's job:
 
-These are evaluation lenses, not a common outline. An artifact may combine them. Judge whether the combination serves one coherent purpose and whether the reader can tell which role or level of behavior each passage addresses.
+| Guidance | What the reader needs |
+| --- | --- |
+| Policy | Applicable conditions, requirements, ownership, and consequential exceptions. |
+| Contextual judgment | Evidence, priorities, and trade-offs, with useful discretion. |
+| Procedure | Necessary order, meaningful transitions, completion, and failed-prerequisite handling. |
+| Reference | A recognizable question leading to the needed answer. |
 
-## Judge the room left for interpretation
+These lenses may combine; they are not a required outline. Check whether the combination serves one purpose and its passages clearly address the right actor and decision.
 
-Consider what different reasonable readings would cause. Settled requirements and consequential boundaries must remain identifiable: the reader should not mistake a necessary prerequisite for a suggestion. Conversely, instructions can be needlessly restrictive when they prescribe one method despite several methods satisfying the accepted outcome. Specificity is useful when the difference in interpretation matters; it is not an independent measure of quality.
+## Judge how much guidance is enough
 
-Directional language can be effective without determining every action. Assess whether its context supplies a recognizable concern, priority, or trade-off that helps the reader choose. "Concentrate detail on the disputed decision" leaves scope for judgment but directs effort. An unexplained "use judgment" may leave the very choice the document should help with unresolved. Show that missing guidance through a plausible case before treating breadth as a defect. Different sound methods are not, by themselves, evidence of ambiguity that needs repair.
+Ask whether ordinary capable readers would be very likely to agree on important meaning in normal use. Alignment matters before brevity. Firm requirements must remain identifiable; open choices may be guided by a clear priority or trade-off without prescribing every action. "Concentrate detail on the disputed decision" can suffice where an unexplained "use judgment" leaves the main choice unresolved.
 
-Check whether emphasis matches consequence. Can the reader distinguish the central work and firm constraints from optional techniques and illustrative details? A strong voice or metaphor may help focus attention; a sequence of emphatic warnings may obscure priority. Detail and emphasis do not establish authority: evaluate authority under governance and usability in the actual task.
+Support a demand for more detail with a reasonable reading that could cause a materially wrong decision in a supported case. A merely conceivable misreading or difference between sound methods does not establish a defect. Conversely, challenge a prescribed method when several methods meet the accepted outcome and the restriction creates material burden. Specificity, word count, and comprehensive-looking lists are not independent measures of quality.
 
-## Inspect information design
+Check emphasis against consequence. Can readers distinguish central work and firm constraints from optional techniques and illustrative choices? Strong language or metaphor may focus attention; repeated warnings may obscure priorities. Detail and emphasis do not establish authority, which remains with governance.
 
-Can the reader understand an instruction together with its condition and exception, or must they assemble it across distant sections? Can they tell which instruction an example, exception, or supplement explains, including when it applies to several points? Do headings reveal the document's organization, and do emphasis and paragraph placement support those relationships or imply the wrong scope?
+## Inspect where the knowledge lives
 
-Within a paragraph, does the reader develop one point or have to switch between unrelated questions? Across paragraphs, can they follow the connection without mistaking a new point for a continuation? Distinct concerns may deserve separate paragraphs under the same heading. Judge whether their boundaries make the reasoning easier to follow; more paragraphs are not themselves a defect.
+Keep the decision, its condition, and its exception understandable together. Check whether headings, transitions, paragraph boundaries, and examples make their relationships clear. A qualification for several points needs a scope the reader can recognize. Different points may need separate paragraphs; more paragraphs are not themselves a defect. Compression into labels or lists can lose necessary reasoning just as repetition can bury it.
 
-Is the main work visible before detail needed only for an unusual case? Is useful explanation missing because it was compressed into labels or lists?
+For a Skill, assess discovery using only the task and context available before loading. Check intended uses, nearby nonmatches, and important uses easy to miss. Always-present descriptions and pointers must earn the attention they demand, including from readers who will not need the target.
 
-For a Skill, assess its discovery description using only the task and context available before loading. Test intended uses, nearby nonmatches, and important uses that are easy to miss. Assess what always-present descriptions and pointers ask every reader to process, including readers who will not need their targets. Does that material help select the right guidance?
+Trace the initial entry and all required transitive reads, then each consequential branch. A useful reference has a recognizable trigger and supplies the promised knowledge. An unconditional extra read does not save reading burden; neither does a conditional label covering almost every ordinary use. Static traces can establish these paths without invented usage frequencies or length targets.
 
-Trace the complete initial use: the entry and everything it requires, through transitive reads. Then trace the additional material required for each consequential branch. Can the reader recognize the branch before loading its reference, and does its destination supply the promised knowledge? A conditional label does not defer material needed by every ordinary use. Judge the actual reading burden across the path; apparent brevity achieved through unconditional extra reads is not a saving. Static traces can establish these dependencies without claiming measured usage frequencies or imposing length targets.
+For rule-led Skills, assess both ordinary policy application and requested assessment. The entry must support substantive decisions through a result with fundamental policy and sufficient conditions, exceptions, and evidence. Deeper references should represent actual knowledge branches.
 
-For rule-led Skills, assess both ordinary policy application and requested review of existing work. The entry should support ordinary substantive decisions through a result, with fundamental policy and sufficient conditions and exceptions. Deeper references should correspond to real knowledge branches. A task label that sends almost every substantive use elsewhere is weak disclosure.
+Follow consequential definitions to their owners. Share material when readers need the same meaning and perspective; keep role-specific judgment usable in its own context. A reader should not need another role's manual to learn their own job. Verify dependency routes, not just reachable targets: Rules may reference Rules or Skills; Skills may invoke or reference Skills, including rule-led Skills. Reliance on an independently loaded Rule needs guaranteed loading in the supported environment rather than a direct Rule-file link. Session visibility alone supplies no such guarantee.
 
-Follow consequential definitions to their owners. Shared reference material should offer the same meaning and perspective to its readers, while distinct role judgments remain usable in their own contexts. Duplicated policies, unsupported dependencies, and reading another role's manual to learn one's own job can each undermine the artifact's organization.
+## Challenge the design deliberately
 
-Check the form of a dependency route as well as whether its target is readable. Rules may reference Rules or Skills; Skills may invoke or reference Skills, including rule-led Skills. A Skill relying on an independently loaded Rule needs a guarantee of that loading in its supported environment, rather than a direct reference to that Rule's file. A reachable source in the review session does not establish an appropriate route for the intended reader.
+In every round, use rhetorical questions to test whether the current design remains justified. Ask the questions that fit the artifact, such as:
 
-## Assess economy and expression
+- If this artifact were designed today from its current goal and constraints, would these file boundaries, responsibilities, and mechanisms still be chosen?
+- Which rules, examples, handoffs, or checks repeat across files without serving a different reader decision?
+- Does the entry expose the ordinary path while references represent recognizable branches, or does apparent brevity merely move mandatory reading elsewhere?
+- For a Skill, do discovery, metadata, executable support, and file layout still match the behavior it promises?
+- What could be removed, merged, disclosed, or reassigned without losing accepted meaning, permission boundaries, compatibility, or recovery?
 
-Evaluate the work the language imposes. Prefer observations such as "the reader must infer which of three actors owns this action" over labels such as "too abstract." Familiar terms, direct prose, and well-chosen examples should expose the important relationships without needless decoding.
+These questions are an attention mechanism, not a required questionnaire to send to the Author. Report a concise conclusion in every result: **redesign warranted** or **current design justified**, with the main reason. Ask the Author only about a concrete uncertainty that prevents or materially affects judgment.
 
-Challenge repetition, accumulated caveats, production history, generic instructions, and invented terminology when they obscure useful guidance or make maintenance harder. Also challenge excessive compression when it removes the explanation needed to act. Necessary complexity and useful rationale earn their space. Word count, unique facts, and comprehensive-looking lists alone prove neither quality nor its absence.
+For a rewrite, confirm that the Candidate actually reconsidered content, structure, and mechanisms. It may retain sound design, but sentence-level polishing alone does not satisfy that task. Substantial simplification is an opportunity, not a quota; dependable understanding and accepted meaning come first.
 
-Judge the mechanism the reader must carry out as well as the prose that explains it. In the affected contract, do retained or added steps, branches, handoffs, and outputs serve a present accepted outcome or necessary guarantee? Challenge avoidable material execution, coordination, or maintenance burden: identify the mechanism, demonstrate its burden through a plausible task, and support why less mechanism can satisfy the same requirements and boundaries. A supported compatibility, recovery, or other requirement can justify complexity; a preference for a shorter or different design cannot justify a finding. Keep this assessment within the affected contract; a local expression change alone does not call for mechanism redesign.
+## Challenge avoidable burden without losing knowledge
 
-An example earns attention when it resolves a real ambiguity or shows a difficult distinction. Can the intended reader understand its premise, choice, and consequence from the example and provided context, or must they guess what an unavailable source meant? Ordinary domain vocabulary need not be explained, but a missing fact that changes the lesson is a comprehension gap. Judge whether incidental details could be mistaken for requirements and whether the surrounding instruction remains usable beyond that example.
+Describe the work imposed on the reader precisely: "the reader must infer which actor owns the action" is more useful than "too abstract." Challenge repetition, accumulated caveats, production history, generic instructions, and invented terms when they obscure useful guidance or impose avoidable reading or maintenance. Treat references that restate entry rules as an explicit simplification target: determine whether the second passage serves a distinct role decision or merely duplicates the same meaning. Judge explanation against its context: if omitting or merging it preserves supported meaning and dependable understanding, its relevance alone does not earn the reading it adds. A repeated example or a lead-in that merely announces the next passage may qualify. Preserve explanations and necessary complexity that help the reader choose and act. Under the common grades, offer a clearly worthwhile, inexpensive cut as a non-blocking suggestion when the acceptance bar is already met.
 
-For Agent-invoked tools, can the reader use the operation from the supplied invocation and understand its relevant inputs, outputs, and failure response? First-party Python tools need a plain CLI example for each operation. Judge whether the examples teach actual use, rather than merely naming the tool or showing help for an otherwise unexplained operation. External tools retain their own invocation conventions.
+Assess the mechanism as well as its prose within the affected contract. Identify any avoidable material execution, coordination, or maintenance burden through a plausible task, and show how less mechanism can satisfy the same supported outcomes and boundaries. Compatibility, recovery, and other accepted guarantees can justify complexity. A local expression edit alone does not call for mechanism redesign.
 
-## Recognize opportunities to redesign
+An example should expose a useful distinction through an intelligible premise, choice, and consequence. Check that its context supplies facts that change the lesson and that incidental details cannot readily become mistaken obligations. Familiar domain vocabulary need not be re-explained.
 
-While reviewing an existing Rule or Skill, look for concrete gains from rebuilding its design around the current goal, reader decisions and valid constraints instead of retaining the old outline. An opportunity means an evidenced problem has a materially better organization, allocation of responsibilities or method; a preferred style alone is insufficient. Preserve supported meaning and permission boundaries unless changing them is separately authorized. Assess the Candidate already under review, without scanning unrelated artifacts.
+For Agent-invoked tools, check whether the supplied invocation, inputs, outputs, and failure response let readers use the operation. First-party Python tools need a plain CLI example for each operation; a help example alone does not teach other unexplained operations. External tools keep their invocation conventions.
 
-Useful signals include the following; they illustrate possibilities rather than form a mandatory checklist:
+## Route design opportunities by scope
 
-- Substantial Agent-irrelevant or repeated content can be removed while preserving needed meaning, with an estimated reduction of at least 20% of the affected document's length. Identify the removable material and count still-required references with it; moving mandatory reading to another file is not a saving.
-- A clearer decision order can keep prerequisites, actions, exceptions and completion conditions together, improving readability even at the same length.
-- Scattered or cyclic references can be replaced by coherent knowledge boundaries and fewer necessary jumps, while retaining a single authoritative home for each meaning.
-- Determinate matching, validation or formatting belongs in a suitable supported tool, leaving guidance to own decisions, authorization and result interpretation; weigh the tool and migration cost against the benefit.
-- Accumulated exceptions or near-identical branches can give way to a classification that reflects the cases still supported.
-- Uncommon-case detail can move behind recognizable conditions so the ordinary path stays complete and readable.
-- Duplicated handoffs, checks or unused reports can be combined or retired while retaining necessary independent judgment and verification.
+A whole-file redesign opportunity requires an evidenced problem and a materially better organization, responsibility allocation, or method. Removing substantial unnecessary material, keeping prerequisites and exceptions beside actions, replacing cyclic reading paths, disclosing uncommon branches, or combining redundant handoffs can improve a design. Choose by the actual gain, counting all still-required reading and preserving supported meaning and permission boundaries. Moving a determinate operation into a tool also needs its support and migration cost justified.
 
-Use the baseline, diff and accepted task scope to decide how to route what you find. Send a redesign proposal to the Controller for a user choice only when **both** conditions hold:
+Send a redesign proposal to the Controller for a user choice only when the issue both predates the Author's changes and lies outside the accepted task, and its repair requires redesigning a whole file rather than a local correction. Whole-file redesign concerns the design affected, not line count or reduction percentage. Name the old problem, sketch the better direction, explain why local repair is insufficient, and state benefits and preservation boundaries. Leave an unapproved rewrite unwritten.
 
-1. The issue predates the Author's changes, was not caused by them, and lies outside the current task's accepted goal.
-2. Resolving it requires redesigning a whole file's organization, responsibilities or method; a local correction is insufficient.
-
-Whole-file redesign concerns the design affected, not the number of changed lines: formatting throughout a file, merging a few repeated passages or achieving a 20% reduction may still be local work. Neither a percentage nor the opportunity itself changes the review grade or requires redesign. For a proposal, name the old problem, illustrate the better structure or method, explain why local repair is insufficient, and state the likely benefit and meanings to preserve. A short structural sketch is enough; leave an unapproved rewrite unwritten.
-
-Route other observations to the Author under the common finding and suggestion grades, including local improvements to pre-existing material. An Author-caused regression or an issue within the accepted task belongs in the normal repair path even when its correction affects the whole file. Suggestions remain optional; existing requirements, permissions and frozen file boundaries still govern any repair. If evidence cannot establish attribution or scope, resolve that gap through the Controller before choosing the dependent route, and continue clear review work.
+Route other observations to the Author under the common grades, including local improvements to pre-existing material. A regression or an issue within the accepted task follows normal repair even if the fix affects a whole file. Resolve uncertain attribution or scope through the Controller before choosing that route; continue clear review. The opportunity alone neither changes the grade nor makes an optional improvement mandatory.
 
 ## Reach a judgment
 
-The fixed bar is that the document supports accurate understanding and practical use for its intended task without avoidable material confusion, reading burden, or mechanism burden. Demonstrate a defect through a plausible task or reading path; personal taste is not a reason to fail a Candidate.
-
-Return Quality's result under the common contract, with the paths assessed and any material evidence gaps. A `PASS` means the artifact meets this bar; it does not claim that no sentence could ever be improved or that unobserved reader behavior is proven.
+The fixed bar is accurate understanding and practical use without avoidable material confusion, reading burden, or mechanism burden. Demonstrate a defect through a plausible task or reading path. Return the paths assessed and material evidence gaps under the common contract. `PASS` means this bar is met, not that every sentence is unimprovable or unobserved reader behavior is proven.

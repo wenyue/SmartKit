@@ -1,137 +1,117 @@
 # Controller
 
-Make the assignment faithful to the user and keep the collaboration moving. The Author owns the artifact's design and prose; Reviewers own their judgments. You own scope, evidence delivery, version consistency, questions for the user, and the final handoff.
+Keep the assignment faithful to the user and the collaboration tied to one Candidate. The Author owns design and prose; Reviewers own judgments. You own scope, evidence, version consistency, user-owned questions, and handoff. Read the [shared terms](shared-terms.md).
 
-Read the [shared terms](shared-terms.md). Use the following sequence to manage one Candidate.
+## Establish a faithful, actionable job
 
-## Establish the job
+Preserve the original request, corrections, and the proposals or questions they answer as a user-intent record separate from your interpretation. Resolve material unknowns from available evidence; ask the user only for an unresolved choice or fact that could change scope, behavior, risk, or acceptance. Editorial improvement leaves composition with the Author and does not authorize changing accepted requirements.
 
-Understand the intended outcome, the reason for the change, and what must remain true. Preserve the original request and subsequent corrections, together with the proposals or questions they answer. Keep this user-intent record distinct from your interpretation so Correctness can detect a mistaken brief as well as a mistaken draft.
+Establish intended readers, the supported environment, canonical owners, and their boundaries. Supply evidence for consequential direct and transitive dependencies, how readers reach them, and unavailable or failed-use outcomes. Current-session visibility does not establish a supported loading route.
 
-Resolve material unknowns from available evidence. Ask the user only when a choice or missing fact could change scope, behavior, risk, or acceptance and cannot be derived. A request to improve writing leaves editorial choices with the Author; it does not authorize changing an accepted requirement.
+Set the authorized outcome and ownership boundary. A rewrite reconsiders content, structure, and mechanisms from current goals and necessary constraints; local polishing alone is not the requested result. Treat a Skill's file layout and metadata as part of that design instead of freezing the existing file set by default. Sound design may remain, and simplification is an opportunity rather than a quota.
 
-Establish the intended readers and supported use environment, including the available capabilities and how required knowledge reaches them. Inspect relevant existing owners and their boundaries before selecting the canonical artifact and its supporting resources. Current-session visibility does not establish a supported loading route. Supply evidence for direct and transitive dependencies and their unavailable or failed-use outcomes where these affect the task.
+For a new artifact, rewrite, or substantial reorganization with unsettled file design, give the resident Author a read-only layout assignment. Resolve it into exact paths and allowed create, edit, move, or delete operations before writing; include both endpoints of a move. Ordinary revisions with clear paths need no separate proposal. Preserve existing work and include the supporting resources needed for one coherent artifact. Separate additional artifacts into dependency-ordered jobs.
 
-Set the authorized outcome and ownership boundary. When a new artifact or substantial reorganization needs file design, assign the resident Author a read-only layout proposal within that boundary. Resolve the proposal into exact Candidate paths and allowed create, edit, move, and delete operations before releasing any writing. An ordinary revision with clear paths needs no separate proposal.
+A resident role retains its own working context across returns, for example as a persistent child agent or a resumed session. A fresh agent receiving only a summary is a new identity. Keep one resident Author through layout, initial writing, and every repair; harness-specific mechanics belong to the harness.
 
-Include supporting resources needed for one coherent artifact and preserve pre-existing work. A move requires authority for the move, including both endpoints. Repository visibility is not write authority. Resolve editorial layout within already granted authority; ask the user only for a material decision or authority that remains missing. Separate additional artifacts into dependency-ordered jobs; a caller may supply the common plan, but each invocation still owns one Candidate.
+For a Skill target, supply its `AUTHORING.md` when present. Running this workflow on another target is not a reason to load this Skill's own authoring record. Include its creation or update in scope only when the entry's threshold for a durable authoring decision is met, or when the current work changes a recorded decision. The record explains decisions; it does not replace operative requirements or freeze them permanently.
 
-Prepare a concise brief locating:
+Give the Author a concise brief containing the outcome, accepted changes and preservation decisions, exact scope and operations, authoritative sources and related owners, supported environment and loading routes, open dependencies, required non-fixing checks, and observable completion conditions. For a rewrite, identify the current artifact and relevant earlier versions as evidence without making either outline authoritative. Supply the reasons, corrections, and original exchanges needed to understand the task. Distinguish settled choices from suggestions; a detailed input is not a prescribed outline.
 
-- the outcome, accepted changes, preservation decisions, and consequential constraints;
-- exact Candidate paths and allowed operations, or the bounded read-only layout question still to be resolved before writing;
-- authoritative sources, domain evidence, related owners, supported use environment and loading routes, caller plan, and open dependencies;
-- required non-fixing checks and observable completion conditions.
+Coordinate required outside-owner changes through their authorized routes. Missing source access, permission, or a user-owned decision requires `NEEDS_INPUT` before dependent work; an in-scope draft cannot close an outside dependency.
 
-Give the Author the context needed to understand the actual task: requirements and their reasons, accepted decisions, relevant domain evidence, and the meaning of any earlier rejection or correction. Include original exchanges when summarizing would lose an important distinction. Keep the brief focused on locating the work, and pass later corrections faithfully. Choose context for its value to the Author's decisions rather than treating either a brief alone or the entire conversation as a universal requirement.
+## Preserve the baseline and bounds
 
-Supply relevant owners' current sources and any accepted allocation plan. Distinguish settled requirements from composition choices left to the Author.
-
-When the result depends on another owner's change, establish that dependency's scope, prerequisites, and authorized route, then coordinate its resolution. Missing source access, permission, or a user-owned choice requires `NEEDS_INPUT` before dependent work; an in-scope draft cannot close an out-of-scope dependency.
-
-## Preserve the baseline and execution bounds
-
-Once exact paths and operations are settled, retain the complete Candidate baseline and fingerprint before writing. Read `python "<skill-root>/scripts/candidate_evidence.py" --help`, resolving `<skill-root>` to the loaded Skill. Its capture operation records existing and absent paths:
+After settling scope, retain the complete pre-write Candidate and fingerprint. Resolve `<skill-root>` to this loaded Skill and read `python "<skill-root>/scripts/candidate_evidence.py" --help`. Capture records existing and absent paths, bytes, and supported executable bits; help defines platform coverage.
 
 ```text
 python "<skill-root>/scripts/candidate_evidence.py" capture --root "<candidate-root>" --output "<new-snapshot>" --path "<candidate-relative-path>"
 ```
 
-Repeat `--path` for every scoped resource. Use a new snapshot directory outside the Candidate root, as required by the tool; keep other evidence and review records outside Candidate scope too. Record the allowed operations and checks alongside the baseline. A path-subset check alone does not prove that an operation was authorized.
+Repeat `--path` for every scoped resource. Keep snapshots outside the Candidate root as the tool requires, and other evidence and review records outside Candidate scope. Record allowed operations and required checks alongside them; a path-subset check does not establish operation authority. If Candidate instructions govern this job, preserve their complete pre-write text and use it throughout: the rewrite cannot authorize its own run.
 
-If later file design requires a path-set change, pause Candidate writing and resolve the proposed operations within the accepted authority. Keep every previously frozen path in the job's evidence scope, including move and deletion endpoints. Preserve the original baseline unchanged; capture any added paths' present or absent state before their first write. These supplements join the original baseline as cumulative change evidence, never replacing an earlier path's starting state with its edited contents.
+A later path-set change pauses Candidate writing. Resolve its operations, keep every previously frozen path in evidence scope, and preserve added paths before their first write. Supplements extend the original baseline without replacing an earlier path's starting state. Capture the complete enlarged current scope, update the brief and checks, and give affected roles the cumulative evidence before releasing writing. Earlier verdicts do not accept this new version. Uncertain pre-write evidence or attribution requires preserving state and returning `BLOCKED`.
 
-Capture the entire enlarged scope for its current fingerprint. Update the brief, allowed operations, and affected checks, and supply the original baseline plus supplements to the roles that need change evidence before releasing further writing. Earlier verdicts cannot accept this new complete version. If pre-write evidence or attribution is uncertain, preserve the state and return `BLOCKED` rather than inventing a clean starting point.
+Set a finite iteration budget: three review rounds unless the accepted task establishes another limit. Record authorized extensions. Progress and resources determine whether another round is useful; approaching the limit does not lower acceptance standards.
 
-If the Candidate includes instructions governing this job, preserve their complete pre-write text and use it for the entire invocation. A rewritten workflow cannot authorize its own current run.
-
-Set a finite iteration budget appropriate to the task. Use three review rounds unless the accepted task establishes a different limit; honor user-authorized extensions by recording the revised bound. Progress and resources determine whether another round is useful. Neither an approaching limit nor a desire to finish lowers acceptance standards.
-
-Before offering runtime verification, establish finite scenario and attempt limits and an aggregate resource ceiling, including any task-internal delegation. Give Correctness the authority and lifecycle access needed to observe and safely close that work. Tool availability alone supplies neither permission nor adequate isolation. Correctness chooses scenarios within these bounds.
+Before offering runtime verification, establish finite scenario and attempt limits and an aggregate resource ceiling, including task-internal delegation. Give Correctness sufficient authority and lifecycle access to observe and safely close the work. Tool availability alone supplies neither permission nor isolation; Correctness selects scenarios within the bounds.
 
 ## Assign the roles
 
-Keep one resident Author for any read-only layout proposal, initial writing, and repairs. The Author is the sole Candidate writer. A layout assignment may precede exact paths and baseline capture; release initial writing only after the task is actionable and the complete Candidate still matches its preserved pre-write evidence. Supply the finalized paths, operations, and baseline identity to the Author at that point.
+Keep one resident Author as sole Candidate writer for layout, initial writing, and repairs. Release initial writing only when the task is actionable and the complete Candidate still matches its baseline; supply exact paths, operations, and baseline identity.
 
-Choose the review topology from the job's actual uncertainty and consequences:
-
-| Topology | Appropriate job |
+| Review topology | Use when |
 | --- | --- |
-| Integrated: one Reviewer applies all three perspectives | Requirements, dependencies, and critical paths are understood, material uncertainty is absent, and risk is bounded. |
-| Independent: one Reviewer for each perspective | Self-hosting, broadly consequential, high-risk, or materially uncertain work, including uncertainty about owners, permissions, safety, recovery, or validation. |
+| Integrated: one identity applies all three perspectives | Requirements, dependencies, and critical paths are understood, material uncertainty is absent, and risk is bounded. |
+| Independent: a separate identity for each perspective | The job is self-hosting, broadly consequential, high-risk, or materially uncertain, including owners, permissions, safety, recovery, or validation. |
 
-Every Reviewer assignment includes its common and professional instructions, the current Candidate and fingerprint, round number, and stable evidence locations. Provide these distinct inputs rather than having every role reconstruct the whole authoring session:
+Each Reviewer receives its common and professional contracts, complete Candidate and fingerprint, round, and stable evidence locations. Quality reviews the whole artifact while focusing on the diff and its consequences; the frozen Candidate still limits what the Author may change and what checks cover. Provide the evidence each judgment needs:
 
-| Role | Additional evidence |
+| Perspective | Evidence beyond the current Candidate |
 | --- | --- |
-| Quality | Intended purpose and readers, expression constraints, relevant domain and owner evidence, original baseline and derived diff, accepted task scope and preservation decisions. |
-| Change | Original baseline, derived diff, accepted change and preservation decisions, Author's semantic summary. |
-| Correctness | Original user-intent record and brief as separate inputs, baseline and diff, critical behavior decisions, check results, execution authority and bounds. |
+| Quality | Purpose and readers, expression constraints, relevant domain and owner evidence, baseline and diff, accepted scope and preservation decisions. |
+| Change | Baseline and diff, accepted change and preservation decisions, Author's semantic summary. |
+| Correctness | Original intent record and brief as distinct inputs, baseline and diff, critical behavior decisions, check results, execution authority and bounds. |
 
-Independent Reviewers start with their assigned evidence, without inherited authoring deliberations or other Reviewers' conclusions. An Integrated Reviewer receives the union and returns three separate judgments.
+Independent Reviewers start without inherited authoring deliberations or other Reviewers' conclusions. An Integrated Reviewer receives the union and returns separate judgments. Retain identities while topology stays unchanged; unavailable required roles or context separation means `BLOCKED`, not an implicit combination of roles.
 
-Retain identities while the topology is unchanged. If required roles or context separation are unavailable, return `BLOCKED`; combining roles is not an implicit fallback.
+On `INDEPENDENT_REVIEW_REQUIRED`, safely close the Integrated attempt and active runtime work, then start three fresh independent identities on the current fingerprint in the same round. Supply source evidence without prior verdicts. Resolve any additional scope or permission first.
 
-An Integrated Reviewer may return `INDEPENDENT_REVIEW_REQUIRED`. Safely close that attempt and any active runtime work, then start three fresh Independent Reviewers on the current fingerprint in the same round. Supply source evidence without the prior verdicts. Broader permission or scope still requires resolution before the switch proceeds.
+## Check, review, and repair each version
 
-## Manage checks and repairs
+### Gate the Author's return
 
-### Gate each Author return
-
-After every Author draft or repair return, capture and compare the complete Candidate. Verify that the return came from the assigned Author, changes fit the allowed operations, and state is attributable. Preserve and report uncertain or out-of-scope changes as `BLOCKED`; do not erase them. For `NEEDS_INPUT` or `BLOCKED`, retain partial work as evidence and follow the clarification or finalization route.
-
-Use the compare operation to derive changes against preserved pre-write evidence:
+After every draft or repair return, capture and compare the complete Candidate. Confirm the assigned Author produced it, changes fit allowed operations, and state is attributable. Preserve uncertain or out-of-scope changes and report `BLOCKED`; do not erase them. Retain partial work on `NEEDS_INPUT` or `BLOCKED` and follow clarification or safe finalization.
 
 ```text
 python "<skill-root>/scripts/candidate_evidence.py" compare --root "<candidate-root>" --snapshot "<baseline-snapshot>" --allowed-change-path "<editable-relative-path>"
 ```
 
-Repeat `--allowed-change-path` for the permitted changed paths in that snapshot; omit it when no change is allowed. With supplemental baselines, compare each snapshot and account for their union. Capture the complete current scope to bind checks and reviews to one fingerprint; a comparison of only one supplement does not identify the complete Candidate.
+Repeat `--allowed-change-path` for permitted changed paths in that snapshot; omit it when none may change. Compare every supplemental baseline and account for their union. Capture the complete current scope to bind checks and reviews to one fingerprint.
 
 ### Run the required checks
 
-After every Author draft or repair, run this Skill's check entry on every surviving Markdown file in the complete Candidate scope, including scoped references. The entry is a required check whenever Candidate Markdown survives. It runs every document check this Skill owns, and its help names each check with its coverage, exemptions, and limits. Resolve `<skill-root>` to this loaded Skill's directory and pass the Candidate files explicitly, without scanning unrelated repository files:
+After every Author draft or repair, check every surviving Markdown file in the complete Candidate scope with this Skill's entry. Pass files explicitly; its help defines coverage, exemptions, and limits.
 
 ```text
 python "<skill-root>/scripts/check_candidate.py" --help
 python "<skill-root>/scripts/check_candidate.py" -- "<candidate-root>/<candidate-relative-path.md>" "<candidate-root>/<scoped-reference.md>"
 ```
 
-The entry never rewrites files. A pass establishes only what its checks cover, not Markdown validity or semantic correctness. If the Candidate has no surviving Markdown files, record the entry as not applicable.
+For staged or backup Candidates retaining final target-relative layout, supply the authorized business-target root and complete frozen path set to the Author and every check invocation. Include absent and deleted paths:
 
-For an Author `COMPLETE`, also run every other required check in non-fixing mode. Retain commands, results, and the tested fingerprint for the entry and each other check. Begin review only after all required checks pass.
+```text
+python "<skill-root>/scripts/check_candidate.py" --candidate-root "<staging-or-backup-root>" --target-root "<business-target-root>" --candidate-path ".agents/skills/example/SKILL.md" --candidate-path ".agents/skills/example/references/guide.md" --candidate-path ".agents/skills/example/references/deleted.md" -- "<staging-or-backup-root>/.agents/skills/example/SKILL.md" "<staging-or-backup-root>/.agents/skills/example/references/guide.md"
+```
 
-### Route check failures
+The mapping makes scoped destinations resolve in the Candidate and retained destinations in the target; it supplies read context, not write or access authority. Keep exact roots and scope with the evidence. Only surviving Candidate Markdown receives document checks; linked targets supply existence and anchors. Resolve unavailable target access through the failure route below.
 
-Read the entry's result from its exit status and streams, not from knowledge of individual checks. Status 0 means no problem was found. Status 1 means document problems, listed on stdout. Status 2 means a usage or input error, reported on stderr, left the result incomplete; it takes precedence over 1, and stdout may still list problems in the inputs that could be read.
+The entry never rewrites files. A pass establishes its bounded coverage, not Markdown validity or semantic correctness. Record it as not applicable when no Candidate Markdown survives. For an Author `COMPLETE`, also run all other required checks in non-fixing mode. Retain commands, results, and tested fingerprint; begin review only after every required check passes.
 
-Route each failure by its cause and retain the diagnostics. Candidate-caused failures go to the same Author for repair; these include document problems in Candidate files and any input error a Candidate file causes, such as Markdown that is not UTF-8. When the Author reports a failure as having another cause, such as an unreadable target outside the Candidate or a suspected false positive, establish its cause from the diagnostics before routing it. Correct your own invocation mistakes and rerun. Missing user-controlled input or permission requires `NEEDS_INPUT`; other unresolved failures or correction without progress require `BLOCKED`.
+Read exit status and streams: 0 means no problem found; 1 lists document problems on stdout; 2 reports a usage or input error on stderr and an incomplete result, taking precedence over 1 even if stdout also lists problems. Route by cause. Candidate-caused errors, including invalid UTF-8, go to the Author. Establish the cause of outside-target errors or suspected false positives before routing them; fix your own invocation mistakes and rerun. Missing user-controlled input or permission requires `NEEDS_INPUT`; other unresolved failures or correction without progress require `BLOCKED`.
 
-### Review and repair
+### Close the review round
 
-Reviewers send findings and Candidate questions directly to the Author. Track their returns and verify an unchanged Candidate fingerprint after each. Resolve questions about intent or permission, but leave semantic verdicts with Reviewers. When a Reviewer retains a contested blocking finding after reassessment, resolve any intent, scope, or permission question it turns on, asking the user when the decision is user-owned; otherwise the Reviewer's verdict stands. Wait for all applicable results and necessary answers before releasing one coherent repair. Reapply the Author-return gate and checks after that repair; every perspective then reviews the complete new version.
+Reviewers send findings and Candidate questions directly to the Author. Track all results and confirm the fingerprint remains unchanged after each. Leave semantic verdicts with Reviewers; resolve intent, scope, or permission questions behind a retained contested finding, asking the user when needed. Otherwise the retained verdict stands.
 
-### Close a round
+Wait for every perspective and necessary answer before releasing one coherent repair. Reapply the return gate and checks; all three perspectives review the complete changed version, including changes after an earlier `PASS`. A round closes when all perspectives have returned.
 
-A round closes when all perspectives have returned. Resolve any pending scope decision before releasing affected work or finalizing it. If all perspectives pass, finish unless the Author elects worthwhile local suggestions or the user has authorized broader work still to be done. Release optional local work only when its required checks and review fit the remaining budget; otherwise leave it unapplied and hand off the accepted version. A selected improvement may share one coherent repair with blocking findings, and every changed version goes through the same checks and all perspectives. If a material defect remains, continue only within the remaining budget and with a plausible correction; report `BLOCKED` when the bound is reached or no progress is possible. Do not spend further rounds on unsupported preferences or treat elapsed effort as evidence of quality.
+When all pass, finish unless broader authorized work remains or the Author selects worthwhile local suggestions whose checks and review fit the remaining budget. Optional improvements may share a repair with blocking findings, but need not delay an accepted version. Continue a failed round only with remaining budget and a plausible correction; return `BLOCKED` when the bound is reached or progress is no longer possible. Unsupported preferences and elapsed effort do not justify further rounds or acceptance.
 
-## Resolve questions faithfully
+## Resolve decisions with their owner
 
-A material question can arise during any phase. Pause its dependent work and continue unrelated clear work. Establish recoverable facts first, then route the remaining decision to its owner. When a Reviewer asks for user input, preserve the exact question; label your own explanation or recommendation separately. Explain plausible interpretations and consequences so the user can make the actual decision. Silence and the brief itself are not approval.
+When a material question arises, pause dependent work and continue clear work. Recover facts first, then route the remaining decision. Preserve a Reviewer's exact user question and label your explanation or recommendation separately; explain plausible interpretations and consequences. Silence and the brief itself are not approval.
 
-When the answer changes meaning, update the intent record and brief and send the correction to affected roles. A fact resolved under an unchanged brief needs no rewrite. If Correctness identifies a brief distortion, correct it from the cited user evidence; an unresolved interpretation still belongs to the user. Recheck scope, dependencies, and validation when a decision changes them.
+A meaning-changing answer updates the intent record and brief and reaches affected roles; a fact resolved under the unchanged brief needs no rewrite. Correct a demonstrated brief distortion from the cited user evidence. Recheck scope, dependencies, and validation when the answer affects them.
 
-When Quality sends a whole-file redesign proposal for a pre-existing issue outside the accepted task, check whether existing authorization already covers it. If not, present the concrete problem, proposed direction, benefit and preservation boundaries with lettered choices: **A. Include the redesign** or **B. Keep the current task limited**. Accept an unambiguous natural-language answer too. Do not repeat an unchanged pending or declined proposal; continue independent work while awaiting a decision. Approval enters the normal scope, baseline and iteration-bound process before further writing. Decline leaves the current task and ordinary review results intact; any independently blocking defect still needs resolution under its existing acceptance bar.
+Quality reports every round whether redesign is warranted and why. A conclusion that the current design remains justified needs no discussion by itself. Concrete uncertainty may produce a focused question to the Author under the normal review route; do not turn the assessment into mandatory back-and-forth for every suggestion.
+
+For Quality's whole-file redesign proposal about a pre-existing issue outside the task, first check existing authority. If additional authorization is needed, present the problem, direction, benefit, and preservation boundaries with **A. Include the redesign** and **B. Keep the current task limited**; accept an unambiguous natural-language answer too. Do not repeat an unchanged pending or declined proposal. Approval enters the normal scope, baseline, and budget process; decline preserves ordinary review results and does not waive independently blocking defects.
 
 ## Finalize and hand off
 
-On every exit, account for the Author, Reviewers, Runners, and any permitted children. End active work safely, retain necessary observations, establish cleanup and residual state, and check the final Candidate boundary. If safe termination, integrity, or cleanup remains uncertain, preserve the state and return `BLOCKED` with the recovery-relevant facts.
+On every exit, account for Author, Reviewers, Runners, and permitted children. End active work safely, retain necessary observations, establish cleanup and residual state, and check the final Candidate boundary. Uncertain termination, integrity, or cleanup requires preserving recovery-relevant state and returning `BLOCKED`.
 
-Return a concise, usable record containing:
+Return the Candidate type, exact paths and final fingerprint, Author's semantic summary, topology and separate perspective results including intent fidelity, required check evidence, runtime observations and limits when used, unresolved dependencies or risks, residual state, and terminal result.
 
-- Candidate type, exact paths, final fingerprint, and the Author's semantic summary for that version;
-- topology and separate Quality, Change, and Correctness results, including intent-fidelity coverage;
-- required checks and results, plus runtime scenarios, observations, and limits when used;
-- unresolved risks or dependencies, residual state, and the terminal result.
-
-`COMPLETE` requires all three perspectives and all required checks to pass on the same final fingerprint, with dependencies closed and safe finalization established. `NEEDS_INPUT` identifies the exact user-controlled decision, input, access, or permission needed. `BLOCKED` identifies why the authorized workflow cannot complete and the evidence or capability needed to change that.
+`COMPLETE` requires all three perspectives and required checks to pass on the same final fingerprint, dependencies closed, and safe finalization. `NEEDS_INPUT` names the exact user-controlled decision, input, access, or permission needed. `BLOCKED` explains why authorized work cannot complete and what evidence or capability could change that.

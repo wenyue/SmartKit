@@ -1,19 +1,17 @@
 ---
 name: write-rules-and-skills
-description: Author or revise one English Rule or Agent Skill.
+description: Author, revise, or rewrite one English Rule or Agent Skill.
 ---
 
 # Write Rules and Skills
 
-Write an artifact that helps an Agent do a particular job well: make the right decisions, understand the important constraints, and reach a useful result. A good Rule makes policy usable; a good Skill supplies the knowledge and method its task needs. Neither is improved by accumulating every instruction that might apply.
+Write guidance that helps an Agent do a particular job well. Aim for the minimum guidance that makes ordinary capable readers very likely to share the intended understanding in normal use. Alignment comes before brevity: keep accepted outcomes, consequential boundaries, and explanation that supports that understanding. Use practical judgment rather than pursuing certainty against every possible misreading.
 
-Each invocation produces one **Candidate**: a Rule or Skill and its scoped supporting resources. The active Agent is the Controller. Read the [Controller contract](references/controller.md) to prepare the assignment and manage it through handoff.
+Each invocation produces one **Candidate**: a Rule or Skill and its scoped supporting resources. The active Agent is the Controller; read the [Controller contract](references/controller.md) to establish the request, authority, evidence, and completion conditions. One resident [Author](references/author.md) owns the design and writing through repairs.
 
-## How the work proceeds
+For a rewrite, reconsider the artifact's content, structure, and mechanisms from its current goals and necessary constraints. File layout and Skill metadata are part of that design. Sound choices may remain, but polishing the existing sentences alone does not complete a rewrite. Read a target Skill's `AUTHORING.md` when present. Create or update one only for a deliberate trade-off that a future writer is likely to undo and whose accidental reversal would be costly; skip obvious or easily reversed choices. Record the decision and reason, adding alternatives or consequences only when they are worth remembering. Ordinary use of the target does not load that record.
 
-The Controller establishes the actual request, editable scope, evidence, and completion conditions. One [Author](references/author.md) receives the task context and a concise brief, then owns the writing from the first draft through repairs. The brief locates the job and conveys the user's requirements and reasons without prescribing the composition.
-
-After the Author returns a complete draft and required checks pass, review it from three distinct perspectives:
+After a complete draft passes required checks, obtain three judgments:
 
 | Perspective | Question |
 | --- | --- |
@@ -21,8 +19,8 @@ After the Author returns a complete draft and required checks pass, review it fr
 | [Change](references/change-reviewer.md) | Does the change preserve or deliberately revise the right meaning? |
 | [Correctness](references/correctness-reviewer.md) | Does it fulfill the actual request, and will its prescribed behavior work? |
 
-Reviewers follow the [common conduct](references/reviewer.md) and their own professional contracts. They identify evidenced defects; the Author chooses a coherent repair. The Controller arranges independent identities when the job needs them, keeps all judgments tied to the same version, and resolves questions that belong to the user. When behavior needs observation, Correctness may commission a bounded [Runner](references/runner.md).
+Reviewers apply the [common conduct](references/reviewer.md) and their professional contracts. They identify evidenced defects; the Author chooses the repair. The Controller selects the required independent identities, keeps judgments tied to the same version, and routes user-owned questions. Correctness may commission a bounded [Runner](references/runner.md) when behavior needs observation.
 
-Repeat writing, checks, and review for material defects or accepted improvements within the agreed iteration budget. Acceptance standards stay fixed; optional improvements need not delay an otherwise accepted result. Completion means the same final Candidate has passed the required checks and all three reviews; a promising draft or an exhausted budget is not that result.
+Repeat writing, checks, and review within the agreed iteration budget. Keep acceptance standards fixed; optional improvements need not delay an accepted result. `COMPLETE` requires all required checks and three reviews to pass on the same final Candidate. Otherwise return `NEEDS_INPUT` or `BLOCKED`, identifying the unresolved dependency and preserving evidence.
 
-The workflow returns `COMPLETE`, `NEEDS_INPUT`, or `BLOCKED`, with exact files and supporting evidence. It operates within the task's authority. Publishing, installing, translating, committing, and other downstream actions retain their own authorization. When this Skill is itself being rewritten, its pre-write instructions govern the current invocation.
+This workflow grants no downstream publishing, installation, translation, commit, or other authority. When rewriting this Skill, its complete pre-write instructions govern the current invocation.

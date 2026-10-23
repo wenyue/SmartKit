@@ -120,10 +120,11 @@ class CandidateEvidenceTest(unittest.TestCase):
         self.assertEqual(second.returncode, 0, second.stderr)
         self.assertEqual(
             json.loads(first.stdout)["schema"],
-            "smartkit.candidate-evidence-capture-report/v1",
+            "smartkit.candidate-evidence-capture-report",
         )
         first_manifest = self.manifest(self.base / "snapshot-one")
         second_manifest = self.manifest(self.base / "snapshot-two")
+        self.assertEqual(first_manifest["schema"], "smartkit.candidate-evidence")
         self.assertEqual(
             [entry["path"] for entry in first_manifest["entries"]],
             ["a.txt", "b.txt", "missing"],
@@ -151,7 +152,7 @@ class CandidateEvidenceTest(unittest.TestCase):
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual(first.stdout, second.stdout)
         report = json.loads(first.stdout)
-        self.assertEqual(report["schema"], "smartkit.candidate-evidence-report/v1")
+        self.assertEqual(report["schema"], "smartkit.candidate-evidence-report")
         self.assertEqual(report["path_boundary"], "PASS")
         self.assertEqual(report["changed_paths"], ["added.txt", "deleted.txt", "modified.txt"])
         self.assertEqual(
@@ -267,7 +268,8 @@ class CandidateEvidenceTest(unittest.TestCase):
         handle_stat = self.observation_stat(path_stat, st_ctime_ns=path_stat.st_ctime_ns + 1)
         with mock.patch.object(EVIDENCE.os, "name", "nt"):
             with mock.patch.object(EVIDENCE.os, "fstat", return_value=handle_stat):
-                self.assertEqual(EVIDENCE.stable_observation(self.root, [path.name]), {path.name: data})
+                self.assertEqual(EVIDENCE.stable_observation(self.root, [path.name]),
+                                 {path.name: EVIDENCE.ObservedFile(data, None)})
 
     def observation_stat(self, original, **changes):
         fields = ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns", "st_ctime_ns")
@@ -402,6 +404,116 @@ class CandidateEvidenceTest(unittest.TestCase):
         self.assertEqual(BYTECODE_SETTING_AFTER, BYTECODE_SETTING_BEFORE)
         self.assertEqual(HELPER_CACHE_AFTER, HELPER_CACHE_BEFORE)
 
+    @unittest.skipUnless(os.name == "posix", "POSIX executable bits are unavailable")
+    def test_mode_only_changes_affect_fingerprint_comparison_and_path_boundary(self):
+        path = self.root / "tool.py"
+        path.write_bytes(b"print('same bytes')\n")
+        path.chmod(0o644)
+        snapshot = self.base / "snapshot"
+        self.assertEqual(self.capture(snapshot, path.name, "missing").returncode, 0)
+        manifest = self.manifest(snapshot)
+        self.assertEqual(manifest["executable_mode"], "posix-executable-bits")
+        self.assertEqual(manifest["entries"][1]["executable_bits"], 0)
+        fingerprints = {manifest["fingerprint"]}
+        for mode, bits in ((0o744, 0o100), (0o654, 0o010), (0o645, 0o001)):
+            with self.subTest(mode=oct(mode)):
+                path.chmod(mode)
+                result = self.compare(snapshot, path.name)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                report = json.loads(result.stdout)
+                self.assertEqual(report["changed_paths"], [path.name])
+                self.assertNotIn(report["current_fingerprint"], fingerprints)
+                fingerprints.add(report["current_fingerprint"])
+                change = report["changes"][0]
+                self.assertEqual(change["change"], "modified")
+                self.assertEqual(change["before"]["executable_bits"], 0)
+                self.assertEqual(change["after"]["executable_bits"], bits)
+                self.assertEqual(change["before"]["sha256"], change["after"]["sha256"])
+                self.assertEqual(change["delta"]["unified"], "")
+                refused = self.compare(snapshot)
+                self.assertEqual(refused.returncode, 3)
+                self.assertEqual(json.loads(refused.stdout)["path_boundary_violations"], [path.name])
+        path.chmod(0o600)
+        result = self.compare(snapshot)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["changed_paths"], [])
+
+    def test_mode_drift_between_complete_observations_is_refused(self):
+        first = {"tool": EVIDENCE.ObservedFile(b"same", 0)}
+        second = {"tool": EVIDENCE.ObservedFile(b"same", 0o100)}
+        with mock.patch.object(EVIDENCE, "observe", side_effect=[first, second]):
+            with self.assertRaisesRegex(EVIDENCE.EvidenceError, "between the two complete observations"):
+                EVIDENCE.stable_observation(self.root, ["tool"])
+
+    def test_unsupported_platform_records_null_mode_and_refuses_cross_policy_comparison(self):
+        (self.root / "tool").write_bytes(b"same")
+        snapshot = self.base / "snapshot"
+        arguments = ["capture", "--root", str(self.root), "--output", str(snapshot), "--path", "tool"]
+        with mock.patch.object(EVIDENCE, "executable_mode", return_value="unsupported"):
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(EVIDENCE.main(arguments), 0)
+            manifest = self.manifest(snapshot)
+            self.assertEqual(manifest["executable_mode"], "unsupported")
+            self.assertIsNone(manifest["entries"][0]["executable_bits"])
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(EVIDENCE.main(["compare", "--root", str(self.root),
+                                               "--snapshot", str(snapshot)]), 0)
+        with mock.patch.object(EVIDENCE, "executable_mode", return_value="posix-executable-bits"):
+            error = io.StringIO()
+            with redirect_stderr(error):
+                self.assertEqual(EVIDENCE.main(["compare", "--root", str(self.root),
+                                               "--snapshot", str(snapshot)]), 2)
+            self.assertIn("unsupported on this platform", error.getvalue())
+
+    @unittest.skipUnless(os.name == "posix", "POSIX executable bits are unavailable")
+    def test_snapshot_mode_metadata_is_validated_and_bound_to_fingerprint(self):
+        (self.root / "tool").write_bytes(b"same")
+        snapshot = self.base / "snapshot"
+        self.assertEqual(self.capture(snapshot, "tool", "missing").returncode, 0)
+        original = self.manifest(snapshot)
+        for invalid in (True, -1, 0o200, None, "111"):
+            with self.subTest(mode=invalid):
+                manifest = json.loads(json.dumps(original))
+                manifest["entries"][1]["executable_bits"] = invalid
+                (snapshot / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+                result = self.compare(snapshot)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("executable bits are invalid", result.stderr)
+        manifest = json.loads(json.dumps(original))
+        manifest["entries"][1]["executable_bits"] ^= 0o100
+        (snapshot / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        result = self.compare(snapshot)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("fingerprint does not match", result.stderr)
+        manifest = json.loads(json.dumps(original))
+        manifest["entries"][0]["executable_bits"] = 0
+        (snapshot / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        self.assertEqual(self.compare(snapshot).returncode, 2)
+
+    def test_invalid_snapshot_manifest_is_refused_without_mutating_evidence_or_candidate(self):
+        (self.root / "file").write_bytes(b"baseline")
+        snapshot = self.base / "snapshot"
+        self.assertEqual(self.capture(snapshot, "file").returncode, 0)
+        original = self.manifest(snapshot)
+        (self.root / "file").write_bytes(b"current")
+        before = self.candidate_digest()
+        cases = (
+            ("missing field", {key: value for key, value in original.items()
+                               if key != "executable_mode"}, "invalid shape"),
+            ("extra field", {**original, "unexpected": True}, "invalid shape"),
+            ("schema", {**original, "schema": "unrelated.snapshot"}, "schema is unsupported"),
+        )
+        for label, manifest, diagnostic in cases:
+            with self.subTest(case=label):
+                saved = json.dumps(manifest).encode()
+                (snapshot / "manifest.json").write_bytes(saved)
+                result = self.compare(snapshot)
+                self.assertEqual((result.returncode, result.stdout), (2, ""))
+                self.assertIn(diagnostic, result.stderr)
+                self.assertEqual((snapshot / "manifest.json").read_bytes(), saved)
+                self.assertEqual((snapshot / "payloads/000000.bin").read_bytes(), b"baseline")
+                self.assertEqual(self.candidate_digest(), before)
+
     def test_capture_failure_reports_partial_snapshot_for_controller_cleanup(self):
         output = self.base / "partial-snapshot"
 
@@ -436,8 +548,8 @@ class CandidateEvidenceTest(unittest.TestCase):
         normalized_help = " ".join(result.stdout.split())
         self.assertIn("capture", result.stdout)
         self.assertIn("compare", result.stdout)
-        self.assertIn("smartkit.candidate-evidence-capture-report/v1", result.stdout)
-        self.assertIn("smartkit.candidate-evidence-report/v1", result.stdout)
+        self.assertIn("smartkit.candidate-evidence-capture-report", result.stdout)
+        self.assertIn("smartkit.candidate-evidence-report", result.stdout)
         self.assertIn("Exit 0", result.stdout)
         self.assertIn("exit 2", result.stdout)
         self.assertIn("exit 3", result.stdout)

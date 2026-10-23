@@ -33,7 +33,7 @@ Links from ordinary repository documents alone do not qualify. Leave headings wi
 
 Place each required anchor at the end of its translated heading, on the same line after one space: `<a id="source-section-id"></a>`. Use double quotes and the explicit closing tag. Keep referenced source identifiers verbatim, including generated heading identifiers, and normalize existing anchors on referenced headings to this format.
 
-Use normal Markdown links whose fragments match the referenced section identifiers. Preserve source destinations, including paths and fragments. Apply these conventions to document headings and links; keep protected code examples unchanged.
+Use normal Markdown links whose fragments match the referenced section identifiers. For each relative path, resolve its destination from the English source, then link to its corresponding declared or existing mirror when available; otherwise link to the actual canonical source. Compute that path relative to the translated file and preserve any query and fragment. Keep destinations with a scheme, root-relative paths, and self-fragments unchanged. Apply these conventions to document headings and links; keep code blocks and inline code literals unchanged.
 
 For example, suppose a supplied English Rule contains the heading `## Validation` and links to it with `[Validation](#validation)`. That Rule's link qualifies the heading for an anchor in its mirror:
 
