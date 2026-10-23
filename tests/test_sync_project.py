@@ -102,6 +102,24 @@ class SyncProjectTest(unittest.TestCase):
         } for key, value in entry.items())
         lock_path.write_text(json.dumps(lock), encoding='utf-8')
 
+    def test_broad_sync_uses_local_rule_entry_and_preserves_shared_entry(self):
+        self.config['ruleEntry'] = 'AGENTS.local.md'
+        self.save_config()
+        self.write('AGENTS.local.md', '# Personal\r\n\r\nKeep local context.\r\n')
+        self.write('.agents/rules/personal.md', '# Personal policy\n')
+        before = self.snapshot()
+        result = self.sync(True)
+        self.assertEqual(result.check, 'drift')
+        self.assertIn('AGENTS.local.md', result.changed_paths)
+        self.assertNotIn('AGENTS.md', result.changed_paths)
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.sync().check, 'clean')
+        self.assertIn(b'- `.agents/rules/personal.md`', (self.target / 'AGENTS.local.md').read_bytes())
+        self.assertEqual((self.target / 'AGENTS.md').read_bytes(), before['AGENTS.md'])
+        after = self.snapshot()
+        self.assertEqual(self.sync().changed_paths, ())
+        self.assertEqual(self.snapshot(), after)
+
     def test_native_settings_sync_update_and_retirement_preserve_unrelated_fields(self):
         path = self.target / '.codex/config.toml'
         path.write_bytes(path.read_bytes() + b'\n[features]\nkeep_local = true\n')

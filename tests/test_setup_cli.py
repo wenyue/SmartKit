@@ -671,6 +671,39 @@ class SetupCliTest(unittest.TestCase):
                 target, source_root=REPO_ROOT, catalog=catalog, config=config,
             ))
 
+    def test_local_rule_entry_and_selection_are_frozen_through_finish(self):
+        for mutation in ('create', 'change', 'delete', 'selection'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                target = root / 'target'
+                target.mkdir()
+                shared = target / 'AGENTS.md'
+                shared.write_bytes(b'# Shared project route\r\n')
+                config = target / '.agents/config.json'
+                config.parent.mkdir()
+                config.write_text('{"ruleEntry":"AGENTS.local.md"}', encoding='utf-8')
+                local = target / 'AGENTS.local.md'
+                if mutation != 'create':
+                    local.write_bytes(b'# Personal configuration\n')
+                session = self.private_session(root)
+                with redirect_stdout(StringIO()):
+                    self.assertEqual(self.prepare(target, session), 0)
+                self.write_generated_outputs(session)
+                if mutation in ('create', 'change'):
+                    local.write_bytes(b'# Concurrent personal configuration\n')
+                elif mutation == 'delete':
+                    local.unlink()
+                else:
+                    config.write_text('{"ruleEntry":"AGENTS.md"}', encoding='utf-8')
+                before = self.snapshot_tree(target)
+                with redirect_stderr(StringIO()) as error, redirect_stdout(StringIO()):
+                    self.assertEqual(setup_project_agents.main(['finish', '--target', str(target),
+                        '--session', str(session), *self.source_args()]), 2)
+                self.assertIn('target changed after start', error.getvalue())
+                self.assertEqual(self.snapshot_tree(target), before)
+                self.assertEqual(shared.read_bytes(), b'# Shared project route\r\n')
+                self.assertFalse((target / '.agents/smartkit.lock.json').exists())
+
     def test_native_agent_inventory_freezes_addition_content_deletion_and_moves(self):
         for directory, suffix in (
             ('.codex/agents', '.toml'), ('.cursor/agents', '.md'),

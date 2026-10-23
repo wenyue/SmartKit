@@ -16,7 +16,7 @@ SCRIPTS_ROOT = REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import workflow  # noqa: E402
-from project_config import project_rules  # noqa: E402
+from project_config import project_rules, transaction  # noqa: E402
 
 
 class SyncProjectRulesTest(unittest.TestCase):
@@ -193,6 +193,115 @@ class SyncProjectRulesTest(unittest.TestCase):
                 'changed_paths': [],
             })
             self.assertEqual(agents.read_bytes(), updated)
+
+    def test_local_entry_check_apply_and_repeat_preserve_shared_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            shared = target / 'AGENTS.md'
+            shared.write_bytes(b'# Shared\r\n\r\nKeep the shared project route.\r\n')
+            self.write_rule(target, 'local.md', body='Local guidance.')
+            config = target / '.agents/config.json'
+            config.write_text(json.dumps({'ruleEntry': 'AGENTS.local.md'}), encoding='utf-8')
+            local = target / 'AGENTS.local.md'
+            local.write_bytes(b'# Personal\r\n\r\n## Agent skills\r\n\r\nKeep this.\r\n')
+            before = {path.relative_to(target): path.read_bytes() for path in target.rglob('*') if path.is_file()}
+            with mock.patch.object(workflow, '_create_session') as create, \
+                 mock.patch.object(workflow.bootstrap, 'main') as bootstrap:
+                for arguments, expected_status, expected_paths in (
+                    (['--check'], 1, ['AGENTS.local.md']), ([], 0, ['AGENTS.local.md']), ([], 0, []),
+                ):
+                    output = StringIO()
+                    with redirect_stdout(output):
+                        status = workflow.main(['sync-project-rules', '--target', str(target), *arguments])
+                    self.assertEqual(status, expected_status)
+                    self.assertEqual(json.loads(output.getvalue())['changed_paths'], expected_paths)
+                    if arguments:
+                        self.assertEqual({path.relative_to(target): path.read_bytes()
+                                          for path in target.rglob('*') if path.is_file()}, before)
+                    self.assertEqual(shared.read_bytes(), before[Path('AGENTS.md')])
+                create.assert_not_called()
+                bootstrap.assert_not_called()
+            self.assertIn(b'- `.agents/rules/local.md`', local.read_bytes())
+            self.assertTrue(local.read_bytes().startswith(before[Path('AGENTS.local.md')]))
+            self.assertEqual(config.read_bytes(), before[Path('.agents/config.json')])
+
+    def test_local_entry_rejects_symlink_and_directory_without_writing_shared_entry(self):
+        for kind in ('directory', 'symlink'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                self.write_rule(target, 'local.md', body='Local guidance.')
+                (target / '.agents/config.json').write_text('{"ruleEntry":"AGENTS.local.md"}', encoding='utf-8')
+                shared = target / 'AGENTS.md'
+                shared.write_bytes(b'# Shared\n')
+                local = target / 'AGENTS.local.md'
+                outside = target / 'personal.txt'
+                outside.write_bytes(b'preserve outside entry\n')
+                if kind == 'symlink':
+                    try:
+                        local.symlink_to(outside)
+                    except OSError:
+                        self.skipTest('symlinks unavailable')
+                else:
+                    local.mkdir()
+                with self.assertRaises(project_rules.ProjectRuleSyncError):
+                    project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+                self.assertEqual(shared.read_bytes(), b'# Shared\n')
+                self.assertEqual(outside.read_bytes(), b'preserve outside entry\n')
+                self.assertTrue(local.is_symlink() if kind == 'symlink' else local.is_dir())
+
+    def test_rule_entry_choice_drift_after_planning_preserves_both_entries(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure, initial in ((secure, initial) for secure in modes for initial in (None, 'AGENTS.local.md')):
+            with self.subTest(secure=secure, initial=initial), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                self.write_rule(target, 'local.md', body='Local guidance.')
+                config = target / '.agents/config.json'
+                if initial is not None:
+                    config.write_text(json.dumps({'ruleEntry': initial}), encoding='utf-8')
+                shared = target / 'AGENTS.md'
+                local = target / 'AGENTS.local.md'
+                shared.write_bytes(b'# Shared\n')
+                local.write_bytes(b'# Personal\n')
+                real_apply = project_rules.apply_plan
+                def change_choice_then_apply(root, plan, *, postcondition):
+                    config.write_text(json.dumps({'ruleEntry': 'AGENTS.local.md' if initial is None else 'AGENTS.md'}),
+                                      encoding='utf-8')
+                    return real_apply(root, plan, postcondition=postcondition)
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     mock.patch.object(project_rules, 'apply_plan', side_effect=change_choice_then_apply):
+                    with self.assertRaises(project_rules.ProjectRuleSyncError):
+                        project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+                self.assertEqual(shared.read_bytes(), b'# Shared\n')
+                self.assertEqual(local.read_bytes(), b'# Personal\n')
+                self.assertEqual(json.loads(config.read_bytes())['ruleEntry'],
+                                 'AGENTS.local.md' if initial is None else 'AGENTS.md')
+
+    def test_rule_entry_guard_rolls_back_index_after_config_changes_during_postcondition(self):
+        modes = (True, False) if transaction._SECURE_DIR_FDS else (False,)
+        for secure in modes:
+            with self.subTest(secure=secure), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                self.write_rule(target, 'local.md', body='Local guidance.')
+                config = target / '.agents/config.json'
+                config.write_bytes(b'{"ruleEntry":"AGENTS.local.md"}')
+                shared = target / 'AGENTS.md'
+                local = target / 'AGENTS.local.md'
+                shared.write_bytes(b'# Shared\n')
+                local.write_bytes(b'# Personal\n')
+                concurrent = b'{"ruleEntry":"AGENTS.local.md","note":"concurrent edit"}'
+                real_apply = project_rules.apply_plan
+                def apply_with_late_edit(root, plan, *, postcondition):
+                    def edit_after_check():
+                        postcondition()
+                        config.write_bytes(concurrent)
+                    return real_apply(root, plan, postcondition=edit_after_check)
+                with mock.patch.object(transaction, '_SECURE_DIR_FDS', secure), \
+                     mock.patch.object(project_rules, 'apply_plan', side_effect=apply_with_late_edit):
+                    with self.assertRaises(project_rules.ProjectRuleSyncError):
+                        project_rules.synchronize_project_rules(REPO_ROOT, target, check_only=False)
+                self.assertEqual(shared.read_bytes(), b'# Shared\n')
+                self.assertEqual(local.read_bytes(), b'# Personal\n')
+                self.assertEqual(config.read_bytes(), concurrent)
 
     def test_local_rules_without_metadata_are_required(self):
         with tempfile.TemporaryDirectory() as directory:

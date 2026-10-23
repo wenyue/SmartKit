@@ -19,7 +19,6 @@ from project_config.project_rendering import (
     _render_project_agents, _remove_dotted_field, _render_project_mcp, _render_project_settings,
 )
 from project_config.project_rules import (
-    ENTRY_PATH,
     ProjectRuleSyncError,
     render_entry_agents,
     render_project_rule_index,
@@ -272,10 +271,11 @@ def render_desired_state(
                             source_root, target_root, catalog, config, project_rules,
                         ),
                     })
-                    content = render_entry_agents(target_root, content)
+                    content = render_entry_agents(target_root, content, config.rule_entry)
                 except ProjectRuleSyncError as error:
                     raise RenderError(str(error)) from error
-            _copy_file(files, asset.target, content)
+            target = config.rule_entry if asset.id == 'entry-agents' else asset.target
+            _copy_file(files, target, content)
             continue
         if asset.kind == 'wrapper':
             template = (source_root / asset.source).read_text(encoding='utf-8')
@@ -404,7 +404,7 @@ def render_desired_state(
             sources=sources,
             external_sources=external_assets,
             structured_paths=tuple(native_documents),
-        unmanaged_paths=(ENTRY_PATH, *generated_targets),
+            unmanaged_paths=(config.rule_entry, *generated_targets),
             previous=previous_ownership,
             contracts=contracts,
             project_files=tuple(project_files),
@@ -438,6 +438,8 @@ def render_desired_state(
     desired_files = tuple(DesiredFile(path, content) for path, content in sorted(files.items()))
     delete_paths.update(ownership.delete_paths)
     delete_paths.difference_update(files)
+    # Entry selection owns one section and never retires either complete entry file.
+    delete_paths.difference_update({PurePosixPath('AGENTS.md'), PurePosixPath('AGENTS.local.md')})
     return RenderedState(
         desired_files,
         desired_fields,

@@ -115,6 +115,7 @@ class ProjectConfig:
     agents: tuple[ProjectAgentSpec, ...] = ()
     maintenance: MaintenanceConfig | None = None
     settings: tuple[DesiredField, ...] = ()
+    rule_entry: PurePosixPath = PurePosixPath('AGENTS.md')
 
     @property
     def external_skills(self) -> tuple[ExternalSkillSpec, ...]:
@@ -187,3 +188,4 @@ class Change:
 @dataclass(frozen=True)
 class Plan:
     changes: tuple[Change, ...]
+    read_guards: tuple[tuple[PurePosixPath, ExpectedEntry | None], ...] = ()

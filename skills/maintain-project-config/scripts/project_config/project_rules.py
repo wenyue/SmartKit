@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -10,15 +11,17 @@ from project_state.ownership import OwnershipError
 from project_state.paths import is_link_like as _is_link_like, ProjectError, confined_target
 from project_state.skill_metadata import RuleMetadataError
 
+from .catalog import parse_rule_entry
 from .discovery import DiscoveryError, discover_project_rules
 from .markdown import live_headings, live_text
 from .models import ChangeKind, DesiredFile, Plan, ProjectConfig, ProjectRuleSpec
 from .ownership import load_ownership
-from .planner import PlanningError, build_plan
+from .planner import PlanningError, _read_current, build_plan
 from .transaction import TransactionError, apply_plan
 
 
 ENTRY_PATH = PurePosixPath('AGENTS.md')
+CONFIG_PATH = PurePosixPath('.agents/config.json')
 PROJECT_RULES_TITLE = 'Project rules'
 _RULE_PATH = re.compile(r'\.agents/rules/([^`|/\r\n]+\.md)(?=[`)\s]|$)')
 _INDEX_REFERENCE = re.compile(r'`[^`\r\n]+\.md`')
@@ -45,9 +48,11 @@ def render_rule_index(source_root: Path, required: list[str]) -> str:
     return template.replace('{{rule_items}}', '\n'.join(items)).strip()
 
 
-def validate_project_rule_index(target_root: Path) -> None:
+def validate_project_rule_index(
+    target_root: Path, entry_path: PurePosixPath = ENTRY_PATH,
+) -> None:
     """Refuse legacy conditional or ambiguous declarations before target effects."""
-    _index_references(_read_entry(target_root))
+    _index_references(_read_entry(target_root, entry_path))
 
 
 def render_project_rule_index(
@@ -57,7 +62,7 @@ def render_project_rule_index(
     config: ProjectConfig,
     project_rules: tuple[ProjectRuleSpec, ...],
 ) -> str:
-    validate_project_rule_index(target_root)
+    validate_project_rule_index(target_root, config.rule_entry)
     required = []
     for asset in catalog.assets:
         if (
@@ -93,21 +98,23 @@ def project_rules_section_bounds(content: str) -> tuple[int, int] | None:
     return start, end
 
 
-def _read_entry(target_root: Path) -> bytes | None:
+def _read_entry(
+    target_root: Path, entry_path: PurePosixPath = ENTRY_PATH,
+) -> bytes | None:
     try:
-        entry = confined_target(target_root, ENTRY_PATH)
+        entry = confined_target(target_root, entry_path)
     except ProjectError as error:
         raise ProjectRuleSyncError(str(error)) from error
     if not entry.exists():
         return None
     if _is_link_like(entry) or not entry.is_file():
-        raise ProjectRuleSyncError('project AGENTS.md is unsafe')
+        raise ProjectRuleSyncError(f'project {entry_path} is unsafe')
     try:
         content = entry.read_bytes()
         content.decode('utf-8')
     except (OSError, UnicodeDecodeError) as error:
         raise ProjectRuleSyncError(
-            'project AGENTS.md is not readable UTF-8'
+            f'project {entry_path} is not readable UTF-8'
         ) from error
     return content
 
@@ -147,9 +154,11 @@ def _replace_project_rules_section(current: bytes | None, block: bytes) -> bytes
     return (content[:start] + body + separator + suffix).encode()
 
 
-def render_entry_agents(target_root: Path, block: bytes) -> bytes:
-    """Replace only the owned Project rules section in a safe AGENTS.md."""
-    return _replace_project_rules_section(_read_entry(target_root), block)
+def render_entry_agents(
+    target_root: Path, block: bytes, entry_path: PurePosixPath = ENTRY_PATH,
+) -> bytes:
+    """Replace only the owned Project rules section in the selected safe entry."""
+    return _replace_project_rules_section(_read_entry(target_root, entry_path), block)
 
 
 def _managed_rule_paths(
@@ -295,13 +304,21 @@ def _plan_project_rule_sync(source_root: Path, target_root: Path) -> Plan:
     source = Path(source_root).resolve()
     target = Path(target_root).absolute()
     catalog = load_catalog(source)
+    config_content, config_expected = _read_current(target, CONFIG_PATH)
+    try:
+        document = {} if config_content is None else json.loads(config_content.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ProjectRuleSyncError('project config is not readable UTF-8 JSON') from error
+    if not isinstance(document, dict):
+        raise ProjectRuleSyncError('project config must be an object')
+    entry_path = parse_rule_entry(document.get('ruleEntry', 'AGENTS.md'))
     managed = _managed_rule_paths(target, catalog)
     project_rules = discover_project_rules(
         target,
         catalog,
         previous_managed=managed,
     )
-    current = _read_entry(target)
+    current = _read_entry(target, entry_path)
     required = _preserved_references(current, managed)
     indexed = {_row_path(reference) for reference in required}
     for relative in sorted(managed, key=lambda path: path.as_posix()):
@@ -318,12 +335,14 @@ def _plan_project_rule_sync(source_root: Path, target_root: Path) -> Plan:
     index = render_rule_index(source, required)
     block = template.replace('{{project_rule_index}}', index).encode()
     desired = _replace_project_rules_section(current, block)
-    plan = build_plan(target, (DesiredFile(ENTRY_PATH, desired),))
+    plan = build_plan(target, (DesiredFile(entry_path, desired),))
     change = plan.changes[0]
     observed = None if change.expected is None else change.expected.content
     if observed != current:
-        raise PlanningError('project AGENTS.md changed while its Rule index was planned')
-    return plan
+        raise PlanningError(f'project {entry_path} changed while its Rule index was planned')
+    if (config_content, config_expected) != _read_current(target, CONFIG_PATH):
+        raise PlanningError('project config changed while its Rule index was planned')
+    return Plan(plan.changes, ((CONFIG_PATH, config_expected),))
 
 
 def synchronize_project_rules(

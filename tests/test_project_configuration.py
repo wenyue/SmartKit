@@ -645,6 +645,45 @@ class ProjectConfigurationTest(unittest.TestCase):
         for relative in ('.agents/config.json', '.codex/config.toml', '.cursor/cli.json', 'AGENTS.md'):
             self.assertEqual((self.entry / 'files' / relative).read_bytes(), (self.target / relative).read_bytes())
 
+    def test_full_setup_local_entry_stays_within_existing_repository_backup_scope(self):
+        from contextlib import redirect_stdout, redirect_stderr
+        from io import StringIO
+        from test_setup_cli import SetupCliTest
+        import setup_project_agents
+        config = {'maintenance': self.binding, 'setupVersion': '1.2.23', 'ruleEntry': 'AGENTS.local.md'}
+        self.write(self.target, '.agents/config.json', json.dumps(config))
+        shared = self.target / 'AGENTS.md'
+        shared.write_bytes(b'# Shared route\r\n\r\nKeep the tracked project document.\r\n')
+        self.write(self.target, 'AGENTS.local.md', '# Personal configuration\n')
+        for relative in self.module.backup.DEFAULT_FILES:
+            if relative in ('AGENTS.md', '.agents/config.json'):
+                continue
+            self.write(self.target, relative, '{}\n' if relative.endswith('.json') else '# Local context\n')
+        for relative in self.module.backup.DEFAULT_DIRECTORIES:
+            (self.target / relative).mkdir(parents=True, exist_ok=True)
+        paths = [relative for relative in self.module.backup.DEFAULT_FILES if relative != 'AGENTS.md']
+        paths.extend(self.module.backup.DEFAULT_DIRECTORIES)
+        paths.append('AGENTS.local.md')
+        self.module.initialize_entry(self.target, self.entry, paths)
+        self.module.apply(self.target)
+        scope = (self.entry / 'manifest.json').read_bytes()
+        original = shared.read_bytes()
+        helper = SetupCliTest()
+        session = helper.private_session(self.root)
+        with redirect_stdout(StringIO()):
+            self.assertEqual(helper.prepare(self.target, session), 0)
+        helper.write_generated_outputs(session)
+        with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as error:
+            self.assertEqual(setup_project_agents.main(['finish', '--target', str(self.target),
+                '--session', str(session), *helper.source_args()]), 0, error.getvalue())
+        self.assertEqual((self.entry / 'manifest.json').read_bytes(), scope)
+        self.assertFalse((self.entry / 'files/AGENTS.md').exists())
+        self.assertEqual(shared.read_bytes(), original)
+        self.assertEqual((self.entry / 'files/AGENTS.local.md').read_bytes(),
+                         (self.target / 'AGENTS.local.md').read_bytes())
+        self.assertIn(b'- `.agents/rules/tools.md`', (self.target / 'AGENTS.local.md').read_bytes())
+        self.assertEqual(self.module.inspect(self.target)['changes'], [])
+
     def test_full_setup_retains_source_and_rolls_back_target_on_late_source_drift(self):
         from contextlib import redirect_stdout, redirect_stderr
         from io import StringIO

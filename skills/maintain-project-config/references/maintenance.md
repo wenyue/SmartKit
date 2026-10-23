@@ -39,7 +39,7 @@ An entry has `manifest.json` and `files/`. Its manifest declares exact target-re
 
 Only `files` and `directories` are supported manifest fields. Versioned manifests are unsupported; report the format error and preserve the source rather than converting it.
 
-The snapshot under `files/` preserves selected files byte for byte and selected directories recursively. Native MCP and settings files, project instructions and selected generated files can be backed up in full. Backup neither splits fields nor uses `smartkit.lock.json` to decide which bytes to copy. The lock and existing setup mechanisms retain their separate behavior; restoring a full-file snapshot requires no MCP regeneration. An explicit scope may include the lock as an ordinary complete file; defaults omit it and runtime state.
+The snapshot under `files/` preserves selected files byte for byte and selected directories recursively. Selecting `AGENTS.local.md` through `ruleEntry` does not by itself add that local file to an existing manifest; explicitly select it through the accepted backup-scope route when it needs restoration. Native MCP and settings files, project instructions and selected generated files can be backed up in full. Backup neither splits fields nor uses `smartkit.lock.json` to decide which bytes to copy. The lock and existing setup mechanisms retain their separate behavior; restoring a full-file snapshot requires no MCP regeneration. An explicit scope may include the lock as an ordinary complete file; defaults omit it and runtime state.
 
 Select the paths needed to restore the user's configuration. Review their full content before accepting the scope: the backup copies credentials and machine paths if those appear in selected files, and performs no secret filtering. Keep credential values in their existing credential facilities. Target-local synchronization state stays outside the backup. When selected, `.agents/config.json` is also copied in full, including binding and `setupVersion`; a copied setup marker is not evidence that this checkout completed setup. Its repository binding must match the selected source; resolve a mismatch rather than silently rewriting snapshot bytes. Snapshots support regular files and directories; symlinks and paths rejected by command validation require resolution before proceeding. Report unavailable source content rather than treating it as an empty backup.
 
@@ -129,7 +129,9 @@ python "<maintain>" sync-project --target "<target-root>" --check
 
 This route renders established discovery and native Agent, MCP and settings mappings without fetching, blueprint authoring or full migration. Check mode writes nothing: exit 0 means clean, exit 1 means drift, and exit 2 means failure. If rendering intentionally changes selected backed-up files, adopt those accepted results and reconfirm source-target agreement before publication. In either local mode, use this route directly after editing the project's canonical inputs.
 
-When only the generated `Project rules` section in `AGENTS.md` needs updating, use the narrower route, which does not require full setup ownership:
+The schema's `ruleEntry` selects `AGENTS.md` (the default) or `AGENTS.local.md` for the generated `Project rules` section. Both local synchronization routes manage that section in the selected file, preserving its other bytes and the unselected entry. Changing the selection does not move or remove an existing section or delete the former entry.
+
+When only that generated section needs updating, use the narrower route, which does not require full setup ownership:
 
 ```text
 python "<maintain>" sync-project-rules --target "<target-root>"
@@ -140,7 +142,7 @@ Honor prerequisite and ownership failures. Maintenance neither invokes full setu
 
 ## Keep personal configuration out of business Git
 
-Machine-only and repository modes maintain target-local Git exclusions for their configuration scope, local synchronization state and known generated outputs. The maintenance commands manage exclusions after binding, application and deliberate local synchronization; full setup retains its own completion route. Exclusions belong in the target worktree's Git `info/exclude`, resolved by Git and anchored correctly within the business repository, including nested monorepo targets. Preserve shared `.gitignore` files and unrelated exclusion rules.
+Machine-only and repository modes maintain target-local Git exclusions for their configuration scope, local synchronization state and known generated outputs. Machine-only mode includes the selected Rule entry in those exclusions. The maintenance commands manage exclusions after binding, application and deliberate local synchronization; full setup retains its own completion route. Exclusions belong in the target worktree's Git `info/exclude`, resolved by Git and anchored correctly within the business repository, including nested monorepo targets. Preserve shared `.gitignore` files and unrelated exclusion rules.
 
 Exclusions affect untracked paths only. Preserve and report configuration already tracked by business Git; choosing a personal mode grants no automatic untracking or history rewrite. Without a Git worktree, report exclusions as not applicable. Switching to project-shared mode retires only the verified SmartKit-managed block for this target; retain and report other matching exclusions. A failed exclusion update leaves mode enforcement incomplete even if configuration was saved.
 

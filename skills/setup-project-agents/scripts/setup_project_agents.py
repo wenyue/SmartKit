@@ -16,7 +16,7 @@ from pathlib import Path, PurePosixPath
 import agents_setup  # Expose the supported maintenance engine.
 from project_state.models import ContractError
 from project_state.catalog import load_catalog, safe_relative
-from project_config.catalog import parse_external_skills, parse_mcp_servers, parse_project_agents
+from project_config.catalog import parse_external_skills, parse_mcp_servers, parse_project_agents, parse_rule_entry
 from agents_setup.agent_discovery import discover_native_agents
 from project_config.discovery import DiscoveryError, discover_project_rules, discover_project_skills
 from agents_setup.generation import generation_requests
@@ -135,6 +135,7 @@ def _request(
         'configuration_fingerprint': project_configuration.require_converged(target),
         'maintenance': project_configuration.binding_document(config.maintenance) if config.maintenance else None,
         'settings': [{'path': str(item.path), 'key': item.key, 'value': item.value} for item in config.settings],
+        'rule_entry': config.rule_entry.as_posix(),
         'harnesses': [item.value for item in _HARNESSES],
         'selected_rules': list(config.selected_rules),
         'selected_skills': list(config.selected_skills),
@@ -260,7 +261,7 @@ def _request_config(
         'target', 'source_root', 'source_commit', 'harnesses', 'selected_rules',
         'selected_skills', 'external_sources', 'mcp_servers', 'generation_requests',
         'external_snapshot_sha256', 'project_agents', 'source_fingerprint',
-        'target_fingerprint', 'configuration_fingerprint', 'maintenance', 'settings',
+        'target_fingerprint', 'configuration_fingerprint', 'maintenance', 'settings', 'rule_entry',
     }
     if set(request) != required:
         raise SetupError('session request has an invalid shape')
@@ -328,6 +329,7 @@ def _request_config(
         config = ProjectConfig(
             *selections, external_sources, mcp_servers, project_agents,
             parse_maintenance(request['maintenance']), parse_project_settings(request['settings']),
+            parse_rule_entry(request['rule_entry']),
         )
     except (KeyError, TypeError, ValueError, SetupError) as error:
         raise SetupError('session request has invalid setup choices') from error
@@ -521,6 +523,7 @@ def _target_evidence_paths(
         paths[relative] = paths.get(relative, False) or content
 
     add(PurePosixPath('.agents/config.json'))
+    add(config.rule_entry)
     add(OWNERSHIP_PATH)
     try:
         previous = load_ownership(root, catalog=catalog)
@@ -566,7 +569,7 @@ def _target_evidence_paths(
                     if child.is_file():
                         add(asset.target / child.relative_to(source).as_posix())
             continue
-        add(asset.target)
+        add(config.rule_entry if asset.id == 'entry-agents' else asset.target)
 
     rules_root = root / '.agents' / 'rules'
     add(PurePosixPath('.agents/rules'))
@@ -658,6 +661,7 @@ def _target_fingerprint(
         paths[relative] = paths.get(relative, False) or include_content
     digest = hashlib.sha256()
     digest.update(b'smartkit-setup-target\0v2\0')
+    digest.update(config.rule_entry.as_posix().encode('utf-8') + b'\0')
     link_roots: list[PurePosixPath] = []
     for relative_path, include_content in sorted(
         paths.items(), key=lambda item: item[0].as_posix(),
@@ -875,7 +879,7 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
     discovery = discover_native_agents(project.root)
     if discovery.issues:
         raise SetupError('; '.join(discovery.issues))
-    validate_project_rule_index(project.root)
+    validate_project_rule_index(project.root, config.rule_entry)
     discover_project_skills(project.root, catalog)
     try:
         previous = load_ownership(project.root, catalog=catalog)

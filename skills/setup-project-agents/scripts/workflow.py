@@ -350,6 +350,7 @@ def _inspect(args: argparse.Namespace) -> int:
                     raise WorkflowError(f'project Agent source is empty: {relative}')
         return {
             'selected_rules': list(config.selected_rules), 'selected_skills': list(config.selected_skills),
+            'rule_entry': config.rule_entry.as_posix(),
             'project_agents': [{'id': agent.id, 'sources': [str(path) for path in agent.source_paths]} for agent in config.agents],
             'external_sources': [item.id for item in config.external_sources],
             'mcp_servers': [item.id for item in config.mcp_servers],
@@ -361,7 +362,7 @@ def _inspect(args: argparse.Namespace) -> int:
         return {'initialized': state is not None, 'managed_assets': len(state.assets) if state else 0}
 
     def project_discovery() -> dict[str, object]:
-        validate_project_rule_index(target)
+        validate_project_rule_index(target, inspect_project(target, catalog=catalog).config.rule_entry)
         return {
             'additional_rules': [str(rule.path) for rule in discover_project_rules(target, catalog)],
             'additional_skills': [str(skill.path) for skill in discover_project_skills(target, catalog)],
@@ -719,7 +720,7 @@ def build_parser() -> argparse.ArgumentParser:
     sync_project = phases.add_parser('sync-project', help='Synchronize only local project discovery and Agent/MCP mappings; no fetch or generation', allow_abbrev=False)
     sync_project.add_argument('--target', type=Path, required=True)
     sync_project.add_argument('--check', action='store_true', help='Report drift without writing (exit 1); clean exits 0, errors exit 2')
-    sync_project_rules = phases.add_parser('sync-project-rules', help='Synchronize only AGENTS.md Project rules; no setup ownership required', allow_abbrev=False)
+    sync_project_rules = phases.add_parser('sync-project-rules', help='Synchronize only the selected Project rules entry; no setup ownership required', allow_abbrev=False)
     sync_project_rules.add_argument('--target', type=Path, required=True)
     sync_project_rules.add_argument('--check', action='store_true')
     return parser

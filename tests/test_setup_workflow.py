@@ -477,6 +477,50 @@ class SetupWorkflowTest(unittest.TestCase):
                 generated_resource.read_bytes(), generated_resource_content
             )
 
+    def test_pinned_full_setup_uses_local_rule_entry_and_keeps_shared_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            origin = self.make_origin(root)
+            target = root / 'target'
+            target.mkdir()
+            self.write_matt_context(target)
+            shared = target / 'AGENTS.md'
+            shared.write_bytes(shared.read_bytes() + b'\r\nPreserve every byte.\r\n')
+            (target / 'AGENTS.local.md').write_bytes(b'# Personal configuration\r\n\r\n## Agent skills\r\n\r\nKeep local notes.\r\n')
+            original = shared.read_bytes()
+            config = target / '.agents/config.json'
+            config.parent.mkdir()
+            config.write_text(json.dumps({'ruleEntry': 'AGENTS.local.md', 'maintenance': {'mode': 'local'},
+                                          'setupVersion': '1.2.23'}), encoding='utf-8')
+            output = StringIO()
+            with mock.patch.object(bootstrap, 'CANONICAL_REPOSITORY', origin.as_uri()), redirect_stdout(output):
+                self.assertEqual(workflow.main(['start', '--target', str(target)]), 0)
+            start = json.loads(output.getvalue())
+            self.assertIsNotNone(start['source_commit'])
+            session = Path(start['session'])
+            self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
+            request = json.loads((session / 'request.json').read_bytes())
+            self.assertEqual(request['rule_entry'], 'AGENTS.local.md')
+            for item in request['generation_requests']:
+                generated = session / 'generated' / item['target']
+                generated.parent.mkdir(parents=True, exist_ok=True)
+                generated.write_text(f"# Generated {item['id']}\n", encoding='utf-8')
+                with redirect_stdout(StringIO()):
+                    self.assertEqual(workflow.main(['register', '--session', str(session),
+                        '--request-id', item['id'], '--output', str(generated)]), 0)
+            output, error = StringIO(), StringIO()
+            with redirect_stdout(output), redirect_stderr(error):
+                self.assertEqual(workflow.main(['finish', '--session', str(session)]), 0, error.getvalue())
+            finish = json.loads(output.getvalue())
+            self.assertEqual(finish['check'], 'clean')
+            self.assertIn('AGENTS.local.md', finish['changed_paths'])
+            self.assertNotIn('AGENTS.md', finish['changed_paths'])
+            self.assertEqual(json.loads(config.read_bytes())['setupVersion'], workflow.load_catalog(REPO_ROOT).plugin_version)
+            self.assertFalse(session.exists())
+            self.assertEqual(shared.read_bytes(), original)
+            self.assertIn(b'- `.agents/rules/tools.md`', (target / 'AGENTS.local.md').read_bytes())
+            self.assertIn(b'## Agent skills', (target / 'AGENTS.local.md').read_bytes())
+
     def test_pinned_result_rejects_malformed_external_source_provenance(self):
         malformed_sources = (
             [{'id': 'missing-validated-fields'}],

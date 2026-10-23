@@ -42,7 +42,7 @@ from .models import (
 
 
 _GITHUB_SOURCE = re.compile(r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')
-_PROJECT_CONFIG_FIELDS = frozenset({'$schema', 'skills', 'mcp', 'agents', 'setupVersion', 'maintenance', 'settings'})
+_PROJECT_CONFIG_FIELDS = frozenset({'$schema', 'skills', 'mcp', 'agents', 'setupVersion', 'maintenance', 'settings', 'ruleEntry'})
 _EXTERNAL_SOURCE_FIELDS = frozenset({'source', 'ref', 'include'})
 _MCP_SERVER_FIELDS = frozenset({
     'id', 'harnesses', 'command', 'args', 'cwd', 'env', 'url', 'overrides',
@@ -540,6 +540,12 @@ def parse_project_settings(value: object) -> tuple[DesiredField, ...]:
     return tuple(result)
 
 
+def parse_rule_entry(value: object) -> PurePosixPath:
+    if not isinstance(value, str) or value not in {'AGENTS.md', 'AGENTS.local.md'}:
+        raise ContractError('project config ruleEntry must be AGENTS.md or AGENTS.local.md')
+    return PurePosixPath(value)
+
+
 def load_project_config(
     path: Path | None,
     *,
@@ -568,4 +574,5 @@ def load_project_config(
         agents,
         parse_maintenance(document.get('maintenance')),
         parse_project_settings(document.get('settings')),
+        parse_rule_entry(document.get('ruleEntry', 'AGENTS.md')),
     )

@@ -145,6 +145,25 @@ def _operations(plan: Plan) -> tuple[_Operation, ...]:
     return tuple(operations)
 
 
+def _read_guard_operations(plan: Plan) -> tuple[_Operation, ...]:
+    """Reuse preimage validation for read-only dependencies, including absent files."""
+    guards = []
+    seen = {change.path for change in plan.changes}
+    for path, expected in plan.read_guards:
+        if expected is not None and not isinstance(expected, ExpectedEntry):
+            raise TransactionError(TypeError('plan read guard preimage is invalid'))
+        change = Change(
+            ChangeKind.CREATE if expected is None else ChangeKind.UNCHANGED,
+            path, b'' if expected is None else expected.content, expected,
+        )
+        _validate_change(change)
+        if path in seen:
+            raise TransactionError(ValueError(f'duplicate plan read guard: {_path_key(path)}'))
+        seen.add(path)
+        guards.append(_Operation(path, change.kind, change.content, expected))
+    return tuple(guards)
+
+
 def _open_root(root: Path) -> int:
     absolute = Path(root).absolute()
     descriptor = os.open(absolute.anchor, _DIRECTORY_FLAGS)
@@ -629,10 +648,13 @@ def _apply_secure(
     postcondition: Callable[[], None] | None,
 ) -> None:
     operations = _operations(plan)
+    read_guards = _read_guard_operations(plan)
     guard, root_fd = _root_guard(target_root)
     applied: list[_Mutation] = []
     created: list[_CreatedDirectory] = []
     try:
+        for read_guard in read_guards:
+            _expected(root_fd, read_guard)
         for change in plan.changes:
             _expected(root_fd, _Operation(
                 _validate_change(change),
@@ -647,12 +669,18 @@ def _apply_secure(
                     for index, operation in enumerate(operations)
                 }
                 for operation in operations:
+                    for read_guard in read_guards:
+                        _expected(root_fd, read_guard)
                     _expected(root_fd, operation)
                     _apply(root_fd, guard, operation, backups[operation.path], created, applied)
+                for read_guard in read_guards:
+                    _expected(root_fd, read_guard)
                 _verify_desired(root_fd, plan.changes)
                 if postcondition is not None:
                     postcondition()
                 _verify_applied(root_fd, applied)
+                for read_guard in read_guards:
+                    _expected(root_fd, read_guard)
                 _verify_desired(root_fd, plan.changes)
             except BaseException as error:
                 original = error.original_error if isinstance(error, TransactionError) else error
@@ -668,6 +696,7 @@ def _apply_fallback(
 ) -> None:
     """Functional fallback with repeated confinement; it cannot provide POSIX openat guarantees."""
     operations = _operations(plan)
+    read_guards = _read_guard_operations(plan)
     root = Path(target_root)
     root_entry = root.lstat()
     root_identity = (root_entry.st_dev, root_entry.st_ino)
@@ -824,6 +853,8 @@ def _apply_fallback(
 
     temporary_context = tempfile.TemporaryDirectory(prefix='agents-setup-transaction-')
     try:
+        for read_guard in read_guards:
+            expected(read_guard)
         for change in plan.changes:
             expected(_Operation(
                 change.path,
@@ -863,6 +894,8 @@ def _apply_fallback(
                     item.identity,
                 )
         for operation in operations:
+            for read_guard in read_guards:
+                expected(read_guard)
             expected(operation)
             backup = backups[operation.path]
             path = target(operation.path)
@@ -909,11 +942,15 @@ def _apply_fallback(
                 _replace(temporary, path)
             finally:
                 temporary.unlink(missing_ok=True)
+        for read_guard in read_guards:
+            expected(read_guard)
         for change in plan.changes:
             verify_desired(change)
         if postcondition is not None:
             postcondition()
         verify_applied()
+        for read_guard in read_guards:
+            expected(read_guard)
         for change in plan.changes:
             verify_desired(change)
     except BaseException as error:

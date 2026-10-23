@@ -1566,6 +1566,46 @@ class SetupRendererTest(unittest.TestCase):
             self.assertEqual(updated.count('## Project rules'), 2)
             self.assertTrue(updated.startswith(outside.replace('GitHub Issues', 'Local issues')))
 
+    def test_switching_rule_entry_preserves_previously_owned_document_and_checks_its_digest(self):
+        from project_config.transaction import apply_plan
+        for previous, selected in (('AGENTS.md', 'AGENTS.local.md'), ('AGENTS.local.md', 'AGENTS.md')):
+            for modified in (False, True):
+                with self.subTest(previous=previous, modified=modified), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    target = root / 'target'
+                    target.mkdir()
+                    original = b'# Previously owned complete entry\r\n'
+                    entry = target / previous
+                    entry.write_bytes(original)
+                    lock = target / '.agents/smartkit.lock.json'
+                    lock.parent.mkdir()
+                    lock.write_text(json.dumps({'sources': [], 'assets': [{
+                        'kind': 'file', 'role': 'entry', 'path': previous,
+                        'digest': hashlib.sha256(original).hexdigest(),
+                    }]}), encoding='utf-8')
+                    if modified:
+                        entry.write_bytes(b'# Concurrent user edit\n')
+                    expected = entry.read_bytes()
+                    generated = self.generated_tree(root)
+                    config = replace(self.config(), rule_entry=PurePosixPath(selected))
+                    if modified:
+                        before = {path.relative_to(target): path.read_bytes()
+                                  for path in target.rglob('*') if path.is_file()}
+                        with self.assertRaisesRegex(RenderError, 'modified outside setup'):
+                            self.render_with_config(target, generated, config)
+                        self.assertEqual({path.relative_to(target): path.read_bytes()
+                                          for path in target.rglob('*') if path.is_file()}, before)
+                        continue
+                    rendered = self.render_with_config(target, generated, config)
+                    self.assertNotIn(PurePosixPath(previous), rendered.delete_paths)
+                    self.assertNotIn(previous, rendered.files_by_path)
+                    apply_plan(target, build_plan(target, rendered.files, rendered.fields,
+                                                 delete_paths=rendered.delete_paths, replace_roots=rendered.replace_roots))
+                    self.assertEqual(entry.read_bytes(), expected)
+                    self.assertIn(b'## Project rules', (target / selected).read_bytes())
+                    self.assertFalse(any(asset['path'] == previous
+                                         for asset in json.loads(lock.read_bytes())['assets']))
+
     def test_project_rules_replaces_existing_section_and_preserves_adjacent_sections(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

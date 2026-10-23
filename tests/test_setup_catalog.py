@@ -40,6 +40,25 @@ class SetupCatalogTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     load_project_config(path, catalog=load_catalog(REPO_ROOT))
 
+    def test_rule_entry_defaults_and_restricts_selection_to_root_entry_documents(self):
+        schema = json.loads((REPO_ROOT / 'setup-assets/catalog/project-config.schema.json').read_bytes())
+        selection = schema['properties']['ruleEntry']
+        self.assertEqual(set(selection['enum']), {'AGENTS.md', 'AGENTS.local.md'})
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'config.json'
+            for document, expected in (({}, 'AGENTS.md'), ({'ruleEntry': 'AGENTS.md'}, 'AGENTS.md'),
+                                       ({'ruleEntry': 'AGENTS.local.md'}, 'AGENTS.local.md')):
+                with self.subTest(document=document):
+                    path.write_text(json.dumps(document), encoding='utf-8')
+                    config = load_project_config(path, catalog=load_catalog(REPO_ROOT))
+                    self.assertEqual(config.rule_entry, PurePosixPath(expected))
+            for value in (None, False, [], {}, 1, '', '../AGENTS.local.md', './AGENTS.local.md',
+                          '/AGENTS.local.md', '.agents/AGENTS.local.md', 'CLAUDE.md', 'agents.local.md'):
+                with self.subTest(value=value):
+                    path.write_text(json.dumps({'ruleEntry': value}), encoding='utf-8')
+                    with self.assertRaises(ContractError):
+                        load_project_config(path, catalog=load_catalog(REPO_ROOT))
+
     def test_project_settings_are_scoped_native_fields(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'config.json'

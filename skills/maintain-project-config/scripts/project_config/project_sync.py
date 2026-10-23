@@ -82,7 +82,7 @@ def _plan(source: Path, target: Path, catalog):
     if state is None or not state.project_sync:
         raise ProjectSyncError(
             'project synchronization needs established project mapping ownership; '
-            'run full setup first (sync-project-rules remains available for AGENTS.md only)'
+            'run full setup first (sync-project-rules remains available for the selected Rule entry only)'
         )
     config = inspect_project(target, catalog=catalog).config
     if _external_declarations(config) != _recorded_declarations(state):
@@ -93,7 +93,7 @@ def _plan(source: Path, target: Path, catalog):
     files = {}
     agents = _render_project_agents(files, target, config)
     project_files = tuple(files)
-    observed_paths = {OWNERSHIP_PATH, PurePosixPath('AGENTS.md'), *project_files,
+    observed_paths = {OWNERSHIP_PATH, config.rule_entry, *project_files,
                       *(asset.path for asset in managed), *(field.path for field in config.settings),
                       *(_MCP_NATIVE[harness][0] for server in config.mcp_servers for harness in server.harnesses)}
     observed = {path: _read_current(target, path) for path in observed_paths}
@@ -164,7 +164,7 @@ def _plan(source: Path, target: Path, catalog):
                       fields, delete_paths=result.delete_paths)
     if observed != {path: _read_current(target, path) for path in observed_paths}:
         raise ProjectSyncError('project adapters changed while synchronization was planned; retry from current inputs')
-    return plan, preserved
+    return Plan(plan.changes, rule_plan.read_guards), preserved
 
 
 def _changed(plan: Plan) -> tuple[str, ...]:

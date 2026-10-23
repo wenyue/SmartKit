@@ -62,7 +62,7 @@ def add_arguments(parser: argparse.ArgumentParser, *, include_sync: bool = False
     if include_sync:
         for name, help_text in (
             ('sync-project', 'Synchronize established local Rule/Skill discovery and Agent/MCP/settings mappings'),
-            ('sync-project-rules', 'Synchronize only the AGENTS.md Project rules index; no setup ownership required'),
+            ('sync-project-rules', 'Synchronize only the selected Project rules entry; no setup ownership required'),
         ):
             command = commands.add_parser(name, help=help_text, description=help_text, allow_abbrev=False)
             command.add_argument('--target', type=Path, required=True)
@@ -164,6 +164,7 @@ def sync_git_exclusions(target: Path, catalog: Catalog, paths: list[str] | None 
         personal.update(manifest['directories'])
         return exclude_local(target, sorted(personal))
     config = load_project_config(target / configuration.CONFIG, catalog=catalog)
+    personal.add(config.rule_entry.as_posix())
     personal.update(str(path) for agent in config.agents for path in agent.source_paths)
     personal.update(str(field.path) for field in config.settings)
     owned = load_ownership(target)
