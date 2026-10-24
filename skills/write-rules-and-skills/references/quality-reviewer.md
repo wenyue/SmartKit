@@ -59,7 +59,15 @@ For a rewrite, confirm that the Candidate actually reconsidered content, structu
 
 ## Challenge avoidable burden without losing knowledge
 
-Describe the work imposed on the reader precisely: "the reader must infer which actor owns the action" is more useful than "too abstract." Challenge repetition, accumulated caveats, production history, generic instructions, and invented terms when they obscure useful guidance or impose avoidable reading or maintenance. Treat references that restate entry rules as an explicit simplification target: determine whether the second passage serves a distinct role decision or merely duplicates the same meaning. Judge explanation against its context: if omitting or merging it preserves supported meaning and dependable understanding, its relevance alone does not earn the reading it adds. A repeated example or a lead-in that merely announces the next passage may qualify. Preserve explanations and necessary complexity that help the reader choose and act. Under the common grades, offer a clearly worthwhile, inexpensive cut as a non-blocking suggestion when the acceptance bar is already met.
+### Reading and explanation
+
+Describe the work imposed on the reader precisely: "the reader must infer which actor owns the action" is more useful than "too abstract." Challenge repetition, accumulated caveats, production history, generic instructions, and invented terms when they obscure useful guidance or impose avoidable reading or maintenance.
+
+Treat references that restate entry rules as an explicit simplification target: determine whether the second passage serves a distinct role decision or merely duplicates the same meaning. Judge explanation against its context. If omitting or merging it preserves supported meaning and dependable understanding, its relevance alone does not earn the reading it adds. A repeated example or a lead-in that merely announces the next passage may qualify.
+
+Preserve explanations and necessary complexity that help the reader choose and act. Under the common grades, offer a clearly worthwhile, inexpensive cut as a non-blocking suggestion when the acceptance bar is already met.
+
+### Mechanisms, examples, and tools
 
 Assess the mechanism as well as its prose within the affected contract. Identify any avoidable material execution, coordination, or maintenance burden through a plausible task, and show how less mechanism can satisfy the same supported outcomes and boundaries. Compatibility, recovery, and other accepted guarantees can justify complexity. A local expression edit alone does not call for mechanism redesign.
 

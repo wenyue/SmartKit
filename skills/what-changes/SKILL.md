@@ -5,21 +5,25 @@ description: Review accumulated intended changes in a read-only scope report whe
 
 # What Changes
 
-Turn the active conversation's accumulated intended changes into a scope the user can review immediately before implementation. Reconcile what is still intended, what has been set aside, and what remains unclear; show how the proposed file changes serve that scope.
+Before implementation, turn accumulated intended changes into a scope the user can review. Reconcile active goals, displaced ideas, and unresolved questions, then connect the proposed file changes to those outcomes.
 
 Run this workflow on explicit invocation, or when the user asks to execute many accumulated edits or edits discussed far apart in the active conversation. Judge autonomous invocation by the intended changes, not conversation length alone. Carry out small, clear requests normally.
 
 The review is read-only. Invocation authorizes the inspection needed for the report, not implementation or other changes.
 
-## Reconstruct the Current Intent
+## Reconstruct intent from the active conversation
 
 Use the conversation and explicitly referenced source artifacts needed to understand its intended changes. Inspect repository paths read-only when that helps identify affected files or modules. Reconcile later decisions with earlier suggestions, rejected ideas, superseded plans, and completed work so the report describes what remains to be done.
 
-Distinguish an item's status from its age or origin. A still-active Agent suggestion belongs among the goals even if the user has not explicitly endorsed it; identify it as a suggestion rather than an agreed user requirement. An older unfinished, uncanceled goal belongs in pending confirmation when its active status remains unclear. Put items there only when available evidence cannot settle their status or a material detail.
+Classify each item by its current status, not its age or origin:
+
+- Include a still-active Agent suggestion among the goals even without explicit user endorsement; label it as a suggestion, not an agreed user requirement.
+- Put an older unfinished, uncanceled goal in pending confirmation when its active status remains unclear.
+- Use pending confirmation only when available evidence cannot settle the item's status or a material detail.
 
 State gaps in accessible history or evidence rather than inventing a decision or path. If missing conversation history prevents a reliable scope review, carry that coverage gap into pending confirmation.
 
-## Present a Reviewable Scope
+## Present goals and file changes together
 
 Use four semantic sections in this order, with these emoji-prefixed bold labels. Omit empty sections:
 
@@ -30,15 +34,15 @@ Use four semantic sections in this order, with these emoji-prefixed bold labels.
 
 Keep relevant verification plans and evidence limits beside the items they qualify.
 
-For each planned file or module, combine what will change and why in one explanation, making its relationship to the applicable goal or goals clear. Name exact paths when the expected affected set is modest and evidence supports them. At roughly 30 or more files, group by module where that makes the scope readable, while still naming consequential individual files. Grouping should help the user judge the changes, not hide their reach.
+For each planned file or module, explain the change and its reason together, linking it to the applicable goals. Name exact paths when evidence supports a modest affected set. At roughly 30 or more files, group by module where useful for readability and still name consequential individual files. Grouping should expose the reach of the work, not conceal it.
 
-## Resolve Scope Before Asking to Implement
+## Resolve open items, then confirm implementation
 
 End the report by asking the user to resolve pending items. After each answer, update and recheck the report. Ask whether to begin implementation only when no pending items remain; if the initial report has none, end with that implementation question.
 
 Implement only on an affirmative answer to that question. An earlier execution request does not count as the answer. Resolving a pending item alone is not implementation confirmation.
 
-## Example Report
+## Example report
 
 These placeholders stand for conversation-supported goals, decisions, and paths. The example shows all four sections and an unresolved goal; omit empty sections in an actual report.
 

@@ -5,96 +5,102 @@ description: Assess or implement first-time adoption and upgrades of third-party
 
 # Maintain Third-Party Skills
 
-Guide first-time adoption and upgrades through one maintenance path: evaluate what the selected upstream Skills will make consumers do, settle necessary local adaptations, then generate and verify the repository snapshots. Preserve accepted local behavior until a change is chosen. Investigate risks and consequential choices before the user has to identify them, then recommend a supported approach. A clean patch application establishes only mechanical compatibility.
+Evaluate what upstream Skills will make consumers do, settle necessary local adaptations, then generate and verify the repository snapshots. Preserve accepted local behavior until a change is chosen. Investigate consequential risks proactively and recommend a supported course: a clean patch application establishes mechanical compatibility, not sound adoption.
 
-This is a project-local maintenance Skill. An assessment request authorizes investigation and a proposal; a request to add or upgrade a Skill also authorizes the ready implementation within its accepted scope. Neither extends automatically to publishing or installing the result into user environments.
+This project-local Skill serves both assessment and implementation. Assessment authorizes investigation and a proposal; a request to add or upgrade also authorizes ready implementation within its accepted scope. Neither automatically authorizes publication or installation into user environments.
 
-## Establish the maintenance boundary
+## Establish the source and affected scope
 
-Read the external-source entries in [the Skill registry](../../../skills/registry.json), their available records in [the lock](../../../vendor/external-skills.lock.json), and the listed patch files. Inspect Git state, installed Skill destinations, and managed outputs for existing work before choosing a workspace and comparison point. Establish which starting point applies to each requested Skill:
+Read the external-source declarations in [the Skill registry](../../../skills/registry.json), available [lock records](../../../vendor/external-skills.lock.json), and listed patches. Inspect Git state, installed destinations, and managed outputs for existing work before selecting a workspace and comparison point.
 
-| Starting point | Evidence and review needed |
+| Starting point | Required baseline |
 | --- | --- |
-| First adoption from a new source | No installed baseline is expected. Establish source identity, a reviewed target commit, selected Skills and their complete behavior, license, dependencies, and local integration. |
-| Add a Skill from an existing source | Review the new Skill as a first adoption. Use the source's recorded baseline for its existing selected Skills, and assess any source revision change as an upgrade for those Skills. |
-| Upgrade an installed Skill | Use the lock's resolved commit as the installed upstream baseline; a configured tag or branch name alone does not identify those bytes. Compare the target against that baseline and the current local adaptations. |
+| First adoption from a new source | No installed baseline is expected. Establish source identity, reviewed target commit, selected Skills and complete behavior, license, dependencies, and local integration. |
+| Adding a Skill from an existing source | Review the new selection as first adoption. Retain the recorded baseline for existing selections and assess any revision change as their upgrade. |
+| Upgrading an installed Skill | Use the lock's resolved commit as the installed upstream baseline and compare the target with it and current local adaptations. A configured tag or branch does not identify those bytes. |
 
-A missing lock record is normal for a genuinely new source or Skill. Existing installed content with missing or unverifiable provenance needs investigation; treating it as new adoption would bypass the baseline and preservation needed to justify its replacement. Resolve that gap before changing the affected content.
+A missing lock record is normal for a genuinely new source or selection. Installed content with missing or unverifiable provenance needs investigation before replacement; calling it new adoption would bypass preservation and baseline review.
 
-The registry and patches are inputs; distributed Skill trees, licenses, and lock are derived through [the external Skill updater](../../../scripts/update_external_skills.py). Keep adaptations with these owners rather than editing generated snapshots directly.
+The registry and patches are canonical inputs. [The updater](../../../scripts/update_external_skills.py) derives distributed Skill trees, licenses, and lock records; express adaptations through those inputs.
 
-Identify the requested source, selected Skills, target revision, and outcome. Verify the target against current upstream releases and repository content, distinguishing a release from unreleased branch work. Record the resolved target commit for review and later verification. When the request leaves the target open, recommend a supported release or revision and explain any consequential choice between release stability and needed unreleased changes. Missing or unverifiable target evidence blocks adoption; state the gap and continue only independent investigation.
+Identify the requested source, selection, revision, and outcome. Verify the target against current upstream releases and repository content, distinguish a release from unreleased branch work, and record its resolved commit. If the target is open, recommend a supported release or revision and explain consequential trade-offs between stability and needed unreleased work. Missing or unverifiable target evidence blocks adoption while independent investigation may continue.
 
-The registry revision and the updater's `--source` apply to an entire upstream repository, not one Skill. Establish every selected Skill affected by that source revision. Adding a Skill from an existing source uses that same revision; if the addition needs a newer revision, assess its effect on all already selected Skills. Explain any unavoidable wider update and resolve its scope before implementing it.
+The registry revision and updater's `--source` operate on an entire upstream repository. Account for every selected Skill affected by a revision change. A newly selected Skill uses that same revision; if it needs a newer one, assess all existing selections and resolve any unavoidable scope expansion before implementation.
 
-## Discover what could change the adoption decision
+## Find what could change the adoption decision
 
-For first adoption, read the complete selected Skills and their owned resources at the target revision. Trace required references, scripts, assets, and other Skill dependencies to establish what the selection needs to function. Distinguish the capabilities needed for the user's goal from optional branches, and determine how consumers can reach each supported branch with its prerequisites. A candidate's summary or recent changelog cannot establish the behavior being introduced.
+For first adoption, read the complete selected Skills and their owned resources at the target revision. Trace required references, scripts, assets, and other Skill dependencies. Separate capabilities needed for the goal from optional branches and establish how consumers reach each supported branch with its prerequisites. A summary or recent changelog cannot establish complete introduced behavior.
 
-For upgrades, read release notes and compare the old and target upstream trees for all selected Skills and their owned resources. Establish why existing local patches exist and whether the target supplies an equivalent result. Focus the review on changed behavior and its dependencies while preserving necessary guarantees outside the delta.
+For an upgrade, read release notes and compare old and target upstream trees for all selected Skills and owned resources. Establish why each local patch exists and whether the target supplies an equivalent result. Focus on changed behavior and its dependencies while preserving necessary guarantees outside the delta.
 
-In either case, follow the affected instructions into local Rules, Skills, callers, and tools. Use those relationships to find risks and useful simplifications. Upstream-internal conflicts or ambiguities need attention only when they materially impede local adoption; unrelated upstream features need no adoption work merely because they exist.
+In both cases, follow affected instructions into local Rules, Skills, callers, and tools. Address upstream-internal ambiguity or conflict when it materially impedes local adoption; unrelated upstream features need no work merely because they exist.
 
-For each newly selected or materially changed Skill, investigate the consequences:
+### Compare consequences, not just text
 
-| Concern | What could change the decision |
+For every newly selected or materially changed Skill, examine these questions:
+
+| Concern | Evidence that matters |
 | --- | --- |
-| Behavior and composition | New or changed triggers, obligations, stopping conditions, delegation, and side effects can alter accepted behavior. Read applicable Rules, native discovery metadata, and actual dependencies together before deciding what is missing or incompatible. |
-| Local adaptations | For an addition, identify the smallest local differences needed to compose with the repository. For an upgrade, establish each patch's purpose from old upstream and current applied content, then find its counterpart in the target. Distinguish context repair, an equivalent upstream implementation, and a change to the intended behavior. |
-| Selection and overlap | Compare proposed capabilities with existing local ones; explain whether the selection complements, duplicates, or replaces them. Trace added, renamed, moved, removed, and newly required entries through callers, registry, and public exposure. Selection changes affect both coverage and maintenance cost. |
-| Dependencies and migration | Check document conventions, templates, links, scripts, commands, tools, and harness capabilities required by the selection or changed by the upgrade. A dependency outside the selected tree needs a supported delivery or access route; a renamed format can leave callers or existing documents unusable even when the patch applies. |
-| Provenance and effects | Check source identity, license and attribution requirements, and introduced executable or network behavior. Expose additional access, credentials, services, recurring cost, or trust requirements. |
+| Behavior and composition | Triggers, obligations, stops, delegation, and side effects, read together with applicable Rules, native discovery metadata, and actual dependencies. |
+| Local adaptations | The smallest necessary local differences for adoption; for upgrade, each patch's purpose and target counterpart. Distinguish context repair, equivalent upstream behavior, and changed intent. |
+| Selection and overlap | Whether capabilities complement, duplicate, or replace local ones; effects of additions, renames, moves, removals, and new requirements on callers, registry, public exposure, and maintenance. |
+| Dependencies and migration | Conventions, templates, links, scripts, commands, tools, and Harness capabilities. Dependencies outside selected trees need supported delivery or access; renamed formats may break consumers despite clean patches. |
+| Provenance and effects | Source identity, license and attribution, executable or network behavior, and any new access, credentials, services, recurring cost, or trust requirement. |
 
-Establish a conflict only when applicable clauses cannot both be satisfied for the same decision. Cite both precise source locations, their conditions, the triggering scenario, and its consequence; apply governing precedence before proposing a repair. Instructions for different stages can coexist. Likewise, a missing explicit Skill name does not prove missing capability: check whether applicable Rules and native discovery already supply the required route. Distinguish a supported static reading from observed invocation behavior, and identify consequential uncertainty.
+Establish a conflict only when applicable clauses cannot both be satisfied for the same decision. Cite precise locations, conditions, the triggering case, and its consequence; apply precedence before proposing repair. Different stages can coexist. A missing explicit Skill name does not establish missing capability when Rules and native discovery supply the route. Distinguish static interpretation from observed invocation behavior and disclose consequential uncertainty.
 
-Evaluate replacement by the outcomes and necessary guarantees consumers depend on, including accepted authorization, verification, and recovery boundaries. Different steps alone do not justify retaining two Skills. Explain what the replacement covers, what remains unsupported, and whether the gap merits a small integration, keeping a distinct capability, or deferring adoption. Include the maintenance cost of preserving the old protocol; preserve its necessary guarantees without transplanting steps that no longer serve them.
+Judge a replacement by the outcomes and necessary authorization, verification, and recovery guarantees consumers need. Different steps alone do not justify two Skills. Explain coverage, remaining gaps, and whether they merit small integration, a distinct capability, or deferred adoption. Include the old protocol's maintenance cost without transplanting steps whose purpose has disappeared.
 
-Choose the owner of each adaptation from the responsibility that needs to change. A local caller or Rule may need revision to compose with a sound upstream design; a patch belongs where an accepted local difference must remain in the vendored Skill. Compare those options before adding patch burden. Context-only patch repair can proceed within existing authorization. Retire a patch only after establishing that its accepted result is supplied elsewhere or its removal is authorized; dropping it merely to make the updater pass loses the behavior it exists to preserve.
+### Put each adaptation with its owner
 
-For a proposed retirement or replacement, trace remaining consumers and assumptions: references, public exposure, terms, protocols, documentation, and checks. Separate cleanup required by that choice from optional simplification of surrounding workflows. Recommend bounded follow-up work when the old dependency was their reason for complexity; material expansion remains a user choice.
+Compare a caller or Rule change with a vendored patch. A sound upstream design may need local integration; a patch is justified where an accepted difference must remain in the external Skill. Context-only patch repairs fit existing authority. Retire a patch only when its accepted result is supplied elsewhere or removal is authorized; making the updater pass does not justify losing that result.
 
-The assessment is ready when every selected Skill and patch is accounted for, affected consumers and dependencies have a supported route or an explicit gap, and material risks and choices are explained. Keep evidence in the conversation; registry, lock, and patches remain the durable provenance records.
+For retirement or replacement, trace remaining references, public exposure, terms, protocols, documentation, and checks. Separate required cleanup from optional simplification. Recommend bounded follow-up where the old dependency caused surrounding complexity; material expansion remains a user choice.
 
-## Recommend a course and settle consequential choices
+The assessment is ready when every selection and patch is accounted for, affected consumers and dependencies have a supported route or explicit gap, and material risks and choices are explained. Keep investigation evidence in the conversation; registry, lock, and patches remain durable provenance.
 
-Lead with the recommended adoption scope and why it serves the user's goal. Identify the source, new selection or baseline-to-target change, benefits, material risks, affected consumers, patch dispositions, migration work, and proposed verification and recovery. Prioritize consequences that could change the decision rather than giving every file or diff equal weight.
+## Recommend and settle consequential choices
 
-For each unresolved material choice, present viable alternatives, their trade-offs, and a grounded recommendation. State the evidence and any assumption on which it turns. If missing evidence could reverse the recommendation, obtain it when recoverable; otherwise name the gap and next useful investigation or precise user input needed. Do not substitute an open-ended request for direction for analysis the Agent can perform.
+Lead with the scope that best serves the goal and why. Identify source and selection or baseline-to-target change, benefits, material risks, consumers, patch dispositions, migration work, and proposed verification and recovery. Prioritize what could change the choice.
 
-Ask and wait before dependent changes when the choice changes accepted scope or behavior, such as adopting or retiring a public Skill, changing names or activation, accepting new service or permission requirements, or expanding consumer migrations. Reuse decisions and authorization already supplied; routine repairs that preserve the accepted result need no new approval checkpoint. For analysis only, finish with the concrete proposal and remaining decisions. For an authorized addition or upgrade, proceed once the accepted scope, behavior, prerequisites, and checks are clear.
+For unresolved material choices, explain viable alternatives, trade-offs, recommendation, supporting evidence, and pivotal assumptions. Obtain recoverable evidence that could reverse the recommendation; otherwise identify the gap and next useful investigation or precise user input. Do the available analysis instead of asking for open-ended direction.
 
-## Apply through the owning updater
+Ask and wait before a change to accepted scope or behavior, such as public adoption or retirement, names or activation, service or permission requirements, or broader consumer migrations. Reuse supplied decisions and authorization; routine repairs preserving the accepted result need no new approval. Assessment-only ends with the concrete proposal. Authorized adoption or upgrade proceeds once scope, behavior, prerequisites, and checks are settled.
 
-Retain the original inputs and recorded outputs through Git evidence or an isolated workspace so the task's changes can be recovered without discarding existing work. Account for managed-output drift before updating: preserve it, establish its ownership and intent, express accepted changes in the owning patch, then restore only the corresponding recorded output when that work is safely preserved. Inspect proposed new destinations too; an existing directory is evidence to reconcile, not permission to overwrite it. If ownership or preservation is unclear, pause the affected update and request direction.
+## Apply through the updater
 
-For a new source, add its source declaration, reviewed revision, license declaration, and selected Skills to the registry. For an existing source, change only the accepted revision, selection, or paths. Resolve exact fields, naming constraints, and supported source and license forms from the current registry and updater validation rather than inventing a parallel schema. Confirm that selected names and destinations fit alongside first-party and other external Skills.
+Retain original inputs and recorded outputs through Git evidence or isolation. Reconcile managed-output drift before updating: preserve it, determine ownership and intent, express accepted changes in the owning patch, and only then restore the corresponding recorded output. Inspect new destinations too; an existing directory is evidence to reconcile, not permission to overwrite. Unclear ownership or preservation pauses the affected update for direction.
 
-Create or adapt ordered patches against the resolved target while preserving upstream wording outside the accepted local delta. Keep local invocation metadata and packaged assets in those patches when adaptation is needed. Preserve license and copyright notices. Use repository owners for authorized changes to public exposure, README coverage, and consumers, treating new entries consistently with other third-party Skills. Removing a contract includes its affected callers, documentation, and checks.
+For a new source, declare its identity, reviewed revision, license, and selection in the registry. For an existing source, change only accepted revision, selection, or paths. Take exact fields, naming constraints, and supported source and license forms from current registry and updater validation. Confirm names and destinations coexist with first-party and other external Skills.
 
-From the repository root, update the selected source:
+Create ordered patches against the resolved target, preserving upstream wording outside accepted deltas and all license and copyright notices. Include necessary local invocation metadata and packaged assets in patches. Use repository owners for authorized exposure, README coverage, and consumer changes, consistently with other external Skills. Retiring a contract includes affected callers, documentation, and checks.
+
+Run from the repository root:
 
 ```bash
 python scripts/update_external_skills.py --update --source <owner/repository>
 ```
 
-Use the registry's actual source ID, including for a newly declared source with no old lock record. Confirm the current CLI with `--help` when needed. A selected-source operation retains other configured sources through their existing lock records; missing records for those sources are a prerequisite gap to resolve, not a reason to silently widen the update. Omitting `--source` processes all configured sources; use that scope only when intended. Removing a whole source requires planning the full update because a removed ID is no longer accepted by `--source`. Removing a selected Skill from a retained source makes the updater remove its managed destination.
+Use the actual registry source ID, including for a new source, and consult `--help` when needed. Selected-source updates preserve other configured sources through their lock records; a missing record is a prerequisite gap, not permission to widen scope. Omitting `--source` updates all configured sources and requires that scope to be intended. A removed source ID cannot be selected, so whole-source removal requires planning the full update. Removing a selection from a retained source removes its managed destination.
 
-The updater copies selected Skills into staging and normalizes CRLF to LF in UTF-8 resources without NUL bytes before applying patches, then normalizes patch outputs before recording final hashes. Write patches against this normalized text. Binary resources and upstream checkouts remain unchanged; this conversion preserves other whitespace, including Markdown hard breaks. Text licenses use the same LF representation. Repository Git attributes disable newline conversion for Skill trees and licenses, preserving their recorded bytes across host line-ending settings even when an opaque resource has a text suffix.
+### Respect the updater's representation and transaction
 
-The updater stages and validates patches before installing Skills, licenses, and lock together. A patch conflict leaves previous installed outputs intact; input edits made before invoking it still need review. Investigate failures before retrying. For a reported transaction or rollback failure, inspect actual files and saved Git evidence rather than assuming recovery succeeded.
+The updater normalizes CRLF to LF in staged UTF-8 resources without NUL bytes before patching, then normalizes patch output before hashing. Write patches against that representation. Binary resources and upstream checkouts remain unchanged; other whitespace, including Markdown hard breaks, is preserved. Text licenses use LF too. Repository Git attributes disable newline conversion for Skill trees and licenses so recorded bytes survive host settings, even for opaque resources with text suffixes.
+
+The updater stages and validates patches before installing Skills, licenses, and lock together. A patch conflict leaves installed outputs intact; prior input edits still need review. Investigate failures before retrying. A transaction or rollback error requires inspecting actual files and saved Git evidence rather than assuming recovery succeeded.
 
 ## Verify the applied result
 
-Read the complete added or changed Skills with their required resources and trace affected invocation paths. Confirm that the intended patch behavior, discovery, document conventions, and dependencies work together. For new or changed executable behavior, run the relevant supported checks; if behavior cannot be verified, report the specific gap rather than treating textual coherence as runtime evidence.
+Read complete added or changed Skills with required resources and trace affected invocation paths. Check intended patch behavior, discovery, document conventions, and dependencies together. Run relevant supported checks for new or changed executable behavior; textual coherence does not establish runtime behavior, so report any specific verification gap.
 
-Run the updater in non-mutating check mode:
+Run the non-mutating check:
 
 ```bash
 python scripts/update_external_skills.py --check --source <owner/repository>
 ```
 
-Both update and check resolve upstream sources and may need network access; `--check` is not an offline lock inspection. Check the resulting lock's commit against the reviewed target. A moved target or newly observed delta requires reassessment. Review the reported patch extent as a signal of local maintenance burden, not proof that the adaptation is correct.
+Both update and check resolve upstream sources and may require network access; `--check` is not an offline lock inspection. Compare the resulting locked commit with the reviewed target. A moved target or new delta requires reassessment. Patch extent signals maintenance burden, not correctness.
 
-Run applicable manifest, Rule delivery, translation, and repository checks from their current owners and [CI configuration](../../../.github/workflows/test.yml). Synchronize mirrors when the project's translation policy applies. Inspect every changed or removed path, generated output, license, and lock entry against the accepted scope, including unexpected changes outside the selected source. Run `git diff <comparison-point> --check`, covering new untracked files as well.
+Run applicable manifest, Rule-delivery, translation, and repository checks from their current owners and [CI](../../../.github/workflows/test.yml). Synchronize mirrors where project policy requires it. Inspect every changed or removed path, generated output, license, and lock entry against accepted scope, including surprises outside the selected source. Run `git diff <comparison-point> --check`, including new untracked files.
 
-Completion requires the reviewed selection and revision to be installed in repository snapshots, accepted local behavior and affected consumers to be coherent, all required checks to pass, and existing work to be preserved. Report source and revision changes, adopted or retired entries, meaningful patch and migration decisions, verification evidence, and any unresolved limitation. Distinguish completed repository maintenance from downstream publication or installation, which retain their own authority.
+Completion requires reviewed selections and revisions installed in repository snapshots, coherent accepted behavior and consumers, passing required checks, and preserved existing work. Report source and revision changes, adopted or retired entries, consequential patch and migration decisions, evidence, and unresolved limits. Downstream publication and installation retain their own authority.

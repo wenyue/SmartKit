@@ -18,6 +18,12 @@ Delegate only within explicit bounds. Give children the same context and authori
 
 ## Close and report
 
-On completion, failure, interruption, or contamination, safely stop the task and children, retain observations, and clean scenario-owned effects where authorized and safe. Establish that no execution remains active and recheck the tested Candidate's fingerprint. If termination, capture, integrity, or cleanup is uncertain, stop further activity, notify Correctness, and preserve recovery-relevant state.
+On completion, failure, interruption, or contamination:
+
+- Safely stop the task and children and retain observations.
+- Clean scenario-owned effects where authorized and safe.
+- Establish that no execution remains active and recheck the tested Candidate's fingerprint.
+
+If termination, capture, integrity, or cleanup is uncertain, stop further activity, notify Correctness, and preserve recovery-relevant state.
 
 Return supplied and final fingerprints, actual activity and observations, gaps and host limits, child accounting, cleanup, and residual state. Distinguish ordinary task pauses from missing check prerequisites: use `NEEDS_INPUT` for user-controlled check input or permission and `BLOCKED` when safe evidence cannot be obtained within bounds. Give no Candidate verdict.

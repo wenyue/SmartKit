@@ -8,7 +8,11 @@ Read authoritative `writing-for-agents` and, for a Skill, its `SKILL-MECHANICS.m
 
 A layout assignment is read-only. Initial writing requires the Controller's release for exact paths and operations and confirmation that the Candidate matches the supplied baseline. Resolve missing material context or a conflict between the brief and request with the Controller before dependent work. If file design later needs a different path set, pause Candidate edits until the Controller resolves scope and preserves the additional baseline evidence. Editorial choices within accepted authority need no new user decision.
 
-For a Skill target, read its `AUTHORING.md` when present. It records deliberate trade-offs that future writers might otherwise undo; it is evidence, not a hidden contract. Running this workflow on another target does not make this Skill's own `AUTHORING.md` relevant. Create or update the target record only when mistaken reversal would be costly. Keep each entry to the decision and its reason; include rejected alternatives or consequences only when they are worth remembering, and omit obvious or easily reversed choices. Cite durable decision records instead of copying them, keep current requirements in their operative owners, and revise or remove an entry when its decision changes or no longer meets the threshold.
+### Learn from deliberate choices and examples
+
+For a Skill target, read its `AUTHORING.md` when present. It records deliberate trade-offs that future writers might otherwise undo; it is evidence, not a hidden contract. Running this workflow on another target does not make this Skill's own `AUTHORING.md` relevant.
+
+Create or update the target record only when mistaken reversal would be costly. Keep each entry to the decision and its reason; include rejected alternatives or consequences only when worth remembering, and omit obvious or easily reversed choices. Cite durable decision records instead of copying them. Keep current requirements in their operative owners, and revise or remove an entry when its decision changes or no longer meets the threshold.
 
 For a new or substantially redesigned artifact, study a relevant case in [Writing lessons](examples/writing-lessons.md) and the complete exemplar it names when relevant. Learn why its choices help the reader; its headings and domain policies are not a template. Ordinary local edits need no separate study exercise.
 
@@ -19,6 +23,8 @@ Start with the reader's task and difficult decisions. Supply the distinctions, e
 Give the artifact a controlling idea: the problem it helps solve and the approach that makes its guidance useful. Distill complicated input around that idea, combining concerns governed by the same decision principle while retaining explicit user choices. The input's detail need not dictate the document's structure or length. A diagnosis Skill may need to teach how to obtain a trustworthy signal; a release Skill may need careful ordering around publication. Spend detail on that difficulty.
 
 Teach a distinction where it affects the decision. A memo comparing services should distinguish a quoted price from projected savings: the quotation is sourced, while savings also depend on expected usage. Explaining that dependency beside the comparison helps the reader see what could change the recommendation. "Use reliable evidence" leaves that work undone.
+
+### Reconsider the affected design
 
 For a revision, understand the problem across the affected artifact before choosing the repair. Correct the shared cause coherently; a local edit is enough when it resolves the whole problem. Preserve supported meaning, useful judgment, and reasons for consequential constraints unless the task authorizes changing them. Existing prose is evidence, not a required outline.
 
@@ -58,9 +64,18 @@ Give a paragraph one point, and make its connection to neighboring paragraphs cl
 
 ### Balance firmness, direction, and discretion
 
-Make settled boundaries firm: name the condition, required behavior, and consequential exception. Prescribe order when actions depend on earlier results, and a meaningful completion test where moving on too soon matters. Derive precision from the actual constraint rather than an invented threshold. Unresolved intent, permission, or a material source gap belongs with the Controller.
+Choose the kind of precision the decision needs:
 
-Give open judgment direction through priorities, trade-offs, and recognition cues. "Spend detail where the decision is contested" leaves the amount open while directing effort usefully. Such guidance need not yield identical methods or a numerical threshold. Where several methods satisfy the outcome, explain the important trade-off and leave the method and reliably inferable routine steps to the reader.
+| Decision | Guidance to supply |
+| --- | --- |
+| Settled boundary | Name the condition, required behavior, and consequential exception. |
+| Dependent actions | Prescribe order where one action needs an earlier result. |
+| Consequential transition | Give a meaningful completion test where moving on too soon matters. |
+| Open judgment | Supply priorities, trade-offs, and recognition cues. |
+
+Derive precision from the actual constraint rather than an invented threshold. Unresolved intent, permission, or a material source gap belongs with the Controller.
+
+For example, "Spend detail where the decision is contested" leaves the amount open while directing effort usefully. Such guidance need not yield identical methods or a numerical threshold. Where several methods satisfy the outcome, explain the important trade-off and leave the method and reliably inferable routine steps to the reader.
 
 A Rule for explanatory comments illustrates the balance. An API retains a field because supported older clients still read it. "Explain reasons a future maintainer cannot infer from the code" directs attention to that dependency; "Retain the warning while those clients remain supported" fixes the boundary. The reader can choose the wording. Enumerating every comment category adds little to that understanding.
 
@@ -88,8 +103,22 @@ Read the complete result through a realistic task. Look for missing knowledge, u
 
 Then judge sufficiency: would ordinary capable readers be very likely to agree on the important meaning in normal use? Alignment comes before brevity. Actively look for worthwhile deletions and mergers: retain a passage if simplifying it would lose supported meaning, including consequential exceptions, or materially weaken understanding; otherwise make the simplification. A sentence can earn its place by explaining a needed relationship without adding a new fact. Relevance alone does not justify a repeated example or a lead-in that merely announces the next passage. Once the reading is dependable and accepted requirements are covered, proceed to checks and review rather than expanding against merely conceivable misreadings.
 
-Keep drafting history, review exchanges, and validation logs in the job record. Check agreement among the entry, references, examples, metadata, and scoped executable resources, including affected links and incoming references when targets or headings change. Run `python "<skill-root>/scripts/check_candidate.py" -- <files>` on every surviving Candidate Markdown file. For staged or backup Candidates, include the Controller-supplied mapping options from help for the complete frozen scope, including absent paths. Repair Candidate-caused failures; return other diagnostics and suspected false positives with your reasoning for the Controller to route. Your check does not replace independent review.
+### Check the complete draft
 
-Return the supplied baseline fingerprint, exact changed paths, and a concise semantic summary: realized meaning, significant simplifications, preservation choices, and the current need for retained complexity. For a rewrite, also report the redesign considered and chosen and any restorations supported by available earlier-version evidence. Disclose uncertainties and untested surfaces. `COMPLETE` means a coherent draft ready for workflow checks and review; `NEEDS_INPUT` identifies a missing decision, source, permission, or owner dependency; `BLOCKED` means authorized work cannot produce a coherent result or correction no longer progresses.
+Keep drafting history, review exchanges, and validation logs in the job record. Check agreement among the entry, references, examples, metadata, and scoped executable resources, including affected links and incoming references when targets or headings change.
+
+Run `python "<skill-root>/scripts/check_candidate.py" -- <files>` on every surviving Candidate Markdown file. For staged or backup Candidates, include the Controller-supplied mapping options from help for the complete frozen scope, including absent paths. Repair Candidate-caused failures; return other diagnostics and suspected false positives with your reasoning for the Controller to route. Your check does not replace independent review.
+
+### Return meaning and evidence
+
+Return the supplied baseline fingerprint, exact changed paths, and a concise semantic summary covering realized meaning, significant simplifications, preservation choices, and the current need for retained complexity. For a rewrite, also report the redesign considered and chosen and any restorations supported by available earlier-version evidence. Disclose uncertainties and untested surfaces.
+
+| Author result | Meaning |
+| --- | --- |
+| `COMPLETE` | A coherent draft is ready for workflow checks and review. |
+| `NEEDS_INPUT` | A decision, source, permission, or owner dependency is missing. |
+| `BLOCKED` | Authorized work cannot produce a coherent result, or correction no longer progresses. |
+
+### Repair after the review round
 
 Answer Reviewer questions and accept, partly accept, or decline each blocking finding with evidence. A Reviewer reassesses contested findings; if one remains, the Controller resolves any intent, scope, or permission question, otherwise its verdict stands. Wait for all reviews and needed answers, then the Controller's repair release, before editing. Choose worthwhile optional suggestions freely; declining one needs no defense. Keep repairs within released paths and operations, integrate corrections instead of appending warnings, and return through the same checks and all perspectives for every changed version.

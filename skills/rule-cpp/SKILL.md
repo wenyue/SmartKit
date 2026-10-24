@@ -3,24 +3,22 @@ name: rule-cpp
 description: Use for C++ work, including requested code-policy assessment.
 ---
 
-# C++ Guidelines
+# C++ Boundaries and Ownership
 
-## Keep Interfaces and Ownership Clear
+Keep ownership visible in C++ interfaces and lifetimes, especially where native code meets another language, platform, or thread.
 
-Keep public interfaces narrow and preserve existing ABI, FFI, and platform boundaries. Keep behavior with its owner; introduce an options type only when related inputs form a stable concept.
+## Design interfaces around their owners
 
-Prefer RAII and value semantics. Where a pointer owns its resource, prefer a smart pointer over a raw owning pointer.
+Preserve existing ABI, FFI, and platform boundaries while keeping public interfaces narrow. Keep behavior with its owner. Group related inputs into an options type only when they form a stable concept.
 
-## Express Failure Through the Boundary's Contract
+Prefer value semantics and RAII for resource lifetimes. When a pointer owns a resource, prefer a smart pointer to a raw owning pointer.
 
-Make expected failure part of the return contract. Reserve exceptions for failures the surrounding boundary treats as exceptional.
+## Carry failure and lifetime contracts across boundaries
 
-## Own Shared State and Native Callbacks
+Represent expected failures in the return contract; use exceptions for failures the surrounding boundary treats as exceptional.
 
-Synchronize shared mutable state through one clear owner and the narrowest suitable primitive. Preserve cleanup, cancellation, and thread-affinity requirements across native callbacks.
+Give shared mutable state one clear synchronization owner and use the narrowest suitable primitive. Across native callbacks, preserve cleanup, cancellation, and thread-affinity requirements.
 
-## Follow Repository Tools and Verify Boundaries
+## Verify behavior and leave mechanics to project tools
 
-Let the repository formatter, compiler, and static-analysis configuration own mechanical style and naming.
-
-Test behavior boundaries where native ownership, failure handling, or ABI behavior can regress.
+Test boundaries where native ownership, failure handling, or ABI behavior can regress. Let the repository formatter, compiler, and static-analysis configuration govern mechanical style and naming.

@@ -9,15 +9,15 @@ Rename one established code symbol or tracked repository path from `old` to `new
 
 The accepted request and target-project governance own all reads, writes, and commands. This Skill covers the rename and its necessary same-identity reference, generated, test, and documentation changes. It grants no authority to discard, stash, reset, or overwrite user work; edit canonical generated output directly; commit, push, publish, release, deploy, create a worktree, use the network, or perform remote actions.
 
-## Establish the Identity and Compatibility Decision
+## 1. Establish the identity and compatibility decision
 
-Record one old name, one new name, the target identity, intended scope, and exact authority for every required effect. Locate the declaration or tracked path that establishes the identity. Distinguish it from unrelated homonyms and overloaded, shadowed, inherited, or generated identities. Rule out a collision with a different symbol or path at the destination.
+Record one old name, one new name, the target identity, intended scope, and exact authority for every required effect. Locate the declaration or tracked path that establishes the identity, distinguish unrelated homonyms and overloaded, shadowed, inherited, or generated identities, and rule out a destination collision with another symbol or path.
 
 An externally observable name is a contract. For a public API or a name observed through callers, persisted data, configuration, protocols, or published interfaces, establish the approved breaking rename, staged migration, alias, adapter, or no-change decision before writing. Do not invent compatibility policy.
 
 Keep serialization keys, protocol fields, database columns, persisted names, and configuration keys unchanged unless the approved rename explicitly includes them. A code symbol's new spelling does not by itself authorize a change to those contracts.
 
-## Trace References and Establish the Write Route
+## 2. Trace the identity and establish its write routes
 
 Begin with identity-bearing surfaces and their necessary integration context. Choose discovery methods according to what can establish the binding:
 
@@ -29,9 +29,16 @@ Follow every confirmed use. Widen discovery when unresolved references, reposito
 
 Before any writing, identify the canonical owner and usable supported generator for affected generated surfaces. Establish a safe version-control move for a path rename and the applicable owner-required checks with their executable routes.
 
-Stop before writing if identity, scope, authority, or an observed name's compatibility decision is unresolved; the destination collides; a needed generated owner, supported generator, safe move, or required check route is unavailable; or the compatibility decision requires no change. Report the actual blocking fact or decision and its owner. A settled no-change decision means the rename will not proceed, not that a decision is missing.
+Before writing, stop for any of these conditions:
 
-## Apply the Rename Through Its Owners
+- Identity, scope, authority, or an observed name's compatibility decision is unresolved.
+- The destination collides with another identity.
+- A needed generated owner, supported generator, safe move, or required check route is unavailable.
+- The settled compatibility decision requires no change.
+
+Report the actual blocking fact or decision and its owner. A settled no-change decision means the rename will not proceed; it does not mean input is missing.
+
+## 3. Apply the rename through its owners
 
 Rename the declaration or tracked path and every confirmed in-scope reference. Use a semantic rename when its coverage is trustworthy; otherwise make the evidence-backed edits explicitly.
 
@@ -44,7 +51,7 @@ Apply each affected surface's ownership constraints:
 
 Order actions where safety or repository tooling requires it, such as updating a generator before regeneration or establishing the temporary path before a case-only destination. Choose ordinary editing details within those constraints.
 
-## Verify Coverage and Correct Supported Misses
+## 4. Verify coverage and correct supported misses
 
 A new spelling does not establish a complete rename. Repeat the relevant identity-aware discovery after editing, searching affected surfaces and necessary integration context for the old name. Widen only when evidence indicates incomplete coverage. For paths, recheck the tree, index, and path references.
 
@@ -57,7 +64,7 @@ Classify every remaining occurrence that could plausibly denote the target as:
 
 Group unrelated homonyms when common evidence supports the classification. A per-occurrence inventory of low-signal matches does not prove correctness.
 
-Run every applicable owner-required check for the changed surfaces and material rename risks, including formatting, static analysis, builds, generated-output verification, and tests where required. Add broader checks only when repository governance or current evidence makes them relevant. When compatibility preserves both names, verify the supported behavior of each.
+Run every applicable owner-required check for changed surfaces and material rename risks: formatting, static analysis, builds, generated-output verification, and tests where required. Broaden checks only when repository governance or current evidence makes them relevant. If compatibility preserves both names, verify each name's supported behavior.
 
 Correct a miss when current evidence ties it unambiguously to the approved identity and supports an authorized in-scope correction that preserves behavior and the compatibility decision. Choose among sound methods using ordinary engineering judgment, then repeat affected discovery and checks.
 
@@ -67,10 +74,14 @@ Stop correcting when evidence no longer improves, no supported safe in-scope cor
 
 An unavailable or failing required check prevents completion. When unavailable non-required evidence leaves no material identity or compatibility risk unresolved, narrow the completion claim and report the exact untested surface.
 
-## Report the Outcome and Remaining State
+## 5. Report the outcome and remaining state
 
-- `COMPLETE`: The target uses the approved name, every confirmed reference uses it or is preserved by approved compatibility, no plausible target occurrence remains unresolved, and every applicable required check passes. Record any noncritical untested surface that narrows this result.
-- `BLOCKED`: Before writing, a requirement for a safe authorized rename cannot be established, or the approved compatibility decision requires no change. State the actual reason; a settled no-change decision is not a request for missing input.
-- `FAILED`: After any write, the rename cannot be completed or verified safely. This includes a failing or unavailable required check, an unresolved occurrence, exhausted correction, or newly required scope or owner action. After a write, `FAILED` takes precedence over a condition that would otherwise be `BLOCKED`. Preserve useful partial state and evidence without inventing rollback authority.
+| Outcome | Required meaning |
+| --- | --- |
+| `COMPLETE` | The target uses the approved name; every confirmed reference uses it or approved compatibility; no plausible target occurrence remains unresolved; and every applicable required check passes. Record any noncritical untested surface that narrows this result. |
+| `BLOCKED` | Before writing, a safe authorized rename requirement cannot be established, or the approved compatibility decision requires no change. Give the actual reason; a settled no-change decision is not missing input. |
+| `FAILED` | After any write, the rename cannot be completed or verified safely: a required check fails or is unavailable, an occurrence is unresolved, correction is exhausted, or new scope or owner action is needed. |
+
+After a write, `FAILED` takes precedence over a condition that would otherwise be `BLOCKED`. Preserve useful partial state and evidence without inventing rollback authority.
 
 Report the mapping and identity; compatibility decision; discovery methods and coverage; changed, generated, moved, and preserved surfaces; remaining old-name classifications and unrelated same-name identities; checks and exits; corrections; outcome; and unresolved or untested surfaces. Group homogeneous resolved occurrences when common evidence supports them, but locate every unresolved, mixed, or materially exceptional occurrence. For a non-complete result, include the exact partial state, stopping evidence, and next owner or decision, if one is needed.

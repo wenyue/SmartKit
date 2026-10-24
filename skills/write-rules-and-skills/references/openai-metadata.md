@@ -52,4 +52,10 @@ interface:
   default_prompt: "使用 $write-rules-and-skills，将我提供的要求整理成一份可执行的 Agent 规则或技能。"
 ```
 
-Before handoff, confirm that the YAML parses, all six required fields are nonempty strings, the default prompt names the actual Skill, and `brand_color` is a six-digit hexadecimal color. Resolve each icon path from the target Skill root, confirm that its packaged file opens, and inspect the artwork at small and large sizes for transparency, legibility, and an appropriate motif. Read the copy against the Skill's actual behavior, checking the one-sentence description and useful starting request. Run the owning workflow's required checks; format checks alone do not establish copy quality or visual usefulness.
+Before handoff, check the complete package:
+
+- **Metadata:** the YAML parses, all six required fields are nonempty strings, the default prompt names the actual Skill, and `brand_color` is a six-digit hexadecimal color.
+- **Assets:** resolve each icon path from the target Skill root and confirm its packaged file opens. Inspect the artwork at small and large sizes for transparency, legibility, and an appropriate motif.
+- **Copy:** read it against the Skill's actual behavior, checking the one-sentence description and useful starting request.
+
+Run the owning workflow's required checks. Format checks alone do not establish copy quality or visual usefulness.

@@ -24,7 +24,16 @@ The bundle preserves complete existing artifact bytes, including project-owned s
 
 Invoke the public writer at `source_root/skills/write-rules-and-skills/SKILL.md` and its required same-source references, including `writing-for-agents`. Use the business-project context, the immutable blueprint as accepted task/spec input, and `GENERATED` as the request root. Repository maintenance does not replace business-project evidence with the configuration repository's own layout or conventions. Resolve complete existing content from the selected authoring source and compare its applied target evidence before freezing; preserve any unadopted target changes. Supply the common plan, complete current content, qualified ownership/loading evidence and dependency state. Ambient or target-checkout writers cannot replace this pinned route.
 
-For each handoff, supply `GENERATED` as `<candidate-root>`, the immutable request's actual business-project target as `<target-root>`, and the exact frozen Candidate-relative path list, including deleted or absent endpoints. Supply every already accepted sibling Candidate's exact frozen paths, including deleted or absent endpoints, through the writer check's `--context-path` option. Read that check entry's `--help` for the option contract. Keep the Candidate's final target-relative layout and delegate validation in the final destination namespace to the pinned writer's supported mapped-check interface. This mapping supplies read context for validation, not permission to mutate the target.
+For each handoff, supply the pinned writer's mapped-check inputs as follows:
+
+| Input | Required value |
+| --- | --- |
+| `<candidate-root>` | `GENERATED`. |
+| `<target-root>` | The immutable request's actual business-project target. |
+| Candidate path list | Every exact frozen Candidate-relative path, including deleted or absent endpoints. |
+| `--context-path` | Every already accepted sibling Candidate's exact frozen paths, including deleted or absent endpoints. |
+
+Read the check entry's `--help` for the option contract. Keep the Candidate's final target-relative layout and delegate validation in the final destination namespace to the pinned writer's supported mapped-check interface. Mapping supplies read context for validation, not permission to mutate the target.
 
 Each request receives exactly one Candidate under the public writer's own scope, validation, review and result protocol. Run jobs in the common plan's generation order so every referrer's checks receive its already accepted generated dependencies as context. Consume only an individual `COMPLETE` whose exact Candidate paths lie beneath `GENERATED` and satisfy that blueprint, retaining required evidence in its handoff. Blueprint readiness terminology is not a substitute.
 
@@ -34,7 +43,9 @@ An unchanged artifact needs the same assessment and `COMPLETE`; the writer may r
 
 Compare all generated outputs together with retained Rules and relevant Skill/global policy against the common plan. Look for lost obligations, stale evidence, conflicting owners, duplication and broken loading routes. Resolve the combined result before registering anything.
 
-As the final reconciliation gate before registration, run the pinned writer's check entry once over every surviving generated Markdown file. Supply `GENERATED`, the business target and the union of every request's exact frozen Candidate paths, including deleted endpoints, so mapped links are checked against the complete proposed final set. A Candidate-caused failure returns to every affected writer through a fresh invocation and requires a fresh `COMPLETE`; do not repair the Candidate in place. Repeat reconciliation and this whole-set gate after corrections until it passes.
+As the final reconciliation gate before registration, run the pinned writer's check entry once over every surviving generated Markdown file. Supply `GENERATED`, the business target, and the union of every request's exact frozen Candidate paths, including deleted endpoints, so mapped links are checked against the complete proposed final set.
+
+A Candidate-caused failure returns to every affected writer through a fresh invocation and requires a fresh `COMPLETE`; do not repair the Candidate in place. Repeat reconciliation and this whole-set gate after corrections until it passes.
 
 If reconciliation changes the plan, prepare a fresh input bundle and provide relevant current handoffs to the affected writers. Every correction goes through a distinct public-writer invocation with a newly frozen single-Candidate scope; obtain a fresh `COMPLETE` for every changed Candidate, including affected earlier outputs. Leave accepted Candidates unchanged behind their handoffs. Repeat until every request and current handoff agrees with the reconciled plan.
 

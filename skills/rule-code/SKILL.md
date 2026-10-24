@@ -3,27 +3,36 @@ name: rule-code
 description: Use for work involving code in any language, including requested code-policy assessment.
 ---
 
-# Code Design Goals
+# Code Design
 
 ## Ponytail Loading
 
 Before making decisions in any coding task, read [ponytail](../ponytail/SKILL.md).
 
-## Keep Behavior and APIs with Their Owners
+Keep behavior understandable through its owners. Choose structure for the work needed to understand and change it, rather than for shorter callers or more reusable-looking interfaces.
+
+## Choose a boundary that earns its cost
 
 Give every behavior, state, invariant, and lifecycle one clear owner. Keep owner-local logic and the reasoning needed to understand and change it together.
 
-Keep short, straightforward, single-use logic in its caller by default. Extract when the result materially reduces the total effort needed to understand and change the behavior. Benefits can come from a distinct responsibility, invariant, or domain concept; actual production reuse; substantial branching, state, or lifecycle complexity; or dependency isolation. Weigh those benefits against added functions, types, files, APIs, and navigation.
+Keep short, straightforward, single-use logic in its caller by default. Extract only when the result materially reduces the total effort needed to understand and change the behavior. Useful reasons include:
 
-Use the smallest boundary that realizes the benefit; a private helper in the same file may be enough. Keep enough cohesive control flow in the caller to make the operation understandable.
+- A distinct responsibility, invariant, or domain concept.
+- Actual production reuse.
+- Substantial branching, state, or lifecycle complexity.
+- Dependency isolation.
+
+Weigh the benefit against the added functions, types, files, APIs, and navigation. Use the smallest boundary that realizes it; a private helper in the same file may be enough. Retain enough cohesive control flow in the caller to make the operation understandable.
 
 Shortening a caller, naming a small block, line counts, and hypothetical reuse do not by themselves justify extraction. Exercise private logic through its owning behavior. A test seam needs a responsibility or dependency boundary justified by the production design, independently of the wish to test private logic directly.
+
+### Keep failure handling and public APIs with their owners
 
 Keep failure handling with its owning operation. Catch/log/default repetition alone does not justify a callback wrapper, even across callers. Require a coherent responsibility beyond the template, such as cleanup, transaction completion, required failure-contract translation, or substantive recovery; judge that responsibility rather than function length.
 
 Align public interfaces with stable product or domain capabilities. Meet test and call-site needs through the owning contract rather than widening APIs, moving owner-local logic, or adding indirection solely for convenience.
 
-## Make State and Dependencies Explicit
+## Make state, effects, and lifetimes visible
 
 Provide dependencies through visible owners and keep state placement consistent with that ownership. Give each unit only the capabilities it needs, with dependency direction and cross-layer boundaries explicit.
 
@@ -31,11 +40,11 @@ Keep state mutation and lifecycle transitions predictable from creation through 
 
 Keep side effects, failure modes, retries, fallbacks, and lifecycle transitions visible in the contract or control flow.
 
-## Use Local Evidence for Code Structure
+## Follow the project's established design
 
 Before editing code, inspect the target file and nearby implementations for comparable work. Follow their established naming, structure, control flow, and API patterns unless a more specific rule or an explicitly approved design requires a deliberate departure.
 
-## Retain Diagnostics
+## Resolve diagnostics before considering suppression
 
 Do not suppress compiler, analyzer, or linter diagnostics at the configuration level. Use an inline or file-wide suppression only when resolving the diagnostic would violate the approved design or produce a materially worse result.
 

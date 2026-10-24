@@ -16,11 +16,13 @@ S may include attributable staged, unstaged and untracked work without committin
 
 Where W equals B, use S. Preserve target-only edits and include identical edits once. For overlapping text, use `git merge-file -p` on temporary files with W as local, B as ancestor and S as incoming. Inspect even a clean merge for semantic compatibility. Settle every output before writing to the target. Ask about unresolved conflicts or ambiguous intent; retain both sides while resolving them. Delete/modify cases, complex renames and binary overlap need an explicit resolution. Regeneration stays with its deterministic owner and requires accepted authority.
 
-## Back up, apply and verify
+## Preserve the exact input and output snapshots
 
 Coordinate writers for preparation and application. Create an external operation directory outside both worktrees and their Git directories. Retain readable `before/` and `after/` trees containing only affected relative paths: before holds W and after holds the combined result. Missing files represent absence; record the affected path list so deletion and an omitted input are distinguishable. Copy bytes and intended modes without filters or line-ending conversion, and verify the copies. Capture target branch/HEAD and the complete raw index, including any split-index dependency, without refreshing it. Record source identity and the selected S state for the final comparison.
 
 Use ordinary regular files in real directories. Check both ends of renames and affected ancestors; keep Git administrative paths, nested repositories, symlinks and file aliases outside the operation. Preserve existing permissions. Git patches encode executable mode, not all permissions or metadata: check the native operation's behavior for the actual files and platform before using it. For example, explicit Windows ACLs or POSIX extended attributes may not survive file replacement. Use a verified preserving native method for such files, or stop the affected transfer. Readable backups alone do not prove those attributes can be restored.
+
+## Choose a transfer method that preserves bytes and permissions
 
 Use native file operations that preserve the admitted permissions, with an expected-absence check for creation and an exact pre-state check before replacement or deletion. A working-file Git patch is one option for ordinary files. Check applicable Git attributes first: filters, text conversion, `ident` and `working-tree-encoding` can transform bytes even without staging. Use direct byte-preserving file operations instead when those transformations or unrepresented permission changes apply.
 
@@ -36,6 +38,8 @@ Exit 1 means differences were found; exit 0 means no changes. Other failures sto
 git -c core.autocrlf=false apply -p2 --check --whitespace=nowarn <absolute-patch-file>
 git -c core.autocrlf=false apply -p2 --whitespace=nowarn <absolute-patch-file>
 ```
+
+## Recheck the prepared state, apply, and verify
 
 Before applying, compare every affected target path with before, verify source S and the captured HEAD/index are unchanged, and confirm backups and outputs still match preparation. Patch checking alone is insufficient: context matching can tolerate later edits. Apply only while the coordinated write window still holds. Use working-file-only application; `--index`, `--cached` and `--3way` change the index contract, while `--reject` permits partial application. An empty patch needs no write.
 

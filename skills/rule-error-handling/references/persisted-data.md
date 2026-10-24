@@ -2,23 +2,25 @@
 
 Use this reference before choosing, changing, or reviewing repair, reconstruction, discard, or degraded use of persistent or serialized data when authority, loss, later reads, or interpretation must be established. Ordinary I/O failure propagation alone needs no data-recovery decision.
 
-## Establish the Data's Role and Recovery Authority
+## Establish what may be recovered or lost
 
 Identify the owner, the data's purpose, acceptable loss, and the valid state required by the accepted outcome. Establish whether recovery must change future reads and whether this boundary may mutate storage. A path, format, or finding of corruption supplies no authority to lose data.
 
-Use the data's role to investigate the consequential questions:
+Use the data's role to identify the evidence that matters:
 
-- For derived or cached data, identify the source for rebuilding and whether absence is valid during rebuilding or after accepted discard.
-- For access or local state, identify the actor or service that recreates it and the capability unavailable until then.
-- For defaultable state, establish that the defaults are valid and loss of displaced choices or progress is accepted.
-- For important, user-authored, imported, or sole-copy data, establish an authoritative replacement or authority for the specific loss and a valid resulting state. Preserve the bytes while either loss authority or resulting validity remains unresolved.
-- For schema or migration metadata, establish how it controls interpretation of retained records and selection of required transitions.
+| Data role | Establish before choosing recovery |
+| --- | --- |
+| Derived or cached | The rebuilding source, and whether absence is valid during rebuilding or after accepted discard. |
+| Access or local state | The actor or service that recreates it, and the capability unavailable until then. |
+| Defaultable state | Valid defaults and accepted loss of displaced choices or progress. |
+| Important, user-authored, imported, or sole-copy data | An authoritative replacement or authority for the specific loss, plus a valid resulting state. Preserve the bytes while loss authority or resulting validity is unresolved. |
+| Schema or migration metadata | How it controls retained-record interpretation and selection of required transitions. |
 
 The contract may support degradation, reconstruction, repair, or accepted discard. Exact reconstruction is unnecessary when another state fulfills the accepted contract. Carry unresolved material loss, ownership, or state decisions to their owner before dependent changes.
 
 Explain reconstruction assumptions and loss authority beside the recovery when code, types, and referenced contracts leave them unclear.
 
-## Distinguish Reading from Repair
+## Distinguish a readable result from a persisted repair
 
 Locate the failing phase: reading bytes, validating their syntax or meaning, or executing repair. Valid syntax alone does not establish valid meaning. Failed access and invalid content need to remain distinguishable through handling.
 
@@ -28,7 +30,7 @@ For writable state, verify the particular repair rather than treating defaults a
 
 In this example, the operation that required authentication still reports it unavailable; restoring a valid signed-out state has not completed that operation.
 
-## Preserve Evidence and Interpretation Through Repair
+## Preserve evidence and interpretation through repair
 
 If repair fails, carry the invalid-content cause, repair failure, affected state, and actionable path to the final owner. A read-only store can prevent an otherwise authorized discard; returning defaults does not prove that repair established the intended state.
 

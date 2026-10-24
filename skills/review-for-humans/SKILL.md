@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help the human understand what each change does, whether it is reasonable, and whether its implementation is elegant. Review the selected comparison read-only, then carry out the actions the user selects. Capturing evidence and preparing diff links are part of review; changes to reviewed files or Git state need the applicable action's authorization.
+Help the human understand each change and form two judgments: whether it is reasonable and whether its implementation is elegant. Review the selected comparison read-only, then carry out the user's selected actions. Evidence capture and diff-link preparation belong to review; changing reviewed files or Git state needs the applicable action's authorization.
 
 For every question, offer a list of concrete choices consecutively labeled **A**, **B**, **C**, and so on, including scope questions, workspace creation or synchronization, remedies, and closing menus. Describe the effects in the conversation's language and ask for a letter. Interpret letters case-insensitively against the latest menu; accept unambiguous natural-language selections, including agreement to a clearly specified action. M and O IDs select items, not actions. Clarify ambiguous replies; questions and disagreements do not authorize actions.
 
@@ -21,7 +21,9 @@ For every question, offer a list of concrete choices consecutively labeled **A**
 
 An explicit PR or branch comparison excludes local uncommitted changes unless requested. Honor an explicitly selected historical version. Preserve the selected scope when applying other review guidance with different defaults.
 
-For the local default, skip staged-only edits and review only the unstaged portion of a partially staged file. Reverting a staged edit in the worktree is an unstaged change relative to the index. Include untracked files as additions only when explicitly requested. Another explicitly selected local comparison overrides these defaults. An empty comparison stays empty.
+### Local comparison defaults
+
+Skip staged-only edits and review only the unstaged portion of a partially staged file. A worktree edit that reverts staged content is still an unstaged change relative to the index. Include untracked files as additions only when explicitly requested. An explicitly selected alternative local comparison overrides these defaults; an empty comparison stays empty.
 
 ### Check the review workspace
 
@@ -56,7 +58,9 @@ Verify creation or synchronization and preservation of local work before reviewi
 
 For PRs, obtain complete file-level Viewed states for the current authenticated GitHub viewer. Exclude `VIEWED`; include `UNVIEWED` and `DISMISSED`. Complete pagination and verify that base and head remain unchanged during acquisition. Approval, comments, and prior chat display do not establish Viewed state, and current states do not establish the filter for a historical snapshot. An explicit request to include viewed files overrides the filter. If required states are unavailable, pause and offer to obtain them or review all otherwise eligible files without filtering.
 
-Exclude test files from file reports, modification counts, and progress. Apply selected-file, Viewed, and local-scope filters before counting. These report filters do not exclude changes from a later full-branch commit or its checks. Order files like GitHub's Files changed directory tree: recursively list changed files in subdirectories before direct files; use observed sibling order when available, otherwise sort sibling directories and direct files by name. Thus `src/z/api.dart` precedes `src/a.dart`.
+Exclude test files from file reports, modification counts, and progress. Apply selected-file, Viewed, and local-scope filters before counting. These filters affect the report, not the scope of a later full-branch commit or its checks.
+
+Order files like GitHub's Files changed directory tree: recursively list changed files in subdirectories before direct files. Use observed sibling order when available; otherwise sort sibling directories and direct files by name. Thus `src/z/api.dart` precedes `src/a.dart`.
 
 Retain fixed before-and-after evidence, pinned comparison commits, the ordered file list, and PR viewer/filter evidence. For local comparisons, also retain the original index baseline, even when the user chose another before version, so completion can account for existing staged work. State the scope and exclusions before the first group. If no files remain, report that and finish without a fabricated report or progress fraction.
 
@@ -134,11 +138,13 @@ O items add no main-review files, modifications, progress, or Viewed eligibility
 
 Localize action names and descriptions to the conversation's language. M IDs narrow an action to items; they do not select whole-group completion. Advance to the saved next group, or use **pass and finish** and **finish** when all files are displayed.
 
-Keep these scopes distinct:
+Keep three scopes distinct:
 
-- **Review and progress:** the selected, eligible files and deltas actually displayed.
-- **Commit and publication:** all outstanding branch changes and, for a push, the full outgoing ancestry, subject to the preparation and confirmation below.
-- **Viewed:** eligible reviewed files in the current group, plus earlier files explicitly included in an intermediate completion. Final **pass and finish** covers every displayed reviewed group, including those advanced with **continue**.
+| Scope | What it includes |
+| --- | --- |
+| **Review and progress** | Selected, eligible files and deltas actually displayed. |
+| **Commit and publication** | All outstanding branch changes and, for a push, the full outgoing ancestry, subject to the preparation and confirmation below. |
+| **Viewed** | Eligible reviewed files in the current group, plus earlier files explicitly included in an intermediate completion. Final **pass and finish** covers every displayed reviewed group, including those advanced with **continue**. |
 
 Inclusion in a commit or push is not review. A local or branch review needs no PR and grants no push authority. PR completion requires a verified PR; publication also requires explicit authorization for its disclosed delta. Neither action approves or merges the PR; ignored findings remain ignored.
 
@@ -206,13 +212,31 @@ If coverage needs missing evidence or a scope decision, leave the path unmarked 
 
 Execute only the effects disclosed and authorized by the selected action. Reuse verified commits, pushes, and Viewed results instead of repeating writes.
 
-1. **Revalidate.** Compare review evidence, any remote base/head, and local state relevant to the selected effects with the prepared state; include the branch tip, index, worktree, and outgoing ancestry whenever committing or publishing. Resolve relevant drift with refreshed inventory, applicable checks and affected re-review; changed or new extra content to be committed or published needs renewed inclusion confirmation.
-2. **Commit when needed.** Stage the full disclosed final content and verify the index against the intended tree. Use `git commit --amend` when recorded review actions establish HEAD as this review's fix or optimization commit and the current branch and any push target are neither `master` nor `main`; otherwise create a new commit. Run normal hooks, then verify the commit, parent, full tree, index, and remaining worktree state. Hook changes need applicable checks and affected re-review; changes beyond confirmed content also need updated consent. All intended changes must be committed without unexplained residue. A local/branch completion can now advance.
-3. **Publish when authorized and needed.** Revalidate the full outgoing delta after hooks. When replacing an already-published review commit, push to the verified source ref with `--force-with-lease=<ref>:<verified-old-remote-SHA>`; otherwise push normally. Pause on remote drift or push rejection. Read back base/head and the complete published delta. Confirm the expected commit, checked content, and valid displayed assessments.
-4. **Record Viewed.** On the actual PR version, verify the viewer and both commit IDs and confirm complete per-path coverage for the selected set. Mark only eligible selected paths still awaiting Viewed. Read back every selected path, including reused results, and the PR version. All must be `VIEWED`, with base/head unchanged during recording.
-5. **Advance or finish.** Acknowledge the verified result and resume from the saved position. Final completion accounts for all displayed groups, including earlier groups advanced without recording.
+Throughout completion, an intended new head needs verification, not repetition of already covered review. Unexpected changes to content, base, or affected dependencies require affected re-review; text equality alone cannot prove unchanged effects. Refresh evidence and obtain a new selection when the result no longer represents the authorized reviewed version. Marking a newer version does not prove it was reviewed.
 
-An intended new head needs verification, not repetition of already covered review. Unexpected changes to content, base, or affected dependencies require affected re-review; text equality alone cannot prove unchanged effects. Refresh evidence and obtain a new selection when the result no longer represents the authorized reviewed version. Marking a newer version does not prove it was reviewed.
+### 1. Revalidate the selected effects
+
+Compare review evidence, any remote base/head, and relevant local state with the prepared state. When committing or publishing, include the branch tip, index, worktree, and outgoing ancestry. Resolve drift with refreshed inventory, applicable checks, and affected re-review. Changed or new extra content to be committed or published needs renewed inclusion confirmation.
+
+### 2. Commit when needed
+
+Stage the full disclosed final content and verify the index against the intended tree. Use `git commit --amend` when recorded review actions establish HEAD as this review's fix or optimization commit and the current branch and any push target are neither `master` nor `main`; otherwise create a new commit.
+
+Run normal hooks, then verify the commit, parent, full tree, index, and remaining worktree state. Hook changes need applicable checks and affected re-review; changes beyond confirmed content also need updated consent. Commit all intended changes without unexplained residue. A local/branch completion can now advance.
+
+### 3. Publish when authorized and needed
+
+Revalidate the full outgoing delta after hooks. When replacing an already-published review commit, push to the verified source ref with `--force-with-lease=<ref>:<verified-old-remote-SHA>`; otherwise push normally. Pause on remote drift or push rejection.
+
+Read back base/head and the complete published delta. Confirm the expected commit, checked content, and valid displayed assessments.
+
+### 4. Record Viewed on the verified PR version
+
+Verify the viewer and both commit IDs on the actual PR version, and confirm complete per-path coverage for the selected set. Mark only eligible selected paths still awaiting Viewed. Read back every selected path, including reused results, and the PR version. All must be `VIEWED`, with base/head unchanged during recording.
+
+### 5. Advance or finish
+
+Acknowledge the verified result and resume from the saved position. Final completion accounts for all displayed groups, including earlier groups advanced without recording.
 
 ### Recover an unfinished operation
 

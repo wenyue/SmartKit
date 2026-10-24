@@ -5,7 +5,7 @@ description: Use when state-changing repository work needs an isolated linked Gi
 
 # Create Worktree
 
-Select or create one linked Git worktree, prepare its environment, and return `ready` or `non-ready`. Carry the source's current work by default while leaving the source unchanged. Inherited changes remain protected work, not automatically part of the caller's task.
+Select or create one linked Git worktree and prepare its environment without disturbing existing work. Return `ready` or `non-ready`. Carry the source's current work by default; inherited changes remain protected under their original ownership rather than automatically becoming the caller's task.
 
 ## 1. Select the workspace and starting state
 
@@ -15,8 +15,10 @@ If continuing a selected worktree, check its physical path, Git registration, br
 
 For a new worktree, resolve the base to an immutable commit and choose the starting state:
 
-- **Carry** is the default: source `HEAD` plus staged, unstaged, and untracked nonignored changes, preserving the distinction between those layers.
-- **Clean** requires an explicit choice: the selected base without source changes.
+| Mode | Starting state and decision |
+| --- | --- |
+| **Carry** | Default: source `HEAD` plus staged, unstaged, and untracked nonignored changes, preserving the distinction between layers. |
+| **Clean** | Explicit choice required: selected base without source changes. |
 
 A different base requires an explicit clean choice or agreed compatible carry semantics. Establish how carried changes apply to that base before proceeding; a base choice alone does not authorize copying changes from another base. A caller that requires only task-owned state may reject inherited work, but that does not authorize dropping it or changing the carry default.
 
@@ -43,7 +45,11 @@ For either mode, capture the source's `HEAD`, branch, index, working contents, a
 
 For **clean**, skip transfer capture, counting, and carry approval. For **carry**, capture staged and unstaged changes separately, including when both affect one path, plus untracked inputs. Preserve contents, additions, deletions, renames, binary files, executable modes, and symlinks. Exclude ignored files, dependency caches, and nested worktrees; route necessary omitted inputs to environment preparation. Establish the expected target state before copying, including any agreed cross-base transformation.
 
-Count added plus deleted lines in both staged and unstaged deltas and new untracked text. Count each distinct changed path once across all layers. Binary changes count as paths without invented line counts. Before creation or copying, if **lines >= 300 OR paths >= 10**, show the source, target, counts, and carried state, then obtain an explicit carry decision unless that snapshot and target already have one. Disclose unmeasurable items and obtain a decision covering them; they are not zero. Below both thresholds, proceed with default carry and report the counts.
+### Carry counts and approval
+
+Count added plus deleted lines in staged and unstaged deltas and new untracked text. Count each distinct changed path once across all layers; binary changes count as paths without invented line counts.
+
+Before creation or copying, if **lines >= 300 OR paths >= 10**, show the source, target, counts, and carried state, then obtain an explicit carry decision unless that snapshot and target already have one. Disclose unmeasurable items and obtain a decision covering them; they are not zero. Below both thresholds, proceed with default carry and report the counts.
 
 A material change to the reviewed snapshot or target requires a fresh summary and decision. If carry is declined, obtain an explicit clean `HEAD`/base choice or cancel; silence is not approval.
 
@@ -55,7 +61,9 @@ Create at the selected commit. For clean mode, copy no source changes. For carry
 
 Verify the registered target path, named branch, and `HEAD` at the chosen base. Compare its index and working state to the expected result, including file contents, types, modes, and staged versus unstaged changes. Compare index semantics, not binary index-extension metadata. Confirm that the source stayed unchanged and that container, exclusion, and creation effects match the chosen plan. Drift or an incomplete comparison yields `non-ready`.
 
-After interruption or failure, inspect what actually exists before retrying. Retain partial paths, branches, registrations, and copied work with enough context to continue safely; do not replay a copy over later changes. Remove partial artifacts only when they belong solely to this attempt, contain no other work, and removal is authorized. Recheck the applicable choices before resuming.
+### Continue safely after interruption
+
+Inspect what actually exists before retrying after interruption or failure. Retain partial paths, branches, registrations, and copied work with enough context to continue safely; do not replay a copy over later changes. Remove partial artifacts only when they belong solely to this attempt, contain no other work, and removal is authorized. Recheck the applicable choices before resuming.
 
 ## 4. Prepare the environment and report readiness
 
@@ -63,6 +71,12 @@ Discover the selected target's project `prepare-worktree-environment` Skill. Whe
 
 Recheck target identity and expected state after setup, accounting for its authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, required setup succeeded, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
 
-Give the caller the status, target path, branch, immutable base and current `HEAD`, whether it was created or reused, the carried/inherited-state summary and any carry decision, and environment status. For `non-ready`, add the blocker, retained partial state, and concrete next action. Keep supporting observations available when needed; a full evidence inventory is not the handoff.
+Give the caller a concise readiness handoff:
+
+- Status, target path, branch, immutable base, and current `HEAD`.
+- Whether the worktree was created or reused, its carried/inherited-state summary and any carry decision, and environment status.
+- For `non-ready`, the blocker, retained partial state, and concrete next action.
+
+Keep supporting observations available; the handoff need not reproduce the full evidence inventory.
 
 Readiness covers the workspace and its preparation, not project health. This Skill runs no project baseline, build, or test checks. The implementation workflow owns those checks and commit decisions; carrying inherited work does not authorize committing it. Before using a returned workspace, recheck its current identity and state and investigate unexpected drift.

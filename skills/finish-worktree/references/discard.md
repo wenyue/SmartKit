@@ -1,8 +1,12 @@
 # Explicit Discard
 
+## Match authority to the actual loss
+
 Discard requires explicit authority over the actual losses; general cleanup permission is insufficient. Confirm the worktree's physical registration, branch, HEAD, unique commits, publication and recovery refs. Identify other checkouts using the branch and keep them outside the removal boundary.
 
 Inventory staged, unstaged, untracked and ignored contents, including content identities, types, modes and symlink targets. Establish that removal cannot reach the unaffected target, and capture its HEAD, complete index and local state for comparison. Match the existing grant against these losses and disclose them; ask only about material losses it does not cover. Unmerged work needs explicit abandonment authority or proof that its result has been integrated.
+
+## Remove only what the current grant covers
 
 Immediately before removal, refresh the identity and loss inventory. Changed facts require a new match against the grant. Use the creating host for a host-created worktree and ordinary Git removal otherwise. Force removal requires authority over its exact full loss.
 

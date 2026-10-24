@@ -9,11 +9,15 @@ Diagnose one exact client/session pair using the least evidence sufficient for t
 
 Keep the report to metadata and derived observations. Never reproduce prompts, responses, transcripts, tool inputs, tool outputs or credentials. This boundary applies to failure explanations as well as successful evidence.
 
-## Establish the target and useful scope
+## 1. Establish the exact target and useful scope
 
 Resolve the client and session together. Supported clients are `codex`, `cursor` and `copilot`, where `copilot` means GitHub Copilot CLI. Session IDs contain only letters, digits, dot, underscore, colon and hyphen. When both explicit arguments are absent, `CODEX_THREAD_ID` may supply the current Codex identity. A partial or invalid explicit pair cannot fall back to that ambient identity; never select the newest log or substitute a convenient session.
 
-Choose `turn`, `session` or `both` for the diagnostic question. Use `both` when the question spans turn and session, or their comparison can resolve a material causal uncertainty. If the request provides no basis for a narrower choice, use `both`. Within the acquired scope, analyze only the capabilities material to the question, including those needed to distinguish a material alternative cause. Expand that analysis when an observation exposes a new material uncertainty, not merely because another metric is available.
+### Choose the scope the question needs
+
+Choose `turn`, `session` or `both`. Use `both` when the question spans turn and session, their comparison can resolve material causal uncertainty, or the request gives no basis for a narrower choice.
+
+Within the acquired scope, analyze only capabilities material to the question, including those needed to distinguish a material alternative cause. Expand the analysis when an observation exposes new material uncertainty, rather than because another metric is available.
 
 `turn` means the final recorded turn of the selected Codex session's immutable snapshot: its latest user-message boundary through its last event. For a diagnosis of the current live session, this is the invoking turn as recorded; for a completed session, it is the final recorded turn. There is no interface for selecting an earlier historical turn.
 
@@ -24,7 +28,7 @@ Choose `turn`, `session` or `both` for the diagnostic question. Use `both` when 
 
 Stop before acquisition for a missing, partial or unsupported identity, an invalid session ID, or a request for another historical turn. State the exact prerequisite without changing the requested identity or presenting whole-session evidence as turn evidence.
 
-## Establish authority for this acquisition
+## 2. Establish authority for this acquisition
 
 The Codex profile reads the exact local session log. It retains private content only within this attempt and reports no such content. Whole-session usage, model activity and estimated cost come from the installed Tokscale provider, whose acquisition has a different effect boundary.
 
@@ -38,7 +42,7 @@ A previous diagnosis grant is not continuing authority. The wrapper performs no 
 
 Cursor may depend on an existing valid Tokscale Cursor identity and a previously completed, separately authorized sync. Copilot CLI may depend on OTEL file export configured before the activity; telemetry that was never recorded cannot be reconstructed. These are possible source prerequisites, not diagnoses to infer from an empty result. A missing matching row alone establishes neither a missing sync nor missing OTEL history.
 
-## Acquire once and preserve each source's boundary
+## 3. Acquire once and keep source boundaries distinct
 
 Resolve the directory of the loaded `SKILL.md` as `<skill-root>`. The CLI can be inspected without acquiring session evidence:
 
@@ -64,7 +68,7 @@ Record the resolved Tokscale executable path and version, provider start/end, su
 
 The Codex and Tokscale acquisitions do not form an atomic snapshot. Keep their immutable observations, intervals, effects and failures distinct even when the wrapper presents them in one report. If a source is unavailable or fails, retain supported partial evidence instead of trying another telemetry command. If the wrapper itself cannot run, report that failed step and the exact missing capability; do not invent an equivalent acquisition route.
 
-## Determine what the evidence can answer
+## 4. Determine what the evidence can answer
 
 For each selected capability, use exactly one wrapper state and its source-specific reason:
 
@@ -82,13 +86,21 @@ Preserve facts, inferences, uncertainty and unavailable or failed coverage separ
 
 ### Interpret behavior without inventing events
 
-Lifecycle, coordination and waits answer different questions. Codex `sub_agent_activity` establishes its documented `started`, `interacted` and `interrupted` observations. `interacted` proves neither completion nor waiting. Coordination call/output records can establish observed task state; only `wait_agent` call/output records establish waits. An unknown lifecycle kind fails that capability alone. Tool-output envelopes can establish failures, but their private content stays out of the report.
+Lifecycle, coordination and waits answer different questions:
+
+| Evidence | What it establishes |
+| --- | --- |
+| Codex `sub_agent_activity` | Documented `started`, `interacted` and `interrupted` observations. `interacted` proves neither completion nor waiting. |
+| Coordination call/output records | Observed task state. |
+| `wait_agent` call/output records | Waits; other lifecycle or coordination records do not establish them. |
+
+An unknown lifecycle kind fails that capability alone. Tool-output envelopes can establish failures, but their private content stays out of the report.
 
 An incomplete call has a supported start without a matching completion in the captured evidence. It is not automatically a stuck call. Waits, timeouts, repeated calls and incomplete calls need task context before supporting a cause. Summed durations can overlap elapsed time, lifecycle counts are observed lower bounds, and child-session tokens need a stable child mapping before attribution.
 
 Compare reliable observations with the task and applicable concurrency limits. Direct knowledge of the current turn may inform the interpretation as an explicit inference. Token, call, cost and duration volume is descriptive; there is no fixed abnormal threshold. Label every monetary value `estimated API-equivalent cost`, never a bill.
 
-## Reach one bounded conclusion
+## 5. Reach one conclusion within the evidence boundary
 
 Choose exactly one conclusion at the narrowest scope supported by the evidence:
 
@@ -100,9 +112,15 @@ Choose exactly one conclusion at the narrowest scope supported by the evidence:
 
 Whole-session usage alone cannot establish behavior health. Missing behavior evidence cannot support a healthy-behavior conclusion. Likewise, an acquisition timeout is evidence about acquisition until task-relevant observations support a claim about the session itself.
 
-## Hand off the diagnosis and necessary recovery
+## 6. Report the diagnosis and supported recovery needs
 
-Return one structured report beginning with client/session identity, requested and selected scope, actual boundaries, harness profile and every used source's interval and effect contract. Then give the selected capabilities and their scope/state/reason, relevant usage and estimated API-equivalent cost, material observations and causal inferences, uncertainty or failed evidence, and exactly one conclusion with the untested surfaces that limit it. Include the resolved provider executable and version when attempted or when its identity affects interpretation or recovery.
+Return one structured report in this order:
+
+1. Client/session identity, requested and selected scope, actual boundaries, harness profile, and every used source's interval and effect contract.
+2. Selected capabilities with their scope, state, and reason; relevant usage and estimated API-equivalent cost; material observations and causal inferences; and uncertainty or failed evidence.
+3. Exactly one conclusion and the untested surfaces that limit it.
+
+Include the resolved provider executable and version when attempted or when its identity affects interpretation or recovery.
 
 Derive actionable recovery prerequisites only from a requested source the wrapper attempted and an observed failure or missing prerequisite. Unsupported, unrequested or noncritical capabilities create no provider recovery action. For example, an observed provider execution/schema failure concerns that installed provider; it does not establish a need to log in, sync or configure telemetry. Retain the exact client/session pair and source boundary for any authorized rerun.
 

@@ -5,7 +5,7 @@ description: Refactor one concrete code target while preserving supported caller
 
 # Refactor Code
 
-Remove an established structural pressure from one concrete code target. Improve where knowledge lives and how the implementation fits together while keeping supported caller-visible behavior, invariants, and external contracts unchanged. The pressure gives the change its purpose; the supported contract gives it its boundary.
+Remove an established structural pressure from one concrete code target while preserving supported caller-visible behavior, invariants, and external contracts. Improve where knowledge lives and how the implementation fits together. The pressure explains why to change; the supported contract defines what must survive.
 
 ## Route before writing
 
@@ -21,21 +21,25 @@ A concrete refactor can still contain a genuine design question. Use the model-i
 
 **Redirected**, **Out of Scope**, and pre-write **Blocked** results perform no write. When classification or a returned design depends on unavailable material, return **Blocked** with the exact missing evidence.
 
-## Establish the boundary
+## Establish the preservation boundary
 
 Before writing, establish the target, the structural pressure, the intended internal result, and the accepted scope. Trace affected implementation and caller paths far enough to distinguish the structure that may change from the supported behavior, invariants, and external contracts that must survive. Use the target's tests, configuration, history, and local patterns where they help establish those facts.
 
-Choose preservation evidence at each supported seam for the regressions this refactor could introduce. Suppose callers of a record parser rely on input order being retained and malformed records producing a particular error. A check that parsing returns a nonempty list does not establish either guarantee. Observe the promised results through the supported interface. The useful check distinguishes preservation from regression, rather than merely exercising code.
+### Choose evidence that can expose a regression
+
+At each supported seam, choose preservation evidence for the regressions this refactor could introduce. Observe promised results through the supported interface, rather than merely exercising the code.
+
+Suppose a parser's callers rely on retained input order and a particular error for malformed records. A check that parsing returns a nonempty list establishes neither guarantee. The useful check distinguishes the preserved contract from those regressions.
 
 Gather the least evidence that makes that distinction at every supported seam, together with every owner-required affected-surface check. Establish applicable project rules, each hand-written or generated surface's owner, the required check routes, and authority for every needed read, command, and write. For generated surfaces, establish an authorized operation through their owner before any writing; direct edits cannot substitute for that route.
 
 Keep discovery and proof bounded by these obligations and the integration context needed to interpret them. Widen only when evidence exposes another materially affected path or unresolved risk. Unavailable noncritical evidence narrows the supported conclusion and belongs in the handoff. If a missing fact, access, authority, material evidence, or check route leaves a safe change or preservation claim unsupported, return **Blocked** before writing and name the exact gap.
 
-## Restructure the target
+## Restructure only what resolves the pressure
 
 Choose the smallest coherent internal structure that removes the accepted pressure and localizes knowledge. Let the source of the pressure guide the shape: repeated knowledge may belong together; indirection that scatters one idea may be worth removing. Introduce an abstraction only when a real seam earns it. Speculative frameworks, extension points, compatibility layers, and test-only APIs are outside the result.
 
-For example, suppose several parser branches must change together whenever the same escape rule is corrected. One internal implementation of that rule can remove duplicated knowledge while preserving parsing behavior. A configurable parsing framework would need additional real variation to justify it. The aim is to concentrate the existing responsibility, not to prepare a family of future parsers.
+If several parser branches must change together whenever the same escape rule is corrected, one internal implementation can remove that duplicated knowledge while preserving behavior. A configurable parser framework would need additional real variation. Concentrate the existing responsibility instead of preparing a family of hypothetical parsers.
 
 Change only necessary, owner-authorized implementation surfaces and internal callers, keeping scope anchored to this target and pressure. Authority over one internal does not extend to another. Change generated surfaces only through their established owners and authorized operations. Preserve unrelated and user-owned state throughout the work.
 
@@ -51,9 +55,14 @@ After one coherent internal result:
 
 Suppose a refactor groups records and returns them in group order, although callers require input order. Retaining input positions or changing the traversal could both restore that behavior. If both fit the established contract and authorized scope, choose the clearer fit for the implementation. If required behavior or authority is unresolved, or a material effect of the change is unknown, stop the dependent correction: choosing a method cannot settle those gaps.
 
-## Results and handoff
+## Report the result and remaining state
 
-Return **Complete** only when the structural pressure is removed, supported caller-visible behavior and external contracts remain preserved, invariants hold, replaced internals are retired, the final scope matches ownership and authority, and every required check passes.
+Return **Complete** only when all of these conditions hold:
+
+- The structural pressure is removed.
+- Supported caller-visible behavior, external contracts, and invariants remain preserved.
+- Replaced internals are retired and the final scope matches ownership and authority.
+- Every required check passes.
 
 After writing, return **Failure** when a required check cannot pass or run, preservation evidence no longer discriminates, no authorized in-scope correction is supported by the available evidence, or the same finding recurs unchanged. Failure takes precedence over any coincident Blocked, Redirected, or Out of Scope fact: the handoff must account for the changed state. Preserve useful state and evidence without inventing rollback authority.
 

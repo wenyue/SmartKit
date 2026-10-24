@@ -10,7 +10,9 @@ Independent Review assigns one perspective per identity. Integrated Review assig
 
 ## Distinguish defects from improvements
 
-A **blocking finding** connects a precise location or omission to a plausible material consequence under your perspective's acceptance bar. State the affected criterion, supporting evidence, and what the reader would misunderstand, do incorrectly, lose, or be unnecessarily burdened by. A **non-blocking suggestion** improves an artifact that already meets the bar. Offer only the few clearly worthwhile, inexpensive suggestions; a preferred phrase or layout never establishes a defect by itself.
+A **blocking finding** connects a precise location or omission to a plausible material consequence under your perspective's acceptance bar. State the affected criterion, supporting evidence, and what the reader would misunderstand, do incorrectly, lose, or be unnecessarily burdened by.
+
+A **non-blocking suggestion** improves an artifact that already meets the bar. Offer only the few clearly worthwhile, inexpensive suggestions; a preferred phrase or layout never establishes a defect by itself.
 
 Send labeled findings, suggestions, and focused Candidate questions directly to the Author. Optional rewrites or sketches may illustrate the problem but must be labeled illustrative. The Author chooses the repair and may freely decline suggestions; judge whether a repair resolves the effect, not whether it follows your wording.
 

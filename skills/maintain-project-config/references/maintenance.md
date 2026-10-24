@@ -41,7 +41,13 @@ Only `files` and `directories` are supported manifest fields. Versioned manifest
 
 The snapshot under `files/` preserves selected files byte for byte and selected directories recursively. Selecting `AGENTS.local.md` through `ruleEntry` does not by itself add that local file to an existing manifest; explicitly select it through the accepted backup-scope route when it needs restoration. Native MCP and settings files, project instructions and selected generated files can be backed up in full. Backup neither splits fields nor uses `smartkit.lock.json` to decide which bytes to copy. The lock and existing setup mechanisms retain their separate behavior; restoring a full-file snapshot requires no MCP regeneration. An explicit scope may include the lock as an ordinary complete file; defaults omit it and runtime state.
 
-Select the paths needed to restore the user's configuration. Review their full content before accepting the scope: the backup copies credentials and machine paths if those appear in selected files, and performs no secret filtering. Keep credential values in their existing credential facilities. Target-local synchronization state stays outside the backup. When selected, `.agents/config.json` is also copied in full, including binding and `setupVersion`; a copied setup marker is not evidence that this checkout completed setup. Its repository binding must match the selected source; resolve a mismatch rather than silently rewriting snapshot bytes. Snapshots support regular files and directories; symlinks and paths rejected by command validation require resolution before proceeding. Report unavailable source content rather than treating it as an empty backup.
+### Accept the complete selected content
+
+Select the paths needed to restore the user's configuration. Review their full content before accepting the scope: selected files can contain credentials and machine paths, and backup performs no secret filtering. Keep credential values in their existing credential facilities and target-local synchronization state outside the backup.
+
+When selected, `.agents/config.json` is copied in full, including binding and `setupVersion`. A copied setup marker does not prove that this checkout completed setup. Its repository binding must match the selected source; resolve a mismatch rather than silently rewriting snapshot bytes.
+
+Snapshots support regular files and directories. Symlinks and paths rejected by command validation require resolution before proceeding. Report unavailable source content rather than treating it as an empty backup.
 
 Repeated `--file` arguments to binding and adoption accept files or directories. When creating an entry without explicit selections, the command selects existing default project configuration paths and directories; inspect that actual scope and the complete selected content before publication. The command help and inspection report provide the current selection. Defaults include project entry files, `.agents/config.json`, native MCP/settings files and project Rule, Skill and Agent directories; a default list is a starting scope, not evidence that every project-specific configuration is covered.
 
@@ -90,9 +96,13 @@ python "<maintain>" apply --target "<target-root>"
 
 In repository mode, validate the accepted source and inspect its target effects. Show the changed paths and content differences, including additions and deletions within the declared scope; identify differing binary files when a text diff is unavailable. Any source/target difference requires the user's choice before application, including the first restoration, later restorations, enabled automatic synchronization and changes made only in the configuration repository. Pause the whole synchronization and ask the user to choose keep local or use the configuration repository; apply no partial selection while that choice is pending.
 
-Keep local skips this synchronization, preserving target contents and the prior synchronization receipt. Report that synchronization was skipped and the differences remain; independent work may continue, while work requiring source/target convergence stays pending. This choice neither adopts local content nor publishes it to the configuration repository. Later synchronization still checks the remaining differences; deliberate adoption remains a separate accepted operation through the route below.
+### Apply the user's whole-synchronization choice
 
-Use the configuration repository applies the complete reviewed restoration, passing `--accept-existing <inspect-fingerprint>` for the exact inspected state. If either side changes after inspection, inspect again, show the new differences and obtain a new choice; a stale token is refused. No saved per-file history or three-way conflict resolution is involved. When source and target already agree, application needs no difference-acceptance token.
+**Keep local** skips this synchronization, preserving target contents and the prior synchronization receipt. Report the skipped synchronization and remaining differences. Independent work may continue; work requiring source/target convergence stays pending. This choice neither adopts local content nor publishes it to the configuration repository. Later synchronization still checks the differences, and deliberate adoption remains a separate accepted operation through the route below.
+
+**Use the configuration repository** applies the complete reviewed restoration, passing `--accept-existing <inspect-fingerprint>` for the exact inspected state. If either side changes after inspection, inspect again, show the new differences, and obtain a new choice; a stale token is refused. No saved per-file history or three-way conflict resolution is involved. When source and target already agree, application needs no difference-acceptance token.
+
+### Record verified agreement and the startup preference
 
 Repository mode records successful restoration in the target-local `.agents/project-config-sync.json` with `binding`, `source`, `sourceFingerprint`, `appliedPaths` and `automatic`, without a format version. The source fingerprint covers the selected entry's scope and actual snapshot contents, including accepted unpublished edits, rather than the entire repository commit. Changes to another project do not invalidate this receipt. Versioned receipts are unsupported; report the format error and preserve the state rather than migrating it.
 
@@ -170,6 +180,8 @@ python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/fi
 
 Repeat `--path` for the complete accepted scope. Commit hooks run normally; revalidate hook-altered content, restore it and repeat relevant checks before publication. Preserve the retained commit and diagnostic when publishing is refused. Ambiguous selected paths, unverified outgoing scope or additional outgoing commits require resolution rather than broadening this operation's scope; an older scope receipt does not authorize publication of earlier work.
 
+### Recover a failed or uncertain publication
+
 A failed or uncertain push may leave a valid local commit and applied target. Inspect the actual local and remote outcome before retrying a retained verified commit:
 
 ```text
@@ -177,5 +189,7 @@ python "<maintain>" publish --target "<target-root>" --commit "<verified-commit>
 ```
 
 Confirm that source and applied evidence still agree. Preserve local commits when the remote advances or diverges and resolve branch state before a protected retry. Verify that the intended commit is reachable on the selected remote branch; a successful-looking push message alone is insufficient.
+
+### Report the established result
 
 Report source edits and validation, target application, any deliberate rendering, exclusions and tracked configuration, unmet prerequisites and remote publication separately. Repository-mode completion requires successful local work and verified publication of the intended scope, except for an explicitly requested local result or no owned source changes or commit to publish. A failed push preserves saved source, retained commits, applied target and any successful local full-setup result; report local success and incomplete remote synchronization. Maintenance and publication do not establish new setup success.

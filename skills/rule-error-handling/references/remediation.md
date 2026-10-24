@@ -2,7 +2,7 @@
 
 Use this reference when designing, changing, or reviewing a final disposition that relies on human action, or when cross-role resolution and feedback responsibilities need to be established.
 
-## Assign a Feasible Action to an Authorized Actor
+## Find an actor who can perform the action
 
 Establish who can perform the action from actual deployment, access, available tools, callers, and expected use. Keep specialist troubleshooting and complex repair with qualified actors. Use these defaults to start that investigation:
 
@@ -17,7 +17,7 @@ A runtime prompt may collect a bounded product choice under an established contr
 
 For example, a deterministic reconstruction failure on unchanged persisted data will recur on later reads. If an ordinary client user cannot inspect or repair that data, transferring the exception to that user alone leaves a repeating failure. Select repair, explicit degradation or isolation, or supported escalation according to the data contract, preserving data whose loss is unauthorized. An accepted degraded result must keep the failure and its material impact visible; neither catching the exception nor keeping the bytes establishes a complete disposition. Apply the entry's persisted-data and recovery branches when their conditions hold. This is a final human-facing disposition decision; internal layers may still propagate through their accepted contracts.
 
-## Connect Feedback to the Resulting State
+## Connect feedback to state and feasible action
 
 Distinguish what the audience needs to understand or do from the evidence maintainers need to investigate. Connect feedback about the resulting state to the feasible action or supported escalation established for that audience.
 
@@ -27,10 +27,10 @@ For example, suppose only maintainers have both access and authority for storage
 
 Feedback must accurately reflect the resulting state. Acknowledgement or delegation does not establish that recovery is complete.
 
-## Own the Action Through Completion
+## Keep ownership through completion and interruption
 
 Trace each action from the failed state through successful completion, failure, and any mid-path stop. Establish the acting owner, final reporter, and feedback owner from evidence. Determine what state remains, who receives the result, and how feedback changes as the action succeeds or fails.
 
-Use channels appropriate to the audience and environment. An initiated action or displayed prompt alone does not establish an observable outcome.
+Choose channels for the actual audience and environment. Starting an action or displaying a prompt does not by itself make the outcome observable.
 
 Verify meaningful paths through the responsible public boundary, including secondary failures, cancellation or interruption where applicable. Keep completion, failure, and retained state observable after ownership transfers.

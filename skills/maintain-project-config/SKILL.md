@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Maintain Project Config
 
-Maintain the project's agent configuration using the business project's evidence. In repository mode, the selected configuration files and directories form a complete backup: author the accepted snapshot, restore it to the target and publish the exact verified scope. Local modes retain their existing authoring and synchronization routes.
+Maintain agent configuration from the business project's evidence. In repository mode, selected files and directories form a complete backup: author the accepted snapshot, restore it to the target, then publish the exact verified scope. Local modes keep their existing authoring and synchronization routes.
 
 Resolve this directory as `<skill-root>`, its containing plugin as `<plugin-root>`, and the business project as `<target-root>`. Read [Project Configuration Maintenance](references/maintenance.md) before using `<skill-root>/scripts/maintain.py` as `<maintain>`. That shared reference owns binding, backup scope, restoration, local synchronization and publication recovery. Explicit setup restoration and enabled startup synchronization consume the reference and supported commands without invoking this user-only Skill. Resolve resources from the loaded plugin, independently of the target's working directory.
 
@@ -18,7 +18,12 @@ python "<maintain>" inspect --target "<target-root>"
 
 Inspection is read-only. Establish the maintenance mode, selected entry, backup scope, target differences and unfinished work. An inspection-only request ends with those findings and unavailable evidence; it authorizes no update, restoration, edit or publication.
 
-For an unbound project, present the three modes together: project shared, this machine only, or a separate configuration repository. Establish the user's choice before binding. For an explicit restoration, follow the reference's source-selection route: reuse a valid binding with a matching successful local restoration receipt, or ask for the repository, branch and entry. A copied binding alone does not establish this checkout's source. Reuse a valid binding for later maintenance of the same checkout; infer no repository identity from business remotes or other local checkouts. For initialization over existing configuration, analyze its actual contents and differences, propose the concrete plan and obtain the user's decision before replacement.
+| Situation | Establish before writing |
+| --- | --- |
+| Unbound project | Present project shared, this machine only, and separate configuration repository together; obtain the user's mode choice before binding. |
+| Explicit restoration | Follow the reference's source-selection route: reuse a valid binding with a matching successful local restoration receipt, or ask for repository, branch, and entry. A copied binding alone does not establish this checkout's source. |
+| Later maintenance of this checkout | Reuse its valid binding; infer no repository identity from business remotes or other checkouts. |
+| Initialization over existing configuration | Analyze actual contents and differences, propose the concrete plan, and obtain the user's replacement decision. |
 
 ## 2. Update before editing
 
@@ -56,7 +61,7 @@ python "<maintain>" apply --target "<target-root>"
 
 In either local mode, canonical inputs already reside in the target. Continue directly through the established local synchronization route below, without `apply` or configuration-repository access.
 
-For every repository application with source/target differences, follow the reference's user-choice and exact inspected-state acceptance route before writing. This includes later restorations, automatic synchronization and repository-only changes. Present the differences and wait for the user to choose keep local or use the configuration repository for the whole synchronization. Keeping local skips this synchronization without adoption or publication; report the remaining differences and leave work requiring convergence pending. Source content and local content must both agree before the command may skip content writes; a matching saved source fingerprint alone is insufficient. The receipt advances only after successful application.
+For every differing repository application, follow the reference's complete user-choice and exact inspected-state acceptance route before writing. That route governs later restoration, automatic synchronization, and repository-only changes as well as first use. It owns whole-synchronization acceptance, keep-local outcomes, drift, the conditions for skipping content writes, and receipt advancement; use those conditions rather than treating a saved source fingerprint as agreement.
 
 Restoring a full-file snapshot ends with exact target agreement and checks of local prerequisites. A restore-only request performs no source authoring, generation, full setup or publication. If the requested configuration change also requires deliberate local rendering, use the reference's established `sync-project` or narrower `sync-project-rules` route and its ownership checks. Adopt any intentionally changed backed-up outputs into the source and re-establish agreement before publication. Neither restoration nor maintenance establishes full setup success; unmet setup or migration prerequisites remain for the user to explicitly invoke through the owning Skill.
 
@@ -72,4 +77,6 @@ python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/fi
 
 Repeat `--path` for every accepted source change, including manifests and deletions. Preserve unrelated index entries and working changes. Follow the reference's normal commit-hook handling and protected `publish --commit` retry route when publication fails or is uncertain; maintenance grants no force push or history rewrite.
 
-Completion requires validated source, target agreement, applicable checks and the established publication outcome: verified remote publication, an explicitly requested local result, or no publication needed for this operation. Local modes complete without a configuration-repository publication step. Report mode and source, accepted and preserved paths, validation and restoration, any deliberate rendering, Git exclusions and tracked configuration paths, and the exact commit and verified remote outcome when applicable. For incomplete work, distinguish saved source, retained commits, applied target, unmet prerequisites and remaining remote synchronization.
+Completion requires validated source, target agreement, applicable checks, and the established publication outcome: verified remote publication, an explicitly requested local result, or no publication needed for this operation. Local modes require no configuration-repository publication.
+
+Report mode and source, accepted and preserved paths, validation and restoration, any deliberate rendering, Git exclusions and tracked configuration paths, and the exact commit and verified remote outcome when applicable. For incomplete work, distinguish saved source, retained commits, applied target, unmet prerequisites, and remaining remote synchronization.

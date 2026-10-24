@@ -46,6 +46,10 @@ Essential evidence needing user-controlled input or permission requires `NEEDS_I
 
 ## Reach a judgment
 
-Return explicit coverage of intent to brief, brief to Candidate, and Candidate commitments back to authorized intent. Include critical paths, supporting checks or observations, untested or inaccessible surfaces, and runtime limits and residual state where relevant.
+Return explicit coverage of all three intent comparisons: intent to brief, brief to Candidate, and Candidate commitments back to authorized intent. Include:
+
+- Critical paths and their supporting checks or observations.
+- Untested or inaccessible surfaces.
+- Runtime limits and residual state, where relevant.
 
 Keep claims proportional to evidence: a reader-role exercise is not a full workflow run, and a few successful cases do not establish general reliability, model stability, or causal improvement over the old version. Such claims need separately scoped evidence. Return under the common contract using the same correctness bar throughout the review budget.

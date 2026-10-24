@@ -13,3 +13,7 @@ Require Quality to use rhetorical questions every round and state whether redesi
 ## Keep authoring records lean
 
 Create an `AUTHORING.md` entry only for a deliberate trade-off that a future writer is likely to undo and whose accidental reversal would be costly. Keep the entry to the decision and its reason; retain alternatives or consequences only when they are worth remembering. This prevents the record from becoming routine history or a second contract while preserving the context needed to avoid an expensive mistaken "fix."
+
+## Keep exact protocol separate from design judgment
+
+Scope, version identity, review release, and runtime cleanup have exact boundaries because another role relies on their results. Writing decisions instead need priorities, evidence, and consequential exceptions. Keep this difference visible in the entry and role guidance: converting design advice into mandatory templates or numerical limits would narrow accepted solutions, while treating protocol boundaries as stylistic advice would break coordinated review. The document checker and semantic reviewers remain complementary for the same reason.

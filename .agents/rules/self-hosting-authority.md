@@ -1,22 +1,30 @@
 # Self-Hosting Source Authority
 
-## Select Each Artifact's Source
+Select the authoritative copy separately for every applicable SmartKit or project Rule and Skill. Source selection does not replace another artifact's responsibility.
 
-For every independently applicable SmartKit or project Rule or Skill, use its corresponding source in the current checkout when it exists:
+## Prefer the corresponding checkout source
 
-- SmartKit Rules: `rules/*.md`
-- project Rules: `.agents/rules/**`
-- SmartKit Skills exposed by plugin manifests: `skills/<name>/**`
-- project Skills: `.agents/skills/**`
+When it exists, use the artifact's source in the current checkout:
 
-Resolve unqualified user references to SmartKit Rules or Skills to these checkout sources. An explicit reference to another copy selects that copy instead.
+| Artifact | Checkout source |
+| --- | --- |
+| SmartKit Rule | `rules/*.md` |
+| Project Rule | `.agents/rules/**` |
+| SmartKit Skill exposed by plugin manifests | `skills/<name>/**` |
+| Project Skill | `.agents/skills/**` |
 
-Use an installed, injected, packaged, or cached copy as a fallback only when the corresponding checkout source does not exist. A failed read does not establish absence: an existing source can be inaccessible or unreadable. When required content remains unavailable, report it and stop dependent work under core governance's loading requirements.
+Resolve an unqualified user reference to a SmartKit Rule or Skill to that source. An explicit reference to another copy selects that copy instead.
 
-For a Skill resolved to the checkout, read its complete `SKILL.md` and every required referenced resource from that same source tree.
+For a checkout-selected Skill, read its complete `SKILL.md` and every required referenced resource from the same source tree.
 
-## Preserve Policy Responsibilities
+## Distinguish absence from a failed read
 
-Source selection leaves ordinary applicability, Rule precedence, and Skill composition unchanged. Retain every independently applicable Rule and Skill; selecting one artifact's copy does not replace a distinct artifact.
+Use an installed, injected, packaged, or cached copy as a fallback only when the corresponding checkout source does not exist. A failed read does not establish absence: an existing source can be inaccessible or unreadable.
+
+If required content remains unavailable, report the gap and stop dependent work under core governance's loading requirements.
+
+## Keep ownership and composition unchanged
+
+Source selection leaves ordinary applicability, Rule precedence, and Skill composition intact. Retain every independently applicable Rule and Skill; selecting one copy does not replace a distinct artifact.
 
 `.agents/rules/project-policy.md` remains the sole owner of canonical ownership, contracts and exposure, translation, and verification.

@@ -5,74 +5,86 @@ description: Write or revise project authoring blueprints under setup-assets/blu
 
 # Write Project Authoring Blueprints
 
-Produce the blueprint set needed to turn accepted intent into useful project Rules and Skills. Each blueprint describes one future target: the job it must help its reader do, the project evidence that shapes it, the content that matters, and how that content should evolve on later refreshes. Blueprints support independent authoring through the public writer.
+Write the blueprint set that turns accepted intent into useful project Rules and Skills. Each blueprint describes one future target: its reader's job, the project evidence that shapes it, the content that matters, and how that content should evolve. The public writer authors and reviews those future Candidates independently.
 
-Blueprints are **judgment-only**. Give the future Author firm requirements and concrete directions for open choices; leave composition and ordinary reasoning to that Author. The Author discovers and qualifies project evidence within the invocation's authority; a caller may supply accepted inputs. The public writer owns Candidate authoring and review. A procedure that the future target must teach belongs in its blueprint when order affects behavior; invocation scheduling, script mechanics, and retries belong to their runtime owners.
+Blueprints are **judgment-only**: provide firm requirements and concrete direction for open choices while leaving composition and ordinary reasoning to the future Author. That Author discovers and qualifies project evidence within the invocation's authority; a caller may supply accepted inputs. Include a procedure the future target must teach when order affects behavior. Keep invocation scheduling, script mechanics, and retries with runtime owners.
 
-Read checkout-authoritative `writing-for-agents` before writing. Follow the steps below for this blueprint-authoring run; they are not a template for the blueprints themselves.
+Read checkout-authoritative `writing-for-agents` before writing. The sequence below governs this authoring run; it is not an outline for every blueprint.
 
-## 1. Establish the targets and the authority to write
+## 1. Establish the targets and writing authority
 
-Recover the intended outcome from accepted user decisions and applicable project records, then qualify it against governing contracts, target-owner sources, and observable behavior. Establish source ownership and provenance so an existing example cannot silently become a requirement. Use existing blueprints and targets to find useful intent, omissions, and regressions; their presence does not establish that the old design is correct. Investigate further only to satisfy applicable instructions or answer a concrete question within the available access.
+Recover the outcome from accepted user decisions and applicable project records, then qualify it against governing contracts, target-owner sources, and observable behavior. Establish ownership and provenance so an existing example cannot become a requirement by accident. Use old blueprints and targets to discover intent, omissions, and regressions without assuming their design is correct. Widen investigation only for applicable instructions or a concrete question within available access.
 
-For each required target, establish its reader, purpose, trigger, Rule or Skill type, exact path, and owner. Give it a distinct responsibility, retaining policy, procedures, and facts with their proper owners. Create an additional target only when accepted intent requires one. For a revision, account for every behavior-changing obligation as preserved, changed, added, retired, or outside scope; an unsupported disposition is an unresolved decision rather than permission to drop it.
+For each required target, establish reader, purpose, trigger, Rule or Skill type, exact path, and owner. Give it a distinct responsibility and keep policy, procedures, and facts with their proper owners. Add a target only when accepted intent requires it. For revisions, account for every behavior-changing obligation as preserved, changed, added, retired, or outside scope; an unsupported disposition remains unresolved.
 
-Fix the blueprint paths and operations before drafting. Each create, replace, delete, or move needs authority for that exact path and operation; reuse an existing grant when it covers both. Visibility, a catalog entry, and filesystem access supply no semantic or write authority. Preserve unrelated paths and independently owned surfaces. Proceed when the complete target set, responsibilities, and authorized blueprint operations are clear; route missing inputs through the stop conditions below.
+Fix exact blueprint paths and create, replace, delete, or move operations before drafting. Each needs authority covering both path and operation; reuse existing grants where sufficient. Visibility, a catalog entry, and filesystem access establish neither semantic nor write authority. Preserve unrelated paths and independently owned surfaces.
 
-## 2. Give each Author a direction they can use
+Proceed when the complete target set, responsibilities, and authorized operations are clear. Otherwise use the stop conditions below.
 
-Write from the future reader's decisions. A Rule must connect its applicable condition to required or ranked behavior, with the exceptions that change the result. A Skill must explain the intended outcome and the choices or necessary sequence that lead to it. Specify permissions, verification, results, and stops where they affect that target's behavior. Keep conditions and exceptions beside the meaning they qualify.
+## 2. Give the future Author useful direction
 
-For each substantial part of the target, connect three things: what the reader needs to accomplish, which project evidence determines the content, and what deserves emphasis or exclusion. Name useful source directions and their owners, such as project-declared check commands, generator mappings, architectural decisions, or implementation relationships. Explain what each source resolves instead of asking the Author to "inspect the repository" or "document the tools." Project-dependent facts come from qualified project evidence, not from an illustrative command or a guessed repository layout.
+Write from the future reader's decisions. A Rule connects an applicable condition to required or ranked behavior and consequential exceptions. A Skill explains its outcome and the choices or necessary sequence that achieve it. Specify permission, verification, results, and stops where they affect behavior, keeping conditions and exceptions beside their meaning.
 
-For example, a Tools blueprint may need to help readers keep generated outputs synchronized. Point the Author to the project's declared generators, input/output mappings, and supported checks. Focus the resulting guidance on which source changes require regeneration, how agreement is verified, and what missing authority prevents execution. An inventory of every installed utility would obscure those decisions. The blueprint can establish this direction without choosing commands before the project evidence is available or prescribing headings for the future Rule.
+For each substantial part of the target, connect:
 
-The blueprint is sufficiently concrete when the Author can identify the required meaning, obtain the facts that determine its project-specific form, and choose relevant detail without inventing facts or permissions. Leave document structure and wording open unless they carry an accepted behavioral contract.
+- what its reader needs to accomplish;
+- which project evidence determines the content;
+- what deserves emphasis or exclusion.
 
-## 3. Make later refreshes useful for this content
+Name useful source directions and owners, such as declared checks, generator mappings, architectural decisions, or implementation relationships. Explain what they resolve. A generic request to inspect the repository leaves the content decision unsupported; project facts must come from qualified evidence rather than an illustrative command or guessed layout.
 
-Define refresh preferences in every blueprint. Select them according to the content's job, including different preferences for different parts of a mixed target. Neither rewriting everything nor preserving everything is a suitable default for all blueprints.
+For example, a Tools blueprint may guide its Author to generators, input/output mappings, and supported checks so the future Rule explains when regeneration is required, how agreement is verified, and what missing authority blocks it. An inventory of installed utilities would obscure that job. The blueprint can direct the inquiry without preselecting commands or headings.
 
-| Content | What the blueprint should direct the Author to do |
+The direction is sufficient when the Author can identify required meaning, find the facts shaping its project-specific form, and select relevant detail without inventing facts or permission. Leave structure and wording open unless they carry an accepted behavioral contract.
+
+## 3. Explain what should change on refresh
+
+Every blueprint needs refresh preferences suited to its content, including different preferences for mixed content. Neither rewriting everything nor preserving everything works as a universal default.
+
+| Content | Refresh direction |
 | --- | --- |
-| Tool and code-structure facts | Recheck the configurations, documented ownership, or implementation relationships that establish those facts. Update changed facts and remove disproven claims; frequent changes can be appropriate even when the blueprint is unchanged. |
-| Processes and durable context | Preserve still-applicable decisions, obligations, and their reasons. Identify which changes to requirements, responsibilities, or supported behavior justify revision. Retain useful stable wording when only phrasing could change. |
-| A mixture of both | Distinguish the parts, such as a stable verification obligation and its changing project command. Refresh the fact without losing the obligation or preserving an obsolete command merely because the surrounding policy is stable. |
+| Tool and code-structure facts | Recheck authoritative configuration, documented ownership, or implementation relationships. Update changed facts and remove disproven claims; the blueprint itself need not have changed. |
+| Processes and durable context | Preserve applicable decisions, obligations, and reasons. Identify changed requirements, responsibilities, or supported behavior that justify revision; retain sound wording when only phrasing could differ. |
+| Mixed content | Separate stable obligations from changing facts, such as a verification duty and its project command. Refresh the fact without losing the duty or preserving an obsolete command. |
 
-Use the current target together with fresh, qualified project evidence. Preserve valid project additions and obligations, including their conditions and exceptions. Existing text is evidence of intent, not proof that a disputed claim remains valid; resolve conflicts using the responsible owners and accepted authority. A newer blueprint likewise supplies no blanket reason to erase project decisions.
+Use the current target with fresh qualified evidence. Preserve valid project additions and obligations with their conditions and exceptions. Existing text is evidence of intent, not proof of a disputed claim; resolve conflicts through responsible owners and accepted authority. A newer blueprint does not authorize erasing project decisions.
 
-Explain what evidence warrants each kind of change and what should survive it. Where the refresh criteria reveal no relevant change or defect, retain sound content. Where they justify a revision, keep the resulting guidance accurate and coherent without accumulating duplicates. These criteria guide content decisions; they do not define invocation frequency, script behavior, or a replacement workflow for the public writer.
+Explain which evidence warrants each change and what must survive it. Retain sound content when no relevant change or defect appears; make justified revisions coherent without accumulating duplicates. These preferences guide content, not invocation frequency, scripts, or a replacement for the public writer.
 
-Proceed when every blueprint explains its expected sources of change, stable meaning, and evidence for revision with enough specificity to distinguish a useful refresh from unnecessary rewriting.
+Proceed when each blueprint distinguishes useful refresh from unnecessary rewriting through its expected change sources, stable meaning, and evidence for revision.
 
 ## 4. Bound the future authoring job
 
-Specify what evidence the future Author needs and how to obtain and qualify it within the invocation's authority: project facts with ownership and provenance, the existing target and relevant project additions, and accepted requirements distinguished from content used to detect regressions. A caller may supply these inputs, but their absence from a handoff is a discovery task before it is a missing-input stop. Let the Author determine ordinary file, interface, and implementation choices from qualified evidence; require user input only for material choices beyond accepted authority. Explain how facts that remain unsupported after authorized discovery affect the ability to produce the target.
+Specify the evidence the future Author needs and how to discover and qualify it within the invocation's authority: project facts with owners and provenance, the existing target and relevant additions, accepted requirements, and regression-detection material. A caller may supply this evidence, but an incomplete handoff first calls for authorized discovery, not an immediate missing-input stop.
 
-Establish that Author's exact Candidate and writable paths, the allowed create, replace, delete, and move operations, required validation, and any other permission or external effect before writing. Use the destination authorized for that invocation. Make every needed operation's grant explicit, reusing accepted authority where sufficient. Generating or inspecting an artifact supplies no authority to modify a live target.
+Let the Author make ordinary file, interface, and implementation choices from qualified evidence. Require user input for material choices beyond accepted authority. Explain how facts still unsupported after discovery prevent a usable target.
 
-Define observable acceptance conditions and the evidence the handoff must carry. Distinguish the future authoring run's supported results from the results the finished Rule or Skill will govern when used. Missing authority, unsupported material facts, and unresolved material choices must stop dependent authoring. These conditions supplement the public writer's result contract; they neither replace its workflow nor authorize downstream integration effects.
+Establish the future Author's exact Candidate and writable paths, allowed create, replace, delete, and move operations, required validation, and other permissions or external effects before writing. Use the authorized destination and make each required operation's grant explicit, reusing accepted authority where sufficient. Generating or inspecting an artifact does not authorize modifying a live target.
 
-This step is complete when the future Author can recognize its scope, evidence-discovery responsibilities, usable result, and stopping conditions without assuming a grant or inputs from a separate workflow.
+Define observable acceptance and required handoff evidence. Distinguish results of the future authoring run from results governed by the finished artifact. Missing authority, unsupported material facts, or unresolved material choices stop dependent authoring. These conditions supplement the public writer's result contract without replacing its workflow or authorizing integration.
 
-## 5. Check the set and deliver it
+Complete this step when the future Author can recognize scope, discovery duties, usable results, and stops without assuming separate-workflow grants or inputs.
 
-Review the complete blueprint set against accepted intent and neighboring owners. Every required target and behavior-changing obligation needs a supported disposition, and every future operation must fit its grant. Resolve overlapping ownership or material ambiguity before handoff.
+## 5. Check the set and deliver
 
-Trace representative normal, exceptional, and insufficient-evidence cases through each blueprint. Include a repeat with unchanged evidence, a changed project fact, and an existing valid project addition. Confirm that the guidance supports retaining sound content, correcting stale facts, and preserving project intent in the relevant cases. Identify the evidence behind each conclusion and where missing facts must stop authoring. These examples test the guidance; they do not become a universal field schema or a claim of exhaustive coverage. For a finite result protocol, check that conditions are distinguishable, overlapping conditions have explicit precedence, and no material gap remains.
+Review the whole set against accepted intent and neighboring owners. Every required target and behavior-changing obligation needs a supported disposition; every future operation must fit its grant. Resolve overlapping ownership and material ambiguity before handoff.
 
-Run all applicable owner-supported deterministic checks without fixing mode. Use `NOT_REQUIRED` only when qualified owner evidence establishes that no such check applies. Completion requires passing checks, or that justified result, as well as the set review above. A failed or inaccessible required check prevents completion; retain the failure evidence and report the unresolved condition.
+Trace representative normal, exceptional, and insufficient-evidence cases through each blueprint. Include unchanged evidence on repeat, a changed project fact, and an existing valid project addition. Check that the guidance supports retaining sound content, correcting stale facts, and preserving project intent, and identify evidence and missing-fact stops. These cases test the guidance without creating a universal field schema or claiming exhaustive coverage. For a finite result protocol, ensure conditions are distinguishable, overlaps have explicit precedence, and no material gap remains.
 
-Deliver the exact blueprint paths and owners, supported outcomes, checks and results, preserved constraints, and uncertain or untested surfaces. Keep this handoff outside the blueprints. The result supports independent authoring through the public writer. Future-target authoring and downstream integration remain separate jobs under their owning workflows; this blueprint-writing run invokes neither. Change only the authorized blueprints: produce no future targets or shared SmartKit artifacts, and perform no translation, installation, publication, commit, or push.
+Run applicable owner-supported deterministic checks without fixing mode. Use `NOT_REQUIRED` only when qualified owner evidence establishes that no check applies. Passing checks, or that justified result, and the set review are required for completion. Failed or inaccessible required checks prevent completion; preserve their evidence and report the unresolved condition.
 
-## Stop when an input cannot support the work
+Deliver exact blueprint paths and owners, supported outcomes, checks and results, preserved constraints, and uncertain or untested surfaces. Keep the handoff outside the blueprints. This run changes only authorized blueprints: it authors no future targets or shared SmartKit artifacts and invokes neither future-target authoring nor downstream integration. It performs no translation, installation, publication, commit, or push; those remain separate jobs.
 
-Use these results for the current blueprint-authoring run, independently of any result contract being described inside a blueprint:
+## Stop when the input cannot support the work
+
+The following results describe this blueprint-authoring run, independently of protocols a blueprint may teach:
 
 | Result | Condition |
 | --- | --- |
-| `ACCESS_REQUIRED` | Required evidence or validation cannot be accessed within the grant. |
+| `ACCESS_REQUIRED` | Required evidence or validation is inaccessible within the grant. |
 | `CONTEXT_REQUIRED` | Access is authorized, but qualified evidence cannot establish a necessary fact. |
 | `HUMAN_DECISION_REQUIRED` | A material choice exceeds accepted authority. |
 
-For missing access or context, identify the exact need, why authorized discovery did not resolve it, the responsible owner or resolving condition, and the consequence of proceeding without it. State the authority and observable condition needed for a fresh run. For a decision, provide its owner, the available choices, supporting evidence, and consequences. Resume only in a new run once the missing input and retry authority are established; existing accepted authority may cover that retry.
+For access or context gaps, name the exact need, why authorized discovery did not resolve it, responsible owner or resolving condition, and consequence of proceeding. State the authority and observable condition needed for a fresh run. For a decision, give its owner, choices, evidence, and consequences.
+
+Resume only in a new run after the missing input and retry authority are established; existing accepted authority may cover that retry.

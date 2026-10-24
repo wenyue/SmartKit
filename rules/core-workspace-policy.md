@@ -1,29 +1,25 @@
 # Workspace Policy
 
-Choose a workspace that lets the task proceed while preserving the work already there. Keep ownership clear: a linked worktree can contain inherited source changes alongside task changes, and carrying those changes leaves their original ownership intact.
+Choose a workspace that lets the task proceed while preserving existing work. Carrying changes into a linked worktree does not transfer their ownership to the current task.
 
-## Preserve Existing Work
+## Preserve work before choosing a workspace
 
-Preserve pre-existing staged, unstaged, and untracked work in the current checkout and every linked worktree. Choose a non-destructive path; when none is available, stop and request direction.
+Preserve pre-existing staged, unstaged, and untracked changes in the current checkout and every linked worktree. Use a non-destructive path; if none exists, stop and request direction.
 
-When existing work and task edits share a file, proceed only when the two can be distinguished and the result is verified to preserve the existing changes. A shared file is acceptable; inseparable changes require a stop and a request for direction.
+Task edits may share a file with existing work when the changes can be distinguished and the result is verified to preserve that work. If they are inseparable, stop and request direction.
 
-## Workspace and Commit Authority
+Use the current checkout when existing state can be preserved and the user, Harness, applicable Skills, and parallel work do not require isolation. When isolation is required or needed to protect existing state, use `create-worktree`; that Skill owns workspace selection and readiness.
 
-### Choose where to work
+## Keep commit authority scoped
 
-Use the current checkout when existing state can be preserved and the user, Harness, applicable Skills, and parallel work do not require isolation. Use `create-worktree` when isolation is required or needed to protect existing state. That Skill owns workspace selection and readiness.
+Commit task changes only when an applicable Skill, Rule, or conversation instruction explicitly requires or permits it, within that instruction's scope and conditions. Otherwise leave them uncommitted.
 
-### Determine what may be committed
+After receiving and rechecking a ready `create-worktree` result, the owning workflow may make scope-only Checkpoint Commits in that exact worktree through normal repository commit hooks without separate authorization. A ready worktree may include inherited source changes. Account for them under their original ownership; checkpoint authority covers only the task's scope, not everything carried into the worktree.
 
-Commit task changes only when an applicable Skill, Rule, or conversation instruction explicitly requires or permits it. Follow that instruction's scope and conditions; otherwise leave the changes uncommitted.
+A later Agent may continue that authority only when the accepted workflow identifies the exact worktree and base, and current Git evidence establishes that every intervening commit and local change belongs to the same scope. Ambiguity stops new commits.
 
-After receiving and rechecking a ready `create-worktree` result, the owning workflow may create scope-only Checkpoint Commits in that exact worktree through normal repository commit hooks, without separate authorization. A ready worktree may still contain inherited source changes; checkpoint authority covers only the task's scope. Account for inherited work under its original ownership rather than treating all worktree contents as task-owned commit content.
+## Require explicit authority for remote writes
 
-A later Agent may continue this checkpoint authority only when the accepted workflow identifies the exact worktree and base, and current Git evidence proves that every intervening commit and local change belongs to the same scope. Ambiguity stops new commits.
-
-## Git Remote Writes
-
-Perform a Git operation that changes remote state only when the user explicitly requests that outcome. Local commit authority does not by itself authorize a remote write.
+Change Git remote state only when the user explicitly requests that outcome. Local commit authority does not authorize a remote write.
 
 Read-only Git remote queries remain subject to ordinary tool and network authorization; this Rule adds no explicit-request condition for them.

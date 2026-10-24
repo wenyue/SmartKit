@@ -50,7 +50,15 @@ Finish rechecks CodeGraph without preparing it, then validates complete outputs,
 
 After convergence and before private-session cleanup, the launcher prepares the final target `.agents/config.json` bytes, recording the source release as `setupVersion` and preserving other config values. In repository mode, it also prepares the final synchronization receipt and, only when `.agents/config.json` is already selected for backup, the identical final bytes for that source file. The receipt fingerprints the resulting source entry. An unselected config file remains outside the backup; finish does not expand its scope.
 
-After successfully removing the private session, the launcher applies this prepared configuration update with guards against concurrent changes. Local modes update the target config only; repository mode coordinates the target config, synchronization receipt and any selected source config. Source and target may reside on separate filesystems; these guarded updates are not atomic as a set. Local finish success requires exit 0, `phase: finish`, `check: clean`, `codegraph.ready: true`, the reported successful setup version and completed cleanup. Configuration convergence alone is insufficient. CodeGraph preparation occurred outside this transaction and is not rolled back by a later setup failure. The resulting `setupVersion` records local full setup success even if subsequent source publication fails.
+After successfully removing the private session, the launcher applies this prepared configuration update with guards against concurrent changes. Local modes update only the target config; repository mode coordinates target config, synchronization receipt, and any selected source config. Source and target may occupy separate filesystems, so these guarded updates are not atomic as a set.
+
+Local finish succeeds only when every required observation is present:
+
+- Exit 0 and `phase: finish`.
+- `check: clean` and `codegraph.ready: true`.
+- The reported successful setup version and completed cleanup.
+
+Configuration convergence alone is insufficient. CodeGraph preparation occurred outside this transaction and is not rolled back by a later setup failure. The resulting `setupVersion` records local full setup success even if subsequent source publication fails.
 
 Keep exclusive access to planned target and source paths through apply and recovery. Guards cannot prevent an uncooperative writer from changing a path between check and mutation.
 

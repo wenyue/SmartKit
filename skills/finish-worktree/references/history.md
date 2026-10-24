@@ -14,6 +14,8 @@ If the target or source moves, reassess the facts needed for the selected operat
 
 Consolidation needs an explicit user request or project requirement and commit authority. The range must be wholly task-owned, unpublished and unrelied upon; the exact target must be its ancestor and the source clean under `git status --porcelain=v1 -z`. Use normal repository commit hooks.
 
+### Preserve the original before building a candidate
+
 Record the original branch, HEAD/tree and exact target outside the source worktree. Create a unique, expected-absent recovery ref pointing to the original HEAD with `git update-ref <backup-ref> <old-oid> ""`. An empty expected old value requires the ref to be absent. Keep this ref until recovery no longer needs the original history.
 
 Build the candidate on detached HEAD so a failed hook leaves the original branch intact. Run each command only after its predecessor succeeds, in the source worktree:
@@ -26,4 +28,8 @@ git commit --file <external-message-file>
 
 Use an owned message file and ordinary commit hooks. If the staged diff is empty, stop rather than creating an empty delivery commit. Verify the candidate has the target as its sole parent, the exact accepted tree and a clean checkout. A hook changing contents requires renewed checks and acceptance; retain its changes instead of resetting them away. Identical content allows reuse of content review, but rerun checks that depend on commit identity or hooks.
 
-Only after those checks, move the original branch using `git update-ref <original-branch-ref> <candidate-oid> <old-oid>`, then switch back to it and verify branch, HEAD/tree and clean state. A changed branch rejects the update instead of replacing someone else's work. On any failure or interruption, inspect HEAD, branch, index and working files before continuing; retain the candidate, backup ref and message for manual recovery. Do not reset or retry blindly. Remove recovery items only under the entry's cleanup conditions.
+### Update the branch after candidate verification
+
+Only after those checks, move the original branch using `git update-ref <original-branch-ref> <candidate-oid> <old-oid>`, then switch back to it and verify branch, HEAD/tree and clean state. A changed branch rejects the update instead of replacing someone else's work.
+
+On any failure or interruption, inspect HEAD, branch, index and working files before continuing; retain the candidate, backup ref and message for manual recovery. Do not reset or retry blindly. Remove recovery items only under the entry's cleanup conditions.

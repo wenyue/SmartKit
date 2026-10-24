@@ -5,7 +5,7 @@ description: Finish an isolated linked Git worktree by keeping it for later, pub
 
 # Finish Worktree
 
-Choose where the work should go, verify that result, and leave any remaining work easy to resume. The implementation workflow owns content, checks and review; the issue tracker's owner decides when to close its records. A PR or a transfer is a handoff, not proof that the result was integrated.
+Finish by verifying the chosen destination or retention state and leaving any remaining work easy to resume. The implementation workflow owns content, checks and review; the issue tracker's owner decides when to close records. A PR or transfer hands work off without proving that it was integrated.
 
 ## Choose the outcome
 
@@ -19,7 +19,9 @@ Confirm the source's physical path, Git worktree registration, repository, branc
 | [Return for review](references/return-for-review.md) | Combine task changes with a checkout's working files while preserving its HEAD and complete index. |
 | [Explicit discard](references/discard.md) | Remove work whose actual loss the user has authorized. |
 
-A blocked route does not authorize a different outcome. Preserve commits unless consolidation is explicitly requested or required by project policy. Publication, local integration and requested consolidation require [History Preparation](references/history.md); keeping, transferring and discarding do not otherwise require formal review. Independent project and caller requirements still apply.
+A blocked route does not authorize a different outcome. Preserve commits unless the user explicitly requests consolidation or project policy requires it.
+
+Publication, local integration and requested consolidation require [History Preparation](references/history.md). Keeping, transferring and discarding do not otherwise require formal review; independent project and caller requirements still apply.
 
 To **keep for later**, leave files, indexes and refs untouched. Report the worktree, branch, HEAD, unfinished work, pending checks or operations, and who will continue with what next action. Refresh that account if concurrent work changes it. There is no need to clean or review work merely to keep it. Retaining the residue of an earlier failed operation does not make that operation successful.
 
@@ -35,4 +37,6 @@ Remove only identified, task-owned items that are no longer needed and whose rem
 
 Before deleting a branch, establish that no worktree uses it. Delete owned branch and recovery refs with their expected old OIDs. Observe each removal before proceeding; partial cleanup does not undo a verified handoff or delivery. Keeping an item is a valid finish when its location, next owner and condition for later removal are clear. Transfer backups and sources have the stricter acceptance condition in their route.
 
-Report the selected outcome and what was verified: relevant paths, branches/commits or PR URL, checks, retained work and the next action. Distinguish completed actions from failures or uncertainty; for example, “delivered to main; source cleanup failed” must not prompt another integration. Finish when the selected result is verified and remaining items are either safely removed or deliberately retained with enough information to continue.
+Report the selected outcome and its verified evidence: relevant paths, branches/commits or PR URL, checks, retained work, and next action. Keep completed actions distinct from failure or uncertainty. For example, “delivered to main; source cleanup failed” calls for cleanup, not another integration.
+
+Finish when the selected result is verified and every remaining item is safely removed or deliberately retained with enough information to continue.

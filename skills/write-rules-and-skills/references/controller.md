@@ -4,19 +4,32 @@ Keep the assignment faithful to the user and the collaboration tied to one Candi
 
 ## Establish a faithful, actionable job
 
+### Separate user intent from the brief
+
 Preserve the original request, corrections, and the proposals or questions they answer as a user-intent record separate from your interpretation. Resolve material unknowns from available evidence; ask the user only for an unresolved choice or fact that could change scope, behavior, risk, or acceptance. Editorial improvement leaves composition with the Author and does not authorize changing accepted requirements.
 
 Establish intended readers, the supported environment, canonical owners, and their boundaries. Supply evidence for consequential direct and transitive dependencies, how readers reach them, and unavailable or failed-use outcomes. Current-session visibility does not establish a supported loading route.
 
 Set the authorized outcome and ownership boundary. A rewrite reconsiders content, structure, and mechanisms from current goals and necessary constraints; local polishing alone is not the requested result. Treat a Skill's file layout and metadata as part of that design instead of freezing the existing file set by default. Sound design may remain, and simplification is an opportunity rather than a quota.
 
-For a new artifact, rewrite, or substantial reorganization with unsettled file design, give the resident Author a read-only layout assignment. Resolve it into exact paths and allowed create, edit, move, or delete operations before writing; include both endpoints of a move. Ordinary revisions with clear paths need no separate proposal. Preserve existing work and include the supporting resources needed for one coherent artifact. Separate additional artifacts into dependency-ordered jobs.
+### Set scope with the resident Author
+
+For a new artifact, rewrite, or substantial reorganization with unsettled file design, give the resident Author a read-only layout assignment. Before writing, resolve the layout into exact paths and allowed create, edit, move, or delete operations, including both endpoints of a move. Ordinary revisions with clear paths need no separate proposal. Preserve existing work and include the supporting resources needed for one coherent artifact. Separate additional artifacts into dependency-ordered jobs.
 
 A resident role retains its own working context across returns, for example as a persistent child agent or a resumed session. A fresh agent receiving only a summary is a new identity. Keep one resident Author through layout, initial writing, and every repair; harness-specific mechanics belong to the harness.
 
 For a Skill target, supply its `AUTHORING.md` when present. Running this workflow on another target is not a reason to load this Skill's own authoring record. Include its creation or update in scope only when the entry's threshold for a durable authoring decision is met, or when the current work changes a recorded decision. The record explains decisions; it does not replace operative requirements or freeze them permanently.
 
-Give the Author a concise brief containing the outcome, accepted changes and preservation decisions, exact scope and operations, authoritative sources and related owners, supported environment and loading routes, open dependencies, required non-fixing checks, and observable completion conditions. For a rewrite, identify the current artifact and relevant earlier versions as evidence without making either outline authoritative. Supply the reasons, corrections, and original exchanges needed to understand the task. Distinguish settled choices from suggestions; a detailed input is not a prescribed outline.
+### Supply an actionable brief
+
+Give the Author a concise brief covering:
+
+- The outcome, accepted changes, and preservation decisions.
+- Exact paths and allowed operations.
+- Authoritative sources, related owners, supported environment, and loading routes.
+- Open dependencies, required non-fixing checks, and observable completion conditions.
+
+For a rewrite, identify the current artifact and relevant earlier versions as evidence without making either outline authoritative. Supply the reasons, corrections, and original exchanges needed to understand the task. Distinguish settled choices from suggestions; detailed input is not a prescribed outline.
 
 Coordinate required outside-owner changes through their authorized routes. Missing source access, permission, or a user-owned decision requires `NEEDS_INPUT` before dependent work; an in-scope draft cannot close an outside dependency.
 
@@ -31,6 +44,8 @@ python "<skill-root>/scripts/candidate_evidence.py" capture --root "<candidate-r
 Repeat `--path` for every scoped resource. Keep snapshots outside the Candidate root as the tool requires, and other evidence and review records outside Candidate scope. Record allowed operations and required checks alongside them; a path-subset check does not establish operation authority. If Candidate instructions govern this job, preserve their complete pre-write text and use it throughout: the rewrite cannot authorize its own run.
 
 A later path-set change pauses Candidate writing. Resolve its operations, keep every previously frozen path in evidence scope, and preserve added paths before their first write. Supplements extend the original baseline without replacing an earlier path's starting state. Capture the complete enlarged current scope, update the brief and checks, and give affected roles the cumulative evidence before releasing writing. Earlier verdicts do not accept this new version. Uncertain pre-write evidence or attribution requires preserving state and returning `BLOCKED`.
+
+### Bound review and runtime work
 
 Set a finite iteration budget: three review rounds unless the accepted task establishes another limit. Record authorized extensions. Progress and resources determine whether another round is useful; approaching the limit does not lower acceptance standards.
 
@@ -88,7 +103,15 @@ The mapping makes scoped destinations resolve in the Candidate and retained dest
 
 The entry never rewrites files. A pass establishes its bounded coverage, not Markdown validity or semantic correctness. Record it as not applicable when no Candidate Markdown survives. For an Author `COMPLETE`, also run all other required checks in non-fixing mode. Retain commands, results, and tested fingerprint; begin review only after every required check passes.
 
-Read exit status and streams: 0 means no problem found; 1 lists document problems on stdout; 2 reports a usage or input error on stderr and an incomplete result, taking precedence over 1 even if stdout also lists problems. Route by cause. Candidate-caused errors, including invalid UTF-8, go to the Author. Establish the cause of outside-target errors or suspected false positives before routing them; fix your own invocation mistakes and rerun. Missing user-controlled input or permission requires `NEEDS_INPUT`; other unresolved failures or correction without progress require `BLOCKED`.
+Read both exit status and streams:
+
+| Exit | Meaning |
+| --- | --- |
+| `0` | No problem found within the check's coverage. |
+| `1` | Document problems are listed on stdout. |
+| `2` | A usage or input error is reported on stderr; the result is incomplete. This takes precedence over `1`, even when stdout also lists document problems. |
+
+Route by cause. Candidate-caused errors, including invalid UTF-8, go to the Author. Establish the cause of outside-target errors or suspected false positives before routing them; fix your own invocation mistakes and rerun. Missing user-controlled input or permission requires `NEEDS_INPUT`; other unresolved failures or correction without progress require `BLOCKED`.
 
 ### Close the review round
 
@@ -112,6 +135,15 @@ For Quality's whole-file redesign proposal about a pre-existing issue outside th
 
 On every exit, account for Author, Reviewers, Runners, and permitted children. End active work safely, retain necessary observations, establish cleanup and residual state, and check the final Candidate boundary. Uncertain termination, integrity, or cleanup requires preserving recovery-relevant state and returning `BLOCKED`.
 
-Return the Candidate type, exact paths and final fingerprint, Author's semantic summary, topology and separate perspective results including intent fidelity, required check evidence, runtime observations and limits when used, unresolved dependencies or risks, residual state, and terminal result.
+Return a handoff that identifies:
 
-`COMPLETE` requires all three perspectives and required checks to pass on the same final fingerprint, dependencies closed, and safe finalization. `NEEDS_INPUT` names the exact user-controlled decision, input, access, or permission needed. `BLOCKED` explains why authorized work cannot complete and what evidence or capability could change that.
+- Candidate type, exact paths, final fingerprint, and the Author's semantic summary.
+- Review topology and separate perspective results, including intent fidelity.
+- Required check evidence and, when used, runtime observations and limits.
+- Unresolved dependencies or risks, residual state, and terminal result.
+
+| Result | Required basis |
+| --- | --- |
+| `COMPLETE` | All three perspectives and required checks pass on the same final fingerprint, dependencies are closed, and finalization is safe. |
+| `NEEDS_INPUT` | Name the exact user-controlled decision, input, access, or permission needed. |
+| `BLOCKED` | Explain why authorized work cannot complete and what evidence or capability could change that. |
