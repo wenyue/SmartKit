@@ -19,6 +19,10 @@
     {
       "version": "1.2.24",
       "guide": "references/migrations/1.2.24.md"
+    },
+    {
+      "version": "1.2.25",
+      "guide": "references/migrations/1.2.25.md"
     }
   ]
 }
