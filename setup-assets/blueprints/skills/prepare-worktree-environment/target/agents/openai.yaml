@@ -1,0 +1,7 @@
+interface:
+  display_name: "Prepare Worktree Environment"
+  short_description: "为已选定的 Git 工作树准备所需环境并确认就绪状态。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#15803D"
+  default_prompt: "使用 $prepare-worktree-environment，为当前已选定的 Git 工作树准备环境并报告就绪状态。"

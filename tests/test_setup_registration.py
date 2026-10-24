@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -73,13 +75,21 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertFalse(result['ready'])
         self.assertEqual(len(result['remaining_requests']), 3)
         manifest = json.loads(self.manifest.read_bytes())
-        self.assertEqual(manifest['requests'], [
+        self.assertEqual(manifest['version'], 2)
+        self.assertEqual([
+            {'id': entry['id'], 'outputs': [item['path'] for item in entry['outputs']]}
+            for entry in manifest['requests']
+        ], [
             {'id': 'blueprint-project-tools', 'outputs': [rule]},
             {'id': 'blueprint-change-set-verification', 'outputs': [
                 '.agents/skills/change-set-verification/SKILL.md',
                 '.agents/skills/change-set-verification/references/checks.md',
             ]},
         ])
+        self.assertTrue(all(
+            output['sha256'] == hashlib.sha256((self.generated / output['path']).read_bytes()).hexdigest()
+            for entry in manifest['requests'] for output in entry['outputs']
+        ))
         self.assertEqual(list(self.target.iterdir()), [])
         self.assertFalse((self.session / workflow._SESSION_CLAIM).exists())
 
@@ -135,7 +145,7 @@ class SetupRegistrationTest(unittest.TestCase):
         rule.write_bytes(b'project edit\n')
         self.prepare()
         self.assertTrue(self.request['generation_requests'])
-        self.assertEqual(json.loads(self.manifest.read_bytes()), {'version': 1, 'requests': []})
+        self.assertEqual(json.loads(self.manifest.read_bytes()), {'version': 2, 'requests': []})
         self.assertEqual(rule.read_bytes(), b'project edit\n')
         for item in self.request['generation_requests']:
             path = self.output(item['target'])
@@ -154,6 +164,92 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertIn('target changed', error)
         self.assertEqual(self.manifest.read_bytes(), original)
         self.assertEqual(config.read_bytes(), b'{}\n')
+
+    def test_changed_or_missing_registered_bytes_cannot_reach_source_or_target(self):
+        for item in self.request['generation_requests']:
+            self.assertEqual(self.register(item['id'], self.output(item['target']))[0], 0)
+        path = self.generated / self.request['generation_requests'][0]['target']
+        original = path.read_bytes()
+        for content in (b'changed after registration', None):
+            with self.subTest(content=content):
+                if content is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(content)
+                with mock.patch.object(setup.project_configuration, 'save_generated') as save, \
+                     mock.patch.object(setup, 'apply_plan') as apply, redirect_stderr(StringIO()):
+                    self.assertEqual(setup.main(['finish', *self.arguments]), 2)
+                save.assert_not_called()
+                apply.assert_not_called()
+                self.assertEqual(list(self.target.iterdir()), [])
+                path.write_bytes(original)
+
+    def test_private_manifest_requires_valid_sealed_output_records(self):
+        for item in self.request['generation_requests']:
+            self.assertEqual(self.register(item['id'], self.output(item['target']))[0], 0)
+        original = self.manifest.read_bytes()
+        for mutation in ('old-version', 'bare-path', 'invalid-hash', 'missing-hash'):
+            with self.subTest(mutation=mutation):
+                manifest = json.loads(original)
+                output = manifest['requests'][0]['outputs'][0]
+                if mutation == 'old-version':
+                    manifest['version'] = 1
+                elif mutation == 'bare-path':
+                    manifest['requests'][0]['outputs'][0] = output['path']
+                elif mutation == 'invalid-hash':
+                    output['sha256'] = 'not a digest'
+                else:
+                    del output['sha256']
+                self.manifest.write_text(json.dumps(manifest), encoding='utf-8')
+                with mock.patch.object(setup.project_configuration, 'save_generated') as save, redirect_stderr(StringIO()):
+                    self.assertEqual(setup.main(['finish', *self.arguments]), 2)
+                save.assert_not_called()
+                self.assertEqual(list(self.target.iterdir()), [])
+
+    def test_rendered_generated_bytes_must_match_registration_before_save(self):
+        for item in self.request['generation_requests']:
+            self.assertEqual(self.register(item['id'], self.output(item['target']))[0], 0)
+        selected = self.request['generation_requests'][0]['target']
+        render = setup.render_desired_state
+
+        def altered(*args, **kwargs):
+            state = render(*args, **kwargs)
+            return replace(state, files=tuple(
+                replace(item, content=b'changed during rendering') if str(item.path) == selected else item
+                for item in state.files
+            ))
+
+        with mock.patch.object(setup, 'render_desired_state', side_effect=altered), \
+             mock.patch.object(setup.project_configuration, 'save_generated') as save, \
+             mock.patch.object(setup, 'apply_plan') as apply, redirect_stderr(StringIO()) as error:
+            self.assertEqual(setup.main(['finish', *self.arguments]), 2)
+        self.assertIn('rendered output differs', error.getvalue())
+        save.assert_not_called()
+        apply.assert_not_called()
+
+    def test_source_save_receives_verified_rendered_bytes_without_staging_reread(self):
+        for item in self.request['generation_requests']:
+            self.assertEqual(self.register(item['id'], self.output(item['target']))[0], 0)
+        selected = self.request['generation_requests'][0]['target']
+        original = (self.generated / selected).read_bytes()
+        observe = setup._generated_outputs
+        observations = 0
+
+        def changed_after_final_observation(*args, **kwargs):
+            nonlocal observations
+            result = observe(*args, **kwargs)
+            observations += 1
+            if observations == 2:
+                (self.generated / selected).write_bytes(b'late staging change')
+            return result
+
+        with mock.patch.object(setup, '_generated_outputs', side_effect=changed_after_final_observation), \
+             mock.patch.object(setup.project_configuration, 'save_generated', side_effect=setup.SetupError('observed save input')) as save, \
+             mock.patch.object(setup, 'apply_plan') as apply, redirect_stderr(StringIO()):
+            self.assertEqual(setup.main(['finish', *self.arguments]), 2)
+        self.assertEqual(save.call_args.args[1][selected], original)
+        apply.assert_not_called()
+        self.assertEqual(list(self.target.iterdir()), [])
 
     def test_claimed_session_cannot_register(self):
         rule = self.output('.agents/rules/tools.md')

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -13,6 +14,20 @@ import textwrap
 import unicodedata
 from typing import Callable, Dict, Iterator, List, NamedTuple, Optional, Sequence, Set, Tuple, Union
 from urllib.parse import unquote as percent_decode
+
+# Resolve owned support beside this file, including when a caller imports it by path.
+_support_spec = importlib.util.spec_from_file_location(
+    "_smartkit_fixed_content", Path(__file__).with_name("fixed_content.py")
+)
+if _support_spec is None or _support_spec.loader is None:
+    raise ImportError("cannot load the owned fixed-content checker")
+fixed_content = importlib.util.module_from_spec(_support_spec)
+_bytecode_setting = sys.dont_write_bytecode
+try:
+    sys.dont_write_bytecode = True
+    _support_spec.loader.exec_module(fixed_content)
+finally:
+    sys.dont_write_bytecode = _bytecode_setting
 
 
 INPUT_ERROR_EXIT = 2
@@ -716,6 +731,7 @@ def build_parser() -> argparse.ArgumentParser:
         "changed. Document problems go to stdout as 'path:line: check-name: message'. Usage and "
         "input errors, including an unreadable input or link target, go to stderr."
     ))
+    sections.append(fixed_content.HELP)
     sections.append(paragraph(
         "Exit 0: no problem found. Exit 1: document problems only. Exit 2: usage or input error; "
         "the result is incomplete, so 2 takes precedence over 1."
@@ -732,6 +748,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="relative POSIX path in the exact frozen Candidate scope; repeat for all paths")
     parser.add_argument("--context-path", action="append", default=[],
                         help="relative POSIX path in another accepted Candidate; repeat for all paths")
+    parser.add_argument("--fixed-content", help="source-relative declaration path captured in --fixed-snapshot")
+    parser.add_argument("--fixed-snapshot", help="candidate_evidence snapshot of the declaration and its sources")
     return parser
 
 
@@ -739,6 +757,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         mapping = path_mapping(args)
+        if args.fixed_content is not None or args.fixed_snapshot is not None:
+            if args.fixed_content is None or args.fixed_snapshot is None or mapping is None:
+                raise InputError("fixed content requires --fixed-content, --fixed-snapshot and Candidate mapping")
     except (InputError, OSError, ValueError) as exc:
         print(f"cannot use path mapping: {exc}", file=sys.stderr)
         return INPUT_ERROR_EXIT
@@ -777,6 +798,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             else:
                 print(report)
                 problems = True
+    if args.fixed_content is not None:
+        try:
+            findings = fixed_content.check(
+                args.fixed_content, Path(args.fixed_snapshot), mapping.candidate_root,
+                {path.as_posix() for path in mapping.candidate_paths},
+            )
+            for finding in findings:
+                report = f"{finding.path}:{finding.line}: fixed-content: {finding.message}"
+                if finding.input_error:
+                    print(report, file=sys.stderr)
+                    input_errors = True
+                else:
+                    print(report)
+                    problems = True
+        except (fixed_content.FixedInputError, OSError, ValueError) as exc:
+            print(f"cannot check fixed content: {exc}", file=sys.stderr)
+            input_errors = True
     if input_errors:
         return INPUT_ERROR_EXIT
     return PROBLEM_EXIT if problems else 0

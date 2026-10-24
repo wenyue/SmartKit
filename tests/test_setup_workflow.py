@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import shutil
 import stat
@@ -68,9 +69,11 @@ class SetupWorkflowTest(unittest.TestCase):
             path = session / 'generated' / PurePosixPath(relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f'# generated {path.name}\n', encoding='utf-8')
-            declarations.append({'id': item['id'], 'outputs': [relative]})
+            declarations.append({'id': item['id'], 'outputs': [
+                {'path': relative, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()},
+            ]})
         (session / 'generated/.setup-generation.json').write_text(
-            json.dumps({'version': 1, 'requests': declarations}), encoding='utf-8'
+            json.dumps({'version': 2, 'requests': declarations}), encoding='utf-8'
         )
 
     @staticmethod
@@ -172,6 +175,18 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(inputs['writer'], str(REPO_ROOT / 'skills/write-rules-and-skills/SKILL.md'))
             self.assertEqual((bundle / 'common-plan.md').read_bytes(), plan.read_bytes())
             self.assertEqual((bundle / 'existing' / support.relative_to(target)).read_bytes(), support.read_bytes())
+            for item in inputs['inputs']:
+                original = REPO_ROOT / item['request']['source']
+                expected = ({path.relative_to(original.parent).as_posix(): path.read_bytes()
+                             for path in original.parent.rglob('*') if path.is_file()}
+                            if item['request']['target'].endswith('/SKILL.md')
+                            else {original.name: original.read_bytes()})
+                self.assertEqual({entry['path'] for entry in item['blueprint_files']}, set(expected))
+                self.assertEqual((bundle / item['blueprint']).read_bytes(), original.read_bytes())
+                for entry in item['blueprint_files']:
+                    self.assertEqual((bundle / entry['copy']).read_bytes(), expected[entry['path']])
+                    self.assertEqual(entry['sha256'], hashlib.sha256(expected[entry['path']]).hexdigest())
+                    self.assertEqual(bundle / entry['copy'], bundle / item['blueprint_root'] / entry['path'])
             self.assertEqual((session / 'request.json').read_bytes(), request_bytes)
             self.assertEqual(registration.read_bytes(), registration_bytes)
             self.assertEqual(before, {path: path.read_bytes() for path in target.rglob('*') if path.is_file()})

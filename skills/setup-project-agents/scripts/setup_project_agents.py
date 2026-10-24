@@ -13,13 +13,16 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, replace
 from pathlib import Path, PurePosixPath
 
+# The pinned implementation remains read-only, including during its imports.
+sys.dont_write_bytecode = True
+
 import agents_setup  # Expose the supported maintenance engine.
 from project_state.models import ContractError
 from project_state.catalog import load_catalog, safe_relative
 from project_config.catalog import parse_external_skills, parse_mcp_servers, parse_project_agents, parse_rule_entry
 from agents_setup.agent_discovery import discover_native_agents
 from project_config.discovery import DiscoveryError, discover_project_rules, discover_project_skills
-from agents_setup.generation import generation_requests
+from agents_setup.generation import blueprint_files, blueprint_root, generation_requests
 from agents_setup.external import ExternalSkillError, snapshot_external_skills
 from project_state.paths import is_link_like as _is_link_like
 from project_state.models import Catalog, Harness
@@ -44,6 +47,7 @@ _COMMIT = re.compile(r'^[0-9a-fA-F]{40}$')
 _REQUEST_NAME = 'request.json'
 _GENERATED_NAME = 'generated'
 _GENERATION_MANIFEST = '.setup-generation.json'
+_GENERATION_VERSION = 2
 _HARNESSES = tuple(Harness)
 
 
@@ -338,7 +342,7 @@ def _request_config(
 
 def _manifest_outputs(
     manifest: Mapping[str, object], generation_requests: object, *, complete: bool,
-) -> set[PurePosixPath]:
+) -> dict[PurePosixPath, str]:
     if not isinstance(generation_requests, list) or not all(
         isinstance(item, Mapping) for item in generation_requests
     ):
@@ -347,12 +351,12 @@ def _manifest_outputs(
         str(item['id']): PurePosixPath(str(item['target']))
         for item in generation_requests
     }
-    if set(manifest) != {'version', 'requests'} or manifest.get('version') != 1:
+    if set(manifest) != {'version', 'requests'} or manifest.get('version') != _GENERATION_VERSION:
         raise SetupError('generation manifest has an invalid shape')
     declarations = manifest.get('requests')
     if not isinstance(declarations, list):
         raise SetupError('generation manifest requests must be an array')
-    declared: set[PurePosixPath] = set()
+    declared: dict[PurePosixPath, str] = {}
     seen_ids: set[str] = set()
     for declaration in declarations:
         if not isinstance(declaration, Mapping) or set(declaration) != {'id', 'outputs'}:
@@ -365,18 +369,24 @@ def _manifest_outputs(
             or request_id in seen_ids
             or not isinstance(outputs, list)
             or not outputs
-            or not all(isinstance(item, str) for item in outputs)
         ):
             raise SetupError('generation manifest request does not match the session request')
         seen_ids.add(request_id)
         primary = expected_requests[request_id]
         paths: list[PurePosixPath] = []
-        for value in outputs:
+        digests: dict[PurePosixPath, str] = {}
+        for output in outputs:
+            if (not isinstance(output, Mapping) or set(output) != {'path', 'sha256'}
+                    or not isinstance(output['path'], str)
+                    or not isinstance(output['sha256'], str)
+                    or re.fullmatch(r'[0-9a-f]{64}', output['sha256']) is None):
+                raise SetupError('generation manifest output must contain a path and SHA256 digest')
             try:
-                path = safe_relative(value, 'generation manifest output path')
+                path = safe_relative(output['path'], 'generation manifest output path')
             except ContractError as error:
                 raise SetupError('generation manifest contains an unsafe output path') from error
             paths.append(path)
+            digests[path] = output['sha256']
         if len(paths) != len(set(paths)) or primary not in paths:
             raise SetupError('generation manifest must declare each primary target exactly once')
         if primary.parts[:2] == ('.agents', 'rules'):
@@ -384,9 +394,9 @@ def _manifest_outputs(
                 raise SetupError('generated Rule request cannot declare supporting outputs')
         elif any(path != primary and primary.parent not in path.parents for path in paths):
             raise SetupError('generated Skill supporting output is outside its Skill directory')
-        if declared.intersection(paths):
+        if set(declared).intersection(paths):
             raise SetupError('generation manifest declares one output more than once')
-        declared.update(paths)
+        declared.update(digests)
     if complete and seen_ids != set(expected_requests):
         raise SetupError('generation manifest does not declare every generation request')
     return declared
@@ -395,7 +405,7 @@ def _manifest_outputs(
 def _generated_outputs(
     session: Path,
     generation_requests: object,
-) -> tuple[Path, tuple[PurePosixPath, ...]]:
+) -> tuple[Path, dict[PurePosixPath, str]]:
     root = session / _GENERATED_NAME
     try:
         status = root.lstat()
@@ -450,7 +460,10 @@ def _generated_outputs(
     expected = {path.as_posix() for path in declared}
     if files != expected:
         raise SetupError('generated outputs must match the exact generation manifest')
-    return root, tuple(sorted(declared, key=lambda item: item.as_posix()))
+    for relative, expected_digest in declared.items():
+        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected_digest:
+            raise SetupError(f'registered output changed; cancel and restart: {relative}')
+    return root, declared
 
 
 def _target_link_boundary(
@@ -754,7 +767,10 @@ def _source_fingerprint(root: Path, catalog: Catalog) -> str:
         root / 'skills' / skill.path / 'SKILL.md'
         for skill in load_skill_registry(root).custom if skill.name.startswith('rule-')
     )
-    sources = [root / asset.source.as_posix() for asset in catalog.assets]
+    for asset in catalog.assets:
+        if asset.kind == 'blueprint':
+            paths.update(root / relative for relative in blueprint_files(root, asset))
+    sources = [root / asset.source.as_posix() for asset in catalog.assets if asset.kind != 'blueprint']
     sources.extend((
         root / 'runtime/project_state',
         root / 'skills/setup-project-agents',
@@ -934,7 +950,7 @@ def _prepare(args: argparse.Namespace, session: Path, source_commit: str | None)
             target_fingerprint=target_fingerprint,
         ),
     )
-    _write_json(generated / _GENERATION_MANIFEST, {'version': 1, 'requests': []})
+    _write_json(generated / _GENERATION_MANIFEST, {'version': _GENERATION_VERSION, 'requests': []})
 
 
 def _session_inputs(
@@ -982,6 +998,7 @@ def _register(args: argparse.Namespace, session: Path, source_commit: str | None
     manifest = _read_json(manifest_path, 'generation manifest')
     _manifest_outputs(manifest, request['generation_requests'], complete=False)
     outputs: list[str] = []
+    sealed: list[dict[str, str]] = []
     for value in args.output:
         supplied = Path(value)
         if supplied.is_absolute():
@@ -993,8 +1010,9 @@ def _register(args: argparse.Namespace, session: Path, source_commit: str | None
         if _target_link_boundary(root, relative) is not None or not (root / relative).is_file():
             raise SetupError('registered output must be a safe regular file')
         outputs.append(relative.as_posix())
-    declaration = {'id': args.request_id, 'outputs': outputs}
-    updated = {'version': 1, 'requests': [*manifest['requests'], declaration]}
+        sealed.append({'path': relative.as_posix(), 'sha256': hashlib.sha256((root / relative).read_bytes()).hexdigest()})
+    declaration = {'id': args.request_id, 'outputs': sealed}
+    updated = {'version': _GENERATION_VERSION, 'requests': [*manifest['requests'], declaration]}
     _manifest_outputs(updated, request['generation_requests'], complete=False)
     temporary: Path | None = None
     try:
@@ -1054,8 +1072,10 @@ def _writer_inputs(args: argparse.Namespace, session: Path, source_commit: str |
     previous = load_ownership(project.root, catalog=catalog)
     contracts = {item.id: item for item in previous.contracts} if previous else {}
     content: dict[PurePosixPath, bytes] = {}
+    blueprint_content: dict[PurePosixPath, bytes] = {}
+    assets = {asset.id: asset for asset in catalog.assets}
     inputs: list[dict[str, object]] = []
-    for item in request['generation_requests']:
+    for index, item in enumerate(request['generation_requests']):
         primary = safe_relative(item['target'], 'writer target')
         paths: dict[PurePosixPath, bool] = {primary: True}
         old = contracts.get(item['id'])
@@ -1080,9 +1100,26 @@ def _writer_inputs(args: argparse.Namespace, session: Path, source_commit: str |
                 'path': relative.as_posix(), 'copy': f'existing/{relative.as_posix()}',
                 'sha256': hashlib.sha256(value).hexdigest(),
             })
+        asset = assets[item['id']]
+        source_base = blueprint_root(asset)
+        if source_base == asset.source:
+            source_base = asset.source.parent
+        # Catalog IDs are opaque; frozen request positions provide portable, unique names.
+        copied_root = PurePosixPath('blueprints') / f'request-{index}'
+        resources = []
+        for relative in blueprint_files(args.source_root, asset):
+            value = (args.source_root / relative).read_bytes()
+            resource = relative.relative_to(source_base)
+            copy = copied_root / resource
+            blueprint_content[copy] = value
+            resources.append({
+                'path': resource.as_posix(), 'copy': copy.as_posix(),
+                'sha256': hashlib.sha256(value).hexdigest(),
+            })
         inputs.append({
             'request': dict(item),
-            'blueprint': str(args.source_root / item['source']),
+            'blueprint': (copied_root / asset.source.relative_to(source_base)).as_posix(),
+            'blueprint_root': copied_root.as_posix(), 'blueprint_files': resources,
             'candidate': str(session / _GENERATED_NAME / primary),
             'existing': existing,
         })
@@ -1109,6 +1146,10 @@ def _writer_inputs(args: argparse.Namespace, session: Path, source_commit: str |
         (bundle / 'common-plan.md').write_bytes(plan)
         for relative, value in content.items():
             destination = bundle / 'existing' / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(value)
+        for relative, value in blueprint_content.items():
+            destination = bundle / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(value)
         _write_json(bundle / 'inputs.json', document)
@@ -1150,8 +1191,13 @@ def _plan(
         config,
         generated,
         external_root if config.external_sources else None,
-        generated_outputs=generated_outputs,
+        generated_outputs=tuple(generated_outputs),
     )
+    rendered_files = rendered.files_by_path
+    for path, expected_digest in generated_outputs.items():
+        content = rendered_files.get(path.as_posix())
+        if content is None or hashlib.sha256(content).hexdigest() != expected_digest:
+            raise SetupError(f'rendered output differs from registered bytes: {path}')
     validate_rendered_state(rendered)
     plan = build_plan(
         project.root,
@@ -1264,9 +1310,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         # Canonical generated inputs survive a later target failure for explicit recovery.
         _, generated_outputs = _generated_outputs(session, request['generation_requests'])
+        rendered_files = rendered.files_by_path
         receipt = project_configuration.save_generated(
             target,
-            {str(path): (session / _GENERATED_NAME / path).read_bytes() for path in generated_outputs},
+            {str(path): rendered_files[str(path)] for path in generated_outputs},
             [str(path) for path in rendered.delete_paths],
             target_outputs={str(change.path): change.content for change in plan.changes
                             if change.content is not None},

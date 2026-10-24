@@ -1,8 +1,12 @@
 # Authoring Decisions
 
-## Blueprint content directs judgment; runtime owns execution
+## Blueprint inputs preserve meaning without owning the writing workflow
 
-A blueprint must tell a future Author what evidence and distinctions matter without becoming a second scheduling or retry protocol. Keeping future-target procedures separate from authoring invocation mechanics preserves the public writer's authority and lets different project evidence produce different valid documents.
+A blueprint gives the future Author semantic requirements, useful project evidence, and accepted fixed sources. Keeping those inputs separate from authoring roles and results preserves the public writer's authority and lets the same blueprint work with or without Setup. Future-target procedures still belong in the blueprint when their order affects behavior; they are not instructions for scheduling the writing job.
+
+The blueprint's `description` directly supplies the target Skill's description. A separate authoring trigger would invent a discovery role for the blueprint and require a second field for the actual target value.
+
+Selected metadata strings and whole icon files have different preservation boundaries. Field constraints retain a stable discovery surface without replacing independent project metadata; packaged sources keep that contract available to every caller. Setup-specific filling or repair would make standalone authoring incomplete and create a competing owner.
 
 ## Refresh facts and durable intent differently
 

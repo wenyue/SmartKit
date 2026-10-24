@@ -17,3 +17,7 @@ Create an `AUTHORING.md` entry only for a deliberate trade-off that a future wri
 ## Keep exact protocol separate from design judgment
 
 Scope, version identity, review release, and runtime cleanup have exact boundaries because another role relies on their results. Writing decisions instead need priorities, evidence, and consequential exceptions. Keep this difference visible in the entry and role guidance: converting design advice into mandatory templates or numerical limits would narrow accepted solutions, while treating protocol boundaries as stylistic advice would break coordinated review. The document checker and semantic reviewers remain complementary for the same reason.
+
+## Treat fixed content as an input constraint
+
+Keep exact string fields and exact files as optional, generic constraints accepted by the Controller. Blueprints and setup are callers rather than special authoring modes, so the same source can be used independently and unrelated metadata remains editable. Reuse the evidence snapshot for accepted sources and declarations: comparing against live or Author-retyped expectations would allow drift to redefine success. A bounded field reader reports unsupported syntax as incomplete instead of approximating YAML values; semantic acceptance remains with the Reviewers.

@@ -33,6 +33,12 @@ For a rewrite, identify the current artifact and relevant earlier versions as ev
 
 Coordinate required outside-owner changes through their authorized routes. Missing source access, permission, or a user-owned decision requires `NEEDS_INPUT` before dependent work; an in-scope draft cannot close an outside dependency.
 
+### Accept fixed content as task input
+
+When an accepted source supplies content that must remain exact, declare the required string fields or complete files using the optional fixed-content schema in `check_candidate.py --help`. Keep every target in the exact Candidate scope. Freeze the declaration and all its sources together with `candidate_evidence.py`, using their common source root; retain that snapshot and fingerprint beside the job evidence. Read expected content from those frozen inputs throughout the job. A change to an accepted source or declaration requires a new frozen input version, an updated brief, and checks and reviews of the affected Candidate.
+
+Give the Author the accepted source, declaration, snapshot identity, and required comparison command in the brief. Fixed fields constrain their values while leaving other fields under ordinary authoring requirements; fixed files constrain all bytes. The Author still owns composition, and Reviewers still judge meaning and intent. This input contract is available to any caller, independently of a setup session or a particular source format such as a blueprint.
+
 ## Preserve the baseline and bounds
 
 After settling scope, retain the complete pre-write Candidate and fingerprint. Resolve `<skill-root>` to this loaded Skill and read `python "<skill-root>/scripts/candidate_evidence.py" --help`. Capture records existing and absent paths, bytes, and supported executable bits; help defines platform coverage.
@@ -102,6 +108,8 @@ python "<skill-root>/scripts/check_candidate.py" --candidate-root "<staging-or-b
 The mapping makes scoped destinations resolve in the Candidate and retained destinations in the target; it supplies read context, not write or access authority. Keep exact roots and scope with the evidence. Only surviving Candidate Markdown receives document checks; linked targets supply existence and anchors. Resolve unavailable target access through the failure route below.
 
 The entry never rewrites files. A pass establishes its bounded coverage, not Markdown validity or semantic correctness. Record it as not applicable when no Candidate Markdown survives. For an Author `COMPLETE`, also run all other required checks in non-fixing mode. Retain commands, results, and tested fingerprint; begin review only after every required check passes.
+
+When the job has fixed content, add `--fixed-content "<source-relative-declaration>" --fixed-snapshot "<source-snapshot>"` and the complete Candidate mapping to the same check invocation. For an in-place Candidate, use its root for both mapping roots. The entry compares directly against validated snapshot payloads; help defines its supported field syntax and exact-file checks. Retain the source snapshot identity with the Candidate fingerprint and check output.
 
 Read both exit status and streams:
 

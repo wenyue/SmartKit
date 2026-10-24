@@ -28,6 +28,7 @@ from project_config.external_contract import isolated_git_environment
 from project_state.paths import is_link_like as _is_link_like
 from project_state.models import AssetSpec, Catalog
 from project_state.skill_metadata import RuleMetadataError, read_policy, validate_rule_skill
+from .generation import blueprint_root
 
 
 CANONICAL_REPOSITORY = 'https://github.com/wenyue/SmartKit.git'
@@ -214,7 +215,12 @@ def _load_manifest(path: Path, version: str, expected_roots: Mapping[str, str]) 
 def _validate_catalog_sources(root: Path, catalog_assets: tuple[AssetSpec, ...]) -> None:
     for asset in catalog_assets:
         relative = asset.source
-        if asset.kind in {'agent', 'skill'}:
+        if asset.kind == 'blueprint':
+            scope = blueprint_root(asset)
+            if scope != relative:
+                _validate_source_tree(root, scope)
+            current = _safe_required(root, relative)
+        elif asset.kind in {'agent', 'skill'}:
             try:
                 current = _validate_source_tree(root, relative)
             except InvalidFetchedSource as error:

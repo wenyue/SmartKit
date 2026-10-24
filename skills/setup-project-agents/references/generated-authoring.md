@@ -4,7 +4,7 @@ Use this for every full setup, before registration. Every current catalog bluepr
 
 ## Plan coverage and loading
 
-Load every requested immutable Setup Authoring Blueprint from the frozen `source_root`. Use its refresh preference and writing focus to assess complete existing content against qualified project evidence. Preserve valid intent, obligations, conditions, exceptions and additions; substantive changes need a blueprint requirement, project fact or demonstrated defect.
+Load every requested immutable authoring blueprint from the frozen `source_root`, including the complete directory for a Skill blueprint and the entry file for a Rule blueprint. Use its refresh preference and writing focus to assess complete existing content against qualified project evidence. Preserve valid intent, obligations, conditions, exceptions and additions; substantive changes need a blueprint requirement, project fact or demonstrated defect.
 
 Plan across frozen requests, retained project Rules, relevant Skills, applicable SmartKit global Rules and discoverable rule-led Skills. For each artifact, establish purpose, neighboring boundaries, evidence and how readers reach its responsibilities:
 
@@ -20,7 +20,7 @@ Record the resolved allocation, generation order, refresh directions, qualified 
 
 Run `workflow.py writer-inputs` as shown in the Skill entry. Read its `--help` for inputs, bundle fields, path resolution and mechanical checks. Use only a successful result.
 
-The bundle preserves complete existing artifact bytes, including project-owned support, as evidence. Those copies neither authorize edits nor require every file to become generated output; the blueprint, ownership and writer's frozen Candidate scope determine that choice. Preparation performs no writing assessment and cannot qualify the common plan's evidence.
+The bundle copies each blueprint's complete resource scope with its relative layout and byte digests, alongside complete existing artifact bytes, including project-owned support. The request retains original source provenance. These copies neither authorize edits nor require every file to become generated output; the blueprint, ownership and writer's frozen Candidate scope determine that choice. Preparation performs no writing assessment and cannot qualify the common plan's evidence.
 
 Invoke the public writer at `source_root/skills/write-rules-and-skills/SKILL.md` and its required same-source references, including `writing-for-agents`. Use the business-project context, the immutable blueprint as accepted task/spec input, and `GENERATED` as the request root. Repository maintenance does not replace business-project evidence with the configuration repository's own layout or conventions. Resolve complete existing content from the selected authoring source and compare its applied target evidence before freezing; preserve any unadopted target changes. Supply the common plan, complete current content, qualified ownership/loading evidence and dependency state. Ambient or target-checkout writers cannot replace this pinned route.
 
@@ -34,6 +34,8 @@ For each handoff, supply the pinned writer's mapped-check inputs as follows:
 | `--context-path` | Every already accepted sibling Candidate's exact frozen paths, including deleted or absent endpoints. |
 
 Read the check entry's `--help` for the option contract. Keep the Candidate's final target-relative layout and delegate validation in the final destination namespace to the pinned writer's supported mapped-check interface. Mapping supplies read context for validation, not permission to mutate the target.
+
+Pass the copied blueprint and its resource root as accepted task inputs. When the blueprint declares fixed content, its writer Controller accepts and freezes that declaration and its sources under the writer's generic contract, supplies the comparison command, and retains the result with the Candidate handoff. Setup transports the complete source; it does not interpret the declaration or duplicate field checks. The same blueprint and writer can be used outside setup; this session adds allocation, set reconciliation and application authority.
 
 Each request receives exactly one Candidate under the public writer's own scope, validation, review and result protocol. Run jobs in the common plan's generation order so every referrer's checks receive its already accepted generated dependencies as context. Consume only an individual `COMPLETE` whose exact Candidate paths lie beneath `GENERATED` and satisfy that blueprint, retaining required evidence in its handoff. Blueprint readiness terminology is not a substitute.
 
@@ -53,7 +55,7 @@ Resolve a planned reference cycle through that same correction route: after both
 
 In repository mode, accepted writer outputs remain staged under `GENERATED` through review and registration. Writers author only canonical project sources within their frozen scope, leaving direct target writes, rendered adapters, delivered assets and the generated `Project rules` section to their existing owners. Finish saves accepted sources before the ordinary target apply; it also persists selected configuration results under [Project Configuration Maintenance](../../maintain-project-config/references/maintenance.md). Full-file backup selection does not enlarge writer scope or rendering ownership. This persistence belongs to setup's accepted application, not a writer's downstream permission.
 
-Register each final request once using its ID and every output from its handoff; `register --help` supplies path syntax. Registration checks mechanical outputs and records them; it does not certify semantic coherence. Once all requests are registered, proceed to `finish`.
+Before registration, confirm each staged output still matches its accepted writer handoff. Register each final request once using its ID and every output from that handoff; `register --help` supplies path syntax. Registration seals the complete output list and byte digests in the private session; it does not certify semantic coherence. Finish checks the exact set and digests and carries verified bytes through source saving and target application. Once all requests are registered, proceed to `finish`.
 
 ## Handle corrections and unavailable inputs
 

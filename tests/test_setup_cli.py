@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import ast
 import os
 import shutil
 import stat
@@ -69,9 +70,11 @@ class SetupCliTest(unittest.TestCase):
             path = session / 'generated' / PurePosixPath(relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f'# generated {path.name}\n', encoding='utf-8')
-            declarations.append({'id': item['id'], 'outputs': [relative]})
+            declarations.append({'id': item['id'], 'outputs': [
+                {'path': relative, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()},
+            ]})
         (session / 'generated/.setup-generation.json').write_text(
-            json.dumps({'version': 1, 'requests': declarations}), encoding='utf-8'
+            json.dumps({'version': 2, 'requests': declarations}), encoding='utf-8'
         )
 
     @staticmethod
@@ -640,6 +643,31 @@ class SetupCliTest(unittest.TestCase):
                         setup_project_agents._source_fingerprint(source, catalog), baseline,
                     )
                     contract.write_bytes(original)
+            asset = next(item for item in catalog.assets if item.id == 'blueprint-change-set-verification')
+            resource = source / asset.source.parent / 'opaque.bin'
+            resource.write_bytes(b'\x00\xff')
+            added = setup_project_agents._source_fingerprint(source, catalog)
+            self.assertNotEqual(added, baseline)
+            resource.write_bytes(b'changed')
+            self.assertNotEqual(setup_project_agents._source_fingerprint(source, catalog), added)
+            resource.unlink()
+            self.assertEqual(setup_project_agents._source_fingerprint(source, catalog), baseline)
+
+    def test_read_only_entries_create_no_source_bytecode_and_changed_scripts_parse_as_python_38(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'source'
+            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'))
+            environment = os.environ.copy()
+            environment.pop('PYTHONDONTWRITEBYTECODE', None)
+            for name in ('workflow.py', 'setup_project_agents.py'):
+                completed = subprocess.run(
+                    [sys.executable, str(source / 'skills/setup-project-agents/scripts' / name), '--help'],
+                    env=environment, capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(list(source.rglob('__pycache__')), [])
+        for name in ('workflow.py', 'setup_project_agents.py', 'agents_setup/source.py', 'agents_setup/generation.py'):
+            ast.parse((SCRIPTS_ROOT / name).read_text(encoding='utf-8'), feature_version=(3, 8))
 
     def test_native_agent_source_is_frozen_and_round_trips_through_request(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -783,6 +811,108 @@ class SetupCliTest(unittest.TestCase):
                 self.assertEqual(setup_project_agents.main(command), 2)
             self.assertIn('before registration', error.getvalue())
             self.assertEqual(list(session.glob('writer-inputs-*')), [])
+
+    def test_blueprint_resources_are_opaque_copied_inputs_and_later_drift_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'source'
+            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'))
+            asset = next(item for item in setup_project_agents.load_catalog(source).assets
+                         if item.id == 'blueprint-change-set-verification')
+            opaque = source / asset.source.parent / 'fixed-content.json'
+            opaque.write_bytes(b'{opaque to setup, even when not JSON}\x00\xff')
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            arguments = ['--target', str(target), '--session', str(session), '--source-root', str(source),
+                         '--source-commit', 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1']
+            with redirect_stdout(StringIO()):
+                self.assertEqual(setup_project_agents.main(['prepare', *arguments]), 0)
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Use the writer to assess each artifact.\n')
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(setup_project_agents.main(['writer-inputs', *arguments, '--plan', str(plan)]), 0)
+            bundle = Path(json.loads(output.getvalue())['bundle'])
+            inputs = json.loads((bundle / 'inputs.json').read_bytes())
+            item = next(item for item in inputs['inputs'] if item['request']['id'] == asset.id)
+            self.assertEqual((bundle / item['blueprint_root'] / 'fixed-content.json').read_bytes(), opaque.read_bytes())
+            self.write_generated_outputs(session)
+            opaque.write_bytes(b'changed after start')
+            for command in (['writer-inputs', '--plan', str(plan)], ['finish']):
+                with self.subTest(command=command), redirect_stderr(StringIO()) as error:
+                    self.assertEqual(setup_project_agents.main([*command, *arguments]), 2)
+                self.assertIn('source changed after start', error.getvalue())
+                self.assertEqual(list(target.iterdir()), [])
+
+    def test_writer_inputs_keep_opaque_catalog_ids_out_of_bundle_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'source'
+            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'))
+            catalog_path = source / 'setup-assets/catalog/assets.json'
+            document = json.loads(catalog_path.read_bytes())
+            ids = iter(('con', 'nul', 'prn', 'com1', 'long-' + 'a' * 300))
+            for item in document['assets']:
+                if item['kind'] == 'blueprint':
+                    item['id'] = next(ids)
+            catalog_path.write_text(json.dumps(document), encoding='utf-8')
+            assets = {item.id: item for item in setup_project_agents.load_catalog(source).assets
+                      if item.kind == 'blueprint'}
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            arguments = ['--target', str(target), '--session', str(session), '--source-root', str(source),
+                         '--source-commit', 'offline', '--no-bootstrap', '--completion-protocol', 'setup-version-codegraph-v1']
+            with redirect_stdout(StringIO()):
+                self.assertEqual(setup_project_agents.main(['prepare', *arguments]), 0)
+            request = json.loads((session / 'request.json').read_bytes())
+            plan = root / 'plan.md'
+            plan.write_bytes(b'Preserve request identities and complete blueprint inputs.\n')
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(setup_project_agents.main(['writer-inputs', *arguments, '--plan', str(plan)]), 0)
+            bundle = Path(json.loads(output.getvalue())['bundle'])
+            inputs = json.loads((bundle / 'inputs.json').read_bytes())
+            self.assertEqual([item['request'] for item in inputs['inputs']], request['generation_requests'])
+            roots = set()
+            for item in inputs['inputs']:
+                asset = assets[item['request']['id']]
+                copied_root = setup_project_agents.safe_relative(item['blueprint_root'], 'copied blueprint root')
+                self.assertNotIn(copied_root.as_posix().casefold(), roots)
+                roots.add(copied_root.as_posix().casefold())
+                entry = source / asset.source
+                files = entry.parent.rglob('*') if asset.target.name == 'SKILL.md' else (entry,)
+                expected = {path.relative_to(entry.parent).as_posix(): path.read_bytes()
+                            for path in files if path.is_file()}
+                self.assertEqual(self.snapshot_tree(bundle / copied_root), expected)
+                self.assertEqual(item['blueprint'], (copied_root / entry.name).as_posix())
+                self.assertEqual(item['request']['source'], asset.source.as_posix())
+                self.assertEqual({resource['path'] for resource in item['blueprint_files']}, set(expected))
+                for resource in item['blueprint_files']:
+                    self.assertEqual(resource['copy'], (copied_root / resource['path']).as_posix())
+                    self.assertEqual(resource['sha256'], hashlib.sha256(expected[resource['path']]).hexdigest())
+
+    def test_unreadable_blueprint_resource_refuses_preparation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            target.mkdir()
+            session = self.private_session(root)
+            asset = next(item for item in setup_project_agents.load_catalog(REPO_ROOT).assets
+                         if item.id == 'blueprint-change-set-verification')
+            denied_root = REPO_ROOT / asset.source.parent
+            scandir = os.scandir
+
+            def denied(path):
+                if Path(path) == denied_root:
+                    raise PermissionError('cannot enumerate blueprint resources')
+                return scandir(path)
+
+            with mock.patch.object(os, 'scandir', side_effect=denied), redirect_stderr(StringIO()):
+                self.assertEqual(self.prepare(target, session), 2)
+            self.assertFalse((session / 'request.json').exists())
+            self.assertEqual(list(target.iterdir()), [])
 
     def test_fileless_codex_role_allows_prepare_and_its_declaration_is_frozen(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -978,14 +1108,17 @@ class SetupCliTest(unittest.TestCase):
                 '.agents/skills/change-set-verification/'
                 'scripts/__pycache__/selection.json'
             )
-            request['outputs'].extend((helper, exact_cache_path))
-            manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
             helper_path = session / 'generated' / PurePosixPath(helper)
             helper_path.parent.mkdir(parents=True)
             helper_path.write_text('print("selected")\n', encoding='utf-8')
             cache_path = session / 'generated' / PurePosixPath(exact_cache_path)
             cache_path.parent.mkdir(parents=True)
             cache_path.write_text('{"selected": true}\n', encoding='utf-8')
+            request['outputs'].extend(
+                {'path': relative, 'sha256': hashlib.sha256((session / 'generated' / relative).read_bytes()).hexdigest()}
+                for relative in (helper, exact_cache_path)
+            )
+            manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
 
             with redirect_stdout(StringIO()):
                 self.assertEqual(
@@ -1726,9 +1859,11 @@ class SetupEndToEndTest(unittest.TestCase):
             path = session / 'generated' / PurePosixPath(relative)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f'# generated {path.name}\n', encoding='utf-8')
-            declarations.append({'id': item['id'], 'outputs': [relative]})
+            declarations.append({'id': item['id'], 'outputs': [
+                {'path': relative, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()},
+            ]})
         (session / 'generated/.setup-generation.json').write_text(
-            json.dumps({'version': 1, 'requests': declarations}), encoding='utf-8'
+            json.dumps({'version': 2, 'requests': declarations}), encoding='utf-8'
         )
 
     def bootstrap_prepare(self, origin: Path, target: Path, session: Path) -> None:

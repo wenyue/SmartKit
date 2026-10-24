@@ -13,6 +13,9 @@ import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 
+# Inspecting or executing a pinned source must not create source caches.
+sys.dont_write_bytecode = True
+
 import bootstrap
 import adopt_project_agents
 import agents_setup  # Expose the supported maintenance engine.
@@ -696,8 +699,12 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             'JSON returns bundle and inputs (inputs.json). Common fields bind the request, pinned writer and '
             'writing-for-agents entries, generated root, copied plan/digest, frozen evidence references and '
-            'external snapshot metadata. Per-request inputs give blueprint/candidate paths and existing '
-            'copies/digests or missing markers. Relative plan/copy paths resolve from bundle. '
+            'external snapshot metadata. Per-request inputs give copied blueprint entry/root, '
+            'blueprint_files (resource-relative path, bundle-relative copy, SHA256), candidate path '
+            'and existing copies/digests or missing markers. Blueprint, blueprint_root, plan and copy '
+            'paths resolve from bundle; request.source retains pinned-source provenance. '
+            'A Skill blueprint includes its complete source directory; a Rule includes only its entry. '
+            'Resource contents are opaque to Setup; the writer owns their interpretation and checks. '
             'Copies include recorded outputs and all files in current/previous Skill directories; '
             'enumeration/read failures refuse preparation. Exit 0: complete bundle. Exit 2: refusal/failure. '
             'Requires an unregistered session; leaves target, request and registration unchanged.'
@@ -707,7 +714,9 @@ def build_parser() -> argparse.ArgumentParser:
     writer_inputs.add_argument('--plan', type=Path, required=True, help='Nonempty UTF-8 common plan including qualified evidence and unresolved owner dependencies')
     register = phases.add_parser(
         'register', allow_abbrev=False,
-        description='Record one final request\'s complete output list; duplicate registration is refused without replacement.',
+        description=('Record one final request\'s complete output list and SHA256 byte identity; '
+                     'duplicate registration is refused without replacement. Finish rejects changed bytes; '
+                     'semantic corrections require cancellation and a new session.'),
     )
     register.add_argument('--session', type=Path, required=True)
     register.add_argument('--request-id', required=True)

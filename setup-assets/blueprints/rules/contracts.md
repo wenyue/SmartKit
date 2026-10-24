@@ -30,18 +30,10 @@ Treat accepted project contracts and their reasons as durable. Recheck their cur
 
 Concentrate on consequential included and excluded cases, such as whether a change preserves a consumer contract or requires a migration. Preserve still-valid project additions and exceptions. When an obligation changes, replace its affected definition and reconcile neighboring references instead of keeping both versions. With unchanged meaning, retain the complete existing Rule.
 
-## Author boundary and result
+## Authoring boundary and acceptance
 
 The Author may inspect target evidence, run owner-supported read-only or non-fixing checks, and create or replace `.agents/rules/contracts.md` beneath the Candidate root authorized for this request. Settle that root, exact path and operation through the public writer before writing. No fixed staging directory is required. Deletion, moves, live-target writes, unrelated mutation, and external effects require separate accepted authority.
 
-The first applicable condition determines the sole authoring result:
+The public writer owns authoring, review, and terminal results. Acceptance for this Rule requires every supported predicate, obligation, and affected surface to have an evidenced policy outcome: each supported input selects exactly one outcome without invented facts. Required checks must pass; omitting a check needs evidence that it is not applicable.
 
-| Result | Discriminator |
-| --- | --- |
-| `ACCESS_REQUIRED` | Necessary evidence or validation is inaccessible within the grant. |
-| `CONTEXT_REQUIRED` | Access exists, but a necessary fact cannot be discovered from qualified evidence. |
-| `HUMAN_DECISION_REQUIRED` | Material policy alternatives remain, or a required operation, effect, owner, comparison point, exception, or obligation disposition lacks accepted authority. |
-| `VALIDATION_FAILED` | A required check fails, or a supported predicate, obligation, affected surface, or Author operation lacks an evidenced outcome or grant. |
-| `READY` | Every required mapping is present, each supported input selects exactly one observable policy outcome without invented facts, and all applicable deterministic checks pass or are evidenced as `NOT_REQUIRED`. |
-
-A stop names the blocker, owner, consequence, and condition for a fresh attempt. A ready handoff identifies the Candidate, target and evidence owners, obligation dispositions, checks, preserved constraints, and uncertain or untested surfaces. The complete handoff is independently usable by the caller; it grants no downstream installation, publication, commit, or push.
+Include target and evidence owners, obligation dispositions, check results, preserved constraints, and uncertain or untested surfaces in the writer's handoff. For an unresolved access, evidence, or authority gap, identify the blocker, its owner and consequence, and what would enable continuation. The handoff must be independently usable by the caller and grants no downstream installation, publication, commit, or push.

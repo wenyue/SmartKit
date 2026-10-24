@@ -12,6 +12,8 @@ A fresh checkout may contain useful configuration while its copied repository bi
 
 Every blueprint request receives its own public-writer Candidate and complete review. Setup supplies allocation and dependency order, then reconciles the combined result and mapped links before registration. Individual passes cannot prove combined coverage, while direct controller repairs would break their accepted fingerprints and Author ownership.
 
+Pass a Skill blueprint's whole resource directory and let the writer interpret accepted fixed-content inputs. Setup seals registered output bytes through application instead of reimplementing metadata checks. This keeps blueprint authoring independently usable and prevents Setup from becoming a second source of content requirements; the temporary seal does not restrict later project-owned edits.
+
 ## Freeze setup inputs while allowing runtime-only refresh
 
 Setup-relevant source or target drift requires cancellation and a new session, even when a separate task authorized the edit. CodeGraph runtime state remains outside that freeze so an idle-exited daemon can be refreshed before the first finish attempt. The boundary avoids both silently changing the accepted input and needlessly restarting for transient runtime state.

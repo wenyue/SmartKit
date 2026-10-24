@@ -325,6 +325,42 @@ class SetupSourceTest(unittest.TestCase):
     def test_validate_source_accepts_the_actual_plugin_root(self):
         self.assertEqual(validate_source(REPO_ROOT), REPO_ROOT)
 
+    def test_skill_blueprint_resources_are_validated_but_rule_siblings_are_not(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'source'
+            write_valid_source(source)
+            catalog_path = source / 'setup-assets/catalog/assets.json'
+            catalog = json.loads(catalog_path.read_text(encoding='utf-8'))
+            catalog['assets'].extend([
+                {'id': 'skill-blueprint', 'kind': 'blueprint',
+                 'source': 'setup-assets/blueprints/example/SKILL.md',
+                 'target': '.agents/skills/example/SKILL.md'},
+                {'id': 'rule-blueprint', 'kind': 'blueprint',
+                 'source': 'setup-assets/blueprints/rules/example.md',
+                 'target': '.agents/rules/example.md', 'metadata': {
+                     'section': 'project', 'loading': 'always',
+                     'cursor': {'alwaysApply': True}, 'github': {'applyTo': '**'},
+                 }},
+            ])
+            catalog_path.write_text(json.dumps(catalog), encoding='utf-8')
+            entry = source / 'setup-assets/blueprints/example/SKILL.md'
+            entry.parent.mkdir(parents=True)
+            entry.write_bytes(b'blueprint')
+            rule = source / 'setup-assets/blueprints/rules/example.md'
+            rule.parent.mkdir(parents=True)
+            rule.write_bytes(b'rule')
+            outside = root / 'outside'
+            outside.mkdir()
+            try:
+                (rule.parent / 'ignored').symlink_to(outside, target_is_directory=True)
+            except OSError:
+                self.skipTest('symlinks are unavailable')
+            self.assertEqual(validate_source(source), source)
+            (entry.parent / 'target').symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(InvalidFetchedSource, 'source path'):
+                validate_source(source)
+
     def test_validate_source_requires_a_direct_toml_plugin_agent_directory(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / 'source'

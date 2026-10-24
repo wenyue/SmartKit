@@ -14,7 +14,7 @@ sys.path.insert(0, str(REPO_ROOT / 'skills/maintain-project-config/scripts'))
 sys.path.insert(0, str(REPO_ROOT / 'skills/setup-project-agents/scripts'))
 
 from project_state.catalog import load_catalog
-from agents_setup.generation import generation_requests
+from agents_setup.generation import current_contracts, generation_requests
 from project_config.models import ProjectConfig
 from project_state.ownership import OwnershipError
 from project_config.ownership import load_ownership
@@ -40,6 +40,8 @@ class SetupGenerationTest(unittest.TestCase):
                 continue
             source = REPO_ROOT / asset.source
             destination = self.source / asset.source
+            if asset.kind == 'blueprint' and asset.target is not None and asset.target.name == 'SKILL.md':
+                source, destination = source.parent, destination.parent
             destination.parent.mkdir(parents=True, exist_ok=True)
             if source.is_dir():
                 shutil.copytree(source, destination, dirs_exist_ok=True)
@@ -57,6 +59,27 @@ class SetupGenerationTest(unittest.TestCase):
             self.source, self.target, self.catalog,
             load_ownership(self.target, catalog=self.catalog),
         )
+
+    def test_skill_resource_membership_and_bytes_are_part_of_its_contract(self):
+        def fingerprints():
+            return {item.id: item.fingerprint for item in current_contracts(self.source, self.catalog)}
+        baseline = fingerprints()
+        asset = next(item for item in self.catalog.assets if item.id == 'blueprint-change-set-verification')
+        resource = self.source / asset.source.parent / 'target/extra.bin'
+        resource.parent.mkdir(parents=True, exist_ok=True)
+        resource.write_bytes(b'first\x00\xff')
+        added = fingerprints()
+        self.assertEqual({key for key in baseline if baseline[key] != added[key]}, {asset.id})
+        resource.write_bytes(b'second\x00\xff')
+        self.assertNotEqual(fingerprints()[asset.id], added[asset.id])
+        resource.unlink()
+        self.assertEqual(fingerprints(), baseline)
+
+    def test_rule_contract_does_not_consume_undeclared_siblings(self):
+        baseline = current_contracts(self.source, self.catalog)
+        sibling = self.source / 'setup-assets/blueprints/rules/unrelated.txt'
+        sibling.write_bytes(b'not part of a declared Rule blueprint')
+        self.assertEqual(current_contracts(self.source, self.catalog), baseline)
 
     def sync(self, *, helper=False):
         requests = self.requests()

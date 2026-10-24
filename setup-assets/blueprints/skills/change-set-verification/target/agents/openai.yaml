@@ -1,0 +1,7 @@
+interface:
+  display_name: "Change-Set Verification"
+  short_description: "验证已完成的变更集，执行适用检查并给出有证据支持的结论。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"
+  default_prompt: "使用 $change-set-verification，验证当前已完成的变更集并报告检查结果与证据缺口。"

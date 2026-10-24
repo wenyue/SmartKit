@@ -33,6 +33,12 @@
 
 通过获准路径协调其他所有者所需的变更。缺少来源访问、权限或需要用户作出的决定时，应在依赖性工作前返回 `NEEDS_INPUT`；范围内的初稿不能关闭范围外的依赖。
 
+### 将固定内容作为任务输入接受
+
+已接受来源提供了必须保持精确一致的内容时，使用 `check_candidate.py --help` 中的可选固定内容 schema 声明所需字符串字段或完整文件。每个目标都必须位于确切 Candidate 范围内。以声明及其所有来源的共同根目录调用 `candidate_evidence.py`，将它们一并冻结；把该快照及指纹与任务证据一同保留。整个任务始终从这些冻结输入读取预期内容。已接受来源或声明发生变化时，需要冻结新的输入版本、更新 brief，并重新检查和审查受影响的 Candidate。
+
+在 brief 中向 Author 提供已接受来源、声明、快照身份和所需比较命令。固定字段约束字段值，其他字段仍遵循普通编写要求；固定文件约束全部字节。Author 仍负责组织表达，Reviewer 仍判断含义与意图。任何调用方都可以使用这项输入契约，不依赖 setup 会话或蓝图等特定来源形式。
+
 ## 保留基线和执行边界
 
 范围确定后，保留完整的写入前 Candidate 及指纹。将 `<skill-root>` 解析为当前加载的 Skill，并阅读 `python "<skill-root>/scripts/candidate_evidence.py" --help`。capture 操作记录已存在和不存在的路径、文件字节及受支持的可执行位；平台覆盖范围由帮助信息定义。
@@ -102,6 +108,8 @@ python "<skill-root>/scripts/check_candidate.py" --candidate-root "<staging-or-b
 映射使范围内的目标在 Candidate 中解析，保留的目标则在业务目标中解析；它提供读取上下文，不授予写入或访问权限。将精确根目录和范围与证据一并保留。只有仍存在的 Candidate Markdown 文件接受文档检查；链接目标仅提供存在性和锚点信息。目标访问不可用时，遵循下方的失败处理路径。
 
 该入口从不改写文件。通过只证明满足其有限覆盖范围内的检查，不代表 Markdown 有效或语义正确。没有仍存在的 Candidate Markdown 文件时，将它记录为不适用。Author 返回 `COMPLETE` 时，还须以非修复模式运行其他全部必要检查。保留命令、结果和被测指纹；只有全部必要检查通过后才开始审查。
+
+任务包含固定内容时，在同一检查调用中加入 `--fixed-content "<source-relative-declaration>" --fixed-snapshot "<source-snapshot>"` 及完整 Candidate 映射。就地编写的 Candidate 使用自身根目录作为两个映射根目录。入口直接与通过验证的快照内容比较；帮助信息定义其支持的字段语法及整文件检查。将来源快照身份与 Candidate 指纹及检查输出一同保留。
 
 同时读取退出状态和输出流：
 

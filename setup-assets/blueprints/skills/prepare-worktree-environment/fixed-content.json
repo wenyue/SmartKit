@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "fields": [
+    {
+      "source": {"path":"SKILL.md","format":"frontmatter","key":["description"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/SKILL.md","format":"frontmatter","key":["description"]}
+    },
+    {
+      "source": {"path":"target/agents/openai.yaml","format":"yaml","key":["interface","display_name"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/agents/openai.yaml","format":"yaml","key":["interface","display_name"]}
+    },
+    {
+      "source": {"path":"target/agents/openai.yaml","format":"yaml","key":["interface","short_description"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/agents/openai.yaml","format":"yaml","key":["interface","short_description"]}
+    },
+    {
+      "source": {"path":"target/agents/openai.yaml","format":"yaml","key":["interface","icon_small"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/agents/openai.yaml","format":"yaml","key":["interface","icon_small"]}
+    },
+    {
+      "source": {"path":"target/agents/openai.yaml","format":"yaml","key":["interface","icon_large"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/agents/openai.yaml","format":"yaml","key":["interface","icon_large"]}
+    },
+    {
+      "source": {"path":"target/agents/openai.yaml","format":"yaml","key":["interface","brand_color"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/agents/openai.yaml","format":"yaml","key":["interface","brand_color"]}
+    },
+    {
+      "source": {"path":"target/agents/openai.yaml","format":"yaml","key":["interface","default_prompt"]},
+      "target": {"path":".agents/skills/prepare-worktree-environment/agents/openai.yaml","format":"yaml","key":["interface","default_prompt"]}
+    }
+  ],
+  "files": [
+    {
+      "source": "target/assets/icon.svg",
+      "target": ".agents/skills/prepare-worktree-environment/assets/icon.svg"
+    }
+  ]
+}

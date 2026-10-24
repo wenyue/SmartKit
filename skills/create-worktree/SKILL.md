@@ -5,13 +5,13 @@ description: Use when state-changing repository work needs an isolated linked Gi
 
 # Create Worktree
 
-Select or create one linked Git worktree and prepare its environment without disturbing existing work. Return `ready` or `non-ready`. Carry the source's current work by default; inherited changes remain protected under their original ownership rather than automatically becoming the caller's task.
+Select or create one linked Git worktree and establish its environment readiness without disturbing existing work. Return `ready` or `non-ready`. Carry the source's current work by default; inherited changes remain protected under their original ownership rather than automatically becoming the caller's task.
 
 ## 1. Select the workspace and starting state
 
 Use the accepted task scope and existing choices of source, target, base, and permitted effects. Resolve the source checkout, primary project checkout, and physical Git common directory from repository topology; the invoking linked checkout need not be the primary checkout.
 
-If continuing a selected worktree, check its physical path, Git registration, branch, `HEAD`, base relationship, and local changes against the task context. Reuse it when they agree, preserving its inherited and task changes. Do not copy fresh source changes over it. If its identity or ownership is unclear, return `non-ready`; otherwise skip creation and proceed to environment preparation.
+If continuing a selected worktree, check its physical path, Git registration, branch, `HEAD`, base relationship, and local changes against the task context. Reuse it when they agree, preserving its inherited and task changes. Do not copy fresh source changes over it. If its identity or ownership is unclear, return `non-ready`; otherwise skip creation and assess environment readiness.
 
 For a new worktree, resolve the base to an immutable commit and choose the starting state:
 
@@ -65,11 +65,13 @@ Verify the registered target path, named branch, and `HEAD` at the chosen base. 
 
 Inspect what actually exists before retrying after interruption or failure. Retain partial paths, branches, registrations, and copied work with enough context to continue safely; do not replay a copy over later changes. Remove partial artifacts only when they belong solely to this attempt, contain no other work, and removal is authorized. Recheck the applicable choices before resuming.
 
-## 4. Prepare the environment and report readiness
+## 4. Assess environment readiness
 
-Discover the selected target's project `prepare-worktree-environment` Skill. When present, invoke it for that target within accepted setup permissions, marking inherited modifications as protected. Use its `environment-ready` or `environment-non-ready` result; reuse still-valid results for this target instead of repeating setup checks. A present but unavailable, failed, interrupted, or ambiguous setup yields `non-ready`. When absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness.
+Preparation applies on a newly created worktree's first use, when evidence shows a missing or stale environment prerequisite for the current task, or when the user explicitly requests preparation. Otherwise report `not-needed` and use the existing environment. A linked-worktree location or invalid cached preparation record alone establishes no preparation need.
 
-Recheck target identity and expected state after setup, accounting for its authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, required setup succeeded, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
+When preparation applies, discover the selected target's project `prepare-worktree-environment` Skill. If present, invoke it within accepted preparation permissions, marking inherited modifications as protected, or reuse a still-valid result for this target. Use its `environment-ready` or `environment-non-ready` result. A required Skill that is unavailable, or preparation that fails, is interrupted, or remains ambiguous yields `non-ready`. If the Skill is absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness.
+
+Recheck target identity and expected state after the assessment and any preparation, accounting for authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, environment status is `environment-ready`, `not-needed`, or `not-provided`, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
 
 Give the caller a concise readiness handoff:
 
