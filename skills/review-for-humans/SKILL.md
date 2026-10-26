@@ -8,7 +8,9 @@ disable-model-invocation: true
 
 Help the human understand each change and form two judgments: whether it is reasonable and whether its implementation is elegant. Review the selected comparison read-only, then carry out the user's selected actions. Evidence capture and diff-link preparation belong to review; changing reviewed files or Git state needs the applicable action's authorization.
 
-For every question, offer a list of concrete choices consecutively labeled **A**, **B**, **C**, and so on, including scope questions, workspace creation or synchronization, remedies, and closing menus. Describe the effects in the conversation's language and ask for a letter. Interpret letters case-insensitively against the latest menu; accept unambiguous natural-language selections, including agreement to a clearly specified action. M and O IDs select items, not actions. Clarify ambiguous replies; questions and disagreements do not authorize actions.
+For every question, offer concrete choices and explain their effects in the conversation's language, including scope questions, workspace creation or synchronization, remedies, and closing menus. Consecutive labels **A**, **B**, **C**, and so on are recommended for easy selection. When using letters, interpret them case-insensitively against the latest menu; accept unambiguous natural-language selections, including agreement to a clearly specified action. M and O IDs select items, not actions. Clarify ambiguous replies; questions and disagreements do not authorize actions.
+
+The formatting below is recommended presentation: emoji, labels, emphasis, separators, and layouts may be adapted to the reader. Required evidence, both judgments, stable M/O IDs, grouping and progress accounting, action meanings, authorization, and verification remain binding.
 
 ## Establish the comparison
 
@@ -84,15 +86,15 @@ If link preparation fails, report the diagnostic and pause the dependent report;
 
 ## Explain each file
 
-Use [report examples](references/report-examples.md) to calibrate explanations, observations, and menus. Begin each complete file block with `📄 **[path](diff-destination)**` and a short overview of the file's responsibility and overall change. Explain user or caller effects in ordinary language, retaining technical details that affect the judgment.
+Use [report examples](references/report-examples.md) to calibrate explanations, observations, and menus. Give each complete file block a linked filename and a short overview of its responsibility and overall change. A recommended opening is `📄 **[path](diff-destination)**`. Explain user or caller effects in ordinary language, retaining technical details that affect the judgment.
 
 Group modifications by the problem or scenario they address. Keep related implementation steps together; split when changes are independent or cannot share one simple explanation. A localization file is one modification. Minor accompanying edits can appear in the overview or be omitted.
 
-Label modifications `🔧 **M1** - **<title>**`, numbering continuously across files and groups. Retain M IDs for findings, suggestions, selections, and re-reviews. Keep emoji and surrounding punctuation outside bold; preserve punctuation intrinsic to code and paths.
+Assign modifications continuous M IDs across files and groups, retaining them for findings, suggestions, selections, and re-reviews. The recommended label is `🔧 **M1** - **<title>**`; emoji and surrounding punctuation usually read well outside bold. Preserve punctuation intrinsic to code and paths.
 
 ### Give two independent judgments
 
-Every modification gets both judgments, each in its own paragraph with an explicit conclusion and reason. Apply them to code, prose, and translations alike. Use ⚖️ for reasonableness and 🎨 for elegance, without repeating the dimension's name after the emoji.
+Every modification gets both judgments, each with an explicit conclusion and reason. Apply them to code, prose, and translations alike. Separate paragraphs, with ⚖️ for reasonableness and 🎨 for elegance, are recommended; repeating the dimension's name after its emoji is usually unnecessary.
 
 | Judgment | Basis |
 | --- | --- |
@@ -108,13 +110,13 @@ Retain material findings and qualifications from the underlying review, includin
 
 ### Choose the explanation's depth
 
-Use a **compact** explanation for straightforward behavior with clear scope and no material risk or trade-off: one short before-and-after paragraph, then the separate ⚖️ and 🎨 paragraphs. It uses no examples, snippets, emoji prefix, or Before/After labels.
+For straightforward behavior with clear scope and no material risk or trade-off, a **compact** explanation usually works well: one short before-and-after paragraph, then the two judgments. Examples, snippets, an emoji prefix, or Before/After labels are usually unnecessary.
 
-Use an **expanded** explanation for complex mechanisms, important contracts, material findings or trade-offs, or key evidence gaps: ⏪ **Before**, ⏩ **After**, then the two judgments. For code, show the smallest useful before-and-after snippets from the retained evidence and explain how they cause the compared behavior. Keep relevant error, state, or lifecycle conditions. Clearly label illustrative simplifications and preserve their behavior; omit code when it adds no understanding. A one-line diff can still need expansion.
+Complex mechanisms, important contracts, material findings or trade-offs, or key evidence gaps benefit from an **expanded** explanation. A useful layout is ⏪ **Before**, ⏩ **After**, then the two judgments. For code, show the smallest useful before-and-after snippets from the retained evidence and explain how they cause the compared behavior. Keep relevant error, state, or lifecycle conditions. Clearly label illustrative simplifications and preserve their behavior; omit code when it adds no understanding. A one-line diff can still need expansion.
 
 ## Display groups and maintain progress
 
-Separate complete file blocks with `---`. End a group after the file that brings it to at least 10 modifications; never split a file. Display the final shorter group when the scope ends. End with `---` and `📊 **Progress**: **displayed files / files requiring review**`, explicitly describing the count as displayed files.
+End a group after the file that brings it to at least 10 modifications; never split a file. Display the final shorter group when the scope ends. Give the group conclusion and cumulative progress in the closing, explicitly identifying displayed files out of files requiring review; progress does not imply completion or Viewed recording. Separating complete file blocks and the closing with `---`, and bolding the count and total, are recommended for scanning.
 
 Across replies, retain group membership, reviewed changes, next position and M ID, judgments, finding decisions, outstanding suggestions, and each group's verified completion results. Count each main-review file once. A full-branch commit can clean the worktree before all files are displayed; continue unseen groups from retained evidence rather than rebuilding the scope from the new index. Update totals only for actual scope changes.
 
@@ -122,7 +124,7 @@ Across replies, retain group membership, reviewed changes, next position and M I
 
 During necessary reading, report an unrelated pre-existing issue only when evidence establishes both the issue and that the selected change neither introduced, triggered, nor aggravated it. This does not authorize a broader audit.
 
-Give observations continuous **O1**, **O2**, and subsequent IDs. Initially show them only in the group closing, under `📌 **Incidental observations (outside this review's scope)**`, with a title, source location/link, evidence and impact, independence from the selected change, and a recommendation with its benefit.
+Give observations continuous **O1**, **O2**, and subsequent IDs. Initially show them only in a clearly separate, out-of-scope part of the group closing, with a title, source location/link, evidence and impact, independence from the selected change, and a recommendation with its benefit. The recommended label is `📌 **Incidental observations (outside this review's scope)**`.
 
 O items add no main-review files, modifications, progress, or Viewed eligibility. Advice alone does not block advancement or authorize repair. Unqualified fix, optimize, and ignore-all actions exclude them. A selected O repair needs its own outcome, authorization, checks, and dedicated re-review; it remains separate unless the user explicitly expands the main scope.
 
@@ -158,21 +160,18 @@ Before offering completion, perform derivable read-only preparation for its actu
 | --- | --- |
 | Pending unreasonable findings | Offer fix and ignore, plus supported optimize. Explain why both advancing actions are unavailable. |
 | Missing correctness/version evidence, failed or incomplete review checks, or stale review | Explain the gap and its remedy; complete authorized work before offering advancement. |
-| Selected commit, push, or Viewed operation unfinished | Preserve that selection. Once ready, offer its remaining steps as the same completion action; ordinary continue cannot bypass it. |
+| Selected commit, push, or Viewed operation unfinished | Preserve that selection and, once ready, resume its already authorized remaining steps without routine reconfirmation. If changed effects require a new decision, offer that decision for the same completion operation; ordinary continue cannot bypass it. |
 | Advancement ready but completion's target, interface, checks, or safe scope unavailable | Explain the concrete prerequisite. Continue remains available. Checks for extra branch content block continuation only when they affect the review. |
 | Extra content needs inclusion confirmation | Disclose it and offer a combined confirmation-and-completion choice when all other prerequisites are ready, alongside continue. |
 | Completion ready | Offer its actual remaining commit, push, and Viewed effects, alongside continue. Reuse verified completed work; no empty commit or unnecessary push. |
 
 For a ready local/branch review, completion commits outstanding changes and verifies them. For a ready PR, completion publishes review work when needed and authorized, then records eligible files Viewed; when no commit or publication is needed, offer pass for Viewed recording alone. State any verified results it will reuse. Add optimize whenever supported suggestions remain.
 
-Every closing accounts for completion readiness, including after a repair or in a dedicated re-review. Put unavailable-action explanations outside the executable menu. After progress, use these sections in order, omitting empty ones:
+Every closing accounts for completion readiness, including after a repair or in a dedicated re-review. State any pending findings with IDs, severity, and impact, including earlier groups; retain optional improvements with IDs, proposals, and benefits, and the separate O observations. Disclose the full commit scope, any extra-content confirmation, publication delta, and Viewed set when applicable. Keep unavailable actions distinguishable from executable choices.
 
-1. **Pending findings**, including earlier groups: `**M1** (P1): <impact summary>`.
-2. **Optional improvements**, including earlier groups: ID, proposed improvement, and benefit.
-3. 📌 **Incidental observations (outside this review's scope)**.
-4. **Available actions**, using the lettered choices and concrete effects described above. Name the full commit scope, any extra-content confirmation, publication delta, and Viewed set when applicable.
+A useful closing layout is conclusion and progress, relevant checks and limits, then the concrete decision with its available actions. Emoji, short labels, and lettered options can help scanning. A simple continuation question usually needs no number; several decisions or later references may benefit from numbered blocks. A recommendation can sit beside its option or in a separate ➡️ paragraph when the reason needs explanation. Refer to scope already explained instead of repeating the menu or asking for the same choice again. [Example closings](references/report-examples.md#example-closings-for-different-results) illustrate these presentation choices and the different readiness states.
 
-Close with a compact question asking for an operation letter and any supported recommendation; omit the closing if no choice remains. [Example closings](references/report-examples.md#example-closings-for-different-results) show the presentation of these states.
+Continue already authorized work when ready. If review and completion are finished and no decision remains, report the result without asking for a choice.
 
 If the user asks to advance while blocked, explain the pending IDs or prerequisites and regenerate the available menu; continue never means ignore. Questions and disputed findings call for answers or reassessment, not automatic advancement. An explicit stop or pause is always allowed: report displayed progress and unresolved findings, evidence, modifications, publication, or operations without claiming completed work.
 

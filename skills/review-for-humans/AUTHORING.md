@@ -14,4 +14,4 @@ Commit, push, and Viewed recording can succeed independently. The selected compl
 
 ## Retain contrasting menu examples
 
-The examples cover materially different readiness and authorization states, including partial staging, extra outgoing commits, same-file uncovered hunks, and partial Viewed recording. Their shared presentation is intentional, while the differing available actions carry the teaching value. A single generic closing would hide those distinctions.
+The examples cover materially different readiness and authorization states, including partial staging, extra outgoing commits, same-file uncovered hunks, and partial Viewed recording. Those differences determine the available actions. Status icons and reusable closing layouts are recommendations that make repeated groups easy to compare; required review content and operation contracts remain separate. Adapting the presentation avoids mechanical repetition without losing those useful defaults. A single generic closing would also hide the scope and recovery distinctions.

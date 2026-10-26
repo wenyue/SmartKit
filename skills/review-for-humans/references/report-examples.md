@@ -1,10 +1,10 @@
 # Report Examples
 
-These examples illustrate the report and closing formats defined in [Review for Humans](../SKILL.md). Consult them when calibrating presentation; the entry owns the scope, judgments, actions, and verification requirements.
+These examples illustrate the required review content and suggested presentation in [Review for Humans](../SKILL.md). Consult them when calibrating presentation; the entry owns the scope, judgments, actions, and verification requirements.
 
 ## Complete report
 
-Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; use a vertical comparison only when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. The full branch inventory also contains their tests; all changes were introduced in this conversation and required checks passed. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
+Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; a vertical comparison can help when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. The full branch inventory also contains their tests; all changes were introduced in this conversation and required checks passed. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.
 
 The loopback URLs below illustrate filename-link formatting only; they are placeholders rather than generated previews. Actual reports use the shared tool's returned Markdown.
 
@@ -73,25 +73,21 @@ Previously, repeated clicks could start duplicate saves; the handler now refuses
 
 - **M3**: Use a shared completion path for the flag reset to reduce duplication and make cleanup easier to maintain.
 
-**Available actions**
+Would you like to commit the checked changes and finish, or improve M3 first?
 
 - **A**. **Optimize**: Implement the optional improvement.
-- **B**. **Pass and finish**: Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
+- **B**. **Pass and finish** (recommended): Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
 - **C**. **Finish**: End this review without committing, retaining the improvement as advice.
-
-❓ **Q1** - **Next action**: Which action should I take? Enter its letter.
-
-➡️ I recommend **B**: the checked changes are ready to commit, and the optional improvement can remain advice.
 
 ## Example closings for different results
 
-These illustrative closings follow file reports or dedicated re-reviews; they do not replace the two judgments in each modification. Localize them and use only the options available for the actual state.
+These illustrative closings follow file reports or dedicated re-reviews; they do not replace the two judgments in each modification. Adapt the wording and detail to the actual decision, localize the text, and include only actions that are ready and still need a choice. Reuse recognizable status cues and layouts where they help compare groups, and choose numbered question blocks when decisions need separate answers or stable references. The examples vary their presentation while preserving scope and authorization distinctions.
 
 ### Incidental observation with a ready final group
 
 In this illustrative local review, the selected change only adjusts export-button text. The branch inventory contains only the three text files changed in this conversation; required checks passed. The source location below is illustrative; an actual report uses an available source link.
 
-📊 **Progress**: **3/3 files displayed**. No unreasonable findings are pending.
+No unreasonable findings are pending. **3/3 files displayed**.
 
 📌 **Incidental observations (outside this review's scope)**
 
@@ -104,14 +100,10 @@ In this illustrative local review, the selected change only adjusts export-butto
 
 O1 remains advice, does not block completion, and is excluded from bulk fixes or optimizations. Handling it requires a separate selection.
 
-**Available actions**
+Commit the reviewed text changes and finish, keeping O1 as separate advice?
 
-- **A**. **Pass and finish**: Commit all three branch changes, verify the result, and end this review without pushing, retaining O1 as advice.
+- **A**. **Pass and finish** (recommended): Commit all three branch changes, verify the result, and end this review without pushing, retaining O1 as advice.
 - **B**. **Finish**: End this review without committing, retaining O1 as advice.
-
-❓ **Q1** - **Complete the review**: Which action should I take? Enter its letter.
-
-➡️ I recommend **A**: the reviewed text changes are ready to commit, while O1 remains separate advice.
 
 ### Dedicated re-review after an O repair
 
@@ -129,20 +121,16 @@ Previously, a rejected export left the button disabled because restoration occur
 
 **O1 status**: Repaired; required checks and independent re-review confirmed the result. Main-review progress remains **3/3 files displayed**. This separate re-review creates no M ID or additional Viewed eligibility.
 
-**Available actions**
+Commit the reviewed text changes and the verified O1 repair, then finish?
 
-- **A**. **Pass and finish**: Commit all branch changes, including the three reviewed text files and O1's checked, re-reviewed repair, verify the result, and end this review without pushing.
+- **A**. **Pass and finish** (recommended): Commit all branch changes, including the three reviewed text files and O1's checked, re-reviewed repair, verify the result, and end this review without pushing.
 - **B**. **Finish**: End this review without committing.
-
-❓ **Q1** - **Finish after the repair**: Which action should I take? Enter its letter.
-
-➡️ I recommend **A**: the selected repair and the branch changes have passed the required checks and review.
 
 If O1's check or re-review is incomplete or fails, retain its unresolved status and leave completion that would include the repair unavailable. Confirmation to include branch content does not replace this re-review.
 
 ### Pending findings and optional improvements
 
-📊 **Progress**: **4/9 files displayed**.
+⚠️ Two findings need attention. **4/9 files displayed**.
 
 **Pending findings**
 
@@ -155,92 +143,69 @@ If O1's check or re-review is incomplete or fails, retain its unresolved status 
 
 **Pass and continue** and **continue** are unavailable until M2 and M5 are repaired or explicitly ignored.
 
-**Available actions**
+How would you like to address M2 and M5? Include M IDs to select a subset.
 
-- **A**. **Fix**: Repair both pending findings, or the subset you select.
+- **A**. **Fix** (recommended): Repair both pending findings, or the subset you select.
 - **B**. **Ignore**: Choose which findings to ignore; other findings remain pending.
 - **C**. **Optimize**: Implement the optional improvement; the pending findings still need attention.
 
-❓ **Q1** - **Resolve pending findings**: Which action should I take? Enter its letter; include M IDs to select a subset.
-
-➡️ I recommend **A**: repair M2 and M5 before advancing; the optional improvement can wait.
-
 If the user replies “A, M2” or “a, M2,” repair only M2; M5 remains pending. If the user replies “B” or “b,” clarify which findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation letters choose actions; M IDs choose their items.
 
-If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the lettered available actions and letter-entry prompt above.
+If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the concrete question and available lettered actions above.
 
 ### Local partial staging with extra content
 
-📊 **Progress**: **1/3 files displayed**. The displayed unstaged save-handler fix is reasonable; required checks passed for the full proposed commit.
+The displayed unstaged save-handler fix is reasonable; required checks passed for the full proposed commit. **1/3 files displayed**.
 
 The branch commit will include all staged, unstaged, and untracked changes: the save-handler fix, two undisplayed source files, and its new test file. The test remains outside report progress. These changes were introduced in this conversation except for an already-staged label change in `ui/save_button.dart`, which changes “Save” to “Save draft.” That staged hunk shares a file with the displayed fix and was made before this conversation. The final worktree retains both changes; the original index state is saved for recovery.
 
-**Available actions**
+Include the extra staged label change in the commit, or continue reviewing without committing?
 
 - **A**. **Confirm inclusion and pass and continue**: Include the extra “Save draft” label change, commit the full branch inventory above, verify the result, then show the next group without pushing.
-- **B**. **Continue**: Show the next group without staging or committing.
-
-❓ **Q1** - **Include the staged change**: Include the extra label change and commit, or continue reviewing? Enter **A** or **B**.
-
-➡️ I recommend **B** while inclusion is undecided: it preserves the staged change and lets the review continue without committing it.
+- **B**. **Continue** (recommended while inclusion is undecided): Show the next group without staging or committing.
 
 If the user declines the extra content, leave full-branch completion pending; do not silently commit only the save-handler fix. If option A completes, display the remaining two source files from the retained review snapshot even though the worktree is now clean. They were included in the commit but have not yet been displayed or counted as reviewed.
 
 ### Clean branch without a PR
 
-📊 **Progress**: **3/3 files displayed**. No unreasonable findings are pending. All branch changes are already committed, the branch and worktree state are verified, and no PR publication was requested.
-
-**Available actions**
-
-- **A**. **Pass and finish**: Reuse the verified commits and end this review, with no empty commit or push.
-- **B**. **Finish**: End this review without further writes.
-
-❓ **Q1** - **Finish the review**: Which action should I take? Enter its letter.
-
-➡️ I recommend **A**: the branch is already verified, so completion needs no further Git write.
+✅ The review is complete, with **3/3 files displayed** and no pending unreasonable findings. All branch changes are already committed, and the branch and worktree state are verified. No PR publication was requested, and no further Git write is needed.
 
 ### PR with no repairs and an unrelated submodule difference
 
-📊 **Progress**: **4/9 files displayed**. No unreasonable findings or unpublished changes made for this review are pending, and no selected commit or publication remains unfinished. Required review checks passed; the four displayed remote files have complete coverage at the pinned PR base/head.
+In this example, the PR version, viewer, and Viewed write/readback interfaces are verified. There are no unpublished changes made for this review or unfinished selected commit or publication operations. The full application journey is outside this group's required checks.
 
-Read-only inspection found a local submodule checkout difference unrelated to this review. It leaves the fixed reviewed PR delta, its dependencies, and the four files' assessments valid, so it will be preserved. No commit or push is needed for this completion; the PR version, viewer, and Viewed write/readback interfaces are verified.
+✅ This group has no findings requiring repair. **4/9 files displayed**; the four reviewed files have complete coverage at the pinned PR base/head.
 
-**Available actions**
+Formatting, diff checks, and targeted tests passed. Static analysis retains two unchanged dependency notices, confirmed against the baseline.
 
-- **A**. **Pass and continue**: Verify the reviewed PR version, mark the four displayed reviewed files Viewed, verify every selected file and the PR version by readback, then show the next group.
+⚠️ Tests cover the affected behavior and Windows native components; the full application journey has not been run.
+
+An unrelated local submodule checkout difference leaves the reviewed delta, its dependencies, and the assessments valid and will be preserved. No commit or push is needed; this group's Viewed recording is still pending.
+
+❓ Mark the four reviewed files Viewed before continuing?
+
+- **A**. **Pass and continue** (recommended): Verify the reviewed PR version, mark the four displayed reviewed files Viewed, verify every selected file and the PR version by readback, then show the next group.
 - **B**. **Continue**: Show the next group without marking Viewed.
-
-❓ **Q1** - **Record reviewed files**: Mark the four reviewed files Viewed before continuing? Enter **A** or **B**.
-
-➡️ I recommend **A**: the four files have complete review coverage, and the unrelated local difference stays preserved.
 
 ### PR repaired locally and ready for completion
 
-📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired; required checks and re-review passed. The full local branch delta contains those two fixes, their tests, and an undisplayed release-note change introduced earlier in this conversation. All applicable checks passed and the four displayed files' assessments remain valid. The PR target, viewer, write interfaces, and full publication scope have been verified.
+M2 and M5 are repaired; required checks and re-review passed. **4/9 files displayed**. The full local branch delta contains those two fixes, their tests, and an undisplayed release-note change introduced earlier in this conversation. All applicable checks passed and the four displayed files' assessments remain valid. The PR target, viewer, write interfaces, and full publication scope have been verified.
 
-**Available actions**
+Publish the checked branch changes and record the four reviewed files Viewed before continuing?
 
-- **A**. **Pass and continue**: Commit and push all branch changes listed above, including the tests and release note, verify the PR version, mark only the four displayed reviewed files Viewed and verify every readback, then show the next group.
+- **A**. **Pass and continue** (recommended): Commit and push all branch changes listed above, including the tests and release note, verify the PR version, mark only the four displayed reviewed files Viewed and verify every readback, then show the next group.
 - **B**. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
-
-❓ **Q1** - **Publish and continue**: Publish the checked branch changes and record the four reviewed files Viewed, or continue without those writes? Enter **A** or **B**.
-
-➡️ I recommend **A**: the full publication scope and the four files' review coverage are ready for completion.
 
 ### Extra unpushed content needs confirmation
 
-📊 **Progress**: **4/9 files displayed**. M2 and M5 are repaired. Required checks passed for the complete proposed publication, and affected re-review confirmed the displayed files' assessments.
+M2 and M5 are repaired. **4/9 files displayed**. Required checks passed for the complete proposed publication, and affected re-review confirmed the displayed files' assessments.
 
 The normal push would publish the two local fixes and existing unpushed commit `a1b2c3d`, which changes the export default from CSV to JSON. That commit was not introduced in this conversation and its files have not been displayed in this review. Users relying on the old default would need to choose CSV explicitly. Confirm inclusion of that extra commit before publication; it will not receive review progress or Viewed marking merely because it is pushed.
 
-**Available actions**
+Include `a1b2c3d` in publication, or continue reviewing without publishing?
 
 - **A**. **Confirm inclusion and pass and continue**: Include `a1b2c3d` in publication, commit all outstanding branch changes, push the complete branch delta, verify the PR version, mark only the four displayed reviewed files Viewed, verify readbacks, then show the next group.
-- **B**. **Continue**: Show the next group, retaining the local fixes and unpushed commit without publishing or marking Viewed.
-
-❓ **Q1** - **Include the earlier commit**: Include `a1b2c3d` in publication, or continue without publishing? Enter **A** or **B**.
-
-➡️ I recommend **B** while inclusion is undecided: changing the export default is a separate decision, and the review can continue without publishing it.
+- **B**. **Continue** (recommended while inclusion is undecided): Show the next group, retaining the local fixes and unpushed commit without publishing or marking Viewed.
 
 If the commit's origin cannot be established, say so and request the same explicit inclusion decision. If inclusion is declined, preserve the branch and leave completion pending until the user chooses a revised outcome; do not automatically cherry-pick only the fixes, rewrite history, or publish a smaller delta.
 
@@ -254,32 +219,22 @@ If the label hunk cannot be reviewed within the authorized scope, keep the file 
 
 ### Resume partially completed PR recording
 
-📊 **Progress**: **4/9 files displayed**. The selected completion's commit and push are verified. After access was restored, readback confirmed the expected PR version and viewer: two selected files are Viewed and two remain unviewed.
+The selected completion's commit and push are verified. **4/9 files displayed**. After access was restored, readback confirmed the expected PR version and viewer: two selected files are Viewed and two remain unviewed.
 
 The selected **pass and continue** is unfinished. Ordinary **continue** is unavailable until the remaining recording and readbacks complete.
 
-**Available actions**
-
-- **A**. **Pass and continue**: Resume by marking the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed marking will be reused.
-
-❓ **Q1** - **Resume recording**: Resume the remaining recording and verification steps? Enter **A**.
-
-➡️ I recommend **A**: it completes the already selected operation while reusing the verified commit, push, and markings.
+➡️ I will resume the authorized recording: mark the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed markings will be reused.
 
 ### Final group of a PR review
 
-📊 **Progress**: **9/9 files displayed**. No pending findings, outstanding local changes, or unpublished branch commits remain; the full branch state and reviewed PR version are verified. Four files from earlier groups are verified Viewed; five reviewed files across the report, including files from groups advanced using continue, still await Viewed.
+No pending findings, outstanding local changes, or unpublished branch commits remain; the full branch state and reviewed PR version are verified. **9/9 files displayed**. Four files from earlier groups are verified Viewed; five reviewed files across the report, including files from groups advanced using continue, still await Viewed.
 
 **Optional improvements**
 
 - **M7**: Share the state-reset logic to reduce duplication and maintenance omissions.
 
-**Available actions**
+Record the remaining five reviewed files Viewed and finish, or address M7 first?
 
 - **A**. **Optimize**: Implement the optional improvement.
-- **B**. **Pass and finish**: Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
+- **B**. **Pass and finish** (recommended): Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
 - **C**. **Finish**: End this review without marking the remaining files Viewed, retaining the improvement as advice.
-
-❓ **Q1** - **Finish the PR review**: Which action should I take? Enter its letter.
-
-➡️ I recommend **B**: finish recording the reviewed files and retain M7 as optional advice.
