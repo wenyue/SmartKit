@@ -193,22 +193,67 @@ class RecommendedToolCheckerTest(unittest.TestCase):
     def setUpClass(cls):
         cls.checker = load_recommended_tool_checker_module()
 
-    def test_missing_prompt_reports_failure_before_running_or_marking_daily_checks(self):
+    def test_missing_selected_prompt_reports_failure_without_retrying_workflow_rendering(self):
         checker = self.checker
         with tempfile.TemporaryDirectory() as directory:
-            entry = Path(directory) / 'check_recommended_tools.py'
+            entry = Path(directory) / 'runtime/recommended-tools/check_recommended_tools.py'
+            # Configuration findings request consent even when another check failed.
+            finding = checker.Finding('project-config-error', 'Configuration', 'unreadable', 'Inspect it.')
             with mock.patch.object(checker, '__file__', str(entry)), \
-                    mock.patch.object(checker, 'run_hook') as run, \
+                    mock.patch.object(checker, 'run_hook', return_value=checker.HookResult(True, (finding,))) as run, \
+                    mock.patch.object(checker, 'load_user_shell_path'), \
                     mock.patch.object(checker, 'record_readiness_snapshot') as record, \
                     mock.patch('sys.stdout', new_callable=io.StringIO) as output, \
                     mock.patch('sys.stderr', new_callable=io.StringIO) as errors:
                 result = checker.main(['hook', '--harness', 'codex',
                                        '--policy', str(POLICY_ROOT / 'codex.json')])
             self.assertEqual(result, 0)
-            run.assert_not_called()
+            run.assert_called_once()
             self.assertTrue(record.call_args.args[0].internal_error)
+            self.assertEqual(record.call_args.args[0].findings, (finding,))
             self.assertIn('readiness-consent.md', errors.getvalue())
-            self.assertIn('could not complete', json.loads(output.getvalue())['systemMessage'])
+            message = json.loads(output.getvalue())['systemMessage']
+            self.assertIn('could not complete', message)
+            self.assertIn('unreadable', message)
+            self.assertNotIn('❓', message)
+
+    def test_missing_selected_prompt_records_error_instead_of_notification(self):
+        checker = self.checker
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            policy = root / 'policy.json'
+            policy.write_text('{"harness":"codex","tools":[]}\n', encoding='utf-8')
+            finding = checker.Finding('tool-missing', 'Example Tool', 'missing', 'Install it.')
+            with mock.patch.object(checker, '_prompt', side_effect=checker.PolicyError('missing selected prompt')):
+                result = checker.run_hook('codex', policy, root / 'cache',
+                                          project_root=root, evaluator=lambda _: [finding])
+            self.assertTrue(result.internal_error)
+            self.assertFalse(result.requires_user_prompt)
+            state = root / 'cache' / checker._project_cache_key(root) / 'codex.json'
+            self.assertEqual(json.loads(state.read_text(encoding='utf-8'))['outcome'], 'error')
+            self.assertIn('missing selected prompt', checker.render_hook_result(result, 'codex'))
+
+    def test_public_hook_without_decisions_does_not_load_consent_prompts(self):
+        checker = self.checker
+        with mock.patch.object(checker, 'run_hook', return_value=checker.HookResult(True)), \
+                mock.patch.object(checker, 'load_user_shell_path'), \
+                mock.patch.object(checker, 'record_readiness_snapshot'), \
+                mock.patch.object(checker, '_prompt', side_effect=AssertionError('unneeded prompt')), \
+                mock.patch('sys.stdout', new_callable=io.StringIO) as output:
+            self.assertEqual(checker.main(['hook', '--harness', 'codex']), 0)
+        self.assertEqual(output.getvalue(), '')
+
+    def test_missing_session_prompt_does_not_consume_daily_gate(self):
+        checker = self.checker
+        for failing_check in ('check_project_codegraph', 'check_project_configuration'):
+            with self.subTest(check=failing_check), \
+                    mock.patch.object(checker, 'check_project_codegraph', return_value=()), \
+                    mock.patch.object(checker, 'check_project_configuration', return_value=((), '')), \
+                    mock.patch.object(checker, failing_check, side_effect=checker.PolicyError('missing session prompt')), \
+                    mock.patch.object(checker, '_run_daily_hook') as daily:
+                with self.assertRaisesRegex(checker.PolicyError, 'missing session prompt'):
+                    checker.run_hook('codex', POLICY_ROOT / 'codex.json')
+                daily.assert_not_called()
 
     def test_version_comparison_is_strict_and_suffix_tolerant(self):
         cases = (
@@ -1434,7 +1479,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         self.assertEqual(set(rendered), {'additional_context'})
         message = rendered['additional_context']
         self.assertIn('Example Tool', message)
-        self.assertIn('End this turn after requesting consent', message)
+        self.assertIn('end this turn after requesting consent', message)
         self.assertIn('maintain_recommended_tools.py', message)
 
     def test_blocking_hook_outputs_request_consent_without_showing_commands(self):
@@ -1503,7 +1548,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
                 message,
             )
             self.assertIn('continue the original task', message)
-            self.assertIn('End this turn after requesting consent', message)
+            self.assertIn('end this turn after requesting consent', message)
             self.assertIn('Do not show the underlying maintenance commands', message)
             self.assertIn('maintain_recommended_tools.py', message)
             self.assertIn('--tool example --action install --approved', message)
@@ -2138,11 +2183,11 @@ class SetupMigrationHookTest(unittest.TestCase):
                 self.assertIn('All reported readiness findings use the same temporary pause', output)
                 self.assertIn('explicitly declines or defers all', output)
                 self.assertIn('continue the original task', output)
-                self.assertIn('Continue an already authorized action', output)
-                self.assertIn('Keep deferred findings unresolved', output)
+                self.assertIn('Reuse applicable explicit authorization', output)
+                self.assertIn('leave explicitly deferred items unresolved', output)
                 self.assertIn('nor advances the successful project setup version', output)
                 self.assertNotIn('Pause ordinary project work until', output)
-                self.assertNotIn('maintain_recommended_tools.py', output)
+                self.assertIn('An empty action list authorizes no runner invocation', output)
                 if host in {'codex', 'qoder', 'cursor'}:
                     native = json.loads(self.checker.render_hook_result(result, host))
                     self.assertIn('B．', native.get('systemMessage', native.get('user_message', '')))

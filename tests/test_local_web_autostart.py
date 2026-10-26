@@ -403,6 +403,32 @@ class DailyConsentTests(unittest.TestCase):
                 self.assertTrue(findings)
                 self.assertFalse(self.checker.HookResult(True, findings).requires_user_prompt)
 
+    def test_missing_sequence_stops_before_notifying_or_cleaning_duplicate_configuration(self):
+        c = self.checker
+        original = c._prompt
+
+        def without_sequence(name, **values):
+            if name == 'check-sequence.md':
+                raise c.PolicyError('missing check sequence')
+            return original(name, **values)
+
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
+            root = Path(directory)
+            for name, value in {'load_policy': {'tools': []}, 'check_policy': [],
+                                'check_config_requirements': [], 'check_mcp_readiness': [],
+                                'check_setup_migrations': [], 'check_smartkit_version': [],
+                                '_start_latest_smartkit_version_fetch': lambda: None}.items():
+                stack.enter_context(mock.patch.object(c, name, return_value=value))
+            stack.enter_context(mock.patch.object(autostart, 'inspect_status', return_value=
+                autostart.AutostartStatus(True, None, 'unconfigured', 'windows')))
+            stack.enter_context(mock.patch.object(c, '_prompt', side_effect=without_sequence))
+            cleanup = stack.enter_context(mock.patch.object(c, 'remove_duplicate_user_mcp'))
+            result = c._run_daily_hook('codex', root / 'policy.json', root / 'cache', project_root=root)
+            self.assertTrue(result.internal_error)
+            cleanup.assert_not_called()
+            state = root / 'cache' / c._project_cache_key(root) / 'codex.json'
+            self.assertEqual(json.loads(state.read_text(encoding='utf-8'))['outcome'], 'error')
+
     def test_native_and_agent_messages_offer_one_lettered_question_and_wait(self):
         c = self.checker
         choice = c.Finding("local-web-autostart-choice", "Local Web", "undecided", "ask",
@@ -422,15 +448,16 @@ class DailyConsentTests(unittest.TestCase):
             self.assertIn("autostart enable", context)
             self.assertIn("autostart disable", context)
             self.assertIn("no later option and no default", context)
-            self.assertIn("Pause the original task", context)
+            self.assertIn("Keep the original task paused", context)
             self.assertIn("B must be persisted", context)
 
-    def test_public_hook_loads_all_prompts_and_delivers_startup_choice(self):
+    def test_public_hook_loads_only_selected_prompts_and_delivers_startup_choice(self):
         c = self.checker
         choice = c.Finding('local-web-autostart-choice', 'Local Web', 'undecided', 'ask',
                            'local-web', 'autostart', 'choose')
         with mock.patch.object(c, 'run_hook', return_value=c.HookResult(True, (choice,))) as run, \
                 mock.patch.object(c, 'record_readiness_snapshot') as record, \
+                mock.patch.object(c, '_prompt', wraps=c._prompt) as prompts, \
                 mock.patch.object(c, 'load_user_shell_path'), \
                 mock.patch('sys.stdout', new_callable=io.StringIO) as output, \
                 mock.patch('sys.stderr', new_callable=io.StringIO) as errors:
@@ -441,6 +468,9 @@ class DailyConsentTests(unittest.TestCase):
         value = json.loads(output.getvalue())
         self.assertIn('是否启用登录自启动', value['systemMessage'])
         self.assertIn('autostart disable', value['hookSpecificOutput']['additionalContext'])
+        self.assertEqual([call.args[0] for call in prompts.call_args_list],
+                         ['autostart-consent.md', 'check-sequence.md'])
+        self.assertEqual(prompts.call_args_list[0].kwargs['feature'], 'local_web')
 
     def test_update_question_precedes_independent_login_question(self):
         c = self.checker
@@ -452,8 +482,62 @@ class DailyConsentTests(unittest.TestCase):
         context = result["hookSpecificOutput"]["additionalContext"]
         self.assertLess(context.index("All reported readiness"), context.index("login-startup preference"))
         self.assertIn("one independent question per reply", context)
-        self.assertIn("❓ **Q2**", context)
-        self.assertIn("finish any pending check questions", context)
+        self.assertIn("❓ **Q<next>**", context)
+        self.assertIn("number subsequent questions when actually asked", context)
+        self.assertEqual(context.count('Process the supplied decision steps'), 1)
+        self.assertNotIn('autostart enable', result['systemMessage'])
+        self.assertNotIn('是否启用登录自启动', result['systemMessage'])
+
+    def test_selected_prompts_resolve_from_installed_feature_and_share_the_native_question(self):
+        c = self.checker
+        with tempfile.TemporaryDirectory() as directory:
+            plugin = Path(directory)
+            for feature, name in (('recommended-tools', 'check-sequence.md'),
+                                  ('local_web', 'autostart-consent.md')):
+                destination = plugin / 'runtime' / feature / 'prompts' / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                content = (ROOT / 'runtime' / feature / 'prompts' / name).read_text(encoding='utf-8')
+                destination.write_text(content.replace('是否启用登录自启动？', '测试安装目录中的问题？'), encoding='utf-8')
+            entry = plugin / 'runtime/recommended-tools/check_recommended_tools.py'
+            finding = c.Finding('local-web-autostart-choice', 'Local Web', 'undecided', 'ask')
+            with mock.patch.object(c, '__file__', str(entry)):
+                result = json.loads(c.render_hook_result(c.HookResult(True, (finding,)), 'codex'))
+            question = result['systemMessage'].split('\n', 1)[1]
+            context = result['hookSpecificOutput']['additionalContext']
+            self.assertIn('测试安装目录中的问题？', question)
+            self.assertIn(question, context)
+            self.assertNotIn('<!-- agent-only -->', question)
+            self.assertNotIn('autostart disable', question)
+            self.assertIn(str(plugin / 'runtime/local_web/__main__.py'), context)
+
+    def test_maintenance_does_not_require_login_prompt_and_notifications_require_neither(self):
+        c = self.checker
+        original = c._prompt
+
+        def without_login(name, **values):
+            if name == 'autostart-consent.md':
+                raise c.PolicyError('missing unselected login prompt')
+            return original(name, **values)
+
+        maintenance = c.Finding('tool-missing', 'Example Tool', 'missing', 'Install it.')
+        with mock.patch.object(c, '_prompt', side_effect=without_login):
+            result = json.loads(c.render_hook_result(c.HookResult(True, (maintenance,)), 'codex'))
+        self.assertIn('❓ **Q1**', result['systemMessage'])
+        notice = c.Finding('local-web-autostart-state', 'Local Web', 'changed', 'Inspect it.')
+        with mock.patch.object(c, '_prompt', side_effect=AssertionError('unneeded prompt')):
+            result = json.loads(c.render_hook_result(c.HookResult(True, (notice,)), 'codex'))
+        self.assertIn('changed', result['systemMessage'])
+        self.assertNotIn('hookSpecificOutput', result)
+
+    def test_configuration_sync_and_notices_survive_combined_consent(self):
+        c = self.checker
+        finding = c.Finding('local-web-autostart-choice', 'Local Web', 'undecided', 'ask')
+        result = json.loads(c.render_hook_result(c.HookResult(
+            True, (finding,), notices=('CodeGraph reminder',), configuration_context='Configuration sync instructions',
+        ), 'codex'))
+        context = result['hookSpecificOutput']['additionalContext']
+        self.assertIn('CodeGraph reminder', context)
+        self.assertLess(context.index('autostart status'), context.index('Configuration sync instructions'))
 
 
 if __name__ == "__main__":

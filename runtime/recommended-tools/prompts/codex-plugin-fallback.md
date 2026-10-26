@@ -1,1 +1,0 @@
-If the runner reports that manual action is required and the named tool is a Codex plugin, use an available Codex plugin-management tool for that plugin. If no such tool is available, tell the user to complete the action in the Codex Plugins interface.
