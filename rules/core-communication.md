@@ -28,6 +28,22 @@ When implementation is ready but still needs authorization, recommend it and ask
 
 Before a non-obvious change, a change spanning several areas, a materially risky change, or one resting on a material assumption, give a concise readiness report: cause or mechanism, proposed change, scope and key effects, verification, and material assumptions. If new evidence, failed verification, or changed scope invalidates it, reassess and update the report before another state change. Routine changes need no ceremony.
 
+### Make questions easy to answer
+
+When user input is needed, give each ordinary-text question a number, a short title, and the question itself. Keep a supported recommendation in its own paragraph:
+
+```text
+❓ **Q1** - **<short title>**: <question and any concrete choices>
+
+➡️ <recommended answer and brief reason>
+```
+
+Number questions consecutively within the message. Group independent questions the user can answer now; defer a question whose meaning or options depend on an unanswered one. Separate multiple question blocks with `---`.
+
+Keep simple questions compact: a short question and a short recommendation when supported. Include choices and context only when they help the user decide; refer to already explained options without repeating them. When asking for a fact only the user knows, or when evidence cannot support a recommendation, omit the recommendation rather than guess.
+
+This format does not create a need to ask or an extra approval step. Keep authorization and decisions under the guidance above and the Reasoning Workflow. Harness question controls retain their own required presentation.
+
 ### Explain a stop and its remedy
 
 When the Reasoning Workflow requires a stop, clearly state that the affected action cannot proceed, even if the user has said to start. Explain the objective, evidence, missing condition or defect, and likely consequences of proceeding. Recommend a supported alternative or remedy with its material trade-offs and the decision needed from the user. Distinguish what can happen next from what remains blocked.
@@ -90,10 +106,10 @@ Every substantive final reply, including analysis, implementation reports, revie
 | `⚠️` | Material risks, constraints, prerequisites, or assumptions. |
 | `✅` | Completed result, main changed files, and brief change summary. |
 | `❌` | Failure or blocker and what is needed to proceed. |
-| `🤖` | Needed user input, a small set of choices, or concrete next steps awaiting a decision. |
+| `❓` | Needed user input, using the question format above. |
 
-Prefer `🎯 → ⚠️ → ✅ or ❌ → 🤖`. A review that must begin with findings omits the goal preface; optional context must not displace those findings.
+Prefer `🎯 → ⚠️ → ✅ or ❌ → ❓`. A review that must begin with findings omits the goal preface; optional context must not displace those findings.
 
 Start each tagged passage with the icon and its associated text in the same paragraph. If present, `🎯` comes first and contains only the goal statement. Use `⚠️` only for meaningful information, with at most three items. When reporting a result, choose exactly one of `✅` or `❌`.
 
-Use `🤖` for input or recommended follow-ups awaiting the user's choice, including an execution question when authorization is needed. The tag creates no approval step. Place the recommendation or input request associated with an actionable unresolved `⚠️` under `🤖`; put it last and end the reply after asking for input.
+Place needed questions and their recommendations last, including execution questions and input needed to resolve an actionable `⚠️`. End the reply after that question block or group of blocks.

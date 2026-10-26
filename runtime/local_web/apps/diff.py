@@ -245,10 +245,6 @@ def git_base_uri(comparison: Comparison) -> Optional[str]:
         return None
     name = target.base_path or target.path
     try:
-        # A reused VS Code window may resolve a Git-file checkout through its parent.
-        # Materialize the fixed blob instead of assuming that checkout is registered.
-        if (target.repo / ".git").is_file():
-            return None
         history = target.repo.resolve(strict=True)
         for part in name.split("/"):
             history /= part
@@ -309,11 +305,13 @@ def open_editor(target: Target) -> Dict[str, str]:
                 before = captured.files[before_name].path
             if comparison.worktree_file is None or comparison.after is None:
                 after = captured.files[after_name].path
-        if before_uri is None:
-            arguments = [str(before), str(after)]
-        else:
-            # Windows Chromium filters standalone URL arguments before VS Code parses them.
-            arguments = ["--file-uri=" + before_uri, "--file-uri=" + after.as_uri()]
+        if before_uri is not None:
+            from ..editor_bridge import open_registered_diff
+            if open_registered_diff(target.repo, before_uri, after):
+                return {"viewer": "vscode", "message": "已在 VS Code 中打开文件对比。"}
+            captured = artifacts.create_artifact({before_name: comparison.before or b""})
+            before = captured.files[before_name].path
+        arguments = [str(before), str(after)]
         environment = dict(os.environ)
         environment.pop("ELECTRON_RUN_AS_NODE", None)
         log_path = prepare_state() / "vscode-launch.log"
@@ -332,5 +330,5 @@ def open_editor(target: Target) -> Dict[str, str]:
         if status not in (None, 0):
             raise OSError("VS Code launcher exited with status " + str(status))
     except (OSError, ValueError) as error:
-        return {"viewer": "web", "url": fallback, "message": "VS Code 启动失败，正在打开网页 diff：" + str(error)}
+        return {"viewer": "web", "url": fallback, "message": "VS Code 比较结果未确认，正在打开网页 diff：" + str(error)}
     return {"viewer": "vscode", "message": "已向 VS Code 发送 diff 请求；如果未显示，请使用下方网页入口。"}

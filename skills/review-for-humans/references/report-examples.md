@@ -79,7 +79,9 @@ Previously, repeated clicks could start duplicate saves; the handler now refuses
 - **B**. **Pass and finish**: Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
 - **C**. **Finish**: End this review without committing, retaining the improvement as advice.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Next action**: Which action should I take? Enter its letter.
+
+➡️ I recommend **B**: the checked changes are ready to commit, and the optional improvement can remain advice.
 
 ## Example closings for different results
 
@@ -107,7 +109,9 @@ O1 remains advice, does not block completion, and is excluded from bulk fixes or
 - **A**. **Pass and finish**: Commit all three branch changes, verify the result, and end this review without pushing, retaining O1 as advice.
 - **B**. **Finish**: End this review without committing, retaining O1 as advice.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Complete the review**: Which action should I take? Enter its letter.
+
+➡️ I recommend **A**: the reviewed text changes are ready to commit, while O1 remains separate advice.
 
 ### Dedicated re-review after an O repair
 
@@ -130,7 +134,9 @@ Previously, a rejected export left the button disabled because restoration occur
 - **A**. **Pass and finish**: Commit all branch changes, including the three reviewed text files and O1's checked, re-reviewed repair, verify the result, and end this review without pushing.
 - **B**. **Finish**: End this review without committing.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Finish after the repair**: Which action should I take? Enter its letter.
+
+➡️ I recommend **A**: the selected repair and the branch changes have passed the required checks and review.
 
 If O1's check or re-review is incomplete or fails, retain its unresolved status and leave completion that would include the repair unavailable. Confirmation to include branch content does not replace this re-review.
 
@@ -155,7 +161,9 @@ If O1's check or re-review is incomplete or fails, retain its unresolved status 
 - **B**. **Ignore**: Choose which findings to ignore; other findings remain pending.
 - **C**. **Optimize**: Implement the optional improvement; the pending findings still need attention.
 
-🤖 **Enter an operation letter; include M IDs to select a subset.**
+❓ **Q1** - **Resolve pending findings**: Which action should I take? Enter its letter; include M IDs to select a subset.
+
+➡️ I recommend **A**: repair M2 and M5 before advancing; the optional improvement can wait.
 
 If the user replies “A, M2” or “a, M2,” repair only M2; M5 remains pending. If the user replies “B” or “b,” clarify which findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation letters choose actions; M IDs choose their items.
 
@@ -172,7 +180,9 @@ The branch commit will include all staged, unstaged, and untracked changes: the 
 - **A**. **Confirm inclusion and pass and continue**: Include the extra “Save draft” label change, commit the full branch inventory above, verify the result, then show the next group without pushing.
 - **B**. **Continue**: Show the next group without staging or committing.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Include the staged change**: Include the extra label change and commit, or continue reviewing? Enter **A** or **B**.
+
+➡️ I recommend **B** while inclusion is undecided: it preserves the staged change and lets the review continue without committing it.
 
 If the user declines the extra content, leave full-branch completion pending; do not silently commit only the save-handler fix. If option A completes, display the remaining two source files from the retained review snapshot even though the worktree is now clean. They were included in the commit but have not yet been displayed or counted as reviewed.
 
@@ -185,7 +195,9 @@ If the user declines the extra content, leave full-branch completion pending; do
 - **A**. **Pass and finish**: Reuse the verified commits and end this review, with no empty commit or push.
 - **B**. **Finish**: End this review without further writes.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Finish the review**: Which action should I take? Enter its letter.
+
+➡️ I recommend **A**: the branch is already verified, so completion needs no further Git write.
 
 ### PR with no repairs and an unrelated submodule difference
 
@@ -198,7 +210,9 @@ Read-only inspection found a local submodule checkout difference unrelated to th
 - **A**. **Pass and continue**: Verify the reviewed PR version, mark the four displayed reviewed files Viewed, verify every selected file and the PR version by readback, then show the next group.
 - **B**. **Continue**: Show the next group without marking Viewed.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Record reviewed files**: Mark the four reviewed files Viewed before continuing? Enter **A** or **B**.
+
+➡️ I recommend **A**: the four files have complete review coverage, and the unrelated local difference stays preserved.
 
 ### PR repaired locally and ready for completion
 
@@ -209,7 +223,9 @@ Read-only inspection found a local submodule checkout difference unrelated to th
 - **A**. **Pass and continue**: Commit and push all branch changes listed above, including the tests and release note, verify the PR version, mark only the four displayed reviewed files Viewed and verify every readback, then show the next group.
 - **B**. **Continue**: Show the next group, retaining the local fixes without publishing or marking Viewed.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Publish and continue**: Publish the checked branch changes and record the four reviewed files Viewed, or continue without those writes? Enter **A** or **B**.
+
+➡️ I recommend **A**: the full publication scope and the four files' review coverage are ready for completion.
 
 ### Extra unpushed content needs confirmation
 
@@ -222,7 +238,9 @@ The normal push would publish the two local fixes and existing unpushed commit `
 - **A**. **Confirm inclusion and pass and continue**: Include `a1b2c3d` in publication, commit all outstanding branch changes, push the complete branch delta, verify the PR version, mark only the four displayed reviewed files Viewed, verify readbacks, then show the next group.
 - **B**. **Continue**: Show the next group, retaining the local fixes and unpushed commit without publishing or marking Viewed.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Include the earlier commit**: Include `a1b2c3d` in publication, or continue without publishing? Enter **A** or **B**.
+
+➡️ I recommend **B** while inclusion is undecided: changing the export default is a separate decision, and the review can continue without publishing it.
 
 If the commit's origin cannot be established, say so and request the same explicit inclusion decision. If inclusion is declined, preserve the branch and leave completion pending until the user chooses a revised outcome; do not automatically cherry-pick only the fixes, rewrite history, or publish a smaller delta.
 
@@ -244,7 +262,9 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 - **A**. **Pass and continue**: Resume by marking the two remaining selected files Viewed, verify all four selected files and the PR version, then show the next group. The verified commit, push, and completed marking will be reused.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Resume recording**: Resume the remaining recording and verification steps? Enter **A**.
+
+➡️ I recommend **A**: it completes the already selected operation while reusing the verified commit, push, and markings.
 
 ### Final group of a PR review
 
@@ -260,4 +280,6 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 - **B**. **Pass and finish**: Complete recording for all nine reviewed files across every group: mark the five remaining files Viewed, verify all nine files and the PR version, then end this review, retaining the improvement as advice.
 - **C**. **Finish**: End this review without marking the remaining files Viewed, retaining the improvement as advice.
 
-🤖 **Enter an operation letter.**
+❓ **Q1** - **Finish the PR review**: Which action should I take? Enter its letter.
+
+➡️ I recommend **B**: finish recording the reviewed files and retain M7 as optional advice.

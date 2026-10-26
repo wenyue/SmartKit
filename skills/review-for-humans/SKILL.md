@@ -172,7 +172,7 @@ Every closing accounts for completion readiness, including after a repair or in 
 3. 📌 **Incidental observations (outside this review's scope)**.
 4. **Available actions**, using the lettered choices and concrete effects described above. Name the full commit scope, any extra-content confirmation, publication delta, and Viewed set when applicable.
 
-End with one short instruction to enter a letter; omit it if no choice remains. [Example closings](references/report-examples.md#example-closings-for-different-results) show the presentation of these states.
+Close with a compact question asking for an operation letter and any supported recommendation; omit the closing if no choice remains. [Example closings](references/report-examples.md#example-closings-for-different-results) show the presentation of these states.
 
 If the user asks to advance while blocked, explain the pending IDs or prerequisites and regenerate the available menu; continue never means ignore. Questions and disputed findings call for answers or reassessment, not automatic advancement. An explicit stop or pause is always allowed: report displayed progress and unresolved findings, evidence, modifications, publication, or operations without claiming completed work.
 

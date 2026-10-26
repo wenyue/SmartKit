@@ -107,14 +107,15 @@ Live URLs compare the fixed blob with the current on-disk path; deletion is an
 absent current side and rename needs a new link. Snapshot URLs read the current
 path at the fixed PR head, using base_path only for the before side. An absent
 path at an existing commit is absence; missing commits/blobs are errors.
-VS Code prefers a validated fixed-commit Git URI for checkouts with a .git
-directory. Git-file checkouts, including linked worktrees, use temporary baselines
-because the reused editor may not identify their repository. Other inapplicable
-Git locators also use temporary files. Present current files are opened directly;
-absent sides use empty temporary files. A Git locator never replaces the pinned blob as the baseline.
-Snapshot editor comparisons materialize both fixed sides as private temporary files.
+VS Code uses a validated fixed-commit Git URI only when the optional Diff Bridge
+confirms that the exact checkout is registered in the receiving window and reads
+that baseline there. The bridge opens the native comparison in that same window.
+Without the bridge, registration, or a readable Git baseline, materialize the
+pinned blob and compare ordinary files. Installation is separate; see the bundled
+runtime/local_web/vscode/README.md. Live worktree files remain the right side;
+absent sides use empty temporary files. Snapshot comparisons materialize both sides.
 Live VS Code may show unsaved editor contents; live HTML reads the on-disk file.
-One editor mode is chosen before dispatch, without automatic relaunch or retries.
+A sent bridge request with an unknown outcome is never automatically relaunched.
 VS Code is attempted from a visible page; explicit launch failure falls back
 to GitHub for live PRs or HTML for fixed snapshots/non-PRs, in the same tab.
 A dispatched request tries to close the tab;

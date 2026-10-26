@@ -20,7 +20,7 @@ from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
-from local_web import ORIGIN, HOST, artifacts, cli, http_server, service, storage
+from local_web import ORIGIN, HOST, artifacts, cli, editor_bridge, http_server, service, storage
 from local_web.apps import comparisons, diff
 from local_web_test_support import isolate_local_web
 
@@ -60,13 +60,13 @@ class DiffFixture:
                      "files": list(entries) if entries else [self.entry()]}, **extra)
 
     @contextmanager
-    def editor_dispatch(self, status=0):
+    def editor_dispatch(self, status=0, *, registered=False):
         # Keep real Git subprocesses separate from the mocked editor launch.
         process = Mock()
         process.wait.return_value = status
         editor = SimpleNamespace(Popen=Mock(return_value=process), DEVNULL=subprocess.DEVNULL,
                                  TimeoutExpired=subprocess.TimeoutExpired)
-        with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff, "subprocess", editor):
+        with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff, "subprocess", editor), patch.object(editor_bridge, "open_registered_diff", return_value=registered):
             yield editor.Popen
 
 class DiffTests(DiffFixture, unittest.TestCase):
@@ -436,18 +436,39 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
 
     def test_commit_editor_uses_native_git_uri_without_temporary_files(self):
         target = self.prepare()
-        with self.editor_dispatch() as launch, patch.object(artifacts, "create_artifact") as capture:
+        with self.editor_dispatch(registered=True) as launch, patch.object(artifacts, "create_artifact") as capture:
             result = diff.open_editor(target)
+            request = editor_bridge.open_registered_diff.call_args[0]
         self.assertEqual(result["viewer"], "vscode")
         capture.assert_not_called()
-        launch.assert_called_once()
-        command = launch.call_args[0][0]
-        self.assertEqual(command[:3], ["Code.exe", "--reuse-window", "--diff"])
-        self.assertTrue(command[3].startswith("--file-uri="))
-        before = urllib.parse.urlsplit(command[3].split("=", 1)[1])
+        launch.assert_not_called()
+        self.assertEqual(request[0], self.repo)
+        before = urllib.parse.urlsplit(request[1])
         self.assertEqual(before.scheme, "git")
         self.assertEqual(json.loads(urllib.parse.unquote(before.query)), {"path": str(self.file), "ref": self.before})
-        self.assertEqual(command[4], "--file-uri=" + self.file.as_uri())
+        self.assertEqual(request[2], self.file)
+
+    def test_commit_without_a_registered_editor_uses_the_retained_blob(self):
+        target = self.prepare()
+        with self.editor_dispatch() as launch:
+            result = diff.open_editor(target)
+        self.assertEqual(result["viewer"], "vscode")
+        command = launch.call_args[0][0]
+        self.assertFalse(command[3].startswith("--file-uri=git:"))
+        self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
+        self.assertEqual(Path(command[4]), self.file)
+
+    def test_registered_linked_checkout_opens_in_its_own_window(self):
+        linked = self.linked(self.base / "registered worktree")
+        target = self.prepare(replace(self.context, repo=linked, view="worktree"))
+        with self.editor_dispatch(registered=True) as launch, patch.object(artifacts, "create_artifact") as capture:
+            result = diff.open_editor(target)
+            request = editor_bridge.open_registered_diff.call_args[0]
+        self.assertEqual(result["viewer"], "vscode")
+        self.assertEqual(request[0], linked)
+        self.assertEqual(request[2], linked / self.name)
+        capture.assert_not_called()
+        launch.assert_not_called()
 
     def test_linked_checkout_uses_fixed_files_without_requiring_editor_repository_detection(self):
         for name in (self.repo / ".worktrees" / "nested review", self.base / "external review"):
@@ -495,23 +516,23 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
 
     def test_native_launch_failure_falls_back_to_web_without_relaunch(self):
         target = self.prepare()
-        with self.editor_dispatch(status=2) as launch, patch.object(artifacts, "create_artifact") as capture:
+        with self.editor_dispatch() as launch, patch.object(artifacts, "create_artifact") as capture:
+            editor_bridge.open_registered_diff.side_effect = OSError("sent, result unknown")
             result = diff.open_editor(target)
         self.assertEqual(result["url"], target.github)
         capture.assert_not_called()
-        launch.assert_called_once()
+        launch.assert_not_called()
 
     def test_native_deletion_materializes_only_the_absent_current_side(self):
         self.file.unlink()
         target = self.prepare()
-        with self.editor_dispatch() as launch, patch.object(artifacts, "create_artifact", wraps=artifacts.create_artifact) as capture:
+        with self.editor_dispatch(registered=True) as launch, patch.object(artifacts, "create_artifact", wraps=artifacts.create_artifact) as capture:
             result = diff.open_editor(target)
+            after = editor_bridge.open_registered_diff.call_args[0][2]
         self.assertEqual(result["viewer"], "vscode")
         capture.assert_called_once_with({"after.py": b""})
-        command = launch.call_args[0][0]
-        self.assertTrue(command[3].startswith("--file-uri=git:"))
-        after_uri = urllib.parse.urlsplit(command[4].split("=", 1)[1])
-        self.assertEqual(Path(urllib.request.url2pathname(after_uri.path)).read_bytes(), b"")
+        self.assertEqual(after.read_bytes(), b"")
+        launch.assert_not_called()
         self.assertFalse(self.file.exists())
 
     def test_textconv_uses_files_without_executing_the_converter(self):
@@ -626,9 +647,10 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(target.base, "blob:" + self.oid)
         self.assertEqual(target.base_commit, self.before)
         self.assertEqual(target.base_path, self.name)
-        with self.editor_dispatch() as launch:
+        with self.editor_dispatch(registered=True) as launch:
             self.assertEqual(diff.open_editor(target)["viewer"], "vscode")
-        before_uri = urllib.parse.urlsplit(launch.call_args[0][0][3].split("=", 1)[1])
+            before_uri = urllib.parse.urlsplit(editor_bridge.open_registered_diff.call_args[0][1])
+        launch.assert_not_called()
         self.assertEqual(json.loads(urllib.parse.unquote(before_uri.query))["path"], str(self.repo / self.name))
         self.assertEqual(target.github, self.github + "#diff-b1cb4c2fea8f27faabf83123f17e7e992ed88c065ec16deaef2c77891f8da40d")
         self.assertEqual(diff.read_comparison(target).after, b"first edit\n")

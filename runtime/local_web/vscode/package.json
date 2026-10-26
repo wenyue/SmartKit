@@ -1,0 +1,28 @@
+{
+  "name": "smartkit-diff-bridge",
+  "displayName": "SmartKit Diff Bridge",
+  "description": "Open SmartKit diffs through the Git repository registered in the receiving VS Code window.",
+  "publisher": "wenyue",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "main": "./extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  }
+}
