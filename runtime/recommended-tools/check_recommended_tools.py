@@ -88,7 +88,7 @@ class HookResult:
     @property
     def requires_user_prompt(self) -> bool:
         return any(finding.code.startswith('project-config-') for finding in self.findings) or (not self.internal_error and any(
-            finding.code != 'detector-error' for finding in self.findings
+            finding.code not in {'detector-error', 'local-web-autostart-state', 'local-web-autostart-unsupported'} for finding in self.findings
         ))
 
 
@@ -1505,6 +1505,33 @@ def _acquire_lock(path: Path) -> str:
     return 'owned'
 
 
+def check_local_web_autostart() -> list[Finding]:
+    """Inspect login preference only inside the existing per-project daily gate."""
+    runtime = str(Path(__file__).resolve().parents[1])
+    if runtime not in sys.path:
+        sys.path.insert(0, runtime)
+    from local_web import autostart
+
+    try:
+        status = autostart.inspect_status()
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return [Finding('detector-error', 'SmartKit Local Web login startup',
+                        str(error), 'Inspect the preserved user configuration; no login setting was changed.')]
+    if status.preference is None and status.supported:
+        return [Finding('local-web-autostart-choice', 'SmartKit Local Web login startup',
+                        'Current-user login startup has not been selected.',
+                        'Ask whether to enable login startup and persist the explicit A/B choice.',
+                        target_kind='local-web', target_id='autostart', action='choose')]
+    if not status.supported:
+        return [Finding('local-web-autostart-unsupported', 'SmartKit Local Web login startup',
+                        status.message, 'Login startup is unavailable; no elevation or system registration is requested.')]
+    if status.preference is True and status.state != 'installed':
+        return [Finding('local-web-autostart-state', 'SmartKit Local Web login startup',
+                        status.message or status.state,
+                        'The user choice is retained. Inspect autostart status; OS changes are not repaired silently.')]
+    return []
+
+
 def _run_daily_hook(
     harness: str,
     policy_path: Path,
@@ -1555,6 +1582,7 @@ def _run_daily_hook(
                     ) if finding.tool != 'codegraph MCP'],
                     lambda: check_setup_migrations(project_root),
                     lambda: check_smartkit_version(harness, latest_smartkit_version()),
+                    check_local_web_autostart,
                 )
                 with ThreadPoolExecutor(max_workers=len(checks)) as executor:
                     pending = [executor.submit(check) for check in checks]
@@ -1686,17 +1714,19 @@ def _prompt(name: str, **values: str) -> str:
         raise PolicyError(f'readiness prompt unavailable or invalid: {path}: {error}') from error
 
 
-def _user_consent_request(findings: str) -> str:
-    return (
-        f'{findings}\n'
-        '[smartkit] Recommended readiness changes require approval. Reply with the '
-        'names whose requested actions you approve, or explicitly decline or defer those '
-        'actions to bypass the pause temporarily and continue the original task. '
-        'Deferred findings remain unresolved.'
-    )
+def _user_consent_request(findings: str, *, autostart_only: bool = False) -> str:
+    if autostart_only:
+        question = ("❓ **Q1** - **是否启用登录自启动？**：是否让 SmartKit 本机 Web 服务在当前用户登录后后台启动？\n"
+                    "A．启用，并保存选择。\nB．不启用，并保存选择。\n"
+                    "➡️ 推荐 A，减少服务未运行造成的本地链接不可用。")
+    else:
+        question = ("❓ **Q1** - **是否执行上述更新与维护？**：请确认上面列出的操作。\n"
+                    "A．执行列出的操作。\nB．不执行，保留未解决项，完成后续检查问题后继续原任务。\n"
+                    "➡️ 推荐 A，以修复已报告的问题。")
+    return findings + '\n' + question
 
 
-def _agent_consent_request(
+def _maintenance_consent_request(
     findings: str,
     actionable_findings: tuple[Finding, ...],
     harness: str,
@@ -1726,6 +1756,21 @@ def _agent_consent_request(
     )
 
 
+def _agent_consent_request(
+    findings: str,
+    actionable_findings: tuple[Finding, ...],
+    harness: str,
+) -> str:
+    ordinary = tuple(f for f in actionable_findings if not f.code.startswith('local-web-autostart-'))
+    blocks = []
+    if HookResult(True, ordinary).requires_user_prompt:
+        blocks.append(_maintenance_consent_request(render_findings(ordinary), ordinary, harness))
+    if any(f.code == 'local-web-autostart-choice' for f in actionable_findings):
+        entry = Path(__file__).resolve().parents[1] / 'local_web' / '__main__.py'
+        blocks.append(_prompt('autostart-consent.md', entry=str(entry), question_number=str(len(blocks) + 1)))
+    return '\n'.join(blocks) or findings
+
+
 def render_hook_result(
     result: HookResult,
     harness: str,
@@ -1742,7 +1787,9 @@ def render_hook_result(
             return json.dumps(
                 {
                     'continue': True,
-                    'systemMessage': _user_consent_request(rendered),
+                    'systemMessage': _user_consent_request(rendered, autostart_only=not HookResult(True, tuple(
+                            f for f in result.findings if not f.code.startswith('local-web-autostart-')
+                        )).requires_user_prompt),
                     'hookSpecificOutput': {
                         'hookEventName': 'SessionStart',
                         'additionalContext': _agent_consent_request(
@@ -1763,7 +1810,9 @@ def render_hook_result(
             return json.dumps(
                 {
                     'continue': False,
-                    'user_message': _user_consent_request(rendered),
+                    'user_message': _user_consent_request(rendered, autostart_only=not HookResult(True, tuple(
+                            f for f in result.findings if not f.code.startswith('local-web-autostart-')
+                        )).requires_user_prompt),
                 }
             )
         return json.dumps(
@@ -1842,6 +1891,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             _prompt('readiness-consent.md', runner_instruction='', plugin_fallback='')
             _prompt('approved-actions.md', maintenance_runner='', action_text='')
+            _prompt('autostart-consent.md', entry='', question_number='1')
             _prompt('codegraph-not-ready.md', message='')
             if args.harness == 'codex':
                 _prompt('codex-plugin-fallback.md')

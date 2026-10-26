@@ -28,11 +28,17 @@ MAINTAINER_PATH = (
 POLICY_ROOT = CHECKER_PATH.parent / 'policies'
 RECOMMENDED_TOOL_POLICIES = POLICY_ROOT
 _USER_MCP_PATCH = None
+_AUTOSTART_PATCH = None
 
 
 def setUpModule():
     # Hook runs must never edit the developer's real user-level MCP configuration.
-    global _USER_MCP_PATCH
+    global _USER_MCP_PATCH, _AUTOSTART_PATCH
+    sys.path.insert(0, str(REPO_ROOT / "runtime"))
+    from local_web import autostart
+    _AUTOSTART_PATCH = mock.patch.object(autostart, "inspect_status", return_value=
+        autostart.AutostartStatus(True, False, "disabled", None))
+    _AUTOSTART_PATCH.start()
     if str(CHECKER_PATH.parent) not in sys.path:
         sys.path.insert(0, str(CHECKER_PATH.parent))
     import user_mcp
@@ -45,6 +51,7 @@ def setUpModule():
 
 def tearDownModule():
     _USER_MCP_PATCH.stop()
+    _AUTOSTART_PATCH.stop()
 
 
 def load_checker():
@@ -1108,8 +1115,8 @@ class RecommendedToolCheckerTest(unittest.TestCase):
                 self.assertTrue(result.ran)
                 self.assertEqual(result.findings, findings)
                 message = json.loads(checker.render_hook_result(result, 'codex'))['systemMessage']
-                self.assertEqual(message.count('Reply with the names'), 1)
-                self.assertIn('bypass the pause temporarily', message)
+                self.assertEqual(message.count('❓ **Q1**'), 1)
+                self.assertIn('B．', message)
             for check in (tools, config_check, mcp, setup, version, fetch):
                 self.assertEqual(check.call_count, 3)
             self.assertEqual(config.read_bytes(), baseline)
@@ -1365,7 +1372,9 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         )
         self.assertIs(rendered['continue'], True)
         self.assertIn('at least 6', rendered['systemMessage'])
-        self.assertIn('require approval', rendered['systemMessage'])
+        self.assertIn('❓ **Q1**', rendered['systemMessage'])
+        self.assertIn('A．', rendered['systemMessage'])
+        self.assertIn('B．', rendered['systemMessage'])
         context = rendered['hookSpecificOutput']['additionalContext']
         self.assertIn('--setting multi_agent', context)
         self.assertIn('configure --harness codex', context)
@@ -1452,7 +1461,9 @@ class RecommendedToolCheckerTest(unittest.TestCase):
 
         for message in messages:
             self.assertIn('Example Tool', message)
-            self.assertIn('Reply with the names', message)
+            self.assertIn('❓ **Q1**', message)
+            self.assertIn('A．', message)
+            self.assertIn('B．', message)
             self.assertNotIn('maintain_recommended_tools.py', message)
             self.assertNotIn('--approved', message)
 
@@ -2133,8 +2144,8 @@ class SetupMigrationHookTest(unittest.TestCase):
                 self.assertNotIn('Pause ordinary project work until', output)
                 self.assertNotIn('maintain_recommended_tools.py', output)
                 if host in {'codex', 'qoder', 'cursor'}:
-                    native = self.checker.render_hook_result(result, host)
-                    self.assertIn('bypass the pause temporarily', native)
+                    native = json.loads(self.checker.render_hook_result(result, host))
+                    self.assertIn('B．', native.get('systemMessage', native.get('user_message', '')))
 
     def test_setup_and_other_findings_share_one_prompt_and_only_approved_maintenance(self):
         findings = (
@@ -2148,7 +2159,7 @@ class SetupMigrationHookTest(unittest.TestCase):
                 output = json.loads(self.checker.render_hook_result(result, host, delivery='context'))
                 if host in {'codex', 'qoder'}:
                     context = output['hookSpecificOutput']['additionalContext']
-                    self.assertEqual(output['systemMessage'].count('Reply with the names'), 1)
+                    self.assertEqual(output['systemMessage'].count('❓ **Q1**'), 1)
                 elif host == 'cursor':
                     context = output['additional_context']
                 else:
