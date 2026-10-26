@@ -147,9 +147,17 @@ def inspect_status() -> AutostartStatus:
     selected = preference()
     record = _record()
     if record is None:
+        available = None if selected is False else _select_backend()
+        backends = (("windows",) if sys.platform == "win32" else
+                    ("systemd", "xdg") if sys.platform.startswith("linux") else ())
+        for backend in backends:
+            for path in _paths(backend).values():
+                if path.exists() or storage.redirected(path):
+                    return AutostartStatus(available is not None or selected is False, selected, "modified", backend,
+                                           "An unowned login file was preserved: " + str(path))
         if selected is False:
             return AutostartStatus(True, False, "disabled", None)
-        backend = _select_backend()
+        backend = available
         if backend is None:
             return AutostartStatus(False, selected, "unsupported", None,
                                    "No supported current-user login mechanism is available.")

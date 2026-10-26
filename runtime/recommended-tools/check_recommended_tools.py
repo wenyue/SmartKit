@@ -1525,7 +1525,8 @@ def check_local_web_autostart() -> list[Finding]:
     if not status.supported:
         return [Finding('local-web-autostart-unsupported', 'SmartKit Local Web login startup',
                         status.message, 'Login startup is unavailable; no elevation or system registration is requested.')]
-    if status.preference is True and status.state != 'installed':
+    expected = 'installed' if status.preference else 'disabled'
+    if status.preference is not None and status.state != expected:
         return [Finding('local-web-autostart-state', 'SmartKit Local Web login startup',
                         status.message or status.state,
                         'The user choice is retained. Inspect autostart status; OS changes are not repaired silently.')]

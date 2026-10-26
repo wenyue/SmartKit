@@ -110,6 +110,23 @@ class LoginRegistrationTests(unittest.TestCase):
         self.assertEqual(native.read_text(), "not SmartKit's entry")
         self.assertTrue(autostart.preference())
 
+    def test_refusal_reports_unowned_entries_and_preserves_every_native_backend(self):
+        for backend in ('xdg', 'systemd', 'windows'):
+            with self.subTest(backend=backend), mock.patch.object(
+                    autostart.sys, 'platform', 'win32' if backend == 'windows' else 'linux'):
+                native = autostart._registration(backend)
+                native.parent.mkdir(parents=True, exist_ok=True)
+                native.write_text('unknown user entry')
+                with self.assertRaisesRegex(ValueError, 'preserved'):
+                    autostart.configure(False)
+                self.assertFalse(autostart.preference())
+                self.assertEqual(native.read_text(), 'unknown user entry')
+                status = autostart.inspect_status()
+                self.assertEqual(status.state, 'modified')
+                self.assertIn(str(native), status.message)
+                self.assertFalse(autostart._record_path().exists())
+                native.unlink()
+
     def test_modified_owned_file_is_not_repaired_by_hook_or_deleted(self):
         autostart.configure(True)
         native = autostart._registration("xdg")
@@ -379,7 +396,8 @@ class DailyConsentTests(unittest.TestCase):
 
     def test_unsupported_or_changed_registration_is_reported_without_another_choice(self):
         for status in (autostart.AutostartStatus(False, None, "unsupported", None, "no user mechanism"),
-                       autostart.AutostartStatus(True, True, "disabled-in-system", "systemd", "user disabled")):
+                       autostart.AutostartStatus(True, True, "disabled-in-system", "systemd", "user disabled"),
+                       autostart.AutostartStatus(True, False, "modified", "xdg", "unowned entry")):
             with self.subTest(status=status), mock.patch.object(autostart, "inspect_status", return_value=status):
                 findings = tuple(self.checker.check_local_web_autostart())
                 self.assertTrue(findings)
