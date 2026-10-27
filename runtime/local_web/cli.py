@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 from datetime import timedelta
 import json
 from pathlib import Path
 import sys
 from typing import Optional, Sequence
 
-from . import artifacts, service
+from . import artifacts, service, autostart
 from .apps import diff
 
 
@@ -144,7 +145,13 @@ requested, never merely because a chat ends.
 Manual stop followed by ensure creates a new private-page credential.
 Private readiness/setup URLs contain an instance credential; keep them private.
 They read owner-produced observations/source state without checks or repair.
-Hook/CLI startup is bounded recovery, not URL-click or login startup. Diff URLs
+Hook/CLI startup is bounded recovery. Explicit autostart enable/disable records
+the current user's login choice; status only inspects it. Windows uses a user
+Startup shortcut; Linux uses a user systemd unit or XDG desktop registration.
+No system service, elevation, or lingering is configured. Disabling preserves the
+host used by active chats. Login registration uses a stable user-local launcher;
+session Hooks refresh only its owned plugin pointer without re-enabling OS entries.
+URL clicks cannot start a stopped host. Diff URLs
 need no reissuing after restart but require the same worktree and Git object.
 Preview artifacts and canonical/project records have independent lifetimes.
 Failures print diagnostics and exit 1; hook failures exit 0 to preserve sessions.
@@ -174,6 +181,8 @@ Examples (<entry> is the loaded local_web resource):
     compare.add_argument("--inspect", action="store_true", help="Inspect PR worktree identity/freshness without starting the host")
     hook = commands.add_parser("hook", help="Record the project and restore the host from a session hook.")
     hook.add_argument("--harness", required=True, choices=("codex", "cursor", "copilot", "qoder"))
+    login = commands.add_parser("autostart", help="Inspect or explicitly configure current-user login startup.")
+    login.add_argument("action", choices=("status", "enable", "disable"))
     commands.add_parser("serve", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
@@ -196,7 +205,15 @@ Examples (<entry> is the loaded local_web resource):
             content = sys.stdin.read() if args.input == "-" else Path(args.input).read_bytes().decode("utf-8")
             batch = json.loads(content, object_pairs_hook=artifacts._unique_object)
             value = diff.inspect(batch) if args.inspect else diff.links(batch)
+        elif args.command == "autostart":
+            value = asdict(autostart.inspect_status() if args.action == "status"
+                           else autostart.configure(args.action == "enable"))
         elif args.command == "hook":
+            try:
+                autostart.refresh_runtime()
+            except (OSError, ValueError) as error:
+                print("SmartKit login startup refresh failed; continuing session host recovery: "
+                      + str(error), file=sys.stderr)
             context = service.hook_project(args.harness)
             if not context:
                 return 0

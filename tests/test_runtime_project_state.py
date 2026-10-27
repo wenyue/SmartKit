@@ -78,7 +78,9 @@ class RuntimeProjectStateTests(unittest.TestCase):
                 output = json.loads(checker.render_hook_result(
                     checker.HookResult(True, tuple(findings), notices=notices), 'codex'))
                 assert output['continue'] is True
-                assert 'End this turn after requesting consent' in output['hookSpecificOutput']['additionalContext']
+                context = output['hookSpecificOutput']['additionalContext']
+                assert 'end this turn after requesting consent' in context.lower()
+                assert 'An empty action list authorizes no runner invocation' in context
                 snapshot = setup_snapshot(project)
                 assert snapshot['status'] == 'initialized'
                 assert snapshot['setup_version'] == '1.2.21'

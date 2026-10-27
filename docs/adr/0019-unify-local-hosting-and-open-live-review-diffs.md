@@ -6,6 +6,8 @@ Date: 2026-10-16
 
 Updated: 2026-10-20. Source-branch discovery and fixed PR comparisons replace the original exact-head-only selection and immediate GitHub fallback.
 
+The recovery-only startup scope below is extended by [ADR 0022](0022-enable-explicit-current-user-login-startup-for-local-web.md), which adds explicitly authorized current-user login registration.
+
 Human reviews need convenient editor diffs while showing subsequent local edits, and the shared hosting code now mixes process, HTTP, storage, and feature responsibilities. Unify the local runtime and use self-contained diff URLs that compare a fixed Git baseline with the current worktree, preferring VS Code and retaining GitHub and HTML fallbacks.
 
 This decision replaces [ADR 0018](0018-share-a-local-http-service-for-smartkit-pages-and-artifacts.md)'s runtime layout, dynamic addressing, route families, fixed-snapshot display links, and historical preview compatibility. Its other ownership, preservation, and feature access boundaries remain applicable.

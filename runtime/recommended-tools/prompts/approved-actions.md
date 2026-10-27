@@ -1,1 +1,0 @@
-After a subsequent user message grants consent, invoke the bundled internal maintenance runner at {maintenance_runner}. Treat each semicolon-separated entry as a separate action and invoke only the entries the user approved: {action_text}.

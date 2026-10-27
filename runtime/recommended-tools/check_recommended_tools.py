@@ -88,7 +88,7 @@ class HookResult:
     @property
     def requires_user_prompt(self) -> bool:
         return any(finding.code.startswith('project-config-') for finding in self.findings) or (not self.internal_error and any(
-            finding.code != 'detector-error' for finding in self.findings
+            finding.code not in {'detector-error', 'local-web-autostart-state', 'local-web-autostart-unsupported'} for finding in self.findings
         ))
 
 
@@ -1505,6 +1505,34 @@ def _acquire_lock(path: Path) -> str:
     return 'owned'
 
 
+def check_local_web_autostart() -> list[Finding]:
+    """Inspect login preference only inside the existing per-project daily gate."""
+    runtime = str(Path(__file__).resolve().parents[1])
+    if runtime not in sys.path:
+        sys.path.insert(0, runtime)
+    from local_web import autostart
+
+    try:
+        status = autostart.inspect_status()
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return [Finding('detector-error', 'SmartKit Local Web login startup',
+                        str(error), 'Inspect the preserved user configuration; no login setting was changed.')]
+    if status.preference is None and status.supported:
+        return [Finding('local-web-autostart-choice', 'SmartKit Local Web login startup',
+                        'Current-user login startup has not been selected.',
+                        'Ask whether to enable login startup and persist the explicit A/B choice.',
+                        target_kind='local-web', target_id='autostart', action='choose')]
+    if not status.supported:
+        return [Finding('local-web-autostart-unsupported', 'SmartKit Local Web login startup',
+                        status.message, 'Login startup is unavailable; no elevation or system registration is requested.')]
+    expected = 'installed' if status.preference else 'disabled'
+    if status.preference is not None and status.state != expected:
+        return [Finding('local-web-autostart-state', 'SmartKit Local Web login startup',
+                        status.message or status.state,
+                        'The user choice is retained. Inspect autostart status; OS changes are not repaired silently.')]
+    return []
+
+
 def _run_daily_hook(
     harness: str,
     policy_path: Path,
@@ -1555,14 +1583,29 @@ def _run_daily_hook(
                     ) if finding.tool != 'codegraph MCP'],
                     lambda: check_setup_migrations(project_root),
                     lambda: check_smartkit_version(harness, latest_smartkit_version()),
+                    check_local_web_autostart,
                 )
                 with ThreadPoolExecutor(max_workers=len(checks)) as executor:
                     pending = [executor.submit(check) for check in checks]
                     findings_list = [finding for future in pending for finding in future.result()]
+            findings = tuple(findings_list)
+            result = HookResult(True, findings, notices=notices)
+            if result.requires_user_prompt:
+                try:
+                    # Validate only this check's selected prompts before recording notification.
+                    _consent_request('', findings, harness)
+                except PolicyError as error:
+                    try:
+                        _write_state(state_path, date, 'error')
+                    except OSError:
+                        pass
+                    return HookResult(True, internal_error=True,
+                                      notices=(*notices, '[smartkit] ' + str(error), render_findings(findings)))
+            if evaluator is None:
                 notices = tuple(remove_duplicate_user_mcp(
                     harness, mcp_registry_path or default_mcp_registry_path(),
                 ))
-            findings = tuple(findings_list)
+                result = replace(result, notices=notices)
             if not findings:
                 try:
                     _write_state(state_path, date, 'passed')
@@ -1578,7 +1621,7 @@ def _run_daily_hook(
                     _write_state(state_path, date, 'error')
                 except OSError:
                     pass
-            return HookResult(True, findings, notices=notices)
+            return result
         except Exception:
             try:
                 _write_state(state_path, date, 'error')
@@ -1629,15 +1672,20 @@ def run_hook(
     force: bool = False,
     evaluator: Callable[[dict[str, Any]], list[Finding]] | None = None,
 ) -> HookResult:
+    notices: tuple[str, ...] = ()
+    configuration_findings: tuple[Finding, ...] = ()
+    context = ''
+    if evaluator is None:
+        project = resolve_project_root(project_root)
+        # Session-only resources must also be available before consuming the daily gate.
+        notices = check_project_codegraph(project, harness)
+        configuration_findings, context = check_project_configuration(project)
+        if HookResult(False, configuration_findings).requires_user_prompt:
+            _consent_request('', configuration_findings, harness)
     result = _run_daily_hook(
         harness, policy_path, cache_root, now, project_root=project_root,
         mcp_registry_path=mcp_registry_path, force=force, evaluator=evaluator,
     )
-    if evaluator is not None:
-        return result
-    project = resolve_project_root(project_root)
-    notices = check_project_codegraph(project, harness)
-    configuration_findings, context = check_project_configuration(project)
     return replace(result, findings=(*result.findings, *configuration_findings),
                    notices=(*result.notices, *notices), configuration_context=context)
 
@@ -1678,31 +1726,19 @@ def render_findings(findings: list[Finding] | tuple[Finding, ...]) -> str:
     )
 
 
-def _prompt(name: str, **values: str) -> str:
-    path = Path(__file__).resolve().parent / 'prompts' / name
+def _prompt(name: str, *, feature: str = 'recommended-tools', **values: str) -> str:
+    path = Path(__file__).resolve().parents[1] / feature / 'prompts' / name
     try:
         return path.read_text(encoding='utf-8').rstrip('\r\n').format(**values)
     except (OSError, UnicodeError, KeyError, ValueError) as error:
         raise PolicyError(f'readiness prompt unavailable or invalid: {path}: {error}') from error
 
 
-def _user_consent_request(findings: str) -> str:
-    return (
-        f'{findings}\n'
-        '[smartkit] Recommended readiness changes require approval. Reply with the '
-        'names whose requested actions you approve, or explicitly decline or defer those '
-        'actions to bypass the pause temporarily and continue the original task. '
-        'Deferred findings remain unresolved.'
-    )
-
-
-def _agent_consent_request(
-    findings: str,
+def _maintenance_consent_request(
     actionable_findings: tuple[Finding, ...],
     harness: str,
 ) -> str:
     maintenance_runner = Path(__file__).resolve().parents[2] / 'skills/setup-project-agents/scripts/maintain_recommended_tools.py'
-    plugin_fallback = ' ' + _prompt('codex-plugin-fallback.md') if harness == 'codex' else ''
     approved_actions = []
     for finding in actionable_findings:
         if finding.target_kind == 'tool':
@@ -1715,15 +1751,43 @@ def _agent_consent_request(
                 f'configure --harness {harness} --setting {finding.target_id} '
                 '--approved'
             )
-    action_text = '; '.join(approved_actions)
-    runner_instruction = (
-        _prompt('approved-actions.md', maintenance_runner=str(maintenance_runner), action_text=action_text) + ' '
-        if action_text else ''
-    )
-    return findings + '\n[smartkit] ' + _prompt(
+    return _prompt(
         'readiness-consent.md',
-        runner_instruction=runner_instruction, plugin_fallback=plugin_fallback,
+        maintenance_runner=str(maintenance_runner), action_text='; '.join(approved_actions),
+        question_number='1',
     )
+
+
+def _consent_request(
+    findings: str,
+    actionable_findings: tuple[Finding, ...],
+    harness: str,
+    configuration_context: str = '',
+) -> tuple[str, str]:
+    """Compose the selected steps once for both native questions and Agent context."""
+    ordinary = tuple(f for f in actionable_findings if not f.code.startswith('local-web-autostart-'))
+    needs_maintenance = HookResult(True, ordinary).requires_user_prompt
+    steps: list[str] = []
+    if needs_maintenance:
+        steps.append(_maintenance_consent_request(ordinary, harness))
+    if any(f.code == 'local-web-autostart-choice' for f in actionable_findings):
+        entry = Path(__file__).resolve().parents[1] / 'local_web' / '__main__.py'
+        steps.append(_prompt('autostart-consent.md', feature='local_web', entry=str(entry),
+                             question_number='<next>' if steps else '1'))
+    if not steps:
+        return '', '\n'.join(part for part in (findings, configuration_context) if part)
+    questions: list[str] = []
+    for step in steps:
+        question, separator, instructions = step.partition('\n\n<!-- agent-only -->\n\n')
+        if not separator or not question.strip() or not instructions.strip():
+            raise PolicyError('consent prompt must contain a question and agent-only instructions')
+        questions.append(question)
+    if configuration_context:
+        steps.append(configuration_context)
+    context = '\n\n'.join(part for part in (
+        findings, _prompt('check-sequence.md'), *steps,
+    ) if part)
+    return questions[0], context
 
 
 def render_hook_result(
@@ -1738,16 +1802,16 @@ def render_hook_result(
     if result.internal_error and result.requires_user_prompt:
         rendered = '[smartkit] Recommended-tool daily check could not complete.\n' + rendered
     if result.requires_user_prompt:
+        question, context = _consent_request(rendered, result.findings, harness, context)
+        user_message = '\n'.join(part for part in (rendered, question) if part)
         if harness in {'codex', 'qoder'}:
             return json.dumps(
                 {
                     'continue': True,
-                    'systemMessage': _user_consent_request(rendered),
+                    'systemMessage': user_message,
                     'hookSpecificOutput': {
                         'hookEventName': 'SessionStart',
-                        'additionalContext': _agent_consent_request(
-                            rendered, result.findings, harness
-                        ) + ('\n' + context if context else ''),
+                        'additionalContext': context,
                     },
                 }
             )
@@ -1755,22 +1819,18 @@ def render_hook_result(
             if delivery == 'context':
                 return json.dumps(
                     {
-                        'additional_context': _agent_consent_request(
-                            rendered, result.findings, harness
-                        ) + ('\n' + context if context else '')
+                        'additional_context': context,
                     }
                 )
             return json.dumps(
                 {
                     'continue': False,
-                    'user_message': _user_consent_request(rendered),
+                    'user_message': user_message,
                 }
             )
         return json.dumps(
             {
-                'additionalContext': _agent_consent_request(
-                    rendered, result.findings, harness
-                ) + ('\n' + context if context else '')
+                'additionalContext': context,
             }
         )
     if result.internal_error:
@@ -1840,11 +1900,6 @@ def main(argv: list[str] | None = None) -> int:
     policy_path = args.policy or default_policy_path(args.harness)
     if args.command == 'hook':
         try:
-            _prompt('readiness-consent.md', runner_instruction='', plugin_fallback='')
-            _prompt('approved-actions.md', maintenance_runner='', action_text='')
-            _prompt('codegraph-not-ready.md', message='')
-            if args.harness == 'codex':
-                _prompt('codex-plugin-fallback.md')
             load_user_shell_path()
             result = run_hook(
                 args.harness,
@@ -1859,7 +1914,11 @@ def main(argv: list[str] | None = None) -> int:
         except PolicyError as error:
             print('[smartkit] ' + str(error), file=sys.stderr)
             result = replace(result, internal_error=True)
-            output = render_hook_result(result, args.harness, delivery=args.delivery)
+            # A failed prompt cannot safely render its workflow again; retain facts as diagnostics.
+            failed = HookResult(result.ran, internal_error=True, notices=(
+                *result.notices, '[smartkit] ' + str(error), render_findings(result.findings),
+            ))
+            output = render_hook_result(failed, args.harness, delivery=args.delivery)
         try:
             record_readiness_snapshot(result, args.harness)
         except (OSError, ValueError) as error:

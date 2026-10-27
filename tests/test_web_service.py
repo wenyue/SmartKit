@@ -7,6 +7,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 import urllib.error
@@ -431,6 +432,45 @@ class WebServiceTests(unittest.TestCase):
         restarted = web.ensure_service()
         self.assertNotEqual(restarted['pid'], info['pid'])
         self.assertEqual(web.load_state()['port'], int(restarted['origin'].rsplit(':', 1)[1]))
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows byte-lock initialization')
+    def test_windows_cold_lock_waits_after_stale_empty_file_observation(self):
+        started = threading.Event()
+        done = threading.Event()
+        acquired = threading.Event()
+        failures = []
+        lock = storage.prepare_state() / 'start.lock'
+        original_stat = Path.stat
+
+        def observe(path, *args, **kwargs):
+            if path == lock and threading.current_thread() is waiter:
+                # This contender observed the empty file before the owner locked it.
+                return SimpleNamespace(st_size=0)
+            return original_stat(path, *args, **kwargs)
+
+        def wait_for_lock():
+            started.set()
+            try:
+                with web.start_lock(deadline=time.monotonic() + 3):
+                    acquired.set()
+            except OSError as error:
+                failures.append(error)
+            finally:
+                done.set()
+
+        waiter = threading.Thread(target=wait_for_lock)
+        try:
+            with web.start_lock(), patch.object(Path, 'stat', observe):
+                waiter.start()
+                self.assertTrue(started.wait(2))
+                self.assertFalse(done.wait(0.2), repr(failures))
+            waiter.join(4)
+            self.assertFalse(waiter.is_alive())
+            self.assertEqual(failures, [])
+            self.assertTrue(acquired.is_set())
+        finally:
+            if waiter.ident is not None:
+                waiter.join(4)
 
     def test_concurrent_ensure_returns_one_server(self):
         processes = [subprocess.Popen([sys.executable, '-B', str(self.entry), 'ensure'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

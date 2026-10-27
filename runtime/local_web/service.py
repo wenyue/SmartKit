@@ -78,9 +78,7 @@ def start_lock(*, deadline: Optional[float] = None) -> Iterator[None]:
     with os.fdopen(descriptor, "r+b") as stream:
         if os.name == "nt":
             import msvcrt
-            if not path.stat().st_size:
-                stream.write(b"0")
-                stream.flush()
+            # Windows permits locking past EOF; writing a marker races another owner.
 
             def acquire() -> None:
                 stream.seek(0)
