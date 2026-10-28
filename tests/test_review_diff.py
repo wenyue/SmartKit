@@ -680,6 +680,146 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         return {"repo": str(context.repo), "pr": {"repository": "o/r", "number": 1,
                 "head": context.head, "branch": context.branch, "source_repository": context.source_repository}}
 
+    def test_inspect_keeps_wrong_current_branch_at_the_same_commit(self):
+        context = self.source_context()
+        self.run_git("checkout", "-b", "another-branch")
+        result = diff.inspect(self.inspect_context(context))
+        self.assertEqual(result["worktrees"], [])
+        current = result["current"]
+        self.assertEqual(current["repo"], str(self.repo.resolve()))
+        self.assertEqual(current["branch"], "another-branch")
+        self.assertEqual((current["repository_status"], current["branch_status"], current["status"]),
+                         ("related", "different", "same"))
+        self.assertEqual(current["remotes"], [{"name": "origin", "repository": "o/r"}])
+
+    def test_inspect_distinguishes_unrelated_and_unverified_repositories(self):
+        context = self.source_context()
+        request = self.inspect_context(context)
+        for remote, repository_status, branch_status in (
+                ("https://github.com/other/repository.git", "unrelated", "different"),
+                ("/local/unverified/repository", "unknown", "unknown")):
+            with self.subTest(remote=remote):
+                self.run_git("remote", "set-url", "origin", remote)
+                result = diff.inspect(request)
+                self.assertEqual(result["worktrees"], [])
+                self.assertEqual(result["current"]["repository_status"], repository_status)
+                self.assertEqual(result["current"]["branch_status"], branch_status)
+                self.assertEqual(result["current"]["status"], "same")
+        self.run_git("remote", "remove", "origin")
+        current = diff.inspect(request)["current"]
+        self.assertEqual((current["repository_status"], current["branch_status"]), ("unknown", "unknown"))
+
+    def test_inspect_source_fork_and_alias_without_exposing_remote_credentials(self):
+        context = self.source_context()
+        self.run_git("remote", "add", "fork", "https://secret:password@github.com/contributor/r.git")
+        self.run_git("branch", "-m", "local-review")
+        self.run_git("config", "branch.local-review.remote", "fork")
+        self.run_git("config", "branch.local-review.merge", "refs/heads/review/target")
+        request = self.inspect_context(replace(context, source_repository="contributor/r"))
+        result = diff.inspect(request)
+        self.assertEqual(result["current"]["repository_status"], "related")
+        self.assertEqual(result["current"]["branch_status"], "matching")
+        self.assertEqual(result["current"], result["worktrees"][0])
+        self.assertNotIn("secret", json.dumps(result))
+        self.assertNotIn("password", json.dumps(result))
+        self.run_git("remote", "remove", "origin")
+        self.assertEqual(diff.inspect(request)["current"]["repository_status"], "related")
+
+    def test_inspect_detached_current_checkout_and_another_matching_worktree(self):
+        context = self.source_context()
+        self.run_git("checkout", "--detach", self.head)
+        linked = self.base / "review workspace"
+        self.run_git("worktree", "add", str(linked), "review/target")
+        result = diff.inspect(self.inspect_context(context))
+        self.assertIsNone(result["current"]["branch"])
+        self.assertEqual((result["current"]["branch_status"], result["current"]["status"]), ("detached", "same"))
+        self.assertEqual([entry["repo"] for entry in result["worktrees"]], [str(linked.resolve())])
+        self.assertEqual(result["worktrees"][0]["branch_status"], "matching")
+
+    def test_inspect_same_name_with_ambiguous_remotes_needs_source_evidence(self):
+        context = self.source_context()
+        self.run_git("remote", "add", "fork", "https://github.com/contributor/r.git")
+        result = diff.inspect(self.inspect_context(context))
+        self.assertEqual(result["current"]["repository_status"], "related")
+        self.assertEqual(result["current"]["branch_status"], "unknown")
+        self.assertEqual(result["worktrees"], [])
+
+    def test_inspect_inventories_partial_staging_renames_and_untracked_files_read_only(self):
+        context = self.source_context()
+        renamed = "renamed 中文.py"
+        self.run_git("mv", self.name, renamed)
+        changed = self.repo / renamed
+        changed.write_bytes(b"unstaged change after rename\n")
+        partial = self.repo / "partial.txt"
+        partial.write_bytes(b"staged\n")
+        self.run_git("add", "--", partial.name)
+        partial.write_bytes(b"staged and unstaged\n")
+        folder = self.repo / "untracked directory"
+        folder.mkdir()
+        (folder / "child 中文.txt").write_bytes(b"untracked\n")
+        index = (self.repo / ".git/index").read_bytes()
+        objects = self.run_git("count-objects", "-v")
+        current = diff.inspect(self.inspect_context(context))["current"]
+        self.assertTrue(current["dirty"])
+        self.assertEqual(current["status"], "same")
+        changes = current["changes"]
+        self.assertIn({"path": renamed, "status": "R", "original_path": self.name}, changes["staged"])
+        self.assertIn({"path": renamed, "status": "M", "original_path": self.name}, changes["unstaged"])
+        self.assertIn({"path": "partial.txt", "status": "A"}, changes["staged"])
+        self.assertIn({"path": "partial.txt", "status": "M"}, changes["unstaged"])
+        self.assertEqual(changes["untracked"], [{"path": "untracked directory/child 中文.txt", "status": "?"}])
+        self.assertEqual(changes["conflicted"], [])
+        self.assertEqual((self.repo / ".git/index").read_bytes(), index)
+        self.assertEqual(self.run_git("count-objects", "-v"), objects)
+        self.assertEqual(changed.read_bytes(), b"unstaged change after rename\n")
+        self.assertEqual(partial.read_bytes(), b"staged and unstaged\n")
+
+    @unittest.skipIf(os.name == "nt", "Windows filenames cannot contain newlines")
+    def test_inspect_preserves_newlines_in_untracked_paths(self):
+        context = self.source_context()
+        name = "untracked\nname.txt"
+        (self.repo / name).write_bytes(b"untracked\n")
+        changes = diff.inspect(self.inspect_context(context))["current"]["changes"]
+        self.assertEqual(changes["untracked"], [{"path": name, "status": "?"}])
+
+    def test_inspect_reports_unmerged_paths_as_conflicts(self):
+        context = self.source_context()
+        self.run_git("checkout", "-b", "other")
+        self.file.write_bytes(b"other edit\n")
+        self.run_git("commit", "-am", "other edit")
+        self.run_git("checkout", "review/target")
+        self.file.write_bytes(b"source edit\n")
+        self.run_git("commit", "-am", "source edit")
+        merged = subprocess.run(["git", "-C", str(self.repo), "merge", "other"], capture_output=True, timeout=10)
+        self.assertEqual(merged.returncode, 1, merged.stderr)
+        changes = diff.inspect(self.inspect_context(context))["current"]["changes"]
+        self.assertEqual(changes["conflicted"], [{"path": self.name, "status": "UU"}])
+        self.assertEqual(changes["staged"], [])
+        self.assertEqual(changes["unstaged"], [])
+
+    def test_inspect_status_failure_keeps_changes_unknown(self):
+        context = self.source_context()
+        original = comparisons.git
+
+        def unavailable_status(repo, *arguments):
+            if arguments[0] == "status":
+                raise PermissionError("status denied")
+            return original(repo, *arguments)
+
+        with patch.object(comparisons, "git", side_effect=unavailable_status):
+            current = diff.inspect(self.inspect_context(context))["current"]
+        self.assertIsNone(current["dirty"])
+        self.assertIsNone(current["changes"])
+        self.assertEqual(current["status"], "same")
+        self.assertIn("status denied", current["message"])
+
+    def test_inspect_head_only_context_does_not_claim_branch_identity(self):
+        request = {"repo": str(self.repo), "pr": {"repository": "o/r", "number": 1, "head": self.head}}
+        current = diff.inspect(request)["current"]
+        self.assertEqual(current["branch_status"], "unknown")
+        self.assertEqual(current["repository_status"], "unknown")
+        self.assertEqual(current["status"], "same")
+
     def test_source_branch_discovery_allows_newer_commits_and_dirty_worktree(self):
         context = self.source_context()
         self.file.write_bytes(b"newer committed fix\n")
@@ -723,6 +863,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
             self.assertEqual(cli.main(["diff", "--inspect", "--input", "-"]), 0)
         ensure.assert_not_called()
         self.assertEqual(json.loads(output.getvalue())["worktrees"][0]["status"], "same")
+        self.assertEqual(json.loads(output.getvalue())["current"]["branch_status"], "matching")
 
     def test_inspection_failure_is_not_reported_as_no_matching_worktree(self):
         context = self.source_context()
@@ -738,7 +879,9 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.run_git("remote", "add", "fork", "git@github.com:other/r.git")
         self.run_git("config", "branch.review/target.remote", "fork")
         self.run_git("config", "branch.review/target.merge", "refs/heads/review/target")
-        self.assertEqual(diff.inspect(self.inspect_context(context))["worktrees"], [])
+        result = diff.inspect(self.inspect_context(context))
+        self.assertEqual(result["worktrees"], [])
+        self.assertEqual(result["current"]["branch_status"], "different")
         self.assertEqual(self.prepare(context).view, "snapshot")
 
     def test_tracking_identifies_local_branch_alias_and_external_worktree(self):

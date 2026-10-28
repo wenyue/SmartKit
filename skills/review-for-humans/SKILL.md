@@ -29,32 +29,37 @@ Skip staged-only edits and review only the unstaged portion of a partially stage
 
 ### Check the review workspace
 
-Before every PR review, run the shared read-only workspace inspection, including when the current checkout already uses the PR branch. Resolve `local_web` from the loaded SmartKit resources and follow its help for inputs and results:
+Before every PR review, establish the current workspace's repository, checked-out branch, and commit in that order. Resolve the branch and version decisions before filtering or displaying files, so local review links open the workspace the user expects to edit.
+
+Use current authoritative PR metadata to identify the PR-owning repository, source repository or fork, source branch, and target commit. Keep an explicitly selected historical version as the target; local tracking data cannot establish the PR's current head.
+
+For an available Git workspace, run the shared read-only inspection, including when the current checkout already uses the PR branch. Resolve `local_web` from the loaded SmartKit resources and follow its help for inputs and results:
 
 ```text
 python "<local_web>" --help
 python "<local_web>" diff --inspect --input "<context.json>"
 ```
 
-Supply current authoritative PR metadata, distinguishing the PR-owning repository from its source fork. Use the returned workspace matches and freshness results for the decisions below; stale local tracking data cannot establish the PR's current head.
+Supply the verified PR context. Read `current` for the supplied checkout and `worktrees` for matching alternatives; an empty alternatives list says nothing about the current repository's identity. Use each observation's `repository_status`, `branch_status`, and version `status` independently for the decisions below. Equal commits do not establish a matching branch, and a related repository does not establish the source branch's identity. The command observes the supplied target without establishing remote freshness or performing checkout or synchronization.
 
-The inspection command requires PR context. For a branch-only review, inspect the current checkout and registered linked worktrees through read-only Git. Check against its authoritative remote when specified or reliably established; ask for a missing target rather than inventing an upstream. A deliberately local branch or local unstaged review needs no remote synchronization. Keep an explicitly selected historical version as the review target.
+Report the current workspace's path, repository relationship, branch, commit, and the staged, unstaged, untracked, and conflicted paths from `changes`. Use the same inspection for any alternative workspace before selecting or changing it. Preserve the distinction between partial staging, rename sources, and conflicts; this inventory is an observation, not a recovery snapshot or proof that checkout is safe. Unknown or unavailable evidence is not clean or current. Report diagnostics, use independently available evidence only for the decisions it supports, and leave dependent review pending or offer an independently verified fixed comparison. Fixed-snapshot alternatives below are PR-only and require the fixed comparison's evidence.
 
-For a selected workspace, use read-only Git to inventory staged, unstaged, and untracked work; the PR inspection reports these only as a dirty indicator. Report its path, branch, commit, local changes, and relationship to the target. Unknown evidence is not clean or current. Resolve the applicable decision before filtering or displaying files; fixed-snapshot alternatives below are PR-only and require the fixed comparison's evidence.
+1. **Repository.** Establish whether the current checkout belongs to the PR-owning repository or its verified source repository. If neither matches, offer an available verified workspace, authorized creation from a verified repository and target, fixed PR snapshot review, or cancellation. Keep an unrelated checkout unchanged. If identity is unknown, resolve the missing evidence or choose an independently verified fixed comparison before proceeding.
+2. **Branch.** In a related repository, verify that the checked-out branch corresponds to the PR's source branch and repository. A local alias may qualify through verified tracking; disclose that mapping. A different branch or detached HEAD still needs a choice even at the target commit. Ask whether to check out the PR branch in the current workspace, presenting its safe plan and applicable alternatives: select an existing verified worktree, create an isolated one, review the fixed snapshot, or cancel. Finding another matching worktree does not silently settle this choice. If the branch is already checked out elsewhere, offer that worktree or another safe plan rather than forcing a second checkout.
+3. **Version.** After selecting or preparing the corresponding branch and workspace, compare its `HEAD` with the verified review target. When they differ, ask whether to synchronize that workspace to the exact target commit, with the choices below. Checkout approval alone does not authorize synchronization; reuse authorization only when it explicitly covered the same concrete effects.
 
-| Workspace state | Choices |
+| Selected workspace version | Choices |
 | --- | --- |
-| No verified match | Create a clean worktree at the verified target; review the fixed PR comparison without creation; or cancel. |
 | Same commit | Continue without a sync question. Disclose local changes when live links will show them. |
-| Behind | Synchronize using a concrete safe plan; review the fixed PR comparison without syncing; or cancel. |
-| Ahead or diverged | Explain the local commits and, for divergence, the distinct remote commits. Offer to keep them and use live links for the fixed review, use fixed PR snapshot links, or prepare a synchronization plan for a separate decision. |
+| Behind | Offer synchronization to the exact target through a concrete safe plan, fixed PR snapshot review without syncing, or cancellation. |
+| Ahead or diverged | Explain the local commits and, for divergence, the distinct target commits. Ask whether to synchronize to the exact target, disclosing a plan that preserves local work and commits; unresolved plan choices need a separate decision. Also offer to retain the local version with live links for the fixed review, use fixed PR snapshot links, or cancel. Retained live links show the differing local version, not the fixed reviewed contents; disclose that difference. |
 | Unknown | Explain the missing evidence. Offer an available way to obtain it, an already verified fixed PR comparison, or cancellation. |
 
-For a branch-only review without a usable display workspace, offer authorized creation, another scope, or cancellation.
+Before checkout or synchronization, disclose the workspace, target branch and commit, method, affected commits, and preservation of staged, unstaged, and untracked work. Obtain authorization for those concrete effects; neither action authorizes an unspecified history change or publication. Use [create-worktree](../create-worktree/SKILL.md) for authorized creation, with the user's clean choice and verified immutable base.
 
-Use [create-worktree](../create-worktree/SKILL.md) for authorized creation, with the user's clean choice and verified immutable base. Before a sync, disclose its workspace, target, method, affected commits, and preservation of staged, unstaged, and untracked work. Obtain authorization for those concrete effects; “sync” does not authorize an unspecified history change or publication.
+After authorized checkout, creation, or synchronization, rerun the inspection with the selected workspace path and verify the result and preservation of local work before reviewing or preparing live links. Refresh PR base/head and Viewed evidence and reassess changed targets. After interruption, inspect the actual result before retrying; keep review pending until verification or an explicit change to supported fixed review or cancellation. Retain the verified workspace, branch mapping, target commit, and selected link mode. [Workspace examples](references/report-examples.md#pr-workspace-decisions) illustrate separate checkout and synchronization choices.
 
-Verify creation or synchronization and preservation of local work before reviewing, then refresh PR base/head and Viewed evidence and reassess changed targets. After interruption, inspect the actual result before retrying; keep review pending until verification or an explicit change to supported fixed review or cancellation. Retain the verified workspace and selected link mode.
+The inspection command requires PR context. For a branch-only review, inspect the current checkout and registered linked worktrees through read-only Git. Check against its authoritative remote when specified or reliably established; ask for a missing target rather than inventing an upstream. Apply the relevant version, preservation, authorization, and verification requirements above. Without a usable display workspace, offer authorized creation, another scope, or cancellation. A deliberately local branch or local unstaged review needs no remote synchronization.
 
 ### Filter files and retain the snapshot
 
@@ -78,7 +83,7 @@ python "<local_web>" diff --input "<batch.json>"
 
 Prepare links from the retained comparison: capture local index-based links alongside the review snapshot; use the fixed before commit, existing blob, or genuine absence for branch and PR comparisons. Supply the pinned reviewed PR head and other PR metadata, and rename paths, as the help requires.
 
-For PRs, set `view="snapshot"` for an explicitly historical target, a selected fixed comparison, or unavailable source identity, with the required fixed evidence. Use `view="worktree"` and the verified path for an explicitly selected or newly prepared workspace, including a local alias; otherwise use the default selection. A branch-only review supplies its verified display workspace without PR context.
+For PRs, set `view="snapshot"` for an explicitly historical target, a selected fixed comparison, or unavailable source identity, with the required fixed evidence. For PR links to local files, set `view="worktree"` and `repo` to the workspace verified through preflight, including the current checkout or a selected local alias. Bind that exact path rather than leaving workspace selection to automatic discovery. A branch-only review supplies its verified display workspace without PR context.
 
 Use returned IDs to associate the returned Markdown with files. Keep review evidence and Viewed eligibility tied to the fixed assessed version, even if live links or GitHub show newer contents.
 

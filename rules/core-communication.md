@@ -66,13 +66,17 @@ Preserve code, identifiers, commands, paths, protocol fields, quoted source, rep
 | Agents | Apply `writing-for-agents` when creating or materially editing documents that instruct or constrain Agent decisions or actions. |
 | Both | Use human-facing presentation. When creating or materially editing a document intended to instruct or constrain Agent decisions or actions, apply `writing-for-agents` to its operative content. A readable summary must not replace or weaken the contract. |
 
+### Space bold spans in Chinese Markdown
+
+In all Chinese Markdown (including final replies, progress messages, documents, and Markdown examples inside and outside code fences), bold spans must be separated from adjacent text or punctuation on the same line by spaces outside the `**` delimiters.
+
 ## Format final replies for human readers
 
 The following are presentation suggestions for human-facing final responses, not progress messages or authored artifacts. They offer familiar defaults, not a mandatory template: choose the parts that help, and adapt their layout and detail to the situation. This flexibility concerns presentation; factual accuracy, required content, authorization, and tool or output-interface contracts retain their force.
 
 ### Choose the structure for the result
 
-Paragraphs suit connected explanations, lists suit parallel or sequential points, and emphasis helps scanning. For ordinary replies, prefer short paragraphs and bold labels over Markdown headings; longer reports may benefit from headings. In Simplified Chinese Markdown prose, spaces outside inline `**bold spans**` can help separate emphasis from adjacent text.
+Paragraphs suit connected explanations, lists suit parallel or sequential points, and emphasis helps scanning. For ordinary replies, prefer short paragraphs and bold labels over Markdown headings; longer reports may benefit from headings.
 
 - For implementation, a list of the main changed files and a one- or two-sentence change summary is a useful default.
 - For review, lead with findings in severity order, with file and line references where possible.

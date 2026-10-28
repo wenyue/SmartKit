@@ -644,7 +644,7 @@ class PluginManifestTest(unittest.TestCase):
             MATT_PROMOTED,
         )
         ponytail = next(source for source in lock['sources'] if source['id'] == 'DietrichGebert/ponytail')
-        self.assertEqual(ponytail['commit'], '9cc65d03aa2da1db7121b912d03596409ee340b8')
+        self.assertEqual(ponytail['commit'], '16352ac229eb08a9598dcae48fe9f2b342567d86')
         self.assertEqual({skill['id'].split('/', 1)[1] for skill in ponytail['skills']},
                          PONYTAIL_PROMOTED)
         for record in ponytail['skills']:

@@ -14,6 +14,9 @@ from .. import ORIGIN
 from ..storage import redirected
 
 
+BranchStatus = Literal["matching", "different", "detached", "unknown"]
+
+
 @dataclass(frozen=True)
 class Target:
     repo: Path
@@ -305,25 +308,38 @@ def github_repository(url: str) -> Optional[str]:
     return None
 
 
-def branch_source_matches(entry: Worktree, branch: str, source_repository: str) -> bool:
+def branch_source_status(entry: Worktree, branch: Optional[str], source_repository: Optional[str]) -> BranchStatus:
+    """Keep an unverified source distinct from a known branch mismatch."""
+    if entry.branch is None:
+        return "detached"
+    if branch is None or source_repository is None:
+        return "unknown"
     remote = git(entry.repo, "config", "--get", "--default", "", "branch." + entry.branch + ".remote").decode().strip()
     merge = git(entry.repo, "config", "--get", "--default", "", "branch." + entry.branch + ".merge").decode().strip()
     if remote:
-        if remote == "." or merge != "refs/heads/" + branch:
-            return False
+        if merge != "refs/heads/" + branch:
+            return "different"
+        if remote == ".":
+            return "unknown"
         url = git(entry.repo, "remote", "get-url", remote).decode().strip()
-        return github_repository(url) == source_repository.lower()
+        source = github_repository(url)
+        if source is None:
+            return "unknown"
+        return "matching" if source == source_repository.lower() else "different"
+    if entry.branch != branch:
+        return "different"
     # Without tracking, only an unambiguous configured source can identify a same-name branch.
     remotes = git(entry.repo, "remote").decode().splitlines()
     sources = {github_repository(git(entry.repo, "remote", "get-url", name).decode().strip()) for name in remotes}
-    return entry.branch == branch and sources == {source_repository.lower()}
+    if not sources or None in sources or len(sources) != 1:
+        return "unknown"
+    return "matching" if sources == {source_repository.lower()} else "different"
 
 
 def matching_worktrees(entries: Sequence[Worktree], *, head: str, branch: Optional[str],
                        source_repository: Optional[str]) -> List[Worktree]:
     if branch:
-        return [entry for entry in entries if entry.branch is not None
-                and branch_source_matches(entry, branch, source_repository)]
+        return [entry for entry in entries if branch_source_status(entry, branch, source_repository) == "matching"]
     return [entry for entry in entries if entry.head == head]
 
 
@@ -333,25 +349,90 @@ def pr_worktrees(target: Target) -> List[Path]:
             branch=target.branch, source_repository=target.source_repository)]
 
 
+def worktree_changes(repo: Path) -> Dict[str, List[Dict[str, str]]]:
+    """Inventory both index layers, rename sources, conflicts, and individual untracked paths."""
+    changes = {name: [] for name in ("staged", "unstaged", "untracked", "conflicted")}  # type: Dict[str, List[Dict[str, str]]]
+    records = iter(git(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all",
+                       "--ignore-submodules=none").split(b"\0"))
+    for record in records:
+        if not record:
+            continue
+        if len(record) < 4 or record[2:3] != b" ":
+            raise ValueError("invalid Git status record")
+        status = record[:2].decode("ascii")
+        item = {"path": os.fsdecode(record[3:])}
+        if "R" in status or "C" in status:
+            # Porcelain -z emits the destination first, then a separate original path.
+            original = next(records, b"")
+            if not original:
+                raise ValueError("Git status rename source is unavailable")
+            item["original_path"] = os.fsdecode(original)
+        if status == "??":
+            changes["untracked"].append(dict(item, status="?"))
+        elif status in ("DD", "AU", "UD", "UA", "DU", "AA", "UU"):
+            changes["conflicted"].append(dict(item, status=status))
+        else:
+            for name, code in zip(("staged", "unstaged"), status):
+                if code != " ":
+                    changes[name].append(dict(item, status=code))
+    return changes
+
+
+def inspect_workspace(entry: Worktree, pr: PullRequest, branch_status: BranchStatus) -> Dict[str, object]:
+    """Report independent identity, commit, and local-change evidence for one checkout."""
+    remotes = [{"name": name, "repository": github_repository(git(entry.repo, "remote", "get-url", name).decode().strip())}
+               for name in git(entry.repo, "remote").decode().splitlines()]
+    sources = {remote["repository"] for remote in remotes}
+    targets = {pr.repository.lower()}
+    if pr.source_repository:
+        targets.add(pr.source_repository.lower())
+    if sources & targets:
+        repository_status = "related"
+    elif not sources or None in sources or pr.source_repository is None:
+        repository_status = "unknown"
+    else:
+        repository_status = "unrelated"
+    observation = {"repo": str(entry.repo), "branch": entry.branch, "head": entry.head,
+                   "repository_status": repository_status, "remotes": remotes, "branch_status": branch_status,
+                   "status": "unknown", "dirty": None, "changes": None, "ahead": None, "behind": None,
+                   "message": ""}  # type: Dict[str, object]
+    diagnostics = []  # type: List[str]
+    try:
+        changes = worktree_changes(entry.repo)
+        observation.update(changes=changes, dirty=any(changes.values()))
+    except (OSError, ValueError) as error:
+        diagnostics.append(str(error))
+    try:
+        ahead, behind = map(int, git(entry.repo, "rev-list", "--left-right", "--count",
+                                    entry.head + "..." + pr.head).split())
+        observation.update(status="diverged" if ahead and behind else "ahead" if ahead else "behind" if behind else "same",
+                           ahead=ahead, behind=behind)
+    except (OSError, ValueError) as error:
+        diagnostics.append(str(error))
+    observation["message"] = "; ".join(diagnostics)
+    return observation
+
+
 def inspect_worktrees(repo: Path, pr: PullRequest) -> Dict[str, object]:
-    """Compare existing worktrees with a caller-observed head, without network or Git writes."""
-    observations = []
-    matches = matching_worktrees(registered_worktrees(repo), head=pr.head, branch=pr.branch,
-                                 source_repository=pr.source_repository)
-    for entry in matches:
-        observation = {"repo": str(entry.repo), "branch": entry.branch, "head": entry.head,
-                       "status": "unknown", "dirty": None}
-        try:
-            observation["dirty"] = bool(git(entry.repo, "status", "--porcelain=v1", "-z", "--untracked-files=normal"))
-            ahead, behind = map(int, git(entry.repo, "rev-list", "--left-right", "--count",
-                                        entry.head + "..." + pr.head).split())
-            observation.update(status="diverged" if ahead and behind else "ahead" if ahead else "behind" if behind else "same",
-                               ahead=ahead, behind=behind)
-        except (OSError, ValueError) as error:
-            observation["message"] = str(error)
-        observations.append(observation)
+    """Inspect the current checkout even when source-branch discovery does not match it."""
+    entries = registered_worktrees(repo)
+    root = repo.resolve(strict=True)
+    current = None  # type: Optional[Dict[str, object]]
+    observations = []  # type: List[Dict[str, object]]
+    for entry in entries:
+        branch_status = branch_source_status(entry, pr.branch, pr.source_repository)
+        matches = branch_status == "matching" if pr.branch else entry.head == pr.head
+        if entry.repo == root or matches:
+            observation = inspect_workspace(entry, pr, branch_status)
+            if entry.repo == root:
+                current = observation
+            if matches:
+                observations.append(observation)
+    if current is None:
+        raise ValueError("current checkout is missing from registered worktrees")
     return {"reviewed_head": pr.head, "branch": pr.branch, "source_repository": pr.source_repository,
-            "worktrees": observations, "message": "" if observations else "未找到对应分支的本地工作区。"}
+            "current": current, "worktrees": observations,
+            "message": "" if observations else "未找到对应分支的本地工作区。"}
 
 
 def resolve_targets(target: Target) -> Resolution:

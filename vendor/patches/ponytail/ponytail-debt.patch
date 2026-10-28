@@ -18,7 +18,7 @@
  can't quietly become permanent.
 
  ## Scan
-@@ -19,27 +19,25 @@
+@@ -19,26 +19,25 @@
 
  If the user names their own marker word (`/ponytail-debt TODO`), grep for that word instead.
 
@@ -53,7 +53,6 @@
  ## Boundaries
 
 -Reads and reports only, changes nothing. To persist it, ask and it writes the
--ledger to a file (e.g. `PONYTAIL-DEBT.md`). One-shot. "stop ponytail-debt" or
--"normal mode" to revert.
+-ledger to a file (e.g. `PONYTAIL-DEBT.md`). One-shot.
 +Reads and reports only. When authorized, persist the ledger to a file
 +(e.g. `PONYTAIL-DEBT.md`). One-shot.

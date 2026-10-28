@@ -2,6 +2,26 @@
 
 These examples illustrate the required review content and suggested presentation in [Review for Humans](../SKILL.md). Consult them when calibrating presentation; the entry owns the scope, judgments, actions, and verification requirements.
 
+## PR workspace decisions
+
+This illustrative PR belongs to `team/app`, with source branch `feature/export` in the same repository. Read-only inspection verifies that `/work/app` belongs to `team/app`, is clean, and has `main` checked out. Its existing local `feature/export` branch is not checked out elsewhere and is two commits behind the verified PR head `b7c9d21`; that target object and the fixed comparison evidence are available. Short commit IDs here are display abbreviations; actual comparisons and commands use the verified full IDs.
+
+❓ **Q1** - **Check out the PR branch?**: The current workspace is the right repository, but it is on `main`. Switch `/work/app` to its existing `feature/export` branch before review?
+
+- **A**. **Check out the branch** (recommended): Switch this clean workspace to the existing local `feature/export` branch, preserving both branch tips. This choice does not advance that branch's version.
+- **B**. **Review the fixed PR snapshot**: Keep the checkout unchanged and use fixed snapshot links; those links do not open editable files in this workspace.
+- **C**. **Cancel**: Leave the checkout unchanged and stop the review.
+
+After A succeeds, verify the checkout and unchanged branch tips, then present the version choice before showing files:
+
+❓ **Q2** - **Synchronize to the reviewed version?**: `/work/app` now has `feature/export` checked out, but it is two commits behind `b7c9d21`. The workspace remains clean, the PR target is unchanged, and a fast-forward to that exact commit is available.
+
+- **A**. **Synchronize** (recommended): Fast-forward the local branch to `b7c9d21`, verify the resulting commit and clean state, then use live links bound to `/work/app`. This does not push anything.
+- **B**. **Review the fixed PR snapshot**: Keep the older local version and use fixed snapshot links.
+- **C**. **Cancel**: Stop here, retaining the completed checkout without synchronizing.
+
+If another registered worktree already contains the PR branch, offer selecting that verified path in Q1; do not switch workspaces silently. If `main` happened to equal the target commit, Q1 would still resolve the branch mismatch, while a verified matching branch and commit would need no Q2. Adapt choices to actual dirty state, local commits, source-fork identity, and available safe plans; this clean fast-forward example supplies no permission for a reset, rebase, or loss of work.
+
 ## Complete report
 
 Use these examples as a guide, adapting the detail to the reader. Preserve the file overview, modifications, both reasoned judgments, and progress; a vertical comparison can help when the modification calls for expansion. These are illustrative files and snippets, not findings about a particular repository. This example is a local unstaged review containing three non-test files. The full branch inventory also contains their tests; all changes were introduced in this conversation and required checks passed. Assume that deleting an item detaches it from its storage box, that the task promises to flush the deletion, and that flush errors propagate to the caller. That persistence contract and detachment mechanism warrant an expanded explanation.

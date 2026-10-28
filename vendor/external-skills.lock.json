@@ -533,10 +533,10 @@
     {
       "id": "DietrichGebert/ponytail",
       "url": "https://github.com/DietrichGebert/ponytail",
-      "requested_ref": "9cc65d03aa2da1db7121b912d03596409ee340b8",
-      "resolved_ref": "9cc65d03aa2da1db7121b912d03596409ee340b8",
+      "requested_ref": "16352ac229eb08a9598dcae48fe9f2b342567d86",
+      "resolved_ref": "16352ac229eb08a9598dcae48fe9f2b342567d86",
       "ref_kind": "commit",
-      "commit": "9cc65d03aa2da1db7121b912d03596409ee340b8",
+      "commit": "16352ac229eb08a9598dcae48fe9f2b342567d86",
       "license": {
         "spdx": "MIT",
         "source_path": "LICENSE",
@@ -556,7 +556,7 @@
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail.patch",
-              "sha256": "79cd64ee700fbe8bc405d4ba3afd34ecc56ab3703bb4b6c3a886ef2ceee7223b"
+              "sha256": "d6c44fb2c6791d44dc8a7ee325422efd04affb4a16223644e4c6e20884931f00"
             },
             {
               "path": "vendor/patches/ponytail/ponytail.openai.patch",
@@ -609,14 +609,14 @@
           "source_path": "skills/ponytail-debt",
           "destination": "skills/ponytail-debt",
           "files": {
-            "SKILL.md": "85f8935421039a4e0706fb5c258a49ea0f5928e23df2e77464fb39cc5bd57484",
+            "SKILL.md": "b9853c862751c7779700ab2e03d81e637f57a560d52904b4eaffd87a3182ba1a",
             "agents/openai.yaml": "fc9df238bd8ac7e6c1e45b8afcaa788ca31c341ff44a509030c0f4afe2828959",
             "assets/icon.svg": "426e2fe7706562c437c7b69cc99bc7c541c0a0b932596f81b959c0a61b21db1f"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-debt.patch",
-              "sha256": "3c598935c5ba67aec2d6ea85ca803395277667c8c0df588b2abb060d1d9c6780"
+              "sha256": "aba6dcd607b882d52778607f4dd41772caa63804e43ce72f5159e8f83b5fd2d6"
             },
             {
               "path": "vendor/patches/ponytail/ponytail-debt.openai.patch",

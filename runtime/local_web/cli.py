@@ -89,14 +89,35 @@ Validate the entire batch before starting the service.
 Before PR review, run diff --inspect --input context.json with exactly
 {"repo":"/absolute/worktree", "pr":{...the same complete PR context...}}.
 This read-only operation starts no host and makes no network request. Output has
-reviewed_head, branch, source_repository, worktrees, and message. Each matching
-worktree reports repo, branch, head, status (same/ahead/behind/diverged/unknown),
-dirty (boolean, or null if unavailable), ahead/behind counts when known, and a
-diagnostic message on failure. The supplied head must come from current authoritative
-PR metadata; this operation cannot establish remote freshness from a stale input.
-An empty list means no verified match. Errors in discovery fail with diagnostics,
-not an empty/clean result. The review Skill owns lettered create/sync choices and
-verification of authorized effects; browser opening never performs those effects.
+reviewed_head, branch, source_repository, current, worktrees, and message. current
+always describes the supplied checkout, even on another branch or in an unrelated
+repository; worktrees lists the matching registered checkouts using the discovery
+rules above. Selecting another checkout remains the caller's decision.
+Each observation reports repo, branch (null when detached), head, and:
+  repository_status: related/unrelated/unknown. A recognized remote for the PR owner
+    or source establishes related; absent/unrecognized remotes or missing source
+    identity leave a nonmatching repository unknown. remotes contains only name
+    and normalized repository (null if unrecognized), never remote credentials.
+  branch_status: matching/different/detached/unknown, independent of commit equality.
+    Verified tracking can identify a local alias. Missing PR source context or
+    ambiguous source identity remains unknown; same-name branches alone cannot match.
+  status: same/ahead/behind/diverged/unknown relative to reviewed_head; ahead and
+    behind are counts or null when unavailable. This does not establish branch identity.
+  dirty: boolean, or null if the local-change inspection failed.
+  changes: staged/unstaged/untracked/conflicted lists, or null if unavailable. Each
+    item has path and status (the corresponding Git porcelain code; conflicts use
+    both columns), plus original_path for a rename/copy. A partially staged path
+    occurs in both layers; conflicted paths are separate. Untracked directories
+    are expanded to individual nonignored files. Paths retain literal characters.
+  message: diagnostics for unavailable local-change or commit evidence; available
+    evidence remains usable independently. An empty list is not an unknown result.
+The supplied head must come from current authoritative PR metadata; inspection
+cannot establish remote freshness from a stale input. An empty worktrees list means
+no verified match, not an unrelated current repository. Discovery/identity read
+errors fail with diagnostics, never an empty/clean result. Reinspect the selected
+path after an authorized checkout or synchronization, before preparing live links.
+The review Skill owns lettered checkout/sync choices and verification of authorized
+effects; neither inspection nor browser opening performs those effects.
 Output: per-file id, title, url, markdown. url and markdown identify the same
 localhost /diff entry. Use that entry for every filename link; local_web owns
 VS Code detection and GitHub/HTML fallback when the browser opens it.
