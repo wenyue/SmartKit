@@ -112,15 +112,15 @@ When user input is needed, ❓ can introduce the question and choices, followed 
 
 ### Make questions easy to answer
 
-When several questions need separate answers, choices need explanation, or later discussion needs stable references, consider a numbered block with a short, specific title and a concrete question. A supported recommendation can follow in its own paragraph:
+For a single independent question, default to an unnumbered question, with a short, specific title when useful. A supported recommendation can follow in its own paragraph:
 
 ```text
-❓ **Q1** - **<short title>**: <question and any concrete choices>
+❓ **<short title>**: <question and any concrete choices>
 
 ➡️ <recommended answer and brief reason>
 ```
 
-For several such blocks, consecutive numbering and consistent titles make replies easier to match; `---` can separate longer blocks. A simple question can be a natural sentence, with or without ❓. A title is useful when it names the actual decision rather than merely saying “Next step.”
+Number questions only when asking several questions in the same round or when later discussion needs stable references. Use consecutive labels such as `Q1` and `Q2` and consistent titles to make replies easier to match; `---` can separate longer blocks. A simple question can be a natural sentence, with or without ❓. A title is useful when it names the actual decision rather than merely saying “Next step.”
 
 A concrete question before an A/B/C list is usually enough. If the choices already explain their effects, refer to them without repeating the menu or asking for the same choice again. A brief recommendation can sit beside its option; a separate ➡️ paragraph is useful when the reasoning deserves more space. Fact-only questions need no preferred answer.
 
