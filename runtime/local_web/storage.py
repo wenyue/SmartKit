@@ -5,14 +5,106 @@ import os
 import stat
 import sys
 import tempfile
+from functools import lru_cache
 from pathlib import Path
+
+@lru_cache(maxsize=1)
+def _windows_is_appcontainer() -> bool:
+    if os.name != "nt":
+        return False
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    security = ctypes.WinDLL("advapi32", use_last_error=True)
+    kernel.GetCurrentProcess.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    security.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE)]
+    security.GetTokenInformation.argtypes = [
+        wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
+    ]
+    token_query = 0x0008
+    token_is_appcontainer = 29
+    token = wintypes.HANDLE()
+    if not security.OpenProcessToken(kernel.GetCurrentProcess(), token_query, ctypes.byref(token)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        contained = wintypes.DWORD()
+        size = wintypes.DWORD()
+        if not security.GetTokenInformation(
+            token, token_is_appcontainer, ctypes.byref(contained), ctypes.sizeof(contained), ctypes.byref(size)
+        ):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return bool(contained.value)
+    finally:
+        kernel.CloseHandle(token)
+
+
+def _windows_known_local_appdata() -> Path:
+    import ctypes
+    import uuid
+
+    folder_id = (ctypes.c_ubyte * 16).from_buffer_copy(
+        uuid.UUID("f1b32785-6fba-4fcf-9d55-7b8e7f157091").bytes_le
+    )
+    shell = ctypes.WinDLL("shell32")
+    shell.SHGetKnownFolderPath.argtypes = [
+        ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p, ctypes.POINTER(ctypes.c_wchar_p),
+    ]
+    shell.SHGetKnownFolderPath.restype = ctypes.c_long
+    dont_verify = 0x4000
+    value = ctypes.c_wchar_p()
+    result = shell.SHGetKnownFolderPath(ctypes.byref(folder_id), dont_verify, None, ctypes.byref(value))
+    if result:
+        raise OSError(f"Unable to resolve LocalAppData known folder: 0x{result & 0xffffffff:08x}")
+    try:
+        if not value.value:
+            raise OSError("LocalAppData known folder is empty")
+        return Path(value.value)
+    finally:
+        memory = ctypes.WinDLL("ole32")
+        memory.CoTaskMemFree.argtypes = [ctypes.c_void_p]
+        memory.CoTaskMemFree(ctypes.cast(value, ctypes.c_void_p))
+
+
+def _windows_user_local_appdata() -> Path:
+    import winreg
+
+    with winreg.OpenKey(
+        winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+    ) as key:
+        value, kind = winreg.QueryValueEx(key, "Local AppData")
+    if not isinstance(value, str) or kind not in (winreg.REG_SZ, winreg.REG_EXPAND_SZ):
+        raise OSError("User LocalAppData registry value is invalid")
+    return Path(os.path.expandvars(value) if kind == winreg.REG_EXPAND_SZ else value)
+
+
+def _windows_local_appdata() -> Path:
+    configured = Path(os.environ.get("LOCALAPPDATA", ""))
+    if not configured.is_absolute():
+        return Path.home() / "AppData/Local"
+    try:
+        if not _windows_is_appcontainer():
+            return configured
+        container = _windows_known_local_appdata()
+        if configured.resolve() != container.resolve():
+            return configured
+        user = _windows_user_local_appdata()
+        if not user.is_absolute() or user.resolve() == container.resolve():
+            raise OSError("User LocalAppData does not identify a host directory")
+        return user
+    except OSError as error:
+        # A missing host location must not be mistaken for an undecided preference.
+        raise OSError(f"Unable to determine the current user's LocalAppData: {error}") from error
+
 
 def user_cache_dir() -> Path:
     if sys.platform == "darwin":
         return Path.home() / "Library/Caches"
-    windows = sys.platform == "win32"
-    configured = Path(os.environ.get("LOCALAPPDATA" if windows else "XDG_CACHE_HOME", ""))
-    fallback = Path.home() / ("AppData/Local" if windows else ".cache")
+    if sys.platform == "win32":
+        return _windows_local_appdata().resolve()
+    configured = Path(os.environ.get("XDG_CACHE_HOME", ""))
+    fallback = Path.home() / ".cache"
     return (configured if configured.is_absolute() else fallback).resolve()
 
 
@@ -32,9 +124,11 @@ def cache_dir() -> Path:
 def state_dir() -> Path:
     if sys.platform == "darwin":
         base = Path.home() / "Library/Application Support"
+    elif os.name == "nt":
+        base = _windows_local_appdata()
     else:
-        configured = Path(os.environ.get("LOCALAPPDATA" if os.name == "nt" else "XDG_STATE_HOME", ""))
-        base = configured if configured.is_absolute() else Path.home() / ("AppData/Local" if os.name == "nt" else ".local/state")
+        configured = Path(os.environ.get("XDG_STATE_HOME", ""))
+        base = configured if configured.is_absolute() else Path.home() / ".local/state"
     return base.resolve() / "smartkit/local-web"
 
 

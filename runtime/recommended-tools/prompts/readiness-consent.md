@@ -5,7 +5,7 @@ B．不执行，保留未解决项，完成后续检查问题后继续原任务�
 
 <!-- agent-only -->
 
-All reported readiness findings use the same temporary pause, including required project setup or migration. Tell the user which checks reported problems, their consequences and proposed actions. Execute only approved actions and leave explicitly deferred items unresolved. Do not show the underlying maintenance commands. If the user explicitly declines or defers all listed readiness actions, do not ask again about those actions or run maintenance; this step is settled with those findings unresolved. Deferral neither repairs them nor advances the successful project setup version.
+Readiness findings that require a user decision use the same temporary pause, including required project setup or migration. Automatic configuration actions are handled in their separate preceding step. Tell the user which checks reported problems, their consequences and proposed actions. Execute only approved actions and leave explicitly deferred items unresolved. Do not show the underlying maintenance commands. If the user explicitly declines or defers all listed readiness actions, do not ask again about those actions or run maintenance; this step is settled with those findings unresolved. Deferral neither repairs them nor advances the successful project setup version.
 
 The bundled internal maintenance runner is {maintenance_runner}. Its available actions for this check are: {action_text}. After consent, treat each semicolon-separated entry as a separate action and invoke only the entries the user approved. An empty action list authorizes no runner invocation; use each finding's owning workflow for actions not represented here. This bundled setup helper performs only the approved tool actions.
 

@@ -49,6 +49,13 @@ class LoginRegistrationTests(unittest.TestCase):
         self.assertFalse(autostart._registration("xdg").exists())
         self.assertFalse(autostart._record_path().exists())
 
+    def test_refusal_can_be_followed_by_an_explicit_enable(self):
+        self.assertEqual(autostart.configure(False).state, "disabled")
+        status = autostart.configure(True)
+        self.assertTrue(status.preference)
+        self.assertEqual(status.state, "installed")
+        self.assertTrue(autostart._registration("xdg").is_file())
+
     def test_enable_verifies_then_disable_removes_only_owned_files(self):
         storage.prepare_state()
         storage.write_json(autostart._config_path(), {"other": 7, "localWeb": {"other": 8}})
@@ -393,6 +400,7 @@ class DailyConsentTests(unittest.TestCase):
             self.assertEqual(inspector.call_count, 2)
             inspector.return_value = autostart.AutostartStatus(True, False, "disabled", None)
             self.assertFalse(check("one", day + timedelta(days=1)).requires_user_prompt)
+            self.assertFalse(check("two", day + timedelta(days=1)).requires_user_prompt)
 
     def test_unsupported_or_changed_registration_is_reported_without_another_choice(self):
         for status in (autostart.AutostartStatus(False, None, "unsupported", None, "no user mechanism"),
@@ -402,6 +410,74 @@ class DailyConsentTests(unittest.TestCase):
                 findings = tuple(self.checker.check_local_web_autostart())
                 self.assertTrue(findings)
                 self.assertFalse(self.checker.HookResult(True, findings).requires_user_prompt)
+
+    def test_missing_choice_with_existing_registration_is_reported_without_prompt(self):
+        for state in ("modified", "incomplete", "missing", "installed"):
+            status = autostart.AutostartStatus(True, None, state, "windows", "registration requires inspection")
+            with self.subTest(state=state), mock.patch.object(autostart, "inspect_status", return_value=status):
+                findings = self.checker.check_local_web_autostart()
+                self.assertEqual([finding.code for finding in findings], ["local-web-autostart-state"])
+                self.assertFalse(self.checker.HookResult(True, tuple(findings)).requires_user_prompt)
+
+    @unittest.skipUnless(WINDOWS, "Windows AppContainer state")
+    def test_windows_container_reuses_user_login_choice_and_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            host = root / "host"
+            isolated = root / "container"
+            config = host / "smartkit/local-web/config.json"
+            config.parent.mkdir(parents=True)
+            config.write_text('{"localWeb":{"autostart":false}}', encoding="utf-8")
+            for base, in_container in ((host, False), (isolated, True)):
+                with self.subTest(in_container=in_container), ExitStack() as stack:
+                    stack.enter_context(mock.patch.dict(os.environ, {"LOCALAPPDATA": str(base), "APPDATA": str(root / "roaming")}))
+                    stack.enter_context(mock.patch.object(storage, "_windows_is_appcontainer", return_value=in_container))
+                    stack.enter_context(mock.patch.object(storage, "_windows_known_local_appdata", return_value=isolated))
+                    stack.enter_context(mock.patch.object(storage, "_windows_user_local_appdata", return_value=host))
+                    self.assertEqual(storage.state_dir(), config.parent.resolve())
+                    self.assertEqual(storage.user_cache_dir(), host.resolve())
+                    status = autostart.inspect_status()
+                    self.assertIs(status.preference, False)
+                    self.assertEqual(status.state, "disabled")
+                    self.assertEqual(self.checker.check_local_web_autostart(), [])
+
+    @unittest.skipUnless(WINDOWS, "Windows AppContainer state")
+    def test_windows_container_preserves_explicit_local_appdata_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(root / "custom")}), \
+                    mock.patch.object(storage, "_windows_is_appcontainer", return_value=True), \
+                    mock.patch.object(storage, "_windows_known_local_appdata", return_value=root / "container"), \
+                    mock.patch.object(storage, "_windows_user_local_appdata", return_value=root / "host") as lookup:
+                self.assertEqual(storage.state_dir(), (root / "custom/smartkit/local-web").resolve())
+                self.assertEqual(storage.user_cache_dir(), (root / "custom").resolve())
+                lookup.assert_not_called()
+
+    @unittest.skipUnless(WINDOWS, "Windows LocalAppData registry")
+    def test_windows_user_local_appdata_expands_only_expandable_registry_values(self):
+        import winreg
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            value = str(root / '%SMARTKIT_TEST_STATE_COMPONENT%')
+            with mock.patch.dict(os.environ, {'SMARTKIT_TEST_STATE_COMPONENT': 'user-state'}), \
+                    mock.patch.object(winreg, 'OpenKey'), mock.patch.object(winreg, 'QueryValueEx') as query:
+                query.return_value = (value, winreg.REG_SZ)
+                self.assertEqual(storage._windows_user_local_appdata(), Path(value))
+                query.return_value = (value, winreg.REG_EXPAND_SZ)
+                self.assertEqual(storage._windows_user_local_appdata(), root / 'user-state')
+
+    @unittest.skipUnless(WINDOWS, "Windows AppContainer state")
+    def test_windows_container_cannot_read_host_location_reports_detector_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            isolated = Path(directory) / "container"
+            with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(isolated)}), \
+                    mock.patch.object(storage, "_windows_is_appcontainer", return_value=True), \
+                    mock.patch.object(storage, "_windows_known_local_appdata", return_value=isolated), \
+                    mock.patch.object(storage, "_windows_user_local_appdata", side_effect=FileNotFoundError("host location unavailable")):
+                findings = self.checker.check_local_web_autostart()
+                self.assertEqual([finding.code for finding in findings], ["detector-error"])
+                self.assertFalse(self.checker.HookResult(True, tuple(findings)).requires_user_prompt)
 
     def test_missing_sequence_stops_before_notifying_or_cleaning_duplicate_configuration(self):
         c = self.checker
@@ -480,11 +556,11 @@ class DailyConsentTests(unittest.TestCase):
         result = json.loads(c.render_hook_result(c.HookResult(True, findings), "codex"))
         self.assertIn("更新与维护", result["systemMessage"])
         context = result["hookSpecificOutput"]["additionalContext"]
-        self.assertLess(context.index("All reported readiness"), context.index("login-startup preference"))
+        self.assertLess(context.index("Readiness findings that require a user decision"), context.index("login-startup preference"))
         self.assertIn("one independent question per reply", context)
         self.assertIn("❓ **Q<next>**", context)
         self.assertIn("number subsequent questions when actually asked", context)
-        self.assertEqual(context.count('Process the supplied decision steps'), 1)
+        self.assertEqual(context.count('Process the supplied steps'), 1)
         self.assertNotIn('autostart enable', result['systemMessage'])
         self.assertNotIn('是否启用登录自启动', result['systemMessage'])
 

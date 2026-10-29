@@ -1383,48 +1383,78 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             '',
         )
 
-    def test_config_findings_request_one_consent_and_map_to_separate_actions(self):
+    def test_codex_configuration_findings_execute_without_consent_question(self):
         checker = self.checker
-        result = checker.HookResult(
-            True,
-            (
-                checker.Finding(
-                    'required-value-mismatch',
-                    'Codex multi-agent',
-                    'is false; it must be true',
-                    'Enable it and start a new session.',
-                    'setting',
-                    'multi_agent',
-                    'configure',
-                ),
-                checker.Finding(
-                    'required-value-mismatch',
-                    'Codex parallel-agent capacity',
-                    'allows 4 concurrent agents; it must allow at least 6',
-                    'Raise the setting and start a new session.',
-                    'setting',
-                    'parallel_agent_capacity',
-                    'configure',
-                ),
-            ),
+        policy = json.loads((POLICY_ROOT / 'codex.json').read_text(encoding='utf-8'))
+        with mock.patch.object(checker, 'run_detector', return_value='false'):
+            findings = checker._check_required_values(policy)
+        findings += checker.check_config_requirements(
+            policy, REPO_ROOT, rpc=lambda method, params: {'config': {'agents': {'max_threads': 3}}},
         )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            policy_path = root / 'codex.json'
+            policy_path.write_text(json.dumps(policy), encoding='utf-8')
+            result = checker._run_daily_hook(
+                'codex', policy_path, root / 'cache', project_root=root, evaluator=lambda _: findings,
+            )
 
+        self.assertTrue(result.ran)
+        self.assertFalse(result.requires_user_prompt)
+        self.assertTrue(result.requires_automatic_configuration)
         rendered = json.loads(checker.render_hook_result(result, 'codex'))
-
-        self.assertEqual(
-            set(rendered),
-            {'continue', 'systemMessage', 'hookSpecificOutput'},
-        )
-        self.assertIs(rendered['continue'], True)
-        self.assertIn('at least 6', rendered['systemMessage'])
-        self.assertIn('❓ **Q1**', rendered['systemMessage'])
-        self.assertIn('A．', rendered['systemMessage'])
-        self.assertIn('B．', rendered['systemMessage'])
+        self.assertNotIn('❓', rendered['systemMessage'])
         context = rendered['hookSpecificOutput']['additionalContext']
-        self.assertIn('--setting multi_agent', context)
-        self.assertIn('configure --harness codex', context)
-        self.assertIn('--setting parallel_agent_capacity', context)
-        self.assertIn('--approved', context)
+        self.assertIn('Automatically execute only the listed configuration actions', context)
+        self.assertIn('--setting multi_agent --approved', context)
+        self.assertIn('--setting parallel_agent_capacity --approved', context)
+
+    def test_automatic_configuration_precedes_other_independent_questions(self):
+        checker = self.checker
+        policy = json.loads((POLICY_ROOT / 'codex.json').read_text(encoding='utf-8'))
+        automatic = checker.check_config_requirements(
+            policy, REPO_ROOT, rpc=lambda method, params: {'config': {'agents': {'max_threads': 3}}},
+        )[0]
+        tool = checker.Finding('tool-missing', 'Example Tool', 'missing', 'Install it.',
+                               'tool', 'example', 'install')
+        login = checker.Finding('local-web-autostart-choice', 'Local Web', 'undecided', 'Ask.',
+                                'local-web', 'autostart', 'choose')
+        result = checker.HookResult(True, (automatic, tool, login))
+
+        self.assertTrue(result.requires_user_prompt)
+        self.assertTrue(result.requires_automatic_configuration)
+        rendered = json.loads(checker.render_hook_result(result, 'codex'))
+        self.assertNotIn('❓', rendered['systemMessage'])
+        context = rendered['hookSpecificOutput']['additionalContext']
+        self.assertLess(context.index('Automatically execute only the listed configuration actions'),
+                        context.index('Tell the user which checks reported problems'))
+        self.assertLess(context.index('Tell the user which checks reported problems'),
+                        context.index('login-startup preference'))
+        self.assertIn('❓ **Q1**', context)
+        self.assertIn('❓ **Q<next>**', context)
+
+    def test_automatic_configuration_is_not_run_after_a_failed_check(self):
+        checker = self.checker
+        automatic = checker.Finding(
+            'required-value-mismatch', 'Capacity', 'too low', 'Configure.',
+            'setting', 'parallel_agent_capacity', 'configure', automatic_configuration=True,
+        )
+        project_error = checker.Finding('project-config-error', 'Project', 'unavailable', 'Inspect.')
+        result = checker.HookResult(True, (automatic, project_error), internal_error=True)
+        rendered = json.loads(checker.render_hook_result(result, 'codex'))
+        context = rendered['hookSpecificOutput']['additionalContext']
+        self.assertFalse(result.requires_automatic_configuration)
+        self.assertNotIn('Automatically execute only the listed configuration actions', context)
+        self.assertNotIn('--setting parallel_agent_capacity --approved', context)
+
+    def test_automatic_configuration_rejects_an_unsafe_setting_identifier(self):
+        checker = self.checker
+        finding = checker.Finding(
+            'required-value-mismatch', 'Bad setting', 'mismatch', 'Configure.',
+            'setting', 'capacity;unexpected', 'configure', automatic_configuration=True,
+        )
+        with self.assertRaises(checker.PolicyError):
+            checker.render_hook_result(checker.HookResult(True, (finding,)), 'codex')
 
     def test_copilot_fleet_action_waits_for_consent_before_exposing_slash_command(self):
         checker = self.checker
@@ -2001,6 +2031,87 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
         self.assertIn('current Copilot CLI session', result.detail)
         rpc.assert_not_called()
 
+    def test_configuration_write_preserves_a_concurrent_user_change(self):
+        checker = self.maintainer.checker
+        state = {'version': 'before', 'capacity': 3}
+        writes = []
+
+        def rpc(method, params):
+            if method == 'config/read':
+                snapshot = {
+                    'config': {'agents': {'max_concurrent_threads_per_session': state['capacity']}},
+                    'layers': [{'name': {'type': 'user', 'profile': None}, 'version': state['version']}],
+                }
+                state.update(version='after', capacity=8)
+                return snapshot
+            writes.append(params)
+            if params.get('expectedVersion') != state['version']:
+                raise checker.DetectorError('configuration version changed')
+            state['capacity'] = params['value']
+            return {}
+
+        with self.assertRaises(self.maintainer.MaintenanceError):
+            self.maintainer.configure_setting(
+                'codex', 'parallel_agent_capacity', approved=True, project_root=REPO_ROOT, rpc=rpc,
+            )
+        self.assertEqual(state['capacity'], 8)
+        self.assertEqual(writes[0].get('expectedVersion'), 'before')
+
+    def test_configuration_write_requires_a_user_layer_version(self):
+        rpc = mock.Mock(return_value={'config': {'agents': {'max_threads': 3}}, 'layers': []})
+        with self.assertRaises(self.maintainer.MaintenanceError):
+            self.maintainer.configure_setting(
+                'codex', 'parallel_agent_capacity', approved=True, project_root=REPO_ROOT, rpc=rpc,
+            )
+        self.assertEqual([call.args[0] for call in rpc.call_args_list], ['config/read'])
+
+    def test_configuration_write_uses_the_active_profile_version(self):
+        state = {'capacity': 3}
+        calls = []
+
+        def rpc(method, params):
+            calls.append((method, params))
+            if method == 'config/value/write':
+                state['capacity'] = params['value']
+                return {}
+            return {
+                'config': {'agents': {'max_concurrent_threads_per_session': state['capacity']}},
+                'layers': [
+                    {'name': {'type': 'project'}, 'version': 'project-version'},
+                    {'name': {'type': 'user', 'profile': 'work'}, 'version': 'profile-version'},
+                    {'name': {'type': 'user', 'profile': None}, 'version': 'base-version'},
+                ],
+            }
+
+        result = self.maintainer.configure_setting(
+            'codex', 'parallel_agent_capacity', approved=True, project_root=REPO_ROOT, rpc=rpc,
+        )
+        self.assertEqual(result.status, 'completed')
+        self.assertEqual(calls[1][1]['expectedVersion'], 'profile-version')
+
+    def test_configuration_cli_reports_why_the_version_is_unavailable(self):
+        with mock.patch.object(self.maintainer, 'configure_setting',
+                               side_effect=self.maintainer.MaintenanceError('user configuration version is unavailable')), \
+                mock.patch.object(self.maintainer.checker, 'load_user_shell_path'), \
+                mock.patch('sys.stderr', new_callable=io.StringIO) as errors:
+            result = self.maintainer.main([
+                'configure', '--harness', 'codex', '--setting', 'parallel_agent_capacity', '--approved',
+            ])
+        self.assertEqual(result, 2)
+        self.assertIn('user configuration version is unavailable', errors.getvalue())
+
+    def test_configuration_maintenance_preserves_a_sufficient_capacity(self):
+        for capacity in (5, 8):
+            with self.subTest(capacity=capacity):
+                rpc = mock.Mock(return_value={
+                    'config': {'agents': {'max_concurrent_threads_per_session': capacity}},
+                })
+                result = self.maintainer.configure_setting(
+                    'codex', 'parallel_agent_capacity', approved=True, project_root=REPO_ROOT, rpc=rpc,
+                )
+                self.assertEqual(result.status, 'already-satisfied')
+                self.assertEqual([call.args[0] for call in rpc.call_args_list], ['config/read'])
+
     def test_approved_capacity_configuration_writes_five_and_verifies_six_total(self):
         effective = [{'agents': {'max_threads': 3}}]
         calls = []
@@ -2014,7 +2125,10 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
                     }
                 }
                 return {}
-            return {'config': effective[0]}
+            return {
+                'config': effective[0],
+                'layers': [{'name': {'type': 'user', 'profile': None}, 'version': 'snapshot-version'}],
+            }
 
         result = self.maintainer.configure_setting(
             'codex',
@@ -2033,6 +2147,7 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
                     'keyPath': 'agents.max_concurrent_threads_per_session',
                     'value': 5,
                     'mergeStrategy': 'upsert',
+                    'expectedVersion': 'snapshot-version',
                 },
             ),
         )
@@ -2042,7 +2157,10 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
         )
 
     def test_approved_multi_agent_configuration_uses_policy_write(self):
-        rpc = mock.Mock(return_value={})
+        rpc = mock.Mock(return_value={
+            'config': {},
+            'layers': [{'name': {'type': 'user', 'profile': None}, 'version': 'snapshot-version'}],
+        })
         with mock.patch.object(
             self.maintainer,
             '_configuration_required',
@@ -2057,12 +2175,14 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
             )
 
         self.assertEqual(result.status, 'completed')
-        rpc.assert_called_once_with(
+        self.assertEqual([call.args[0] for call in rpc.call_args_list], ['config/read', 'config/value/write'])
+        rpc.assert_any_call(
             'config/value/write',
             {
                 'keyPath': 'features.multi_agent',
                 'value': True,
                 'mergeStrategy': 'upsert',
+                'expectedVersion': 'snapshot-version',
             },
         )
 
@@ -2180,7 +2300,7 @@ class SetupMigrationHookTest(unittest.TestCase):
         for host in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(host=host):
                 output = self.checker.render_hook_result(result, host, delivery='context')
-                self.assertIn('All reported readiness findings use the same temporary pause', output)
+                self.assertIn('Readiness findings that require a user decision use the same temporary pause', output)
                 self.assertIn('explicitly declines or defers all', output)
                 self.assertIn('continue the original task', output)
                 self.assertIn('Reuse applicable explicit authorization', output)

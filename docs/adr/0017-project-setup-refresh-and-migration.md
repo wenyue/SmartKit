@@ -28,9 +28,11 @@ their reading contract, including blueprint, configuration-format, and AGENTS.md
 wording corrections and shared Skill changes alone do not require migration. A maintainer-facing
 Skill in the SmartKit repository owns version advancement and the assessment of migration needs;
 the hook consumes the declared result instead of inferring necessity from unequal version numbers.
-All readiness checks share the Daily Project Check Gate, run concurrently, and aggregate findings
-before one consent request. A reported problem temporarily pauses ordinary work; the user may
-explicitly decline or defer its action and continue the original task. This includes missing setup
+All readiness checks share the Daily Project Check Gate, run concurrently, and aggregate findings.
+Detected Codex configuration-write mismatches are handled automatically by the existing maintenance
+owner after rechecking the effective value; already-satisfied values are preserved. Other readiness
+actions retain their shared consent request. A reported problem requiring a decision temporarily
+pauses ordinary work; the user may explicitly decline or defer its action and continue the original task. This includes missing setup
 baselines and Required Project Migrations. Deferral preserves unresolved findings and never advances
 the Project Setup Version. Already authorized actions addressing the findings may continue without
 another approval request. Keep host-native hook delivery and the shared daily-check behavior.

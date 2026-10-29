@@ -146,6 +146,8 @@ def _configuration_required(
     requirement: dict[str, Any],
     project_root: Path,
     request: Callable[[str, dict[str, Any]], dict[str, Any]],
+    *,
+    snapshot: dict[str, Any] | None = None,
 ) -> bool:
     if kind == 'required-value':
         findings = checker._check_required_values({
@@ -156,7 +158,7 @@ def _configuration_required(
         if findings[0].code == 'detector-error':
             raise MaintenanceError('configuration state could not be determined safely')
         return True
-    response = request(
+    response = snapshot if snapshot is not None else request(
         'config/read',
         {'includeLayers': False, 'cwd': str(project_root)},
     )
@@ -282,7 +284,8 @@ def configure_setting(
     project_root = checker.resolve_project_root(project_root)
 
     def apply(request: Callable[[str, dict[str, Any]], dict[str, Any]]) -> MaintenanceResult:
-        if not _configuration_required(kind, requirement, project_root, request):
+        snapshot = request('config/read', {'includeLayers': True, 'cwd': str(project_root)})
+        if not _configuration_required(kind, requirement, project_root, request, snapshot=snapshot):
             return MaintenanceResult(
                 harness,
                 setting_id,
@@ -290,12 +293,24 @@ def configure_setting(
                 'configure',
                 'already-satisfied',
             )
+        layers = snapshot.get('layers')
+        if not isinstance(layers, list):
+            raise MaintenanceError('user configuration version is unavailable')
+        user_layer = next((
+            layer for layer in layers
+            if isinstance(layer, dict) and isinstance(layer.get('name'), dict)
+            and layer['name'].get('type') == 'user' and not layer.get('disabledReason')
+        ), None)
+        version = user_layer.get('version') if user_layer else None
+        if not isinstance(version, str) or not version:
+            raise MaintenanceError('user configuration version is unavailable')
         request(
             'config/value/write',
             {
                 'keyPath': maintenance['write_key_path'],
                 'value': maintenance['write_value'],
                 'mergeStrategy': 'upsert',
+                'expectedVersion': version,
             },
         )
         if _configuration_required(kind, requirement, project_root, request):
@@ -385,8 +400,8 @@ def main(argv: list[str] | None = None) -> int:
     except ApprovalRequired:
         print('[smartkit] User consent is required before maintenance.', file=sys.stderr)
         return 2
-    except (MaintenanceError, checker.PolicyError):
-        print('[smartkit] Maintenance could not proceed safely.', file=sys.stderr)
+    except (MaintenanceError, checker.PolicyError) as error:
+        print(f'[smartkit] Maintenance could not proceed safely: {error}', file=sys.stderr)
         return 2
     print(render_result(result))
     if result.status in {'completed', 'already-satisfied'}:

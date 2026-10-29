@@ -8,7 +8,7 @@ The fixed local origin introduced in [ADR 0019](0019-unify-local-hosting-and-ope
 
 ## User choice and authorization
 
-Include the choice in the existing Daily Project Check Gate, scoped by canonical project root, Harness, and local calendar day. Settle update and maintenance decisions first, then ask one independent, numbered login-startup question in the conversation language, with A to enable, B to decline, and a recommendation with its reason. Ask one question per reply and wait for a subsequent explicit choice; there is no later or default option. Keeping the decisions separate prevents approval of maintenance from implicitly authorizing login startup.
+Include the choice in the existing Daily Project Check Gate, scoped by canonical project root, Harness, and local calendar day. Complete automatic configuration and settle other update and maintenance decisions first, then ask one independent, numbered login-startup question in the conversation language, with A to enable, B to decline, and a recommendation with its reason. Ask one question per reply and wait for a subsequent explicit choice; there is no later or default option. Keeping the decisions separate prevents approval of maintenance from implicitly authorizing login startup.
 
 `autostart status` is read-only. Execute `autostart enable` or `autostart disable` only with authorization for that choice, and persist either result in the current user's Local Web state directory at `config.json`, under `localWeb.autostart`. An absent value means undecided; a boolean records an explicit choice. The choice is user-wide so other projects do not ask again after it is saved, while each project's checks retain their existing daily gate. Other users' preferences and registrations remain independent.
 

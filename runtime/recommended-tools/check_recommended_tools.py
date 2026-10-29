@@ -75,6 +75,7 @@ class Finding:
     target_kind: str | None = None
     target_id: str | None = None
     action: str | None = None
+    automatic_configuration: bool = False
 
 
 @dataclass(frozen=True)
@@ -88,8 +89,14 @@ class HookResult:
     @property
     def requires_user_prompt(self) -> bool:
         return any(finding.code.startswith('project-config-') for finding in self.findings) or (not self.internal_error and any(
-            finding.code not in {'detector-error', 'local-web-autostart-state', 'local-web-autostart-unsupported'} for finding in self.findings
+            not finding.automatic_configuration
+            and finding.code not in {'detector-error', 'local-web-autostart-state', 'local-web-autostart-unsupported'}
+            for finding in self.findings
         ))
+
+    @property
+    def requires_automatic_configuration(self) -> bool:
+        return not self.internal_error and any(finding.automatic_configuration for finding in self.findings)
 
 
 def parse_version(value: str) -> tuple[int, ...]:
@@ -391,6 +398,7 @@ def _check_required_values(policy: dict[str, Any]) -> list[Finding]:
                     'setting' if requirement.get('maintenance') else None,
                     requirement['id'] if requirement.get('maintenance') else None,
                     'configure' if requirement.get('maintenance') else None,
+                    automatic_configuration=policy.get('harness') == 'codex' and bool(requirement.get('maintenance')),
                 )
             )
     return findings
@@ -723,6 +731,7 @@ def check_config_requirements(
             'setting',
             requirement['id'],
             'configure',
+            automatic_configuration=policy.get('harness') == 'codex',
         ))
 
     validated = [
@@ -1517,7 +1526,7 @@ def check_local_web_autostart() -> list[Finding]:
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         return [Finding('detector-error', 'SmartKit Local Web login startup',
                         str(error), 'Inspect the preserved user configuration; no login setting was changed.')]
-    if status.preference is None and status.supported:
+    if status.preference is None and status.supported and status.state == 'unconfigured':
         return [Finding('local-web-autostart-choice', 'SmartKit Local Web login startup',
                         'Current-user login startup has not been selected.',
                         'Ask whether to enable login startup and persist the explicit A/B choice.',
@@ -1525,6 +1534,10 @@ def check_local_web_autostart() -> list[Finding]:
     if not status.supported:
         return [Finding('local-web-autostart-unsupported', 'SmartKit Local Web login startup',
                         status.message, 'Login startup is unavailable; no elevation or system registration is requested.')]
+    if status.preference is None:
+        return [Finding('local-web-autostart-state', 'SmartKit Local Web login startup',
+                        status.message or status.state,
+                        'Inspect the login registration; no login setting was changed.')]
     expected = 'installed' if status.preference else 'disabled'
     if status.preference is not None and status.state != expected:
         return [Finding('local-web-autostart-state', 'SmartKit Local Web login startup',
@@ -1590,7 +1603,7 @@ def _run_daily_hook(
                     findings_list = [finding for future in pending for finding in future.result()]
             findings = tuple(findings_list)
             result = HookResult(True, findings, notices=notices)
-            if result.requires_user_prompt:
+            if result.requires_user_prompt or result.requires_automatic_configuration:
                 try:
                     # Validate only this check's selected prompts before recording notification.
                     _consent_request('', findings, harness)
@@ -1764,8 +1777,12 @@ def _consent_request(
     harness: str,
     configuration_context: str = '',
 ) -> tuple[str, str]:
-    """Compose the selected steps once for both native questions and Agent context."""
-    ordinary = tuple(f for f in actionable_findings if not f.code.startswith('local-web-autostart-'))
+    """Compose automatic work and the remaining independent questions."""
+    automatic = tuple(f for f in actionable_findings if f.automatic_configuration)
+    ordinary = tuple(
+        f for f in actionable_findings
+        if not f.automatic_configuration and not f.code.startswith('local-web-autostart-')
+    )
     needs_maintenance = HookResult(True, ordinary).requires_user_prompt
     steps: list[str] = []
     if needs_maintenance:
@@ -1774,7 +1791,21 @@ def _consent_request(
         entry = Path(__file__).resolve().parents[1] / 'local_web' / '__main__.py'
         steps.append(_prompt('autostart-consent.md', feature='local_web', entry=str(entry),
                              question_number='<next>' if steps else '1'))
-    if not steps:
+    automatic_step = ''
+    if automatic:
+        if harness != 'codex':
+            raise PolicyError('automatic configuration is unsupported for this harness')
+        actions = []
+        for finding in automatic:
+            if (finding.code != 'required-value-mismatch' or finding.target_kind != 'setting' or finding.action != 'configure'
+                    or not isinstance(finding.target_id, str)
+                    or re.fullmatch(r'[A-Za-z0-9_-]+', finding.target_id) is None):
+                raise PolicyError('automatic configuration finding is invalid')
+            actions.append(f'configure --harness {harness} --setting {finding.target_id} --approved')
+        runner = Path(__file__).resolve().parents[2] / 'skills/setup-project-agents/scripts/maintain_recommended_tools.py'
+        automatic_step = _prompt('automatic-configuration.md', maintenance_runner=str(runner),
+                                 action_text='; '.join(actions))
+    if not steps and not automatic_step:
         return '', '\n'.join(part for part in (findings, configuration_context) if part)
     questions: list[str] = []
     for step in steps:
@@ -1785,9 +1816,9 @@ def _consent_request(
     if configuration_context:
         steps.append(configuration_context)
     context = '\n\n'.join(part for part in (
-        findings, _prompt('check-sequence.md'), *steps,
+        findings, _prompt('check-sequence.md'), automatic_step, *steps,
     ) if part)
-    return questions[0], context
+    return (questions[0] if questions else ''), context
 
 
 def render_hook_result(
@@ -1801,9 +1832,12 @@ def render_hook_result(
     context = result.configuration_context
     if result.internal_error and result.requires_user_prompt:
         rendered = '[smartkit] Recommended-tool daily check could not complete.\n' + rendered
-    if result.requires_user_prompt:
-        question, context = _consent_request(rendered, result.findings, harness, context)
-        user_message = '\n'.join(part for part in (rendered, question) if part)
+    if result.requires_user_prompt or result.requires_automatic_configuration:
+        actionable = tuple(f for f in result.findings if not result.internal_error or not f.automatic_configuration)
+        question, context = _consent_request(rendered, actionable, harness, context)
+        user_message = rendered if result.requires_automatic_configuration else '\n'.join(
+            part for part in (rendered, question) if part
+        )
         if harness in {'codex', 'qoder'}:
             return json.dumps(
                 {
