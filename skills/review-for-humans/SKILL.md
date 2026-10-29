@@ -97,19 +97,30 @@ Group modifications by the problem or scenario they address. Keep related implem
 
 Assign modifications continuous M IDs across files and groups, retaining them for findings, suggestions, selections, and re-reviews. The recommended label is `🔧 **M1** - **<title>**`; emoji and surrounding punctuation usually read well outside bold. Preserve punctuation intrinsic to code and paths.
 
+### Put review effort into elegance
+
+The main reviewing Agent gives elegance more review effort than reasonableness. Perform a dedicated elegance pass through the relevant surrounding implementation, affected callers, and nearby or comparable patterns, so the judgment covers how the change fits its context rather than only its diff. Use unit and integration test evidence to focus reasonableness checks while still checking task fulfillment, supported behavior, established contracts, and serious consequences.
+
+For a meaningful design choice, compare the chosen structure with a plausible simpler or more direct alternative when one exists, and judge whether its benefits justify its complexity. An **Elegant** conclusion rests on inspected context and any applicable comparison; when no plausible alternative exists, the context can justify the current structure. Scale the work to the change: a straightforward edit needs no manufactured alternative, and deeper scrutiny need not produce a longer explanation.
+
 ### Give two independent judgments
 
 Every modification gets both judgments, each with an explicit conclusion and reason. Apply them to code, prose, and translations alike. Separate paragraphs, with ⚖️ for reasonableness and 🎨 for elegance, are recommended; repeating the dimension's name after its emoji is usually unnecessary.
 
 | Judgment | Basis |
 | --- | --- |
-| ⚖️ **Reasonable**. | The change serves the task, is correct and safe, fits its scope, and has justified costs. |
+| ⚖️ **Reasonable**. | The change serves the task, is correct within supported behavior and established contracts, fits its scope, and has costs and risks justified by the task and evidence. |
 | ⚖️ **Unreasonable** (P1): | Evidence establishes a material defect, unnecessary scope, or unjustified cost. Explain its impact and recommend a concrete correction with its benefit. Use the actual P0–P3 severity. |
-| 🎨 **Elegant**. | The change addresses the problem at the appropriate responsibility, with clear structure and little unnecessary state, branching, or repetition. |
-| 🎨 **Can improve**. | Identify avoidable complexity or repetition and a supported simpler approach, explaining its clarity or maintenance benefit. A style preference alone is insufficient. |
+| 🎨 **Elegant**. | Responsibilities and structure are clear, expression is readable, interfaces express their use naturally and consistently, and abstraction, state, branching, repetition, and defensive measures earn their cost. New code aligns with nearby or comparable implementations, with justified departures. |
+| 🎨 **Needs improvement**. | Evidence establishes material, avoidable understanding or maintenance burden, with a supported simpler or more consistent approach whose benefit justifies the change cost. Explain the concrete burden, proposed change, and benefit. Optimization or explicit acceptance of retention is required before advancement. |
+| 🎨 **Optional improvement**. | The current implementation meets the structural bar, but a supported refinement offers a concrete benefit worth its change cost. Explain the limited benefit and keep it optional. |
 | ⚖️ **Insufficient evidence**. or 🎨 **Insufficient evidence**. | Name the missing evidence for that dimension and how to resolve it. The other dimension may still have a supported judgment. |
 
-A reasonable change can be inelegant. Elegance concerns are optional improvements; only a separately evidenced reasonableness defect creates a fix-or-ignore gate. Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Base it on consequences and affected conditions.
+Filter reported improvements more strictly than the internal examination: omit personal preferences and trivial or low-benefit polish. Group evidence and remedies for one underlying burden rather than generating many tiny suggestions. Report only worthwhile changes; finding no such change is a valid result and does not weaken the required per-modification judgments.
+
+Assess additions and removals of defensive measures under elegance. Prefer relying on established invariants and boundary guarantees over repeated checks or speculative fallbacks; adding defense needs a concrete purpose that justifies its complexity. Missing extra protection alone is not unreasonable unless evidence identifies a credible triggering condition and potentially serious consequences. Ordinary supported behavior and promised failure handling remain correctness obligations.
+
+A reasonable change can need a required elegance improvement. Keep the judgments independent: a supported structural problem requires optimization or explicit acceptance, while a worthwhile refinement below that bar remains optional. Style alignment uses observed nearby or comparable implementations, not the reviewer's preferred convention. A separately evidenced reasonableness defect still needs repair or explicit ignoring. Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Base it on consequences and affected conditions.
 
 Retain material findings and qualifications from the underlying review, including task and standards concerns. Distinguish checks actually performed from author-reported results.
 
@@ -123,7 +134,7 @@ Complex mechanisms, important contracts, material findings or trade-offs, or key
 
 End a group after the file that brings it to at least 10 modifications; never split a file. Display the final shorter group when the scope ends. Give the group conclusion and cumulative progress in the closing, explicitly identifying displayed files out of files requiring review; progress does not imply completion or Viewed recording. Separating complete file blocks and the closing with `---`, and bolding the count and total, are recommended for scanning.
 
-Across replies, retain group membership, reviewed changes, next position and M ID, judgments, finding decisions, outstanding suggestions, and each group's verified completion results. Count each main-review file once. A full-branch commit can clean the worktree before all files are displayed; continue unseen groups from retained evidence rather than rebuilding the scope from the new index. Update totals only for actual scope changes.
+Across replies, retain group membership, reviewed changes, next position and M ID, judgments, finding decisions, required elegance improvements and their optimization or retention decisions, optional suggestions, and each group's verified completion results. Count each main-review file once. A full-branch commit can clean the worktree before all files are displayed; continue unseen groups from retained evidence rather than rebuilding the scope from the new index. Update totals only for actual scope changes.
 
 ### Keep incidental observations separate
 
@@ -131,17 +142,18 @@ During necessary reading, report an unrelated pre-existing issue only when evide
 
 Give observations continuous **O1**, **O2**, and subsequent IDs. Initially show them only in a clearly separate, out-of-scope part of the group closing, with a title, source location/link, evidence and impact, independence from the selected change, and a recommendation with its benefit. The recommended label is `📌 **Incidental observations (outside this review's scope)**`.
 
-O items add no main-review files, modifications, progress, or Viewed eligibility. Advice alone does not block advancement or authorize repair. Unqualified fix, optimize, and ignore-all actions exclude them. A selected O repair needs its own outcome, authorization, checks, and dedicated re-review; it remains separate unless the user explicitly expands the main scope.
+O items add no main-review files, modifications, progress, or Viewed eligibility. Advice alone does not block advancement or authorize repair. Unqualified fix, optimize, ignore-all, and accept-all actions exclude them. A selected O repair needs its own outcome, authorization, checks, and dedicated re-review; it remains separate unless the user explicitly expands the main scope.
 
 ## Offer actions
 
 | Action | Effect |
 | --- | --- |
-| **fix** | Repair selected pending unreasonable findings; unqualified fix selects all displayed outstanding findings, including earlier groups. |
-| **ignore** | Mark only selected findings ignored, retaining severity and impact. If several are possible, clarify the selection unless the user explicitly chose all. |
-| **optimize** | Implement selected supported 🎨 suggestions; unqualified optimize selects all displayed outstanding suggestions. Pending unreasonable findings remain pending. |
+| **fix** | Repair selected pending unreasonable findings; unqualified fix selects all displayed outstanding unreasonable findings, including earlier groups. |
+| **ignore** | Mark only selected unreasonable findings ignored, retaining severity and impact. If several are possible, clarify the selection unless the user explicitly chose all. |
+| **optimize** | Implement selected required or optional 🎨 improvements; unqualified optimize selects all displayed outstanding elegance improvements, including earlier groups. Pending unreasonable findings remain pending. |
+| **accept** | Explicitly retain selected required elegance improvements after their burden and proposed remedy are disclosed. Preserve the judgment and trade-off as accepted, not optimized. If several are possible, clarify the selection unless the user explicitly chose all. This does not ignore unreasonable findings or authorize edits. |
 | **pass and continue** | Complete any required full-branch commit and disclosed PR publication, record eligible PR files Viewed, verify completion, then advance. |
-| **continue** | Advance without staging, committing, pushing, or marking Viewed. Retain modifications and suggestions. |
+| **continue** | Advance without staging, committing, pushing, or marking Viewed. Retain modifications, judgments, retention decisions, and optional suggestions. |
 
 Localize action names and descriptions to the conversation's language. M IDs narrow an action to items; they do not select whole-group completion. Advance to the saved next group, or use **pass and finish** and **finish** when all files are displayed.
 
@@ -157,13 +169,14 @@ Inclusion in a commit or push is not review. A local or branch review needs no P
 
 ### Decide which actions are ready
 
-Both advancing actions require all displayed unreasonable findings repaired or explicitly ignored, available correctness/version evidence, successful required review checks, completed affected re-reviews, and any previously selected completion operation fully verified. Optional improvements and missing elegance evidence alone do not block advancement.
+Both advancing actions require all displayed unreasonable findings repaired or explicitly ignored, all displayed required elegance improvements optimized and re-reviewed or explicitly accepted for retention, available correctness/version evidence, successful required review checks, completed affected re-reviews, and any previously selected completion operation fully verified. These requirements include outstanding items from earlier groups. Optional improvements and missing elegance evidence alone do not block advancement; an unsupported elegance concern cannot become a required improvement.
 
 Before offering completion, perform derivable read-only preparation for its actual effects. Use the following priorities:
 
 | State | Menu |
 | --- | --- |
-| Pending unreasonable findings | Offer fix and ignore, plus supported optimize. Explain why both advancing actions are unavailable. |
+| Pending unreasonable findings | Offer fix and ignore, plus supported optimize and accept for any pending required elegance improvements. Explain why both advancing actions are unavailable. |
+| Pending required elegance improvements | Offer optimize and accept for the identified items. If unreasonable findings are also pending, include their fix/ignore choices; accepting elegance does not resolve them. Explain why both advancing actions are unavailable. |
 | Missing correctness/version evidence, failed or incomplete review checks, or stale review | Explain the gap and its remedy; complete authorized work before offering advancement. |
 | Selected commit, push, or Viewed operation unfinished | Preserve that selection and, once ready, resume its already authorized remaining steps without routine reconfirmation. If changed effects require a new decision, offer that decision for the same completion operation; ordinary continue cannot bypass it. |
 | Advancement ready but completion's target, interface, checks, or safe scope unavailable | Explain the concrete prerequisite. Continue remains available. Checks for extra branch content block continuation only when they affect the review. |
@@ -172,13 +185,13 @@ Before offering completion, perform derivable read-only preparation for its actu
 
 For a ready local/branch review, completion commits outstanding changes and verifies them. For a ready PR, completion publishes review work when needed and authorized, then records eligible files Viewed; when no commit or publication is needed, offer pass for Viewed recording alone. State any verified results it will reuse. Add optimize whenever supported suggestions remain.
 
-Every closing accounts for completion readiness, including after a repair or in a dedicated re-review. State any pending findings with IDs, severity, and impact, including earlier groups; retain optional improvements with IDs, proposals, and benefits, and the separate O observations. Disclose the full commit scope, any extra-content confirmation, publication delta, and Viewed set when applicable. Keep unavailable actions distinguishable from executable choices.
+Every closing accounts for completion readiness, including after a repair or in a dedicated re-review. State any pending unreasonable findings with IDs, severity, and impact, including earlier groups. Separately show pending required elegance improvements with IDs, concrete burdens, remedies, and benefits; retain explicit acceptance decisions and their trade-offs, optional suggestions, and the separate O observations. Disclose the full commit scope, any extra-content confirmation, publication delta, and Viewed set when applicable. Keep unavailable actions distinguishable from executable choices.
 
 A useful closing layout is conclusion and progress, relevant checks and limits, then the concrete decision with its available actions. Emoji, short labels, and lettered options can help scanning. A simple continuation question usually needs no number; several decisions or later references may benefit from numbered blocks. A recommendation can sit beside its option or in a separate ➡️ paragraph when the reason needs explanation. Refer to scope already explained instead of repeating the menu or asking for the same choice again. [Example closings](references/report-examples.md#example-closings-for-different-results) illustrate these presentation choices and the different readiness states.
 
 Continue already authorized work when ready. If review and completion are finished and no decision remains, report the result without asking for a choice.
 
-If the user asks to advance while blocked, explain the pending IDs or prerequisites and regenerate the available menu; continue never means ignore. Questions and disputed findings call for answers or reassessment, not automatic advancement. An explicit stop or pause is always allowed: report displayed progress and unresolved findings, evidence, modifications, publication, or operations without claiming completed work.
+If the user asks to advance while blocked, explain the pending IDs or prerequisites and regenerate the available menu; continue never means ignore or accept. Questions and disputed findings call for answers or reassessment, not automatic advancement. An explicit stop or pause is always allowed: report displayed progress and unresolved findings, evidence, modifications, publication, or operations without claiming completed work.
 
 ## Repair and re-review
 
@@ -186,9 +199,9 @@ Limit an authorized fix or optimization to selected items and necessary supporti
 
 1. Run required checks successfully and refresh before-and-after evidence and links. For unpublished PR changes, keep both the pinned remote version and the checked local content intended for publication; keep O evidence separately.
 2. Independently re-review changed or affected previously reviewed parts, including unexpected changes. Display complete updated file blocks with both judgments in a dedicated reply separate from unseen files. For an O repair, assess the behavior and affected dependencies in a dedicated O re-review with its source location, before-and-after explanation, and both reasoned judgments.
-3. Retain original M/O IDs and group membership; do not count a file again. O re-review creates no main progress or Viewed eligibility. Mark repairs or suggestions complete only when checks and re-review confirm them.
+3. Retain original M/O IDs and group membership; do not count a file again. O re-review creates no main progress or Viewed eligibility. Mark repairs or optimizations complete only when checks and re-review confirm them. Retention acceptance remains valid for the same assessed content and effects; reassess it when those change.
 
-A single fix, ignore, or optimize ends with an updated menu, without advancement. An explicit compound request authorizes its ordered effects, including dedicated re-review before completion and advancement; continue those authorized steps without routine reconfirmation. New findings, failed checks, changed effects, or newly discovered extra content pause the dependent step. Independently authorized optimization can proceed while findings remain, but cannot open the advancement gate.
+A single fix, ignore, optimize, or accept ends with an updated menu, without advancement. Acceptance alone changes no reviewed content and needs no content re-review. An explicit compound request authorizes its ordered effects, including dedicated re-review after edits before completion and advancement; continue those authorized steps without routine reconfirmation. New findings, failed checks, changed effects, or newly discovered extra content pause the dependent step. Independently authorized optimization can proceed while findings remain, but advancement requires every applicable gate above to be satisfied.
 
 ## Prepare completion
 

@@ -69,7 +69,7 @@ Saving the box reference first lets the code flush that same box after deleting 
 
 ⚖️ **Reasonable**. This directly repairs the promised deletion behavior with a small change. Flush failures reach the caller; flushing does not roll back the deletion, so a failed flush must not be described as a restored item.
 
-🎨 **Elegant**. Keeping the original box reference at the deletion site directly handles the detachment mechanism without adding a separate lookup or new state elsewhere.
+🎨 **Elegant**. The deletion and flush paths show that both operations need the same box instance. Compared with looking the box up again after deletion, keeping its reference at the deletion site expresses that dependency directly and avoids another lookup or owner elsewhere.
 
 ---
 
@@ -79,25 +79,45 @@ This file handles the Save button. The change prevents repeated clicks from star
 
 🔧 **M3** - **Refuse repeated clicks while saving**
 
-Previously, repeated clicks could start duplicate saves; the handler now refuses another save while one is pending, and completion and cancellation both reset the pending flag correctly.
+Previously, repeated clicks could start duplicate saves; the handler now refuses another save while one is pending. Success, failure, and cancellation each repeat the same three-step cleanup: clear the pending flag, release the request token, and refresh button availability. Each copy currently works, and failures still reach the caller.
 
 ⚖️ **Reasonable**. This prevents duplicate saves within the requested scope.
 
-🎨 **Can improve**. Both branches repeat the same flag reset; a shared completion path would make cleanup easier to maintain.
+🎨 **Needs improvement**. Inspecting all three outcome paths and nearby save handlers shows one cleanup operation copied across outcomes, while the established implementation uses a shared completion path. That direct alternative preserves the current results and error propagation, gives cleanup one owner, and removes future synchronization work at a small local change cost. Passing tests do not remove this structural burden. Optimize it or explicitly accept retaining it before finishing.
 
 ---
 
-📊 **Progress**: **3/3 files displayed**. No unreasonable findings are pending.
+📊 **Progress**: **3/3 files displayed**. No unreasonable findings are pending; M3 remains a required elegance improvement.
 
-**Optional improvements**
+**Required elegance improvement**
 
-- **M3**: Use a shared completion path for the flag reset to reduce duplication and make cleanup easier to maintain.
+- **M3**: Put the repeated cleanup in the established shared completion path, reducing duplication and future synchronization work.
 
-Would you like to commit the checked changes and finish, or improve M3 first?
+**Pass and finish** and **finish** are unavailable until M3 is optimized and re-reviewed or explicitly accepted for retention. How would you like to handle it?
 
-- **A**. **Optimize**: Implement the optional improvement.
-- **B**. **Pass and finish** (recommended): Commit all branch changes, including the three reviewed files and their tests, verify the result, and end this review without pushing, retaining the improvement as advice.
-- **C**. **Finish**: End this review without committing, retaining the improvement as advice.
+- **A**. **Optimize M3** (recommended): Consolidate cleanup, run the required checks, and show a dedicated re-review with both judgments and an updated menu.
+- **B**. **Accept M3**: Retain the three cleanup copies and their synchronization cost, record that explicit acceptance, and show the updated menu without editing or advancing.
+
+After an explicit acceptance of M3, retain its **Needs improvement — accepted** judgment and the disclosed maintenance cost. With all other prerequisites still verified, offer:
+
+- **A**. **Pass and finish**: Commit all branch changes, including the three reviewed files and their tests, verify the result, and finish without pushing, retaining M3's accepted trade-off.
+- **B**. **Finish**: Finish without committing, retaining M3's accepted trade-off.
+
+If the user instead selects optimization, complete the checks and dedicated re-review before offering these advancing actions. A successful re-review can conclude **Elegant** because cleanup now has one owner; progress remains **3/3 files displayed**. Neither acceptance nor optimization alone authorizes the commit.
+
+## Judgment boundaries
+
+These independent illustrative cases calibrate the two judgments; they are not additional modifications in the report above. Each premise supplies the evidence that distinguishes extra defense, ordinary correctness, structural burden, and personal preference.
+
+| Evidence and change | Reasonableness | Elegance |
+| --- | --- | --- |
+| A private helper removes a second null check after its only caller has established a non-null input. No supported path bypasses that caller. | **Reasonable**: the established input contract still holds; the missing duplicate check supplies no serious-risk finding. | **Elegant**: relying on the verified boundary guarantee removes redundant defense and keeps the operation visible. Do not request another check merely for hypothetical callers. |
+| A handler adds repeated validation and fallback branches for values already guaranteed by its parser, while neighboring handlers call the same operation directly. The added paths preserve supported results but obscure the operation. | **Reasonable**: supported behavior and scope remain intact. | **Needs improvement**: remove the redundant checks and speculative fallbacks; their branches add a second validation story and obscure the established implementation pattern. Adding defense needs a concrete benefit. |
+| A new cleanup route passes a request-controlled absolute path directly to recursive deletion. A request naming a directory outside generated output can erase unrelated user data. | **Unreasonable (P1)**: the reachable input and deletion effect establish a serious data-loss risk; add a containment check before deletion. | **Needs improvement**: express and enforce the allowed directory boundary once at the cleanup entry, so callers can understand its contract without scattered checks. Fixing the risk can also resolve this structural concern, subject to re-review. |
+| A new private helper represents an option with several positional booleans, while adjacent equivalent helpers use a named option object. Its internal callers must repeatedly inspect the signature to distinguish the flags. | **Reasonable**: current callers pass the intended values and supported behavior works. | **Needs improvement**: align the helper and its internal callers with the established named-option interface, making calls readable and avoiding a second convention for the same concept. This is evidenced interface and style alignment, not a preferred naming fashion. |
+| A local variable is already clear and follows nearby conventions; the reviewer prefers a different equally familiar name. | **Reasonable**: either name preserves behavior and scope. | **Elegant**: the current name serves its context. Omit the personal naming preference from the report; it supplies no worthwhile improvement. |
+
+For a straightforward label edit like M1, the compact explanation and judgments are sufficient. For M2 and M3, the inspected dependencies and alternatives support a substantive design conclusion. If an alternative requires broader churn than its benefit warrants, omit that suggestion rather than turning the extra review effort into more report items.
 
 ## Example closings for different results
 
@@ -107,7 +127,7 @@ These illustrative closings follow file reports or dedicated re-reviews; they do
 
 In this illustrative local review, the selected change only adjusts export-button text. The branch inventory contains only the three text files changed in this conversation; required checks passed. The source location below is illustrative; an actual report uses an available source link.
 
-No unreasonable findings are pending. **3/3 files displayed**.
+No unreasonable findings or required elegance improvements are pending. **3/3 files displayed**.
 
 📌 **Incidental observations (outside this review's scope)**
 
@@ -148,30 +168,31 @@ Commit the reviewed text changes and the verified O1 repair, then finish?
 
 If O1's check or re-review is incomplete or fails, retain its unresolved status and leave completion that would include the repair unavailable. Confirmation to include branch content does not replace this re-review.
 
-### Pending findings and optional improvements
+### Pending unreasonable findings and required elegance improvements
 
-⚠️ Two findings need attention. **4/9 files displayed**.
+⚠️ Two unreasonable findings and one required elegance improvement need attention. **4/9 files displayed**.
 
 **Pending findings**
 
 - **M2** (P1): Closing the resource can lose unsaved data.
 - **M5** (P2): The error path leaves the button disabled.
 
-**Optional improvements**
+**Required elegance improvement**
 
-- **M7**: Share the repeated state-reset logic to reduce maintenance omissions.
+- **M7**: Three branches repeat the same multi-step state reset. Use the established shared completion path so future changes have one owner.
 
-**Pass and continue** and **continue** are unavailable until M2 and M5 are repaired or explicitly ignored.
+**Pass and continue** and **continue** are unavailable until M2 and M5 are repaired or explicitly ignored, and M7 is optimized and re-reviewed or explicitly accepted for retention.
 
-How would you like to address M2 and M5? Include M IDs to select a subset.
+How would you like to handle these items? Include M IDs to select a subset.
 
 - **A**. **Fix** (recommended): Repair both pending findings, or the subset you select.
 - **B**. **Ignore**: Choose which findings to ignore; other findings remain pending.
-- **C**. **Optimize**: Implement the optional improvement; the pending findings still need attention.
+- **C**. **Optimize M7**: Consolidate the state reset, run checks, and show a dedicated re-review; M2 and M5 remain pending.
+- **D**. **Accept M7**: Retain its duplication and maintenance cost; M2 and M5 remain pending and no code changes are authorized.
 
-If the user replies “A, M2” or “a, M2,” repair only M2; M5 remains pending. If the user replies “B” or “b,” clarify which findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation letters choose actions; M IDs choose their items.
+If the user replies “A, M2” or “a, M2,” repair only M2; M5 and M7 remain pending. If the user replies “B” or “b,” clarify which unreasonable findings to ignore unless the context already identifies them or the user explicitly chooses all. Operation letters choose actions; M IDs choose their items. Ignoring M2 and M5 does not accept M7, and accepting M7 does not ignore either unreasonable finding.
 
-If the user replies “continue,” explain: “M2 and M5 are still pending, so I cannot show the next group yet.” Reissue the concrete question and available lettered actions above.
+If the user replies “continue,” explain: “M2, M5, and M7 are still pending, so I cannot show the next group yet.” Reissue the concrete question and available lettered actions above. An explicit “accept M7 and continue” records that acceptance but cannot advance while M2 or M5 remains unresolved.
 
 ### Local partial staging with extra content
 
@@ -188,7 +209,7 @@ If the user declines the extra content, leave full-branch completion pending; do
 
 ### Clean branch without a PR
 
-✅ The review is complete, with **3/3 files displayed** and no pending unreasonable findings. All branch changes are already committed, and the branch and worktree state are verified. No PR publication was requested, and no further Git write is needed.
+✅ The review is complete, with **3/3 files displayed** and no pending unreasonable findings or required elegance improvements. All branch changes are already committed, and the branch and worktree state are verified. No PR publication was requested, and no further Git write is needed.
 
 ### PR with no repairs and an unrelated submodule difference
 
@@ -247,11 +268,11 @@ The selected **pass and continue** is unfinished. Ordinary **continue** is unava
 
 ### Final group of a PR review
 
-No pending findings, outstanding local changes, or unpublished branch commits remain; the full branch state and reviewed PR version are verified. **9/9 files displayed**. Four files from earlier groups are verified Viewed; five reviewed files across the report, including files from groups advanced using continue, still await Viewed.
+No pending unreasonable findings, required elegance improvements, outstanding local changes, or unpublished branch commits remain; the full branch state and reviewed PR version are verified. **9/9 files displayed**. Four files from earlier groups are verified Viewed; five reviewed files across the report, including files from groups advanced using continue, still await Viewed.
 
 **Optional improvements**
 
-- **M7**: Share the state-reset logic to reduce duplication and maintenance omissions.
+- **M7**: Rename the local elapsed-time value to `elapsedMs` where it sits beside `timeoutSeconds`. The short conversion is already understandable, but this one local rename would expose the unit while scanning the two values; its limited change cost makes that concrete readability gain worthwhile. No structural defect needs acceptance.
 
 Record the remaining five reviewed files Viewed and finish, or address M7 first?
 

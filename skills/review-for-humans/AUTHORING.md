@@ -6,7 +6,7 @@ Displayed review omits some branch content, publication can include it after the
 
 ## Keep reasonableness and elegance independent
 
-A correctness or scope defect can block advancement, while a supported simplification remains optional unless it exposes a separate defect. Merging the judgments would turn taste into a repair gate or let an elegant implementation disguise an unreasonable change.
+Reasonableness judges supported behavior, contracts, scope, and actual consequences. The main reviewing Agent invests more effort in elegance through relevant context and design comparison, because structural debt is costly to unwind; this effort does not require delegation or a longer report. Required elegance improvements need optimization or explicit acceptance before advancement, worthwhile limited refinements remain optional, and personal preferences or low-benefit polish are filtered out. Keeping these judgments independent gives evidenced structural burden real weight without treating missing extra defense or personal taste as a correctness defect.
 
 ## Preserve completion as a resumable operation
 
