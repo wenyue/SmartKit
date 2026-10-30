@@ -1,24 +1,22 @@
 # Completion Helper
 
-Use this helper after the Skill's preparation has established a ready, reviewable completion. It supports a verified github.com PR in its selected local branch: Viewed recording alone, or a new commit and normal push followed by Viewed. It can reuse already committed outgoing content. Amendment, force/lease publication, mirrored push remotes, detached workspaces, unresolved Git operations, special index flags, and changed submodule/directory entries use the Skill's existing manual workflow.
+This guide owns CLI capabilities, inputs, evidence binding, and recovery mechanics. [Completion](completion.md) owns readiness, authorization, coverage, and conditional completion choices. The [Skill entry](../SKILL.md) owns ordinary conversation and review. Read the relevant owner before using the tool.
 
-## Keep judgment and permission with the Agent
+## Capabilities and prerequisites
 
-The helper checks frozen identities, content, ancestry, and readbacks. Before execution, the Agent must establish successful required checks for the whole commit/publication, resolve findings and re-reviews, verify whole-file coverage for every selected Viewed path, disclose all outstanding paths and outgoing commits, and obtain the selected action's authorization. Account for mixed provenance and partially staged content under the Skill. A `plan_id` identifies prepared effects; passing it to a command does not grant permission.
+The helper supports a verified github.com PR on its selected local branch: Viewed-only, or a new commit and normal push followed by Viewed. It can reuse committed outgoing content. Amendment/lease or force publication, mirrored push remotes, detached workspaces, unresolved Git operations, special index flags, and changed submodule/directory entries use Completion's manual workflow.
 
-Retain evidence of those decisions in stable readable files outside the worktree. The helper hashes their bytes and stops if they change or disappear. These references are evidence bindings, not a substitute for assessing their meaning or rerunning invalidated checks. For Viewed-only completion, establish that preserved local differences do not invalidate the fixed review or its dependencies.
+It requires Python 3.8+, Git, authenticated GitHub CLI (`gh`), PR/source access, prepared source objects, and readbacks. Viewer must match reviewed identity. It uses `gh api` against github.com, and does not install tools, fetch, synchronize, or select workspaces.
 
-## Prepare a frozen plan
-
-Requirements are Python 3.8+, Git, authenticated GitHub CLI (`gh`), access to the PR and source branch, and the existing prepared worktree. The current GitHub viewer must match the reviewed viewer. The helper uses `gh api` against github.com; unavailable authentication, tools, permissions, source objects, or readbacks leave completion incomplete. It does not install tools, fetch, synchronize, or choose another workspace.
-
-Resolve `<skill-root>` to this actual loaded Skill directory, independently of the target working directory. Read its interface first:
+Resolve `<skill-root>` from the actual loaded Skill, independently of target working directory. Read the interface:
 
 ```text
 python "<skill-root>/scripts/complete_review.py" --help
 ```
 
-Write a JSON request using full commit IDs and the exact selected local branch. `pull_request` names the PR-owning repository; the helper obtains the source repository and ref from GitHub, including forks. `viewed_paths` contains the complete selected eligible set, including earlier displayed groups when finishing. `evidence` names the stable files supporting readiness, full-file coverage, disclosed scope, and authorization.
+## Freeze the prepared action
+
+Supply full commit IDs, exact local branch, complete eligible `viewed_paths`, and stable absolute evidence files outside the worktree supporting readiness, coverage, disclosed scope, and authorization. The helper hashes evidence bytes, not their meaning. A `plan_id` identifies effects; it grants no permission.
 
 ```json
 {
@@ -38,30 +36,28 @@ Write a JSON request using full commit IDs and the exact selected local branch. 
 }
 ```
 
-Use `mode` `viewed-only` and omit `remote` and `message` when publication is unnecessary. That mode requires local HEAD at the pinned PR head and preserves the frozen index and worktree differences. Set `requires_amend` when recorded review actions require amendment; preparation refuses it so the existing amendment/lease workflow remains in control. A false or omitted value must reflect the actual recorded actions.
+`pull_request` names the PR owner; source repository/ref come from GitHub, including forks. For `viewed-only` omit `remote`/`message`; local HEAD must match reviewed PR head and differences are frozen/preserved. Set `requires_amend` truthfully from recorded actions; preparation refuses it so manual amendment/lease stays in control.
 
-Choose a new private state directory outside the worktree, using the owning artifact lifecycle. The directory holds the sole recovery evidence until completion and must remain available; keep it private and do not publish it. The helper creates it with owner-only POSIX permissions; on Windows retain it under an account-private directory with appropriate inherited access controls.
+Choose a new private state directory outside the worktree through the owning artifact lifecycle. Keep this sole recovery evidence available and unpublished. Creation uses owner-only POSIX permissions; on Windows use an account-private directory with suitable inherited access.
 
 ```text
 python "<skill-root>/scripts/complete_review.py" prepare --input "/private/request.json" --state "/private/completion-state"
 ```
 
-Preparation saves `plan.json`, original index bytes, tracked binary diffs, changed working-file bytes or symlink targets, the intended complete tree, outgoing ancestry and delta, full GitHub file pagination, and evidence digests. For publication it stages into an isolated index, runs native Git clean filters, and may add Git objects; it preserves the real index, branch, HEAD, and working contents, then verifies they stayed unchanged. Inspect the saved inventory and logs when disclosing scope; the compact stdout counts do not replace that disclosure.
+Preparation retains plan, original index bytes, tracked binary diffs, changed file bytes/symlink targets, intended complete tree, outgoing ancestry/delta, full PR pagination, and evidence digests. Publication preparation uses an isolated index/native clean filters and may add Git objects; it verifies real index/branch/HEAD/contents stayed unchanged. Inspect inventory/logs for scope disclosure; compact counts are insufficient.
 
-Review the plan's exact paths, full outgoing commit list and delta, final content, PR source/viewer/version, and selected Viewed set against the prepared action. Obtain or reuse authorization only for those same effects. Preparation cannot establish review quality, provenance consent, dependency validity, or authorization by itself.
+## Execute or resume
 
-## Execute and resume the selected action
-
-Once the action is authorized, pass the returned `plan_id` unchanged:
+After authorization for exact effects, reuse the returned `plan_id`:
 
 ```text
 python "<skill-root>/scripts/complete_review.py" run --state "/private/completion-state" --confirm "<plan_id>"
 ```
 
-The command locks this operation, revalidates the prepared state, stages the full disclosed final content when needed, and runs normal commit hooks. It verifies the intended tree and parent, outgoing ancestry and source ref at the verified push destination, performs only a normal scoped push when needed without automatic tag or submodule publication, and reads back the source ref, PR version and published commit/tree. It then marks only selected paths still awaiting Viewed and reads back every selected path and the unchanged PR version. Existing commits, published heads, and Viewed results are verified before reuse. No empty commit is created.
+The command locks/revalidates state, stages intended content when needed, runs normal hooks, and verifies tree/parent, outgoing ancestry, and source destination. It performs only normal scoped push when needed without automatic tag/submodule publication, verifies source-ref/PR version/published commit/tree, then marks remaining paths and reads back the full selected set and unchanged PR version. Existing effects are verified before reuse; no empty commit is created.
 
-Stdout is one compact JSON summary with status, version/counts, plan/progress locations, and the full log directory. Every Git/gh command retains stdout, stderr, arguments, process identity, exit status and duration in private logs; failures are not hidden by the summary. The helper preserves partial effects, does not roll back, and does not advance review progress. Exit `0` means the requested readbacks completed; `1` means incomplete, `2` is CLI usage error, and `130` is interrupted. Inspect the result and account for residual effects before reporting completion.
+Stdout is compact JSON with status, version/counts, plan/progress paths, and private logs. Every Git/gh subprocess retains arguments, identity, stdout/stderr, exit status, and duration. Exit `0` means required readbacks completed; `1` incomplete, `2` usage error, `130` interrupted. Inspect failures/residue; the helper neither rolls back nor advances review progress.
 
-After interruption or a lost response, rerun the same `run` command with the same state and plan ID. It first inspects actual local and remote state: an expected commit needs its checked tree and parent, a push needs source-ref and PR readbacks, and Viewed needs current per-path state. It resumes only missing effects, including after partial Viewed recording. Its native lock releases when the process exits; after any failure occurring once a subprocess starts, it waits for the owned Git/gh child to stop before releasing that lock.
+After interruption/lost response run the same command with the same state/plan ID. It inspects effects and resumes missing work, including partial Viewed. Native locks release on process exit; after post-spawn failure the parent waits for its owned Git/gh child to stop before releasing the lock.
 
-Changed content, branch, evidence, viewer, source, base/head, or publication scope—including detected hook-caused changes—stops the dependent action. Preserve the operation and its evidence, refresh the affected inventory/checks/re-review and any necessary consent, then use a newly prepared plan only when those changed effects are settled. A preparation that created private state retains that diagnostic directory after failure; inspect it before choosing a new state directory. Missing readbacks or uncertain live subprocess state remain incomplete; do not delete locks, reset the worktree, repeat writes speculatively, or substitute ordinary continue.
+Changed content, branch, evidence, viewer, source, base/head, publication scope, or detected hook changes stop dependent effects. Preserve state, settle inventory/checks/re-review/consent through Completion and the Skill entry, then prepare a new plan only for settled changed effects. Failed preparation retains private diagnostics. Missing readbacks or uncertain subprocess state remain incomplete: do not delete locks, reset, repeat speculative writes, or substitute Continue.

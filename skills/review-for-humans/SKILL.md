@@ -6,261 +6,142 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Help the human understand each change and form two judgments: whether it is reasonable and whether its implementation is elegant. Review the selected comparison read-only, then carry out the user's selected actions. Evidence capture and diff-link preparation belong to review; changing reviewed files or Git state needs the applicable action's authorization.
+Help the human understand selected changes and judge both their reasonableness and elegance. Establish fixed evidence, inspect connected implementation, and explain complete file groups before carrying out selected actions. Review authorizes evidence capture and link preparation, not changes to reviewed files, the real index, branches, publication, or Viewed state.
 
-For every question, offer concrete choices and explain their effects in the conversation's language, including scope questions, workspace creation or synchronization, remedies, and closing menus. Consecutive labels **A**, **B**, **C**, and so on are recommended for easy selection. When using letters, interpret them case-insensitively against the latest menu; accept unambiguous natural-language selections, including agreement to a clearly specified action. M and O IDs select items, not actions. Clarify ambiguous replies; questions and disagreements do not authorize actions.
+Keep ordinary review and conversation here. Read [Workspace](references/workspace.md) before PR or remote-aligned branch workspace preparation or links. Read [Completion](references/completion.md) before preparing/offering completion effects, executing them, or recovering unfinished completion. These guides own their conditional decisions and verification. Missing required guidance leaves dependent work incomplete.
 
-The formatting below is recommended presentation: emoji, labels, emphasis, separators, and layouts may be adapted to the reader. Required evidence, both judgments, stable M/O IDs, grouping and progress accounting, action meanings, authorization, and verification remain binding.
+## Choose the useful response
 
-## Establish the comparison
+Do authorized, derivable work before asking: inspect accessible facts, prepare links, run checks, and re-review affected content. With clear scope, state it briefly and start; do not ask whether to obtain evidence you can obtain yourself.
 
-| Requested scope | Review evidence |
+When only the user knows a needed fact, ask that fact directly: “Which branch should I compare against?” If a selection lacks IDs, ask “M2, M5, or all?” rather than presenting an information/Cancel/Stop menu. Apply documented defaults before asking; IDs can complete an already clear pending action but do not choose an action by themselves. Clarify only the unresolved part and preserve the group, earlier authorization, and any unfinished completion. Withdrawing that request does not cancel earlier selected work.
+
+Offer a menu only for a real choice about effects or a trade-off. State the concrete situation first. Put the recommended choice at A; each option starts with a short bold action word, then this occasion's effects.
+
+- A. **Pass** (recommended): Mark these four files Viewed, verify them and the PR version, then show the next group.
+
+Put commit/push/Viewed effects in the description, never behind a bare “Pass” or inside an entire bold operation sentence.
+
+Interpret letters case-insensitively against the latest applicable menu. Accept clear natural language and compound requests for disclosed effects. M/O IDs select items, not actions. Questions and disagreements grant no write authority. A ready selected action proceeds without routine reconfirmation. An explicit stop/pause is always allowed and reports residual work honestly.
+
+Report results or a concrete blocker when no actionable choice remains. Say what succeeded, what failed or is unknown, and what remains. Do not invent a waiting/permission menu or imply monitoring. For unfinished completion follow Completion before any further action.
+
+## Fix the comparison and evidence
+
+| Request | Comparison |
 | --- | --- |
-| PR | Identify the PR and its source repository and branch. Complete the workspace check, then pin the PR base and head and apply the Viewed filter below. |
-| Branch | Pin its tip and its merge-base with a reliably established comparison base. Ask when the base is uncertain; do not assume `main`. |
-| Local changes, or no explicit scope | Compare the index with the worktree: unstaged changes only. |
-| Selected files | Filter the applicable comparison to those files. |
+| PR | Verify owning/source repositories and source branch, prepare the workspace, pin base/head, then apply the authenticated viewer's file-level Viewed filter. |
+| Branch | Pin its tip and merge-base with a reliably established comparison base. Resolve an unknown base; do not assume `main`. |
+| Local changes or no explicit scope | Compare index to worktree: unstaged changes only. |
+| Selected files | Filter the applicable comparison to those paths. |
 
-An explicit PR or branch comparison excludes local uncommitted changes unless requested. Honor an explicitly selected historical version. Preserve the selected scope when applying other review guidance with different defaults.
+Explicit PR/branch comparisons exclude local uncommitted changes unless requested. Honor a selected historical version and preserve this scope when other review guidance has different defaults.
 
-### Local comparison defaults
+For local review, skip staged-only changes and assess only the unstaged part of partially staged files. A worktree reversal of staged content is still an unstaged change. Include untracked files as additions only when explicitly requested. An explicit alternative comparison overrides these defaults.
 
-Skip staged-only edits and review only the unstaged portion of a partially staged file. A worktree edit that reverts staged content is still an unstaged change relative to the index. Include untracked files as additions only when explicitly requested. An explicitly selected alternative local comparison overrides these defaults; an empty comparison stays empty.
+For a PR, acquire complete file states for the current authenticated viewer, including all pages, while verifying unchanged base/head. Exclude `VIEWED`; include `UNVIEWED` and `DISMISSED`. Approval, comments, earlier chat display, and current states for a historical snapshot do not establish the required filter. A request to include viewed files overrides it.
 
-### Check the review workspace
+If complete Viewed filtering remains unavailable after authorized acquisition, first ask directly for any genuinely needed user fact. Otherwise, when fixed comparison evidence is ready, the real choice is A **All** (recommended): review all otherwise eligible files without filtering, or B **Stop**. Never fabricate historical or current Viewed states.
 
-Before every PR review, establish the current workspace's repository, checked-out branch, and commit in that order. Resolve the branch and version decisions before filtering or displaying files, so local review links open the workspace the user expects to edit.
+Exclude tests from file reports, modification counts, and progress; use relevant tests as evidence. Apply selected-file, Viewed, and local filters before counting. These filters do not narrow a later full-branch commit or its checks. Order files as GitHub's directory tree: recursively list changed files in subdirectories before direct files, using observed sibling order or otherwise sorting sibling directories and direct files by name. Thus `src/z/api.dart` precedes `src/a.dart`.
 
-Use current authoritative PR metadata to identify the PR-owning repository, source repository or fork, source branch, and target commit. Keep an explicitly selected historical version as the target; local tracking data cannot establish the PR's current head.
+Retain pinned commits, fixed before/after content, the ordered file list, and PR viewer/filter evidence. For local review also retain the original index baseline, even if another before version was selected. State scope and exclusions before the first group. An empty comparison ends without a progress fraction or invented files.
 
-For an available Git workspace, run the shared read-only inspection, including when the current checkout already uses the PR branch. Resolve `local_web` from the loaded SmartKit resources and follow its help for inputs and results:
+Known files with incomplete evidence stay in the total. Name missing evidence for each affected judgment; pause dependent review rather than treating unknown content as clean. Assess defects introduced, triggered, or aggravated by the selected change, including evidence in unchanged code. Keep unrelated pre-existing issues separate as O observations.
+
+### Bind filename links to that evidence
+
+Resolve `local_web` from loaded SmartKit resources and follow its supported interface:
 
 ```text
 python "<local_web>" --help
-python "<local_web>" diff --inspect --input "<context.json>"
-```
-
-Supply the verified PR context. Read `current` for the supplied checkout and `worktrees` for matching alternatives; an empty alternatives list says nothing about the current repository's identity. Use each observation's `repository_status`, `branch_status`, and version `status` independently for the decisions below. Equal commits do not establish a matching branch, and a related repository does not establish the source branch's identity. The command observes the supplied target without establishing remote freshness or performing checkout or synchronization.
-
-Report the current workspace's path, repository relationship, branch, commit, and the staged, unstaged, untracked, and conflicted paths from `changes`. Use the same inspection for any alternative workspace before selecting or changing it. Preserve the distinction between partial staging, rename sources, and conflicts; this inventory is an observation, not a recovery snapshot or proof that checkout is safe. Unknown or unavailable evidence is not clean or current. Report diagnostics, use independently available evidence only for the decisions it supports, and leave dependent review pending or offer an independently verified fixed comparison. Fixed-snapshot alternatives below are PR-only and require the fixed comparison's evidence.
-
-1. **Repository.** Establish whether the current checkout belongs to the PR-owning repository or its verified source repository. If neither matches, offer an available verified workspace, authorized creation from a verified repository and target, fixed PR snapshot review, or cancellation. Keep an unrelated checkout unchanged. If identity is unknown, resolve the missing evidence or choose an independently verified fixed comparison before proceeding.
-2. **Branch.** In a related repository, verify that the checked-out branch corresponds to the PR's source branch and repository. A local alias may qualify through verified tracking; disclose that mapping. A different branch or detached HEAD still needs a choice even at the target commit. Ask whether to check out the PR branch in the current workspace, presenting its safe plan and applicable alternatives: select an existing verified worktree, create an isolated one, review the fixed snapshot, or cancel. Finding another matching worktree does not silently settle this choice. If the branch is already checked out elsewhere, offer that worktree or another safe plan rather than forcing a second checkout.
-3. **Version.** After selecting or preparing the corresponding branch and workspace, compare its `HEAD` with the verified review target. When they differ, ask whether to synchronize that workspace to the exact target commit, with the choices below. Checkout approval alone does not authorize synchronization; reuse authorization only when it explicitly covered the same concrete effects.
-
-| Selected workspace version | Choices |
-| --- | --- |
-| Same commit | Continue without a sync question. Disclose local changes when live links will show them. |
-| Behind | Offer synchronization to the exact target through a concrete safe plan, fixed PR snapshot review without syncing, or cancellation. |
-| Ahead or diverged | Explain the local commits and, for divergence, the distinct target commits. Ask whether to synchronize to the exact target, disclosing a plan that preserves local work and commits; unresolved plan choices need a separate decision. Also offer to retain the local version with live links for the fixed review, use fixed PR snapshot links, or cancel. Retained live links show the differing local version, not the fixed reviewed contents; disclose that difference. |
-| Unknown | Explain the missing evidence. Offer an available way to obtain it, an already verified fixed PR comparison, or cancellation. |
-
-Before checkout or synchronization, disclose the workspace, target branch and commit, method, affected commits, and preservation of staged, unstaged, and untracked work. Obtain authorization for those concrete effects; neither action authorizes an unspecified history change or publication. Use [create-worktree](../create-worktree/SKILL.md) for authorized creation, with the user's clean choice and verified immutable base.
-
-After authorized checkout, creation, or synchronization, rerun the inspection with the selected workspace path and verify the result and preservation of local work before reviewing or preparing live links. Refresh PR base/head and Viewed evidence and reassess changed targets. After interruption, inspect the actual result before retrying; keep review pending until verification or an explicit change to supported fixed review or cancellation. Retain the verified workspace, branch mapping, target commit, and selected link mode. [Workspace examples](references/report-examples.md#pr-workspace-decisions) illustrate separate checkout and synchronization choices.
-
-The inspection command requires PR context. For a branch-only review, inspect the current checkout and registered linked worktrees through read-only Git. Check against its authoritative remote when specified or reliably established; ask for a missing target rather than inventing an upstream. Apply the relevant version, preservation, authorization, and verification requirements above. Without a usable display workspace, offer authorized creation, another scope, or cancellation. A deliberately local branch or local unstaged review needs no remote synchronization.
-
-### Filter files and retain the snapshot
-
-For PRs, obtain complete file-level Viewed states for the current authenticated GitHub viewer. Exclude `VIEWED`; include `UNVIEWED` and `DISMISSED`. Complete pagination and verify that base and head remain unchanged during acquisition. Approval, comments, and prior chat display do not establish Viewed state, and current states do not establish the filter for a historical snapshot. An explicit request to include viewed files overrides the filter. If required states are unavailable, pause and offer to obtain them or review all otherwise eligible files without filtering.
-
-Exclude test files from file reports, modification counts, and progress. Apply selected-file, Viewed, and local-scope filters before counting. These filters affect the report, not the scope of a later full-branch commit or its checks.
-
-Order files like GitHub's Files changed directory tree: recursively list changed files in subdirectories before direct files. Use observed sibling order when available; otherwise sort sibling directories and direct files by name. Thus `src/z/api.dart` precedes `src/a.dart`.
-
-Retain fixed before-and-after evidence, pinned comparison commits, the ordered file list, and PR viewer/filter evidence. For local comparisons, also retain the original index baseline, even when the user chose another before version, so completion can account for existing staged work. State the scope and exclusions before the first group. If no files remain, report that and finish without a fabricated report or progress fraction.
-
-When required scope or source evidence is unavailable, identify the gap and pause dependent review. Keep a known file with incomplete evidence in the total and report insufficient evidence for the affected judgment. Assess defects introduced, triggered, or aggravated by the selected change within its modifications, including when the evidence is in unchanged code. Unrelated pre-existing issues use O observations below.
-
-## Prepare filename links
-
-Use the shared tool for every reviewed filename link, following its help for inputs:
-
-```text
 python "<local_web>" diff --input "<batch.json>"
 ```
 
-Prepare links from the retained comparison: capture local index-based links alongside the review snapshot; use the fixed before commit, existing blob, or genuine absence for branch and PR comparisons. Supply the pinned reviewed PR head and other PR metadata, and rename paths, as the help requires.
+Use returned Markdown for every reviewed filename link, associated through returned IDs. Capture index-based local links with the snapshot; for PR/branch links supply the fixed before commit, existing blob, or genuine absence, plus rename paths and pinned PR context as required.
 
-For PRs, set `view="snapshot"` for an explicitly historical target, a selected fixed comparison, or unavailable source identity, with the required fixed evidence. For PR links to local files, set `view="worktree"` and `repo` to the workspace verified through preflight, including the current checkout or a selected local alias. Bind that exact path rather than leaving workspace selection to automatic discovery. A branch-only review supplies its verified display workspace without PR context.
+For historical PRs, selected fixed comparisons, or unavailable source identity, use `view="snapshot"` with verified fixed evidence. For PR live links use `view="worktree"` and bind `repo` to the exact workspace verified by Workspace, including a verified local alias. Branch-only links use their verified display workspace without PR context. Disclose differing or dirty live contents; they change neither the reviewed version nor Viewed eligibility.
 
-Use returned IDs to associate the returned Markdown with files. Keep review evidence and Viewed eligibility tied to the fixed assessed version, even if live links or GitHub show newer contents.
+A link failure pauses the dependent report. Preserve comparison and selected mode while resolving it. A generated link does not prove editor display.
 
-If link preparation fails, report the diagnostic and pause the dependent report; preserve the selected comparison and mode when resolving it. Link generation alone does not prove editor display.
+## Inspect outcomes and the structure that serves them
 
-## Explain each file
+Give elegance more review effort than reasonableness. Inspect relevant surrounding implementation, affected callers, and nearby or comparable patterns, rather than only the diff. Use unit/integration evidence to focus behavioral checks while still assessing task outcomes, accepted scope, contracts, and operating costs/risks. Distinguish actual checks from author-reported results and retain material task/standards findings.
 
-Use [report examples](references/report-examples.md) to calibrate explanations, observations, and menus. Give each complete file block a linked filename and a short overview of its responsibility and overall change. A recommended opening is `📄 **[path](diff-destination)**`. Explain user or caller effects in ordinary language, retaining technical details that affect the judgment.
+For a meaningful design choice, establish required user/caller outcomes from task, contracts, actual use, and lifetime before choosing a structure. An implemented capability is not automatically needed. Compare with a smaller sufficient design: remove an unnecessary capability/layer, call directly, or use an existing owner instead of only rearranging the same functionality. Trace what each layer uniquely owns. Simpler designs still need owners for required feedback, logging, recovery, and lifecycle safeguards; a supported behavior/contract change is a scope decision, not behavior-preserving optimization.
 
-Group modifications by the problem or scenario they address. Keep related implementation steps together; split when changes are independent or cannot share one simple explanation. A localization file is one modification. Minor accompanying edits can appear in the overview or be omitted.
+Inspect every scoped added file and declaration, including functions, types, members, and state added to existing files. Tiny files and trivial forwarders add boundaries and cannot use the straightforward-edit exemption. New files require especially strong evidence for an independent responsibility/boundary and why an existing accurate owner or local placement would not serve. Increase scrutiny with actual reach and lifetime: public types/functions/members and top-level state need strong caller/contract justification; private helpers/members get proportionate scrutiny; ordinary local variables need no extra necessity rationale. Visibility keywords alone do not establish exposure.
 
-Assign modifications continuous M IDs across files and groups, retaining them for findings, suggestions, selections, and re-reviews. The recommended label is `🔧 **M1** - **<title>**`; emoji and surrounding punctuation usually read well outside bold. Preserve punctuation intrinsic to code and paths.
+Caller count, short bodies, uniform presentation, prospective reuse, and testing convenience alone do not justify a boundary. A real responsibility can justify one with one caller. Reasons can be evident in source, tasks, or contracts; require neither rationale comments nor a report item per addition.
 
-### Put review effort into elegance
+### Make two independent judgments
 
-The main reviewing Agent gives elegance more review effort than reasonableness. Perform a dedicated elegance pass through the relevant surrounding implementation, affected callers, and nearby or comparable patterns, so the judgment covers how the change fits its context rather than only its diff. Use unit and integration test evidence to focus reasonableness checks while still checking task fulfillment, supported behavior, established contracts, and serious consequences.
+Every modification receives both an explicit conclusion and its reason, including prose and translations.
 
-For a meaningful design choice, compare the chosen structure with a plausible simpler or more direct alternative when one exists, and judge whether its benefits justify its complexity. An **Elegant** conclusion rests on inspected context and any applicable comparison; when no plausible alternative exists, the context can justify the current structure. Scale the work to the change: a straightforward edit needs no manufactured alternative, and deeper scrutiny need not produce a longer explanation.
-
-### Give two independent judgments
-
-Every modification gets both judgments, each with an explicit conclusion and reason. Apply them to code, prose, and translations alike. Separate paragraphs, with ⚖️ for reasonableness and 🎨 for elegance, are recommended; repeating the dimension's name after its emoji is usually unnecessary.
-
-| Judgment | Basis |
+| Judgment | Evidence and consequence |
 | --- | --- |
-| ⚖️ **Reasonable**. | The change serves the task, is correct within supported behavior and established contracts, fits its scope, and has costs and risks justified by the task and evidence. |
-| ⚖️ **Unreasonable** (P1): | Evidence establishes a material defect, unnecessary scope, or unjustified cost. Explain its impact and recommend a concrete correction with its benefit. Use the actual P0–P3 severity. |
-| 🎨 **Elegant**. | Responsibilities and structure are clear, expression is readable, interfaces express their use naturally and consistently, and abstraction, state, branching, repetition, and defensive measures earn their cost. New code aligns with nearby or comparable implementations, with justified departures. |
-| 🎨 **Needs improvement**. | Evidence establishes material, avoidable understanding or maintenance burden, with a supported simpler or more consistent approach whose benefit justifies the change cost. Explain the concrete burden, proposed change, and benefit. Optimization or explicit acceptance of retention is required before advancement. |
-| 🎨 **Optional improvement**. | The current implementation meets the structural bar, but a supported refinement offers a concrete benefit worth its change cost. Explain the limited benefit and keep it optional. |
-| ⚖️ **Insufficient evidence**. or 🎨 **Insufficient evidence**. | Name the missing evidence for that dimension and how to resolve it. The other dimension may still have a supported judgment. |
+| ⚖️ **Reasonable** | Required task outcomes, accepted scope, supported behavior/contracts, and justified operating costs/risks. |
+| ⚖️ **Unreasonable** (P0–P3) | A material task, behavior, or contract defect, unnecessary scope, or unjustified operating cost/risk. Explain impact and a concrete correction. |
+| 🎨 **Elegant** | Responsibilities, boundaries, and exposed interfaces earn their understanding/maintenance cost; expression is readable; abstraction, state, branching, repetition, and defense have concrete benefits. Interfaces and observed comparable patterns are consistent, with justified departures. |
+| 🎨 **Needs improvement** | Material avoidable understanding/maintenance burden and a supported simpler or more consistent alternative worth its change cost. Disclose burden, remedy, and benefit; optimization plus re-review or explicit retention acceptance is required. |
+| 🎨 **Optional improvement** | Structure already meets the bar, but a supported refinement offers a concrete benefit worth its limited cost. Keep it optional. |
+| **Insufficient evidence**, for either dimension | State missing material evidence and how to resolve it. The other judgment can remain supported. |
 
-Filter reported improvements more strictly than the internal examination: omit personal preferences and trivial or low-benefit polish. Group evidence and remedies for one underlying burden rather than generating many tiny suggestions. Report only worthwhile changes; finding no such change is a valid result and does not weaken the required per-modification judgments.
+Structural burden alone is an elegance issue, not a reasonableness defect. Incorrect behavior can have clear, economical structure; a behavioral defect alone does not prove poor structure. Both may fail with corresponding evidence. Missing need/ownership evidence proves neither elegance nor a structural defect. Omit personal preference and low-benefit polish; group remedies for one underlying burden.
 
-Assess additions and removals of defensive measures under elegance. Prefer relying on established invariants and boundary guarantees over repeated checks or speculative fallbacks; adding defense needs a concrete purpose that justifies its complexity. Missing extra protection alone is not unreasonable unless evidence identifies a credible triggering condition and potentially serious consequences. Ordinary supported behavior and promised failure handling remain correctness obligations.
+Assess extra defensive checks/fallbacks by their structural benefit. Prefer established invariants and boundary guarantees over repeated validation or speculative recovery. Missing extra protection alone is not unreasonable without a credible trigger and potentially serious consequences; ordinary supported behavior and promised failure handling remain correctness obligations.
 
-A reasonable change can need a required elegance improvement. Keep the judgments independent: a supported structural problem requires optimization or explicit acceptance, while a worthwhile refinement below that bar remains optional. Style alignment uses observed nearby or comparable implementations, not the reviewer's preferred convention. A separately evidenced reasonableness defect still needs repair or explicit ignoring. Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Base it on consequences and affected conditions.
+Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Use consequences and affected conditions. Required elegance is a substantive gate, not optional styling.
 
-Retain material findings and qualifications from the underlying review, including task and standards concerns. Distinguish checks actually performed from author-reported results.
+## Explain complete file groups
 
-### Choose the explanation's depth
+Give each file a linked filename and brief responsibility/change overview. Group implementation steps by the problem they solve; split independent changes that cannot share one simple explanation. A localization file is one modification. Minor accompanying edits can stay in the overview or be omitted.
 
-For straightforward behavior with clear scope and no material risk or trade-off, a **compact** explanation usually works well: one short before-and-after paragraph, then the two judgments. Examples, snippets, an emoji prefix, or Before/After labels are usually unnecessary.
+Use continuous M IDs across files/groups and retain them for findings, selections, and re-review. A useful label is `🔧 **M1** - **<title>**`. Keep intrinsic path/code punctuation. Separate reasoned paragraphs, commonly ⚖️ and 🎨, distinguish the judgments.
 
-Complex mechanisms, important contracts, material findings or trade-offs, or key evidence gaps benefit from an **expanded** explanation. A useful layout is ⏪ **Before**, ⏩ **After**, then the two judgments. For code, show the smallest useful before-and-after snippets from the retained evidence and explain how they cause the compared behavior. Keep relevant error, state, or lifecycle conditions. Clearly label illustrative simplifications and preserve their behavior; omit code when it adds no understanding. A one-line diff can still need expansion.
+Straightforward behavior with clear scope and no material trade-off usually needs one short before/after paragraph and both judgments. Mechanisms, contracts, findings, or gaps benefit from expanded explanation and the smallest useful actual before/after snippets. Preserve error/state/lifecycle conditions; label illustrative simplifications and keep their behavior faithful. A one-line diff can need deep scrutiny; deeper scrutiny need not produce a longer report.
 
-## Display groups and maintain progress
+End a group after the complete file that brings it to at least 10 modifications; never split a file. Show the final shorter group at scope end. Report cumulative displayed files out of eligible files, not implied completion or Viewed. Count each main-review file once.
 
-End a group after the file that brings it to at least 10 modifications; never split a file. Display the final shorter group when the scope ends. Give the group conclusion and cumulative progress in the closing, explicitly identifying displayed files out of files requiring review; progress does not imply completion or Viewed recording. Separating complete file blocks and the closing with `---`, and bolding the count and total, are recommended for scanning.
-
-Across replies, retain group membership, reviewed changes, next position and M ID, judgments, finding decisions, required elegance improvements and their optimization or retention decisions, optional suggestions, and each group's verified completion results. Count each main-review file once. A full-branch commit can clean the worktree before all files are displayed; continue unseen groups from retained evidence rather than rebuilding the scope from the new index. Update totals only for actual scope changes.
+Retain group membership, next position/M ID, evidence, judgments, findings/decisions, accepted trade-offs, suggestions, and verified effects across replies. Continue unseen files from retained evidence if a full-branch commit cleans the worktree. Change totals only for actual scope changes.
 
 ### Keep incidental observations separate
 
-During necessary reading, report an unrelated pre-existing issue only when evidence establishes both the issue and that the selected change neither introduced, triggered, nor aggravated it. This does not authorize a broader audit.
+Report an unrelated pre-existing issue only when necessary reading establishes the issue and that this change neither introduced, triggered, nor aggravated it. This is not a broader audit.
 
-Give observations continuous **O1**, **O2**, and subsequent IDs. Initially show them only in a clearly separate, out-of-scope part of the group closing, with a title, source location/link, evidence and impact, independence from the selected change, and a recommendation with its benefit. The recommended label is `📌 **Incidental observations (outside this review's scope)**`.
+Use continuous O IDs. Initially place observations in a separate out-of-scope closing section, with title, source location/link, evidence/impact, independence, and recommendation/benefit. O items add no main files, modifications, progress, or Viewed eligibility. Advice alone does not block progress. Bulk fix/optimize/ignore/accept excludes O items; an O repair needs separate selection, checks, and re-review unless the user explicitly expands main scope.
 
-O items add no main-review files, modifications, progress, or Viewed eligibility. Advice alone does not block advancement or authorize repair. Unqualified fix, optimize, ignore-all, and accept-all actions exclude them. A selected O repair needs its own outcome, authorization, checks, and dedicated re-review; it remains separate unless the user explicitly expands the main scope.
+Close each group with conclusion/progress, actual checks/limits, pending unreasonable IDs/severity/impact, required elegance burdens/remedies/benefits, accepted trade-offs and optional suggestions, plus separate O advice. Explain concrete before/after causes and user/caller consequences: say what operation is skipped, what state is duplicated, or what boundary has no responsibility. A label such as “meets contracts” or “clear structure” is not its own reason. Keep rare machinery in the internal analysis unless it changes the user's choice. Consult [Report Examples](references/report-examples.md) for complete dialogue illustrations, not policy.
 
-## Offer actions
+## Offer the next real choice
 
-| Action | Effect |
+First complete derivable preparation and distinguish what blocks review from what blocks only a proposed write. Missing/stale correctness or version evidence, failed/incomplete required review checks, and unfinished affected re-review block advancement. Missing elegance evidence alone does not. Pending unreasonable findings need repair or explicit ignoring; required elegance needs optimization/re-review or explicit retention acceptance, including earlier groups. O advice alone never blocks.
+
+If a missing user fact blocks progress, ask it directly. If an external condition has no actionable remedy, report the blocker rather than offering an action you cannot perform. Independent supported repairs can still be selected; their explanation must say what will remain blocked.
+
+Use these fixed group choices, with IDs and actual effects filled in:
+
+| Situation | Ordered choices |
 | --- | --- |
-| **fix** | Repair selected pending unreasonable findings; unqualified fix selects all displayed outstanding unreasonable findings, including earlier groups. |
-| **ignore** | Mark only selected unreasonable findings ignored, retaining severity and impact. If several are possible, clarify the selection unless the user explicitly chose all. |
-| **optimize** | Implement selected required or optional 🎨 improvements; unqualified optimize selects all displayed outstanding elegance improvements, including earlier groups. Pending unreasonable findings remain pending. |
-| **accept** | Explicitly retain selected required elegance improvements after their burden and proposed remedy are disclosed. Preserve the judgment and trade-off as accepted, not optimized. If several are possible, clarify the selection unless the user explicitly chose all. This does not ignore unreasonable findings or authorize edits. |
-| **pass and continue** | Complete any required full-branch commit and disclosed PR publication, record eligible PR files Viewed, verify completion, then advance. |
-| **continue** | Advance without staging, committing, pushing, or marking Viewed. Retain modifications, judgments, retention decisions, and optional suggestions. |
+| Pending unreasonable findings only | A **Fix** (recommended): repair the named findings, check and re-review; B **Keep**: explicitly ignore those findings with severity/impact retained; C **Stop**: end with them unresolved. |
+| Pending required elegance only | A **Optimize** (recommended): implement the named remedies, check and re-review; B **Keep**: explicitly accept their disclosed burdens; C **Stop**. |
+| Both kinds of necessary issue | A **Address** (recommended): explicitly propose repairing the named unreasonable findings **and** optimizing the named required elegance issues, then checks/re-review; B **Keep**: explicitly propose ignoring the named findings **and** accepting the named structural burdens; C **Stop**. |
+| Review and completion ready, with remaining disclosed effects and no separate inclusion decision | A **Pass** (recommended): execute the actual prepared commit/push/Viewed effects and then advance/end; B **Continue**: advance without those writes, or **Finish** at the final group; C **Optimize** only when optional suggestions remain. |
+| Review can advance but no completion effects are ready/needed | A **Continue** (recommended), or **Finish** at the final group; B **Optimize** only when optional suggestions remain; finally **Stop** for a non-final group. |
+| Final group, no gate, optional suggestion, effect, or decision remains | Report verified completion; no menu. |
 
-Localize action names and descriptions to the conversation's language. M IDs narrow an action to items; they do not select whole-group completion. Advance to the saved next group, or use **pass and finish** and **finish** when all files are displayed.
+Optional advice never displaces the main recommendation or adds options to necessary-issue menus. State that subsets and other valid actions can be requested by IDs in ordinary language; there is no need to print every internal operation. Address executes the mixed remedy explicitly described in the current proposal. It is not an alias that changes the bare Fix default.
 
-Keep three scopes distinct:
+Bare **Fix** selects all displayed pending unreasonable M findings; bare **Optimize** selects all displayed outstanding required/optional elegance M improvements, including earlier groups. Neither includes O advice. **Ignore** and **Accept** apply only to selected unreasonable findings or required elegance burdens; with several candidates ask directly which IDs unless all were explicitly chosen. Keep accepted judgments/trade-offs, not an “optimized” label. **Keep** must state which of these decisions it proposes; it edits nothing. Ignore does not accept elegance, and acceptance does not ignore unreasonable findings.
 
-| Scope | What it includes |
-| --- | --- |
-| **Review and progress** | Selected, eligible files and deltas actually displayed. |
-| **Commit and publication** | All outstanding branch changes and, for a push, the full outgoing ancestry, subject to the preparation and confirmation below. |
-| **Viewed** | Eligible reviewed files in the current group, plus earlier files explicitly included in an intermediate completion. Final **pass and finish** covers every displayed reviewed group, including those advanced with **continue**. |
+Continue/Finish never stages, commits, pushes, or records Viewed. Pass has only its disclosed effects and grants neither PR approval nor merge authority. A completion-only gap does not block Continue/Finish unless it invalidates review or a selected completion is unfinished. Before offering write effects or extra-content inclusion, use Completion; its conditional choices replace the ordinary ready menu for that decision.
 
-Inclusion in a commit or push is not review. A local or branch review needs no PR and grants no push authority. PR completion requires a verified PR; publication also requires explicit authorization for its disclosed delta. Neither action approves or merges the PR; ignored findings remain ignored.
+## Repair selected items and re-review
 
-### Decide which actions are ready
+Limit fixes/optimizations to selected items and necessary supporting changes. Optimization preserves supported behavior/contracts.
 
-Both advancing actions require all displayed unreasonable findings repaired or explicitly ignored, all displayed required elegance improvements optimized and re-reviewed or explicitly accepted for retention, available correctness/version evidence, successful required review checks, completed affected re-reviews, and any previously selected completion operation fully verified. These requirements include outstanding items from earlier groups. Optional improvements and missing elegance evidence alone do not block advancement; an unsupported elegance concern cannot become a required improvement.
+After any reviewed-content change or selected O repair, run required checks, refresh before/after evidence and links, then independently re-review changed/affected previously reviewed parts, including unexpected changes. Keep pinned remote PR evidence and checked unpublished local content separately. Show complete updated file blocks with both judgments in a dedicated reply apart from unseen files.
 
-Before offering completion, perform derivable read-only preparation for its actual effects. Use the following priorities:
+For O repair, retain separate evidence and give its own location, before/after explanation, and two judgments. It creates no M ID, main progress, or Viewed eligibility. Preserve original M/O IDs/groups; do not recount files. Mark repair/optimization complete only after checks/re-review confirm it. Retention acceptance remains valid only for the same assessed content/effects.
 
-| State | Menu |
-| --- | --- |
-| Pending unreasonable findings | Offer fix and ignore, plus supported optimize and accept for any pending required elegance improvements. Explain why both advancing actions are unavailable. |
-| Pending required elegance improvements | Offer optimize and accept for the identified items. If unreasonable findings are also pending, include their fix/ignore choices; accepting elegance does not resolve them. Explain why both advancing actions are unavailable. |
-| Missing correctness/version evidence, failed or incomplete review checks, or stale review | Explain the gap and its remedy; complete authorized work before offering advancement. |
-| Selected commit, push, or Viewed operation unfinished | Preserve that selection and, once ready, resume its already authorized remaining steps without routine reconfirmation. If changed effects require a new decision, offer that decision for the same completion operation; ordinary continue cannot bypass it. |
-| Advancement ready but completion's target, interface, checks, or safe scope unavailable | Explain the concrete prerequisite. Continue remains available. Checks for extra branch content block continuation only when they affect the review. |
-| Extra content needs inclusion confirmation | Disclose it and offer a combined confirmation-and-completion choice when all other prerequisites are ready, alongside continue. |
-| Completion ready | Offer its actual remaining commit, push, and Viewed effects, alongside continue. Reuse verified completed work; no empty commit or unnecessary push. |
-
-For a ready local/branch review, completion commits outstanding changes and verifies them. For a ready PR, completion publishes review work when needed and authorized, then records eligible files Viewed; when no commit or publication is needed, offer pass for Viewed recording alone. State any verified results it will reuse. Add optimize whenever supported suggestions remain.
-
-Every closing accounts for completion readiness, including after a repair or in a dedicated re-review. State any pending unreasonable findings with IDs, severity, and impact, including earlier groups. Separately show pending required elegance improvements with IDs, concrete burdens, remedies, and benefits; retain explicit acceptance decisions and their trade-offs, optional suggestions, and the separate O observations. Disclose the full commit scope, any extra-content confirmation, publication delta, and Viewed set when applicable. Keep unavailable actions distinguishable from executable choices.
-
-A useful closing layout is conclusion and progress, relevant checks and limits, then the concrete decision with its available actions. Emoji, short labels, and lettered options can help scanning. A simple continuation question usually needs no number; several decisions or later references may benefit from numbered blocks. A recommendation can sit beside its option or in a separate ➡️ paragraph when the reason needs explanation. Refer to scope already explained instead of repeating the menu or asking for the same choice again. [Example closings](references/report-examples.md#example-closings-for-different-results) illustrate these presentation choices and the different readiness states.
-
-Continue already authorized work when ready. If review and completion are finished and no decision remains, report the result without asking for a choice.
-
-If the user asks to advance while blocked, explain the pending IDs or prerequisites and regenerate the available menu; continue never means ignore or accept. Questions and disputed findings call for answers or reassessment, not automatic advancement. An explicit stop or pause is always allowed: report displayed progress and unresolved findings, evidence, modifications, publication, or operations without claiming completed work.
-
-## Repair and re-review
-
-Limit an authorized fix or optimization to selected items and necessary supporting changes; optimization preserves supported behavior and contracts. After reviewed content changes, or after any O repair:
-
-1. Run required checks successfully and refresh before-and-after evidence and links. For unpublished PR changes, keep both the pinned remote version and the checked local content intended for publication; keep O evidence separately.
-2. Independently re-review changed or affected previously reviewed parts, including unexpected changes. Display complete updated file blocks with both judgments in a dedicated reply separate from unseen files. For an O repair, assess the behavior and affected dependencies in a dedicated O re-review with its source location, before-and-after explanation, and both reasoned judgments.
-3. Retain original M/O IDs and group membership; do not count a file again. O re-review creates no main progress or Viewed eligibility. Mark repairs or optimizations complete only when checks and re-review confirm them. Retention acceptance remains valid for the same assessed content and effects; reassess it when those change.
-
-A single fix, ignore, optimize, or accept ends with an updated menu, without advancement. Acceptance alone changes no reviewed content and needs no content re-review. An explicit compound request authorizes its ordered effects, including dedicated re-review after edits before completion and advancement; continue those authorized steps without routine reconfirmation. New findings, failed checks, changed effects, or newly discovered extra content pause the dependent step. Independently authorized optimization can proceed while findings remain, but advancement requires every applicable gate above to be satisfied.
-
-## Prepare completion
-
-For a PR with no unpublished changes made for this review and no unfinished selected commit or publication, pass can verify the pinned remote PR version and record Viewed without committing or pushing. Establish through read-only inspection that unrelated local differences, including a submodule checkout difference, leave the fixed reviewed delta, its dependencies, and complete per-file coverage valid; preserve those differences. Their presence alone does not require publication or inclusion consent. Unpublished changes made for this review, including fixes and optimizations, must reach the verified PR version before Viewed recording, and an unfinished selected commit or publication retains its full scope and remaining steps.
-
-### Account for the whole branch
-
-When completion includes a commit or push, identify the exact repository, branch, and worktree. Inventory all staged, unstaged, and untracked changes, plus every existing commit a proposed push would publish. Retain the branch tip, index, worktree and applicable untracked content as recovery evidence.
-
-A completion commit includes the full outstanding branch state, including tests, supporting/generated files, staged-only changes, and undisplayed or excluded files. Honor repository restrictions on sensitive, ignored, or disposable files; resolve any unsafe inclusion with the user instead of silently narrowing the commit. For partial staging, establish the coherent final worktree content, explain any staged content it supersedes, and retain the original index. Unresolved content conflicts block completion.
-
-Establish provenance from this conversation's recorded actions and baseline, including mixed-origin hunks. For changes made elsewhere or of unknown origin, disclose the concrete paths or commits, behavior, and material effects, and obtain explicit inclusion confirmation before committing or publishing them. A prior confirmation covers the same content and effects; generic approval of a reviewed group does not cover undisclosed extras. If confirmation is declined or absent, preserve the changes and leave full-branch completion pending; offer continuation or a revised scope, not an automatic smaller commit.
-
-Explain how the commit and push scope differ from displayed review and Viewed scope. Same-conversation extras need accounting and checks, though no additional provenance consent. Run required checks for the whole intended commit/publication, assess effects on displayed review, and complete dedicated re-reviews where needed, including every selected O repair. Inclusion consent cannot replace review or checks.
-
-### Prepare PR publication and Viewed recording
-
-Before offering PR completion, verify the PR-owning repository, source branch/remote, viewer, current base/head, and available interfaces for its actual writes and readbacks. For publication, also verify outgoing ancestry and disclose the entire push delta separately from the Viewed set, including existing unpushed commits. Except for the review-commit amendment below, publication requires a normal push; explain any missing prerequisite. Completion does not authorize rebasing or excluding commits.
-
-Viewed covers a whole file at a PR version. Before offering to mark a path, compare its complete intended PR delta with the retained displayed assessments. Show every uncovered hunk in a dedicated re-review with both judgments, even when it is independent extra content already approved for inclusion. Preserve IDs, original group membership, and progress. An O re-review does not make an otherwise ineligible path eligible.
-
-If coverage needs missing evidence or a scope decision, leave the path unmarked and completion unavailable or pending. Preserve the selected Viewed set rather than dropping a path to finish. Passing checks, inclusion consent, and unchanged earlier hunks do not supply missing coverage.
-
-## Execute completion and verify it
-
-For the supported PR paths—Viewed recording alone, or a new commit and normal push followed by Viewed—use the bundled [completion helper](references/completion-helper.md). Read that guide before preparation and follow its help. It freezes the disclosed scope, retains recovery evidence, executes already authorized effects, and returns a compact summary with full private logs. The helper verifies identities and content; the Agent still owns review, checks, provenance, whole-file coverage, and authorization. Unsupported cases, including amendment and lease publication, retain the workflow below; an unavailable helper does not waive any prerequisite.
-
-Execute only the effects disclosed and authorized by the selected action. Reuse verified commits, pushes, and Viewed results instead of repeating writes.
-
-Throughout completion, an intended new head needs verification, not repetition of already covered review. Unexpected changes to content, base, or affected dependencies require affected re-review; text equality alone cannot prove unchanged effects. Refresh evidence and obtain a new selection when the result no longer represents the authorized reviewed version. Marking a newer version does not prove it was reviewed.
-
-### 1. Revalidate the selected effects
-
-Compare review evidence, any remote base/head, and relevant local state with the prepared state. When committing or publishing, include the branch tip, index, worktree, and outgoing ancestry. Resolve drift with refreshed inventory, applicable checks, and affected re-review. Changed or new extra content to be committed or published needs renewed inclusion confirmation.
-
-### 2. Commit when needed
-
-Stage the full disclosed final content and verify the index against the intended tree. Use `git commit --amend` when recorded review actions establish HEAD as this review's fix or optimization commit and the current branch and any push target are neither `master` nor `main`; otherwise create a new commit.
-
-Run normal hooks, then verify the commit, parent, full tree, index, and remaining worktree state. Hook changes need applicable checks and affected re-review; changes beyond confirmed content also need updated consent. Commit all intended changes without unexplained residue. A local/branch completion can now advance.
-
-### 3. Publish when authorized and needed
-
-Revalidate the full outgoing delta after hooks. When replacing an already-published review commit, push to the verified source ref with `--force-with-lease=<ref>:<verified-old-remote-SHA>`; otherwise push normally. Pause on remote drift or push rejection.
-
-Read back base/head and the complete published delta. Confirm the expected commit, checked content, and valid displayed assessments.
-
-### 4. Record Viewed on the verified PR version
-
-Verify the viewer and both commit IDs on the actual PR version, and confirm complete per-path coverage for the selected set. Mark only eligible selected paths still awaiting Viewed. Read back every selected path, including reused results, and the PR version. All must be `VIEWED`, with base/head unchanged during recording.
-
-### 5. Advance or finish
-
-Acknowledge the verified result and resume from the saved position. Final completion accounts for all displayed groups, including earlier groups advanced without recording.
-
-### Recover an unfinished operation
-
-When a write, interface, or verification fails, pause without advancing, automatic rollback, or substitution of continue/finish. Report confirmed, failed, and unknown effects, including commits, push state, remaining changes, partial staging, and Viewed paths.
-
-Keep the inventory, provenance confirmations, fixed evidence, selected publication and Viewed scopes, viewer/version, group status, and resume position. After a lost response, inspect actual local and remote state before retrying. Once ready, resume only the missing steps of the same completion operation; do not silently add content, enlarge an intermediate Viewed set, or repeat successful writes.
-
-Completion requires every required readback. An explicit stop may leave residual work, which must be reported. Preserve progress after successful recovery; do not reapply filters to remove files already displayed.
+A single repair, ignore, optimization, or acceptance ends at an updated decision without advancement. A clear compound request authorizes ordered effects, including checks and dedicated re-review before completion/advancement. Continue authorized work when ready; changed effects, new findings, failed checks, or new extra content pause dependent steps without inventing new permission.
