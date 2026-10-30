@@ -227,6 +227,8 @@ If coverage needs missing evidence or a scope decision, leave the path unmarked 
 
 ## Execute completion and verify it
 
+For the supported PR paths—Viewed recording alone, or a new commit and normal push followed by Viewed—use the bundled [completion helper](references/completion-helper.md). Read that guide before preparation and follow its help. It freezes the disclosed scope, retains recovery evidence, executes already authorized effects, and returns a compact summary with full private logs. The helper verifies identities and content; the Agent still owns review, checks, provenance, whole-file coverage, and authorization. Unsupported cases, including amendment and lease publication, retain the workflow below; an unavailable helper does not waive any prerequisite.
+
 Execute only the effects disclosed and authorized by the selected action. Reuse verified commits, pushes, and Viewed results instead of repeating writes.
 
 Throughout completion, an intended new head needs verification, not repetition of already covered review. Unexpected changes to content, base, or affected dependencies require affected re-review; text equality alone cannot prove unchanged effects. Refresh evidence and obtain a new selection when the result no longer represents the authorized reviewed version. Marking a newer version does not prove it was reviewed.
