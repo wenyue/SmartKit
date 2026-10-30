@@ -1,4 +1,4 @@
-Automatically execute only the listed configuration actions without asking for confirmation. These are policy-declared configuration writes; tool installation, upgrades, manual session actions, project setup, and login startup retain their own decisions.
+Automatically execute only the listed configuration actions without asking for confirmation. These are policy-declared configuration writes; tool installation, upgrades, project setup, and login startup retain their own decisions.
 
 The bundled maintenance runner is {maintenance_runner}. Its configuration actions for this check are: {action_text}. Briefly tell the user which settings will be checked and changed if needed. Use the current Python interpreter and run each semicolon-separated action separately. The runner rechecks the effective setting before writing, preserves values already meeting the requirement, uses the user-layer version to reject concurrent changes, and verifies each result. If detection fails, report the failure without guessing a value.
 

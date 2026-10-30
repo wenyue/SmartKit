@@ -134,10 +134,6 @@ def _configuration_policy(
         requirement = checker._validate_config_requirement(raw_requirement)
         if requirement['id'] == setting_id:
             return 'minimum-threads', requirement
-    for raw_action in policy.get('manual_session_actions', []):
-        action = checker._validate_manual_session_action(raw_action)
-        if action['id'] == setting_id:
-            return 'manual-session', action
     raise MaintenanceError('configuration setting is not present in the selected policy')
 
 
@@ -268,17 +264,6 @@ def configure_setting(
         raise ApprovalRequired('user consent is required before maintenance')
     kind, requirement = _configuration_policy(harness, setting_id, policy_path)
     maintenance = requirement['maintenance']
-    if kind == 'manual-session':
-        if not checker._manual_session_action_available(requirement):
-            raise MaintenanceError('manual session action is unavailable')
-        return MaintenanceResult(
-            harness,
-            setting_id,
-            requirement['name'],
-            'configure',
-            'manual-action-required',
-            maintenance['instruction'],
-        )
     if harness != 'codex':
         raise MaintenanceError('configuration maintenance is unsupported for this harness')
     project_root = checker.resolve_project_root(project_root)

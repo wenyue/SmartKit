@@ -418,73 +418,7 @@ def _validate_maintenance(maintenance: Any) -> dict[str, Any]:
         ):
             raise PolicyError('configuration maintenance is invalid')
         return maintenance
-    if kind == 'manual-session':
-        if set(maintenance) != {'kind', 'instruction'} or not isinstance(
-            maintenance.get('instruction'), str
-        ) or not maintenance['instruction']:
-            raise PolicyError('manual session maintenance is invalid')
-        return maintenance
     raise PolicyError('setting maintenance kind is invalid')
-
-
-def _validate_manual_session_action(action: Any) -> dict[str, Any]:
-    if not isinstance(action, dict) or set(action) != {
-        'id',
-        'name',
-        'detectors',
-        'maintenance',
-        'guidance',
-    }:
-        raise PolicyError('manual session action is invalid')
-    for field in ('id', 'name', 'guidance'):
-        if not isinstance(action.get(field), str) or not action[field]:
-            raise PolicyError(
-                f'manual session action field {field} must be a non-empty string'
-            )
-    detectors = action.get('detectors')
-    if not isinstance(detectors, list) or not detectors:
-        raise PolicyError('manual session action detectors must be a non-empty array')
-    maintenance = _validate_maintenance(action.get('maintenance'))
-    if maintenance['kind'] != 'manual-session':
-        raise PolicyError('manual session action maintenance kind is invalid')
-    return action
-
-
-def _manual_session_action_available(action: dict[str, Any]) -> bool:
-    for detector in action['detectors']:
-        try:
-            if run_detector(detector) is not None:
-                return True
-        except (PolicyError, re.error):
-            continue
-    return False
-
-
-def _check_manual_session_actions(policy: dict[str, Any]) -> list[Finding]:
-    raw_actions = policy.get('manual_session_actions', [])
-    if not isinstance(raw_actions, list):
-        raise PolicyError('policy manual_session_actions must be an array')
-    findings: list[Finding] = []
-    for raw_action in raw_actions:
-        action = _validate_manual_session_action(raw_action)
-        if not _manual_session_action_available(action):
-            findings.append(Finding(
-                'detector-error',
-                action['name'],
-                'session action availability detection failed',
-                action['guidance'],
-            ))
-            continue
-        findings.append(Finding(
-            'manual-session-action',
-            action['name'],
-            'requires explicit activation for parallel subagents in this session',
-            action['guidance'],
-            'setting',
-            action['id'],
-            'configure',
-        ))
-    return findings
 
 
 def _validate_config_requirement(requirement: Any) -> dict[str, Any]:
@@ -775,18 +709,14 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
     if not isinstance(policy.get('harness'), str) or not isinstance(tools, list):
         raise PolicyError('policy requires harness and tools')
     config_requirements = policy.get('config_requirements', [])
-    manual_session_actions = policy.get('manual_session_actions', [])
     required_values = policy.get('required_values', [])
     if (
         not isinstance(config_requirements, list)
-        or not isinstance(manual_session_actions, list)
         or not isinstance(required_values, list)
     ):
         raise PolicyError('policy value requirements are invalid')
     for raw_requirement in config_requirements:
         _validate_config_requirement(raw_requirement)
-    for raw_action in manual_session_actions:
-        _validate_manual_session_action(raw_action)
     findings: list[Finding] = []
     for raw_tool in tools:
         tool = _validate_tool(raw_tool)
@@ -872,7 +802,6 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
                 )
             )
     findings.extend(_check_required_values(policy))
-    findings.extend(_check_manual_session_actions(policy))
     return findings
 
 

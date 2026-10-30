@@ -103,10 +103,6 @@ class RecommendedToolPolicyTest(unittest.TestCase):
                     [item['id'] for item in policy.get('config_requirements', [])],
                     ['parallel_agent_capacity'] if harness == 'codex' else [],
                 )
-                self.assertEqual(
-                    [item['id'] for item in policy.get('manual_session_actions', [])],
-                    ['fleet_mode'] if harness == 'copilot' else [],
-                )
 
     def test_default_policy_path_resolves_feature_local_policy(self):
         for harness in ('codex', 'cursor', 'copilot', 'qoder'):
@@ -331,22 +327,6 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         self.assertIn('default parallel subagent support', cursor['install'])
         self.assertIn('default parallel subagent capability', cursor['upgrade'])
         self.assertNotIn('config_requirements', policy)
-
-    def test_copilot_fleet_support_produces_an_approved_manual_session_action(self):
-        checker = self.checker
-        policy = json.loads(
-            (POLICY_ROOT / 'copilot.json').read_text(encoding='utf-8')
-        )
-        policy['tools'] = []
-
-        with mock.patch.object(checker, 'run_detector', return_value='/fleet'):
-            findings = checker.check_policy(policy)
-
-        self.assertEqual(len(findings), 1)
-        self.assertEqual(findings[0].code, 'manual-session-action')
-        self.assertEqual(findings[0].target_id, 'fleet_mode')
-        self.assertEqual(findings[0].action, 'configure')
-        self.assertIn('parallel subagents', findings[0].message)
 
     def test_policy_guidance_describes_actions_without_exposing_commands(self):
         forbidden = (
@@ -1456,31 +1436,6 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         with self.assertRaises(checker.PolicyError):
             checker.render_hook_result(checker.HookResult(True, (finding,)), 'codex')
 
-    def test_copilot_fleet_action_waits_for_consent_before_exposing_slash_command(self):
-        checker = self.checker
-        result = checker.HookResult(
-            True,
-            (
-                checker.Finding(
-                    'manual-session-action',
-                    'GitHub Copilot fleet mode',
-                    'requires explicit activation for parallel subagents in this session',
-                    'Enable fleet mode in the current session after approval.',
-                    'setting',
-                    'fleet_mode',
-                    'configure',
-                ),
-            ),
-        )
-
-        context = json.loads(
-            checker.render_hook_result(result, 'copilot')
-        )['additionalContext']
-
-        self.assertIn('configure --harness copilot --setting fleet_mode', context)
-        self.assertNotIn('Run /fleet', context)
-        self.assertIn('manual action required', context)
-
     def test_cursor_context_delivery_instructs_headless_agent(self):
         checker = self.checker
         result = checker.HookResult(
@@ -2010,25 +1965,6 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
                 rpc=rpc,
             )
 
-        rpc.assert_not_called()
-
-    def test_approved_copilot_fleet_action_returns_current_session_instruction(self):
-        rpc = mock.Mock(side_effect=AssertionError('manual action must not write config'))
-        with mock.patch.object(
-            self.maintainer.checker,
-            '_manual_session_action_available',
-            return_value=True,
-        ):
-            result = self.maintainer.configure_setting(
-                'copilot',
-                'fleet_mode',
-                approved=True,
-                rpc=rpc,
-            )
-
-        self.assertEqual(result.status, 'manual-action-required')
-        self.assertIn('Run /fleet', result.detail)
-        self.assertIn('current Copilot CLI session', result.detail)
         rpc.assert_not_called()
 
     def test_configuration_write_preserves_a_concurrent_user_change(self):
