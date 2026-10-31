@@ -16,7 +16,7 @@ Do authorized, derivable work before asking: inspect accessible facts, prepare l
 
 When only the user knows a needed fact, ask that fact directly: “Which branch should I compare against?” If a selection lacks IDs, ask “M2, M5, or all?” rather than presenting an information/Cancel/Stop menu. Apply documented defaults before asking; IDs can complete an already clear pending action but do not choose an action by themselves. Clarify only the unresolved part and preserve the group, earlier authorization, and any unfinished completion. Withdrawing that request does not cancel earlier selected work.
 
-Offer a menu only for a real choice about effects or a trade-off. State the concrete situation first. Put the recommended choice at A; each option starts with a short bold action word, then this occasion's effects.
+Offer a menu only for a real choice about effects or a trade-off. Present all applicable choices in the prescribed order; recommending one never justifies omitting another. Verify facts that materially affect the choice and disclose known limitations. Uninspected or unknown is not unavailable. State the concrete situation first. Put the recommended choice at A; each option starts with a short bold action word, then this occasion's effects.
 
 - A. **Pass** (recommended): Mark these four files Viewed, verify them and the PR version, then show the next group.
 
@@ -127,7 +127,7 @@ Use these fixed group choices, with IDs and actual effects filled in:
 | Pending required elegance only | A **Optimize** (recommended): implement the named remedies, check and re-review; B **Keep**: explicitly accept their disclosed burdens; C **Stop**. |
 | Both kinds of necessary issue | A **Address** (recommended): explicitly propose repairing the named unreasonable findings **and** optimizing the named required elegance issues, then checks/re-review; B **Keep**: explicitly propose ignoring the named findings **and** accepting the named structural burdens; C **Stop**. |
 | Review and completion ready, with remaining disclosed effects and no separate inclusion decision | A **Pass** (recommended): execute the actual prepared commit/push/Viewed effects and then advance/end; B **Continue**: advance without those writes, or **Finish** at the final group; C **Optimize** only when optional suggestions remain. |
-| Review can advance but no completion effects are ready/needed | A **Continue** (recommended), or **Finish** at the final group; B **Optimize** only when optional suggestions remain; finally **Stop** for a non-final group. |
+| After preparation, review can advance but no completion effects are needed, or a verified completion-only limitation prevents them | A **Continue** (recommended), or **Finish** at the final group; B **Optimize** only when optional suggestions remain; finally **Stop** for a non-final group. |
 | Final group, no gate, optional suggestion, effect, or decision remains | Report verified completion; no menu. |
 
 Optional advice never displaces the main recommendation or adds options to necessary-issue menus. State that subsets and other valid actions can be requested by IDs in ordinary language; there is no need to print every internal operation. Address executes the mixed remedy explicitly described in the current proposal. It is not an alias that changes the bare Fix default.

@@ -143,13 +143,14 @@ Scenario: four reviewed PR files have complete coverage, checks passed, publicat
 
 ## A fully verified checkout and synchronization plan
 
-Scenario: /work/app is clean on main. Its existing feature/export branch is two commits behind pinned b7c9d21, not owned by another worktree. Target objects and exact fast-forward safety are verified; all facts use full commit IDs even though the display abbreviates them.
+Scenario: /work/app is clean on main. Its existing feature/export branch is two commits behind pinned b7c9d21, not owned by another worktree. Target objects and exact fast-forward safety are verified; all facts use full commit IDs even though the display abbreviates them. No existing alternative workspace qualifies.
 
 **Agent:** The review is for feature/export, but this workspace is on main. I can switch to the existing branch and fast-forward it to this PR's version. There are no uncommitted files to preserve; main stays unchanged.
 
 - A. **Switch** (recommended): Switch /work/app to feature/export, fast-forward to b7c9d21, and verify the result. No push.
 - B. **Snapshot**: Review the fixed PR contents without changing this checkout.
-- C. **Stop**: Leave the workspace unchanged.
+- C. **Create**: Create a clean /work/app/.worktrees/export-review on review/export at b7c9d21, then assess its environment readiness, preserving the current checkout and branches.
+- D. **Stop**: Leave the workspace unchanged.
 
 **User:** A.
 
@@ -157,9 +158,9 @@ Scenario: /work/app is clean on main. Its existing feature/export branch is two 
 
 ## A later alignment step is still unknown
 
-Scenario: current checkout can safely change to the source branch, but target objects needed to establish synchronization safety are unavailable. Independent PR snapshot evidence exists.
+Scenario: current checkout can safely change to the source branch, but target objects needed to establish synchronization safety or create at that target cannot be acquired through available authorized means. Inspection found no qualifying alternative workspace. Independent PR snapshot evidence exists.
 
-**Agent:** I can switch branches safely. I cannot yet verify the later synchronization, so this choice only switches the checkout.
+**Agent:** I can switch branches safely. I cannot yet verify the later synchronization, so this choice only switches the checkout. No other existing workspace qualifies, and the missing target objects also prevent creating one at the review target.
 
 - A. **Switch** (recommended): Switch to the existing feature/export branch and verify preservation.
 - B. **Snapshot**: Review the fixed PR comparison without switching.
@@ -167,7 +168,7 @@ Scenario: current checkout can safely change to the source branch, but target ob
 
 **User:** Switch.
 
-**Agent:** Checkout is verified. Synchronization is still pending because the target objects are unavailable; no synchronization was performed. The fixed PR comparison is already verified.
+**Agent:** Checkout is verified. Synchronization and creation at the target remain unavailable because the target objects cannot be acquired; neither was performed. No existing alternative workspace qualifies. The fixed PR comparison is already verified.
 
 - A. **Snapshot** (recommended): Review that fixed comparison without changing the branch version.
 - B. **Stop**: Stop with the completed checkout retained.

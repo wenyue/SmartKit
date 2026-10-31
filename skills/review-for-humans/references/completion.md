@@ -26,7 +26,7 @@ For PR effects verify owning/source repositories, source branch/remote, viewer, 
 
 Compare each selected Viewed path's complete intended PR delta against displayed assessments. Re-review uncovered hunks in a dedicated reply with both judgments, even if approved independent extra content. Preserve IDs/groups/progress; O re-review grants no main eligibility. Missing coverage/evidence/scope leaves the path unmarked and completion pending: never drop selected paths to finish. Unchanged earlier hunks, passing checks, and inclusion consent cannot supply coverage.
 
-Perform derivable read-only preparation before asking for a decision. Disclose actual remaining writes, full commit/publication contents, Viewed set, inclusion question, checks/limits, and verified effects to reuse. Extra branch checks block continuation only if they affect review. No empty commit or unnecessary push is needed.
+Before deciding whether Pass can be offered, complete derivable read-only preparation, available checks, and dedicated review within the authorized scope. Uninspected interfaces, inventory, or coverage do not establish that completion is unavailable. If a prerequisite remains unresolved, name the missing fact or verified limitation and distinguish its effect on completion from its effect on review; use that evidence to choose the applicable menu or direct fact question. Disclose actual remaining writes, full commit/publication contents, Viewed set, inclusion question, checks/limits, and verified effects to reuse. Extra branch checks block continuation only if they affect review. No empty commit or unnecessary push is needed.
 
 ## Explain the actual choice
 
@@ -34,7 +34,7 @@ Before a normal Pass option, give the entry's group menu the exact remaining eff
 
 If extra-content consent is undecided and every other prerequisite is ready, use A **Continue** (recommended), or **Finish** for the final group: proceed/end without committing/publishing/recording; B **Pass**: explicitly confirm the named extra content and perform the full disclosed completion; C **Optimize** only if optional suggestions remain. Explain the extra paths/commits and concrete impact first. Declined inclusion is not silently re-asked: preserve content and full-branch scope, allow review continuation where valid, and change the completion outcome only through a new explicit request.
 
-If a user-owned fact is missing, ask it directly. Do available checks and covered-scope dedicated review without another choice. Whole-file coverage gaps are not permission questions when the fixed hunk is already available within authorized review scope.
+If a user-owned fact is missing, ask it directly. Whole-file coverage gaps are not permission questions when the fixed hunk is already available within authorized review scope.
 
 ## Execute and verify
 
