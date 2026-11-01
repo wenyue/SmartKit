@@ -1,6 +1,6 @@
 interface:
   display_name: "Review for Humans"
-  short_description: "按文件解释 PR、分支和本地改动，默认跳过 PR 中已查看的文件并只审查本地未暂存改动。"
+  short_description: "按文件解释 PR、分支和本地改动，判断合理性与优雅性，协助选择后续行动。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
   brand_color: "#2563EB"

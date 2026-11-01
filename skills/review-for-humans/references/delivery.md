@@ -1,68 +1,76 @@
 # Delivery
 
-Read before preparing or offering delivery, executing it, or recovering its effects. This guide owns the complete delivery scope, review coverage, readiness, writes, readbacks, and physical recovery. The Skill entry owns action selection, pending user intent, and advancement; return delivery facts to that loop.
+Prepare and verify the physical effects selected through the [Skill entry](../SKILL.md). This guide owns the complete delivery inventory, semantic coverage, checks, writes, readbacks, and recovery evidence. Return readiness, findings, and actual effects to the entry, which owns menus, pending intent, and advancement.
 
-## Define delivery for the selected workspace
+## Establish the complete effect set
 
-Delivery completes the applicable effects for all outstanding changes in the selected, disclosed review workspace, regardless of who made them or in which conversation. “Current workspace” means that exact path, not the Agent process's incidental working directory.
+“Selected workspace” means the exact disclosed review path, not the Agent process's incidental working directory. Delivery covers all outstanding changes there, regardless of author or conversation.
 
 | Review context | Applicable effects, in order |
 | --- | --- |
-| PR | Commit all outstanding workspace changes, publish the complete outgoing scope to the verified PR source, then record all eligible files reviewed in this conversation as Viewed and verify the result. |
-| Local or branch | Commit all outstanding workspace changes. Push only when the user selected a disclosed publication destination and effect; without a PR there is no Viewed recording. Do not create a PR implicitly. |
+| PR | Commit outstanding workspace changes, publish the complete outgoing scope to the verified PR source, and mark every eligible file reviewed in this conversation Viewed, with readback. |
+| Local or branch | Commit outstanding workspace changes. Push only to a destination and with an effect the user selected; neither PR creation nor Viewed recording is implied. |
 
-Reuse already completed, still-valid effects. A clean workspace needs no empty commit; a current source ref needs no redundant push. Viewed-only is possible when no commit or publication effect remains, not a way to leave unrelated outstanding workspace changes out of a selected delivery. A snapshot review first needs a selected deliverable workspace before any local or publication effects can be promised.
+Reuse effects that are already complete and still valid: no empty commit for a clean workspace or redundant push to a current source ref. Viewed-only delivery applies when no commit or publication remains; it cannot leave outstanding workspace changes out of a selected delivery. Snapshot review needs a selected deliverable workspace before local or publication effects can be promised.
 
-Selecting delivery covers the complete disclosed workspace and outgoing scope, including changes from outside this conversation. Their origin calls for inventory and the applicable review, not a separate inclusion question. Explicit user exclusions or conflicting preservation requirements must be resolved before delivery; do not silently make a smaller commit. Delivery grants neither unrelated history changes, PR approval, nor merging.
+Selection covers the complete disclosed workspace and outgoing scope, including work from outside this conversation. Origin alone needs no extra inclusion question. Resolve explicit exclusions and conflicting preservation requirements before delivery instead of silently shrinking the commit. Authority excludes unrelated history changes, PR approval, and merging.
 
-## Keep scope and review coverage distinct
+Inventory staged, unstaged, nonignored untracked, conflicted, and submodule state; identify the repository, branch, intended final contents, and complete outgoing ancestry. Retain the original index, tip, worktree, and applicable untracked recovery evidence. For partially staged files, establish coherent final worktree content and disclose the staged version it supersedes. Resolve ignored, sensitive, disposable, or independently owned content through its governing restrictions. Conflicts block delivery.
 
-| Scope | Required coverage |
+## Establish coverage for those effects
+
+Three scopes answer different questions:
+
+| Scope | Coverage |
 | --- | --- |
-| Main review and progress | The fixed comparison and filters selected for ordinary file groups. |
-| Commit and publication | Inventory and required checks cover every actual submitted delta and outgoing commit, including tests, documentation, generated/supporting files, staged-only changes, nonignored untracked files, and work outside the main comparison. Semantic review covers all of their non-test changes. |
-| Viewed | Every current PR file whose complete intended PR delta has been reviewed in this conversation, including earlier groups advanced without recording and supplementary review. |
+| Main report and progress | The entry's fixed comparison, filters, and displayed file groups. |
+| Commit and publication | Inventory and required checks cover every submitted delta and outgoing commit, including tests, documentation, generated/supporting files, staged-only and untracked changes, and work outside the main comparison. Current-conversation semantic review covers every non-test change in that set. |
+| Viewed | Complete intended deltas of current PR files reviewed in this conversation, including earlier groups advanced without recording and supplementary review. |
 
-Before any delivery write, establish current-conversation review of every non-test change in the complete proposed commit and publication scope. Test files are excluded from both ordinary main review and delivery supplementary review, using the same repository/main-review classification. Production files do not become test files merely because tests use them. Tests remain in the full commit/publication inventory and required checks. Earlier Fix or Optimize may already provide it; authorship, passing tests, a filename's appearance in a report, and another conversation's review do not prove it. Reuse assessments only while their exact content, dependencies, and effects remain valid. An amended commit also needs coverage of the non-test content it retains. Existing unpublished commits are included in publication coverage; unchanged content already at the destination is not newly published merely because it is an ancestor.
+For commit/publication coverage, reuse an assessment only while its exact content, dependencies, and effects remain valid. Authorship, passing tests, a filename appearing in a report, and review in another conversation do not establish that coverage. An amended commit includes retained non-test content; publication includes existing unpublished commits. Content already at the destination is not newly published merely because it is an ancestor.
 
-For every uncovered non-test change, apply the entry's full inspection standards, including the necessary file and connected context. Before reporting the supplementary review, read [Report Format](report-format.md) and use its fixed presentation. Show it with fixed before/after evidence and links, apart from unseen main-review groups. Reuse existing IDs for affected items and allocate new continuous M IDs to new supplementary modifications, explicitly distinguishing them from main progress. Concise or omitted explanation never establishes coverage of an unreviewed change. Otherwise excluded non-test files still receive this review; test files do not. Supplementary coverage does not change the main file total, advance its saved position, or remove unseen files through refreshed Viewed filtering.
+Tests use the same repository classification as the main review and are excluded from supplementary semantic review as well. Production code used by tests remains production code. All tests still belong in the inventory and required checks.
 
-Supplementary review is required preparation. Return new findings and evidence gaps to the entry before writing; its pending-request rules govern the resulting decision and resumption. Explicitly retained judgments remain recorded.
+For uncovered non-test content, apply the entry's complete inspection standards to the changes and necessary file/caller context. Present supplementary review in the required fixed format with before/after evidence and links, separately from unseen main groups. Reuse IDs for affected items and allocate continuous M IDs for new supplementary modifications. Distinguish these from main progress: supplementary coverage neither changes the main total and saved position nor removes unseen files through a refreshed Viewed filter. O-selected work retains its separate identity under the entry.
 
-Passing tests or including test files in a commit does not make those unreviewed files eligible for Viewed. A reviewed repair fragment is not whole-file PR coverage. Build the Viewed set from complete per-file PR deltas and current-conversation assessments. Supplement uncovered portions of a file intended for recording; leave other partially reviewed files unmarked and disclose that distinction. Once the intended set is fixed, a missing check or failed readback keeps delivery incomplete; never drop a selected path merely to finish. An O observation alone supplies no whole-file coverage, although its repaired file can qualify after complete supplementary review.
+Return findings and evidence gaps before any delivery write. Concise presentation or omitted explanations cannot supply missing assessment; explicitly retained judgments remain recorded.
 
-## Prepare the exact effects
+### Derive Viewed from whole-file PR review
 
-Identify repository, selected workspace, branch, intended final contents, and all outgoing ancestry when publishing. Inventory staged, unstaged, untracked, conflicted, and submodule state. Retain the original index, tip, worktree, and applicable untracked recovery evidence. For partial staging, establish coherent final worktree content and disclose which staged version it supersedes. Resolve ignored, sensitive, disposable, or independently owned content through its governing restrictions rather than automatically adding or silently excluding it. Conflicts block delivery.
+Build the recording set from current-conversation assessments of complete per-file PR deltas. A repaired fragment, O observation, passing checks, or inclusion in a commit does not suffice. Supplement uncovered portions of a file intended for recording; leave other partially reviewed files unmarked and disclose why. Unreviewed tests remain ineligible.
 
-Run required checks over the complete intended commit/publication and establish the review coverage above. Finish derivable read-only preparation and available supplementary review before reporting readiness. Unknown inventory, interfaces, or coverage is not proof of unavailability. Distinguish a limitation affecting delivery alone from one invalidating review; the entry owns the resulting choices.
+Once the intended set is fixed, a missing check or failed readback leaves delivery incomplete; do not drop a selected path to finish. The report's original filters do not narrow eligible recording or delivery coverage, and a larger delivery scope does not justify marking partly reviewed files.
 
-For PR effects, verify owning/source repositories, source branch and remote, authenticated viewer, base/head, and usable write/readback interfaces. For local/branch publication, establish the selected destination and exact outgoing scope; do not invent an upstream or infer push authority from a commit request. Disclose actual remaining writes, full contents and outgoing commits, Viewed set, and checks/limits so the entry can describe the concrete action. Include amendment and exact-lease publication when applicable; do not hide those effects behind an action label.
+## Make readiness concrete
 
-Keep publication and Viewed coverage separately inspectable. The main report's selected-file and Viewed filters do not reduce delivery review. A larger full-workspace scope does not authorize recording a partially reviewed PR file.
+Run required checks over the complete intended commit/publication scope and finish available supplementary review. Complete derivable read-only preparation before reporting readiness; unknown inventory, interfaces, or coverage is not proof that delivery is unavailable. Identify whether a verified limitation affects delivery alone or invalidates review, then return that distinction to the entry.
 
-## Execute the checked plan
+For PR effects, verify owning/source repositories, source branch and remote, authenticated viewer, base/head, and usable write/readback interfaces. For local/branch publication, establish the selected destination and exact outgoing scope; a commit request supplies neither an upstream nor push authority.
 
-Resolve `<skill-root>` from the actual loaded Skill, independently of the target working directory. Read the helper's supported capabilities and interface before choosing it:
+Disclose the remaining writes, full contents, outgoing commits, Viewed set, and checks/limits. Include amendment and exact-lease publication where applicable. Keep publication and Viewed coverage separately inspectable so the user can authorize the actual plan.
+
+## Choose the execution path
+
+Resolve `<skill-root>` from the actual loaded Skill, independently of the target working directory, and read the helper's supported interface:
 
 ```text
 python "<skill-root>/scripts/complete_review.py" --help
 ```
 
-The helper freezes and executes supported PR effects; the Agent supplies semantic coverage, successful checks, scope, and authority. Its help owns request fields, commands, evidence/state storage, outputs, and retry mechanics. Helper preparation may preserve private evidence and Git objects while leaving the real index, branch, and files unchanged. Use the manual sequence below when the actual plan falls outside those capabilities; never change or omit required effects merely to fit the tool. Helper unavailability waives no prerequisite.
+The helper freezes and executes supported PR effects. The Agent supplies semantic coverage, successful checks, disclosed scope, and authority; hashes and plans do not establish them. CLI help owns request fields, commands, private evidence/state, outputs, and retries. Preparation may preserve private evidence and Git objects while leaving the real index, branch, and files unchanged.
 
-Use this manual sequence for local/branch delivery or unsupported helper cases. It also states the required outcomes of helper execution, not a second implementation to run afterward.
+Use the manual sequence below for local/branch delivery and plans outside the helper's capabilities. Helper unavailability waives no prerequisite, and unsupported effects must not be omitted or altered to fit it. The sequence also states the outcomes to verify when using the helper; do not repeat writes afterward.
 
-1. Revalidate the intended contents, tip/index/worktree, affected dependencies, and relevant destination/PR version and outgoing ancestry. Changed content needs fresh inventory, affected review, and checks before reusing authority. Resolve changed destinations, methods, or explicit scope restrictions with the user; origin alone does not require another inclusion decision. An expected new head needs content/version verification, not repetition of unchanged valid review.
-2. When needed, stage the full disclosed final content and verify the intended index tree. Use `git commit --amend` when recorded actions establish HEAD as this review's fix/optimization commit and both the current branch and any push target are neither `master` nor `main`; otherwise create a new commit. Run normal hooks, then verify commit, parent, full tree, index, and remaining worktree. Hook changes require checks and affected review; leave no unexplained residue.
-3. When selected publication is needed, revalidate outgoing ancestry after hooks. Replacing an already-published review commit uses `--force-with-lease=<ref>:<verified-old-remote-SHA>` to the verified source ref; otherwise push normally. Stop on drift or rejection. Read back the destination and complete published delta; for a PR also read base/head. Confirm the expected commit, checked content, and valid assessments. No automatic rebase, commit exclusion, tag publication, or submodule publication is included.
-4. For PR recording, verify viewer, both commit IDs, and full-file coverage on the actual published version. Mark every eligible path in the prepared Viewed set still awaiting recording. Read back every selected path, including reused markings, and base/head. All selected paths must be `VIEWED` with unchanged base/head throughout recording.
-5. When all applicable effects and readbacks succeed, report verified delivery and the actual resulting workspace and remote state. Return this result to the entry; execution does not itself advance the review.
+1. **Revalidate.** Check intended contents, tip/index/worktree, affected dependencies, destination or PR version, and outgoing ancestry. Changed content needs refreshed inventory, affected review, and checks before authority can be reused. Resolve changed destinations, methods, or explicit scope restrictions with the user. An expected new head needs content/version verification, not repetition of unchanged valid assessments.
+2. **Commit when needed.** Stage the full disclosed final content and verify the intended index tree. Use `git commit --amend` when recorded actions establish HEAD as this review's fix/optimization commit and both the current branch and any push target are neither `master` nor `main`; otherwise create a new commit. Run normal hooks, then verify commit, parent, complete tree, index, and remaining worktree. Hook changes require checks and affected review; explain all residue.
+3. **Publish when selected and needed.** Revalidate outgoing ancestry after hooks. Replacing an already-published review commit uses `--force-with-lease=<ref>:<verified-old-remote-SHA>` to the verified source ref; otherwise push normally. Stop on drift or rejection. Read back the destination and complete published delta, plus PR base/head when applicable; confirm the expected commit, checked content, and valid assessments. No automatic rebase, commit exclusion, tag publication, or submodule publication is included.
+4. **Record PR Viewed.** Verify viewer, both commit IDs, and whole-file coverage against the actual published version. Mark every prepared eligible path still awaiting recording, then read back every selected path, including reused markings, and base/head. All must be `VIEWED`, with unchanged base/head throughout recording.
+5. **Return verified effects.** Only successful completion of every applicable effect and readback establishes delivery. Report resulting workspace and remote state to the entry.
 
-## Reconcile incomplete effects
+## Reconcile uncertainty before retrying
 
-Retain selected workspace, inventory, fixed evidence and assessments, accepted trade-offs, publication/Viewed sets, viewer/version, and completed/failed/unknown steps. On an interruption or uncertain response, inspect actual local/remote results before retrying. Reuse confirmed effects and perform only missing steps; do not roll back automatically. The entry retains the user's pending request and review position separately.
+Retain inventory, fixed evidence and assessments, accepted trade-offs, selected workspace, publication/Viewed sets, viewer/version, and completed, failed, or unknown steps. After interruption or an uncertain response, inspect actual local/remote results and reuse confirmed effects, performing only missing work. Do not roll back automatically.
 
-If content, dependencies, destinations, or effects changed, return to the relevant inventory, coverage, and checks before proceeding. Report resulting findings or authority changes to the entry. Preserve successful effects and recovery evidence while the user's decision is pending.
+Changed content, dependencies, destinations, or effects require the corresponding inventory, coverage, and checks before proceeding. Return resulting findings or authority changes to the entry while preserving successful effects and recovery evidence.
 
-Every required readback must succeed. If an interface is unavailable or a result is uncertain, report confirmed, unknown, and pending effects; delivery remains incomplete. At a supported later opportunity, inspect actual state and resume within unchanged authority. An explicit stop preserves recovery evidence and reports residual effects as incomplete.
+An unavailable interface or uncertain result leaves delivery incomplete. Report confirmed, unknown, and pending effects; at a supported later opportunity inspect actual state and resume within unchanged authority. An explicit stop preserves recovery evidence and reports residual effects.

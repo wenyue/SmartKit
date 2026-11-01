@@ -1,12 +1,12 @@
 # Conversation Examples
 
-The Skill entry owns the ordinary review loop; [Report Format](../references/report-format.md) owns the fixed presentation, and Preparation and Delivery own their conditional branches. These synthetic scenarios stand in for inspection/check evidence. The complete report uses a placeholder returned link and illustrative source; it is not an execution record or evidence of general model reliability.
+These synthetic cases illustrate judgment and transitions; they are not execution records or evidence of general model reliability. The [Skill entry](../SKILL.md) owns decisions, [Report Format](../references/report-format.md) owns presentation, and Preparation and Delivery own their conditional work.
 
-## One complete report
+## A complete file report
 
-Scenario: this final PR group has one eligible production file. Inspection covered its whole diff and necessary context, including a cleanup edit omitted from the author's summary. The source shown below is the synthetic fixed comparison.
+Premise: one production file remains in a fixed PR comparison. Inspection found a cancellation regression in a cleanup edit omitted from the author's summary. The link and source below are illustrative.
 
-**Agent:** The fixed PR comparison is ready. This group contains the remaining non-test file; tests are excluded from the report.
+**Agent:** This final group contains the remaining non-test file.
 
 ---
 
@@ -14,9 +14,9 @@ Scenario: this final PR group has one eligible production file. Inspection cover
 
 This controller saves drafts and reports progress. The change names the saved draft and moves pending-state cleanup.
 
-⚖️ **Unreasonable** — M1 clarifies which draft was saved. M2 is P2: cancellation now skips the pending-state reset, so the next save stays disabled. Restore cleanup on that exit. The author's summary omitted this edit, but its defect still needs an explicit item.
+⚖️ **Unreasonable** — M1 identifies the saved draft. M2 is P2: cancellation now skips resetting pending state, leaving the next save disabled. Restore cleanup on that exit.
 
-🎨 **Needs improvement** — M2 requires optimization: success and failure branches duplicate one cleanup responsibility and miss cancellation. A shared completion block covers every exit and removes repeated maintenance. M1 needs no new boundary.
+🎨 **Needs improvement** — M2 spreads one cleanup responsibility across success and failure branches and misses cancellation. A shared completion block covers every exit and removes the duplicated maintenance. M1 introduces no new boundary.
 
 **M1 — Identify the saved draft**
 
@@ -26,7 +26,7 @@ This controller saves drafts and reports progress. The change names the saved dr
 
 **M2 — Move cleanup into outcome branches (P2)**
 
-> ⏪ One completion block clears pending state after the save attempt.
+> ⏪ A completion block clears pending state after every save attempt.
 >
 > ```dart
 > pending = true;
@@ -38,7 +38,7 @@ This controller saves drafts and reports progress. The change names the saved dr
 > }
 > ```
 >
-> ⏩ Success and failure each clear state after the cancellation check.
+> ⏩ Success and failure clear state separately after the cancellation check.
 >
 > ```dart
 > pending = true;
@@ -54,50 +54,60 @@ This controller saves drafts and reports progress. The change names the saved dr
 
 ---
 
-**1/1 main files displayed.** Source and control-flow inspection support M2's P2 cancellation defect and repeated-cleanup burden; no repair checks have run yet. One shared cleanup owner addresses both.
+**1/1 main files displayed.** Source and control-flow inspection establish M2's cancellation defect and cleanup burden. No repair checks have run; one shared cleanup owner addresses both findings.
 
-- A. **Fix and optimize** (recommended): Restore M2's shared cleanup, run required checks, then show the file's dedicated re-review.
-- B. **Ignore**: Leave M2 unchanged, explicitly accepting the disabled-next-save risk and repeated-cleanup burden.
+- A. **Fix and optimize** (recommended): Restore M2's shared cleanup, run required checks, and show its dedicated re-review.
+- B. **Ignore**: Leave M2 unchanged, accepting the disabled-next-save risk and repeated-cleanup burden.
 
-## Choices and transitions without repeated report bodies
+## Decide whether the capability belongs
 
-The following independent scenarios are abbreviated notes, not complete review responses. They omit repeated file blocks to focus on decisions. Actual supplementary, main repair, and selected-O re-reviews still show the complete fixed layout before dependent action resumes.
-
-| Situation | Choice and follow-through |
+| Established evidence | What decides the judgment |
 | --- | --- |
-| A new early return triggers a defect in an unchanged caller. | If the caller closes storage after awaiting the controller, returning before its write finishes can lose the draft. Report the responsible M item's severity, trigger, impact, and correction in the leading judgment; restore the await and failure propagation. This is a main finding. An unrelated pre-existing formatter burden found during necessary reading is O instead. |
-| At 4/9 files, only M8's optional named-parameter rename to expose milliseconds remains; coverage and checks are ready, with no commit or push pending. | Offer A **Optimize**, B **Pass** accepting M8's disclosed unit-lookup cost and recording all four eligible files Viewed before advancing, C **Continue** leaving the suggestion outstanding. After Optimize, check the rename and show its dedicated report without increasing 4/9. A subsequent Pass includes the new commit/push; Continue leaves that change unpublished. |
-| Local review contains one label edit, and delivery inventory finds nothing else; coverage and checks are ready, and no push was requested. | **Pass** commits, verifies, and finishes. **Finish** ends with the edit uncommitted. No push, PR creation, or Viewed effect is implied. |
-| Only-deliver is pending at 4/9; inventory adds an unpublished commit, staged production changes, and tests from another conversation. | Include all of them in commit/publication inventory and checks; supplement current-conversation review of every uncovered non-test change. Tests are excluded from semantic review and gain no Viewed eligibility from passing checks. A new M11 defect or improvement pauses delivery for its remedy or explicit **Ignore**, not another Pass. After required checks and complete affected re-review, resume only-deliver and stay at 4/9. |
-| M2 can lose a promised flush and M7 duplicates cleanup; the user says “Only optimize M7 first,” with no delivery pending. | Optimize, check, and show M7's dedicated re-review. M2 remains unresolved: offer **Fix** or explicit **Ignore** for its disclosed risk. The subset selection grants no delivery or advancement. |
-| Nine main files are displayed; four were advanced with Continue. A supplementary production file also has full PR-delta coverage. Checks are ready and only Viewed recording remains. | Prepare Viewed for all ten current, fully reviewed eligible paths, including the earlier four; supplementary coverage does not change 9/9. Unreviewed tests and files with only a repaired fragment reviewed stay out. A selected Pass records and reads back all ten plus the unchanged PR version, then finishes. |
-| Pass committed and pushed successfully, but the interface failed after confirming only two of four Viewed paths. | Report confirmed, unknown, and pending effects without a fabricated waiting menu. On a supported resume, verify the viewer/version and actual markings, reuse completed effects, record only the missing paths, and read back the full set and version. Then resume Pass's saved next group; do not repeat commit/push. |
-| No M issue remains; unrelated O1 has a supported normalization simplification. Delivery is prepared but unselected. | Offer A **Optimize O1**, B **Pass** leaving O1 unchanged, C **Continue**. An unambiguous “Optimize” selects that explicit O1 scope. After checks, show a separate O1 report with the fixed layout, no M ID or main-progress increase. Its changes enter full delivery review/check scope; Viewed still needs complete PR-file coverage. With a necessary main issue, recommend its remedy and show O1 optimization after **Ignore**, disclosing the unresolved main issue. Unselected O advice does not block delivery; already authorized ready delivery proceeds without a new menu. |
+| A write needs atomic visibility. The existing library transaction guarantees it. A new snapshot layer duplicates that guarantee, adds a second state owner, and passes its fault-injection tests. | Removing the snapshot layer is the relevant smaller alternative. Its duplicate ownership supports **Needs improvement**; the test establishes no additional requirement. |
+| A parser now rejects more values, but task and caller evidence leave the stronger policy unsettled. | **Insufficient evidence** identifies the missing contract or usage basis. Neither a neat adapter nor its rejection tests settle whether stricter behavior belongs. |
+| Untrusted input can request unbounded allocation; the service must remain available, and the library supplies no bound. | The credible trigger and impact justify a limit without an earlier incident. Compare sufficient enforcement mechanisms; leaving the default would miss the requirement. |
 
-## Workspace alternatives remain visible
+## Distinguish preparation from unavailability
 
-Scenario: the current related checkout is clean on main; it can safely switch to the PR source and fast-forward to the fixed target. No other existing workspace qualifies. Creation and fixed-snapshot review are both available.
+Premise: at 4/9 PR files, no finding remains and no delivery has been selected. The workspace also contains staged deletions.
+
+| Evidence after investigation | Response |
+| --- | --- |
+| The deletions are within the disclosed workspace, with no exclusion or preservation conflict. | Complete their supplementary non-test review and full-scope checks. Offer A **Pass** with the prepared commit/publication/Viewed effects and next group, then B **Continue** with that next group and no delivery. In Chinese, B begins **继续** followed by its effects. |
+| An explicit request keeps the deletions outside delivery, and the intended resolution cannot be derived. | Ask directly how to resolve that preservation conflict before preparing a concrete delivery choice. The unanswered decision is not a verified delivery limitation. |
+| Completed preparation confirms that the required publication interface is unavailable; review itself remains valid. | Explain the limitation and offer **Continue**. If Pass was already pending instead, retain it and report the blocker without substituting advancement. |
+
+## Follow the selected intent
+
+These are abbreviated decision notes. Actual supplementary and repair reports still use the complete fixed file layout.
+
+| Situation | Decision and result |
+| --- | --- |
+| At 4/9 files, only M8's optional rename to expose milliseconds remains. Checks and coverage are ready; only Viewed recording remains. | Offer **Optimize**, **Pass** explicitly retaining M8's unit-lookup cost and recording eligible files, then **Continue** leaving the suggestion outstanding. Optimize leads to checks and a dedicated report at 4/9; later Pass includes any new commit/push. |
+| A local label edit is the complete delivery inventory; checks and coverage are ready, and no publication was selected. | **Pass** commits, verifies, and finishes. **Finish** ends with the edit uncommitted. |
+| Only-deliver is pending at 4/9. Inventory discovers an unpublished commit, staged production work, and tests from another conversation. Supplementary review finds M11. | Inventory/check everything, semantically review uncovered non-test content, and present M11's remedy or explicit **Ignore**. After resolution, checks, and dedicated re-review, resume delivery and stay at 4/9. |
+| M2 can lose a promised flush, while M7 duplicates cleanup. The user says “Only optimize M7 first,” with no delivery pending. | Repair and re-review M7; the next decision still concerns M2. The subset request supplies no delivery or advancement authority. |
+| Nine main files and one supplementary production file have complete current PR-delta coverage. Four main files were advanced with Continue. Only recording remains. | Viewed covers all ten eligible paths, while progress stays 9/9. Unreviewed tests and repair-only fragments remain unmarked. Selected Pass reads back all ten and the unchanged PR version before finishing. |
+| Pass committed and pushed, but only two of four Viewed paths have confirmed results. | Report confirmed, unknown, and pending effects. On supported resume, inspect actual markings, complete missing effects, and read back the full set/version before advancing. Repeating commit/push would not repair the uncertainty. |
+| No M issue remains; O1 has a supported normalization simplification. Delivery is prepared but unselected. | Offer **Optimize O1**, **Pass** leaving O1 unchanged, then **Continue**. Selecting the unambiguous Optimize leads to a separate O1 report, no M/progress increase, and delivery coverage of its changes. |
+| A necessary main finding remains alongside O1's supported optimization. | Recommend the main remedy, offer its explicit **Ignore**, then **Optimize O1** stating that the main issue remains. O advice cannot displace the necessary remedy. |
+
+## Keep workspace alternatives visible
+
+Premise: the related checkout is clean on main and can safely switch to the PR source and fast-forward to the pinned target. No existing worktree qualifies; creation and fixed-snapshot review do.
 
 **Agent:** This checkout is on main; the PR uses feature/export.
 
-- A. **Switch current workspace** (recommended): Switch /work/app to feature/export, fast-forward to the verified target, and verify preservation. No push.
+- A. **Switch current workspace** (recommended): Switch /work/app to feature/export, fast-forward to the verified target, and verify preservation.
 - B. **Create workspace**: Create /work/app/.worktrees/export-review at the fixed target on review/export, assess its environment, and preserve the current checkout.
-- C. **Snapshot review**: Review the fixed PR contents without changing this workspace.
+- C. **Snapshot review**: Review fixed PR contents without changing this workspace.
 
 **User:** Create.
 
-**Agent:** The selected worktree, branch mapping, target, and environment are verified. I will review from that path.
+**Agent:** The selected worktree, branch mapping, target, and environment are verified. Review will use that path.
 
-## A missing filter needs consent, not an automatic expansion
+## Ask for the missing decision
 
-Scenario: fixed PR evidence is ready, but authorized acquisition could not obtain complete Viewed states and no user-owned fact can resolve that limitation.
+Complete Viewed states remain unavailable after authorized acquisition, and no missing user fact would resolve it. With fixed comparison evidence ready, ask whether to review all otherwise eligible non-test files without that filter. A refusal leaves the broader scope unselected.
 
-**Agent:** The complete Viewed filter is unavailable. Would you like me to review all otherwise eligible non-test files at the pinned version without that filter?
-
-**User:** No, stop here.
-
-**Agent:** Stopped. The comparison evidence is preserved; no files were reviewed and the broader scope was not selected.
-
-## Ask directly for missing facts
-
-For a branch review with no established comparison base, ask “Which branch should I compare against?” After the user chooses release, derive its verified merge-base. If that equals the reviewed tip, report no changes without a progress fraction or invented action menu.
+For branch review with no established comparison base, ask which branch to compare against. If its verified merge-base equals the reviewed tip, report no changes without a progress fraction or fabricated menu.
