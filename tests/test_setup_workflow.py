@@ -14,6 +14,8 @@ from io import StringIO
 from pathlib import Path, PurePosixPath
 from unittest import mock
 
+from setup_test_support import make_origin
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_ROOT = REPO_ROOT / 'skills' / 'setup-project-agents' / 'scripts'
@@ -39,26 +41,6 @@ class SetupWorkflowTest(unittest.TestCase):
         readiness.start()
         self.addCleanup(readiness.stop)
 
-
-    @staticmethod
-    def make_origin(root: Path) -> Path:
-        origin = root / 'origin.git'
-        work = root / 'origin-work'
-        shutil.copytree(
-            REPO_ROOT,
-            work,
-            ignore=shutil.ignore_patterns('.git', '.superpowers', '__pycache__', '*.pyc'),
-        )
-        subprocess.run(('git', 'init', '--bare', '--quiet', str(origin)), check=True)
-        subprocess.run(('git', '-C', str(work), 'init', '--quiet'), check=True)
-        run_git(work, 'checkout', '--quiet', '-b', 'master')
-        run_git(work, 'config', 'user.email', 'test@example.invalid')
-        run_git(work, 'config', 'user.name', 'Setup Test')
-        run_git(work, 'add', '.')
-        run_git(work, 'commit', '--quiet', '-m', 'workflow source')
-        run_git(work, 'remote', 'add', 'origin', origin.as_uri())
-        run_git(work, 'push', '--quiet', 'origin', 'master')
-        return origin
 
     @staticmethod
     def write_generated_outputs(session: Path) -> None:
@@ -335,7 +317,7 @@ class SetupWorkflowTest(unittest.TestCase):
         configuration = workflow.project_configuration
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             for fail_backup in (False, True):
                 with self.subTest(fail_backup=fail_backup), mock.patch.dict(
                         os.environ, {'SMARTKIT_PROJECT_CONFIG_HOME': str(root / str(fail_backup) / 'storage')}):
@@ -395,7 +377,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_start_and_finish_own_session_apply_check_summary_and_cleanup(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)
@@ -495,7 +477,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_pinned_full_setup_uses_local_rule_entry_and_keeps_shared_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)
@@ -593,7 +575,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_start_preserves_agent_files_before_finish(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             self.write_matt_context(target)
             codex = target / '.codex/agents/change-set-verifier.toml'
@@ -641,7 +623,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_finish_failure_reports_error_cleans_session_and_does_not_write_target(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)
@@ -668,7 +650,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_finish_installs_ignored_generated_targets(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)
@@ -712,7 +694,7 @@ class SetupWorkflowTest(unittest.TestCase):
     ):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)
@@ -756,7 +738,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_finish_rejects_request_target_tampering_and_cleans_session(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             other = root / 'other'
             target.mkdir()
@@ -791,7 +773,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_finish_rejects_setup_evidence_drift_before_mutation_and_keeps_it(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)
@@ -818,7 +800,7 @@ class SetupWorkflowTest(unittest.TestCase):
     def test_finish_ignores_unrelated_target_drift_and_preserves_it(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin = self.make_origin(root)
+            origin, _ = make_origin(root)
             target = root / 'target'
             target.mkdir()
             self.write_matt_context(target)

@@ -15,6 +15,8 @@ from io import StringIO
 from pathlib import Path, PurePosixPath
 from unittest import mock
 
+from setup_test_support import copy_plugin_source, make_origin
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime'))
@@ -492,9 +494,7 @@ class SetupCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source = root / 'source'
-            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns(
-                '.git', '.worktrees', '__pycache__', '*.pyc',
-            ))
+            copy_plugin_source(source)
             target = root / 'target'
             target.mkdir()
             source_args = [
@@ -570,11 +570,7 @@ class SetupCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source = root / 'source'
-            shutil.copytree(
-                REPO_ROOT,
-                source,
-                ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'),
-            )
+            copy_plugin_source(source)
             target = root / 'target'
             target.mkdir()
             session = self.private_session(root)
@@ -618,11 +614,7 @@ class SetupCliTest(unittest.TestCase):
     def test_source_fingerprint_binds_public_authoring_contract(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / 'source'
-            shutil.copytree(
-                REPO_ROOT,
-                source,
-                ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'),
-            )
+            copy_plugin_source(source)
             catalog = setup_project_agents.load_catalog(source)
             baseline = setup_project_agents._source_fingerprint(source, catalog)
             for relative in (
@@ -656,7 +648,7 @@ class SetupCliTest(unittest.TestCase):
     def test_read_only_entries_create_no_source_bytecode_and_changed_scripts_parse_as_python_38(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / 'source'
-            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'))
+            copy_plugin_source(source)
             environment = os.environ.copy()
             environment.pop('PYTHONDONTWRITEBYTECODE', None)
             for name in ('workflow.py', 'setup_project_agents.py'):
@@ -816,7 +808,7 @@ class SetupCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / 'source'
-            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'))
+            copy_plugin_source(source)
             asset = next(item for item in setup_project_agents.load_catalog(source).assets
                          if item.id == 'blueprint-change-set-verification')
             opaque = source / asset.source.parent / 'fixed-content.json'
@@ -849,7 +841,7 @@ class SetupCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / 'source'
-            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '__pycache__', '*.pyc'))
+            copy_plugin_source(source)
             catalog_path = source / 'setup-assets/catalog/assets.json'
             document = json.loads(catalog_path.read_bytes())
             ids = iter(('con', 'nul', 'prn', 'com1', 'long-' + 'a' * 300))
@@ -1816,24 +1808,43 @@ class SetupCliTest(unittest.TestCase):
 class SetupEndToEndTest(unittest.TestCase):
     """The public setup path, without depending on retired synchronizer fixtures."""
 
-    def make_origin(self, root: Path) -> tuple[Path, Path]:
-        origin = root / 'origin.git'
-        work = root / 'origin-work'
-        shutil.copytree(
-            REPO_ROOT,
-            work,
-            ignore=shutil.ignore_patterns('.git', '.superpowers', '__pycache__', '*.pyc'),
-        )
-        subprocess.run(('git', 'init', '--bare', '--quiet', str(origin)), check=True)
-        subprocess.run(('git', '-C', str(work), 'init', '--quiet'), check=True)
-        run_git(work, 'checkout', '--quiet', '-b', 'master')
-        run_git(work, 'config', 'user.email', 'test@example.com')
-        run_git(work, 'config', 'user.name', 'Setup Test')
-        run_git(work, 'add', '.')
-        run_git(work, 'commit', '--quiet', '-m', 'initial master')
-        run_git(work, 'remote', 'add', 'origin', origin.as_uri())
-        run_git(work, 'push', '--quiet', 'origin', 'master')
-        return origin, work
+    def test_source_fixtures_exclude_local_state_and_isolate_git_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'local-source'
+            source.mkdir()
+            (source / 'VERSION').write_bytes(b'fixture source\n')
+            for name in ('.git', '.worktrees', '.venv', '.playwright-mcp', '__pycache__'):
+                local = source / name
+                local.mkdir()
+                (local / 'private-state').write_bytes(b'not plugin source')
+            copied = root / 'copied'
+            with mock.patch('setup_test_support.REPO_ROOT', source):
+                copy_plugin_source(copied)
+            self.assertEqual([path.name for path in copied.iterdir()], ['VERSION'])
+            self.assertEqual((copied / 'VERSION').read_bytes(), b'fixture source\n')
+            run_git(copied, 'init', '--quiet')
+            run_git(copied, 'checkout', '--quiet', '-b', 'master')
+            run_git(copied, 'config', 'user.email', 'test@example.invalid')
+            run_git(copied, 'config', 'user.name', 'Setup Test')
+            run_git(copied, 'add', '.')
+            run_git(copied, 'commit', '--quiet', '-m', 'minimal fixture')
+
+            first = root / 'first'
+            second = root / 'second'
+            first.mkdir()
+            second.mkdir()
+            with mock.patch('setup_test_support._source_repository', return_value=copied):
+                origin, work = make_origin(first)
+                baseline = run_git(work, 'rev-parse', 'HEAD')
+                (work / 'VERSION').write_bytes(b'changed by first case\n')
+                run_git(work, 'add', 'VERSION')
+                run_git(work, 'commit', '--quiet', '-m', 'first case change')
+                run_git(work, 'push', '--quiet', 'origin', 'master')
+                _, independent = make_origin(second)
+            self.assertEqual(run_git(independent, 'rev-parse', 'HEAD'), baseline)
+            self.assertEqual((independent / 'VERSION').read_bytes(), b'fixture source\n')
+            self.assertNotEqual(run_git(origin, 'rev-parse', 'HEAD'), baseline)
 
     @staticmethod
     def private_session(root: Path, name: str) -> Path:
@@ -1906,7 +1917,7 @@ class SetupEndToEndTest(unittest.TestCase):
     def test_remote_master_upgrade_is_idempotent_and_keeps_setup_control_plane_out_of_snapshot(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin, work = self.make_origin(root)
+            origin, work = make_origin(root)
             target = root / 'target'
             target.mkdir()
 
@@ -1967,7 +1978,7 @@ class SetupEndToEndTest(unittest.TestCase):
     def test_failure_paths_fall_back_fail_closed_and_restore_the_original_target(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            origin, work = self.make_origin(root)
+            origin, work = make_origin(root)
             target = root / 'target'
             target.mkdir()
 
@@ -2002,7 +2013,7 @@ class SetupEndToEndTest(unittest.TestCase):
             self.assertIn('WARNING: canonical master is unavailable', stderr.getvalue())
 
             source = root / 'source'
-            shutil.copytree(REPO_ROOT, source, ignore=shutil.ignore_patterns('.git', '.superpowers', '__pycache__', '*.pyc'))
+            copy_plugin_source(source)
             baseline_session = self.private_session(root, 'baseline-session')
             self.assertEqual(setup_project_agents.main([
                 'prepare', '--target', str(target), '--session', str(baseline_session),

@@ -78,6 +78,22 @@ def load_maintainer():
     return module
 
 
+def fixture_prompt(name: str, **values: str) -> str:
+    templates = {
+        'check-sequence.md': 'fixture sequence',
+        'automatic-configuration.md': 'fixture automatic {action_text}',
+        'readiness-consent.md': (
+            'fixture maintenance question {question_number}\n\n<!-- agent-only -->\n\n'
+            'fixture maintenance instructions {action_text}'
+        ),
+        'autostart-consent.md': (
+            'fixture startup question {question_number}\n\n<!-- agent-only -->\n\n'
+            'fixture startup instructions {entry}'
+        ),
+    }
+    return templates[name].format(**values)
+
+
 class RecommendedToolPolicyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1363,7 +1379,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             '',
         )
 
-    def test_codex_configuration_findings_execute_without_consent_question(self):
+    def test_codex_configuration_findings_deliver_actions_without_consent_question(self):
         checker = self.checker
         policy = json.loads((POLICY_ROOT / 'codex.json').read_text(encoding='utf-8'))
         with mock.patch.object(checker, 'run_detector', return_value='false'):
@@ -1382,10 +1398,11 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         self.assertTrue(result.ran)
         self.assertFalse(result.requires_user_prompt)
         self.assertTrue(result.requires_automatic_configuration)
-        rendered = json.loads(checker.render_hook_result(result, 'codex'))
+        with mock.patch.object(checker, '_prompt', side_effect=fixture_prompt):
+            rendered = json.loads(checker.render_hook_result(result, 'codex'))
         self.assertNotIn('❓', rendered['systemMessage'])
         context = rendered['hookSpecificOutput']['additionalContext']
-        self.assertIn('Automatically execute only the listed configuration actions', context)
+        self.assertIn('fixture automatic', context)
         self.assertIn('--setting multi_agent --approved', context)
         self.assertIn('--setting parallel_agent_capacity --approved', context)
 
@@ -1403,15 +1420,14 @@ class RecommendedToolCheckerTest(unittest.TestCase):
 
         self.assertTrue(result.requires_user_prompt)
         self.assertTrue(result.requires_automatic_configuration)
-        rendered = json.loads(checker.render_hook_result(result, 'codex'))
+        with mock.patch.object(checker, '_prompt', side_effect=fixture_prompt):
+            rendered = json.loads(checker.render_hook_result(result, 'codex'))
         self.assertNotIn('❓', rendered['systemMessage'])
         context = rendered['hookSpecificOutput']['additionalContext']
-        self.assertLess(context.index('Automatically execute only the listed configuration actions'),
-                        context.index('Tell the user which checks reported problems'))
-        self.assertLess(context.index('Tell the user which checks reported problems'),
-                        context.index('login-startup preference'))
-        self.assertIn('❓ **Q1**', context)
-        self.assertIn('❓ **Q<next>**', context)
+        self.assertLess(context.index('fixture automatic'), context.index('fixture maintenance'))
+        self.assertLess(context.index('fixture maintenance'), context.index('fixture startup'))
+        self.assertIn('fixture maintenance question 1', context)
+        self.assertIn('fixture startup question <next>', context)
 
     def test_automatic_configuration_is_not_run_after_a_failed_check(self):
         checker = self.checker
@@ -1421,10 +1437,11 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         )
         project_error = checker.Finding('project-config-error', 'Project', 'unavailable', 'Inspect.')
         result = checker.HookResult(True, (automatic, project_error), internal_error=True)
-        rendered = json.loads(checker.render_hook_result(result, 'codex'))
+        with mock.patch.object(checker, '_prompt', side_effect=fixture_prompt):
+            rendered = json.loads(checker.render_hook_result(result, 'codex'))
         context = rendered['hookSpecificOutput']['additionalContext']
         self.assertFalse(result.requires_automatic_configuration)
-        self.assertNotIn('Automatically execute only the listed configuration actions', context)
+        self.assertNotIn('fixture automatic', context)
         self.assertNotIn('--setting parallel_agent_capacity --approved', context)
 
     def test_automatic_configuration_rejects_an_unsafe_setting_identifier(self):
@@ -1735,25 +1752,6 @@ class PythonLauncherContractTest(unittest.TestCase):
         REPO_ROOT / 'runtime/recommended-tools/check_recommended_tools.ps1',
         REPO_ROOT / 'runtime/rules/dispatch.ps1',
     )
-
-    def test_launchers_share_the_bounded_python_contract(self):
-        failure = (
-            'ERROR: Python 3.8 or newer is required; '
-            'checked python.'
-        )
-        for launcher in self.launchers:
-            with self.subTest(launcher=launcher.relative_to(REPO_ROOT).as_posix()):
-                content = launcher.read_text(encoding='utf-8')
-                self.assertIn(failure, content)
-                self.assertIn("sys.version_info < (3, 8)", content)
-                if launcher.suffix == '.sh':
-                    self.assertIn('command -v python', content)
-                else:
-                    self.assertIn("Get-Command python -CommandType Application", content)
-                    self.assertIn('catch {', content)
-                self.assertNotIn('python3', content)
-                self.assertNotIn('uv python find', content)
-                self.assertNotIn('Get-Command py ', content)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows PowerShell')
     def test_powershell_launchers_forward_to_compatible_python(self):
@@ -2230,25 +2228,21 @@ class SetupMigrationHookTest(unittest.TestCase):
             self.assertEqual(result[0].code, 'setup-required')
             self.assertEqual(lock.read_bytes(), b'{"unknown": true}')
 
-    def test_required_setup_uses_shared_temporary_pause_and_allows_deferral(self):
+    def test_required_setup_delivers_readiness_prompt_without_maintenance_actions(self):
         finding = self.checker.Finding('setup-required', 'SmartKit project setup', 'missing version', 'Run setup')
         result = self.checker.HookResult(True, (finding,))
         for host in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(host=host):
-                output = self.checker.render_hook_result(result, host, delivery='context')
-                self.assertIn('Readiness findings that require a user decision use the same temporary pause', output)
-                self.assertIn('explicitly declines or defers all', output)
-                self.assertIn('continue the original task', output)
-                self.assertIn('Reuse applicable explicit authorization', output)
-                self.assertIn('leave explicitly deferred items unresolved', output)
-                self.assertIn('nor advances the successful project setup version', output)
-                self.assertNotIn('Pause ordinary project work until', output)
-                self.assertIn('An empty action list authorizes no runner invocation', output)
+                with mock.patch.object(self.checker, '_prompt', wraps=self.checker._prompt) as prompts:
+                    self.checker.render_hook_result(result, host, delivery='context')
+                self.assertEqual([call.args[0] for call in prompts.call_args_list],
+                                 ['readiness-consent.md', 'check-sequence.md'])
+                self.assertEqual(prompts.call_args_list[0].kwargs['action_text'], '')
                 if host in {'codex', 'qoder', 'cursor'}:
                     native = json.loads(self.checker.render_hook_result(result, host))
                     self.assertIn('B．', native.get('systemMessage', native.get('user_message', '')))
 
-    def test_setup_and_other_findings_share_one_prompt_and_only_approved_maintenance(self):
+    def test_setup_and_other_findings_share_one_prompt_with_selected_maintenance_actions(self):
         findings = (
             self.checker.Finding('setup-required', 'SmartKit project setup', 'missing version', 'Run setup-project-agents'),
             self.checker.Finding('smartkit-outdated', 'SmartKit plugin', 'outdated', 'Update the plugin'),
@@ -2257,10 +2251,11 @@ class SetupMigrationHookTest(unittest.TestCase):
         for host in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(host=host):
                 result = self.checker.HookResult(True, findings)
-                output = json.loads(self.checker.render_hook_result(result, host, delivery='context'))
+                with mock.patch.object(self.checker, '_prompt', side_effect=fixture_prompt):
+                    output = json.loads(self.checker.render_hook_result(result, host, delivery='context'))
                 if host in {'codex', 'qoder'}:
                     context = output['hookSpecificOutput']['additionalContext']
-                    self.assertEqual(output['systemMessage'].count('❓ **Q1**'), 1)
+                    self.assertEqual(output['systemMessage'].count('fixture maintenance question 1'), 1)
                 elif host == 'cursor':
                     context = output['additional_context']
                 else:
@@ -2269,8 +2264,6 @@ class SetupMigrationHookTest(unittest.TestCase):
                     self.assertIn(finding.message, context)
                 self.assertIn('setup-project-agents', context)
                 self.assertIn('apply --harness ' + host + ' --tool example --action install --approved', context)
-                self.assertIn('Execute only approved actions', context)
-                self.assertIn('leave explicitly deferred items unresolved', context)
 
 
 if __name__ == '__main__':

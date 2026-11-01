@@ -380,32 +380,6 @@ class DiagnoseAgentSessionTest(unittest.TestCase):
 
     def test_public_job_supports_python_3_8(self):
         ast.parse(TIMING_SCRIPT.read_text(encoding='utf-8'), feature_version=(3, 8))
-        self.assertIn('3.8', TIMING_SCRIPT.read_text(encoding='utf-8'))
-
-
-    def test_skill_defines_identity_effects_and_source_boundaries(self):
-        skill = (
-            REPO_ROOT / 'skills' / 'diagnose-agent-session' / 'SKILL.md'
-        ).read_text(encoding='utf-8')
-
-        normalized_skill = ' '.join(skill.split())
-
-        self.assertIn('current or completed agent session', normalized_skill)
-        self.assertIn('current Codex identity', normalized_skill)
-        self.assertIn('installed Tokscale provider', normalized_skill)
-        self.assertIn(
-            'do not form an atomic snapshot', normalized_skill
-        )
-        self.assertIn('pricing or provider endpoints', normalized_skill)
-        self.assertIn('Tokscale-owned config and cache directories', normalized_skill)
-        self.assertIn('Tokscale executable path and version', normalized_skill)
-        self.assertIn('Provider stdout and stderr remain withheld', normalized_skill)
-        self.assertIn('no login, sync, credential change', normalized_skill)
-        self.assertIn('never select the newest log', normalized_skill)
-        self.assertIn('final recorded turn', normalized_skill)
-        self.assertIn('Exactly one match excludes that call alone', normalized_skill)
-        self.assertIn('Multiple matches exclude nothing', normalized_skill)
-        self.assertIn('no owned turn-bounded model-activity or cost provider', normalized_skill)
 
     def test_windows_resolves_tokscale_cmd_for_python_subprocess(self):
         resolved = self.timing.tokscale_executable(

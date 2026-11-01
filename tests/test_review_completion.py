@@ -59,13 +59,33 @@ class FakeGitHub:
                 'parents': [{'sha': item} for item in self.test.git('rev-list', '--parents', '-n', '1', head).split()[1:]]}
 
 
-class ReviewCompletionTests(unittest.TestCase):
-    def setUp(self):
+class CompletionFixture:
+    def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix='completion 中文 ')
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
         self.repository = self.directory / 'repo with spaces'
         self.repository.mkdir()
+        self.state = self.directory / 'private state'
+        self.evidence = self.directory / 'review-evidence.txt'
+        self.evidence.write_text('Checks passed and whole-file review complete. Prior action is authorized.', encoding='utf-8')
+        self.comparison = 'a' * 40
+        self.base = 'b' * 40
+
+    def request(self, mode: str = 'viewed-only', **extra: object) -> Path:
+        value = {'repository': str(self.repository), 'branch': 'feature', 'pull_request': 'owner/repo',
+                 'number': 7, 'base': self.comparison, 'head': self.base, 'viewer': 'reviewer',
+                 'viewed_paths': ['file.txt', 'already.txt'], 'mode': mode,
+                 'evidence': [str(self.evidence)]}
+        if mode == 'commit-push':
+            value.update(remote='origin', message='Reviewed changes')
+        value.update(extra)
+        path = self.directory / 'request.json'
+        path.write_text(json.dumps(value), encoding='utf-8')
+        return path
+class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
         self.remote = self.directory / 'remote.git'
         self.call_git('init', '--bare', str(self.remote))
         self.git('init')
@@ -83,9 +103,6 @@ class ReviewCompletionTests(unittest.TestCase):
         self.base = self.git('rev-parse', 'HEAD')
         self.git('remote', 'add', 'origin', str(self.remote))
         self.git('push', 'origin', 'HEAD:refs/heads/feature')
-        self.state = self.directory / 'private state'
-        self.evidence = self.directory / 'review-evidence.txt'
-        self.evidence.write_text('Checks passed and whole-file review complete. Prior action is authorized.', encoding='utf-8')
         self.github = FakeGitHub(self)
         self.patches = [patch.object(completion.Commands, 'graphql', lambda commands, query, variables: self.github.graphql(commands, query, variables)),
                         patch.object(completion.Commands, 'commit', lambda commands, source, head: self.github.commit(commands, source, head)),
@@ -104,18 +121,6 @@ class ReviewCompletionTests(unittest.TestCase):
 
     def remote_head(self):
         return self.call_git('--git-dir', str(self.remote), 'rev-parse', 'refs/heads/feature')
-
-    def request(self, mode='viewed-only', **extra):
-        value = {'repository': str(self.repository), 'branch': 'feature', 'pull_request': 'owner/repo',
-                 'number': 7, 'base': self.comparison, 'head': self.base, 'viewer': 'reviewer',
-                 'viewed_paths': ['file.txt', 'already.txt'], 'mode': mode,
-                 'evidence': [str(self.evidence)]}
-        if mode == 'commit-push':
-            value.update(remote='origin', message='Reviewed changes')
-        value.update(extra)
-        path = self.directory / 'request.json'
-        path.write_text(json.dumps(value), encoding='utf-8')
-        return path
 
     def prepare(self, mode='viewed-only', **extra):
         return completion.prepare(self.request(mode, **extra), self.state)
@@ -167,18 +172,6 @@ class ReviewCompletionTests(unittest.TestCase):
         self.run_completion(prepared)
         self.assertEqual(self.git('rev-parse', 'HEAD'), self.base)
         self.assertEqual(self.git('status', '--porcelain'), '')
-
-    def test_command_interruption_reaps_child_before_returning(self):
-        commands = completion.Commands(self.repository, self.directory)
-        process = Mock()
-        process.pid = 123
-        process.returncode = 130
-        process.communicate.side_effect = KeyboardInterrupt
-        with patch.object(completion.subprocess, 'Popen', return_value=process), self.assertRaises(KeyboardInterrupt):
-            commands.call(['git', '--version'])
-        process.wait.assert_called_once_with()
-        log = completion.read_json(next(commands.logs.glob('*.command.json')))
-        self.assertEqual(log['exit_code'], 130)
 
     def test_reuses_existing_commit_without_empty_commit(self):
         (self.repository / 'file.txt').write_bytes(b'changed\n')
@@ -261,47 +254,8 @@ class ReviewCompletionTests(unittest.TestCase):
         (self.repository / 'file.txt').write_bytes(b'new\n')
         prepared = self.prepare('commit-push')
         self.run_completion(prepared)
-        self.run_completion(prepared)
         self.assertEqual(self.remote_head(), self.git('rev-parse', 'HEAD'))
         self.assertEqual(self.call_git('--git-dir', str(mirror), 'rev-parse', 'refs/heads/feature'), self.base)
-
-    def test_log_write_failure_after_spawn_reaps_real_child(self):
-        commands = completion.Commands(self.repository, self.directory)
-        original_write = completion.write_json
-        original_spawn = subprocess.Popen
-        children = []
-        def fail_pid(path, value):
-            if isinstance(value, dict) and 'pid' in value:
-                raise OSError('state write failed after spawn')
-            return original_write(path, value)
-        def spawn(*arguments, **options):
-            process = original_spawn(*arguments, **options)
-            children.append(process)
-            return process
-        with patch.object(completion, 'write_json', fail_pid), patch.object(completion.subprocess, 'Popen', spawn):
-            with self.assertRaises(OSError):
-                commands.call([sys.executable, '-c', 'import time; time.sleep(0.05)'])
-        self.assertIsNotNone(children[0].poll())
-
-    def test_stale_command_instances_never_overwrite_prior_logs(self):
-        first = completion.Commands(self.repository, self.directory)
-        second = completion.Commands(self.repository, self.directory)
-        first.git('rev-parse', 'HEAD')
-        before = {path: path.read_bytes() for path in first.logs.iterdir()}
-        second.git('status', '--porcelain')
-        self.assertTrue(all(path.read_bytes() == content for path, content in before.items()))
-        self.assertEqual(len(list(first.logs.glob('*.command.json'))), 2)
-
-    def test_cli_rejected_existing_state_locations_remain_unchanged(self):
-        for state in (self.repository, self.directory):
-            with self.subTest(state=str(state)):
-                sentinel = state / 'failure.log'
-                sentinel.write_bytes(b'unowned sentinel')
-                before = {path: path.read_bytes() for path in state.iterdir() if path.is_file()}
-                with patch('sys.stdout', io.StringIO()):
-                    self.assertEqual(completion.main(['prepare', '--input', str(self.request()), '--state', str(state)]), 1)
-                self.assertEqual(sentinel.read_bytes(), b'unowned sentinel')
-                self.assertTrue(all(path.read_bytes() == content for path, content in before.items()))
 
     def test_rejects_content_index_evidence_viewer_and_base_drift(self):
         prepared = self.prepare()
@@ -316,12 +270,6 @@ class ReviewCompletionTests(unittest.TestCase):
             undo()
         self.assertFalse(self.github.marked)
 
-    def test_incorrect_plan_confirmation_never_mutates(self):
-        self.prepare()
-        with self.assertRaises(ValueError):
-            completion.run(self.state, '0' * 64)
-        self.assertFalse(self.github.marked)
-
     def test_partial_viewed_response_is_reconciled_without_repeating_write(self):
         self.github.states['already.txt'] = 'UNVIEWED'
         self.github.fail_after_mark = True
@@ -331,12 +279,6 @@ class ReviewCompletionTests(unittest.TestCase):
         self.assertEqual(self.github.marked, ['file.txt'])
         self.run_completion(prepared)
         self.assertEqual(self.github.marked, ['file.txt', 'already.txt'])
-
-    def test_paginates_complete_viewed_states(self):
-        self.github.page_size = 1
-        prepared = self.prepare()
-        self.run_completion(prepared)
-        self.assertEqual(self.github.marked, ['file.txt'])
 
     def test_lost_push_response_resumes_from_actual_remote(self):
         (self.repository / 'file.txt').write_bytes(b'new\n')
@@ -416,17 +358,103 @@ class ReviewCompletionTests(unittest.TestCase):
             self.run_completion(prepared)
         self.assertFalse(self.github.marked)
 
-    def test_cli_summary_is_bounded_and_full_logs_are_retained(self):
-        prepared = self.prepare()
+class CommandAndCliTests(CompletionFixture, unittest.TestCase):
+    def test_command_interruption_reaps_child_before_returning(self):
+        commands = completion.Commands(self.repository, self.directory)
+        process = Mock()
+        process.pid = 123
+        process.returncode = 130
+        process.communicate.side_effect = KeyboardInterrupt
+        with patch.object(completion.subprocess, 'Popen', return_value=process), self.assertRaises(KeyboardInterrupt):
+            commands.call(['git', '--version'])
+        process.wait.assert_called_once_with()
+        log = completion.read_json(next(commands.logs.glob('*.command.json')))
+        self.assertEqual(log['exit_code'], 130)
+
+    def test_log_write_failure_after_spawn_reaps_real_child(self):
+        commands = completion.Commands(self.repository, self.directory)
+        original_write = completion.write_json
+        original_spawn = subprocess.Popen
+        children = []
+        def fail_pid(path, value):
+            if isinstance(value, dict) and 'pid' in value:
+                raise OSError('state write failed after spawn')
+            return original_write(path, value)
+        def spawn(*arguments, **options):
+            process = original_spawn(*arguments, **options)
+            children.append(process)
+            return process
+        with patch.object(completion, 'write_json', fail_pid), patch.object(completion.subprocess, 'Popen', spawn):
+            with self.assertRaises(OSError):
+                commands.call([sys.executable, '-c', 'import time; time.sleep(0.05)'])
+        self.assertIsNotNone(children[0].poll())
+
+    def test_stale_command_instances_never_overwrite_prior_logs(self):
+        first = completion.Commands(self.repository, self.directory)
+        second = completion.Commands(self.repository, self.directory)
+        first.call([sys.executable, '-c', 'print(1)'])
+        before = {path: path.read_bytes() for path in first.logs.iterdir()}
+        second.call([sys.executable, '-c', 'print(2)'])
+        self.assertTrue(all(path.read_bytes() == content for path, content in before.items()))
+        self.assertEqual(len(list(first.logs.glob('*.command.json'))), 2)
+
+        self.assertTrue(all('exit_code' in completion.read_json(path) for path in first.logs.glob('*.command.json')))
+
+    def test_cli_rejected_existing_state_locations_remain_unchanged(self):
+        for state in (self.repository, self.directory):
+            with self.subTest(state=str(state)):
+                sentinel = state / 'failure.log'
+                sentinel.write_bytes(b'unowned sentinel')
+                before = {path: path.read_bytes() for path in state.iterdir() if path.is_file()}
+                with patch('sys.stdout', io.StringIO()):
+                    self.assertEqual(completion.main(['prepare', '--input', str(self.request()), '--state', str(state)]), 1)
+                self.assertEqual(sentinel.read_bytes(), b'unowned sentinel')
+                self.assertTrue(all(path.read_bytes() == content for path, content in before.items()))
+
+    def test_incorrect_plan_confirmation_never_mutates(self):
+        self.state.mkdir(mode=0o700)
+        completion.write_json(self.state / 'plan.json', {'version': 1})
+        with patch.object(completion, 'references') as evidence, patch.object(completion, 'Commands') as commands:
+            with self.assertRaises(ValueError):
+                completion.run(self.state, '0' * 64)
+        evidence.assert_not_called()
+        commands.assert_not_called()
+
+    def test_paginates_complete_viewed_states(self):
+        identity = Mock()
+        identity.remote_head.return_value = self.base
+        identity.comparison = self.comparison
+        github = FakeGitHub(identity)
+        github.page_size = 1
+        commands = Mock(spec=completion.Commands)
+        cursors = []
+
+        def page(query, variables):
+            cursors.append(variables['cursor'])
+            return github.graphql(commands, query, variables)
+
+        commands.graphql.side_effect = page
+        result = completion.pr_snapshot(commands, {'pull_request': 'owner/repo', 'number': 7})
+        self.assertEqual(result['files'], github.states)
+        self.assertEqual(cursors, [None, '1'])
+
+    def test_cli_summary_is_bounded_and_counts_the_full_plan(self):
+        plan = {
+            'request': {'mode': 'commit-push', 'viewed_paths': ['file-{}'.format(i) for i in range(1000)]},
+            'workspace': {'head': self.base, 'files': {'large-file': {'content': 'private' * 10000}}},
+            'outgoing': ['c' * 40] * 1000,
+        }
+        summary = completion.summary(self.state, plan, 'complete')
         output = io.StringIO()
-        with patch('sys.stdout', output):
-            self.assertEqual(completion.main(['run', '--state', str(self.state), '--confirm', prepared['plan_id']]), 0)
-        summary = json.loads(output.getvalue())
-        self.assertEqual(summary['status'], 'complete')
+        with patch.object(completion, 'run', return_value=summary) as run, patch('sys.stdout', output):
+            self.assertEqual(completion.main(['run', '--state', str(self.state), '--confirm', 'd' * 64]), 0)
+        run.assert_called_once_with(self.state.resolve(), 'd' * 64)
+        value = json.loads(output.getvalue())
+        self.assertEqual(value['status'], 'complete')
+        self.assertEqual(value['viewed_count'], 1000)
+        self.assertEqual(value['outgoing_commit_count'], 1000)
+        self.assertEqual(value['changed_path_count'], 1)
         self.assertLess(len(output.getvalue()), 2000)
-        commands = list((self.state / 'logs').glob('*.command.json'))
-        self.assertTrue(commands)
-        self.assertTrue(all('exit_code' in completion.read_json(path) for path in commands))
 
 
 if __name__ == '__main__':

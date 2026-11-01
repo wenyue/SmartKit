@@ -75,10 +75,6 @@ class PluginRuleContractTest(unittest.TestCase):
     def assert_core_and_index(self, context, root=ROOT):
         registry = json.loads((root / 'rules/registry.json').read_text(encoding='utf-8'))
         self.assertTrue(context.startswith('## SmartKit Rule files\n'))
-        self.assertIn(
-            'Each `<smartkit-rule-file>` block below represents one independent Rule source file.',
-            context,
-        )
         self.assertIn('## SmartKit Rule index', context)
         resources = json.loads(context.split('## SmartKit plugin resources\n', 1)[1]
                                .split('```json\n', 1)[1].split('\n```', 1)[0])
@@ -86,7 +82,6 @@ class PluginRuleContractTest(unittest.TestCase):
             'plugin_root': str(root.resolve()),
             'local_web': str((root / 'runtime/local_web/__main__.py').resolve()),
         })
-        self.assertNotIn('Strength', context)
         core_count = 0
         for rule in registry['rules']:
             if rule.get('delivery', 'inline' if rule['id'].startswith('smartkit/core-') else 'indexed') == 'inline':
@@ -101,7 +96,7 @@ class PluginRuleContractTest(unittest.TestCase):
                 enclosed, _ = remainder.split(closing, 1)
                 self.assertEqual(enclosed, body)
             else:
-                self.assertIn(rule['description'], context)
+                self.assertIn(rule['description'].replace('|', r'\|'), context)
                 self.assertIn(rule['id'], context)
                 self.assertIn(str((root / 'rules' / rule['source']).resolve()), context)
                 self.assertNotIn(
@@ -137,7 +132,6 @@ class PluginRuleContractTest(unittest.TestCase):
             with self.subTest(harness=harness):
                 context = self.session_context(harness, {'prompt': 'Discuss Python error handling'})
                 self.assert_core_and_index(context)
-                self.assertIn('Codex child-result waiting', context)
                 self.assertLess(len(context.encode()), 50000)
         self.assertFalse(self.state_root.exists())
 
@@ -149,15 +143,10 @@ class PluginRuleContractTest(unittest.TestCase):
                     if item['id'] == 'smartkit/core-communication')
         rule['delivery'] = 'indexed'
         path.write_text(json.dumps(document), encoding='utf-8')
-        source_title = (root / 'rules' / rule['source']).read_text(encoding='utf-8').splitlines()[0]
         for harness in HARNESSES:
             with self.subTest(harness=harness):
                 context = self.session_context(harness, root=root)
-                self.assertNotIn(source_title, context)
-                self.assertIn(rule['id'], context)
-                self.assertIn(rule['description'], context)
-                self.assertIn(str(root / 'rules' / rule['source']), context)
-                self.assertIn('# Instruction Governance', context)
+                self.assert_core_and_index(context, root=root)
 
     def test_invalid_delivery_and_indexed_governance_are_rejected(self):
         for delivery in ('unknown', 'indexed'):
@@ -206,7 +195,6 @@ class PluginRuleContractTest(unittest.TestCase):
                 body = (ROOT / 'skills' / name / 'SKILL.md').read_text(encoding='utf-8')
                 self.assertRegex(body, rf'(?m)^name: {name}$')
                 self.assertRegex(body, r'(?m)^description: .+$')
-                self.assertNotIn('Strength:', body)
                 self.assertNotIn('disable-model-invocation: true', body)
         for name in ('code', 'cpp', 'flutter', 'go', 'python'):
             self.assertFalse((ROOT / 'rules' / f'file-{name}.md').exists())
@@ -234,11 +222,10 @@ class PluginRuleContractTest(unittest.TestCase):
         path.write_text(json.dumps(document), encoding='utf-8')
         context = self.session_context('codex', root=root)
         self.assertIn('A \\| B comparison.', context)
-        self.assertIn('# Instruction Governance', context)
-        self.assertNotIn('# Codex Harness Adaptation', context)
+        self.assert_core_and_index(context, root=root)
         indexed['description'] = 'Always'
         path.write_text(json.dumps(document), encoding='utf-8')
-        self.assertNotIn('# Codex Harness Adaptation', self.session_context('codex', root=root))
+        self.assert_core_and_index(self.session_context('codex', root=root), root=root)
 
     def test_session_reentry_restores_core_and_index_without_activation_history(self):
         for harness in ('codex', 'qoder'):

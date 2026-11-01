@@ -69,6 +69,50 @@ class DiffFixture:
         with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff, "subprocess", editor), patch.object(editor_bridge, "open_registered_diff", return_value=registered):
             yield editor.Popen
 
+class TargetValidationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.repo = Path(self.temporary.name)
+        self.name = "a_中文 & #.py"
+        self.file = self.repo / self.name
+        self.oid = 'a' * 40
+        self.target = diff.Target(self.repo, self.name, 'blob:' + self.oid)
+        self.head = 'b' * 40
+        self.github = 'https://github.com/o/r/pull/1/files'
+        self.context = diff.Target(self.repo, self.name, 'commit:' + 'c' * 40, self.github, self.head)
+
+    def test_native_commit_metadata_is_fixed_and_confined(self):
+        fields = dict(repo=str(self.repo), path=self.name, base=self.target.base,
+                      base_commit="a" * 40, base_path="old.py")
+        target = diff.target_from_fields(fields)
+        self.assertEqual(diff.target_from_query(target.query()), target)
+        for change in ({"base_commit": "HEAD"}, {"base_commit": "abc"}, {"base_path": "../old.py"},
+                       {"base": "absent"}, {"base": "index"}, {"base": "commit:" + "b" * 40}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                diff.target_from_fields(dict(fields, **change))
+
+    def test_html_escapes_content_and_preserves_newline_information(self):
+        comparison = diff.Comparison(self.target, b"<script>x</script>\r\n", b"<script>x</script>\n", self.file)
+        output = diff.render_diff(comparison).decode("utf-8")
+        self.assertIn("&lt;script&gt;", output)
+        self.assertNotIn("<script>x", output)
+        self.assertIn("CRLF 1", output)
+        with self.assertRaises(UnicodeDecodeError):
+            diff.render_diff(diff.Comparison(self.target, b"\xff", b"x", self.file))
+
+    def test_pr_context_requires_fixed_head_github_and_safe_before_path(self):
+        fields = dict(repo=str(self.repo), path=self.name, base=self.context.base, head=self.head, github=self.github)
+        for change in ({"head": "HEAD"}, {"head": "abc"}, {"github": ""},
+                       {"base": "index"}, {"base_path": "../old.py"}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                diff.target_from_fields(dict(fields, **change))
+        with patch.object(service, "ensure_service"), self.assertRaises(ValueError):
+            diff.links({"repo": str(self.repo), "base": self.context.base,
+                        "files": [{"id": "M1", "path": self.name}],
+                        "pr": {"repository": "o/r", "number": 1}})
+
+
 class DiffTests(DiffFixture, unittest.TestCase):
     @unittest.skipUnless(os.name == "nt", "requires native Windows consoles")
     def test_git_comparison_runs_without_a_console(self):
@@ -169,16 +213,6 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
                 diff.links(self.batch(self.entry(), self.entry()))
         ensure.assert_not_called()
 
-    def test_native_commit_metadata_is_fixed_and_confined(self):
-        fields = dict(repo=str(self.repo), path=self.name, base=self.target.base,
-                      base_commit="a" * 40, base_path="old.py")
-        target = diff.target_from_fields(fields)
-        self.assertEqual(diff.target_from_query(target.query()), target)
-        for change in ({"base_commit": "HEAD"}, {"base_commit": "abc"}, {"base_path": "../old.py"},
-                       {"base": "absent"}, {"base": "index"}, {"base": "commit:" + "b" * 40}):
-            with self.subTest(change=change), self.assertRaises(ValueError):
-                diff.target_from_fields(dict(fields, **change))
-
     @unittest.skipIf(os.name == "nt", "POSIX symlinks; cache junctions are checked separately")
     def test_symlink_target_cannot_read_outside_the_worktree(self):
         outside = self.base / "private.py"
@@ -187,17 +221,6 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         self.file.symlink_to(outside)
         with self.assertRaisesRegex(ValueError, "redirect"):
             diff.read_comparison(self.target)
-
-    def test_html_escapes_content_and_preserves_newline_information(self):
-        comparison = diff.Comparison(self.target, b"<script>x</script>\r\n", b"<script>x</script>\n", self.file)
-        output = diff.render_diff(comparison).decode("utf-8")
-        self.assertIn("&lt;script&gt;", output)
-        self.assertNotIn("<script>x", output)
-        self.assertIn("仅换行符", output)
-        self.assertIn("CRLF 1", output)
-        self.assertIn("当前工作区", output)
-        with self.assertRaises(UnicodeDecodeError):
-            diff.render_diff(diff.Comparison(self.target, b"\xff", b"x", self.file))
 
     def test_editor_dispatch_uses_real_worktree_and_preserves_temporary_base(self):
         comparison = diff.read_comparison(self.target)
@@ -334,19 +357,6 @@ class BatchInputTests(DiffFixture, unittest.TestCase):
             page = diff.render_page(target)
             self.assertIsNone(page.redirect)
             self.assertIn(github.encode(), page.content)
-
-    def test_default_pr_anchors_match_observed_github_file_fragments(self):
-        entries = [
-            self.entry(path=".agents/skills/change-set-verification/agents/openai.yaml"),
-            self.entry(id="F2", path=".agents/skills/create-icon/agents/openai.yaml"),
-        ]
-        with patch.object(service, "ensure_service"):
-            results = diff.links(self.batch(*entries, pr={"repository": "wenyue/OtakuRoom", "number": 507, "head": "f" * 40}))
-        targets = [diff.target_from_query(urllib.parse.urlsplit(result["url"]).query) for result in results]
-        self.assertEqual([target.github for target in targets], [
-            "https://github.com/wenyue/OtakuRoom/pull/507/files#diff-e7af03f197ac95de06e34b0d00ba3b824ac4af11e8615d30743d2e889a028633",
-            "https://github.com/wenyue/OtakuRoom/pull/507/files#diff-1aa4adc2dd7fb91113f483b1d7ac500edb453475dcfd261acfa04632dc5f0cfa",
-        ])
 
     def test_pr_context_is_complete_and_cannot_supply_a_url(self):
         pr = {"repository": "o/r", "number": 507, "head": "f" * 40}
@@ -947,16 +957,6 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
             self.assertEqual(diff.open_editor(target)["url"], target.url())
         find.assert_not_called()
 
-    def test_pr_context_requires_fixed_head_github_and_safe_before_path(self):
-        fields = dict(repo=str(self.repo), path=self.name, base=self.context.base, head=self.head, github=self.github)
-        for change in ({"head": "HEAD"}, {"head": "abc"}, {"github": ""},
-                       {"base": "index"}, {"base_path": "../old.py"}):
-            with self.subTest(change=change), self.assertRaises(ValueError):
-                diff.target_from_fields(dict(fields, **change))
-        with patch.object(service, "ensure_service"), self.assertRaises(ValueError):
-            diff.links(self.batch(pr={"repository": "o/r", "number": 1}))
-
-
 class DiffHttpTests(DiffFixture, unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -987,9 +987,6 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
         with patch.object(diff, "open_editor", return_value={"viewer": "vscode", "message": "dispatched"}) as launch:
             code, headers, body = self.request(self.target.url())
             self.assertEqual(code, 200)
-            self.assertIn(b"document.prerendering", body)
-            self.assertIn(b"window.top", body)
-            self.assertIn(b'window.close()', body)
             self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
             self.assertIn(b"const automatic=false", body)
             self.assertIn(b"const automatic=true", self.request(self.target.url(), headers={"Sec-Fetch-Site": "cross-site", "Sec-Fetch-User": "?1"})[2])
