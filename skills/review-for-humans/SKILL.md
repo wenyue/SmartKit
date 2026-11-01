@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Make fixed changes understandable enough for the human to judge them and choose what happens next. Establish why the behavior is needed before judging how it is implemented. Review authorizes evidence capture and link preparation. Explain complete file groups before acting on selected review remedies, delivery, or advancement.
 
-This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report. Load [Delivery](references/delivery.md) when an otherwise applicable delivery choice needs preparation, a selected delivery needs execution, its effects need reconciliation, or a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete. [Conversation Examples](examples/conversations.md) illustrate difficult choices without adding policy.
+This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report. Load [Delivery](references/delivery.md) for an explicit delivery request or pending delivery, or to determine whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete. [Conversation Examples](examples/conversations.md) illustrate difficult choices without adding policy.
 
 ## Fix the comparison and reading order
 
@@ -73,7 +73,7 @@ Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious
 
 ## Explain complete groups and preserve their identity
 
-Use Report Format's complete file blocks. Assign continuous M IDs across files and groups, grouping implementation steps by the problem they solve and separating independent changes that cannot share one explanation. One localization file is one modification. Minor accompanying edits without findings may stay in the overview or be omitted from explanation; they remain within assessment coverage.
+Use Report Format for the applicable report kind. Assign continuous M IDs across files and groups, grouping implementation steps by the problem they solve and separating independent changes that cannot share one explanation. One localization file is one modification. Minor accompanying edits without findings may stay in the overview or be omitted from explanation; they remain within assessment coverage.
 
 Every supported unreasonable finding and worthwhile required or optional improvement needs an actionable M item, using an existing item or adding one. Its leading judgment explains the problem, unreasonable severity or elegance status, trigger, impact, correction or benefit. A generic verdict cannot replace the finding. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them; associate each with the responsible M item.
 
@@ -116,7 +116,7 @@ Resolve authorized, derivable work before asking: inspect facts, prepare links, 
 
 Advancement requires current correctness/version evidence, successful required review checks, completed affected re-review, and resolution or explicit retention of pending unreasonable findings and required elegance burdens, including earlier groups. Missing elegance evidence alone does not block advancement. Optional improvements and unselected O advice remain optional.
 
-When Pass is otherwise applicable, complete Delivery's derivable inventory, supplementary review, and checks before deciding whether to offer it. Existing staged work requires that preparation; its presence or origin alone proves no limitation. Honor explicit exclusions and preservation requirements, asking directly when their resolution belongs to the user. Unfinished preparation and unresolved decisions are not verified unavailability. A verified delivery-only limitation still permits ordinary Continue/Finish when review remains valid and no delivery is pending. If no delivery effect remains, offer advancement instead of empty delivery.
+Start delivery preparation when the user explicitly requests delivery or its preparation, or when delivery is already pending. Review, remedies, and advancement alone do not trigger that work. Before offering Pass for the requested delivery, complete Delivery's derivable inventory, supplementary review, and checks, including existing staged work. Honor explicit exclusions and preservation requirements, asking directly when their resolution belongs to the user. Unfinished preparation and unresolved decisions are not verified unavailability. A verified delivery-only limitation still permits ordinary Continue/Finish when review remains valid and no delivery is pending. If no delivery effect remains, offer advancement instead of empty delivery.
 
 ### Present every applicable alternative
 
@@ -128,10 +128,10 @@ Use the first matching row, include every available choice in its order, and lab
 | No pending delivery; unreasonable findings and any elegance improvements remain | **Fix and optimize**; **Ignore** the named defects and improvements. |
 | No pending delivery; unreasonable findings only | **Fix**; **Ignore** the named defects. |
 | No pending delivery; required elegance remains | **Optimize**, including outstanding optional improvements; **Ignore** the named burdens and improvements. |
-| Only optional improvements remain | **Optimize**; **Pass** when available, explicitly retaining those named items; **Continue** or **Finish**. |
-| No outstanding findings or improvements; delivery effects remain | **Pass** when available; **Continue** or **Finish**. |
-| Final group with no finding, supported M/O improvement, effect, or decision left | Report verified completion without a menu. |
-| Review can advance and delivery has no effects or is unavailable | **Continue**, or **Finish** at scope end. |
+| Only optional improvements remain | **Optimize**; **Pass** for requested, prepared delivery, explicitly retaining those named items; **Continue** or **Finish**. |
+| No outstanding findings or improvements; requested delivery is prepared and effects remain | **Pass** when available; **Continue** or **Finish**. |
+| Final group with no finding, supported M/O improvement, requested delivery effect, or decision left | Report verified completion without a menu. |
+| Review can advance without requested delivery, or delivery has no effects or is unavailable | **Continue**, or **Finish** at scope end. |
 
 When an outstanding O observation has a supported optimization, include an explicit **Optimize O…** in any genuine menu. With no necessary main issue or pending delivery taking priority, recommend that optimization ahead of Pass/Continue. Combine M and O remedies only with their IDs and effects named. Otherwise keep the necessary main remedy recommended and place O optimization after the main remedy and Ignore, stating what remains unresolved. For an already authorized ready delivery, disclose O advice without manufacturing another menu or delaying execution.
 
@@ -143,7 +143,7 @@ Start each option with a short bold action label, then its concrete effects. In 
 
 Retain the selected items, workspace, disclosed effects, accepted trade-offs, and any pending compound request. In particular, preserve Pass versus only-deliver and the saved next position through supplementary review, repairs, and interrupted writes.
 
-Limit edits to selected remedies and necessary supporting changes. After reviewed content changes, including selected O work, run required checks and refresh before/after evidence and links. Independently re-review the changed and affected previously reviewed parts, including unexpected changes. Keep pinned remote PR evidence separate from checked unpublished content. Show complete updated file blocks in a dedicated reply apart from unseen main files; preserve IDs/groups without recounting progress. A repair or optimization is complete only when checks and re-review confirm it; retained burdens remain trade-offs.
+Limit edits to selected remedies and necessary supporting changes. After reviewed content changes, including selected O work, run required checks and refresh before/after evidence and links. Independently re-review the changed and affected previously reviewed parts, including unexpected changes. Keep pinned remote PR evidence separate from checked unpublished content. Report the repair in a dedicated reply apart from unseen main files using Report Format; preserve IDs/groups without recounting progress. A repair or optimization is complete only when checks and re-review confirm it; retained burdens remain trade-offs.
 
 Without pending delivery or an explicit compound request, a single Fix, Optimize, or Ignore ends at the updated decision. With a pending request, complete the dedicated re-review and continue its remaining authorized effects. Any unresolved unreasonable finding or outstanding required or optional improvement in required delivery coverage, including selected O work, suspends delivery for remedy or explicit retention. An earlier Pass accepts no later discovery and authorizes no unselected repair. Once those findings and prerequisites are resolved, resume the original request rather than asking for Pass again or substituting Continue/Finish.
 

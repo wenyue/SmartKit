@@ -1,6 +1,12 @@
 # Report Format
 
-Use this fixed presentation for ordinary, supplementary, dedicated repair, and selected-O reports. The [Skill entry](../SKILL.md) owns inspection standards, required findings and conclusions, M/O identity, grouping, progress, and decisions. This reference owns their presentation; examples illustrate it without defining another format.
+The [Skill entry](../SKILL.md) owns inspection standards, required findings and conclusions, M/O identity, grouping, progress, and decisions. This reference owns report depth and presentation; examples illustrate it without defining another format.
+
+## Choose the report depth
+
+Use the complete file blocks below for ordinary and supplementary reviews. For a dedicated repair or optimization, including selected-O work, default to a concise report: identify the selected M/O items and source links, explain what changed and whether the original findings are resolved, give the current reasonableness and elegance judgments with any changed reasons, and report checks, limits, and unresolved decisions. Keep new incidental O observations separate.
+
+Expand the affected file into a complete block for a material design, contract change, or risk introduced by the repair or newly discovered during re-review, or when the user requests the detail. Report depth changes presentation only: retain full evidence, inspection coverage, required checks, and affected re-review without recounting main progress.
 
 ## Arrange complete file blocks
 
@@ -62,4 +68,4 @@ Keep rare machinery in the internal analysis unless it changes the user's choice
 
 ## Check the report before sending
 
-Before sending, check the first-file and between-file separators, then confirm that any complete O section follows the final complete file and precedes the group closing, with one separator at each boundary. With no O section, confirm exactly one separator between the final file and closing. Check the full-path title on its own; separate overview; two leading judgments; bold item titles; and paired quoted comparisons. Confirm conditional findings, evidence gaps, and decisions are present where needed. Keep the fixed structure and use friendly, direct language within it.
+For a concise repair, confirm the required summary content and whether an affected file needs expansion. For complete file blocks, check the first-file and between-file separators, then confirm that any complete O section follows the final complete file and precedes the group closing, with one separator at each boundary. With no O section, confirm exactly one separator between the final file and closing. Check the full-path title on its own; separate overview; two leading judgments; bold item titles; and paired quoted comparisons. Confirm conditional findings, evidence gaps, and decisions are present where needed. Keep the fixed structure and use friendly, direct language within it.
