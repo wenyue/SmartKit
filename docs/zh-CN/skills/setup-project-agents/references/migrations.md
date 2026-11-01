@@ -2,6 +2,12 @@
 
 各版本的迁移指引存放在本文件旁的 `migrations/` 目录中，每个需要迁移的发布版本对应一份 `<version>.md` 文件。根据 `start` 选定的版本，在选定源中找到并读取对应文件，再生成项目内容。 `setup-assets/catalog/migrations.json` 中的机器可读声明标识哪些发布版本要求项目改变； SmartKit 发布了新版本，本身不要求迁移。按顺序，在一次完整 setup 中应用项目成功 `setupVersion` 之后、直至选定源版本的每项条目。无需安装中间插件版本。
 
+## 按声明的迁移决定是否执行 setup
+
+没有比项目 `setupVersion` 更新的迁移指引，就不需要迁移。
+
+检查使用已加载的 SmartKit 来源；完整运行使用 `start` 选定的来源。
+
 ## 建立基线，不虚构历史
 
 已有 `.agents/smartkit.lock.json` 却没有 `setupVersion` 时，需要完整 setup 来建立基线。保留既有所有权记录和项目内容，不猜测之前的版本。没有该初始化记录的项目不会被 setup 检查拦截。

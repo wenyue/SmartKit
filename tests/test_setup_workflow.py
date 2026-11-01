@@ -78,6 +78,129 @@ class SetupWorkflowTest(unittest.TestCase):
             encoding='utf-8',
         )
 
+    def test_current_setup_inspection_skips_before_full_preflight(self):
+        release = workflow.load_catalog(REPO_ROOT).plugin_version
+        latest_migration = workflow.applicable_migrations(REPO_ROOT, None)[-1].version
+        for version in (latest_migration, release):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                (target / '.agents').mkdir()
+                (target / '.agents/smartkit.lock.json').write_text(
+                    '{"sources":[],"assets":[]}', encoding='utf-8',
+                )
+                (target / '.agents/config.json').write_text(
+                    json.dumps({'setupVersion': version}), encoding='utf-8',
+                )
+                before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.rglob('*') if p.is_file()}
+                output = StringIO()
+                with mock.patch.object(workflow, '_require_matt_context') as matt, \
+                     mock.patch.object(workflow, '_create_session') as create, \
+                     mock.patch.object(bootstrap, 'main') as prepare, \
+                     mock.patch.object(workflow, '_verify_codegraph') as runtime, \
+                     redirect_stdout(output):
+                    self.assertEqual(workflow.main(['inspect', '--target', str(target)]), 0)
+                result = json.loads(output.getvalue())
+                self.assertEqual(result['phase'], 'inspect')
+                self.assertTrue(result['skipped'])
+                self.assertEqual(result['reason'], 'no-applicable-migrations')
+                self.assertFalse(result['migrations']['setup_required'])
+                self.assertEqual(result['pending_assessment'], [])
+                self.assertEqual(result['errors'], [])
+                self.assertNotIn('session', result)
+                matt.assert_not_called()
+                create.assert_not_called()
+                prepare.assert_not_called()
+                runtime.assert_not_called()
+                self.assertEqual(before, {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in target.rglob('*') if p.is_file()})
+
+    def test_start_remains_explicit_full_setup_entry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_matt_context(target)
+            (target / '.agents').mkdir()
+            (target / '.agents/smartkit.lock.json').write_text(
+                '{"sources":[],"assets":[]}', encoding='utf-8',
+            )
+            (target / '.agents/config.json').write_text(json.dumps({
+                'setupVersion': workflow.load_catalog(REPO_ROOT).plugin_version,
+                'maintenance': {'mode': 'local'},
+            }), encoding='utf-8')
+            before = {p: p.read_bytes() for p in target.rglob('*') if p.is_file()}
+            output = StringIO()
+            with mock.patch.object(bootstrap, 'fetch_canonical', side_effect=bootstrap.SourceUnavailable('offline')), \
+                 redirect_stdout(output), redirect_stderr(StringIO()):
+                self.assertEqual(workflow.main(['start', '--target', str(target)]), 0)
+            result = json.loads(output.getvalue())
+            session = Path(result['session'])
+            self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
+            self.assertTrue(session.is_dir())
+            self.assertEqual(result['migrations'], [])
+            self.assertTrue(result['generation_requests'])
+            self.assertEqual(before, {p: p.read_bytes() for p in target.rglob('*') if p.is_file()})
+
+    def test_pending_migration_still_starts_full_session(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_matt_context(target)
+            (target / '.agents').mkdir()
+            (target / '.agents/smartkit.lock.json').write_text(
+                '{"sources":[],"assets":[]}', encoding='utf-8',
+            )
+            (target / '.agents/config.json').write_text(
+                '{"setupVersion":"1.0.0","maintenance":{"mode":"local"}}', encoding='utf-8',
+            )
+            output = StringIO()
+            with mock.patch.object(bootstrap, 'fetch_canonical', side_effect=bootstrap.SourceUnavailable('offline')), \
+                 redirect_stdout(output), redirect_stderr(StringIO()):
+                self.assertEqual(workflow.main(['start', '--target', str(target)]), 0)
+            result = json.loads(output.getvalue())
+            session = Path(result['session'])
+            self.addCleanup(lambda: workflow._remove_session(session) if session.exists() else None)
+            self.assertTrue(session.is_dir())
+            self.assertTrue(result['migrations'])
+
+    def test_invalid_setup_baseline_is_never_skipped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / '.agents').mkdir()
+            (target / '.agents/smartkit.lock.json').write_text(
+                '{"sources":[],"assets":[]}', encoding='utf-8',
+            )
+            (target / '.agents/config.json').write_text(
+                '{"setupVersion":"invalid"}', encoding='utf-8',
+            )
+            before = {p: p.read_bytes() for p in target.rglob('*') if p.is_file()}
+            output = StringIO()
+            with mock.patch.object(workflow, '_create_session') as create, \
+                 mock.patch.object(bootstrap, 'main') as prepare, redirect_stdout(output):
+                self.assertEqual(workflow.main(['inspect', '--target', str(target)]), 2)
+            result = json.loads(output.getvalue())
+            self.assertNotIn('skipped', result)
+            self.assertIn('setup version', result['migrations']['error'])
+            create.assert_not_called()
+            prepare.assert_not_called()
+            self.assertEqual(before, {p: p.read_bytes() for p in target.rglob('*') if p.is_file()})
+
+    def test_initialized_without_setup_version_still_requires_full_preflight(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_matt_context(target)
+            (target / '.agents').mkdir()
+            (target / '.agents/smartkit.lock.json').write_text(
+                '{"sources":[],"assets":[]}', encoding='utf-8',
+            )
+            (target / '.agents/config.json').write_text(
+                '{"maintenance":{"mode":"local"}}', encoding='utf-8',
+            )
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(workflow.main(['inspect', '--target', str(target)]), 0)
+            result = json.loads(output.getvalue())
+            self.assertEqual(result['migrations']['status'], 'baseline-required')
+            self.assertTrue(result['migrations']['setup_required'])
+            self.assertTrue(result['pending_assessment'])
+            self.assertNotIn('skipped', result)
+
     def test_inspect_is_read_only_for_fresh_and_initialized_targets(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
@@ -100,6 +223,7 @@ class SetupWorkflowTest(unittest.TestCase):
                 self.assertEqual(result['phase'], 'inspect')
                 self.assertEqual(result['ownership']['initialized'], initialized)
                 self.assertTrue(result['migrations']['provisional'])
+                self.assertTrue(result['migrations']['setup_required'])
                 self.assertIn('.agents/rules/structure.md', [item['target'] for item in result['project_discovery']['generation_requests']])
                 self.assertIn('additional_rules', result['project_discovery'])
                 self.assertTrue(result['pending_assessment'])

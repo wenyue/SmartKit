@@ -335,7 +335,6 @@ def _inspect(args: argparse.Namespace) -> int:
         _require_matt_context(target)
         return {'present': True}
 
-    check('matt', matt)
     try:
         if not target.is_dir():
             raise WorkflowError('target must be an existing directory')
@@ -344,6 +343,29 @@ def _inspect(args: argparse.Namespace) -> int:
         result['errors'] = [*errors, str(error)]
         _emit(result)
         return 2
+
+    def migrations() -> dict[str, object]:
+        setup = project_setup_version(target, source)
+        version = setup.version if isinstance(setup, SetupVersion) else None
+        selected = () if setup is SetupStatus.UNINITIALIZED else applicable_migrations(source, version)
+        return {
+            'provisional': True, 'setup_version': version,
+            'status': 'initialized' if isinstance(setup, SetupVersion) else setup.value,
+            'loaded_source_version': catalog.plugin_version,
+            'setup_required': not isinstance(setup, SetupVersion) or bool(selected),
+            'entries': [{'version': item.version, 'guide': item.guide} for item in selected],
+        }
+
+    check('migrations', migrations)
+    migration_state = result.get('migrations')
+    if isinstance(migration_state, dict) and migration_state.get('setup_required') is False:
+        result.update({
+            'skipped': True, 'reason': 'no-applicable-migrations',
+            'pending_assessment': [], 'errors': errors,
+        })
+        _emit(result)
+        return 0
+    check('matt', matt)
 
     def configuration() -> dict[str, object]:
         config = inspect_project(target, catalog=catalog).config
@@ -372,17 +394,6 @@ def _inspect(args: argparse.Namespace) -> int:
             'generation_requests': generation_requests(source, target, catalog, None),
         }
 
-    def migrations() -> dict[str, object]:
-        setup = project_setup_version(target, source)
-        version = setup.version if isinstance(setup, SetupVersion) else None
-        selected = () if setup is SetupStatus.UNINITIALIZED else applicable_migrations(source, version)
-        return {
-            'provisional': True, 'setup_version': version,
-            'status': 'initialized' if isinstance(setup, SetupVersion) else setup.value,
-            'loaded_source_version': catalog.plugin_version,
-            'entries': [{'version': item.version, 'guide': item.guide} for item in selected],
-        }
-
     check('configuration', configuration)
     check('maintenance', lambda: project_configuration.inspect(target))
     check('ownership', ownership)
@@ -390,7 +401,6 @@ def _inspect(args: argparse.Namespace) -> int:
     check('agents', lambda: adopt_project_agents.inspect(target))
     if isinstance(result.get('agents'), dict):
         errors.extend(result['agents'].get('issues', []))
-    check('migrations', migrations)
     check('codegraph', lambda: _verify_codegraph(target))
     result['pending_assessment'] = [
         'Resolve custom Agent identities, sources, models and any required relocation.',
@@ -682,7 +692,8 @@ def build_parser() -> argparse.ArgumentParser:
             'JSON reports Matt context, configuration/Agent sources, ownership, additional project Rules/Skills '
             'and blueprint requests, native Agents, provisional migrations, and CodeGraph health. '
             'errors collects failures; pending_assessment identifies remaining judgment. '
-            'Exit 0: mechanical checks passed, not full setup readiness. Exit 2: prerequisite errors; '
+            'Initialized targets without required migrations return skipped=true before full preflight. '
+            'Exit 0: no setup required or mechanical checks passed, not full setup readiness. Exit 2: prerequisite errors; '
             'independent findings remain available. Migrations use the loaded source until start selects one.'
         ),
     )

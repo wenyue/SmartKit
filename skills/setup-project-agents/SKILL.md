@@ -18,7 +18,7 @@ When the user has named an operation, follow it directly:
 
 | Requested work | Route | Why this route fits |
 | --- | --- | --- |
-| Initialize, upgrade or migrate project configuration | Full setup, starting at step 2 | The request needs configuration reassessment and the full setup lifecycle. |
+| Initialize, upgrade or migrate project configuration | The migration gate at step 2, then full setup when required | Initialization, a missing successful baseline or applicable migrations require full setup. |
 | Update or restore local configuration from a configuration repository | The restoration branch below | The request needs an existing backup applied to this project. |
 | Synchronize local Rule/Skill discovery and declared Agent/MCP mappings only | Local synchronization | The request is limited to rendering established local inputs. |
 | Update only the `AGENTS.md` Rule index | The narrower Rule-index branch under Local synchronization | Only the generated Rule list needs updating. |
@@ -46,7 +46,7 @@ Use those answers to present the applicable choices in the user's language:
 
 | Situation | Choices to offer | Recommendation and reason |
 | --- | --- | --- |
-| Local managed configuration is usable, including in a fresh checkout | A. Upgrade or reassess it. Also offer B. Update or restore from the configuration repository when its binding is established or the user confirms its source. | Recommend A: there is existing configuration to reassess. Retain its maintenance choice. Confirm a copied binding before treating restoration as ready. |
+| Local managed configuration is usable, including in a fresh checkout | A. Check for required project migrations. Also offer B. Update or restore from the configuration repository when its binding is established or the user confirms its source. | Recommend A: the migration gate determines whether setup is needed. Retain its maintenance choice. Confirm a copied binding before treating restoration as ready. |
 | Local managed configuration is absent or established as unusable, and a confirmed source has an existing backup entry | A. Update or restore from the configuration repository. B. Initialize configuration. | Recommend A: the user already has configuration to reuse. Initialization remains available and preserves existing content under Ownership. |
 | Local managed configuration is absent or established as unusable, and there is no known backup and no unresolved source evidence | A. Initialize configuration. B. I already have a configuration backup. | Recommend A. Choice B starts source confirmation; it does not claim a restoration is ready to run. |
 
@@ -102,17 +102,24 @@ Use this branch both to recover lost or changed local configuration and to apply
 
 ## 2. Establish project state and its maintenance mode
 
-Full setup starts here after initialization, upgrade or migration has been selected. Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, SmartKit source selection and recovery; [Project Migrations](references/migrations.md) for baseline and release obligations; and [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for configuration-source binding, private repository access, application and publication. Setup uses the maintenance reference, supported commands and configuration engine without invoking that user-only Skill.
+The selected initialization, upgrade or migration route starts here with a read-only migration gate. Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, SmartKit source selection and recovery; [Project Migrations](references/migrations.md) for baseline and release obligations; and [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for configuration-source binding, private repository access, application and publication. Setup uses the maintenance reference, supported commands and configuration engine without invoking that user-only Skill.
 
-Obtain both read-only inspections below. Reuse still-current results from operation selection, and refresh affected findings after inputs change. Command help explains the reported checks and exits:
+Run setup inspection first. Reuse still-current results from operation selection, and refresh affected findings after inputs change. Command help explains the reported checks and exits:
 
 ```text
 python "<skill-root>/scripts/workflow.py" inspect --help
 python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
+```
+
+If inspection reports `skipped: true`, report that no migration is needed and stop, leaving `setupVersion` unchanged.
+
+When the gate requires full setup, obtain the maintenance inspection:
+
+```text
 python "<maintain>" inspect --target "<target-root>"
 ```
 
-Read the findings alongside complete project configuration, ownership, existing generated content and decision records reached through the project's documentation conventions. Resolve prerequisite errors before their dependent step. Exit 0 from setup inspection still leaves its `pending_assessment` to Setup; it is not a completed assessment. Missing Matt context is completed below, within this invocation after the maintenance source is settled.
+Read the findings alongside complete project configuration, ownership, existing generated content and decision records reached through the project's documentation conventions. Resolve prerequisite errors before their dependent step. For a full run, exit 0 from setup inspection still leaves its `pending_assessment` to Setup; it is not a completed assessment. Missing Matt context is completed below, within this invocation after the maintenance source is settled.
 
 ### Choose where configuration will be maintained
 

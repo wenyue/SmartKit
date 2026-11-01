@@ -2,6 +2,12 @@
 
 Version-specific migration guides live in `migrations/`, beside this file, with one `<version>.md` file per release that requires migration. Use the versions selected by `start` to find and read the corresponding files from the selected source before generating project content. The machine-readable declarations in `setup-assets/catalog/migrations.json` identify releases that require project changes; a newer SmartKit release alone does not require migration. Apply every entry after the project's successful `setupVersion` through the selected source release, in order, in one full setup. No intermediate plugin installation is needed.
 
+## Gate setup by declared migrations
+
+If no migration guide is newer than the project's successful `setupVersion`, the project needs no migration.
+
+Inspection uses the loaded SmartKit source; a full run uses the source selected by `start`.
+
 ## Establish the baseline without inventing history
 
 An existing `.agents/smartkit.lock.json` without `setupVersion` needs a full setup to establish its baseline. Preserve the existing ownership record and project content; do not guess its prior version. A project without that initialization record is not blocked by the setup check.

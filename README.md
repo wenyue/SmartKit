@@ -101,10 +101,12 @@ Manually invoke this Skill to initialize or upgrade project agent configuration,
 
 | Local state | Recommendation |
 | --- | --- |
-| Usable managed configuration, including in a fresh checkout | Upgrade/reassess the existing configuration. A confirmed backup also makes repository restoration available. |
+| Usable managed configuration, including in a fresh checkout | Apply required migrations. A confirmed backup also makes repository restoration available. |
 | Configuration absent or unusable, with a confirmed backup | Restore local configuration from the configuration repository. |
 | Configuration absent or unusable, with no known backup and no unresolved source evidence | Initialize configuration. You can still identify an existing backup before proceeding. |
 | Local configuration cannot yet be assessed, or absent/unusable configuration has an unresolved backup source | Clarify only the missing evidence needed for that recommendation; unavailable evidence does not mean no backup exists. |
+
+An initialized project with a successful `setupVersion` and no required migrations skips full setup.
 
 Full setup checks project Rules, Skills, custom Agents, and MCP mappings, supplies missing tracker, triage-label and domain context, and prepares local CodeGraph. First setup establishes configuration shared through the project, kept only on this machine, or backed up in a separate private repository; existing choices are retained. State an explicit limit when you only want local synchronization or a Rule-index update.
 
