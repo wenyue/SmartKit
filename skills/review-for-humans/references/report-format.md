@@ -44,7 +44,7 @@ The title is its own paragraph: 📄 followed by the bold returned filename link
 
 ## Present judgments and implementation comparisons
 
-Multiple findings may use separate paragraphs or a short list within the appropriate judgment; do not repeat the verdict for every item.
+Multiple findings may use separate paragraphs or a short list within the appropriate judgment; do not repeat the verdict for every item. Make consequential design comparisons visible in the existing elegance reasons: name the concrete alternative and the deciding trade-off, at the depth required by the entry. A brief explanation can suffice for localized low-impact changes; use prose suited to the decision rather than a per-declaration checklist or fixed questionnaire.
 
 Repeat the modification portion as needed, using the entry's assigned IDs. A separate selected-O report uses its O IDs in titles and judgments instead of M IDs. Make the whole ID and title bold without a modification icon, adding an unreasonable finding's severity, for example `**M2 — <title> (P1)**`. Keep intrinsic path/code punctuation. The leading judgments own all problems, triggers, impacts, remedies, and benefits; modification bodies show only the implementation before and after, without repeating finding explanations.
 
