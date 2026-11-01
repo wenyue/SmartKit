@@ -17,6 +17,131 @@ import tempfile
 from typing import Iterator, Optional
 
 
+CLI_HELP = r"""
+SUPPORTED PLANS
+  A verified github.com PR on its selected local branch, in one of two modes:
+  viewed-only records Viewed; commit-push creates a commit if needed, reuses
+  existing outgoing commits, pushes normally when needed, then records Viewed.
+  Both require a nonempty viewed_paths set whose paths already exist in the PR
+  before publication. An empty set or an eligible file entering the PR only after
+  the push needs the Skill's manual delivery workflow. Never omit a required path
+  or invent one to fit this helper.
+
+  Amendment, lease/force publication, mirrored push remotes, detached workspaces,
+  unresolved Git operations, special index flags, and changed submodule/directory
+  entries are unsupported. Use the manual workflow for the actual effects.
+  Requires Python 3.8+, Git, authenticated gh with PR/source access and readbacks,
+  and prepared source objects. All gh API calls target github.com. The helper does
+  not install tools, fetch, synchronize, or select a workspace.
+
+CALLER CONTRACT
+  The Skill entry owns user intent and review progression; references/delivery.md
+  owns full-workspace/outgoing scope, semantic coverage, checks, authorization,
+  and completion. Read those owners before using this mechanical interface.
+  Supply the complete eligible Viewed set and stable absolute evidence files
+  outside the worktree supporting readiness, current-conversation review of all
+  non-test delivery changes, disclosed effects, and authorization. Evidence hashes
+  bind bytes, not meaning: this tool cannot establish semantic review. A plan_id
+  identifies frozen effects and grants no permission.
+
+REQUEST JSON (--input)
+  {
+    "repository": "/absolute/selected-worktree",
+    "branch": "review-branch",
+    "pull_request": "owner/repository",
+    "number": 123,
+    "base": "1111111111111111111111111111111111111111",
+    "head": "2222222222222222222222222222222222222222",
+    "viewer": "reviewer-login",
+    "viewed_paths": ["src/feature.py"],
+    "mode": "commit-push",
+    "remote": "origin",
+    "message": "Fix reviewed behavior",
+    "requires_amend": false,
+    "evidence": ["/absolute/private/review-and-checks.json"]
+  }
+  Use the exact local branch and full lowercase 40-hex commit IDs. number is a
+  positive PR number; pull_request is the PR owner's owner/repository slug.
+  GitHub supplies the verified source repository/ref, including forks. viewer
+  must match the reviewed authenticated identity. viewed_paths is a nonempty
+  unique list of repository-relative forward-slash paths; evidence is a nonempty
+  list of existing files. Unrecognized fields are rejected.
+
+  For viewed-only, omit remote/message. Only this mode requires local HEAD to
+  equal the reviewed PR head; commit-push permits verified outgoing descendants.
+  viewed-only freezes/preserves local differences mechanically, but the delivery
+  contract permits it only when no commit/publication effect remains.
+  For commit-push, supply remote and message; the actual push destination must be
+  the verified source ref, including when fetch and push URLs differ. Set optional
+  requires_amend truthfully from recorded actions: true is refused, so the manual
+  amendment/lease path remains in control. Omitting it means false.
+
+PRIVATE STATE AND EVIDENCE
+  Choose a new state directory outside the worktree through the owning artifact
+  lifecycle. Retain it unpublished as the recovery evidence. Creation uses
+  owner-only POSIX permissions; on Windows choose an account-private directory
+  with suitable inherited access.
+
+  prepare retains the plan, original index bytes, tracked binary diffs, changed
+  file bytes/symlink targets, intended complete tree, outgoing ancestry/delta,
+  full PR pagination, and evidence digests. Publication preparation uses an
+  isolated index/native clean filters and may add Git objects, while verifying
+  the real index, branch, HEAD, and contents remain unchanged. Inspect the full
+  inventory and logs for scope disclosure; compact counts are insufficient.
+
+COMMANDS
+  Resolve <skill-root> from the actual loaded Skill, not the target cwd.
+  python "<skill-root>/scripts/complete_review.py" prepare --input "/private/request.json" --state "/private/completion-state"
+  python "<skill-root>/scripts/complete_review.py" run --state "/private/completion-state" --confirm "<plan_id>"
+
+  After exact-effect authorization, run locks and revalidates the plan, stages
+  intended content when needed, runs normal hooks, and verifies tree/parent,
+  outgoing ancestry, and source destination. It performs only a normal scoped
+  push without automatic tag/submodule publication, verifies source ref, PR
+  version and published commit/tree, then marks remaining paths and reads back
+  the entire selected set with unchanged PR version. Confirmed effects are reused
+  and no empty commit is created. No review advancement occurs.
+
+OUTPUT AND EXIT STATUS
+  Stdout is compact JSON with status, version/counts, plan/progress paths, and
+  private logs. Status is prepared or complete on success, incomplete on a caught
+  failure, or interrupted on KeyboardInterrupt. Every Git/gh subprocess retains
+  arguments, identity, stdout/stderr, exit status, and duration in private logs.
+  Exit 0: requested command succeeded (prepare froze a plan; run completed all
+  required effects/readbacks). Exit 1: incomplete. Exit 2: CLI usage error.
+  Exit 130: interrupted. Inspect failures and residue; no automatic rollback.
+
+RECOVERY
+  After an interrupted run or lost response, inspect retained evidence and run
+  the same command with the same state and plan_id. It inspects actual effects
+  and resumes only missing work, including partial Viewed. Native locks release
+  on process exit; after a post-spawn failure the parent waits for its owned
+  Git/gh child to stop before releasing the lock.
+
+  Changed content, branch, evidence, viewer, source, base/head, publication scope,
+  or detected hook changes stop dependent effects. Preserve state; settle the
+  inventory, checks, re-review, and consent through the Skill entry and Delivery.
+  Prepare a new plan only for settled changed effects. Failed preparation retains
+  private diagnostics. Missing readbacks or uncertain subprocess state remain
+  incomplete: do not delete locks, reset, retry speculative writes, or treat a
+  failed run as completed delivery.
+"""
+
+PREPARE_HELP = """Freeze exact effects and private recovery evidence without committing, pushing,
+or marking Viewed. Read the top-level --help for supported plans and the request
+JSON contract. --state must be a new private directory outside the worktree.
+Preparation can write private evidence and Git objects; it verifies that the real
+index, branch, HEAD, and worktree contents remain unchanged. Inspect the full
+inventory/logs before disclosing the plan; a returned plan_id is not permission."""
+
+RUN_HELP = """Execute or resume a prepared plan only after its exact effects are authorized.
+Use the same private --state and frozen --confirm plan_id. Revalidation precedes
+effects; actual completed effects are inspected before reuse. The top-level
+--help describes capabilities, outputs, and recovery. Exit 0 means all required
+run effects and readbacks completed; failures remain incomplete and preserve
+recovery evidence. This command never advances the human review."""
+
+
 SHA = re.compile(r'[0-9a-f]{40}')
 SLUG = re.compile(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+')
 GIT_ROUTING = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE',
@@ -481,13 +606,16 @@ def workspace_after_commit(commands: Commands, plan: dict, head: str) -> dict:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, epilog=CLI_HELP,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(dest='operation', required=True)
-    preparation = subparsers.add_parser('prepare', help='Freeze a reviewable plan and private recovery evidence')
-    preparation.add_argument('--input', required=True, type=Path)
-    preparation.add_argument('--state', required=True, type=Path)
-    completion = subparsers.add_parser('run', help='Execute/resume only effects already authorized for this plan')
-    completion.add_argument('--state', required=True, type=Path)
+    preparation = subparsers.add_parser('prepare', help='Freeze a reviewable plan and private recovery evidence',
+                                       description=PREPARE_HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
+    preparation.add_argument('--input', required=True, type=Path, help='Request JSON file; full schema is in top-level --help')
+    preparation.add_argument('--state', required=True, type=Path, help='New private recovery directory outside the worktree')
+    completion = subparsers.add_parser('run', help='Execute/resume only effects already authorized for this plan',
+                                      description=RUN_HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
+    completion.add_argument('--state', required=True, type=Path, help='Existing private directory created by prepare')
     completion.add_argument('--confirm', required=True, help='Frozen plan_id matching prior conversation authorization')
     arguments = parser.parse_args(argv)
     state = arguments.state.resolve()
