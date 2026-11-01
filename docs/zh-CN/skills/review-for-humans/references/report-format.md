@@ -4,40 +4,46 @@
 
 ## 排列完整文件块
 
-分组介绍放在首条分隔线之前。每个文件从其前置分隔线开始重复文件块，最后在分组收尾前再加一条分隔线。因此首个文件也有前置分隔线，相邻文件共用一条分界。
+分组介绍放在首条分隔线之前。每个文件从其前置分隔线开始重复文件块。因此首个文件也有前置分隔线，相邻文件共用一条分界。
+
+最后一个完整文件块之后，若存在 O 类观察，紧接着呈现完整的 O 类观察区块，并在其前方及分组收尾前各放一条分隔线。没有 O 类观察时，最后一个文件与分组收尾之间恰好保留一条分隔线。
 
 ````markdown
 ---
 
 📄 **[<full/repository-relative/path>](<returned-url>)**
 
-<职责与改动概述>
+<responsibility and change overview>
 
-⚖️ **<结论>** — <理由及关联条目编号的发现>
+⚖️ **<verdict>** — <reasons and item-keyed findings>
 
-🎨 **<结论>** — <理由及关联条目编号的发现>
+🎨 **<verdict>** — <reasons and item-keyed findings>
 
-**M1 — <改动标题>**
+**M1 — <change title>**
 
-> ⏪ <描述原实现的一句话>
+> ⏪ <sentence describing the earlier implementation>
 >
 > ```<language>
-> <相关原实现代码>
+> <relevant earlier code>
 > ```
 >
-> ⏩ <描述新实现的一句话>
+> ⏩ <sentence describing the changed implementation>
 >
 > ```<language>
-> <相关新实现代码>
+> <relevant changed code>
 > ```
 
 ---
 
-<分组结论、累计主进度、检查与限制、待决定事项>
+<!-- Include this O section and its trailing separator when observations are present. -->
+<complete O observations section>
 
-<存在 O 类观察时单独列出>
+---
+<!-- End of conditional O section. -->
 
-<仍有待决定事项时列出适用的字母选项>
+<group conclusion, cumulative main progress, checks and limits, pending decisions>
+
+<applicable lettered choices when a decision remains>
 ````
 
 标题独占一段：📄 后接加粗的返回文件名链接，显示完整仓库相对路径，不使用单独文件名或缩短路径。职责与改动概述放在下一段。两个前置判断只使用各自的图标和结论，不添加维度名或文件级前缀。标题、概述、判断和修改项分别展示，文件内部不放分隔线。
@@ -56,4 +62,4 @@
 
 ## 发送前检查报告
 
-发送前核对首文件前、文件间和收尾前的分隔线，独占一段的完整路径标题，单独概述，两个前置判断，加粗条目标题，以及成对的引用块对比。确认应当出现的发现、证据缺口和决定都已呈现。保持固定结构，在其中使用友好直接的语言。
+发送前核对首文件前和文件间的分隔线，再确认存在的完整 O 区块位于最后一个完整文件之后、分组收尾之前，两个边界各有一条分隔线。没有 O 区块时，确认最后一个文件与收尾之间恰好只有一条分隔线。核对完整路径标题独占一段、概述单独成段、两个前置判断、加粗条目标题及成对的引用块对比。确认应当出现的发现、证据缺口和决定都已呈现。保持固定结构，在其中使用友好直接的语言。

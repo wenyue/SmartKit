@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 让用户充分理解固定改动，以便判断并选择下一步。评价实现方式前，先确定为什么需要该行为。审查授权采集证据和准备链接。执行选定的审查补救、交付或推进前，先解释完整文件分组。
 
-本入口负责审查范围、评估、发现、进度及用户决定。PR 或需对齐远端的分支证据及工作区选择，加载[准备](references/preparation.md)。每次普通、补审、修复或选定 O 项报告前，完整阅读[报告格式](references/report-format.md)。适用的交付选择需要准备、已选交付需要执行或其效果需要核实时，加载[交付](references/delivery.md)。必要指南不可用时，依赖工作仍未完成。[对话示例](examples/conversations.md)说明困难选择，不增加规则。
+本入口负责审查范围、评估、发现、进度及用户决定。PR 或需对齐远端的分支证据及工作区选择，加载[准备](references/preparation.md)。每次普通、补审、修复或选定 O 项报告前，完整阅读[报告格式](references/report-format.md)。适用的交付选择需要准备、已选交付需要执行、其效果需要核实，或修复触及尚未完整审查的 PR 文件时，加载[交付](references/delivery.md)。必要指南不可用时，依赖工作仍未完成。[对话示例](examples/conversations.md)说明困难选择，不增加规则。
 
 ## 固定比较与阅读顺序
 

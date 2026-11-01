@@ -4,7 +4,9 @@ Use this fixed presentation for ordinary, supplementary, dedicated repair, and s
 
 ## Arrange complete file blocks
 
-Any group introduction precedes the first separator. Repeat the file block from its leading separator for each file, then add one separator before the group closing. Thus every file, including the first, has a separator before it; adjacent files share one boundary.
+Any group introduction precedes the first separator. Repeat the file block from its leading separator for each file. Thus every file, including the first, has a separator before it; adjacent files share one boundary.
+
+After the final complete file block, place the complete O observations section when present, with one separator before it and one before the group closing. Without O observations, use exactly one separator between the final file and the group closing.
 
 ````markdown
 ---
@@ -33,9 +35,13 @@ Any group introduction precedes the first separator. Repeat the file block from 
 
 ---
 
-<group conclusion, cumulative main progress, checks and limits, pending decisions>
+<!-- Include this O section and its trailing separator when observations are present. -->
+<complete O observations section>
 
-<separate O observations when present>
+---
+<!-- End of conditional O section. -->
+
+<group conclusion, cumulative main progress, checks and limits, pending decisions>
 
 <applicable lettered choices when a decision remains>
 ````
@@ -56,4 +62,4 @@ Keep rare machinery in the internal analysis unless it changes the user's choice
 
 ## Check the report before sending
 
-Before sending, check the first-file, between-file, and closing separators; full-path title on its own; separate overview; two leading judgments; bold item titles; and paired quoted comparisons. Confirm conditional findings, evidence gaps, and decisions are present where needed. Keep the fixed structure and use friendly, direct language within it.
+Before sending, check the first-file and between-file separators, then confirm that any complete O section follows the final complete file and precedes the group closing, with one separator at each boundary. With no O section, confirm exactly one separator between the final file and closing. Check the full-path title on its own; separate overview; two leading judgments; bold item titles; and paired quoted comparisons. Confirm conditional findings, evidence gaps, and decisions are present where needed. Keep the fixed structure and use friendly, direct language within it.

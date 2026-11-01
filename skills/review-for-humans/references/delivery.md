@@ -37,7 +37,9 @@ Return findings and evidence gaps before any delivery write. Concise presentatio
 
 ### Derive Viewed from whole-file PR review
 
-Build the recording set from current-conversation assessments of complete per-file PR deltas. A repaired fragment, O observation, passing checks, or inclusion in a commit does not suffice. Supplement uncovered portions of a file intended for recording; leave other partially reviewed files unmarked and disclose why. Unreviewed tests remain ineligible.
+Determine commit/publication readiness and Viewed eligibility separately. Build the recording set from current-conversation assessments of complete per-file PR deltas. A repaired fragment, O observation, passing checks, a filename appearing in a report, or inclusion in a commit does not suffice. Supplement uncovered portions of a file intended for recording; leave other partially reviewed files unmarked and disclose why. Unreviewed tests remain ineligible.
+
+For example, a repair touches a file ahead of the saved main-review position; its original PR changes are already at the publication destination. Once the complete submitted/outgoing scope meets the review, check, and other delivery prerequisites above, the selected delivery can commit and publish the repair while those original PR changes remain unreviewed. Keep the file unmarked and in the saved main-review sequence. If supplementary review also completes its current PR delta, it may become eligible for Viewed, while the saved main-review list and position still remain unchanged.
 
 Once the intended set is fixed, a missing check or failed readback leaves delivery incomplete; do not drop a selected path to finish. The report's original filters do not narrow eligible recording or delivery coverage, and a larger delivery scope does not justify marking partly reviewed files.
 
