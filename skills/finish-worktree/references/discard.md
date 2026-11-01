@@ -1,5 +1,7 @@
 # Explicit Discard
 
+Use this route for abandonment or actual content loss. Safe removal of a completed task-owned worktree follows the cleanup rules in [Finish Worktree](../SKILL.md).
+
 ## Match authority to the actual loss
 
 Discard requires explicit authority over the actual losses; general cleanup permission is insufficient. Confirm the worktree's physical registration, branch, HEAD, unique commits, publication and recovery refs. Identify other checkouts using the branch and keep them outside the removal boundary.

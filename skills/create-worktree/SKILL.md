@@ -9,9 +9,9 @@ Select or create one linked Git worktree and establish its environment readiness
 
 ## 1. Select the workspace and starting state
 
-Use the accepted task scope and existing choices of source, target, base, and permitted effects. Resolve the source checkout, primary project checkout, and physical Git common directory from repository topology; the invoking linked checkout need not be the primary checkout.
+Start from the established need for isolation and the accepted task scope. Use existing choices of source, target, base, and permitted effects. Ask for unresolved required choices or permission, reusing decisions that already cover the operation. Resolve the source checkout, primary project checkout, and physical Git common directory from repository topology; the invoking linked checkout need not be the primary checkout.
 
-If continuing a selected worktree, check its physical path, Git registration, branch, `HEAD`, base relationship, and local changes against the task context. Reuse it when they agree, preserving its inherited and task changes. Do not copy fresh source changes over it. If its identity or ownership is unclear, return `non-ready`; otherwise skip creation and assess environment readiness.
+Before creating a worktree, check whether an existing task worktree can serve the accepted work. Verify a candidate's physical path, Git registration, branch, `HEAD`, base relationship, and local changes against the task context. Reuse it when they agree, preserving its inherited and task changes. Do not repurpose another task's worktree or copy fresh source changes over a continued one. If a selected worktree's identity or ownership is unclear, return `non-ready`; otherwise skip creation and assess environment readiness.
 
 For a new worktree, resolve the base to an immutable commit and choose the starting state:
 

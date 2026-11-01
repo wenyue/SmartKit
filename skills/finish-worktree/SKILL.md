@@ -1,6 +1,6 @@
 ---
 name: finish-worktree
-description: Finish an isolated linked Git worktree by keeping it for later, publishing a pull request, merging locally, transferring its changes back to a checkout, or explicitly discarding it.
+description: Finish work in an isolated linked Git worktree, cleaning it up after completion or retaining it for unfinished work or a concrete continuing use.
 ---
 
 # Finish Worktree
@@ -13,7 +13,7 @@ Confirm the source's physical path, Git worktree registration, repository, branc
 
 | Outcome | When to use it |
 | --- | --- |
-| Keep for later | Leave the work available, including dirty or unfinished work. Follow the guidance below. |
+| Keep for later | Retain unfinished work or a worktree needed for a concrete continuing use. Follow the guidance below. |
 | [Create a pull request](references/create-pull-request.md) | Publish the accepted commits and hand them off for review. |
 | [Merge locally](references/merge-local.md) | Deliver to an authorized local branch by fast-forward. |
 | [Return for review](references/return-for-review.md) | Combine task changes with a checkout's working files while preserving its HEAD and complete index. |
@@ -23,7 +23,7 @@ A blocked route does not authorize a different outcome. Preserve commits unless 
 
 Publication, local integration and requested consolidation require [History Preparation](references/history.md). Keeping, transferring and discarding do not otherwise require formal review; independent project and caller requirements still apply.
 
-To **keep for later**, leave files, indexes and refs untouched. Report the worktree, branch, HEAD, unfinished work, pending checks or operations, and who will continue with what next action. Refresh that account if concurrent work changes it. There is no need to clean or review work merely to keep it. Retaining the residue of an earlier failed operation does not make that operation successful.
+To **keep for later**, require unfinished work or a concrete continuing use; a possible future need alone is insufficient. Leave files, indexes and refs untouched. Explicitly tell the user the worktree path, branch, HEAD, why it remains, and the next use or action that will allow cleanup. Refresh that account if concurrent work changes it. There is no need to clean or review work merely to keep it. Retaining the residue of an earlier failed operation does not make that operation successful.
 
 ## Handle changes and interrupted operations
 
@@ -33,9 +33,11 @@ After a failure or missing response, inspect what the original operation actuall
 
 ## Clean up and report
 
-Remove only identified, task-owned items that are no longer needed and whose removal is authorized. Retain dirty worktrees, uncertain ownership and anything needed for review, continuation or recovery. Inventory ignored contents before removal could reach them; ordinary cleanup does not authorize losing them. Use the creating host's removal interface for host-created worktrees.
+Remove a task-owned worktree by default once the task is complete and required results and evidence are safely preserved outside it. Apply the retention conditions above when work or a concrete continuing use remains. Routine cleanup needs no further confirmation when these conditions are met and the content inventory establishes that removal loses no protected work.
 
-Before deleting a branch, establish that no worktree uses it. Delete owned branch and recovery refs with their expected old OIDs. Observe each removal before proceeding; partial cleanup does not undo a verified handoff or delivery. Keeping an item is a valid finish when its location, next owner and condition for later removal are clear. Transfer backups and sources have the stricter acceptance condition in their route.
+Before removal, inventory staged, unstaged, untracked and ignored contents. Preserve user work, unique evidence and shared outputs; a clean Git status alone does not establish that removal is safe. Disposable dependency caches and reproducible outputs need not be retained. Treat uncertain ownership or loss as unfinished cleanup: retain the worktree and tell the user what must be resolved. If removal would abandon work or lose contents needing explicit loss authority, follow [Explicit Discard](references/discard.md). Use the creating host's removal interface for host-created worktrees.
+
+Before deleting a branch, establish that no worktree uses it. Delete owned branch and recovery refs only when their removal is authorized, using their expected old OIDs. Observe each removal before proceeding; partial cleanup does not undo a verified handoff or delivery. Transfer backups and sources have the stricter acceptance condition in their route.
 
 Report the selected outcome and its verified evidence: relevant paths, branches/commits or PR URL, checks, retained work, and next action. Keep completed actions distinct from failure or uncertainty. For example, “delivered to main; source cleanup failed” calls for cleanup, not another integration.
 

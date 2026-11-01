@@ -8,7 +8,9 @@ Preserve pre-existing staged, unstaged, and untracked changes in the current che
 
 Task edits may share a file with existing work when the changes can be distinguished and the result is verified to preserve that work. If they are inseparable, stop and request direction.
 
-Use the current checkout when existing state can be preserved and the user, Harness, applicable Skills, and parallel work do not require isolation. When isolation is required or needed to protect existing state, use `create-worktree`; that Skill owns workspace selection and readiness.
+Decide whether isolation is needed before creating a worktree. Read-only inspection and remote-only PR operations normally need no new checkout. Use the current checkout when existing state can be preserved and the user, Harness, applicable Skills, and parallel work do not require isolation.
+
+When isolation is needed, prefer a compatible existing task worktree to a new one. Weigh the benefit against dependency restoration and generation costs before choosing a new checkout. Use `create-worktree` to select or create the isolated workspace and establish readiness; its required preparation still applies.
 
 ## Keep commit authority scoped
 
