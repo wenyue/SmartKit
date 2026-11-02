@@ -141,7 +141,7 @@ Start each option with a short bold action label, then its concrete effects. In 
 
 ## Execute, re-review, and resume the selected request
 
-Retain the selected items, workspace, disclosed effects, accepted trade-offs, and any pending compound request. In particular, preserve Pass versus only-deliver and the saved next position through supplementary review, repairs, and interrupted writes.
+Carry the existing repair context through implementation, checks, and affected re-review: selected items and findings, fixed comparison and workspace, necessary supporting paths and context, current evidence and logs, disclosed effects, accepted trade-offs, saved next position, and any pending compound request. Reuse complete applicable guidance, owner-supported commands, and still-valid verification results with their full logs rather than reconstructing them for the report. Preserve Pass versus only-deliver through supplementary review, repairs, and interrupted writes.
 
 Limit edits to selected remedies and necessary supporting changes. After reviewed content changes, including selected O work, run required checks and refresh before/after evidence and links. Independently re-review the changed and affected previously reviewed parts, including unexpected changes. Keep pinned remote PR evidence separate from checked unpublished content. Report the repair in a dedicated reply apart from unseen main files using Report Format; preserve IDs/groups without recounting progress. A repair or optimization is complete only when checks and re-review confirm it; retained burdens remain trade-offs.
 
