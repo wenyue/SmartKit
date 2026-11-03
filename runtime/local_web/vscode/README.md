@@ -10,12 +10,21 @@
 
 ## 本地启用
 
-在提供此开发者入口的 VS Code 中运行命令面板的
-`Developer: Install Extension from Location...`，选择本目录，随后重载窗口。
-也可将本目录作为标准 VS Code 扩展打包后安装。
-同时需要使用包含窗口桥接客户端的 SmartKit 版本；只安装扩展不会改变旧版客户端的启动逻辑。
+运行已安装 SmartKit 的 `local_web ensure`，打开返回的 `apps.editor` 本机设置页。
+填入仓库窗口正在使用的 VS Code 配置名称，点击「安装或更新 Diff Bridge」。
+安装器核对目标配置中的版本。聚焦仓库窗口并重新打开原 diff 链接，确认左侧可读取 Git 历史。
+如窗口尚未加载扩展，重载该窗口后重试。
 
-安装不是普通比较操作的一部分。未安装桥接时，新的 SmartKit 客户端直接使用临时基线。
+## 打包
+
+Git 分发的 SmartKit 安装包携带 `runtime/local_web/smartkit-diff-bridge.vsix`。
+修改扩展后先更新 `package.json` 中的扩展版本，再从本目录生成随包交付的文件。
+
+```sh
+npx --yes --package=@vscode/vsce@4.1.0 -- vsce package --no-dependencies --allow-missing-repository --skip-license --out ../smartkit-diff-bridge.vsix
+```
+
+CI 核对 VSIX 中的扩展源码和清单与当前源码一致。
 
 ## 窗口与连接
 

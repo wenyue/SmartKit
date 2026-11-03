@@ -194,13 +194,14 @@ def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
             '<a class="button" href="' + html.escape(target.url(html_only=True), quote=True) + '">'
             + icon("browser") + '在网页中查看</a></div>' + github
             + '<footer class="closing-note">' + icon("info") + '<div><p>请求发出后将尝试自动关闭本页。</p>'
-            '<p>若页面未关闭，可使用上方网页入口查看。</p></div></footer></div>'
+            '<p>若页面未关闭，可使用上方网页入口查看。</p><p id="bridge-setup" hidden></p></div></footer></div>'
             '<script>const automatic=' + ('true' if automatic else 'false') + ';let started=false;async function openDiff(){if(started||document.prerendering||document.visibilityState!=="visible"||window.top!==window.self)return;started=true;document.getElementById("open").disabled=true;'
             'document.getElementById("opening").classList.add("is-opening");document.querySelectorAll(".spinner").forEach(item=>item.hidden=false);document.getElementById("open-label").textContent="正在打开…";document.getElementById("opening-title").textContent="正在打开 VS Code";'
             'try{const response=await fetch(' + encoded + ',{method:"POST",credentials:"omit"});const result=await response.json();'
             'document.getElementById("status").textContent=result.message;'
             'if(response.ok&&result.url)location.replace(result.url);'
-            'else if(response.ok&&result.viewer==="vscode"){document.getElementById("opening-title").textContent="已发送打开请求";document.getElementById("open-label").textContent="已发送请求";window.close();}'
+            'else if(response.ok&&result.viewer==="vscode"){document.getElementById("opening-title").textContent="已发送打开请求";document.getElementById("open-label").textContent="已发送请求";'
+            'if(result.bridge_setup){const hint=document.getElementById("bridge-setup");hint.textContent=result.bridge_setup;hint.hidden=false;}else{window.close();}}'
             'else{document.getElementById("opening-title").textContent="打开请求未完成";document.getElementById("open-label").textContent="请求未完成";}'
             '}catch(error){document.getElementById("status").textContent="启动请求未完成，请使用下方入口查看 diff。";document.getElementById("opening-title").textContent="打开请求未完成";document.getElementById("open-label").textContent="请求未完成";}'
             'finally{document.getElementById("opening").classList.remove("is-opening");document.querySelectorAll(".spinner").forEach(item=>item.hidden=true);}}'
@@ -331,4 +332,9 @@ def open_editor(target: Target) -> Dict[str, str]:
             raise OSError("VS Code launcher exited with status " + str(status))
     except (OSError, ValueError) as error:
         return {"viewer": "web", "url": fallback, "message": "VS Code 比较结果未确认，正在打开网页 diff：" + str(error)}
-    return {"viewer": "vscode", "message": "已向 VS Code 发送 diff 请求；如果未显示，请使用下方网页入口。"}
+    result = {"viewer": "vscode", "message": "已向 VS Code 发送 diff 请求；如果未显示，请使用下方网页入口。"}
+    if before_uri is not None:
+        result["bridge_setup"] = ("本次左侧使用临时文件。可在 SmartKit 的编辑器设置中启用 Git 基线对比，"
+                                  "或聚焦已启用 Diff Bridge 的仓库窗口后重开链接。"
+                                  "运行 local_web ensure 可获取 apps.editor 设置页地址。")
+    return result

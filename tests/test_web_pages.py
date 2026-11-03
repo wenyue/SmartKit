@@ -40,9 +40,11 @@ class WebPageTests(unittest.TestCase):
         self.assertFalse(any(tag in ("img", "script", "button") for tag, _ in document.tags))
         links = [attrs for tag, attrs in document.tags if tag == "a"]
         self.assertEqual([item["href"] for item in links], [
-            "/readiness/?key=private%20%26%20key", "/setup/?key=private%20%26%20key"])
+            "/readiness/?key=private%20%26%20key", "/setup/?key=private%20%26%20key",
+            "/editor/?key=private%20%26%20key"])
         self.assertEqual(links[0]["aria-current"], "page")
-        self.assertNotIn("aria-current", links[1])
+        for link in links[1:]:
+            self.assertNotIn("aria-current", link)
 
     def test_setup_keeps_missing_baselines_failures_and_migration_meanings(self):
         projects = []

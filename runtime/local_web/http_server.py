@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from . import HOST, PORT, ORIGIN, SERVICE_SCHEMA
 from . import artifacts
-from .apps import diff, status
+from .apps import diff, editor_settings, status
 
 
 class WebHandler(BaseHTTPRequestHandler):
@@ -125,6 +125,10 @@ class WebHandler(BaseHTTPRequestHandler):
                                 "artifact_cache_schema": artifacts.SCHEMA,
                                 "plugin_version": self.server.plugin_version})
                 return
+            if path == "/editor/" and state["mode"] == "applications":
+                self.respond(200, editor_settings.render_settings(state["key"]),
+                             "text/html; charset=utf-8", interactive=True)
+                return
             parts = path.strip("/").split("/")
             api = parts[0] == "api"
             if api:
@@ -156,12 +160,29 @@ class WebHandler(BaseHTTPRequestHandler):
             self.close_connection = True
             self.json(400, {"message": "The launch operation takes URL parameters only"})
             return
-        parsed = urlsplit(self.path)
-        if parsed.path != "/api/diff/open":
-            self.json(404, {"message": "Not found"})
-            return
         if len(self.path) > 32768:
             self.json(414, {"message": "URL too long"})
+            return
+        parsed = urlsplit(self.path)
+        if parsed.path == "/api/editor/install":
+            if not self.private_access(parsed.query):
+                self.json(403, {"message": "Forbidden"})
+                return
+            if self.server.web_state["mode"] != "applications":
+                self.json(404, {"message": "Permanent applications are not enabled"})
+                return
+            try:
+                fields = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
+                if set(fields) - {"key", "profile"} or len(fields.get("profile", ())) != 1:
+                    raise ValueError("请选择一个 VS Code 配置。")
+                self.json(200, editor_settings.install(fields["profile"][0]))
+            except ValueError as error:
+                self.json(400, {"message": str(error)})
+            except OSError as error:
+                self.json(409, {"message": str(error)})
+            return
+        if parsed.path != "/api/diff/open":
+            self.json(404, {"message": "Not found"})
             return
         try:
             target = diff.target_from_query(parsed.query)
