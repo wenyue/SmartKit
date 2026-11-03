@@ -93,6 +93,20 @@ These are abbreviated decision notes. Supplementary reports use complete file bl
 | No M issue remains; O1 has a supported normalization simplification. Requested delivery is prepared but unselected. | Offer **Optimize O1**, **Pass** leaving O1 unchanged, then **Continue**. Selecting the unambiguous Optimize leads to a separate O1 report, no M/progress increase, and delivery coverage of its changes. |
 | A necessary main finding remains alongside O1's supported optimization. | Recommend the main remedy, offer its explicit **Ignore**, then **Optimize O1** stating that the main issue remains. O advice cannot displace the necessary remedy. |
 
+## Close a focused repair
+
+Premise: the user selected Fix and optimize M2 above, with no delivery request. No material design choice, contract change, or risk requires an expanded report. Links and results are illustrative.
+
+**Agent:** **M2 resolved** — [src/editor/save_controller.dart](http://127.0.0.1:47821/diff?example=repair-report). Restored the `finally` block so one owner clears pending state on success, failure, and cancellation.
+
+⚖️ **Reasonable** — Cancellation no longer prevents the next save. Existing completion and failure behavior are preserved.
+
+🎨 **Elegant** — Shared cleanup removes duplicated outcome branches and covers every exit.
+
+Required project checks passed on the repaired contents, covering save success, failure, cancellation, and change integrity. Independent re-review covered the repair and affected previously reviewed save callers. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures used, results, and available logs.
+
+Repair and optimization are complete, with no new findings or pending decisions.
+
 ## Keep workspace alternatives visible
 
 Premise: the related checkout is clean on main and can safely switch to the PR source and fast-forward to the pinned target. No existing worktree qualifies; creation and fixed-snapshot review do.
