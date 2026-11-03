@@ -21,7 +21,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime"))
 from local_web import ORIGIN, HOST, artifacts, cli, editor_bridge, http_server, service, storage
-from local_web.apps import comparisons, diff
+from local_web.apps import comparisons, diff, editor_settings
 from local_web_test_support import isolate_local_web
 
 
@@ -452,6 +452,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(result["viewer"], "vscode")
         capture.assert_not_called()
         launch.assert_not_called()
+        self.assertNotIn("bridge_setup", result)
         self.assertEqual(request[0], self.repo)
         before = urllib.parse.urlsplit(request[1])
         self.assertEqual(before.scheme, "git")
@@ -463,6 +464,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         with self.editor_dispatch() as launch:
             result = diff.open_editor(target)
         self.assertEqual(result["viewer"], "vscode")
+        self.assertIn("apps.editor", result["bridge_setup"])
         command = launch.call_args[0][0]
         self.assertFalse(command[3].startswith("--file-uri=git:"))
         self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
@@ -1000,6 +1002,29 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
             self.assertEqual(result[0], 200)
             self.assertEqual(json.loads(result[2])["viewer"], "vscode")
             launch.assert_called_once_with(self.target)
+
+    def test_editor_install_requires_private_same_origin_post(self):
+        setup = service.service_info({"pid": 1, **self.server.web_state})["apps"]["editor"]
+        endpoint = self.origin + "/api/editor/install"
+        query = urllib.parse.urlencode({"key": self.server.web_state["key"], "profile": "Otaku 中文"})
+        headers = {"Origin": self.origin, "Sec-Fetch-Site": "same-origin"}
+        result = {"profile": "Otaku 中文", "status": "installed", "version": "0.1.0"}
+        with patch.object(editor_settings, "install", return_value=result) as install:
+            self.assertEqual(self.request(self.origin + "/editor/")[0], 403)
+            code, _, body = self.request(setup)
+            self.assertEqual(code, 200)
+            self.assertIn(b'id="bridge-install"', body)
+            self.assertEqual(self.request(endpoint + "?" + query)[0], 404)
+            self.assertEqual(self.request(endpoint + "?" + query, post=True)[0], 403)
+            self.assertEqual(self.request(endpoint + "?profile=Default", post=True, headers=headers)[0], 403)
+            self.assertEqual(self.request(endpoint + "?" + query + "&profile=Default",
+                                          post=True, headers=headers)[0], 400)
+            self.assertNotIn(self.server.web_state["key"].encode(), self.request(self.target.url())[2])
+            install.assert_not_called()
+
+            code, _, body = self.request(endpoint + "?" + query, post=True, headers=headers)
+            self.assertEqual((code, json.loads(body)), (200, result))
+            install.assert_called_once_with("Otaku 中文")
 
     def test_html_refresh_reads_current_content_and_rejects_foreign_hosts(self):
         url = self.target.url(html_only=True)

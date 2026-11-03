@@ -142,6 +142,8 @@ VS Code is attempted from a visible page; explicit launch failure falls back
 to GitHub for live PRs or HTML for fixed snapshots/non-PRs, in the same tab.
 A dispatched request tries to close the tab;
 if browser policy blocks closing, the page keeps manual fallback links.
+When a Git baseline is eligible but the window declines the bridge, the page
+keeps the editor-settings hint. It does not install extensions on diff open.
 GitHub may show the remote PR version. CLI exit does not prove editor display.
 
 create input: {"files":{"report.html":"captured.html","raw/data":"input.txt"},
@@ -164,8 +166,12 @@ versions and unknown port occupation fail without stopping the existing host.
 status starts no process. stop ends only the verified shared instance, when
 requested, never merely because a chat ends.
 Manual stop followed by ensure creates a new private-page credential.
-Private readiness/setup URLs contain an instance credential; keep them private.
-They read owner-produced observations/source state without checks or repair.
+Private readiness, setup and editor URLs contain an instance credential; keep
+them private. Readiness and setup read observations without checks or repair.
+Open apps.editor from ensure/status to install or update the bundled Diff Bridge
+in a user-selected VS Code profile. Opening the page does not run the editor CLI.
+After installing, focus the intended repository window and reopen the diff to
+verify bridge activation.
 Hook/CLI startup is bounded recovery. Explicit autostart enable/disable records
 the current user's login choice; status only inspects it. Windows uses a user
 Startup shortcut; Linux uses a user systemd unit or XDG desktop registration.

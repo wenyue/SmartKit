@@ -117,7 +117,7 @@ def start_lock(*, deadline: Optional[float] = None) -> Iterator[None]:
 def service_info(state: dict) -> dict:
     return {"origin": ORIGIN, "pid": state["pid"], "mode": state["mode"],
             "apps": {feature: ORIGIN + "/" + feature + "/?key=" + state["key"]
-                     for feature in ("readiness", "setup")}}
+                     for feature in ("readiness", "setup", "editor")}}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
