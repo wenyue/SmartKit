@@ -95,7 +95,7 @@ These are abbreviated decision notes. Supplementary reports use complete file bl
 
 ## Close a focused repair
 
-Premise: the user selected Fix and optimize M2 from the complete report above, with no delivery request. The Agent carries forward the fixed comparison, selected workspace, findings, and necessary save-caller context. Project-owned verification supplies current check results and complete logs; affected re-review establishes no material design, contract, or risk change requiring an expanded report. Links and check results below are illustrative.
+Premise: the user selected Fix and optimize M2 from the complete report above, with no delivery request. The Agent carries forward the fixed comparison, selected workspace, findings, and necessary save-caller context. In this example, the project's required verification supplies current results and supporting records; affected re-review establishes no material design, contract, or risk change requiring an expanded report. Links and check results below are illustrative.
 
 **Agent:** **M2 resolved** — [src/editor/save_controller.dart](http://127.0.0.1:47821/diff?example=repair-report). Cleanup now runs from one `finally` block on success, failure, and cancellation.
 
@@ -103,7 +103,7 @@ Premise: the user selected Fix and optimize M2 from the complete report above, w
 
 🎨 **Elegant** — One cleanup owner replaces the duplicated result branches and covers every exit.
 
-Independent re-review covered the repair and affected previously reviewed save callers. Official analyzer, fresh project lint, diff integrity, and all six selected save/cancellation tests passed; no test was skipped. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) retains commands, results, and complete logs. No new findings or decisions remain.
+Independent re-review covered the repair and affected previously reviewed save callers. The project's required checks passed for save success, failure, cancellation, and change integrity; none was skipped. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) retains the procedures used, results, and available logs. No new findings or decisions remain.
 
 Repair and optimization are complete. The fixed comparison and saved main-review position remain unchanged.
 
