@@ -95,7 +95,7 @@ These are abbreviated decision notes. Supplementary reports use complete file bl
 
 ## Close a focused repair
 
-Premise: the user selected Fix and optimize M2 from the complete report above, with no delivery request. The fixed comparison and earlier assessment remain the review context. New checks and independent affected re-review cover the repaired contents in the selected workspace. No material design choice, contract change, or risk calls for a complete file block. Links and results below are illustrative.
+Premise: the user selected Fix and optimize M2 above, with no delivery request. No material design choice, contract change, or risk requires an expanded report. Links and results are illustrative.
 
 **Agent:** **M2 resolved** — [src/editor/save_controller.dart](http://127.0.0.1:47821/diff?example=repair-report). Restored the `finally` block so one owner clears pending state on success, failure, and cancellation.
 
@@ -103,9 +103,9 @@ Premise: the user selected Fix and optimize M2 from the complete report above, w
 
 🎨 **Elegant** — Shared cleanup removes duplicated outcome branches and covers every exit.
 
-Required project checks passed on the repaired contents, covering save success, failure, cancellation, and change integrity; none was skipped. Independent re-review covered the repair and affected previously reviewed save callers. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures used, results, and available logs.
+Required project checks passed on the repaired contents, covering save success, failure, cancellation, and change integrity. Independent re-review covered the repair and affected previously reviewed save callers. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures used, results, and available logs.
 
-Repair and optimization are complete, with no new findings or pending decisions. The fixed comparison and saved main-review position are unchanged.
+Repair and optimization are complete, with no new findings or pending decisions.
 
 ## Keep workspace alternatives visible
 
