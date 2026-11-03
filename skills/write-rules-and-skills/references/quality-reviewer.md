@@ -35,7 +35,7 @@ Check emphasis against consequence. Can readers distinguish central work and fir
 
 Keep the decision, its condition, and its exception understandable together. Check whether headings, transitions, paragraph boundaries, and examples make their relationships clear. A qualification for several points needs a scope the reader can recognize. Different points may need separate paragraphs; more paragraphs are not themselves a defect. Compression into labels or lists can lose necessary reasoning just as repetition can bury it.
 
-For a Skill, assess discovery using only the task and context available before loading. Check intended uses, nearby nonmatches, and important uses easy to miss. Always-present descriptions and pointers must earn the attention they demand, including from readers who will not need the target.
+For a Skill, assess discovery using only the task and context available before loading. Include ordinary small changes that need a requirement even when the task never names the concern it addresses. Judge policy placement by whether those tasks reach the guidance before the governed decision, giving this priority over conceptual grouping or introduction history. Check nearby nonmatches as well as intended uses. Always-present descriptions and pointers must earn the attention they demand, including from readers who will not need the target.
 
 Trace the initial entry and all required transitive reads, then each consequential branch. A useful reference has a recognizable trigger and supplies the promised knowledge. An unconditional extra read does not save reading burden; neither does a conditional label covering almost every ordinary use. Static traces can establish these paths without invented usage frequencies or length targets.
 

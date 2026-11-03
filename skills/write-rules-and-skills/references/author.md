@@ -46,7 +46,7 @@ If a coherent result needs an out-of-scope owner change, identify the responsibi
 
 ### Design the reading path
 
-Give each file a definite reader question or responsibility, with the knowledge needed to answer it. Place its route where the reader can recognize the need, and keep requirements together with the conditions and exceptions needed before the decision. Different roles may need different guidance about the same subject: an Author makes a choice; a Reviewer judges the result. Share definitions only when the readers need the same meaning and perspective.
+Give each file a definite reader question or responsibility, with the knowledge needed to answer it. For Rules and rule-led Skills, choose the home and loading route primarily by the tasks and decisions that need the policy, ahead of conceptual classification or its historical origin. Make the route recognizable from task context before loading, including ordinary small changes, so readers encounter necessary guidance without first identifying the concern it addresses. Keep requirements together with the conditions and exceptions needed before the decision. Different roles may need different guidance about the same subject. An Author makes a choice and a Reviewer judges the result. Share definitions only when the readers need the same meaning and perspective.
 
 Treat repetition across files as a design problem, not merely an editing problem. Keep one operative owner for a meaning and route readers to it. Similar subject matter may remain in separate role files when each passage supplies genuinely different decisions or evidence for that role; make that distinction visible instead of restating a common rule.
 

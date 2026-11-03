@@ -6,12 +6,12 @@ Use this for every full setup, before registration. Every current catalog bluepr
 
 Load every requested immutable authoring blueprint from the frozen `source_root`, including the complete directory for a Skill blueprint and the entry file for a Rule blueprint. Use its refresh preference and writing focus to assess complete existing content against qualified project evidence. Preserve valid intent, obligations, conditions, exceptions and additions; substantive changes need a blueprint requirement, project fact or demonstrated defect.
 
-Plan across frozen requests, retained project Rules, relevant Skills, applicable SmartKit global Rules and discoverable rule-led Skills. For each artifact, establish purpose, neighboring boundaries, evidence and how readers reach its responsibilities:
+Plan across frozen requests, retained project Rules, relevant Skills, applicable SmartKit global Rules and discoverable rule-led Skills. Allocate policy primarily by when project tasks and decisions need it, ahead of conceptual grouping or its historical origin. For each artifact, establish purpose, neighboring boundaries, evidence and how readers reach its responsibilities:
 
 - **Coverage:** preserve every required obligation, with its conditions and exceptions, under an artifact or established external owner reachable before the decision.
 - **Responsibility:** keep operative meaning with its canonical owner. Generated and retained artifacts must agree; a blueprint requirement cannot be reassigned or omitted to simplify the set.
 - **Overlap:** distinguish context useful to different decisions from duplicate definitions or incompatible directions. Resolve ownership while retaining necessary meaning.
-- **Loading:** establish supported routes for unconditional Rules and conditional rule-led Skills. Check combined loading; current conversation visibility does not establish future availability.
+- **Loading:** establish supported routes for unconditional Rules and conditional rule-led Skills. Check combined loading from task context available before the policy is read, including ordinary small changes that need the policy without naming its concern. Current conversation visibility does not establish future availability.
 - **Order:** identify cross-references among generated artifacts and place each referenced artifact before its referrers. For a reference cycle, defer one back-reference: accept one artifact without it, accept the other after its dependency is available, then add the deferred reference through the correction route after both are accepted.
 
 Record the resolved allocation, generation order, refresh directions, qualified evidence and owner-dependency state in a common plan. Evidence beyond the setup fingerprint needs its source and limits. Leave each writer room to organize its Candidate within the plan and blueprint. A discovery affecting neighboring responsibilities returns to Setup; it does not widen that writer's scope.
