@@ -10,7 +10,7 @@ A fresh checkout may contain useful configuration while its copied repository bi
 
 ## Let writers own individual artifacts and Setup own the set
 
-Every blueprint request receives its own public-writer Candidate and complete review. Setup supplies allocation and dependency order, then reconciles the combined result and mapped links before registration. Individual passes cannot prove combined coverage, while direct controller repairs would break their accepted fingerprints and Author ownership.
+Every blueprint request receives its own public-writer Candidate and complete review. Setup establishes the generation order before writing, and generated Skills may depend only on earlier Skills in that set. This keeps each result usable when accepted and avoids a second pass that deliberately restores circular dependencies. Setup then reconciles the combined result and mapped links before registration. Individual passes cannot prove combined coverage, while direct controller repairs would break their accepted fingerprints and Author ownership.
 
 Pass a Skill blueprint's whole resource directory and let the writer interpret accepted fixed-content inputs. Setup seals registered output bytes through application instead of reimplementing metadata checks. This keeps blueprint authoring independently usable and prevents Setup from becoming a second source of content requirements; the temporary seal does not restrict later project-owned edits.
 

@@ -16,7 +16,7 @@
 
 ## 将已提供的 Skill 依赖视为可用
 
-对工具、服务、凭据和其他环境能力，要求说明不可用或失败时的结果；但对 Rule 或 Skill 依赖其受支持环境已配置为提供的 Skill，则不作此要求。在 SmartKit 中，SmartKit Skill 随每个 SmartKit Rule 和 Skill 一起交付；项目的 Rule 和 Skill 可以依赖 SmartKit Skill，因为项目以 SmartKit 为前提；项目自身的 Skill 随其自身的 Rule 和 Skill 一起交付；缺少某个 Skill（包括其他插件的 Skill）属于环境配置问题。针对这些 Skill 的不存在分支在受支持环境中永远不会执行，而单独的失败要求与 Correctness 仍会走查的常规结果处理重复。把豁免限定在已提供的 Skill：受支持目标可能提供也可能不提供的 Skill，例如目标项目为某个 SmartKit Skill 编写以供使用的 Skill，需要存在和不存在两种情况的结果。针对这类 Skill 的具体 SmartKit 规则属于本仓库的项目本地 `write-shared-rules-and-skills` Skill，而不属于这个公开 Skill，因为公开 Skill 不得依赖项目 Skill。
+对工具、服务、凭据和其他环境能力，要求说明不可用或失败时的结果。在产物所有者允许的依赖范围内，将受支持环境提供的 Skill 视为可用，并按常规结果处理方式处理其结果。这样既避免多余的不存在分支，也不会把安装变成添加依赖的许可。对于 SmartKit，捆绑的 Skill 和目标项目自身交付的 Skill 构成受支持环境，其他插件的 Skill 则仍在已接受的依赖范围之外。受支持目标可能提供也可能不提供的获准 Skill，例如蓝图目标 Skill，仍需要存在和不存在两种情况的结果。SmartKit 特有的依赖选择属于本仓库的项目政策和编写输入。公共 writer 检查这些传入的边界，不依赖本项目的 Skill。
 
 ## 保持编写记录精简
 

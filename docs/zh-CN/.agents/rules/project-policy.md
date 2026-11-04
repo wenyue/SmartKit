@@ -22,7 +22,11 @@ SmartKit Skills 可以共享自身目录之外的文档、脚本和资产，前�
 
 这种受支持路径意味着 Skill 不必能被独立复制。它允许使用已声明的插件共享资源，不允许借此访问其他 Skill 的私有资源或任意项目、外部文件。它不授予打包、发布或安装权限。
 
-这些限制约束 SmartKit Skill。项目 Skill 可以无条件引用 SmartKit Skill 及其资源，包括 SmartKit Skill 的私有资源。例外是蓝图目标 Skill，即按 Setup Authoring Blueprint 编写、由 SmartKit Skill 按固定名称查找的项目 Skill：它不得指名或假设调用它的 SmartKit Skill。它通过输入获得所需内容，因此对任何调用方都保持正确，依赖也只从调用方 Skill 指向它。
+SmartKit Skill 可以依赖随 SmartKit 一起打包的 Skill，包括捆绑的第三方快照。为启用 SmartKit 的项目编写的项目 Skill 可以依赖 SmartKit Skill 和项目自身的 Skill。其他插件的 Skill 不在这些依赖边界内。共享产物通过 [编写共享 Rules 和 Skills](../skills/write-shared-rules-and-skills/SKILL.md) 负责的蓝图目标 Skill 路径访问目标项目的 Skill。
+
+只有本 SmartKit 仓库 `.agents/skills/` 下的项目本地 Skill 可以直接依赖 SmartKit 的私有资源。为其他项目编写的 Skill 通过 Skill 入口和明确支持的公开接口使用 SmartKit。将这些依赖和资源限制传入目标编写输入，包括脱离 Setup 独立使用的蓝图。
+
+蓝图目标 Skill 是按 Setup Authoring Blueprint 编写、由 SmartKit Skill 按固定名称查找的项目 Skill。它不得指名或假设调用它的 SmartKit Skill。它通过输入获得所需内容，因此对任何调用方都保持正确，依赖也只从调用方 Skill 指向它。
 
 ## 为文档的读者编写内容
 
