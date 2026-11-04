@@ -4,6 +4,10 @@
 
 The entry owns assessment, findings, user intent, and advancement. Preparation handles the conditional PR/workspace branch; Delivery owns inventory, physical effects, and recovery. Delivery returns readiness and observed results rather than deciding what the user requested. This separation keeps an interrupted write or a supplementary finding from silently replacing a pending Pass.
 
+Principles govern uncommon situations; four common-case tables stabilize recommendations and ordering at the actual decision points. One option represents each action type, with IDs defining its scope. Treating each finding as an option would recreate duplicate Optimize choices and obscure the user’s decision.
+
+Pass selects delivery preparation as well as its applicable effects. Requiring prepared delivery before offering Pass would hide that choice after ordinary review and repairs. New supplementary findings pause writes for a decision, while the original selection remains pending so resolving them needs no second Pass.
+
 Necessity and implementation belong in one assessment path. Splitting them into separate checklists would let a well-tested mechanism receive an elegance judgment before its capability has a supported purpose.
 
 ## Give presentation one owner

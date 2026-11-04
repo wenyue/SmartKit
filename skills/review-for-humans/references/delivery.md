@@ -1,6 +1,6 @@
 # Delivery
 
-Prepare and verify the physical effects selected through the [Skill entry](../SKILL.md). This guide owns the complete delivery inventory, semantic coverage, checks, writes, readbacks, and recovery evidence. Return readiness, findings, and actual effects to the entry, which owns menus, pending intent, and advancement.
+Prepare and verify the physical effects selected through the [Skill entry](../SKILL.md). This guide owns the complete delivery inventory, semantic coverage, checks, writes, readbacks, and recovery evidence. A selected Pass starts this preparation even when inventory, supplementary review, or checks are unfinished. Return readiness, findings, and actual effects to the entry, which owns menus, pending intent, and advancement.
 
 ## Establish the complete effect set
 
@@ -33,7 +33,7 @@ Tests use the same repository classification as the main review and are excluded
 
 For uncovered non-test content, apply the entry's complete inspection standards to the changes and necessary file/caller context. Present supplementary review in the required fixed format with before/after evidence and links, separately from unseen main groups. Reuse IDs for affected items and allocate continuous M IDs for new supplementary modifications. Distinguish these from main progress: supplementary coverage neither changes the main total and saved position nor removes unseen files through a refreshed Viewed filter. O-selected work retains its separate identity under the entry.
 
-Return findings and evidence gaps before any delivery write. Concise presentation or omitted explanations cannot supply missing assessment; explicitly retained judgments remain recorded.
+Return new actionable findings, worthwhile optional improvements, and evidence gaps before any delivery write. The entry's supplementary-review table resolves new items while keeping the delivery request pending. With no unresolved item, complete the remaining prerequisites and execute the selected delivery without another authorization question for unchanged effects. Concise presentation or omitted explanations cannot supply missing assessment; explicitly retained judgments remain recorded.
 
 ### Derive Viewed from whole-file PR review
 
@@ -49,7 +49,7 @@ Run required checks over the complete intended commit/publication scope and fini
 
 For PR effects, verify owning/source repositories, source branch and remote, authenticated viewer, base/head, and usable write/readback interfaces. For local/branch publication, establish the selected destination and exact outgoing scope; a commit request supplies neither an upstream nor push authority.
 
-Disclose the remaining writes, full contents, outgoing commits, Viewed set, and checks/limits. Include amendment and exact-lease publication where applicable. Keep publication and Viewed coverage separately inspectable so the user can authorize the actual plan.
+Disclose the remaining writes, full contents, outgoing commits, Viewed set, and checks/limits. Include amendment and exact-lease publication where applicable. Keep publication and Viewed coverage separately inspectable. A selected Pass already authorizes its disclosed effect scope; ask only for a changed effect or unresolved user-owned decision outside that authority.
 
 ## Choose the execution path
 
