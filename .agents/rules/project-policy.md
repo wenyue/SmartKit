@@ -22,6 +22,8 @@ Keep task-specific inputs, outputs, permissions, and lifetime contracts with the
 
 This supported route means a Skill need not be independently copyable. It permits use of declared shared plugin resources, not another Skill's private resources or arbitrary project or external files. It grants no packaging, publishing, or installation authority.
 
+These limits govern SmartKit Skills. Project Skills may reference SmartKit Skills and their resources unconditionally, including resources private to a SmartKit Skill. The exception is a Blueprint Target Skill, a project Skill authored from a Setup Authoring Blueprint that SmartKit Skills find by its fixed name: it must not name or assume the SmartKit Skill that invokes it. It receives what it needs through its inputs, so it stays correct for any caller and the dependency runs only from the invoking Skill to it.
+
 ## Write documentation for its readers
 
 ### Route Rule readers through Skill entries

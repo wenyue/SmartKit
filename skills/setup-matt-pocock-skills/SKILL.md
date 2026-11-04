@@ -8,6 +8,6 @@ disable-model-invocation: true
 
 Configure the repository's issue tracker, triage labels, and domain documentation for the engineering skills. This entry requires the user's explicit invocation.
 
-Read [Project Context](references/project-context.md) and complete its workflow for the requested repository. The reference also has a supported composition route from an accepted full Setup Project Agents initialization or upgrade; reusing that reference does not invoke this entry.
+Read [Project Context](references/project-context.md) and complete its workflow for the requested repository. Other workflows may reuse that reference as a shared resource without invoking this entry.
 
 After the reference's completion checks pass, tell the user which engineering skills will read the resulting files. Mention that they can edit `docs/agents/*.md` directly later; re-running this entry is only necessary to switch issue trackers or restart setup from scratch.

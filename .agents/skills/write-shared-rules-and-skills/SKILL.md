@@ -42,16 +42,18 @@ Qualify the supporting contract:
 | --- | --- |
 | Candidate and routes | Shared owner, applicability, provenance, exact resources and presence expectations, and intended public loading, discovery, distribution, and Skill-interface routes. |
 | Evidence | Each source and discovery route, supported facts, represented scope, and source-project-specific limits. |
-| Dependencies | Every direct and transitive Rule, Skill, tool, schema, environment capability, and host behavior: its owner, required behavior, consumers, supported shared- or target-owned route, and observable available, unavailable, and failed-use outcomes. |
+| Dependencies | Every direct and transitive Rule, Skill, tool, schema, environment capability, and host behavior: its owner, required behavior, consumers, and supported shared- or target-owned route. For each non-Skill dependency, also its observable available, unavailable, and failed-use outcomes; a Blueprint Target Skill instead needs the present and absent outcomes described below. |
 | Acceptance | Validation and completion duties, accepted permissions and effects, required evidence, and observable pass, blocked, and failure conditions. |
 
-Trace dependencies through to their consumers. Existence on the authoring machine proves neither target availability nor how a consumer reaches the dependency. Resolve material routes and failure behavior before handing off dependent work.
+Trace dependencies through to their consumers. Apart from Blueprint Target Skills, a shared artifact treats the Skills it depends on as available and handles a failure result through its ordinary handling of that Skill's results. The plugin delivers every SmartKit Rule and Skill together, including bundled third-party snapshots; a missing Skill from another plugin is an environment-configuration matter. Tools, services, network access, credentials, and other environment capabilities have no such guarantee: existence on the authoring machine proves neither target availability nor how a consumer reaches the dependency. Resolve material routes and failure behavior before handing off dependent work.
+
+A shared artifact reaches a target project's Skills only through Blueprint Target Skills: project-local Skills authored from Setup Authoring Blueprints and found by their fixed names. Any target may or may not provide one, so the artifact assumes neither and states the outcome for both cases. When present, the artifact uses the Skill's result. When absent, it chooses an outcome that fits its purpose; for example, it skips that work and reports a status if its outcome remains meaningful, or stops and points to project setup if the Skill is indispensable. The artifact need not prescribe how presence is detected. Pass what the Blueprint Target Skill needs through its inputs; it stays caller-neutral and does not name or know its SmartKit caller.
 
 ### Cover differences that can change behavior
 
 Choose the smallest nonempty portfolio of representative targets covering every materially distinct applicability, dependency, permission, execution, observation, recovery, and exit seam. A seam is a difference that could change whether or how the artifact works; different project names or layouts alone do not establish one.
 
-Two projects with the same supported check interface may exercise one case. If the artifact covers an unavailable required capability, that boundary needs evidence that the Agent recognizes it and takes the prescribed exit; another successful project does not cover it. Remove a target when all material seams remain covered without it.
+Two projects with the same supported check interface may exercise one case. If the artifact covers an unavailable required capability, that boundary needs evidence that the Agent recognizes it and takes the prescribed exit; another successful project does not cover it. Likewise, a referenced Blueprint Target Skill needs both a target that provides it and one that does not. Remove a target when all material seams remain covered without it.
 
 For each seam, establish relevant target facts, consumed obligations and dependencies, permissions, critical success and terminal paths, recovery and mid-path stops, expected observations, and evidence characteristics. Require public Correctness to assess both portable semantic authority and representative behavior:
 

@@ -6,9 +6,9 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Triage labels**: the strings used for the five canonical triage roles
 - **Domain docs**: where `GLOSSARY.md` and ADRs live, and the consumer rules for reading them
 
-This prompt-driven workflow is a supported shared resource for the explicit Setup Matt Pocock Skills entry and an accepted initialization or upgrade operation of the user-invoked full Setup Project Agents workflow. Full Setup may enter this reference automatically when required context is missing, complete it before freezing its session, and continue in the same conversation. Restoration, local synchronization, and Rule-index-only operations do not enter this workflow.
+This prompt-driven workflow serves the explicit Setup Matt Pocock Skills entry and is a supported shared resource for other callers that need this project context. Each caller decides when to enter it and may continue its own work in the same conversation after it returns.
 
-The caller supplies the target repository and retains its configuration ownership and application boundaries. Treat paths below as project-relative destinations; inspect the business target for evidence and read existing content at the caller's supplied authoritative authoring destinations before drafting. Under Setup Project Agents, prepare edits through its established maintenance mode and canonical-input route, then apply them through that owner's supported route. This reference neither expands backup selections nor invokes either manual entry. If the reference or a required seed template is unavailable, report the missing resource and leave the dependent operation incomplete.
+The caller supplies the target repository and retains its configuration ownership and application boundaries. Treat paths below as project-relative destinations; inspect the business target for evidence and read existing content at the caller's supplied authoritative authoring destinations before drafting. When the caller supplies an application route, prepare edits for that route and apply them through it. This reference neither expands the caller's authority nor invokes the Setup Matt Pocock Skills entry. If the reference or a required seed template is unavailable, report the missing resource and leave the dependent operation incomplete.
 
 Explore, preserve accepted choices and existing content, resolve missing decisions, show the proposed edits, then write. Reading this reference alone supplies no authority to change project configuration.
 
@@ -27,7 +27,7 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - Is the `triage` skill installed? (a `triage` Skill folder alongside the containing `setup-matt-pocock-skills` directory, or `triage` in your available skills.) This decides whether Section B applies.
 - Monorepo signals: a `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or a populated `packages/*` with its own `src/`. These are present only in a genuinely large multi-package repo; their absence means single-context, which is almost every repo.
 
-Full Setup Project Agents requires SmartKit's bundled sibling `triage` Skill. If it is unavailable, report the incomplete plugin distribution and leave full Setup incomplete; the independent Matt entry can still omit triage configuration when that Skill is not installed.
+When the caller requires triage configuration and the `triage` Skill is unavailable, report the missing Skill and leave the operation incomplete. Otherwise an uninstalled `triage` Skill only omits triage configuration.
 
 ### 2. Present findings and ask
 
@@ -117,4 +117,4 @@ For a missing "other" issue tracker document, write `docs/agents/issue-tracker.m
 
 Read back the affected entry block and docs. Confirm that references resolve, each applicable configuration file contains the accepted decisions, and surrounding project content was preserved. A missing resource, unresolved choice, or failed write leaves this workflow incomplete; report the failure and retained state rather than claiming readiness.
 
-Return the established choices, changed and preserved paths, and any unresolved prerequisite to the caller. Full Setup Project Agents rechecks Matt readiness before continuing its own preflight; completing this reference does not establish completion of full Setup. The independent Matt entry supplies its own final user-facing completion report.
+Return the established choices, changed and preserved paths, and any unresolved prerequisite to the caller. Completing this reference establishes only this project context; the caller owns its own readiness checks and completion report.

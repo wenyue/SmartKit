@@ -22,6 +22,8 @@ SmartKit Skills 可以共享自身目录之外的文档、脚本和资产，前�
 
 这种受支持路径意味着 Skill 不必能被独立复制。它允许使用已声明的插件共享资源，不允许借此访问其他 Skill 的私有资源或任意项目、外部文件。它不授予打包、发布或安装权限。
 
+这些限制约束 SmartKit Skill。项目 Skill 可以无条件引用 SmartKit Skill 及其资源，包括 SmartKit Skill 的私有资源。例外是蓝图目标 Skill，即按 Setup Authoring Blueprint 编写、由 SmartKit Skill 按固定名称查找的项目 Skill：它不得指名或假设调用它的 SmartKit Skill。它通过输入获得所需内容，因此对任何调用方都保持正确，依赖也只从调用方 Skill 指向它。
+
 ## 为文档的读者编写内容
 
 ### 通过 Skill 入口引导 Rule 读者

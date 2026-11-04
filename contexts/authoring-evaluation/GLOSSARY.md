@@ -103,6 +103,11 @@ A project-owned blueprint that supplies accepted meaning and evidence for a futu
 or Skill. It is neither the generated target nor the public authoring workflow.
 _Avoid_: Generated target, shared SmartKit artifact
 
+**Blueprint Target Skill（蓝图目标 Skill）** :
+A project-local Skill authored in a target project from a Setup Authoring Blueprint. SmartKit Skills
+find and use it by its fixed name, so it may be absent.
+_Avoid_: Blueprint Skill, Setup Authoring Blueprint, generated artifact
+
 **Portable authoring（可迁移编写）** :
 The qualification applied when a shared SmartKit Rule or Skill must preserve its meaning and
 dependencies across representative target projects without inheriting source-project assumptions.
