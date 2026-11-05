@@ -1,12 +1,15 @@
 """Platform paths, confined namespaces, and atomic local state writes."""
 from __future__ import annotations
+import contextlib
 import json
 import os
 import stat
 import sys
 import tempfile
+import time
 from functools import lru_cache
 from pathlib import Path
+from typing import Iterator
 
 @lru_cache(maxsize=1)
 def _windows_is_appcontainer() -> bool:
@@ -180,3 +183,47 @@ def write_json(path: Path, value: object, *, create_only: bool = False) -> None:
             os.unlink(temporary)
         except FileNotFoundError:
             pass
+
+
+@contextlib.contextmanager
+def file_lock(path: Path, *, deadline: float) -> Iterator[None]:
+    if redirected(path):
+        raise ValueError("local file lock redirects")
+    descriptor = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
+    with os.fdopen(descriptor, "r+b") as stream:
+        if os.name == "nt":
+            import msvcrt
+            # Windows permits locking past EOF; writing a marker races another owner.
+
+            def acquire() -> None:
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+
+            def release() -> None:
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            def acquire() -> None:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+            def release() -> None:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+        while True:
+            try:
+                acquire()
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("another operation still holds the lock")
+                time.sleep(0.05)
+            except OSError as error:
+                # Native Windows reports lock contention with EACCES.
+                if os.name != "nt" or error.errno != 13 or time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.05)
+        try:
+            yield
+        finally:
+            release()

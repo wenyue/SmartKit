@@ -10,6 +10,7 @@ import tempfile
 import time
 import unittest
 from types import SimpleNamespace
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -187,6 +188,83 @@ class ArtifactCacheTests(unittest.TestCase):
         (source / 'raw.bin').write_bytes(b'mutable input')
         self.assertEqual(path.read_bytes(), b'\x00\xfffixed')
         self.assertFalse(record['files']['raw/data.bin']['public'])
+
+    def test_group_limits_reject_before_writes_or_expiry(self):
+        with patch.object(cache, 'MAX_GROUP_FILES', 1):
+            with self.assertRaisesRegex(ValueError, 'file count'):
+                cache.create_artifact({'a': b'a', 'b': b'b'})
+        with patch.object(cache, 'MAX_GROUP_BYTES', 3):
+            with self.assertRaisesRegex(ValueError, 'artifact bytes'):
+                cache.create_artifact({'a': b'aa', 'b': b'bb'})
+        self.assertFalse(cache.cache_root().exists())
+
+    def test_cli_bounds_total_capture_and_checks_file_count_first(self):
+        from local_web import cli
+        source = self.base / 'batch.json'
+        payload = self.base / 'payload'
+        payload.write_bytes(b'1234')
+        source.write_text(json.dumps({'files': {'a': 'payload', 'b': 'payload'}}))
+        with patch.object(cache, 'MAX_GROUP_BYTES', 6):
+            with self.assertRaisesRegex(ValueError, 'remaining byte limit'):
+                cli.create(source, 60)
+        payload.unlink()
+        with patch.object(cache, 'MAX_GROUP_FILES', 1):
+            with self.assertRaisesRegex(ValueError, 'file count'):
+                cli.create(source, 60)
+        self.assertFalse(cache.cache_root().exists())
+
+    def test_actual_read_is_bounded_when_source_grows_after_stat(self):
+        from unittest.mock import MagicMock
+        stream = MagicMock()
+        stream.__enter__.return_value = stream
+        stream.read.return_value = b'123456'
+        with patch.object(Path, 'open', return_value=stream), patch.object(cache.os, 'fstat', return_value=SimpleNamespace(st_mode=stat.S_IFREG, st_size=0)):
+            with self.assertRaisesRegex(ValueError, 'remaining byte limit'):
+                cache.read_bounded(self.base / 'growing', 5)
+        stream.read.assert_called_once_with(6)
+
+    def test_global_limits_remove_staging_and_preserve_existing_groups(self):
+        original = cache.create_artifact({'original': b'keep'})
+        for setting, value in [('MAX_CACHE_BYTES', 700), ('MAX_CACHE_ENTRIES', 5)]:
+            with self.subTest(setting=setting), patch.object(cache, setting, value):
+                with self.assertRaisesRegex(ValueError, 'cache .*limit'):
+                    cache.create_artifact({'new': b'x' * 400})
+            self.assertEqual(list(cache.cache_root().iterdir()), [self.group(original)])
+            self.assertEqual(cache.read_file(original.files['original']), b'keep')
+
+    def test_concurrent_creation_cannot_overrun_global_capacity(self):
+        with patch.object(cache, 'MAX_CACHE_BYTES', 650):
+            def capture(index):
+                try:
+                    return cache.create_artifact({'payload': b'x' * 100})
+                except ValueError:
+                    return None
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                results = list(workers.map(capture, range(2)))
+        self.assertEqual(sum(item is not None for item in results), 1)
+        self.assertEqual(len(list(cache.cache_root().iterdir())), 1)
+
+    def test_cleanup_summarizes_reasons_and_stops_at_unregistered_directory(self):
+        with patch.object(cache.time, 'time', return_value=1000000):
+            extra = cache.create_artifact({'known': b'fixed'})
+            expired = cache.create_artifact({'known': b'fixed'})
+        foreign = self.group(extra) / 'files/unregistered'
+        foreign.mkdir()
+        (foreign / 'large-tree').mkdir()
+        original_iterdir = Path.iterdir
+        def guarded_iterdir(path):
+            if path == foreign:
+                self.fail('cleanup traversed an unregistered tree')
+            return original_iterdir(path)
+        with patch.object(Path, 'iterdir', guarded_iterdir):
+            report = cache.cleanup_expired(2000000, details=True)
+        self.assertEqual(report['removed_groups'], 1)
+        self.assertEqual(report['preserved_groups'], 1)
+        self.assertEqual(report['reasons'], {'unregistered_content': 1})
+        self.assertGreaterEqual(report['elapsed_seconds'], 0)
+        self.assertTrue(foreign.exists())
+        self.assertFalse(self.group(expired).exists())
+        self.assertTrue(any(item['reason'] == 'unregistered_content' for item in report['details']))
 
     def test_identity_collision_preserves_existing_group(self):
         artifact = cache.create_artifact({'x': b'original'})

@@ -332,34 +332,68 @@ class WebServiceTests(unittest.TestCase):
             old = artifacts.create_artifact({'private.txt': b'expired'})
         self.assertTrue(old.files['private.txt'].path.exists())
         web.ensure_service()
+        deadline = time.monotonic() + 3
+        while old.files['private.txt'].path.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
         self.assertFalse(old.files['private.txt'].path.exists())
 
-    def test_running_service_triggers_periodic_cleanup_without_a_request(self):
-        storage.prepare_state()
-        state = {'schema': web.SERVICE_SCHEMA, 'port': web.PORT, 'key': 'a' * 64, 'mode': 'applications', 'pid': 0}
-        ticks = [0]
-        calls = [0]
-        handlers = {}
+    def test_maintenance_retries_after_failure_and_honors_stop(self):
+        stopped = MagicMock()
+        stopped.is_set.return_value = False
+        stopped.wait.side_effect = [False, True]
+        logger = MagicMock()
+        with patch.object(web, 'cleanup_artifacts', side_effect=[OSError('cleanup failed'), None]) as cleanup:
+            web._maintain_artifacts(stopped, logger)
+        self.assertEqual(cleanup.call_count, 2)
+        logger.exception.assert_called_once()
+        self.assertEqual(stopped.wait.call_count, 2)
 
-        def idle():
-            calls[0] += 1
-            ticks[0] = web.CLEANUP_INTERVAL + 1
-            if calls[0] == 2:
-                handlers[signal.SIGTERM](signal.SIGTERM, None)
+    def test_slow_cleanup_does_not_block_startup_health_or_reuse(self):
+        started = self.base / 'cleanup-started'
+        released = self.base / 'cleanup-release'
+        self.addCleanup(lambda: released.touch())
+        override = (
+            'import time\n'
+            'def slow_cleanup():\n'
+            f'    Path({str(started)!r}).touch()\n'
+            f'    while not Path({str(released)!r}).exists():\n'
+            '        time.sleep(0.02)\n'
+            'service.cleanup_artifacts = slow_cleanup\n'
+        )
+        self.entry.write_text(self.entry.read_text().replace('from local_web.cli import main', override + 'from local_web.cli import main'))
+        with patch.object(web, 'cleanup_artifacts', side_effect=AssertionError('ensure attempted maintenance')):
+            first = web.ensure_service()
+            deadline = time.monotonic() + 3
+            while not started.exists() and time.monotonic() < deadline:
+                time.sleep(0.02)
+            self.assertTrue(started.exists())
+            self.assertFalse(released.exists())
+            self.assertIsNotNone(web.health(web.load_state()))
+            self.assertEqual(web.ensure_service()['pid'], first['pid'])
+            self.assertFalse(released.exists())
 
-        server = SimpleNamespace(server_port=43123, handle_request=idle)
-        manager = MagicMock()
-        manager.__enter__.return_value = server
-        logger = web.logging.getLogger('smartkit.local_web')
-        before = set(logger.handlers)
-        try:
-            with patch.object(http_server, 'WebServer', return_value=manager), patch.object(web, 'load_state', return_value=state), patch.object(web, 'write_json'), patch.object(web.time, 'monotonic', side_effect=lambda: ticks[0]), patch.object(web.signal, 'signal', side_effect=lambda number, handler: handlers.update({number: handler})), patch.object(web, 'cleanup_artifacts') as cleanup:
-                web.serve()
-            cleanup.assert_called_once_with()
-        finally:
-            for handler in set(logger.handlers) - before:
-                logger.removeHandler(handler)
-                handler.close()
+    def test_failed_background_cleanup_leaves_service_healthy(self):
+        override = (
+            'def failed_cleanup():\n'
+            '    raise OSError("injected cleanup failure")\n'
+            'service.cleanup_artifacts = failed_cleanup\n'
+        )
+        self.entry.write_text(self.entry.read_text().replace('from local_web.cli import main', override + 'from local_web.cli import main'))
+        first = web.ensure_service()
+        log = storage.state_dir() / 'requests.log'
+        deadline = time.monotonic() + 3
+        while 'injected cleanup failure' not in log.read_text() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertIn('injected cleanup failure', log.read_text())
+        self.assertIsNotNone(web.health(web.load_state()))
+        self.assertEqual(web.ensure_service()['pid'], first['pid'])
+
+    def test_status_reports_frozen_running_version(self):
+        web.ensure_service()
+        self.set_plugin_version('1.2.22')
+        result = subprocess.run([sys.executable, '-B', str(self.entry), 'status'], capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['service']['plugin_version'], '1.2.21')
 
     def test_status_page_links_are_offered_for_findings_in_each_hook_protocol(self):
         observation = {'status': 'findings', 'captured_at': time.time(), 'message': '',

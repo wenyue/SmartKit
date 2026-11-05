@@ -15,13 +15,16 @@ from .apps import diff
 
 def create(source: Path, seconds: float) -> dict:
     source = source.resolve(strict=True)
-    value = json.loads(source.read_bytes().decode("utf-8"), object_pairs_hook=artifacts._unique_object)
+    value = json.loads(artifacts.read_bounded(source, artifacts.MAX_METADATA_BYTES).decode("utf-8"), object_pairs_hook=artifacts._unique_object)
     if (not isinstance(value, dict) or set(value) - {"files", "public"}
             or not isinstance(value.get("files"), dict) or not value["files"]
             or not isinstance(value.get("public", []), list)
             or not all(isinstance(name, str) for name in value.get("public", []))):
         raise ValueError("input needs files mapping and an optional public filename list")
+    if len(value["files"]) > artifacts.MAX_GROUP_FILES:
+        raise ValueError("artifact file count exceeds %s" % artifacts.MAX_GROUP_FILES)
     captured = {}
+    remaining = artifacts.MAX_GROUP_BYTES
     for name, location in value["files"].items():
         artifacts.filename(name)
         if not isinstance(location, str) or not location:
@@ -29,7 +32,8 @@ def create(source: Path, seconds: float) -> dict:
         path = (source.parent / location).resolve(strict=True)
         if not path.is_file():
             raise ValueError("input is not a regular file: " + str(path))
-        captured[name] = path.read_bytes()
+        captured[name] = artifacts.read_bounded(path, remaining)
+        remaining -= len(captured[name])
     if not artifacts._number(seconds):
         raise ValueError("retention seconds must be finite and positive")
     artifact = artifacts.create_artifact(captured, public_files=value.get("public", []), retention=timedelta(seconds=seconds))
@@ -153,9 +157,21 @@ returns id/created_at/expires_at/files, starts no server and publishes nothing.
 Default artifact retention is seven days; --retention-seconds is positive and
 finite. publish --id explicitly exposes only declared public files and returns
 their URLs. Access/publication/restart never renew expires_at. Before creation,
-at service startup and every 60 seconds, cleanup removes only positively owned
-expired groups; unknown/altered/redirected groups are preserved. Cleanup failure
-stops dependent creation, preserving diagnostics and completed removals.
+cleanup removes only positively owned expired groups; unknown/altered/redirected
+groups are preserved. Host maintenance runs independently after binding and every
+60 seconds, so slow/failed cleanup cannot block readiness or request handling.
+Creation cleanup failures stop creation, preserving completed removals.
+Captured groups are immutable. Additions need a new create operation; appending
+scratch trees or package/download/build caches makes a group unrecognized.
+Use the task or package owner's writable storage and cleanup lifecycle for those.
+Each group allows at most 100 MiB payload and 1000 files. Input/metadata JSON is
+limited to 1 MiB. The cache admits at most 1 GiB total file bytes and 10000 filesystem
+entries (files and directories, including metadata/staging). Actual reads are
+bounded even if a source grows. Concurrent creation is serialized, over-limit
+staging is removed, and existing groups are preserved. Cache-wide admission counts
+unregistered content and refuses redirects. Resolve retained content with its owner.
+cleanup returns elapsed_seconds, scanned_groups, removed_groups, preserved_groups
+and reason counts. Add --details for per-group paths/reasons/diagnostics.
 Publication failure retains the complete group; publish its ID to retry.
 
 ensure/hook reuse the same or a newer compatible plugin version at the fixed port.
@@ -163,7 +179,7 @@ Older authenticated hosts, including legacy hosts without a version, are replace
 while retaining private-page credentials and application mode. Versions are fixed
 at process startup; same-version code edits require a manual restart. Invalid
 versions and unknown port occupation fail without stopping the existing host.
-status starts no process. stop ends only the verified shared instance, when
+status includes the running plugin_version and starts no process. stop ends only the verified shared instance, when
 requested, never merely because a chat ends.
 Manual stop followed by ensure creates a new private-page credential.
 Private readiness, setup and editor URLs contain an instance credential; keep
@@ -197,7 +213,8 @@ Examples (<entry> is the loaded local_web resource):
     ensure.add_argument("--mode", choices=("applications", "previews"), default="applications")
     commands.add_parser("status", help="Read verified live status without starting a process.")
     commands.add_parser("stop", help="Stop only the authenticated shared host.")
-    commands.add_parser("cleanup", help="Remove positively owned expired artifact groups.")
+    cleanup = commands.add_parser("cleanup", help="Remove owned expired groups and summarize outcomes.")
+    cleanup.add_argument("--details", action="store_true", help="Include per-group preservation diagnostics.")
     publish = commands.add_parser("publish", help="Publish declared files without renewing artifact expiry.")
     publish.add_argument("--id", required=True)
     capture = commands.add_parser("create", help="Capture private or explicitly publishable files.")
@@ -218,12 +235,11 @@ Examples (<entry> is the loaded local_web resource):
         elif args.command == "status":
             state = service.load_state()
             running = service.health(state) if state else None
-            value = {"running": bool(running), "service": service.service_info(state) if running else None}
+            value = {"running": bool(running), "service": service.service_info(state, running) if running else None}
         elif args.command == "stop":
             value = {"stopped": service.stop_service()}
         elif args.command == "cleanup":
-            artifacts.cleanup_expired()
-            value = {"cleaned": True}
+            value = {"cleaned": True, **artifacts.cleanup_expired(details=args.details)}
         elif args.command == "create":
             value = create(args.input, args.retention_seconds)
         elif args.command == "publish":
