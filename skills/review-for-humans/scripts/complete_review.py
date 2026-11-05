@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
@@ -15,21 +17,25 @@ import sys
 import time
 import tempfile
 from typing import Iterator, Optional
+from urllib.parse import quote
 
 
 CLI_HELP = r"""
 SUPPORTED PLANS
-  A verified github.com PR on its selected local branch, in one of two modes:
-  viewed-only records Viewed; commit-push creates a commit if needed, reuses
-  existing outgoing commits, pushes normally when needed, then records Viewed.
-  Both require a nonempty viewed_paths set whose paths already exist in the PR
+  A verified github.com PR on its selected local branch, with one effect mode.
+  viewed-only records Viewed. commit-push creates a commit when content changed,
+  reuses existing outgoing commits, publishes when needed, then records Viewed.
+  amend-push amends the review-owned tip when its content or message changed,
+  preserves its parents, publishes the complete outgoing scope, then records Viewed.
+  The caller must establish that amendment belongs to this review. Both local
+  and source branches must be outside master/main for amend-push.
+  All modes require a nonempty viewed_paths set whose paths already exist in the PR
   before publication. An empty set or an eligible file entering the PR only after
   the push needs the Skill's manual delivery workflow. Never omit a required path
   or invent one to fit this helper.
 
-  Amendment, lease/force publication, mirrored push remotes, detached workspaces,
-  unresolved Git operations, special index flags, and changed submodule/directory
-  entries are unsupported. Use the manual workflow for the actual effects.
+  Mirrored push remotes, detached workspaces, unresolved Git operations, special
+  index flags, and changed submodule/directory entries need the manual workflow.
   Requires Python 3.8+, Git, authenticated gh with PR/source access and readbacks,
   and prepared source objects. All gh API calls target github.com. The helper does
   not install tools, fetch, synchronize, or select a workspace.
@@ -57,7 +63,6 @@ REQUEST JSON (--input)
     "mode": "commit-push",
     "remote": "origin",
     "message": "Fix reviewed behavior",
-    "requires_amend": false,
     "evidence": ["/absolute/private/review-and-checks.json"]
   }
   Use the exact local branch and full lowercase 40-hex commit IDs. number is a
@@ -68,13 +73,12 @@ REQUEST JSON (--input)
   list of existing files. Unrecognized fields are rejected.
 
   For viewed-only, omit remote/message. Only this mode requires local HEAD to
-  equal the reviewed PR head; commit-push permits verified outgoing descendants.
+  equal the reviewed PR head. Publication modes permit verified outgoing descendants.
   viewed-only freezes/preserves local differences mechanically, but the delivery
   contract permits it only when no commit/publication effect remains.
-  For commit-push, supply remote and message; the actual push destination must be
-  the verified source ref, including when fetch and push URLs differ. Set optional
-  requires_amend truthfully from recorded actions: true is refused, so the manual
-  amendment/lease path remains in control. Omitting it means false.
+  For either publication mode, supply remote and message. The actual destination
+  must be the verified source ref, including when fetch and push URLs differ.
+  amend-push includes the retained tip content in the disclosed/reviewed scope.
 
 PRIVATE STATE AND EVIDENCE
   Choose a new state directory outside the worktree through the owning artifact
@@ -84,8 +88,10 @@ PRIVATE STATE AND EVIDENCE
 
   prepare retains the plan, original index bytes, tracked binary diffs, changed
   file bytes/symlink targets, intended complete tree, outgoing ancestry/delta,
-  full PR pagination, and evidence digests. Publication preparation uses an
-  isolated index/native clean filters and may add Git objects, while verifying
+  full PR pagination, expected commit parents, and evidence digests. Plans use
+  private version 2. Obsolete versions are rejected without migration. Preparation
+  and source-ref readbacks use gh rather than native Git network access.
+  Publication preparation uses an isolated index/native clean filters and may add Git objects, while verifying
   the real index, branch, HEAD, and contents remain unchanged. Inspect the full
   inventory and logs for scope disclosure; compact counts are insufficient.
 
@@ -96,11 +102,35 @@ COMMANDS
 
   After exact-effect authorization, run locks and revalidates the plan, stages
   intended content when needed, runs normal hooks, and verifies tree/parent,
-  outgoing ancestry, and source destination. It performs only a normal scoped
-  push without automatic tag/submodule publication, verifies source ref, PR
+  outgoing ancestry, and source destination. It publishes only while the source
+  ref matches the frozen old SHA, without automatic tag/submodule publication.
+  It verifies source ref, PR
   version and published commit/tree, then marks remaining paths and reads back
   the entire selected set with unchanged PR version. Confirmed effects are reused
-  and no empty commit is created. No review advancement occurs.
+  and no redundant commit is created. No review advancement occurs.
+
+TRANSPORT (--transport ON run)
+  git (default) uses native Git publication with an exact-SHA force-with-lease.
+  Only amend-push may replace a published tip. Both modes verify frozen outgoing
+  ancestry before publication. Normal commit and publication hooks run.
+
+  github-api uses gh Git Data calls to upload the missing outgoing object closure,
+  checks every resulting SHA, and atomically updates the source ref with beforeOid.
+  It runs the applicable pre-push hook through git hook run with the same remote,
+  URL and OID:refspec stdin as the native route. An active hook requires Git 2.43+
+  with --to-stdin support. Older Git is supported when no pre-push hook is active.
+  API commit messages, identities and tree paths must be UTF-8. Commit headers
+  must be ordinary tree/parent/author/committer headers. Signatures, extra headers, and any API-normalized object identity stop
+  before ref update. Use git transport for such objects. Native commit signing
+  and hooks remain enabled. Object uploads may remain unreachable after failure.
+
+  Example API execution or recovery on blocked native Git endpoints
+  python "<skill-root>/scripts/complete_review.py" run --state "/private/completion-state" --confirm "<plan_id>" --transport github-api
+
+  Transport is an execution choice, outside the frozen plan. Change it on resume
+  only within the same authorized effects and method restrictions. There is no
+  automatic fallback. The helper first reconciles actual source/PR state, reuses
+  confirmed publication, and uploads or publishes only missing work.
 
 OUTPUT AND EXIT STATUS
   Stdout is compact JSON with status, version/counts, plan/progress paths, and
@@ -149,9 +179,10 @@ GIT_ROUTING = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE',
                'GIT_PREFIX', 'GIT_NAMESPACE', 'GIT_CONFIG', 'GIT_CONFIG_COUNT')
 PR_QUERY = '''query($owner:String!,$name:String!,$number:Int!,$cursor:String){
  viewer{login} repository(owner:$owner,name:$name){pullRequest(number:$number){
- id baseRefOid headRefOid headRefName headRepository{nameWithOwner}
+ id baseRefOid headRefOid headRefName headRepository{id nameWithOwner}
  files(first:100,after:$cursor){totalCount nodes{path viewerViewedState}
  pageInfo{hasNextPage endCursor}}}}}'''
+UPDATE_QUERY = '''mutation($input:UpdateRefsInput!){updateRefs(input:$input){clientMutationId}}'''
 MARK_QUERY = '''mutation($id:ID!,$path:String!){markFileAsViewed(input:{
  pullRequestId:$id,path:$path}){pullRequest{baseRefOid headRefOid}}}'''
 
@@ -256,12 +287,16 @@ class Commands:
         require(isinstance(value.get('data'), dict), 'GitHub response has no data')
         return value['data']
 
-    def commit(self, source: str, head: str) -> dict:
-        raw = self.call(['gh', 'api', '--hostname', 'github.com',
-                         'repos/' + source + '/git/commits/' + head])
-        value = json.loads(raw)
-        require(isinstance(value, dict), 'Invalid GitHub commit response')
+    def api(self, method: str, path: str, payload: Optional[dict] = None) -> dict:
+        arguments = ['gh', 'api', '--hostname', 'github.com', '--method', method, path]
+        if payload is not None:
+            arguments.extend(['--input', '-'])
+        value = json.loads(self.call(arguments, input_value=payload))
+        require(isinstance(value, dict), 'Invalid GitHub REST response')
         return value
+
+    def commit(self, source: str, head: str) -> dict:
+        return self.api('GET', 'repos/' + source + '/git/commits/' + head)
 
 
 def pr_snapshot(commands: Commands, request: dict) -> dict:
@@ -276,7 +311,8 @@ def pr_snapshot(commands: Commands, request: dict) -> dict:
         require(isinstance(pr, dict) and isinstance(pr.get('headRepository'), dict),
                 'PR or source repository is unavailable')
         current = {'id': pr['id'], 'base': pr['baseRefOid'], 'head': pr['headRefOid'],
-                   'source': pr['headRepository']['nameWithOwner'], 'ref': 'refs/heads/' + pr['headRefName'],
+                   'source': pr['headRepository']['nameWithOwner'], 'source_id': pr['headRepository']['id'],
+                   'ref': 'refs/heads/' + pr['headRefName'],
                    'viewer': data['viewer']['login']}
         require(identity is None or current == identity, 'PR identity/version changed during pagination')
         identity = current
@@ -300,7 +336,7 @@ def pr_snapshot(commands: Commands, request: dict) -> dict:
 
 def check_pr(observed: dict, plan: dict, head: str) -> None:
     expected = plan['pr']
-    require(all(observed[key] == expected[key] for key in ('id', 'base', 'source', 'ref', 'viewer'))
+    require(all(observed[key] == expected[key] for key in ('id', 'base', 'source', 'source_id', 'ref', 'viewer'))
             and observed['head'] == head, 'PR viewer, source, base or head changed')
     require(all(path in observed['files'] for path in plan['request']['viewed_paths']),
             'A selected Viewed path is no longer in the PR')
@@ -326,11 +362,11 @@ def references(request: dict) -> dict[str, str]:
 def request_from(path: Path) -> dict:
     value = read_json(path)
     allowed = {'repository', 'branch', 'pull_request', 'number', 'base', 'head', 'viewer',
-               'viewed_paths', 'mode', 'remote', 'message', 'requires_amend', 'evidence'}
+               'viewed_paths', 'mode', 'remote', 'message', 'evidence'}
     require(not set(value) - allowed, 'Unknown request fields')
     for key in ('repository', 'branch', 'pull_request', 'base', 'head', 'viewer', 'mode'):
         require(isinstance(value.get(key), str) and bool(value[key]), 'Missing string: ' + key)
-    require(value['mode'] in ('viewed-only', 'commit-push'), 'Unsupported completion mode')
+    require(value['mode'] in ('viewed-only', 'commit-push', 'amend-push'), 'Unsupported completion mode')
     require(SLUG.fullmatch(value['pull_request']) is not None, 'Invalid owner/repository')
     require(type(value.get('number')) is int and value['number'] > 0, 'Invalid PR number')
     require(SHA.fullmatch(value['base']) is not None and SHA.fullmatch(value['head']) is not None,
@@ -341,8 +377,7 @@ def request_from(path: Path) -> dict:
                     for item in value['viewed_paths'])
             and len(set(value['viewed_paths'])) == len(value['viewed_paths']), 'Invalid Viewed path set')
     require(isinstance(value.get('evidence'), list), 'Evidence paths are required')
-    require(not value.get('requires_amend'), 'Amendment/lease publication needs the existing manual workflow')
-    if value['mode'] == 'commit-push':
+    if value['mode'] != 'viewed-only':
         require(isinstance(value.get('remote'), str) and value['remote']
                 and not value['remote'].startswith('-'), 'A verified source remote name is required')
         require(isinstance(value.get('message'), str) and value['message'].strip(), 'Commit message is required')
@@ -397,8 +432,7 @@ def same_worktree(commands: Commands, observed: dict, expected: dict) -> bool:
 
 
 def outgoing(commands: Commands, old: str, head: str) -> list[str]:
-    commands.git('merge-base', '--is-ancestor', old, head)
-    return commands.git('rev-list', '--reverse', old + '..' + head).decode().splitlines()
+    return commands.git('rev-list', '--reverse', '--topo-order', head, '--not', old).decode().splitlines()
 
 
 def push_url(commands: Commands, request: dict, pr: dict) -> str:
@@ -414,9 +448,10 @@ def push_url(commands: Commands, request: dict, pr: dict) -> str:
 
 def remote_head(commands: Commands, request: dict, pr: dict, expected_url: str) -> str:
     require(push_url(commands, request, pr) == expected_url, 'Source push destination changed')
-    fields = commands.git('ls-remote', '--refs', expected_url, pr['ref']).decode().split()
-    require(len(fields) == 2 and fields[1] == pr['ref'], 'Source branch is unavailable')
-    return fields[0]
+    value = commands.api('GET', 'repos/' + pr['source'] + '/git/ref/' + quote(pr['ref'][5:], safe='/'))
+    require(value.get('ref') == pr['ref'] and value.get('object', {}).get('type') == 'commit'
+            and SHA.fullmatch(value['object']['sha']) is not None, 'Source branch is unavailable')
+    return value['object']['sha']
 
 
 def prepare(input_path: Path, state: Path) -> dict:
@@ -445,26 +480,37 @@ def prepare(input_path: Path, state: Path) -> dict:
         tree = commands.git('rev-parse', 'HEAD^{tree}').decode().strip()
         commits = []
         destination = None
-        if request['mode'] == 'commit-push':
+        parents = [before['head']]
+        if request['mode'] != 'viewed-only':
             destination = push_url(commands, request, pr)
             require(remote_head(commands, request, pr, destination) == pr['head'], 'Source ref and PR head disagree')
+            commands.git('merge-base', '--is-ancestor', pr['head'], before['head'])
             commits = outgoing(commands, pr['head'], before['head'])
+            if request['mode'] == 'amend-push':
+                require(before['branch'] not in ('master', 'main')
+                        and pr['ref'] not in ('refs/heads/master', 'refs/heads/main'),
+                        'Amendment requires both local and source branches outside master/main')
+                parents = commands.git('rev-list', '--parents', '-n', '1', before['head']).decode().split()[1:]
             temporary = state / 'intended.index'
             environment = {'GIT_INDEX_FILE': str(temporary)}
             commands.git('read-tree', 'HEAD', environment=environment)
             commands.git('add', '-A', environment=environment)
             tree = commands.git('write-tree', environment=environment).decode().strip()
             commands.git('diff', '--binary', pr['head'], tree)
+            if request['mode'] == 'amend-push':
+                commands.git('show', '--format=fuller', '--binary', before['head'])
+                commands.git('diff', '--binary', parents[0] if parents else
+                             commands.git('hash-object', '-t', 'tree', '-w', '--stdin').decode().strip(), tree)
             commands.git('log', '--format=fuller', '--stat', pr['head'] + '..' + before['head'])
         else:
             require(before['head'] == pr['head'], 'Viewed-only helper requires local HEAD at the reviewed PR head')
         after = workspace(commands)
         require(after == before, 'Local state changed during preparation')
-        plan = {'version': 1, 'request': request, 'workspace': before, 'pr': pr,
+        plan = {'version': 2, 'parents': parents, 'request': request, 'workspace': before, 'pr': pr,
                 'evidence': evidence, 'tree': tree, 'outgoing': commits, 'push_url': destination,
                 'intended_index_sha256': (digest(commands.git('ls-files', '--stage', '-z',
                     environment={'GIT_INDEX_FILE': str(state / 'intended.index')}))
-                    if request['mode'] == 'commit-push' else before['index_sha256'])}
+                    if request['mode'] != 'viewed-only' else before['index_sha256'])}
         write_json(state / 'plan.json', plan)
         plan_id = digest(encoded(plan))
         write_json(state / 'progress.json', {'plan_id': plan_id, 'phase': 'prepared'})
@@ -486,7 +532,7 @@ def verify_commit(commands: Commands, plan: dict, head: str) -> None:
             'Commit tree differs from checked intended content')
     if head != before:
         parents = commands.git('rev-list', '--parents', '-n', '1', head).decode().split()[1:]
-        require(parents == [before], 'Unexpected commit parent/history')
+        require(parents == plan['parents'], 'Unexpected commit parent/history')
         require(commands.git('log', '-1', '--format=%B', head).decode().strip()
                 == plan['request']['message'].strip(), 'Unexpected completion commit message')
 
@@ -497,14 +543,114 @@ def verify_published(commands: Commands, plan: dict, observed: dict, head: str) 
     require(value['sha'] == head and value['tree']['sha'] == plan['tree'],
             'Published commit/tree differs from checked content')
     if head != plan['workspace']['head']:
-        require([item['sha'] for item in value['parents']] == [plan['workspace']['head']],
+        require([item['sha'] for item in value['parents']] == plan['parents'],
                 'Published commit parent differs from expected')
 
 
-def run(state: Path, confirmed: str) -> dict:
+def commit_payload(commands: Commands, head: str) -> dict:
+    """Translate the headers supported by the exact-SHA API publication contract."""
+    raw = commands.git('cat-file', 'commit', head).decode('utf-8')
+    headers, message = raw.split('\n\n', 1)
+    values = {}
+    parents = []
+    for line in headers.splitlines():
+        key, value = line.split(' ', 1)
+        require(key in ('tree', 'parent', 'author', 'committer'),
+                'GitHub API transport cannot reproduce commit header %r in %s. Use git transport' % (key, head))
+        if key == 'parent':
+            parents.append(value)
+        else:
+            require(key not in values, 'Duplicate commit header in ' + head)
+            values[key] = value
+    payload = {'tree': values['tree'], 'parents': parents, 'message': message}
+    for key in ('author', 'committer'):
+        match = re.fullmatch(r'(.*) <([^<>]*)> (-?\d+) ([+-])(\d\d)(\d\d)', values[key])
+        require(match is not None, 'Unsupported Git identity in ' + head)
+        name, email, seconds, sign, hours, minutes = match.groups()
+        offset = timedelta(hours=int(hours), minutes=int(minutes))
+        if sign == '-':
+            offset = -offset
+        date = datetime.fromtimestamp(int(seconds), timezone(offset)).isoformat()
+        payload[key] = {'name': name, 'email': email, 'date': date}
+    return payload
+
+
+def api_pre_push(commands: Commands, state: Path, plan: dict, head: str) -> None:
+    # Let Git select/execute hooks, including core.hooksPath and Windows shell hooks.
+    version = re.search(rb'git version (\d+)\.(\d+)', commands.git('--version'))
+    require(version is not None, 'Cannot determine Git hook-runner capability')
+    if tuple(int(part) for part in version.groups()) < (2, 43):
+        hook = Path(os.fsdecode(commands.git('rev-parse', '--git-path', 'hooks/pre-push')).strip())
+        if not hook.is_absolute():
+            hook = commands.repository / hook
+        active = hook.is_file() and (os.name == 'nt' or os.access(str(hook), os.X_OK))
+        if os.name == 'nt':
+            active = active or hook.with_name(hook.name + '.exe').is_file()
+        require(not active, 'GitHub API publication with a pre-push hook requires Git 2.43+ (git hook run --to-stdin)')
+        return
+    hook_input = state / 'pre-push.stdin'
+    hook_input.write_bytes(('%s %s %s %s\n' % (head, head, plan['pr']['ref'], plan['pr']['head'])).encode('utf-8'))
+    commands.git('hook', 'run', '--ignore-missing', '--to-stdin=' + str(hook_input),
+                 'pre-push', '--', plan['request']['remote'], plan['push_url'])
+
+
+def publish_api(commands: Commands, state: Path, plan: dict, head: str, commits: list[str]) -> None:
+    payloads = {commit: commit_payload(commands, commit) for commit in commits}
+    api_pre_push(commands, state, plan, head)
+    workspace_after_commit(commands, plan, head)
+    require(remote_head(commands, plan['request'], plan['pr'], plan['push_url']) == plan['pr']['head'],
+            'Source ref changed during publication hook')
+    prefix = 'repos/' + plan['pr']['source'] + '/git/'
+    # Excluding the old source tip also excludes its already available object closure.
+    objects = commands.git('rev-list', '--objects', '--no-object-names', head,
+                           '--not', plan['pr']['head']).decode().splitlines()
+    pending = set(objects) - set(commits)
+    uploaded = set()
+
+    def upload(oid: str, kind: str) -> None:
+        if oid not in pending or oid in uploaded:
+            return
+        if kind == 'blob':
+            payload = {'encoding': 'base64', 'content': base64.b64encode(commands.git('cat-file', 'blob', oid)).decode('ascii')}
+            endpoint = 'blobs'
+        else:
+            require(kind == 'tree', 'Unsupported outgoing Git object type')
+            entries = []
+            for raw in commands.git('ls-tree', '-z', oid).split(b'\0'):
+                if not raw:
+                    continue
+                metadata, name = raw.split(b'\t', 1)
+                mode, entry_kind, entry_oid = metadata.decode('ascii').split()
+                if entry_kind != 'commit':  # A gitlink refers to its independent repository.
+                    upload(entry_oid, entry_kind)
+                entries.append({'path': name.decode('utf-8'), 'mode': mode.zfill(6),
+                                'type': entry_kind, 'sha': entry_oid})
+            payload = {'tree': entries}
+            endpoint = 'trees'
+        value = commands.api('POST', prefix + endpoint, payload)
+        require(value.get('sha') == oid, 'GitHub API returned a different ' + kind + ' SHA')
+        uploaded.add(oid)
+
+    for commit, payload in payloads.items():
+        upload(payload['tree'], 'tree')
+        value = commands.api('POST', prefix + 'commits', payload)
+        require(value.get('sha') == commit,
+                'GitHub API cannot reproduce exact commit ' + commit + '. Source ref was not updated')
+    workspace_after_commit(commands, plan, head)
+    check_pr(pr_snapshot(commands, plan['request']), plan, plan['pr']['head'])
+    require(remote_head(commands, plan['request'], plan['pr'], plan['push_url']) == plan['pr']['head'],
+            'Source ref changed before atomic publication')
+    commands.graphql(UPDATE_QUERY, {'input': {'repositoryId': plan['pr']['source_id'], 'refUpdates': [{
+        'name': plan['pr']['ref'], 'beforeOid': plan['pr']['head'], 'afterOid': head,
+        'force': plan['request']['mode'] == 'amend-push' and plan['workspace']['head'] == plan['pr']['head']}]}})
+
+
+def run(state: Path, confirmed: str, transport: str = 'git') -> dict:
     plan = read_json(state / 'plan.json')
     plan_id = digest(encoded(plan))
-    require(plan.get('version') == 1 and confirmed == plan_id, 'Confirmation does not match the frozen plan')
+    require(plan.get('version') == 2, 'Unsupported private plan version; prepare a new plan')
+    require(confirmed == plan_id, 'Confirmation does not match the frozen plan')
+    require(transport in ('git', 'github-api'), 'Unsupported publication transport')
     request = plan['request']
     require(references(request) == plan['evidence'], 'Retained evidence changed or is unavailable')
     commands = Commands(Path(request['repository']), state)
@@ -533,7 +679,9 @@ def run(state: Path, confirmed: str) -> dict:
             check_pr(pr, plan, pr['head'])
             actual_remote = remote_head(commands, request, pr, plan['push_url'])
             require(actual_remote in (plan['pr']['head'], head), 'Remote source ref changed')
-            local_complete = (not observed['files']
+            needs_amend = (request['mode'] == 'amend-push'
+                           and commands.git('log', '-1', '--format=%B', head).decode().strip() != request['message'].strip())
+            local_complete = (not needs_amend and not observed['files']
                               and observed['index_sha256'] == plan['intended_index_sha256']
                               and commands.git('rev-parse', head + '^{tree}').decode().strip() == plan['tree'])
             if head == before['head'] and not local_complete:
@@ -545,14 +693,21 @@ def run(state: Path, confirmed: str) -> dict:
                 require(commands.git('write-tree').decode().strip() == plan['tree'], 'Staged content changed')
                 staged = workspace(commands)
                 require(same_worktree(commands, staged, before), 'Staging/filter changed worktree content')
-                if commands.git('rev-parse', 'HEAD^{tree}').decode().strip() != plan['tree']:
+                if needs_amend or commands.git('rev-parse', 'HEAD^{tree}').decode().strip() != plan['tree']:
                     progress.update(phase='committing', commit_attempted=True)
                     write_json(state / 'progress.json', progress)
-                    commands.git('commit', '-m', request['message'])
+                    arguments = ['commit', '-m', request['message']]
+                    if request['mode'] == 'amend-push':
+                        arguments.extend(['--amend', '--allow-empty'])
+                    commands.git(*arguments)
                     head = commands.git('rev-parse', 'HEAD').decode().strip()
             verify_commit(commands, plan, head)
             workspace_after_commit(commands, plan, head)
-            expected_outgoing = plan['outgoing'] + ([head] if head != before['head'] else [])
+            expected_outgoing = list(plan['outgoing'])
+            if head != before['head']:
+                if request['mode'] == 'amend-push' and before['head'] in expected_outgoing:
+                    expected_outgoing.remove(before['head'])
+                expected_outgoing.append(head)
             require(outgoing(commands, plan['pr']['head'], head) == expected_outgoing,
                     'Outgoing ancestry differs from approved scope')
             progress.update(phase='committed', head=head)
@@ -567,8 +722,12 @@ def run(state: Path, confirmed: str) -> dict:
                 require(pr['head'] == plan['pr']['head'], 'PR and source ref disagree')
                 progress.update(phase='pushing')
                 write_json(state / 'progress.json', progress)
-                commands.git('push', '--no-follow-tags', '--recurse-submodules=no',
-                             request['remote'], head + ':' + plan['pr']['ref'])
+                if transport == 'github-api':
+                    publish_api(commands, state, plan, head, expected_outgoing)
+                else:
+                    commands.git('push', '--no-follow-tags', '--recurse-submodules=no',
+                                 '--force-with-lease=' + plan['pr']['ref'] + ':' + plan['pr']['head'],
+                                 request['remote'], head + ':' + plan['pr']['ref'])
             require(remote_head(commands, request, pr, plan['push_url']) == head, 'Push needs source-ref readback')
             pr = pr_snapshot(commands, request)
             verify_published(commands, plan, pr, head)
@@ -617,11 +776,13 @@ def main(argv: Optional[list[str]] = None) -> int:
                                       description=RUN_HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
     completion.add_argument('--state', required=True, type=Path, help='Existing private directory created by prepare')
     completion.add_argument('--confirm', required=True, help='Frozen plan_id matching prior conversation authorization')
+    completion.add_argument('--transport', choices=('git', 'github-api'), default='git',
+                            help='Publication transport; may change when resuming the same authorized plan')
     arguments = parser.parse_args(argv)
     state = arguments.state.resolve()
     try:
         result = (prepare(arguments.input, state) if arguments.operation == 'prepare'
-                  else run(state, arguments.confirm))
+                  else run(state, arguments.confirm, arguments.transport))
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return 0
     except KeyboardInterrupt:

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import importlib.util
+import base64
+from datetime import datetime
 import io
 import json
 import os
@@ -30,10 +32,26 @@ class FakeGitHub:
         self.override_head = None
         self.override_base = None
         self.fail_next_snapshot = False
+        self.uploads = []
+        self.updates = []
+        self.fail_after_update = False
+        self.wrong_commit_sha = False
+        self.before_update = None
 
     def graphql(self, commands, query, variables):
         head = self.override_head or self.test.remote_head()
         base = self.override_base or self.test.comparison
+        if query == completion.UPDATE_QUERY:
+            update = variables['input']['refUpdates'][0]
+            self.updates.append(variables['input'])
+            if self.before_update:
+                self.before_update()
+            self.test.call_git('--git-dir', str(self.test.remote), 'update-ref', update['name'],
+                               update['afterOid'], update['beforeOid'])
+            if self.fail_after_update:
+                self.fail_after_update = False
+                raise RuntimeError('lost ref-update response')
+            return {'updateRefs': {'clientMutationId': None}}
         if query == completion.MARK_QUERY:
             self.marked.append(variables['path'])
             self.states[variables['path']] = 'VIEWED'
@@ -49,7 +67,7 @@ class FakeGitHub:
         end = start + len(entries)
         return {'viewer': {'login': self.viewer}, 'repository': {'pullRequest': {
             'id': 'PR_test', 'baseRefOid': base, 'headRefOid': head, 'headRefName': 'feature',
-            'headRepository': {'nameWithOwner': 'owner/repo'},
+            'headRepository': {'id': 'REPO_source', 'nameWithOwner': 'owner/repo'},
             'files': {'totalCount': len(self.states),
                       'nodes': [{'path': name, 'viewerViewedState': state} for name, state in entries],
                       'pageInfo': {'hasNextPage': end < len(self.states), 'endCursor': str(end)}}}}}
@@ -57,6 +75,35 @@ class FakeGitHub:
     def commit(self, commands, source, head):
         return {'sha': head, 'tree': {'sha': self.test.git('rev-parse', head + '^{tree}')},
                 'parents': [{'sha': item} for item in self.test.git('rev-list', '--parents', '-n', '1', head).split()[1:]]}
+
+    def api(self, commands, method, path, payload=None):
+        if method == 'GET':
+            return {'ref': 'refs/heads/feature', 'object': {'type': 'commit', 'sha': self.test.remote_head()}}
+        kind = path.rsplit('/', 1)[1]
+        self.uploads.append((kind, payload))
+        if kind == 'blobs':
+            raw = base64.b64decode(payload['content'])
+            arguments = ['hash-object', '-t', 'blob', '-w', '--stdin']
+        elif kind == 'trees':
+            raw = b''.join(('%s %s %s\t' % (entry['mode'], entry['type'], entry['sha'])).encode('ascii')
+                           + entry['path'].encode('utf-8') + b'\0' for entry in payload['tree'])
+            arguments = ['mktree', '-z']
+        else:
+            headers = ['tree ' + payload['tree']] + ['parent ' + parent for parent in payload['parents']]
+            for key in ('author', 'committer'):
+                identity = payload[key]
+                date = datetime.fromisoformat(identity['date'])
+                headers.append('%s %s <%s> %s %s' % (key, identity['name'], identity['email'],
+                                                    int(date.timestamp()), date.strftime('%z')))
+            raw = ('\n'.join(headers) + '\n\n' + payload['message']).encode('utf-8')
+            arguments = ['hash-object', '-t', 'commit', '-w', '--stdin']
+        result = subprocess.run(['git', '--git-dir', str(self.test.remote)] + arguments,
+                                input=raw, capture_output=True, timeout=20)
+        self.test.assertEqual(result.returncode, 0, result.stderr)
+        oid = result.stdout.decode().strip()
+        if kind == 'commits' and self.wrong_commit_sha:
+            oid = 'f' * 40
+        return {'sha': oid}
 
 
 class CompletionFixture:
@@ -77,7 +124,7 @@ class CompletionFixture:
                  'number': 7, 'base': self.comparison, 'head': self.base, 'viewer': 'reviewer',
                  'viewed_paths': ['file.txt', 'already.txt'], 'mode': mode,
                  'evidence': [str(self.evidence)]}
-        if mode == 'commit-push':
+        if mode != 'viewed-only':
             value.update(remote='origin', message='Reviewed changes')
         value.update(extra)
         path = self.directory / 'request.json'
@@ -106,6 +153,7 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
         self.github = FakeGitHub(self)
         self.patches = [patch.object(completion.Commands, 'graphql', lambda commands, query, variables: self.github.graphql(commands, query, variables)),
                         patch.object(completion.Commands, 'commit', lambda commands, source, head: self.github.commit(commands, source, head)),
+                        patch.object(completion.Commands, 'api', lambda commands, method, path, payload=None: self.github.api(commands, method, path, payload)),
                         patch.object(completion, 'source_slug', return_value='owner/repo')]
         for mocked in self.patches:
             mocked.start()
@@ -125,8 +173,8 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
     def prepare(self, mode='viewed-only', **extra):
         return completion.prepare(self.request(mode, **extra), self.state)
 
-    def run_completion(self, prepared):
-        return completion.run(self.state, prepared['plan_id'])
+    def run_completion(self, prepared, transport='git'):
+        return completion.run(self.state, prepared['plan_id'], transport)
 
     def test_viewed_only_preserves_unrelated_dirty_index_and_worktree(self):
         (self.repository / 'unrelated.txt').write_bytes(b'local\n')
@@ -329,7 +377,7 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
         self.assertEqual(self.remote_head(), self.base)
         self.assertFalse(self.github.marked)
 
-    def test_unsupported_amend_and_in_worktree_state_fail_before_effects(self):
+    def test_obsolete_request_and_in_worktree_state_fail_before_effects(self):
         with self.assertRaises(ValueError):
             self.prepare('commit-push', requires_amend=True)
         with self.assertRaises(ValueError):
@@ -358,7 +406,318 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
             self.run_completion(prepared)
         self.assertFalse(self.github.marked)
 
+    def test_amends_published_tip_preserving_parents_and_complete_contents(self):
+        parents = self.git('rev-list', '--parents', '-n', '1', self.base).split()[1:]
+        (self.repository / 'file.txt').write_bytes(b'staged\n')
+        self.git('add', 'file.txt')
+        (self.repository / 'file.txt').write_bytes(b'final\n')
+        (self.repository / 'untracked.txt').write_bytes(b'new\n')
+        prepared = self.prepare('amend-push')
+        self.run_completion(prepared)
+        head = self.git('rev-parse', 'HEAD')
+        self.assertNotEqual(head, self.base)
+        self.assertEqual(self.git('rev-list', '--parents', '-n', '1', head).split()[1:], parents)
+        self.assertEqual(self.git('show', 'HEAD:file.txt'), 'final')
+        self.assertEqual(self.git('show', 'HEAD:already.txt'), 'already')
+        self.assertEqual(self.git('show', 'HEAD:untracked.txt'), 'new')
+        self.assertEqual(self.remote_head(), head)
+        self.run_completion(prepared)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+
+    def test_amends_unpublished_tip_with_message_only_and_preserves_earlier_history(self):
+        self.git('commit', '--allow-empty', '-m', 'First outgoing')
+        earlier = self.git('rev-parse', 'HEAD')
+        (self.repository / 'retained.txt').write_bytes(b'retained outgoing content\n')
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Review-owned tip')
+        old = self.git('rev-parse', 'HEAD')
+        prepared = self.prepare('amend-push')
+        self.run_completion(prepared)
+        head = self.git('rev-parse', 'HEAD')
+        self.assertNotEqual(head, old)
+        self.assertEqual(self.git('rev-parse', 'HEAD^'), earlier)
+        self.assertEqual(self.git('show', 'HEAD:retained.txt'), 'retained outgoing content')
+        self.assertEqual(self.remote_head(), head)
+
+    def test_amend_rejects_master_main_local_or_source_before_effects(self):
+        for branch in ('master', 'main'):
+            with self.subTest(branch=branch):
+                self.git('checkout', '-b', branch)
+                with self.assertRaisesRegex(ValueError, 'outside master/main'):
+                    self.prepare('amend-push', branch=branch)
+                self.git('checkout', 'feature')
+                self.state = self.directory / ('state-source-' + branch)
+                original = self.github.graphql
+                def protected_source(commands, query, variables):
+                    value = original(commands, query, variables)
+                    value['repository']['pullRequest']['headRefName'] = branch
+                    return value
+                with patch.object(self.github, 'graphql', protected_source), \
+                        patch.object(completion, 'remote_head', return_value=self.base), \
+                        self.assertRaisesRegex(ValueError, 'outside master/main'):
+                    self.prepare('amend-push')
+                self.state = self.directory / ('state-next-' + branch)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.base)
+        self.assertFalse(self.github.marked)
+
+    def test_amends_an_existing_empty_tip_without_losing_its_parents(self):
+        self.git('commit', '--allow-empty', '-m', 'Review-owned empty tip')
+        old = self.git('rev-parse', 'HEAD')
+        prepared = self.prepare('amend-push')
+        self.run_completion(prepared)
+        self.assertNotEqual(self.git('rev-parse', 'HEAD'), old)
+        self.assertEqual(self.git('rev-parse', 'HEAD^'), self.base)
+        self.assertEqual(self.git('rev-parse', 'HEAD^{tree}'), self.git('rev-parse', self.base + '^{tree}'))
+
+    def test_lost_amend_response_reuses_exact_commit(self):
+        (self.repository / 'file.txt').write_bytes(b'amended\n')
+        prepared = self.prepare('amend-push')
+        original = completion.Commands.git
+        commits = []
+        def lose_response(commands, *arguments, **options):
+            value = original(commands, *arguments, **options)
+            if arguments[0] == 'commit':
+                commits.append(arguments)
+                raise RuntimeError('lost amend response')
+            return value
+        with patch.object(completion.Commands, 'git', lose_response), self.assertRaises(RuntimeError):
+            self.run_completion(prepared)
+        head = self.git('rev-parse', 'HEAD')
+        self.run_completion(prepared)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+        self.assertEqual(len(commits), 1)
+        self.assertIn('--amend', commits[0])
+
+    def test_native_publication_uses_exact_lease_and_rejects_a_racing_ref(self):
+        (self.repository / 'file.txt').write_bytes(b'amended\n')
+        prepared = self.prepare('amend-push')
+        original = completion.Commands.git
+        pushes = []
+        def race(commands, *arguments, **options):
+            if arguments[0] == 'push':
+                pushes.append(arguments)
+                self.call_git('--git-dir', str(self.remote), 'update-ref', 'refs/heads/feature', self.comparison)
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', race), self.assertRaises(RuntimeError):
+            self.run_completion(prepared)
+        self.assertIn('--force-with-lease=refs/heads/feature:' + self.base, pushes[0])
+        self.assertEqual(self.remote_head(), self.comparison)
+        self.assertFalse(self.github.marked)
+
+    def test_api_uploads_full_outgoing_history_without_native_network_calls(self):
+        (self.repository / 'nested').mkdir()
+        (self.repository / 'nested/中文.bin').write_bytes(b'\x00\xffbinary\n')
+        self.git('add', '-A')
+        self.git('update-index', '--chmod=+x', 'nested/中文.bin')
+        self.git('commit', '-m', 'Existing outgoing')
+        earlier = self.git('rev-parse', 'HEAD')
+        (self.repository / 'file.txt').write_bytes(b'final\n')
+        (self.repository / 'already.txt').unlink()
+        original = completion.Commands.git
+        def offline(commands, *arguments, **options):
+            self.assertNotIn(arguments[0], ('push', 'fetch', 'ls-remote'))
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', offline):
+            prepared = self.prepare('commit-push')
+            self.run_completion(prepared, 'github-api')
+        head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.remote_head(), head)
+        self.assertEqual(self.call_git('--git-dir', str(self.remote), 'rev-parse', head + '^'), earlier)
+        self.assertEqual(self.call_git('--git-dir', str(self.remote), 'ls-tree', '-r', head),
+                         self.git('ls-tree', '-r', head))
+        commits = [payload for kind, payload in self.github.uploads if kind == 'commits']
+        self.assertEqual(len(commits), 2)
+        self.assertEqual(self.github.updates[0]['repositoryId'], 'REPO_source')
+        self.assertEqual(self.github.updates[0]['refUpdates'][0]['beforeOid'], self.base)
+        self.assertFalse(self.github.updates[0]['refUpdates'][0]['force'])
+
+    def test_api_amend_and_lost_cas_response_resume_without_repeated_update(self):
+        (self.repository / 'file.txt').write_bytes(b'api amendment\n')
+        prepared = self.prepare('amend-push')
+        self.github.fail_after_update = True
+        with self.assertRaises(RuntimeError):
+            self.run_completion(prepared, 'github-api')
+        head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.remote_head(), head)
+        self.run_completion(prepared)  # Transport can change without changing frozen effects.
+        self.assertEqual(len(self.github.updates), 1)
+        self.assertTrue(self.github.updates[0]['refUpdates'][0]['force'])
+        self.assertEqual(self.github.marked, ['file.txt'])
+
+    def test_api_sha_mismatch_stops_before_ref_or_viewed_mutation(self):
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push')
+        self.github.wrong_commit_sha = True
+        with self.assertRaisesRegex(ValueError, 'cannot reproduce exact commit'):
+            self.run_completion(prepared, 'github-api')
+        self.assertEqual(self.remote_head(), self.base)
+        self.assertFalse(self.github.updates)
+        self.assertFalse(self.github.marked)
+
+    def test_api_cas_rejects_a_racing_source_ref(self):
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push')
+        self.github.before_update = lambda: self.call_git('--git-dir', str(self.remote), 'update-ref',
+                                                        'refs/heads/feature', self.comparison)
+        with self.assertRaises(AssertionError):
+            self.run_completion(prepared, 'github-api')
+        self.assertEqual(self.remote_head(), self.comparison)
+        self.assertFalse(self.github.marked)
+
+    def test_api_rejects_unreproducible_signed_commit_before_upload(self):
+        self.git('commit', '--allow-empty', '-m', 'Signed outgoing')
+        raw = subprocess.run(['git', '-C', str(self.repository), 'cat-file', 'commit', 'HEAD'],
+                             capture_output=True, check=True).stdout
+        headers, message = raw.split(b'\n\n', 1)
+        raw = headers + b'\ngpgsig -----BEGIN PGP SIGNATURE-----\n fake\n -----END PGP SIGNATURE-----\n\n' + message
+        result = subprocess.run(['git', '-C', str(self.repository), 'hash-object', '-t', 'commit', '-w', '--stdin'],
+                                input=raw, capture_output=True, check=True)
+        signed = result.stdout.decode().strip()
+        self.git('update-ref', 'refs/heads/feature', signed)
+        # This signed outgoing commit is retained by the full publication scope.
+        prepared = self.prepare('commit-push')
+        with self.assertRaisesRegex(ValueError, "header 'gpgsig'"):
+            self.run_completion(prepared, 'github-api')
+        self.assertFalse(self.github.uploads)
+        self.assertFalse(self.github.updates)
+        self.assertFalse(self.github.marked)
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX executable hook fixture')
+    def test_api_old_git_requires_stdin_capability_only_for_active_hook(self):
+        hook = self.repository / '.git/hooks/pre-push'
+        hook.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+        hook.chmod(0o755)
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push')
+        original = completion.Commands.git
+        def old_git(commands, *arguments, **options):
+            if arguments == ('--version',):
+                return b'git version 2.39.2\n'
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', old_git):
+            with self.assertRaisesRegex(ValueError, 'requires Git 2.43'):
+                self.run_completion(prepared, 'github-api')
+            self.assertFalse(self.github.uploads)
+            self.assertFalse(self.github.updates)
+            hook.unlink()
+            self.run_completion(prepared, 'github-api')
+        self.assertEqual(self.remote_head(), self.git('rev-parse', 'HEAD'))
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX executable hook fixture')
+    def test_api_stdin_capable_hook_receives_native_arguments_and_can_block(self):
+        hook = self.repository / '.git/hooks/pre-push'
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push')
+        original = completion.Commands.git
+        invocations = []
+        def modern_hook(commands, *arguments, **options):
+            if arguments == ('--version',):
+                return b'git version 2.43.0\n'
+            if arguments[0] == 'hook':
+                invocations.append(arguments)
+                stdin = Path(arguments[3].split('=', 1)[1]).read_bytes()
+                result = subprocess.run([str(hook)] + list(arguments[-2:]), input=stdin,
+                                        cwd=str(self.repository), capture_output=True, timeout=20)
+                if result.returncode:
+                    raise RuntimeError('pre-push hook rejected publication')
+                return result.stdout
+            return original(commands, *arguments, **options)
+        for body, error in (('exit 1', RuntimeError), ('echo drift > file.txt', ValueError),
+                            ('git checkout -b hook-diverted', ValueError)):
+            hook.write_text('#!/bin/sh\n' + body + '\n', encoding='utf-8')
+            hook.chmod(0o755)
+            with self.subTest(body=body), patch.object(completion.Commands, 'git', modern_hook), self.assertRaises(error):
+                self.run_completion(prepared, 'github-api')
+            self.assertEqual(self.remote_head(), self.base)
+            self.assertFalse(self.github.marked)
+            self.git('checkout', 'feature')
+            self.git('checkout', '--', 'file.txt')
+        hook.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "' + str(self.directory / 'hook-args') + '"\ncat > "' + str(self.directory / 'hook-stdin') + '"\n', encoding='utf-8')
+        with patch.object(completion.Commands, 'git', modern_hook):
+            self.run_completion(prepared, 'github-api')
+        head = self.git('rev-parse', 'HEAD')
+        self.assertEqual((self.directory / 'hook-args').read_text().splitlines(), ['origin', str(self.remote)])
+        self.assertEqual((self.directory / 'hook-stdin').read_text(), '%s %s refs/heads/feature %s\n' % (head, head, self.base))
+        self.assertEqual(self.remote_head(), head)
+
+    def test_api_preserves_merge_parents_timezone_and_symlink_objects(self):
+        self.git('checkout', '-b', 'side')
+        (self.repository / 'side.txt').write_bytes(b'side\n')
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Side outgoing')
+        side = self.git('rev-parse', 'HEAD')
+        self.git('checkout', 'feature')
+        (self.repository / 'feature.txt').write_bytes(b'feature\n')
+        if os.name != 'nt':
+            os.symlink('file.txt', str(self.repository / 'linked.txt'))
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Main outgoing')
+        first = self.git('rev-parse', 'HEAD')
+        with patch.dict(os.environ, {'GIT_AUTHOR_DATE': '2026-10-30T12:34:56-05:30',
+                                    'GIT_COMMITTER_DATE': '2026-10-30T12:34:57+08:00'}):
+            self.git('merge', '--no-ff', 'side', '-m', 'Merge reviewed history')
+        merged = self.git('rev-parse', 'HEAD')
+        self.run_completion(self.prepare('commit-push'), 'github-api')
+        self.assertEqual(self.remote_head(), merged)
+        payload = next(payload for kind, payload in self.github.uploads
+                       if kind == 'commits' and payload['message'] == 'Merge reviewed history\n')
+        self.assertEqual(payload['parents'], [first, side])
+        self.assertTrue(payload['author']['date'].endswith('-05:30'))
+        self.assertTrue(payload['committer']['date'].endswith('+08:00'))
+        if os.name != 'nt':
+            self.assertTrue(any(entry['mode'] == '120000' for kind, payload in self.github.uploads
+                                if kind == 'trees' for entry in payload['tree']))
+
+    def test_blocked_native_git_resumes_same_local_commit_through_api(self):
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push')
+        original = completion.Commands.git
+        def blocked(commands, *arguments, **options):
+            if arguments[0] in ('push', 'fetch', 'ls-remote'):
+                raise RuntimeError('native Git endpoint unreachable')
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', blocked):
+            with self.assertRaises(RuntimeError):
+                self.run_completion(prepared)
+            head = self.git('rev-parse', 'HEAD')
+            self.run_completion(prepared, 'github-api')
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+        self.assertEqual(self.remote_head(), head)
+        self.assertEqual(len(self.github.updates), 1)
+
 class CommandAndCliTests(CompletionFixture, unittest.TestCase):
+    def test_source_ref_endpoint_escapes_url_syntax_and_gh_placeholders(self):
+        commands = completion.Commands(self.repository, self.directory)
+        url = 'https://github.com/owner/repo.git'
+        for branch, endpoint in (
+                ('fix/#123', 'fix/%23123'),
+                ('fix/%review', 'fix/%25review'),
+                ('fix/literal%2Fname', 'fix/literal%252Fname'),
+                ('fix/中文', 'fix/%E4%B8%AD%E6%96%87'),
+                ('fix/{owner}/{repo}/{branch}', 'fix/%7Bowner%7D/%7Brepo%7D/%7Bbranch%7D')):
+            ref = 'refs/heads/' + branch
+            subprocess.run(['git', 'check-ref-format', ref], capture_output=True, timeout=20, check=True)
+            response = {'ref': ref, 'object': {'type': 'commit', 'sha': self.base}}
+            with self.subTest(branch=branch), \
+                    patch.object(completion, 'push_url', return_value=url), \
+                    patch.object(commands, 'call', return_value=completion.encoded(response)) as call:
+                observed = completion.remote_head(commands, {'remote': 'origin'},
+                                                  {'source': 'owner/repo', 'ref': ref}, url)
+                self.assertEqual(observed, self.base)
+                call.assert_called_once_with(['gh', 'api', '--hostname', 'github.com', '--method', 'GET',
+                                              'repos/owner/repo/git/ref/heads/' + endpoint], input_value=None)
+
+    def test_source_ref_readback_refuses_a_different_literal_ref(self):
+        commands = completion.Commands(self.repository, self.directory)
+        url = 'https://github.com/owner/repo.git'
+        ref = 'refs/heads/fix/literal%2Fname'
+        response = {'ref': 'refs/heads/fix/literal/name',
+                    'object': {'type': 'commit', 'sha': self.base}}
+        with patch.object(completion, 'push_url', return_value=url), \
+                patch.object(commands, 'call', return_value=completion.encoded(response)), \
+                self.assertRaisesRegex(ValueError, 'Source branch is unavailable'):
+            completion.remote_head(commands, {'remote': 'origin'}, {'source': 'owner/repo', 'ref': ref}, url)
+
     def test_command_interruption_reaps_child_before_returning(self):
         commands = completion.Commands(self.repository, self.directory)
         process = Mock()
@@ -411,6 +770,13 @@ class CommandAndCliTests(CompletionFixture, unittest.TestCase):
                 self.assertEqual(sentinel.read_bytes(), b'unowned sentinel')
                 self.assertTrue(all(path.read_bytes() == content for path, content in before.items()))
 
+    def test_old_private_plan_is_rejected_even_with_matching_confirmation(self):
+        self.state.mkdir(mode=0o700)
+        plan = {'version': 1}
+        completion.write_json(self.state / 'plan.json', plan)
+        with self.assertRaisesRegex(ValueError, 'Unsupported private plan version'):
+            completion.run(self.state, completion.digest(completion.encoded(plan)))
+
     def test_incorrect_plan_confirmation_never_mutates(self):
         self.state.mkdir(mode=0o700)
         completion.write_json(self.state / 'plan.json', {'version': 1})
@@ -447,8 +813,8 @@ class CommandAndCliTests(CompletionFixture, unittest.TestCase):
         summary = completion.summary(self.state, plan, 'complete')
         output = io.StringIO()
         with patch.object(completion, 'run', return_value=summary) as run, patch('sys.stdout', output):
-            self.assertEqual(completion.main(['run', '--state', str(self.state), '--confirm', 'd' * 64]), 0)
-        run.assert_called_once_with(self.state.resolve(), 'd' * 64)
+            self.assertEqual(completion.main(['run', '--state', str(self.state), '--confirm', 'd' * 64, '--transport', 'github-api']), 0)
+        run.assert_called_once_with(self.state.resolve(), 'd' * 64, 'github-api')
         value = json.loads(output.getvalue())
         self.assertEqual(value['status'], 'complete')
         self.assertEqual(value['viewed_count'], 1000)
