@@ -59,7 +59,9 @@ Resolve `<skill-root>` from the actual loaded Skill, independently of the target
 python "<skill-root>/scripts/complete_review.py" --help
 ```
 
-The helper freezes and executes supported PR effects. The Agent supplies semantic coverage, successful checks, disclosed scope, and authority; hashes and plans do not establish them. CLI help owns request fields, commands, private evidence/state, outputs, and retries. Preparation may preserve private evidence and Git objects while leaving the real index, branch, and files unchanged.
+The helper freezes and executes supported PR effects, including amendment of this review's tip and exact-condition publication. The Agent supplies semantic coverage, successful checks, disclosed scope, and authority. Hashes and plans do not establish them. CLI help owns request fields, commands, private evidence/state, outputs, transport prerequisites, and retries. Preparation may preserve private evidence and Git objects while leaving the real index, branch, and files unchanged.
+
+When native Git publication is unavailable, the helper's GitHub API transport can publish the same frozen objects and conditionally update the same source ref. Preserve applicable hooks, exact commit identity, old-ref checks, and readbacks when choosing or changing transport. Reconcile uncertain publication before retrying through either route. A transport change stays within existing authority only while the disclosed effects and any explicit method restrictions still hold.
 
 Use the manual sequence below for local/branch delivery and plans outside the helper's capabilities. Helper unavailability waives no prerequisite, and unsupported effects must not be omitted or altered to fit it. The sequence also states the outcomes to verify when using the helper; do not repeat writes afterward.
 

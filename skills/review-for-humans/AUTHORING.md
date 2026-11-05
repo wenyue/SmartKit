@@ -25,3 +25,5 @@ The entry preserves pending Pass versus only-deliver; Delivery preserves actual 
 ## Keep the mechanical interface beside its implementation
 
 The helper's CLI help owns its capabilities, request schema, state, outputs, and retries. Delivery retains semantic coverage and authorized-effect requirements and supplies the manual path for unsupported plans. Duplicating CLI details in another reference would create a second interface specification without making the helper a semantic reviewer.
+
+Effect modes freeze the user's chosen history change. Transport remains a run-time choice so a blocked Git endpoint can be bypassed on resume without creating a second publication plan. Both routes bind the same objects and expected old ref. API object reconstruction verifies exact SHAs and refuses metadata it cannot reproduce before changing the ref, preserving the identity required by recovery and review evidence.
