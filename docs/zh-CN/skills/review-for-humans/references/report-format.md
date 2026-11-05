@@ -2,6 +2,8 @@
 
 [技能入口](../SKILL.md)负责检查标准、必须披露的发现与结论、M/O 身份、分组、进度和决定。本参考文档负责报告详略和呈现；示例只说明格式，不另行定义。
 
+当审查使用本地工作区时，在首份报告开头用独立的 `text` 代码块展示选定工作区物理根目录的完整绝对路径，方便复制。此要求适用于当前检出以及已有或新建的关联工作树。选定工作区变化时，在下一份报告前展示新路径。
+
 ## 选择报告详略
 
 普通审查和补审使用下方完整文件块。
@@ -17,6 +19,13 @@
 最后一个完整文件块之后，若存在 O 类观察，紧接着呈现完整的 O 类观察区块，并在其前方及分组收尾前各放一条分隔线。没有 O 类观察时，最后一个文件与分组收尾之间恰好保留一条分隔线。
 
 ````markdown
+<!-- First report using a local workspace, or after a workspace change. -->
+**Working directory**
+
+```text
+<absolute physical root of the selected workspace>
+```
+
 ---
 
 📄 **[<full/repository-relative/path>](<returned-url>)**

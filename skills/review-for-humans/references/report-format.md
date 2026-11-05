@@ -2,6 +2,8 @@
 
 The [Skill entry](../SKILL.md) owns inspection standards, required findings and conclusions, M/O identity, grouping, progress, and decisions. This reference owns report depth and presentation; examples illustrate it without defining another format.
 
+When the review uses a local workspace, start its first report with the selected workspace's full absolute physical root in a separate `text` code block for copying. This covers current checkouts and existing or newly created linked worktrees. Show the updated path before the next report when the selected workspace changes.
+
 ## Choose the report depth
 
 Use the complete file blocks below for ordinary and supplementary reviews.
@@ -17,6 +19,13 @@ Any group introduction precedes the first separator. Repeat the file block from 
 After the final complete file block, place the complete O observations section when present, with one separator before it and one before the group closing. Without O observations, use exactly one separator between the final file and the group closing.
 
 ````markdown
+<!-- First report using a local workspace, or after a workspace change. -->
+**Working directory**
+
+```text
+<absolute physical root of the selected workspace>
+```
+
 ---
 
 📄 **[<full/repository-relative/path>](<returned-url>)**

@@ -24,7 +24,7 @@ from . import artifacts
 from .storage import prepare_cache, prepare_state, read_json, redirected, state_dir, write_json, file_lock
 from .apps.status import hook_page_links, record_project
 
-START_TIMEOUT = 8.0
+START_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 PLUGIN_MANIFEST = Path(__file__).resolve().parents[2] / ".claude-plugin/plugin.json"
 _SEMVER = re.compile(
