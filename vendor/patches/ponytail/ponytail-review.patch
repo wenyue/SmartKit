@@ -1,14 +1,14 @@
 --- a/SKILL.md
 +++ b/SKILL.md
-@@ -4,14 +4,18 @@
+@@ -4,14 +4,22 @@
    Quality review of a change: is the logic right, is it safe, does it hold
    under real load, is risky code tested, is it fast enough, and is every line
    needed. Reads the connected code, not only the diff. Each finding is
 -  explained in plain English. Use for "review this", "code review", "review
 -  the last commit", "review my PR", "is this over-engineered", /ponytail-review.
 +  explained in plain language. Use for technical-quality reviews of changes,
-+  commits or PRs, over-engineering reviews, or /ponytail-review. Use code-review
-+  for the separate project-standards and originating-spec check.
++  commits or PRs, over-engineering reviews, or /ponytail-review. Project standards
++  and originating-spec compliance belong to code-review.
  ---
 
  Review a change like the senior developer who will be paged when it breaks.
@@ -16,12 +16,16 @@
  Lean still matters: every extra line must be read, tested and fixed later.
  This is a report the user asked for, so give it in full.
 +
-+Use [code-review](../code-review/SKILL.md) when project standards or originating-spec
-+compliance must be checked.
++## Responsibility boundaries
++
++| Artifact | Responsibility |
++| --- | --- |
++| [ponytail-review](SKILL.md) | Technical-quality review. |
++| [code-review](../code-review/SKILL.md) | Project-standards and originating-spec compliance. |
 
  ## 1. Understand first
 
-@@ -48,7 +52,8 @@
+@@ -48,7 +56,8 @@
     - reuse: the repo already has this helper (name the path)
     - stdlib / native: the standard library or platform already does it; a
       new dependency for a few lines
@@ -31,7 +35,7 @@
     - merge: near-copies that must change together
     - split: one function doing several unrelated jobs, so it is hard to read
       or test. Split by job, never by line count, and never into helpers that
-@@ -61,19 +66,17 @@
+@@ -61,19 +70,17 @@
  - Re-read the lines and confirm: the caller exists, the value can really be
    empty, the code really is unused.
  - A shortcut marked with a `shortcut:` (or older `ponytail:`) comment that names its limit is a
@@ -54,7 +58,7 @@
  - **Must fix:** bug, security, data loss, breaks at the expected load.
  - **Should fix:** risky code without a test, real slowness, duplication, a
    function that mixes jobs, code that should not exist.
-@@ -90,12 +93,13 @@
+@@ -90,12 +97,13 @@
       `datetime.now(ZoneInfo("Europe/Berlin")).date()`. One line, nothing else changes.
     - **If we skip it:** Late orders show the wrong date, and accounting fixes them by hand.
 

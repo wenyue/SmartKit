@@ -41,7 +41,9 @@ Trace the initial entry and all required transitive reads, then each consequenti
 
 For rule-led Skills, assess both ordinary policy application and requested assessment. The entry must support substantive decisions through a result with fundamental policy and sufficient conditions, exceptions, and evidence. Deeper references should represent actual knowledge branches.
 
-Follow consequential definitions to their owners. Share material when readers need the same meaning and perspective; keep role-specific judgment usable in its own context. A reader should not need another role's manual to learn their own job. Verify dependency routes, not just reachable targets: Rules may reference Rules or Skills; Skills may invoke or reference Skills, including rule-led Skills. Reliance on an independently loaded Rule needs guaranteed loading in the supported environment rather than a direct Rule-file link. Session visibility alone supplies no such guarantee.
+Follow consequential definitions to their owners. Share material when readers need the same meaning and perspective; keep role-specific judgment usable in its own context. A reader should not need another role's manual to learn their own job.
+
+Read [Artifact Relationships](artifact-relationships.md) and the accepted owner-policy sources when assessing dependency routes. Check that the reader can recognize each relationship and reach its necessary guidance before acting, without loading another role's manual or interpreting a mention as an instruction to do unrelated work. Judge the supported reading path, not merely whether a link resolves.
 
 ## Challenge the design deliberately
 

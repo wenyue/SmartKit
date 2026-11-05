@@ -4,7 +4,9 @@ Use this for every full setup, before registration. Every current catalog bluepr
 
 ## Plan coverage and loading
 
-Load every requested immutable authoring blueprint from the frozen `source_root`, including the complete directory for a Skill blueprint and the entry file for a Rule blueprint. Use its refresh preference and writing focus to assess complete existing content against qualified project evidence. Preserve valid intent, obligations, conditions, exceptions and additions; substantive changes need a blueprint requirement, project fact or demonstrated defect.
+Load every requested immutable authoring blueprint from the frozen `source_root`, including the complete directory for a Skill blueprint and the entry file for a Rule blueprint. Before planning dependencies, read [Artifact Relationships](../../write-rules-and-skills/references/artifact-relationships.md) from that same frozen source. In this plan, SmartKit is the accepted shared provider, and its ordinary Skill blueprints identify declared project extension targets by fixed name. Retain those qualified owner facts, blueprint provenance, and applicable target-owner constraints in the common plan and writer handoff; the public contract supplies common semantics without copies in individual blueprints or a dependency on repository-local maintainer Skills.
+
+Use each blueprint's refresh preference and writing focus to assess complete existing content against qualified project evidence. Preserve valid intent, obligations, conditions, exceptions and additions; substantive changes need a blueprint requirement, project fact or demonstrated defect.
 
 Plan across frozen requests, retained project Rules, relevant Skills, applicable SmartKit global Rules and discoverable rule-led Skills. Allocate policy primarily by when project tasks and decisions need it, ahead of conceptual grouping or its historical origin. For each artifact, establish purpose, neighboring boundaries, evidence and how readers reach its responsibilities:
 
@@ -12,7 +14,7 @@ Plan across frozen requests, retained project Rules, relevant Skills, applicable
 - **Responsibility:** keep operative meaning with its canonical owner. Generated and retained artifacts must agree; a blueprint requirement cannot be reassigned or omitted to simplify the set.
 - **Overlap:** distinguish context useful to different decisions from duplicate definitions or incompatible directions. Resolve ownership while retaining necessary meaning.
 - **Loading:** establish supported routes for unconditional Rules and conditional rule-led Skills. Check combined loading from task context available before the policy is read, including ordinary small changes that need the policy without naming its concern. Current conversation visibility does not establish future availability.
-- **Order:** identify cross-references among generated artifacts and place each referenced artifact before its referrers. For a reference cycle, defer one back-reference: accept one artifact without it, accept the other after its dependency is available, then add the deferred reference through the correction route after both are accepted.
+- **Order:** establish the generation order under the shared dependency policy and resolve any conflicting responsibility allocation before releasing writer jobs. Supply the resolved order to each writer and use it for the handoffs below.
 
 Record the resolved allocation, generation order, refresh directions, qualified evidence and owner-dependency state in a common plan. Evidence beyond the setup fingerprint needs its source and limits. Leave each writer room to organize its Candidate within the plan and blueprint. A discovery affecting neighboring responsibilities returns to Setup; it does not widen that writer's scope.
 
@@ -43,15 +45,13 @@ An unchanged artifact needs the same assessment and `COMPLETE`; the writer may r
 
 ## Reconcile before registration
 
-Compare all generated outputs together with retained Rules and relevant Skill/global policy against the common plan. Look for lost obligations, stale evidence, conflicting owners, duplication and broken loading routes. Resolve the combined result before registering anything.
+Compare all generated outputs together with retained Rules and relevant Skill/global policy against the common plan. Look for lost obligations, stale evidence, conflicting owners, duplication and broken loading routes. Confirm that generated Skill dependencies still follow the planned order. Resolve the combined result before registering anything.
 
 As the final reconciliation gate before registration, run the pinned writer's check entry once over every surviving generated Markdown file. Supply `GENERATED`, the business target, and the union of every request's exact frozen Candidate paths, including deleted endpoints, so mapped links are checked against the complete proposed final set.
 
 A Candidate-caused failure returns to every affected writer through a fresh invocation and requires a fresh `COMPLETE`; do not repair the Candidate in place. Repeat reconciliation and this whole-set gate after corrections until it passes.
 
 If reconciliation changes the plan, prepare a fresh input bundle and provide relevant current handoffs to the affected writers. Every correction goes through a distinct public-writer invocation with a newly frozen single-Candidate scope; obtain a fresh `COMPLETE` for every changed Candidate, including affected earlier outputs. Leave accepted Candidates unchanged behind their handoffs. Repeat until every request and current handoff agrees with the reconciled plan.
-
-Resolve a planned reference cycle through that same correction route: after both artifacts are accepted, invoke a fresh writer for the artifact whose back-reference was deferred, supply the other artifact as accepted context, and require a fresh `COMPLETE`.
 
 In repository mode, accepted writer outputs remain staged under `GENERATED` through review and registration. Writers author only canonical project sources within their frozen scope, leaving direct target writes, rendered adapters, delivered assets and the generated `Project rules` section to their existing owners. Finish saves accepted sources before the ordinary target apply; it also persists selected configuration results under [Project Configuration Maintenance](../../maintain-project-config/references/maintenance.md). Full-file backup selection does not enlarge writer scope or rendering ownership. This persistence belongs to setup's accepted application, not a writer's downstream permission.
 

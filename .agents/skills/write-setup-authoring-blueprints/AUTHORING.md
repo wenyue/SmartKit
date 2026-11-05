@@ -2,7 +2,7 @@
 
 ## Blueprint inputs preserve meaning without owning the writing workflow
 
-A blueprint gives the future Author semantic requirements, useful project evidence, and accepted fixed sources. Keeping those inputs separate from authoring roles and results preserves the public writer's authority and lets the same blueprint work with or without Setup. Future-target procedures still belong in the blueprint when their order affects behavior; they are not instructions for scheduling the writing job.
+A blueprint gives the future Author the target's task, useful project evidence, acceptance, refresh preferences, and accepted fixed sources. Common policy stays in the public writer's supported references so a change has one owner and standalone authoring has the same rules as Setup. Repeating policy in every blueprint would obscure its task and let the copies diverge. Future-target procedures still belong in the blueprint when their order affects behavior; authoring roles, results, and set scheduling retain their separate owners.
 
 The blueprint's `description` directly supplies the target Skill's description. A separate authoring trigger would invent a discovery role for the blueprint and require a second field for the actual target value.
 

@@ -69,7 +69,9 @@ description: 当会改变仓库状态的工作需要隔离的关联 Git worktree
 
 在新建 worktree 首次使用、有证据表明当前任务所需环境前提缺失或过时，或用户明确请求准备时，需要环境准备。否则报告 `not-needed` 并使用现有环境。仅位于 linked worktree 中或缓存准备记录失效，并不能确立准备需要。
 
-需要准备时，发现选定目标的项目 `prepare-worktree-environment` Skill。若存在，在已接受的准备权限内调用，并将继承修改标为受保护；也可复用对该目标仍有效的结果。使用其 `environment-ready` 或 `environment-non-ready` 结果。必要 Skill 不可用，或准备失败、中断、结果仍有歧义时，返回 `non-ready`。Skill 不存在时，报告 `not-provided` 并跳过；已知不可缺少的输入或准备缺失，仍会阻止就绪。
+需要准备时，发现选定目标的项目 `prepare-worktree-environment` Skill。若存在，在已接受的准备权限内调用，并将继承修改标为受保护；也可复用对该目标仍有效的结果。使用其 `environment-ready` 或 `environment-non-ready` 结果。必要 Skill 不可用，或准备失败、中断、结果仍有歧义时，返回 `non-ready`。
+
+Skill 不存在时，报告 `not-provided` 并跳过；已知不可缺少的输入或准备缺失，仍会阻止就绪。如果缺失的 Skill 不可替代，返回 `non-ready`，并说明应通过项目 setup 提供它。
 
 评估及任何准备完成后，重新检查目标身份和预期状态，并核算获授权修改。只有创建或复用已验证、已有工作保留、环境状态为 `environment-ready`、`not-needed` 或 `not-provided`，且不再有未解决选择、未授权影响或不可缺少前提时，才返回 `ready`。否则返回 `non-ready`，并保留工作区与部分状态，以便安全继续。
 

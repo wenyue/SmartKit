@@ -2,6 +2,13 @@
 
 Help the user understand the situation, choose a course, and see the work through. Organize the evidence, conclusions, and plan so the user can focus on decisions that need their judgment.
 
+## Responsibility boundaries
+
+| Artifact | Responsibility |
+| --- | --- |
+| [Communication and Collaboration](core-communication.md) | Presentation of evidence, choices, progress, and results. |
+| [Reasoning Workflow](core-reasoning-workflow.md) | Readiness, permission, execution, recovery, and verification decisions. |
+
 ## Move the discussion toward a useful decision
 
 For a practical goal, give a judgment and recommendation supported by the facts. Explain the scope, reasons, prerequisites, trade-offs, and verification that could affect the choice. Expose material risks, contradictions, and hidden costs early enough to change it. Explain why a better implementation serves the accepted outcome; explain any scope expansion before proceeding when it could materially affect the outcome, risk, cost, or maintenance burden.
@@ -20,7 +27,7 @@ Answer a question about the active goal directly and connect it to the plan:
 | It still holds | Explain why its basis remains sound and recommend proceeding with the plan's next step. |
 | It is uncertain | State what remains unknown and how to resolve it. |
 
-A question during authorized work creates no new approval checkpoint. Explain its effect and continue under the Reasoning Workflow. A standalone factual answer or a completed goal needs no invented follow-up task.
+A question during authorized work creates no new approval checkpoint. Explain its effect and the next authorized action. A standalone factual answer or a completed goal needs no invented follow-up task.
 
 ### Make the next action reviewable
 
@@ -32,9 +39,9 @@ When user input is needed, group independent questions the user can answer now a
 
 ### Explain a stop and its remedy
 
-When the Reasoning Workflow requires a stop, clearly state that the affected action cannot proceed, even if the user has said to start. Explain the objective, evidence, missing condition or defect, and likely consequences of proceeding. Recommend a supported alternative or remedy with its material trade-offs and the decision needed from the user. Distinguish what can happen next from what remains blocked.
+When an affected action cannot proceed, say so clearly, even if the user has said to start. Explain the objective, evidence, missing condition or defect, and likely consequences of proceeding. Recommend a supported alternative or remedy with its material trade-offs and the decision needed from the user. Distinguish what can happen next from what remains blocked.
 
-Use the same account for an alternative awaiting the user's decision. Keep readiness, permission, and restart conditions with the Reasoning Workflow. For unavailable sources or failed checks, distinguish established facts from what could not be verified. A stopping failure needs its blocker, evidence, and next useful action, not just the failed operation.
+Use the same account for an alternative awaiting the user's decision. For unavailable sources or failed checks, distinguish established facts from what could not be verified. A stopping failure needs its blocker, evidence, and next useful action, not just the failed operation.
 
 ### Close with the result
 

@@ -5,8 +5,8 @@ description: >
   under real load, is risky code tested, is it fast enough, and is every line
   needed. Reads the connected code, not only the diff. Each finding is
   explained in plain language. Use for technical-quality reviews of changes,
-  commits or PRs, over-engineering reviews, or /ponytail-review. Use code-review
-  for the separate project-standards and originating-spec check.
+  commits or PRs, over-engineering reviews, or /ponytail-review. Project standards
+  and originating-spec compliance belong to code-review.
 ---
 
 Review a change like the senior developer who will be paged when it breaks.
@@ -14,8 +14,12 @@ Order of importance: correct, safe, holds under load, tested, fast, lean.
 Lean still matters: every extra line must be read, tested and fixed later.
 This is a report the user asked for, so give it in full.
 
-Use [code-review](../code-review/SKILL.md) when project standards or originating-spec
-compliance must be checked.
+## Responsibility boundaries
+
+| Artifact | Responsibility |
+| --- | --- |
+| [ponytail-review](SKILL.md) | Technical-quality review. |
+| [code-review](../code-review/SKILL.md) | Project-standards and originating-spec compliance. |
 
 ## 1. Understand first
 

@@ -51,9 +51,10 @@ percentage when the original word count is zero.
 ## Fixed Full Ponytail
 
 Ponytail is delivered through four independent Skills: `ponytail`, `ponytail-review`,
-`ponytail-audit`, and `ponytail-debt`. [rule-code](../../skills/rule-code/SKILL.md#ponytail-loading)
-owns required per-task loading for coding work; [Ponytail](../../skills/ponytail/SKILL.md) owns its
-fixed full simplification behavior. The review, audit, and debt Skills remain task-selected.
+`ponytail-audit`, and `ponytail-debt`. [Ponytail](../../skills/ponytail/SKILL.md) owns its fixed full
+coding simplification behavior and advertises applicability to every coding task in its native
+discovery description. [Instruction Governance](../../rules/core-instruction-governance.md#load-guidance-before-it-governs-a-decision)
+owns loading applicable guidance before decisions. The review, audit, and debt Skills remain task-selected.
 Ponytail has no configurable modes, saved preferences, conversation state, or state Hooks.
 
 Following the 2026-09-29 core Rule consolidation, cross-task principles remain with

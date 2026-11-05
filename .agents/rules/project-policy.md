@@ -20,13 +20,15 @@ Preserve each resource's canonical owner and applicable loading and failure requ
 
 Keep task-specific inputs, outputs, permissions, and lifetime contracts with the consuming Skill. If a required resource is unavailable, report the prerequisite gap and leave dependent work incomplete.
 
-This supported route means a Skill need not be independently copyable. It permits use of declared shared plugin resources, not another Skill's private resources or arbitrary project or external files. It grants no packaging, publishing, or installation authority.
+This supported route means a Skill need not be independently copyable. It permits use of declared shared plugin resources; it does not itself expose private resources or arbitrary project or external files. It grants no packaging, publishing, or installation authority.
+
+Before defining or assessing Rule and Skill relationships, read the public [Artifact Relationships](../../skills/write-rules-and-skills/references/artifact-relationships.md) and this repository's [SmartKit dependency policy](../skills/write-shared-rules-and-skills/SKILL.md#smartkit-dependency-policy) directly. Supply qualified ownership, provenance, and applicable policy as authoring input rather than copying common policy into blueprints.
 
 ## Write documentation for its readers
 
-### Route Rule readers through Skill entries
+### Distinguish Skill invocation from resource consultation
 
-Project Rules reference a Skill through its `SKILL.md`, without links to internal sections. The Skill owns the reading path to its supporting guidance.
+Invoke a Skill through its `SKILL.md`, without links to internal sections as alternative entry points. Rules and Skills may directly consult an explicitly supported resource or in-file reference section under its declared loading conditions; consultation does not invoke the owning Skill's workflow. This does not expose arbitrary private resources or bypass invocation restrictions.
 
 ### Keep root READMEs concise and actionable
 

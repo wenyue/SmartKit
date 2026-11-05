@@ -1,6 +1,13 @@
 # Self-Hosting Source Authority
 
-Select the authoritative copy separately for every applicable SmartKit or project Rule and Skill. Source selection does not replace another artifact's responsibility.
+Select the authoritative copy separately for every applicable SmartKit or project Rule and Skill.
+
+## Responsibility boundaries
+
+| Artifact | Responsibility |
+| --- | --- |
+| [Self-Hosting Source Authority](self-hosting-authority.md) | Source selection. |
+| [Project Policy](project-policy.md) | Canonical ownership, contracts and exposure, translation, and verification. |
 
 ## Prefer the corresponding checkout source
 
@@ -21,10 +28,8 @@ For a checkout-selected Skill, read its complete `SKILL.md` and every required r
 
 Use an installed, injected, packaged, or cached copy as a fallback only when the corresponding checkout source does not exist. A failed read does not establish absence: an existing source can be inaccessible or unreadable.
 
-If required content remains unavailable, report the gap and stop dependent work under core governance's loading requirements.
+If required content remains unavailable, report the gap and stop dependent work.
 
 ## Keep ownership and composition unchanged
 
 Source selection leaves ordinary applicability, Rule precedence, and Skill composition intact. Retain every independently applicable Rule and Skill; selecting one copy does not replace a distinct artifact.
-
-`.agents/rules/project-policy.md` remains the sole owner of canonical ownership, contracts and exposure, translation, and verification.
