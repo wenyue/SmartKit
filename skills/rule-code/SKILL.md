@@ -5,10 +5,6 @@ description: Use for work involving code in any language, including requested co
 
 # Code Design
 
-## Ponytail Loading
-
-Before making decisions in any coding task, read [ponytail](../ponytail/SKILL.md).
-
 Keep behavior understandable through its owners. Choose structure for the work needed to understand and change it, rather than for shorter callers or more reusable-looking interfaces.
 
 ## Choose a boundary that earns its cost

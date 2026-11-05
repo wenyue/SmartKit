@@ -7,14 +7,22 @@ description: Refactor one concrete code target while preserving supported caller
 
 Remove an established structural pressure from one concrete code target while preserving supported caller-visible behavior, invariants, and external contracts. Improve where knowledge lives and how the implementation fits together. The pressure explains why to change; the supported contract defines what must survive.
 
+## Responsibility boundaries
+
+| Artifact | Responsibility |
+| --- | --- |
+| [refactor-code](SKILL.md) | Internal restructuring of one concrete code target while preserving supported caller-visible behavior, invariants, and external contracts. |
+| [rename-code](../rename-code/SKILL.md) | Pure symbol or tracked-path renames, including public names and externally observed paths, and their compatibility decisions; model-invoked. |
+| [improve-codebase-architecture](../improve-codebase-architecture/SKILL.md) | Open-ended architectural searches; user-invoked. |
+
 ## Route before writing
 
-First determine whether the request is a bounded refactor, using authorized repository reads and non-mutating evidence. Keep adjacent Skills responsible for their own work and reach them through their existing public Skill interfaces.
+First determine whether the request is a bounded refactor, using authorized repository reads and non-mutating evidence. A **Redirected** result returns the request to its owner without invoking that Skill.
 
 | Requested outcome | Route |
 | --- | --- |
-| Pure symbol or tracked-path rename, including a public name or externally observed path | Return **Redirected** to the model-invoked `rename-code`. It owns the compatibility decision. Carry the confirmed target, preservation boundary, relevant evidence, and required outcome. |
-| Open-ended search for architectural opportunities | Return **Redirected** to the user-invoked `improve-codebase-architecture`. Confirm only the search scope and hand off that scope and outcome for the user to invoke; do not start the search here. |
+| Pure symbol or tracked-path rename | Return **Redirected** with the confirmed target, preservation boundary, relevant evidence, and required outcome. |
+| Open-ended search for architectural opportunities | Return **Redirected** with only the confirmed search scope and outcome for the user to invoke; do not start the search here. |
 | Non-rename change to caller-visible behavior or an external contract | Return **Out of Scope**, identifying the target, evidence of the observable or contract change, and required outcome. This includes public-interface, persistence, protocol, integration, and user-visible behavior changes. |
 
 A concrete refactor can still contain a genuine design question. Use the model-invoked `codebase-design` for a material unresolved interface, seam, adapter, or test-surface choice only when established repository evidence and ordinary in-scope judgment cannot settle it. Reconcile its result with repository evidence before continuing. A result requiring a non-rename change to caller-visible behavior or an external contract is **Out of Scope**.

@@ -32,9 +32,9 @@ preserving accepted SmartKit behavior and completing verification. New behaviora
 require a user decision; an upgrade does not authorize silently dropping a patch or changing
 its intended result.
 
-Required per-task Ponytail loading belongs to
-[rule-code](../../skills/rule-code/SKILL.md#ponytail-loading), matching the coding scope of
-[Ponytail](../../skills/ponytail/SKILL.md). Ponytail is a Rule Skill for coding simplification,
+[Ponytail](../../skills/ponytail/SKILL.md) remains applicable to every coding task through its
+native discovery description. [Instruction Governance](../../rules/core-instruction-governance.md#load-guidance-before-it-governs-a-decision)
+owns loading applicable guidance before decisions. Ponytail is a Rule Skill for coding simplification,
 retaining its upstream `ponytail` name under that specific naming exception;
 it does not replace the cross-task principles in
 [Reasoning Workflow](../../rules/core-reasoning-workflow.md) and

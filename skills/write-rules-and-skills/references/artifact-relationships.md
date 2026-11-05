@@ -12,9 +12,11 @@ For this dependency contract, **Rule** includes rule-led Skills, regardless of n
 
 ## Separate responsibility from execution
 
-Describe divisions of responsibility in a separate opening paragraph of the Rule or Skill. It may identify which other artifact owns work outside its scope, including a peer or an upper-level caller. This boundary description creates no dependency when it neither performs nor delegates that work and needs none of the named artifact's content or availability. A redirect result may carry facts already established while deciding the boundary.
+When a Rule or Skill needs responsibility clarification in its body, use an unnumbered `## Responsibility boundaries` section immediately after the introduction and before other body sections. Use a two-column table headed `Artifact | Responsibility`, naming the current artifact first and then each relevant other owner. Link every artifact cell, including the current artifact, to its actual Rule file or Skill `SKILL.md` entry with a resolvable Markdown link. Omit the section when no boundary needs clarification. Simplified-Chinese mirrors use `## 职责分界` and `工件 | 职责` with the same structure.
 
-For example, an opening boundary may assign pure renames to a renaming Skill, while the body uses a design-vocabulary Skill to resolve an interface choice. Only the latter is a dependency. Moving an invocation or required read into the opening paragraph does not turn it into a boundary description.
+Describe ownership and necessary conditions in the table, not instructions to read, invoke, or delegate. It may identify a peer or an upper-level caller as the owner of work outside the current artifact's scope. A boundary description creates no dependency when it neither performs nor delegates that work and needs none of the named artifact's content or availability. Keep redirect results and handoff steps in the operational body; they may carry facts already established while deciding the boundary.
+
+For example, the boundary table may assign pure renames to a renaming Skill, while the workflow uses a design-vocabulary Skill to resolve an interface choice. Only the latter is a dependency. Moving an invocation or required read into the boundary section does not turn it into a boundary description.
 
 ## Keep policy independent and capability dependencies sparse
 

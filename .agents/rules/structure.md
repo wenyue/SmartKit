@@ -2,6 +2,13 @@
 
 Place SmartKit code and guidance with the responsibility they serve. Resolve all paths below from the repository root.
 
+## Responsibility boundaries
+
+| Artifact | Responsibility |
+| --- | --- |
+| [Structure](structure.md) | Source placement. |
+| [Project Policy](project-policy.md) | Resource-use permissions and supported sharing routes. |
+
 ## Keep a feature's context together
 
 Keep implementation, policy data, and private resources with the feature that interprets them. Prefer an existing feature directory to a new top-level category based only on file type. For example, recommended-tool policies belong in `runtime/recommended-tools/policies/` because both checking and maintenance consume that feature's decisions.
@@ -16,7 +23,7 @@ Move long Agent behavior instructions out of runtime code into the owning featur
 | --- | --- |
 | Hook-required implementation and resources, including a persistent service started by a Hook | `runtime/<feature>/`; `hooks/` supplies Harness lifecycle wiring. Other consumers may reuse the capability. |
 | Maintenance of SmartKit's own sources and distribution metadata | `scripts/`, including repository-wide synchronizers. |
-| A Skill's documentation, helpers, and assets | Its Skill directory. Other Skills may consume explicitly supported resources through the routes in [Project Policy](project-policy.md); sharing does not require a new `shared/` directory. |
+| A Skill's documentation, helpers, and assets | Its Skill directory; sharing a supported resource does not require a new `shared/` directory. |
 | Portable plugin Rules and Skills | `rules/` and `skills/`. |
 | SmartKit maintainer guidance | `.agents/`. |
 | Future target-project blueprints, templates, and catalogs | `setup-assets/`; these are not this repository's active Rules. |
