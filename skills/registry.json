@@ -45,7 +45,7 @@
         {"id": "mattpocock/research", "path": "skills/engineering/research", "patches": ["vendor/patches/mattpocock/research.openai.patch"]},
         {"id": "mattpocock/domain-modeling", "path": "skills/engineering/domain-modeling", "patches": ["vendor/patches/mattpocock/domain-modeling.patch", "vendor/patches/mattpocock/domain-modeling.openai.patch"]},
         {"id": "mattpocock/codebase-design", "path": "skills/engineering/codebase-design", "patches": ["vendor/patches/mattpocock/codebase-design.openai.patch"]},
-        {"id": "mattpocock/code-review", "path": "skills/engineering/code-review", "patches": ["vendor/patches/mattpocock/code-review.openai.patch"]},
+        {"id": "mattpocock/code-review", "path": "skills/engineering/code-review", "patches": ["vendor/patches/mattpocock/code-review.patch", "vendor/patches/mattpocock/code-review.openai.patch"]},
         {"id": "mattpocock/wizard", "path": "skills/engineering/wizard", "patches": ["vendor/patches/mattpocock/wizard.openai.patch"]},
         {"id": "mattpocock/grill-me", "path": "skills/productivity/grill-me", "patches": ["vendor/patches/mattpocock/grill-me.openai.patch", "vendor/patches/mattpocock/grill-me.harness.patch"]},
         {"id": "mattpocock/grilling", "path": "skills/productivity/grilling", "patches": ["vendor/patches/mattpocock/grilling.patch", "vendor/patches/mattpocock/grilling.openai.patch"]},

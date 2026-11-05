@@ -30,6 +30,9 @@ class FakeGitHub:
         self.override_head = None
         self.override_base = None
         self.fail_next_snapshot = False
+        self.source_branch = 'feature'
+        self.dynamic_files = False
+        self.omitted_path = None
 
     def graphql(self, commands, query, variables):
         head = self.override_head or self.test.remote_head()
@@ -44,11 +47,15 @@ class FakeGitHub:
         if self.fail_next_snapshot:
             self.fail_next_snapshot = False
             raise RuntimeError('unavailable API')
+        if self.dynamic_files:
+            names = commands.git('diff', '--name-only', '--find-renames',
+                                 self.test.comparison + '...' + self.test.remote_head()).decode().splitlines()
+            self.states = {name: self.states.get(name, 'UNVIEWED') for name in names if name != self.omitted_path}
         start = int(variables['cursor'] or 0)
         entries = sorted(self.states.items())[start:start + self.page_size]
         end = start + len(entries)
         return {'viewer': {'login': self.viewer}, 'repository': {'pullRequest': {
-            'id': 'PR_test', 'baseRefOid': base, 'headRefOid': head, 'headRefName': 'feature',
+            'id': 'PR_test', 'baseRefOid': base, 'headRefOid': head, 'headRefName': self.source_branch,
             'headRepository': {'nameWithOwner': 'owner/repo'},
             'files': {'totalCount': len(self.states),
                       'nodes': [{'path': name, 'viewerViewedState': state} for name, state in entries],
@@ -104,6 +111,7 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
         self.git('remote', 'add', 'origin', str(self.remote))
         self.git('push', 'origin', 'HEAD:refs/heads/feature')
         self.github = FakeGitHub(self)
+        self.github.dynamic_files = True
         self.patches = [patch.object(completion.Commands, 'graphql', lambda commands, query, variables: self.github.graphql(commands, query, variables)),
                         patch.object(completion.Commands, 'commit', lambda commands, source, head: self.github.commit(commands, source, head)),
                         patch.object(completion, 'source_slug', return_value='owner/repo')]
@@ -329,13 +337,207 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
         self.assertEqual(self.remote_head(), self.base)
         self.assertFalse(self.github.marked)
 
-    def test_unsupported_amend_and_in_worktree_state_fail_before_effects(self):
-        with self.assertRaises(ValueError):
-            self.prepare('commit-push', requires_amend=True)
+    def test_in_worktree_state_fails_before_effects(self):
         with self.assertRaises(ValueError):
             completion.prepare(self.request(), self.repository / 'state')
         self.assertEqual(self.remote_head(), self.base)
         self.assertFalse(self.github.marked)
+
+    def test_published_amend_preserves_parents_and_uses_exact_lease(self):
+        (self.repository / 'file.txt').write_bytes(b'amended\n')
+        prepared = self.prepare('commit-push', requires_amend=True)
+        original = completion.Commands.git
+        pushes = []
+        def record(commands, *arguments, **options):
+            if arguments[0] == 'push':
+                pushes.append(arguments)
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', record):
+            self.run_completion(prepared)
+            self.run_completion(prepared)
+        self.assertEqual(self.git('rev-parse', 'HEAD^'), self.comparison)
+        self.assertEqual(self.remote_head(), self.git('rev-parse', 'HEAD'))
+        self.assertEqual(self.git('show', 'HEAD:file.txt'), 'amended')
+        self.assertEqual(len(pushes), 1)
+        self.assertIn('--force-with-lease=refs/heads/feature:' + self.base, pushes[0])
+
+    def test_unpublished_amend_retains_earlier_outgoing_and_pushes_normally(self):
+        (self.repository / 'earlier.txt').write_bytes(b'earlier\n')
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Earlier outgoing')
+        earlier = self.git('rev-parse', 'HEAD')
+        (self.repository / 'file.txt').write_bytes(b'first repair\n')
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Review repair')
+        replaced = self.git('rev-parse', 'HEAD')
+        (self.repository / 'file.txt').write_bytes(b'final repair\n')
+        prepared = self.prepare('commit-push', requires_amend=True)
+        original = completion.Commands.git
+        pushes = []
+        def record(commands, *arguments, **options):
+            if arguments[0] == 'push':
+                pushes.append(arguments)
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', record):
+            self.run_completion(prepared)
+        head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.git('rev-parse', 'HEAD^'), earlier)
+        self.assertNotEqual(head, replaced)
+        self.assertEqual(self.git('rev-list', '--reverse', self.base + '..HEAD').splitlines(), [earlier, head])
+        self.assertEqual(self.git('show', 'HEAD:earlier.txt'), 'earlier')
+        self.assertEqual(self.remote_head(), head)
+        self.assertFalse(any(argument.startswith('--force') for argument in pushes[0]))
+
+    def test_false_amend_creates_requested_new_commit_and_true_no_change_reuses_head(self):
+        (self.repository / 'file.txt').write_bytes(b'new commit\n')
+        self.run_completion(self.prepare('commit-push', requires_amend=False))
+        head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.git('rev-parse', 'HEAD^'), self.base)
+        self.base = head
+        self.state = self.directory / 'unchanged amendment'
+        self.run_completion(self.prepare('commit-push', requires_amend=True))
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+
+    def test_amend_preserves_all_merge_parents_and_their_outgoing_history(self):
+        self.git('checkout', '-b', 'side', self.comparison)
+        (self.repository / 'side.txt').write_bytes(b'side\n')
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Side change')
+        side = self.git('rev-parse', 'HEAD')
+        self.git('checkout', 'feature')
+        self.git('merge', '--no-ff', 'side', '-m', 'Review merge')
+        (self.repository / 'file.txt').write_bytes(b'merge repair\n')
+        self.run_completion(self.prepare('commit-push', requires_amend=True, viewed_paths=['side.txt']))
+        head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.git('rev-list', '--parents', '-n', '1', head).split()[1:], [self.base, side])
+        self.assertEqual(self.git('rev-list', '--reverse', self.base + '..' + head).splitlines(), [side, head])
+        self.assertEqual(self.github.marked, ['side.txt'])
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX executable hook fixture')
+    def test_amend_runs_normal_hooks_and_stops_on_changed_checked_tree(self):
+        (self.repository / 'file.txt').write_bytes(b'amended\n')
+        hook = self.repository / '.git/hooks/pre-commit'
+        hook.write_text('#!/bin/sh\necho hook-change > file.txt\ngit add file.txt\n', encoding='utf-8')
+        hook.chmod(0o755)
+        prepared = self.prepare('commit-push', requires_amend=True)
+        with self.assertRaises(ValueError):
+            self.run_completion(prepared)
+        self.assertEqual(self.git('show', 'HEAD:file.txt'), 'hook-change')
+        self.assertEqual(self.remote_head(), self.base)
+        self.assertFalse(self.github.marked)
+
+    def test_amend_rejects_nonboolean_viewed_only_and_protected_branches(self):
+        for mode, value in (('commit-push', 'true'), ('viewed-only', True)):
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                self.prepare(mode, requires_amend=value)
+        self.git('branch', '-m', 'main')
+        with self.assertRaises(ValueError):
+            self.prepare('commit-push', branch='main', requires_amend=True)
+        self.git('branch', '-m', 'feature')
+        self.state = self.directory / 'protected remote'
+        self.github.source_branch = 'main'
+        with self.assertRaises(ValueError):
+            self.prepare('commit-push', requires_amend=True)
+        self.assertEqual(self.remote_head(), self.base)
+        self.assertFalse(self.github.marked)
+
+    def test_amend_lost_commit_and_push_responses_reuse_actual_effects(self):
+        (self.repository / 'file.txt').write_bytes(b'amended\n')
+        prepared = self.prepare('commit-push', requires_amend=True)
+        original = completion.Commands.git
+        attempted = []
+        def lose_response(commands, *arguments, **options):
+            result = original(commands, *arguments, **options)
+            if arguments[0] in ('commit', 'push'):
+                attempted.append(arguments[0])
+                raise RuntimeError('lost ' + arguments[0] + ' response')
+            return result
+        with patch.object(completion.Commands, 'git', lose_response):
+            with self.assertRaises(RuntimeError):
+                self.run_completion(prepared)
+            amended = self.git('rev-parse', 'HEAD')
+            with self.assertRaises(RuntimeError):
+                self.run_completion(prepared)
+            self.run_completion(prepared)
+        self.assertEqual(attempted, ['commit', 'push'])
+        self.assertEqual(self.git('rev-parse', 'HEAD'), amended)
+        self.assertEqual(self.remote_head(), amended)
+        self.assertEqual(self.github.marked, ['file.txt'])
+
+    def test_exact_lease_rejects_source_race_without_viewed_or_rollback(self):
+        (self.repository / 'file.txt').write_bytes(b'amended\n')
+        prepared = self.prepare('commit-push', requires_amend=True)
+        drift = self.git('commit-tree', self.git('rev-parse', self.base + '^{tree}'),
+                         '-p', self.base, '-m', 'Concurrent source update')
+        original = completion.Commands.git
+        def race(commands, *arguments, **options):
+            if arguments[0] == 'push':
+                self.git('push', 'origin', drift + ':refs/heads/feature')
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', race), self.assertRaises(RuntimeError):
+            self.run_completion(prepared)
+        self.assertEqual(self.remote_head(), drift)
+        self.assertNotEqual(self.git('rev-parse', 'HEAD'), self.base)
+        self.assertFalse(self.github.marked)
+
+    def test_commit_push_without_viewed_and_viewed_only_empty_rejection(self):
+        with self.assertRaises(ValueError):
+            self.prepare(viewed_paths=[])
+        (self.repository / 'file.txt').write_bytes(b'publish only\n')
+        prepared = self.prepare('commit-push', viewed_paths=[])
+        result = self.run_completion(prepared)
+        self.assertEqual(result['viewed_count'], 0)
+        self.assertEqual(self.remote_head(), self.git('rev-parse', 'HEAD'))
+        self.assertFalse(self.github.marked)
+
+    def test_new_viewed_path_is_checked_in_intended_diff_then_published(self):
+        (self.repository / 'new.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push', viewed_paths=['new.txt'])
+        plan = completion.read_json(self.state / 'plan.json')
+        self.assertNotIn('new.txt', plan['pr']['files'])
+        self.assertIn('new.txt', plan['intended_pr_paths'])
+        self.run_completion(prepared)
+        self.assertEqual(self.github.marked, ['new.txt'])
+        self.assertEqual(self.git('show', 'HEAD:new.txt'), 'new')
+
+    def test_viewed_path_outside_intended_diff_stops_before_real_effects(self):
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        with self.assertRaises(ValueError):
+            self.prepare('commit-push', viewed_paths=['missing.txt'])
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.base)
+        self.assertEqual(self.git('diff', '--cached', '--name-only'), '')
+        self.assertFalse(self.github.marked)
+
+    def test_new_viewed_path_missing_after_publication_preserves_push_for_resume(self):
+        (self.repository / 'new.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push', viewed_paths=['new.txt'])
+        self.github.omitted_path = 'new.txt'
+        with self.assertRaises(ValueError):
+            self.run_completion(prepared)
+        published = self.remote_head()
+        self.assertNotEqual(published, self.base)
+        self.assertFalse(self.github.marked)
+        self.github.omitted_path = None
+        self.run_completion(prepared)
+        self.assertEqual(self.remote_head(), published)
+        self.assertEqual(self.github.marked, ['new.txt'])
+
+    def test_legacy_v1_plan_reuses_existing_outgoing_commit(self):
+        (self.repository / 'file.txt').write_bytes(b'outgoing\n')
+        self.git('add', '-A')
+        self.git('commit', '-m', 'Existing outgoing')
+        head = self.git('rev-parse', 'HEAD')
+        self.prepare('commit-push')
+        plan = completion.read_json(self.state / 'plan.json')
+        del plan['original_parents']
+        del plan['intended_pr_paths']
+        completion.write_json(self.state / 'plan.json', plan)
+        identity = completion.digest(completion.encoded(plan))
+        completion.write_json(self.state / 'progress.json', {'plan_id': identity, 'phase': 'prepared'})
+        completion.run(self.state, identity)
+        completion.run(self.state, identity)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+        self.assertEqual(self.remote_head(), head)
 
     def test_inherited_git_routing_is_removed(self):
         with patch.dict(os.environ, {'GIT_DIR': '/wrong', 'GIT_WORK_TREE': '/wrong', 'GIT_INDEX_FILE': '/wrong'}):

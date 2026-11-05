@@ -367,11 +367,15 @@
           "source_path": "skills/engineering/code-review",
           "destination": "skills/code-review",
           "files": {
-            "SKILL.md": "47f4e52c21694def9c7c11cbfbf891ca35eac7a93e395797515be3c8a409ae50",
+            "SKILL.md": "0cc317cf5631b177bdb0004a5cad9f21b62748f57ceb04b9e72cd44e4ac8437d",
             "agents/openai.yaml": "916063ab21aacbc1666dde564264160357ab07314c638b3a7f56f37de8d72e22",
             "assets/icon.svg": "109246fe7fcd65c6856938511d8f0072aff5ceee2cc7ebe23b9dabae4e63a0b7"
           },
           "patches": [
+            {
+              "path": "vendor/patches/mattpocock/code-review.patch",
+              "sha256": "a00f3f0ba54ec0d7ad432f07bd8ec81a235ca4892799b8b0c62098b159ed731a"
+            },
             {
               "path": "vendor/patches/mattpocock/code-review.openai.patch",
               "sha256": "6fe010f18a6b642580b3f414498837f7a6715f2b8e7d6055bea8332521cb39d8"
@@ -569,14 +573,14 @@
           "source_path": "skills/ponytail-review",
           "destination": "skills/ponytail-review",
           "files": {
-            "SKILL.md": "38288fe37dd56cff3e79191e8e95bd4cff42920dd4a8f99b9ae25994e2460cbb",
+            "SKILL.md": "c54e90c3f404d057bd720ef000fd912db4ca4b6f256cd3fc517642ebdb28e6ef",
             "agents/openai.yaml": "8fa332bd64108cebf95ace10bb866da9cffcbbb8e4949c8b26ef1a70cc731a7e",
             "assets/icon.svg": "e3b0bf7b14f67c2d3c173743e94b1bccd37aef1582ca2a8ae87084939694110e"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail-review.patch",
-              "sha256": "d28f9b6415b7988fd01897e36d0b7a3e9d14e98195ba9403ee680620b28700c5"
+              "sha256": "41cdf2725b9a6d76dda9776cb8d9bf60470f6bb713f014c0610d8f82291a4ac1"
             },
             {
               "path": "vendor/patches/ponytail/ponytail-review.openai.patch",

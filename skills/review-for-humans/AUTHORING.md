@@ -8,7 +8,7 @@ Principles govern uncommon situations; four common-case tables stabilize recomme
 
 Pass selects delivery preparation as well as its applicable effects. Requiring prepared delivery before offering Pass would hide that choice after ordinary review and repairs. New supplementary findings pause writes for a decision, while the original selection remains pending so resolving them needs no second Pass.
 
-Necessity and implementation belong in one assessment path. Splitting them into separate checklists would let a well-tested mechanism receive an elegance judgment before its capability has a supported purpose.
+Necessity and implementation belong in one assessment path through findings, repair, and independent re-review. Splitting them into separate checklists, or treating a previous Fix selection as proof, would let a well-tested mechanism survive after its original premise was disproven. Keep the decisive caller, trigger, obligation, and existing guarantees with the finding without imposing a separate evidence schema.
 
 ## Give presentation one owner
 
@@ -24,4 +24,4 @@ The entry preserves pending Pass versus only-deliver; Delivery preserves actual 
 
 ## Keep the mechanical interface beside its implementation
 
-The helper's CLI help owns its capabilities, request schema, state, outputs, and retries. Delivery retains semantic coverage and authorized-effect requirements and supplies the manual path for unsupported plans. Duplicating CLI details in another reference would create a second interface specification without making the helper a semantic reviewer.
+The helper's CLI help owns its capabilities, request schema, state, outputs, and retries. Delivery requires that route for supported effects and retains semantic coverage and authorization. Its manual path covers demonstrated unsupported plans, not failed supported operations; common capability gaps should be repaired in the helper so recovery keeps one owner. Duplicating CLI details in another reference would create a second interface specification without making the helper a semantic reviewer.

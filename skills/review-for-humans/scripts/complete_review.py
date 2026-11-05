@@ -20,16 +20,18 @@ from typing import Iterator, Optional
 CLI_HELP = r"""
 SUPPORTED PLANS
   A verified github.com PR on its selected local branch, in one of two modes:
-  viewed-only records Viewed; commit-push creates a commit if needed, reuses
-  existing outgoing commits, pushes normally when needed, then records Viewed.
-  Both require a nonempty viewed_paths set whose paths already exist in the PR
-  before publication. An empty set or an eligible file entering the PR only after
-  the push needs the Skill's manual delivery workflow. Never omit a required path
-  or invent one to fit this helper.
+  viewed-only records Viewed; commit-push creates or amends a commit if needed,
+  reuses existing outgoing commits, publishes, then records eligible paths.
+  commit-push permits an empty Viewed set and paths entering the PR through the
+  prepared publication. viewed-only requires a nonempty set already in the PR.
+  Never omit a required path or invent one to fit this helper.
 
-  Amendment, lease/force publication, mirrored push remotes, detached workspaces,
-  unresolved Git operations, special index flags, and changed submodule/directory
-  entries are unsupported. Use the manual workflow for the actual effects.
+  Amendment replaces only the current review commit, preserving its parents and
+  earlier outgoing ancestry. Replacing an already-published HEAD uses an exact
+  lease on the frozen source SHA; an unpublished amendment pushes normally.
+  Other history rewrites, mirrored push remotes, detached workspaces, unresolved
+  Git operations, special index flags, changed submodule/directory entries, and
+  ambiguous PR merge bases are unsupported. Delivery owns their disposition.
   Requires Python 3.8+, Git, authenticated gh with PR/source access and readbacks,
   and prepared source objects. All gh API calls target github.com. The helper does
   not install tools, fetch, synchronize, or select a workspace.
@@ -63,8 +65,8 @@ REQUEST JSON (--input)
   Use the exact local branch and full lowercase 40-hex commit IDs. number is a
   positive PR number; pull_request is the PR owner's owner/repository slug.
   GitHub supplies the verified source repository/ref, including forks. viewer
-  must match the reviewed authenticated identity. viewed_paths is a nonempty
-  unique list of repository-relative forward-slash paths; evidence is a nonempty
+  must match the reviewed authenticated identity. viewed_paths is a unique list
+  of repository-relative forward-slash paths; evidence is a nonempty
   list of existing files. Unrecognized fields are rejected.
 
   For viewed-only, omit remote/message. Only this mode requires local HEAD to
@@ -73,8 +75,11 @@ REQUEST JSON (--input)
   contract permits it only when no commit/publication effect remains.
   For commit-push, supply remote and message; the actual push destination must be
   the verified source ref, including when fetch and push URLs differ. Set optional
-  requires_amend truthfully from recorded actions: true is refused, so the manual
-  amendment/lease path remains in control. Omitting it means false.
+  requires_amend to boolean true only when recorded actions establish local HEAD
+  as this review's fix/optimization commit and no explicit new-commit request
+  overrides amendment. Local and source branches must not be master or main.
+  False or omission creates a new commit when needed. The request's head is the
+  exact old remote SHA used by a published amendment's lease, never a tracking ref.
 
 PRIVATE STATE AND EVIDENCE
   Choose a new state directory outside the worktree through the owning artifact
@@ -83,8 +88,10 @@ PRIVATE STATE AND EVIDENCE
   with suitable inherited access.
 
   prepare retains the plan, original index bytes, tracked binary diffs, changed
-  file bytes/symlink targets, intended complete tree, outgoing ancestry/delta,
-  full PR pagination, and evidence digests. Publication preparation uses an
+  file bytes/symlink targets, intended complete tree, original parents, outgoing
+  ancestry/delta, intended PR file set, full PR pagination, and evidence digests.
+  Selected Viewed paths must belong to that intended PR diff before publication
+  and to the actual published PR afterward. Publication preparation uses an
   isolated index/native clean filters and may add Git objects, while verifying
   the real index, branch, HEAD, and contents remain unchanged. Inspect the full
   inventory and logs for scope disclosure; compact counts are insufficient.
@@ -96,8 +103,8 @@ COMMANDS
 
   After exact-effect authorization, run locks and revalidates the plan, stages
   intended content when needed, runs normal hooks, and verifies tree/parent,
-  outgoing ancestry, and source destination. It performs only a normal scoped
-  push without automatic tag/submodule publication, verifies source ref, PR
+  outgoing ancestry, and source destination. It performs a scoped normal push or
+  the exact lease above, without automatic tag/submodule publication, verifies source ref, PR
   version and published commit/tree, then marks remaining paths and reads back
   the entire selected set with unchanged PR version. Confirmed effects are reused
   and no empty commit is created. No review advancement occurs.
@@ -302,7 +309,10 @@ def check_pr(observed: dict, plan: dict, head: str) -> None:
     expected = plan['pr']
     require(all(observed[key] == expected[key] for key in ('id', 'base', 'source', 'ref', 'viewer'))
             and observed['head'] == head, 'PR viewer, source, base or head changed')
-    require(all(path in observed['files'] for path in plan['request']['viewed_paths']),
+    paths = plan['request']['viewed_paths']
+    if head == expected['head'] and 'intended_pr_paths' in plan:
+        paths = [path for path in paths if path in expected['files']]
+    require(all(path in observed['files'] for path in paths),
             'A selected Viewed path is no longer in the PR')
 
 
@@ -335,13 +345,16 @@ def request_from(path: Path) -> dict:
     require(type(value.get('number')) is int and value['number'] > 0, 'Invalid PR number')
     require(SHA.fullmatch(value['base']) is not None and SHA.fullmatch(value['head']) is not None,
             'Expected full lowercase GitHub commit IDs')
-    require(isinstance(value.get('viewed_paths'), list) and bool(value['viewed_paths'])
+    require(isinstance(value.get('viewed_paths'), list)
+            and (bool(value['viewed_paths']) or value['mode'] == 'commit-push')
             and all(isinstance(item, str) and item and not item.startswith('/')
                     and '..' not in item.split('/') and '\\' not in item
                     for item in value['viewed_paths'])
             and len(set(value['viewed_paths'])) == len(value['viewed_paths']), 'Invalid Viewed path set')
     require(isinstance(value.get('evidence'), list), 'Evidence paths are required')
-    require(not value.get('requires_amend'), 'Amendment/lease publication needs the existing manual workflow')
+    require(type(value.get('requires_amend', False)) is bool, 'requires_amend must be a boolean')
+    require(not value.get('requires_amend') or value['mode'] == 'commit-push',
+            'Amendment requires commit-push mode')
     if value['mode'] == 'commit-push':
         require(isinstance(value.get('remote'), str) and value['remote']
                 and not value['remote'].startswith('-'), 'A verified source remote name is required')
@@ -432,7 +445,12 @@ def prepare(input_path: Path, state: Path) -> dict:
         pr = pr_snapshot(commands, request)
         require(pr['base'] == request['base'] and pr['head'] == request['head']
                 and pr['viewer'] == request['viewer'], 'Prepared PR version/viewer differs from request')
-        require(all(name in pr['files'] for name in request['viewed_paths']), 'Selected Viewed file is absent')
+        if request['mode'] == 'viewed-only':
+            require(all(name in pr['files'] for name in request['viewed_paths']), 'Selected Viewed file is absent')
+        if request.get('requires_amend'):
+            require(before['branch'] not in ('master', 'main')
+                    and pr['ref'] not in ('refs/heads/master', 'refs/heads/main'),
+                    'Amendment is not permitted on master or main')
         index_bytes = Path(before['index_path']).read_bytes()
         (state / 'original.index').write_bytes(index_bytes)
         commands.git('diff', '--binary', '--cached', 'HEAD')
@@ -442,9 +460,12 @@ def prepare(input_path: Path, state: Path) -> dict:
         for number, (name, item) in enumerate(before['files'].items()):
             if item['kind'] == 'file':
                 shutil.copyfile(str(repository / name), str(recovery / str(number)))
-        tree = commands.git('rev-parse', 'HEAD^{tree}').decode().strip()
+        original_tree = commands.git('rev-parse', 'HEAD^{tree}').decode().strip()
+        tree = original_tree
+        parents = commands.git('rev-list', '--parents', '-n', '1', before['head']).decode().split()[1:]
         commits = []
         destination = None
+        intended_paths = None
         if request['mode'] == 'commit-push':
             destination = push_url(commands, request, pr)
             require(remote_head(commands, request, pr, destination) == pr['head'], 'Source ref and PR head disagree')
@@ -456,6 +477,15 @@ def prepare(input_path: Path, state: Path) -> dict:
             tree = commands.git('write-tree', environment=environment).decode().strip()
             commands.git('diff', '--binary', pr['head'], tree)
             commands.git('log', '--format=fuller', '--stat', pr['head'] + '..' + before['head'])
+            ancestors = parents if request.get('requires_amend') and tree != original_tree else [before['head']]
+            require(bool(ancestors), 'Amended commit has no shared PR ancestry')
+            # Multiple parent arguments model the ancestry of the intended amended merge.
+            bases = commands.git('merge-base', '--all', pr['base'], *ancestors).decode().splitlines()
+            require(len(bases) == 1, 'Intended PR diff needs one unambiguous merge base')
+            intended_paths = [os.fsdecode(name) for name in commands.git(
+                'diff', '--name-only', '-z', '--find-renames', bases[0], tree).split(b'\0') if name]
+            require(all(name in intended_paths for name in request['viewed_paths']),
+                    'Selected Viewed file is outside the intended PR diff')
         else:
             require(before['head'] == pr['head'], 'Viewed-only helper requires local HEAD at the reviewed PR head')
         after = workspace(commands)
@@ -465,6 +495,8 @@ def prepare(input_path: Path, state: Path) -> dict:
                 'intended_index_sha256': (digest(commands.git('ls-files', '--stage', '-z',
                     environment={'GIT_INDEX_FILE': str(state / 'intended.index')}))
                     if request['mode'] == 'commit-push' else before['index_sha256'])}
+        if request['mode'] == 'commit-push':
+            plan.update(original_parents=parents, intended_pr_paths=intended_paths)
         write_json(state / 'plan.json', plan)
         plan_id = digest(encoded(plan))
         write_json(state / 'progress.json', {'plan_id': plan_id, 'phase': 'prepared'})
@@ -486,18 +518,23 @@ def verify_commit(commands: Commands, plan: dict, head: str) -> None:
             'Commit tree differs from checked intended content')
     if head != before:
         parents = commands.git('rev-list', '--parents', '-n', '1', head).decode().split()[1:]
-        require(parents == [before], 'Unexpected commit parent/history')
+        expected = plan['original_parents'] if plan['request'].get('requires_amend') else [before]
+        require(parents == expected, 'Unexpected commit parent/history')
         require(commands.git('log', '-1', '--format=%B', head).decode().strip()
                 == plan['request']['message'].strip(), 'Unexpected completion commit message')
 
 
 def verify_published(commands: Commands, plan: dict, observed: dict, head: str) -> None:
     check_pr(observed, plan, head)
+    require(all(path in observed['files'] for path in plan['request']['viewed_paths']),
+            'A selected Viewed path is absent from the published PR')
     value = commands.commit(observed['source'], head)
     require(value['sha'] == head and value['tree']['sha'] == plan['tree'],
             'Published commit/tree differs from checked content')
     if head != plan['workspace']['head']:
-        require([item['sha'] for item in value['parents']] == [plan['workspace']['head']],
+        expected = (plan['original_parents'] if plan['request'].get('requires_amend')
+                    else [plan['workspace']['head']])
+        require([item['sha'] for item in value['parents']] == expected,
                 'Published commit parent differs from expected')
 
 
@@ -548,12 +585,21 @@ def run(state: Path, confirmed: str) -> dict:
                 if commands.git('rev-parse', 'HEAD^{tree}').decode().strip() != plan['tree']:
                     progress.update(phase='committing', commit_attempted=True)
                     write_json(state / 'progress.json', progress)
-                    commands.git('commit', '-m', request['message'])
+                    arguments = ['commit', '-m', request['message']]
+                    if request.get('requires_amend'):
+                        arguments.append('--amend')
+                    commands.git(*arguments)
                     head = commands.git('rev-parse', 'HEAD').decode().strip()
             verify_commit(commands, plan, head)
             workspace_after_commit(commands, plan, head)
-            expected_outgoing = plan['outgoing'] + ([head] if head != before['head'] else [])
-            require(outgoing(commands, plan['pr']['head'], head) == expected_outgoing,
+            retained = plan['outgoing']
+            if head != before['head'] and request.get('requires_amend'):
+                retained = [commit for commit in retained if commit != before['head']]
+                actual_outgoing = commands.git('rev-list', '--reverse', plan['pr']['head'] + '..' + head).decode().splitlines()
+            else:
+                actual_outgoing = outgoing(commands, plan['pr']['head'], head)
+            expected_outgoing = retained + ([head] if head != before['head'] else [])
+            require(actual_outgoing == expected_outgoing,
                     'Outgoing ancestry differs from approved scope')
             progress.update(phase='committed', head=head)
             write_json(state / 'progress.json', progress)
@@ -567,8 +613,10 @@ def run(state: Path, confirmed: str) -> dict:
                 require(pr['head'] == plan['pr']['head'], 'PR and source ref disagree')
                 progress.update(phase='pushing')
                 write_json(state / 'progress.json', progress)
-                commands.git('push', '--no-follow-tags', '--recurse-submodules=no',
-                             request['remote'], head + ':' + plan['pr']['ref'])
+                arguments = ['push', '--no-follow-tags', '--recurse-submodules=no']
+                if request.get('requires_amend') and before['head'] == plan['pr']['head']:
+                    arguments.append('--force-with-lease=' + plan['pr']['ref'] + ':' + plan['pr']['head'])
+                commands.git(*arguments, request['remote'], head + ':' + plan['pr']['ref'])
             require(remote_head(commands, request, pr, plan['push_url']) == head, 'Push needs source-ref readback')
             pr = pr_snapshot(commands, request)
             verify_published(commands, plan, pr, head)

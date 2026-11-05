@@ -6,7 +6,7 @@ The [Skill entry](../SKILL.md) owns inspection standards, required findings and 
 
 Use the complete file blocks below for ordinary and supplementary reviews.
 
-For a dedicated repair or optimization, including selected-O work, default to a concise report: identify the selected M/O items and source links, explain the repair and whether the original findings are resolved, give current reasonableness and elegance judgments with any changed reasons, and state checks, limits, and unresolved decisions. Keep new incidental O observations separate.
+For a dedicated repair or optimization, including selected-O work, default to a concise report: identify the selected M/O items and source links, explain the supported basis and repair, and say whether the original findings were resolved, corrected, or withdrawn. Give current reasonableness and elegance judgments with any changed reasons, and state checks, limits, and unresolved decisions. Preserve the decisive caller, trigger, obligation, and existing guarantee in the explanation when they determine whether a remedy was needed; a passing test alone cannot supply that basis. Keep new incidental O observations separate.
 
 Expand an affected file into a complete block for a material design choice, contract change, or risk introduced by the repair or revealed during re-review, or when the user requests the detail. A concise report retains full evidence, inspection coverage, required checks, and affected re-review without recounting main progress.
 

@@ -35,12 +35,12 @@ Look for the originating spec, in this order:
 
 Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
 
-On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
+On top of whatever the repo documents, the Standards axis carries the **smell baseline** below: Fowler code smells (_Refactoring_, ch.3) that guide inspection even when a repo documents nothing. They help discover a concrete burden; they do not establish that a new interface or safeguard is needed. Two rules bind them:
 
 - **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.
 - **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation. Like any standard here, skip anything tooling already enforces.
 
-Each smell reads *what it is* → *how to fix*; match it against the diff:
+Each smell reads *what it is* → *a possible remedy*. Match it against the diff and its actual ownership and caller context before recommending that remedy. Compare retaining the existing design, a direct call, or a smaller private change; extraction and new types must earn their caller and maintenance cost. A smell with no supported obligation violation is an optional design judgment, not a required correction:
 
 - **Mysterious Name**: a function, variable, or type whose name doesn't reveal what it does or holds. → rename it; if no honest name comes, the design's murky.
 - **Duplicated Code**: the same logic shape appears in more than one hunk or file in the change. → extract the shared shape, call it from both.
@@ -57,23 +57,25 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
+Give both agents the accepted request and this evidence brief: "Read the affected callers and owners, not only the diff. For a necessary correction, establish the supported caller or entry, credible trigger, applicable obligation, concrete consequence, and repair owner. Check the guarantees already supplied by migrations, validation, transactions, locks, and lifecycles. Preserve actual trust-boundary and asynchronous-lifetime safeguards; tests for a hypothetical state or a previous Fix decision do not prove the original premise. Examine every new function, type, parameter, flag, or public member against its current purpose, an existing interface, a direct call, or private owner-local placement. Weigh caller knowledge and choices, not just body size or call count. Missing evidence that a capability belongs is an unresolved need, not an optional elegance question. Keep the decisive evidence with each finding so subsequent repair and re-review can reassess it."
+
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
 - The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+- The brief: "Report, per file/hunk where relevant, (a) supported documented-standard violations: cite the applicable standard (file + rule), context, and consequence; and (b) worthwhile baseline-smell improvements: name the smell, quote the hunk, and explain its concrete burden and smaller sufficient alternative. Distinguish necessary corrections from optional judgments. A documented repo standard overrides the baseline, and a heuristic cannot authorize an otherwise unnecessary layer, type, or mode. State material evidence gaps without turning them into findings. Skip anything tooling enforces. Under 400 words."
 
 **Spec sub-agent prompt** should include:
 
 - The diff command and commit list.
 - The path or fetched contents of the spec.
-- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
+- The brief: "Report: (a) required outcomes that are missing or partial; (b) added behavior or interfaces without a supported current purpose; (c) implementations that fail a supported requirement. Quote the relevant spec line and establish the affected caller or trigger, existing guarantees, consequence, and responsible correction. An implementation detail need not be named literally in the spec when it serves the required outcome; invented defensive scenarios and passing tests do not establish that need. Distinguish unresolved requirement evidence from a defect or optional design choice. Under 400 words."
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report.
 
 ### 5. Aggregate
 
-Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
+Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned, retaining each finding's decisive evidence, necessary or optional status, and material uncertainty. Resolve unsupported premises with the responsible reviewer before presenting them as findings; correct or withdraw a disproven finding rather than treating an earlier repair decision as proof. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
 
