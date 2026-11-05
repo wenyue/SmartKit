@@ -23,6 +23,8 @@ Meet explicit coverage requirements. For coverage and information choices, weigh
 
 These considerations have no fixed priority; local practice does not decide the answer by itself. Public visibility alone does not require a comment, and straightforward local code may need none. Adding or omitting a comment need not imply that neighboring choices are wrong.
 
+When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
+
 For failures that matter to callers' decisions, explain in API documentation the failure conditions, any stable recognition the contract promises through a native type, category, or identity, and material state after failure. Cover returned and thrown failures, including those intentionally propagated across the boundary. Apply the coverage judgment above without cataloging incidental lower-level failures or repeating an already clear contract.
 
 ## Ground the explanation in the code
