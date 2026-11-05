@@ -20,19 +20,15 @@ Preserve each resource's canonical owner and applicable loading and failure requ
 
 Keep task-specific inputs, outputs, permissions, and lifetime contracts with the consuming Skill. If a required resource is unavailable, report the prerequisite gap and leave dependent work incomplete.
 
-This supported route means a Skill need not be independently copyable. It permits use of declared shared plugin resources, not another Skill's private resources or arbitrary project or external files. It grants no packaging, publishing, or installation authority.
+This supported route means a Skill need not be independently copyable. It permits use of declared shared plugin resources; it does not itself expose private resources or arbitrary project or external files. It grants no packaging, publishing, or installation authority.
 
-SmartKit Skills may depend on Skills bundled with SmartKit, including bundled third-party snapshots. Project Skills authored for SmartKit-enabled projects may depend on SmartKit Skills and their own project's Skills. Skills from other plugins are outside these dependency boundaries. Shared artifacts reach target-project Skills through the Blueprint Target Skill route owned by [Write Shared Rules and Skills](../skills/write-shared-rules-and-skills/SKILL.md).
-
-Only this SmartKit repository's project-local Skills under `.agents/skills/` may depend directly on SmartKit's private resources. Skills authored for other projects use SmartKit through Skill entries and explicitly supported public interfaces. Carry these dependency and resource limits into target authoring inputs, including blueprints used independently of Setup.
-
-A Blueprint Target Skill is a project Skill authored from a Setup Authoring Blueprint that SmartKit Skills find by its fixed name. It must not name or assume the SmartKit Skill that invokes it. It receives what it needs through its inputs, so it stays correct for any caller and the dependency runs only from the invoking Skill to it.
+Before defining or assessing Rule and Skill relationships, read the public [Artifact Relationships](../../skills/write-rules-and-skills/references/artifact-relationships.md) and this repository's [SmartKit dependency policy](../skills/write-shared-rules-and-skills/SKILL.md#smartkit-dependency-policy) directly. Supply qualified ownership, provenance, and applicable policy as authoring input rather than copying common policy into blueprints.
 
 ## Write documentation for its readers
 
-### Route Rule readers through Skill entries
+### Distinguish Skill invocation from resource consultation
 
-Project Rules reference a Skill through its `SKILL.md`, without links to internal sections. The Skill owns the reading path to its supporting guidance.
+Invoke a Skill through its `SKILL.md`, without links to internal sections as alternative entry points. Rules and Skills may directly consult an explicitly supported resource or in-file reference section under its declared loading conditions; consultation does not invoke the owning Skill's workflow. This does not expose arbitrary private resources or bypass invocation restrictions.
 
 ### Keep root READMEs concise and actionable
 

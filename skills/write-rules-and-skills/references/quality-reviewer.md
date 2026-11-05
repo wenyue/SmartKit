@@ -43,7 +43,7 @@ For rule-led Skills, assess both ordinary policy application and requested asses
 
 Follow consequential definitions to their owners. Share material when readers need the same meaning and perspective; keep role-specific judgment usable in its own context. A reader should not need another role's manual to learn their own job.
 
-Verify dependency routes, not just reachable targets. Rules may reference Rules or Skills. A Skill's reader should need to load only the Skills it depends on, including rule-led Skills. Work routed to any other Skill appears as a recognizable boundary redirect that names the owner and its condition, may carry facts established while deciding the route, and holds without loading that Skill. Attribution, self-contained teaching examples, and a Skill that is the subject of the work create no route. Reliance on an independently loaded Rule needs guaranteed loading in the supported environment rather than a direct Rule-file link. Session visibility alone supplies no such guarantee.
+Read [Artifact Relationships](artifact-relationships.md) and the accepted owner-policy sources when assessing dependency routes. Check that the reader can recognize each relationship and reach its necessary guidance before acting, without loading another role's manual or interpreting a mention as an instruction to do unrelated work. Judge the supported reading path, not merely whether a link resolves.
 
 ## Challenge the design deliberately
 

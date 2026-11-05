@@ -42,12 +42,10 @@ Qualify the supporting contract:
 | --- | --- |
 | Candidate and routes | Shared owner, applicability, provenance, exact resources and presence expectations, and intended public loading, discovery, distribution, and Skill-interface routes. |
 | Evidence | Each source and discovery route, supported facts, represented scope, and source-project-specific limits. |
-| Dependencies | Every direct and transitive Rule, Skill, tool, schema, environment capability, and host behavior: its owner, required behavior, consumers, and supported shared- or target-owned route. For each non-Skill dependency, also its observable available, unavailable, and failed-use outcomes; a Blueprint Target Skill instead needs the present and absent outcomes described below. |
+| Dependencies | Every direct and transitive Rule, Skill, tool, schema, environment capability, and host behavior: its owner, required behavior, consumers, supported shared- or target-owned route, and the availability and failure outcomes required by the applicable dependency policy. |
 | Acceptance | Validation and completion duties, accepted permissions and effects, required evidence, and observable pass, blocked, and failure conditions. |
 
-Trace dependencies through to their consumers. A shared artifact may depend on Skills bundled with SmartKit, including bundled third-party snapshots, and on Blueprint Target Skills through the route below. Skills from other plugins are outside its supported dependencies. Treat bundled Skills as available and handle a failure result through ordinary handling of that Skill's results. Tools, services, network access, credentials, and other environment capabilities have no such guarantee. Existence on the authoring machine proves neither target availability nor how a consumer reaches the dependency. Resolve material routes and failure behavior before handing off dependent work.
-
-A shared artifact reaches a target project's Skills only through Blueprint Target Skills: project-local Skills authored from Setup Authoring Blueprints and found by their fixed names. Any target may or may not provide one, so the artifact assumes neither and states the outcome for both cases. When present, the artifact uses the Skill's result. When absent, it chooses an outcome that fits its purpose; for example, it skips that work and reports a status if its outcome remains meaningful, or stops and points to project setup if the Skill is indispensable. The artifact need not prescribe how presence is detected. Pass what the Blueprint Target Skill needs through its inputs; it stays caller-neutral and does not name or know its SmartKit caller.
+Read the public writer's [Artifact Relationships](../../../skills/write-rules-and-skills/references/artifact-relationships.md) and apply the [SmartKit dependency policy](#smartkit-dependency-policy) below before qualifying dependencies. Trace each route through to its consumers against those contracts. Supply the accepted shared ownership, applicable policy, and evidence of target support as public authoring input. Resolve material routes and failure behavior before handoff; authoring-machine availability alone cannot establish portability.
 
 ### Cover differences that can change behavior
 
@@ -94,3 +92,27 @@ An output may close several obligations when it explicitly covers the whole set.
 Preserve the public handoff and its `COMPLETE`, `NEEDS_INPUT`, or `BLOCKED` result. Append an exhaustive account of each obligation and the observable output closing its pass condition, or the remaining gap. Include representative-target evidence only when public output exposes it and the pass condition needs it.
 
 Keep this account transient: create no private Candidate copy, workflow report, or permanent fixture. This Skill grants no publication, installation, commit, push, release, or other downstream effect.
+
+## SmartKit dependency policy
+
+This section is a supported reference for authoring and maintenance consumers in this repository; consulting it does not invoke this Skill's workflow. Apply it with [Artifact Relationships](../../../skills/write-rules-and-skills/references/artifact-relationships.md), whose Rule classification includes rule-led Skills and whose Skill dependencies mean ordinary Skills. Establish SmartKit ownership or accepted project support from qualified provenance; current installation and working directory do not bring unrelated artifacts into scope.
+
+### Select the permitted scope
+
+| Artifact | Permitted direct ordinary Skill dependencies |
+| --- | --- |
+| Shared SmartKit Rule or Skill | Skills bundled with SmartKit, including bundled third-party snapshots, and Blueprint Target Skills through the extension route below. |
+| This repository's project-local Skill under `.agents/skills/` | SmartKit's bundled Skills and this repository's provided project Skills. |
+| Skill authored for another SmartKit-enabled project | SmartKit's bundled Skills and that project's provided Skills. |
+
+Other plugins' Skills are outside these scopes. A project's Rules may sparingly supplement or override applicable SmartKit Rules under the common relationship contract; this does not change instruction precedence.
+
+Project Skills consume SmartKit through Skill entries and explicitly supported public interfaces. Only this repository's project-local Skills under `.agents/skills/` may depend directly on SmartKit-private resources. Declared, bundled public resources retain their supported interfaces and are not private merely because a Skill owns them.
+
+### Expose project behavior through Blueprint Target Skills
+
+A Blueprint Target Skill is a project-owned ordinary Skill authored from a SmartKit Setup Authoring Blueprint and found by its fixed name. These targets are SmartKit's declared reverse-dependency interfaces: a shared SmartKit artifact may reference them like ordinary bundled Skills, while other project Skills remain outside its direct dependency scope. A target may depend on other ordinary Skills in its project as well as permitted SmartKit Skills; the complete graph through those dependencies must remain acyclic.
+
+Unlike bundled dependencies, a target may be absent. Apply the common presence, absence, and failing-result contract; when an indispensable target is absent, point to project setup as the route to provide it. This policy does not prescribe a detection mechanism. Caller-supplied inputs carry context, and actual references are evaluated as dependencies rather than rejected merely for naming a possible caller. Authoring and acceptance instructions remain distinct from the target's runtime behavior.
+
+Supply these SmartKit-specific requirements as qualified owner input to the public writer. Keep common relationship definitions with its public reference and target-specific meaning with the blueprint; neither the public writer nor a target project needs access to this repository-local workflow.
