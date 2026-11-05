@@ -21,7 +21,7 @@ from urllib.parse import quote
 
 from . import HOST, PORT, ORIGIN, SERVICE_SCHEMA
 from . import artifacts
-from .storage import prepare_cache, prepare_state, read_json, redirected, state_dir, write_json
+from .storage import prepare_cache, prepare_state, read_json, redirected, state_dir, write_json, file_lock
 from .apps.status import hook_page_links, record_project
 
 START_TIMEOUT = 8.0
@@ -69,53 +69,15 @@ def load_state() -> Optional[dict]:
 
 @contextlib.contextmanager
 def start_lock(*, deadline: Optional[float] = None) -> Iterator[None]:
-    if deadline is None:
-        deadline = time.monotonic() + START_TIMEOUT
-    path = prepare_state() / "start.lock"
-    if redirected(path):
-        raise ValueError("local host startup lock redirects")
-    descriptor = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
-    with os.fdopen(descriptor, "r+b") as stream:
-        if os.name == "nt":
-            import msvcrt
-            # Windows permits locking past EOF; writing a marker races another owner.
-
-            def acquire() -> None:
-                stream.seek(0)
-                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
-
-            def release() -> None:
-                stream.seek(0)
-                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
-        else:
-            import fcntl
-
-            def acquire() -> None:
-                fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-
-            def release() -> None:
-                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
-        while True:
-            try:
-                acquire()
-                break
-            except BlockingIOError:
-                if time.monotonic() >= deadline:
-                    raise TimeoutError("another local host startup still holds the lock")
-                time.sleep(0.05)
-            except OSError as error:
-                # Native Windows reports lock contention with EACCES.
-                if os.name != "nt" or error.errno != 13 or time.monotonic() >= deadline:
-                    raise
-                time.sleep(0.05)
-        try:
-            yield
-        finally:
-            release()
+    with file_lock(prepare_state() / "start.lock", deadline=(
+            time.monotonic() + START_TIMEOUT if deadline is None else deadline)):
+        yield
 
 
-def service_info(state: dict) -> dict:
-    return {"origin": ORIGIN, "pid": state["pid"], "mode": state["mode"],
+def service_info(state: dict, running: Optional[dict] = None) -> dict:
+    running = state if running is None else running
+    return {"origin": ORIGIN, "pid": running["pid"], "mode": running["mode"],
+            "plugin_version": running.get("plugin_version"),
             "apps": {feature: ORIGIN + "/" + feature + "/?key=" + state["key"]
                      for feature in ("readiness", "setup", "editor")}}
 
@@ -169,9 +131,6 @@ def ensure_service(mode: str = "applications") -> dict:
     required_version = _version_key(_installed_version())
     with start_lock(deadline=deadline):
         prepare_cache()
-        cleanup_artifacts()
-        if time.monotonic() >= deadline:
-            raise TimeoutError("local host startup deadline expired")
         state = load_state()
         running = health(state) if state else None
         if running:
@@ -190,7 +149,7 @@ def ensure_service(mode: str = "applications") -> dict:
                     running = health(state)
                     if running is None:
                         raise OSError("local host stopped during mode activation")
-                return service_info(state)
+                return service_info(state, running)
         else:
             state = {"schema": SERVICE_SCHEMA, "port": PORT, "key": secrets.token_hex(32), "mode": mode, "pid": 0}
         if not port_available():
@@ -216,7 +175,7 @@ def ensure_service(mode: str = "applications") -> dict:
                         and _version_key(running["plugin_version"]) >= required_version):
                     current["pid"] = running["pid"]
                     threading.Thread(target=process.wait, daemon=True).start()
-                    return service_info(current)
+                    return service_info(current, running)
                 if process.poll() is not None:
                     raise OSError("SmartKit local host startup failed; inspect " + str(log_path))
                 time.sleep(0.05)
@@ -235,6 +194,17 @@ def ensure_service(mode: str = "applications") -> dict:
 
 def cleanup_artifacts() -> None:
     artifacts.cleanup_expired()
+
+
+def _maintain_artifacts(stopped: threading.Event, logger: logging.Logger) -> None:
+    """Own periodic maintenance independently of host readiness and request handling."""
+    while not stopped.is_set():
+        try:
+            cleanup_artifacts()
+        except (OSError, ValueError):
+            logger.exception("Artifact cleanup failed; prior removals may remain effective")
+        if stopped.wait(CLEANUP_INTERVAL):
+            return
 
 
 def publish_artifact(identity: str) -> Dict[str, str]:
@@ -284,6 +254,7 @@ def serve() -> None:
     logger = logging.getLogger("smartkit.local_web")
     handler = RotatingFileHandler(str(state_dir() / "requests.log"), maxBytes=131072, backupCount=1, encoding="utf-8")
     logger.addHandler(handler)
+    maintenance_stopped = threading.Event()
     try:
         with WebServer((HOST, PORT), WebHandler) as server:
             state["pid"] = os.getpid()
@@ -301,24 +272,21 @@ def serve() -> None:
             signal.signal(signal.SIGTERM, stop)
             signal.signal(signal.SIGINT, stop)
             started = time.monotonic()
-            next_cleanup = started + CLEANUP_INTERVAL
+            # The daemon shares the process lifetime. Stopping may leave an expired
+            # group partially removed, as with any interrupted explicit cleanup.
+            threading.Thread(target=_maintain_artifacts, args=(maintenance_stopped, logger),
+                             name="smartkit-artifact-maintenance", daemon=True).start()
             while not stopping:
                 current = load_state()
                 if current is None or current["key"] != state["key"] or current["pid"] != os.getpid():
                     raise ValueError("local host state changed unexpectedly")
                 state["mode"] = current["mode"]
-                if time.monotonic() >= next_cleanup:
-                    try:
-                        cleanup_artifacts()
-                    except (OSError, ValueError):
-                        # Cleanup owns reporting; reads and future cleanup remain available.
-                        logger.exception("Artifact cleanup failed; prior removals may remain effective")
-                    next_cleanup = time.monotonic() + CLEANUP_INTERVAL
                 if (state["mode"] == "previews" and time.monotonic() - started > 10
                         and not artifacts.has_unexpired_artifacts(time.time())):
                     break
                 server.handle_request()
     finally:
+        maintenance_stopped.set()
         logger.removeHandler(handler)
         handler.close()
 
