@@ -104,7 +104,7 @@ Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user expli
 | **Pass** | Prepare and complete applicable delivery, including supplementary review and required checks, then advance or finish at scope end. |
 | **Continue** / **Finish** | Advance or end the fully displayed review without delivery. |
 
-Delivery determines the applicable commit, publication, and Viewed effects. Accept “only deliver” as the same delivery without advancement; it is not a separate routine menu option. Neither delivery action grants PR approval or merge authority.
+Delivery determines the applicable commit, publication, and Viewed effects. Accept explicit “deliver” or “only deliver” requests as the same delivery while keeping the current review position; advance afterward only when the user selects Pass or explicitly requests continuation. Delivery alone is not a separate routine menu option. Neither delivery action grants PR approval or merge authority.
 
 Interpret letters case-insensitively against the latest applicable menu. Clear natural language, subsets, and compound requests can select disclosed effects. An unambiguous menu option supplies its stated scope: “Optimize” can select an option explicitly naming O1. With several matching alternatives, ask which IDs. Without a clear menu scope, bare Fix selects all displayed pending unreasonable M findings, and bare Optimize selects all displayed outstanding optional M improvements, including earlier groups.
 
