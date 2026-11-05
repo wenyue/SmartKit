@@ -167,7 +167,7 @@ Use the task or package owner's writable storage and cleanup lifecycle for those
 Each group allows at most 100 MiB payload and 1000 files. Input/metadata JSON is
 limited to 1 MiB. The cache admits at most 1 GiB total file bytes and 10000 filesystem
 entries (files and directories, including metadata/staging). Actual reads are
-bounded even if a source grows. Concurrent creation is serialized, over-limit
+bounded during creation even if a source grows. Existing captures remain readable. Concurrent creation is serialized, over-limit
 staging is removed, and existing groups are preserved. Cache-wide admission counts
 unregistered content and refuses redirects. Resolve retained content with its owner.
 cleanup returns elapsed_seconds, scanned_groups, removed_groups, preserved_groups

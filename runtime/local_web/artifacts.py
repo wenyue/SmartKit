@@ -145,7 +145,7 @@ def _prepare_root() -> Path:
     return root
 
 
-def load_artifact(identity: str) -> Optional[CachedArtifact]:
+def load_artifact(identity: str, *, metadata_limit: Optional[int] = None) -> Optional[CachedArtifact]:
     """Read metadata without maintenance; malformed or redirected records fail visibly."""
     if not isinstance(identity, str) or ID_PATTERN.fullmatch(identity) is None:
         return None
@@ -153,7 +153,8 @@ def load_artifact(identity: str) -> Optional[CachedArtifact]:
     metadata = folder / METADATA_NAME
     checked_path(metadata)
     try:
-        record = json.loads(read_bounded(metadata, MAX_METADATA_BYTES).decode("utf-8"), object_pairs_hook=_unique_object)
+        content = metadata.read_bytes() if metadata_limit is None else read_bounded(metadata, metadata_limit)
+        record = json.loads(content.decode("utf-8"), object_pairs_hook=_unique_object)
     except FileNotFoundError:
         return None
     if (not isinstance(record, dict) or set(record) != {"schema", "id", "created_at", "expires_at", "files", "published"}
@@ -161,7 +162,6 @@ def load_artifact(identity: str) -> Optional[CachedArtifact]:
             or not _number(record["created_at"]) or not _number(record["expires_at"])
             or record["expires_at"] <= record["created_at"]
             or not isinstance(record["files"], dict) or not record["files"]
-            or len(record["files"]) > MAX_GROUP_FILES
             or type(record["published"]) is not bool):
         raise ValueError("invalid cached artifact metadata: " + str(metadata))
     entries = {}  # type: Dict[str, CachedFile]
@@ -180,7 +180,7 @@ def read_file(entry: CachedFile, *, limit: Optional[int] = None) -> bytes:
     path = checked_path(entry.path)
     if not path.is_file():
         raise ValueError("cached artifact is not a regular file: " + str(path))
-    content = read_bounded(path, MAX_GROUP_BYTES if limit is None else limit)
+    content = path.read_bytes() if limit is None else read_bounded(path, limit)
     if hashlib.sha256(content).hexdigest() != entry.sha256:
         raise ValueError("cached artifact content changed: " + str(path))
     return content
@@ -188,6 +188,8 @@ def read_file(entry: CachedFile, *, limit: Optional[int] = None) -> bytes:
 
 def _group_issue(artifact: CachedArtifact) -> Optional[str]:
     """Reject the first unregistered entry before traversing or hashing its contents."""
+    if len(artifact.files) > MAX_GROUP_FILES:
+        return "legacy_group_exceeds_limits"
     group = checked_path(cache_root() / artifact.id)
     for child in group.iterdir():
         if child.name != "files":
@@ -217,6 +219,8 @@ def _group_issue(artifact: CachedArtifact) -> Optional[str]:
         return "missing_content"
     remaining = MAX_GROUP_BYTES
     for entry in artifact.files.values():
+        if checked_path(entry.path).stat().st_size > remaining:
+            return "legacy_group_exceeds_limits"
         remaining -= len(read_file(entry, limit=remaining))
     return None
 
@@ -231,7 +235,7 @@ def _cleanup_expired(root: Path, moment: float, details: bool) -> dict:
         diagnostic = None
         if reason is None:
             try:
-                artifact = load_artifact(group.name)
+                artifact = load_artifact(group.name, metadata_limit=MAX_METADATA_BYTES)
                 if artifact is None:
                     reason = "unrecognized_metadata"
                 elif artifact.expires_at > moment:
@@ -305,9 +309,24 @@ def create_artifact(files: Mapping[str, bytes], *, public_files: Sequence[str] =
         if size > MAX_GROUP_BYTES:
             raise ValueError("artifact bytes exceed %s" % MAX_GROUP_BYTES)
         names.add(normalized)
+    directories = set()
+    # Account for metadata, payload root, staging root, and reserved identity too.
+    required_entries = len(files) + 4
+    if required_entries > MAX_CACHE_ENTRIES:
+        raise ValueError("artifact cache entry limit exceeded by captured paths")
     for name in files:
-        if any(os.path.normcase(str(parent)) in names for parent in PurePosixPath(name).parents if str(parent) != "."):
-            raise ValueError("artifact filenames cannot overlap file and directory paths")
+        path = PurePosixPath(name)
+        if len(path.parts) - 1 + required_entries > MAX_CACHE_ENTRIES:
+            raise ValueError("artifact cache entry limit exceeded by captured paths")
+        for parent in path.parents:
+            if str(parent) == ".":
+                continue
+            normalized = os.path.normcase(str(parent))
+            if normalized in names:
+                raise ValueError("artifact filenames cannot overlap file and directory paths")
+            directories.add(normalized)
+            if required_entries + len(directories) > MAX_CACHE_ENTRIES:
+                raise ValueError("artifact cache entry limit exceeded by captured paths")
     public = set(public_files)
     if public - set(files):
         raise ValueError("public files must belong to the captured artifact")
@@ -367,7 +386,7 @@ def mark_published(identity: str) -> CachedArtifact:
         read_file(entry)
     if not artifact.published:
         metadata = checked_path(cache_root() / identity / "files" / METADATA_NAME)
-        record = json.loads(read_bounded(metadata, MAX_METADATA_BYTES).decode("utf-8"), object_pairs_hook=_unique_object)
+        record = json.loads(metadata.read_bytes().decode("utf-8"), object_pairs_hook=_unique_object)
         record["published"] = True
         descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=str(metadata.parent))
         try:

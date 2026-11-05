@@ -198,6 +198,31 @@ class ArtifactCacheTests(unittest.TestCase):
                 cache.create_artifact({'a': b'aa', 'b': b'bb'})
         self.assertFalse(cache.cache_root().exists())
 
+    def test_parent_directories_are_budgeted_before_any_write(self):
+        with patch.object(cache, 'MAX_CACHE_ENTRIES', 7):
+            with self.assertRaisesRegex(ValueError, 'entry limit'):
+                cache.create_artifact({'one/a/report': b'', 'two/b/report': b''})
+        self.assertFalse(cache.cache_root().exists())
+
+    def test_existing_v1_groups_remain_readable_when_new_limits_are_lower(self):
+        artifact = cache.create_artifact({'a': b'original payload', 'b': b'fixed'}, public_files=['a'])
+        metadata = self.group(artifact) / 'files' / cache.METADATA_NAME
+        with patch.object(cache, 'MAX_GROUP_FILES', 1), patch.object(cache, 'MAX_GROUP_BYTES', 1), patch.object(cache, 'MAX_METADATA_BYTES', 1):
+            loaded = cache.load_artifact(artifact.id)
+            self.assertEqual(cache.read_file(loaded.files['a']), b'original payload')
+            self.assertTrue(cache.mark_published(artifact.id).published)
+            report = cache.cleanup_expired(artifact.expires_at, details=True)
+            self.assertEqual(report['removed_groups'], 0)
+            self.assertEqual(report['preserved_groups'], 1)
+        self.assertTrue(metadata.exists())
+
+    def test_cleanup_preserves_legacy_group_above_current_payload_budget(self):
+        artifact = cache.create_artifact({'a': b'original payload'})
+        with patch.object(cache, 'MAX_GROUP_BYTES', 1):
+            report = cache.cleanup_expired(artifact.expires_at, details=True)
+        self.assertEqual(report['reasons'], {'legacy_group_exceeds_limits': 1})
+        self.assertEqual(cache.read_file(artifact.files['a']), b'original payload')
+
     def test_cli_bounds_total_capture_and_checks_file_count_first(self):
         from local_web import cli
         source = self.base / 'batch.json'
