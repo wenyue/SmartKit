@@ -40,8 +40,7 @@ class WebPageTests(unittest.TestCase):
         self.assertFalse(any(tag in ("img", "script", "button") for tag, _ in document.tags))
         links = [attrs for tag, attrs in document.tags if tag == "a"]
         self.assertEqual([item["href"] for item in links], [
-            "/readiness/?key=private%20%26%20key", "/setup/?key=private%20%26%20key",
-            "/editor/?key=private%20%26%20key"])
+            "/readiness/?key=private%20%26%20key", "/setup/?key=private%20%26%20key"])
         self.assertEqual(links[0]["aria-current"], "page")
         for link in links[1:]:
             self.assertNotIn("aria-current", link)
@@ -80,11 +79,8 @@ class WebPageTests(unittest.TestCase):
             links = [attrs["href"] for tag, attrs in document.tags if tag == "a"]
             self.assertEqual(links, [target.url(html_only=True), target.github])
             buttons = [attrs for tag, attrs in document.tags if tag == "button"]
-            self.assertEqual(len(buttons), 2)
-            self.assertTrue(any(tag == "form" and attrs.get("id") == "bridge-install"
-                                and "hidden" in attrs for tag, attrs in document.tags))
-            self.assertEqual(buttons[0]["type"], "submit")
-            self.assertEqual(buttons[1]["id"], "open")
+            self.assertEqual([(button["id"], button["type"]) for button in buttons], [("open", "button")])
+            self.assertFalse(any(tag == "form" for tag, _ in document.tags))
             self.assertTrue(any(tag == "p" and attrs.get("role") == "status" for tag, attrs in document.tags))
 
 

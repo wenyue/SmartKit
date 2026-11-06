@@ -64,11 +64,6 @@ h2,h3,p{margin:0}h2{font-size:19px;line-height:1.5}h3{font-size:16px}
 .is-opening .spinner{animation:spin 1s linear infinite}.spinner[hidden]{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .opening-status{color:var(--muted);min-height:26px;overflow-wrap:anywhere}
-.bridge-required{display:grid;align-items:center;min-height:100vh}
-.bridge-required .compact{margin:20px auto}
-.bridge-required #bridge-install{margin-top:18px;padding:18px;background:var(--inset);border:1px solid var(--border);border-radius:10px}
-.bridge-required #bridge-install input{padding:8px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;font:inherit;max-width:100%}
-.bridge-required #bridge-install .actions{margin-top:14px}
 .file-context{gap:20px;padding:18px 22px;background:var(--inset);border:1px solid var(--border);border-radius:10px;margin:24px 0}
 .file-context>.icon{color:var(--muted);width:27px;height:27px}.file-context>div{min-width:0}
 .file-path{font:15px/1.6 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.project-name{font-size:13px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}

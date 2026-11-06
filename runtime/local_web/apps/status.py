@@ -98,7 +98,7 @@ def render_application(feature: str, key: str, data: dict) -> bytes:
     access = "?key=" + quote(key, safe="")
     nav = '<nav class="tabs" aria-label="项目状态">' + ''.join(
         '<a href="/' + name + '/' + access + '"' + (' aria-current="page"' if name == feature else '')
-        + '>' + text + '</a>' for name, text in (("readiness", "就绪检查"), ("setup", "项目设置"), ("editor", "编辑器设置"))) + '</nav>'
+        + '>' + text + '</a>' for name, text in (("readiness", "就绪检查"), ("setup", "项目设置"))) + '</nav>'
     rows = []
     for project in data["projects"]:
         identity = html.escape(project["project"])

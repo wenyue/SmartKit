@@ -133,18 +133,12 @@ Live URLs compare the fixed blob with the current on-disk path; deletion is an
 absent current side and rename needs a new link. Snapshot URLs read the current
 path at the fixed PR head, using base_path only for the before side. An absent
 path at an existing commit is absence; missing commits/blobs are errors.
-VS Code uses a validated fixed-commit Git URI only when SmartKit Diff Bridge
-confirms that the exact checkout is registered in the receiving window and reads
-that baseline there. The bridge opens the native comparison in that same window.
-Otherwise check for the required extension in the default VS Code profile.
-If it is missing, the browser keeps a centered installation form and waits for
-an explicit submission. Select the repository window's profile if it differs
-from Default. Confirmed installation resumes the same diff automatically.
-If the installed bridge cannot open a Git baseline, materialize the pinned blob
-and compare ordinary files. Live worktree files remain the right side;
-absent sides use empty temporary files. Snapshot comparisons materialize both sides.
+Live diffs send the selected worktree folder and both file URIs to the VS Code
+desktop CLI. A validated fixed-commit Git URI uses VS Code's built-in Git provider.
+Otherwise, the CLI receives a private temporary copy of the pinned blob.
+Live worktree files remain the right side; absent sides use empty temporary files.
+Snapshot comparisons materialize both sides without opening a worktree folder.
 Live VS Code may show unsaved editor contents; live HTML reads the on-disk file.
-A sent bridge request with an unknown outcome is never automatically relaunched.
 VS Code is attempted from a visible page; explicit launch failure falls back
 to GitHub for live PRs or HTML for fixed snapshots/non-PRs, in the same tab.
 A dispatched request tries to close the tab;
@@ -183,13 +177,8 @@ versions and unknown port occupation fail without stopping the existing host.
 status includes the running plugin_version and starts no process. stop ends only the verified shared instance, when
 requested, never merely because a chat ends.
 Manual stop followed by ensure creates a new private-page credential.
-Private readiness, setup and editor URLs contain an instance credential; keep
-them private. Readiness and setup read observations without checks or repair.
-Open apps.editor from ensure/status to install or update the bundled Diff Bridge
-in a user-selected VS Code profile. Opening the page does not run the editor CLI.
-The session hook reports a missing extension in the default profile when VS Code is available.
-After installing, focus the intended repository window and reopen the diff to
-verify bridge activation.
+Private readiness and setup URLs contain an instance credential; keep them private.
+Readiness and setup read observations without checks or repair.
 Hook/CLI startup is bounded recovery. Explicit autostart enable/disable records
 the current user's login choice; status only inspects it. Windows uses a user
 Startup shortcut; Linux uses a user systemd unit or XDG desktop registration.

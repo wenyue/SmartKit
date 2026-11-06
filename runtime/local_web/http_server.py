@@ -9,11 +9,11 @@ import mimetypes
 import os
 import socket
 import time
-from urllib.parse import parse_qs, parse_qsl, unquote, urlencode, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from . import HOST, PORT, ORIGIN, SERVICE_SCHEMA
 from . import artifacts
-from .apps import diff, editor_settings, status
+from .apps import diff, status
 
 
 class WebHandler(BaseHTTPRequestHandler):
@@ -125,10 +125,6 @@ class WebHandler(BaseHTTPRequestHandler):
                                 "artifact_cache_schema": artifacts.SCHEMA,
                                 "plugin_version": self.server.plugin_version})
                 return
-            if path == "/editor/" and state["mode"] == "applications":
-                self.respond(200, editor_settings.render_settings(state["key"]),
-                             "text/html; charset=utf-8", interactive=True)
-                return
             parts = path.strip("/").split("/")
             api = parts[0] == "api"
             if api:
@@ -164,59 +160,18 @@ class WebHandler(BaseHTTPRequestHandler):
             self.json(414, {"message": "URL too long"})
             return
         parsed = urlsplit(self.path)
-        if parsed.path == "/api/editor/install":
-            if not self.private_access(parsed.query):
-                self.json(403, {"message": "Forbidden"})
-                return
-            if self.server.web_state["mode"] != "applications":
-                self.json(404, {"message": "Permanent applications are not enabled"})
-                return
-            try:
-                fields = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
-                if set(fields) - {"key", "profile"} or len(fields.get("profile", ())) != 1:
-                    raise ValueError("请选择一个 VS Code 配置。")
-                self.json(200, editor_settings.install(fields["profile"][0]))
-            except ValueError as error:
-                self.json(400, {"message": str(error)})
-            except OSError as error:
-                self.json(409, {"message": str(error)})
-            return
-        install = parsed.path == "/api/diff/install"
-        if not install and parsed.path != "/api/diff/open":
+        if parsed.path != "/api/diff/open":
             self.json(404, {"message": "Not found"})
             return
-        # Installation is available to the visible diff page's submit handler. Unlike diff
-        # launch, this write requires the browser to identify the caller as same-origin.
-        if install and self.headers.get("Sec-Fetch-Site") != "same-origin":
-            self.json(403, {"message": "Forbidden"})
-            return
         try:
-            query = parsed.query
-            if install:
-                fields = parse_qsl(query, keep_blank_values=True, strict_parsing=True, max_num_fields=11)
-                profiles = [value for name, value in fields if name == "profile"]
-                if len(profiles) != 1:
-                    raise ValueError("请选择一个 VS Code 配置。")
-                query = urlencode([(name, value) for name, value in fields if name != "profile"])
-            target = diff.target_from_query(query)
+            target = diff.target_from_query(parsed.query)
         except ValueError as error:
             self.json(400, {"message": str(error)})
             return
-        if install:
-            try:
-                editor_settings.install(profiles[0])
-            except ValueError as error:
-                self.json(400, {"message": str(error)})
-                return
-            except OSError as error:
-                self.json(409, {"message": str(error)})
-                return
         try:
-            result = diff.open_editor(target, installation_verified=True) if install else diff.open_editor(target)
-            self.json(200, result)
+            self.json(200, diff.open_editor(target))
         except (OSError, ValueError) as error:
-            message = "已确认扩展安装，但无法打开比较：" if install else "无法打开比较："
-            self.json(409, {"message": message + str(error)})
+            self.json(409, {"message": "无法打开比较：" + str(error)})
 
 
 class WebServer(ThreadingHTTPServer):

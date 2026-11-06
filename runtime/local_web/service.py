@@ -22,7 +22,6 @@ from urllib.parse import quote
 from . import HOST, PORT, ORIGIN, SERVICE_SCHEMA
 from . import artifacts
 from .storage import prepare_cache, prepare_state, read_json, redirected, state_dir, write_json, file_lock
-from .apps import editor_settings
 from .apps.status import hook_page_links, record_project
 
 START_TIMEOUT = 60.0
@@ -80,7 +79,7 @@ def service_info(state: dict, running: Optional[dict] = None) -> dict:
     return {"origin": ORIGIN, "pid": running["pid"], "mode": running["mode"],
             "plugin_version": running.get("plugin_version"),
             "apps": {feature: ORIGIN + "/" + feature + "/?key=" + state["key"]
-                     for feature in ("readiness", "setup", "editor")}}
+                     for feature in ("readiness", "setup")}}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -306,19 +305,7 @@ def hook_project(harness: str) -> str:
     record_project(target, harness)
     info = ensure_service()
     links = hook_page_links(target, harness, info["apps"])
-    notices = []
-    if links:
-        notices.append("这些是本机私有的只读状态页；查看详情不会执行修复：\n" + "\n".join(
-            "- [" + title + "](" + url + ")" for title, url in links.items()))
-    launcher = editor_settings.find_vscode()
-    if launcher is not None:
-        try:
-            installed = editor_settings.installed_version(launcher)
-        except OSError as error:
-            notices.append("[smartkit] 无法确认 VS Code 默认配置中的 Diff Bridge 安装状态。" + str(error))
-        else:
-            if installed is None:
-                notices.append("[smartkit] VS Code 默认配置缺少必装扩展 SmartKit Diff Bridge。"
-                               "请在当前会话提醒用户通过本机[编辑器设置](" + info["apps"]["editor"]
-                               + ")安装到仓库窗口使用的配置。")
-    return "\n\n".join(notices)
+    if not links:
+        return ""
+    return "这些是本机私有的只读状态页；查看详情不会执行修复：\n" + "\n".join(
+        "- [" + title + "](" + url + ")" for title, url in links.items())

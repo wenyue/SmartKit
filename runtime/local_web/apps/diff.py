@@ -8,16 +8,16 @@ import html
 import json
 import os
 import re
+import shutil
 import subprocess
+import sys
 import threading
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Sequence
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from .. import artifacts
-from .. import editor_bridge
 from ..storage import prepare_state, redirected
-from . import editor_settings
 from .presentation import icon, page
 from .comparisons import (Comparison, Target, git, github_pr_url, inspect_worktrees, parse_pr, pin_baseline,
                           read_comparison, resolve_targets, target_from_fields, target_from_query, validate_base)
@@ -186,10 +186,6 @@ def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
             + ('' if automatic else ' hidden') + '></span><h1 id="opening-title">'
             + ('正在打开 VS Code' if automatic else '打开文件对比') + '</h1></div>'
             '<p id="status" class="opening-status" role="status" aria-live="polite">' + initial + '</p>'
-            '<form id="bridge-install" hidden><label for="bridge-profile">目标 VS Code 配置</label> '
-            '<input id="bridge-profile" name="profile" required maxlength="128" value="'
-            + editor_settings.DEFAULT_PROFILE + '">'
-            '<div class="actions"><button class="button primary" type="submit">安装并打开 Diff</button></div></form>'
             '<div class="file-context">' + icon("file") + '<div><p class="file-path">'
             + html.escape(target.path) + '</p><p class="project-name">' + html.escape(target.repo.name)
             + '</p></div></div><p>' + html.escape(target_description(target)) + '</p><div class="actions"><button id="open" class="button primary" type="button">'
@@ -205,26 +201,16 @@ const title=document.getElementById("opening-title");
 const status=document.getElementById("status");
 const openButton=document.getElementById("open");
 const openLabel=document.getElementById("open-label");
-const form=document.getElementById("bridge-install");
-const profile=document.getElementById("bridge-profile");
-const installButton=form.querySelector("button");
 let started=false;
 
-async function requestDiff(endpoint) {
-    const response=await fetch(endpoint,{method:"POST",credentials:"omit"});
+async function requestDiff() {
+    const response=await fetch("/api/diff/open?"+query,{method:"POST",credentials:"omit"});
     const result=await response.json();
     if (!response.ok) throw new Error(result.message);
     status.textContent=result.message;
-    if (result.install_required) {
-        title.textContent="安装 SmartKit Diff Bridge";
-        document.body.classList.add("bridge-required");
-        form.hidden=false;
-        openButton.hidden=true;
-        installButton.focus();
-    } else if (result.url) {
+    if (result.url) {
         location.replace(result.url);
     } else if (result.viewer==="vscode") {
-        form.hidden=true;
         title.textContent="已发送打开请求";
         openLabel.textContent="已发送请求";
         window.close();
@@ -240,7 +226,7 @@ async function openDiff() {
     title.textContent="正在打开 VS Code";
     openLabel.textContent="正在打开…";
     try {
-        await requestDiff("/api/diff/open?"+query);
+        await requestDiff();
     } catch (error) {
         // Network and response failures both leave the manual diff links available.
         title.textContent="打开请求未完成";
@@ -252,22 +238,6 @@ async function openDiff() {
     }
 }
 
-form.addEventListener("submit",async event=>{
-    event.preventDefault();
-    if (!event.isTrusted || form.hidden || installButton.disabled || document.visibilityState!=="visible") return;
-    installButton.disabled=true;
-    profile.disabled=true;
-    status.textContent="正在检查并安装扩展，确认后将自动打开 Diff…";
-    try {
-        await requestDiff("/api/diff/install?"+query+"&profile="+encodeURIComponent(profile.value));
-    } catch (error) {
-        // The request may have reached VS Code. Retrying verifies installation before writing again.
-        status.textContent=error.message || "安装或打开结果未确认，请重试。";
-    } finally {
-        profile.disabled=false;
-        installButton.disabled=false;
-    }
-});
 openButton.addEventListener("click",openDiff);
 if (automatic) {
     document.addEventListener("prerenderingchange",openDiff);
@@ -307,8 +277,38 @@ def git_base_uri(comparison: Comparison) -> Optional[str]:
     return urlunsplit(("git", "", urlsplit(history.as_uri()).path, query, ""))
 
 
-def open_editor(target: Target, *, installation_verified: bool = False) -> Dict[str, str]:
-    """Dispatch a comparison after the required extension is confirmed, or return a browser disposition."""
+def find_vscode() -> Optional[Path]:
+    for name in ("code", "code-insiders"):
+        candidate = shutil.which(name)
+        if candidate:
+            path = Path(candidate)
+            if sys.platform != "win32" or path.suffix.lower() == ".exe":
+                return path
+            # Invoke the executable directly so Windows never interprets user paths as batch commands.
+            for executable in ("Code.exe", "Code - Insiders.exe"):
+                native = path.parent.parent / executable
+                if native.is_file():
+                    return native
+    if sys.platform == "win32":
+        for variable in ("LOCALAPPDATA", "ProgramFiles", "ProgramFiles(x86)"):
+            value = os.environ.get(variable)
+            if value:
+                root = Path(value) / ("Programs" if variable == "LOCALAPPDATA" else "")
+                for directory, executable in (("Microsoft VS Code", "Code.exe"), ("Microsoft VS Code Insiders", "Code - Insiders.exe")):
+                    native = root / directory / executable
+                    if native.is_file():
+                        return native
+    elif sys.platform == "darwin":
+        for root in (Path("/Applications"), Path.home() / "Applications"):
+            for name in ("Visual Studio Code", "Visual Studio Code - Insiders"):
+                native = root / (name + ".app") / "Contents/Resources/app/bin/code"
+                if native.is_file():
+                    return native
+    return None
+
+
+def open_editor(target: Target) -> Dict[str, str]:
+    """Send a VS Code CLI request or return a web destination."""
     if (target.head and target.view == "auto") or target.base.startswith("commit:"):
         resolution = resolve_targets(target)
         if not resolution.targets:
@@ -323,44 +323,36 @@ def open_editor(target: Target, *, installation_verified: bool = False) -> Dict[
         if target.github:
             return {"viewer": "web", "url": target.url(), "message": "本地比较不可用：" + str(error)}
         raise
-    launcher = editor_settings.find_vscode()
+    launcher = find_vscode()
     if launcher is None:
         return {"viewer": "web", "url": fallback, "message": "未找到 VS Code，正在打开网页 diff。"}
     suffix = Path(target.path).suffix
     try:
-        before_uri = git_base_uri(comparison) if comparison.worktree_file is not None else None
-        after = comparison.worktree_file
-        needs_after_file = after is None or comparison.after is None
-        if before_uri is not None and after is not None and comparison.after is not None and editor_bridge.open_registered_diff(target.repo, before_uri, after):
-            return {"viewer": "vscode", "message": "已在 VS Code 中打开文件对比。"}
-        if not installation_verified:
-            try:
-                installed = editor_settings.installed_version(launcher)
-            except OSError as error:
-                return {"install_required": "true", "message": "无法确认 Diff Bridge 安装状态。" + str(error)}
-            if installed is None:
-                return {"install_required": "true", "message": "默认 VS Code 配置缺少必需的扩展。请确认仓库窗口使用的配置后安装。"}
-
-        payloads = {}  # type: Dict[str, bytes]
-        before_name, after_name = "before" + suffix, "after" + suffix
         if target.view == "snapshot":
+            window = ["--reuse-window"]
+            before_uri = after_uri = None
             before_name = "base-" + (target.base_commit or target.base.split(":", 1)[-1])[:12] + suffix
             after_name = "head-" + target.head[:12] + suffix
-        if before_uri is None:
-            payloads[before_name] = comparison.before or b""
-        if needs_after_file:
-            payloads[after_name] = comparison.after or b""
-        if payloads:
-            captured = artifacts.create_artifact(payloads)
-            if needs_after_file:
-                after = captured.files[after_name].path
-        if before_uri is None:
-            before = captured.files[before_name].path
         else:
-            if needs_after_file and after is not None and editor_bridge.open_registered_diff(target.repo, before_uri, after):
-                return {"viewer": "vscode", "message": "已在 VS Code 中打开文件对比。"}
-            before = artifacts.create_artifact({before_name: comparison.before or b""}).files[before_name].path
-        arguments = [str(before), str(after)]
+            window = ["--folder-uri", target.repo.resolve(strict=True).as_uri()]
+            before_uri = git_base_uri(comparison)
+            after = comparison.worktree_file
+            after_uri = after.as_uri() if after is not None and comparison.after is not None else None
+            before_name, after_name = "before" + suffix, "after" + suffix
+
+        if before_uri is None or after_uri is None:
+            payloads = {}
+            if before_uri is None:
+                payloads[before_name] = comparison.before or b""
+            if after_uri is None:
+                payloads[after_name] = comparison.after or b""
+            captured = artifacts.create_artifact(payloads)
+            if before_uri is None:
+                before_uri = captured.files[before_name].path.as_uri()
+            if after_uri is None:
+                after_uri = captured.files[after_name].path.as_uri()
+
+        arguments = window + ["--diff", "--file-uri", before_uri, "--file-uri", after_uri]
         environment = dict(os.environ)
         environment.pop("ELECTRON_RUN_AS_NODE", None)
         log_path = prepare_state() / "vscode-launch.log"
@@ -368,7 +360,7 @@ def open_editor(target: Target, *, installation_verified: bool = False) -> Dict[
             raise ValueError("editor launch log redirects")
         descriptor = os.open(str(log_path), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "wb") as log:
-            process = subprocess.Popen([str(launcher), "--reuse-window", "--diff"] + arguments,
+            process = subprocess.Popen([str(launcher)] + arguments,
                                        env=environment, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                        start_new_session=True)
             try:
@@ -380,7 +372,4 @@ def open_editor(target: Target, *, installation_verified: bool = False) -> Dict[
             raise OSError("VS Code launcher exited with status " + str(status))
     except (OSError, ValueError) as error:
         return {"viewer": "web", "url": fallback, "message": "VS Code 比较结果未确认，正在打开网页 diff：" + str(error)}
-    message = "已向 VS Code 发送 diff 请求；如果未显示，请使用网页入口。"
-    if before_uri is not None:
-        message += " 当前窗口未通过扩展打开 Git 历史，本次左侧使用临时文件。"
-    return {"viewer": "vscode", "message": message}
+    return {"viewer": "vscode", "message": "已向 VS Code 发送 diff 请求；如果未显示，请使用网页入口。"}
