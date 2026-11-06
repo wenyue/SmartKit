@@ -4,9 +4,21 @@ These synthetic cases illustrate judgment and transitions; they are not executio
 
 ## A complete file report
 
-Premise: one production file remains in a fixed PR comparison. Inspection found a cancellation regression in a cleanup edit omitted from the author's summary. The link and source below are illustrative.
+Premise: a fixed PR comparison contains two production files. Inspection found a cancellation regression in a cleanup edit omitted from the author's summary and two observations in draft display paths unaffected by the save changes. This is the first report using the selected workspace. The paths, links, and source below are illustrative.
 
-**Agent:** This final group contains the remaining non-test file.
+**Working directory**
+
+```text
+/work/app
+```
+
+This final group contains both non-test files in the fixed PR comparison; tests and Viewed files were excluded before counting.
+
+---
+
+📄 **[src/editor/labels.dart](http://127.0.0.1:47821/diff?example=labels)**
+
+M1 · Save confirmations use the existing draft-label formatter so unnamed drafts receive the same fallback label everywhere.
 
 ---
 
@@ -14,18 +26,13 @@ Premise: one production file remains in a fixed PR comparison. Inspection found 
 
 This controller saves drafts and reports progress. The change names the saved draft and moves pending-state cleanup.
 
-⚖️ **Unreasonable** — M1 identifies the saved draft. M2 is P2: cancellation now skips resetting pending state, leaving the next save disabled. Restore cleanup on that exit.
+M2 · The save confirmation now names the draft so users can tell what they saved.
 
-🎨 **Needs improvement** — M2's fragmented cleanup leaves cancellation without an owner for the required pending-state reset. Restoring the completion block covers every exit and removes duplicated maintenance. This is part of M2's necessary fix. M1 introduces no new boundary.
+**M3** · **Move cleanup into outcome branches**
 
-**M1 — Identify the saved draft**
-
-> ⏪ The status names only the action: `status = 'Saved';`.
+> ⚖️ ❌ **Unreasonable** · **P2** · Cancelling a save leaves the pending flag set, disabling the next save.\
+> 🎨 ❌ **Needs improvement** · Outcome branches split ownership of the pending flag, so restore one completion block that clears it on every exit.
 >
-> ⏩ The status includes the available draft name: `status = 'Saved ${draft.name}';`.
-
-**M2 — Move cleanup into outcome branches (P2)**
-
 > ⏪ A completion block clears pending state after every save attempt.
 >
 > ```dart
@@ -52,12 +59,29 @@ This controller saves drafts and reports progress. The change names the saved dr
 > }
 > ```
 
+**O1** · **Reuse the draft ordering rule**
+
+> 🎨 **Optional improvement** · The unchanged `recentDrafts` and `pinnedDrafts` getters sort by the same timestamp, so sharing the comparator would keep their ordering consistent when the rule changes.
+
 ---
 
-**1/1 main files displayed.** Source and control-flow inspection establish M2's cancellation defect and cleanup burden. No repair checks have run; one shared cleanup owner addresses the behavioral and structural parts of the same defect.
+📄 **[src/editor/draft_menu.dart](https://example.test/repo/blob/0123456/src/editor/draft_menu.dart#L25)**
 
-- A. **Fix** (recommended): Restore M2's shared cleanup, run required checks, and show its dedicated re-review.
-- B. **Ignore**: Leave M2 unchanged, accepting the disabled-next-save risk and repeated-cleanup burden.
+**O2** · **Reuse the unnamed-draft label**
+
+> 🎨 **Optional improvement** · The unchanged `renameAction` and `copyAction` each reproduce the label formatter's fallback for unnamed drafts, so calling the formatter would keep both labels consistent.
+
+---
+
+M3 remains unreasonable at P2: cancelling a save can disable the next save. O1 and O2 are optional improvements outside the main changes.
+
+Source and control-flow inspection establish the cancellation defect. No repair checks have run.
+
+📊 **Reviewed 2 / 2 files, with 3 modifications.**
+
+&ensp;A. **Fix** (recommended): Restore M3's shared cleanup, run required checks, and show its dedicated re-review.\
+&ensp;B. **Optimize**: Apply O1 and O2 to share the comparator and label formatter, then check and re-review the changes.\
+&ensp;C. **Ignore**: Accept that cancellation can disable the next save under M3.
 
 ## Decide whether the capability belongs
 
@@ -83,9 +107,9 @@ Premise: at 4/9 PR files, no finding remains. The selected workspace also contai
 
 Premise: M21 has an optional simplification. O1 and O2 are unrelated, supported optimization suggestions. No main defect remains.
 
-- A. **Optimize** (recommended): Apply M21's simplification, then check and re-review. O1 and O2 can instead be selected explicitly by ID; they are outside this option's default M21 scope.
-- B. **Pass**: Retain M21's assessed trade-off, prepare and complete applicable delivery, then advance. O1 and O2 remain unselected.
-- C. **Continue**: Review the next group without delivery, leaving M21 open.
+&ensp;A. **Optimize** (recommended): Apply M21's simplification, then check and re-review. O1 and O2 can instead be selected explicitly by ID and are outside this option's default M21 scope.\
+&ensp;B. **Pass**: Retain M21's assessed trade-off, prepare and complete applicable delivery, then advance. O1 and O2 remain unselected.\
+&ensp;C. **Continue**: Review the next group without delivery, leaving M21 open.
 
 **User:** Optimize O1 and O2.
 
@@ -93,7 +117,7 @@ Premise: M21 has an optional simplification. O1 and O2 are unrelated, supported 
 
 ## Follow the selected intent
 
-These are abbreviated decision notes. Supplementary reports use complete file blocks; repair reports follow Report Format's concise default and expansion conditions.
+These are abbreviated decision notes. Supplementary and repair reports use the common file layout, choosing compact or detailed presentation for each item.
 
 | Situation | Decision and result |
 | --- | --- |
@@ -106,22 +130,69 @@ These are abbreviated decision notes. Supplementary reports use complete file bl
 | No M issue remains; O1 has a supported normalization simplification. Delivery is unselected. | Offer **Optimize** explicitly scoped to O1, **Pass** leaving O1 unchanged, then **Continue**. Selecting the unambiguous Optimize leads to a separate O1 report, no M/progress increase, and delivery coverage of its changes. |
 | A necessary main finding remains alongside O1's supported optimization. | Offer **Fix** for the main finding, **Optimize** explicitly scoped to O1, then **Ignore** for the named main finding. Explain that optimizing O1 leaves the main defect unresolved. O advice cannot displace the necessary remedy. |
 
-## Close a focused repair
+## Re-review every file in a repair
 
-Premise: the user selected Fix M2 above, with no delivery request. No material design choice, contract change, or risk requires an expanded report. Links and results are illustrative.
+Premise: in a separate review, M1–M10 have been assigned and main progress is 4/9 files with 10 modifications. M2 found that category-list lookup uses a translated name even though stored lists and callers already have stable category IDs. The user selected Fix M2, without delivery. The repair changes the lookup and both callers, plus a test file. The workspace is unchanged, so its label is not repeated. Links, source, and results are illustrative.
 
-**Agent:** **M2 resolved** — [src/editor/save_controller.dart](http://127.0.0.1:47821/diff?example=repair-report). Restored the `finally` block so one owner clears pending state on success, failure, and cancellation.
+M2 is repaired across the lookup and its two callers. M11 and M12 describe the supporting caller changes; all three items belong to this repair of M2.
 
-⚖️ **Reasonable** — Cancellation no longer prevents the next save. Existing completion and failure behavior are preserved.
+---
 
-🎨 **Elegant** — Shared cleanup removes duplicated outcome branches and covers every exit.
+📄 **[src/catalog/category_index.ts](http://127.0.0.1:47821/diff?example=repair-index)**
 
-Required project checks passed on the repaired contents, covering save success, failure, cancellation, and change integrity. Independent re-review covered the repair and affected previously reviewed save callers. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures used, results, and available logs.
+**M2** · **Find category lists by stable identity**
 
-The repair is complete, with no new findings. This was the final main file; delivery remains a choice.
+> ⚖️ **Reasonable** · Changing a category's translated name keeps its existing list reachable through the stored category ID.\
+> 🎨 **Elegant** · One lookup owner uses the existing identity contract for both callers, with no name-based fallback or second index.
+>
+> ⏪ The lookup matches the display name supplied by the caller.
+>
+> ```typescript
+> function itemsFor(name: string) {
+>   return lists.find(list => list.name === name)?.items ?? [];
+> }
+> ```
+>
+> ⏩ The repaired lookup matches the stable ID already stored on each list.
+>
+> ```typescript
+> function itemsFor(categoryId: string) {
+>   return lists.find(list => list.categoryId === categoryId)?.items ?? [];
+> }
+> ```
 
-- A. **Pass** (recommended): Prepare and deliver the outstanding workspace changes, publish the complete outgoing scope to the PR source, record eligible Viewed paths, and finish after verified readbacks.
-- B. **Finish**: End this review without delivery.
+---
+
+📄 **[src/catalog/editor_controller.ts](http://127.0.0.1:47821/diff?example=repair-editor)**
+
+M11 · Category selection passes the category ID to the lookup so editing the display name keeps the same list selected.
+
+---
+
+📄 **[src/catalog/gallery_controller.ts](http://127.0.0.1:47821/diff?example=repair-gallery)**
+
+M12 · Initialization and service updates both look up lists by category ID, so a translated-name change still finds the original list.
+
+---
+
+M2's repair is complete, with no new findings or outstanding optional improvements. M11 and M12 are reasonable and elegant: both callers follow the existing identity contract directly.
+
+Required project checks passed on the repaired contents. Independent re-review covered all three changed non-test files and the affected previously reviewed category-selection paths. The changed `tests/catalog/category_lookup.test.ts` supplies evidence for renamed and missing categories. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures, results, and available logs.
+
+Repair coverage is three non-test files; main progress remains 4/9 files with 10 modifications. Commit, publication, and Viewed recording have not occurred.
+
+&ensp;A. **Pass** (recommended): Prepare and deliver the outstanding changes in the selected workspace, publish the complete outgoing scope to the PR source, record eligible Viewed paths, then review the next group after verified readbacks.\
+&ensp;B. **Continue**: Review the next group without delivery, keeping the local repair.
+
+## Preserve an incomplete repair or pending delivery
+
+| Changed evidence or intent | Resulting report and next step |
+| --- | --- |
+| The three repair files above have been re-reviewed, but a required project check cannot run. No delivery is pending. | Show the same file blocks, state the supported judgments and exact check gap, and keep the repair incomplete. Neither Pass nor Continue is available until its shared prerequisite is satisfied; explain a verified external blocker without inventing a Wait option. |
+| Pass was selected before supplementary review found M2. The user then selected its repair, all checks and re-review pass, and no new item remains. | Show the dedicated repair report, preserve the pending Pass, and resume its remaining delivery effects automatically. The report does not ask for Pass again. |
+| Only-deliver was selected instead, with the same successful repair evidence. | Show the dedicated repair report and resume delivery, retaining the saved main position after completion. |
+| Selected O1 requires changes in two non-test files and tests. | Show O1 once under its responsible file, describe the second file's supporting change in its file overview, and report tests with verification evidence. Both changed non-test files and affected context receive re-review; no M ID or main progress is added. |
+| A repair completes at the end of the main scope with no pending delivery. | Use the same closing and offer Pass, then Finish, according to the entry. Finish ends the review without delivery. |
 
 ## Keep workspace alternatives visible
 
@@ -129,9 +200,9 @@ Premise: the related checkout is clean on main and can safely switch to the PR s
 
 **Agent:** This checkout is on main; the PR uses feature/export.
 
-- A. **Switch current workspace** (recommended): Switch /work/app to feature/export, fast-forward to the verified target, and verify preservation.
-- B. **Create workspace**: Create /work/app/.worktrees/export-review at the fixed target on review/export, assess its environment, and preserve the current checkout.
-- C. **Snapshot review**: Review fixed PR contents without changing this workspace.
+&ensp;A. **Switch current workspace** (recommended): Switch /work/app to feature/export, fast-forward to the verified target, and verify preservation.\
+&ensp;B. **Create workspace**: Create /work/app/.worktrees/export-review at the fixed target on review/export, assess its environment, and preserve the current checkout.\
+&ensp;C. **Snapshot review**: Review fixed PR contents without changing this workspace.
 
 **User:** Create.
 

@@ -12,13 +12,15 @@ Necessity and implementation belong in one assessment path. Splitting them into 
 
 ## Give presentation one owner
 
-Report Format owns the complete layout and explanation depth, and every report kind loads it. This is a presentation boundary, not reduced ordinary reading. The entry retains inspection coverage and finding disclosure so a concise report cannot shrink the review.
+Report Format owns one file-based layout, item depth, closing order, and menu rendering across ordinary, supplementary, repair, and selected-O reports. The entry retains assessment, identity, action semantics, and choice ordering. A separate repair-summary format caused presentation to drift and made supporting changes easy to hide; choosing depth per item keeps compact reports within the same visible coverage.
 
-Examples supply concrete premises and choices. One complete report demonstrates the format; abbreviated transitions avoid repeatedly reproducing it. Neither examples nor these authoring notes establish operative policy.
+One complete ordinary report and one complete multi-file repair demonstrate the shared layout, including compact items without a redundant title. Abbreviated transitions illustrate other decisions without reproducing each report. Examples and these notes explain the design; operative requirements stay in the entry and Report Format.
 
 ## Separate progress, coverage, and effects
 
 Main progress follows the fixed comparison. Delivery can require more non-test review without changing that sequence, while tests remain within inventory/checks rather than semantic coverage. Viewed depends on complete PR-file assessment, not displayed progress or successful checks. Keeping these scopes distinct prevents full-workspace delivery from marking partially reviewed files or losing undisplayed evidence.
+
+Existing finding IDs remain stable through repair, while additional separately explained M changes consume the next unused IDs. Their relationship belongs in the repair introduction, not repeated item labels or a second numbering system. Consequently, the highest M ID is not a main-progress count. Selected-O supporting files use file explanations rather than new M IDs or invented incidental observations, preserving the separate scope the user selected.
 
 The entry preserves pending Pass versus only-deliver; Delivery preserves actual completed and uncertain effects. Their distinct records allow recovery without repeated publication or unintended advancement.
 

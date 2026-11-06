@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Make fixed changes understandable enough for the human to judge them and choose what happens next. Establish why the behavior is needed before judging how it is implemented. Review authorizes evidence capture and link preparation. Explain complete file groups before acting on selected review remedies, delivery, or advancement.
 
-This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report. Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete. [Conversation Examples](examples/conversations.md) illustrate difficult choices without adding policy.
+This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report and before presenting an action menu. Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete. [Conversation Examples](examples/conversations.md) illustrate difficult choices without adding policy.
 
 ## Fix the comparison and reading order
 
@@ -50,13 +50,13 @@ For a meaningful design choice, establish the required user or caller outcome fr
 
 Judge validation, recovery, and other protection by the requirement, credible trigger, and consequential impact they address. Supported requirements and trust-boundary risks can justify protection before any production incident; established invariants can make repeated checks unnecessary. Missing extra protection is not itself a defect without a credible trigger and potentially serious consequence, while ordinary supported behavior and promised failure handling remain correctness obligations. If material evidence for the need is missing, use **Insufficient evidence** for the affected judgment rather than approving the implementation or presuming the capability is a defect.
 
-For supported behavior, compare the chosen design with a smaller sufficient alternative: keep an existing interface, use an accurate existing owner, call directly, or remove a layer with no unique responsibility. Required feedback, logging, recovery, and lifecycle protection still need owners. A proposal to change supported behavior or contracts is a scope decision, not behavior-preserving optimization.
+For supported behavior, compare the chosen design with a smaller sufficient alternative: keep an existing interface, use an accurate existing owner, call directly, or remove a layer with no unique responsibility. A justified safeguard may cover a slightly broader range of cases if that simplifies the implementation and the effects on normal use are acceptable. Required feedback, logging, recovery, and lifecycle protection still need owners. A proposal to change supported behavior or contracts is a scope decision, not behavior-preserving optimization.
 
 Scrutinize every added file and added or changed declaration or contract, including functions, types, members, and state in existing files. A tiny file or trivial forwarder still introduces a boundary. New files need especially strong evidence for a distinct responsibility and why an existing owner or local placement would not suffice. Scale further scrutiny by actual exposure, caller dependence, lifetime, and change impact: shared interfaces and long-lived state need stronger evidence and concrete alternatives than local helpers. Ordinary local variables need no separate necessity rationale; visibility keywords do not establish actual exposure.
 
 Short bodies, caller counts, uniform presentation, speculative reuse, and testing convenience alone justify no boundary. A real responsibility can justify one with a single caller. Source, tasks, and contracts can supply the reason without rationale comments or one report item per declaration.
 
-### Give two independent judgments per file
+### Judge each modification on both axes
 
 | Judgment | Basis |
 | --- | --- |
@@ -67,9 +67,9 @@ Short bodies, caller counts, uniform presentation, speculative reuse, and testin
 | 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
 | **Insufficient evidence** on either axis | Name the missing material evidence and how to obtain it. Keep any supported judgment on the other axis. |
 
-Explain concrete causes and user or caller consequences, not labels such as “meets contracts” or “clear structure.” Tie findings to modification IDs. One good change cannot cancel another change's defect, burden, or evidence gap; explicit retention preserves the judgment and consequences.
+Attach judgments to the responsible modification and explain concrete causes and user or caller consequences. Assess both axes even when Report Format allows a compact explanation. One good change cannot cancel another change's defect, burden, or evidence gap. Explicit retention preserves the judgment and consequences.
 
-Keep the axes independent. An avoidable structural burden alone supports an optional improvement; a behavioral defect alone does not prove poor structure. A structural requirement violation also needs a correctness finding so its necessary remedy is Fix. Missing need or ownership evidence establishes neither elegance nor a structural defect. Omit preference and low-benefit polish, and combine remedies for the same underlying problem.
+Keep the axes independent. An avoidable structural burden alone supports an optional improvement. A behavioral defect alone does not prove poor structure. A structural requirement violation also needs a correctness finding, with one modification ID and one Fix remedy across both judgments. Missing need or ownership evidence establishes neither elegance nor a structural defect. Omit preference and low-benefit polish, and combine remedies for the same underlying problem.
 
 Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Optimization is always optional. A correction necessary to meet a supported obligation is Fix, even when the defect is structural.
 
@@ -77,9 +77,13 @@ Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious
 
 Use Report Format for the applicable report kind. Assign continuous M IDs across files and groups, grouping implementation steps by the problem they solve and separating independent changes that cannot share one explanation. One localization file is one modification. Minor accompanying edits without findings may stay in the overview or be omitted from explanation; they remain within assessment coverage.
 
-Every supported unreasonable finding and worthwhile optional improvement needs an actionable M item, using an existing item or adding one. Its leading judgment explains the problem, unreasonable severity or elegance status, trigger, impact, correction or benefit. A generic verdict cannot replace the finding. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them; associate each with the responsible M item.
+Keep an existing item's ID through supplementary review and repair. Additional separately explained supporting modifications receive the next unused M IDs and retain their relationship to the original finding. Present each item once in a report; a supporting file does not repeat the original item as another numbered item. Repair and supplementary IDs share the continuous sequence but add no main progress. Selected-O work retains the separate identity below.
 
-End a group after the complete file that brings it to at least 10 modifications, never midway through a file. Show the shorter remainder at scope end. Progress counts cumulative displayed main files out of eligible files, each once; it implies neither successful delivery nor Viewed recording.
+Every supported unreasonable finding and worthwhile optional improvement needs an actionable M item, using an existing item or adding one. Its judgments explain the concrete problem, severity when applicable, trigger, impact, and correction or benefit. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them. Associate each with the responsible M item.
+
+Internally size each main group by review units: a simple modification meeting Report Format's compact criteria counts as 1 unit; a normal modification requiring its detailed form counts as 2. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
+
+Report progress using cumulative displayed main files out of eligible files, each once, and the actual cumulative number of displayed main modifications only. Supplementary items, repairs, and incidental observations add neither main-group units nor main progress. Progress implies neither successful delivery nor Viewed recording.
 
 Close the group with its conclusion and progress, actual checks and limits, pending unreasonable IDs with severity and impact, accepted trade-offs, and optional suggestions with remedies and benefits. Retain evidence, judgments, findings and decisions, group membership, next position, and next M ID across replies. Change totals only when scope changes; a commit that cleans the worktree does not erase undisplayed fixed evidence.
 
@@ -87,7 +91,7 @@ Close the group with its conclusion and progress, actual checks and limits, pend
 
 Necessary reading may reveal an unrelated pre-existing issue. Establish both its evidence and that the selected change neither introduced, triggered, nor aggravated it; this is not an audit of unrelated history or the repository.
 
-Report it separately with a continuous O ID, title, source link/location, evidence and impact, independence, and recommendation or benefit. It adds no main file, modification, progress, or automatic Viewed eligibility. Unselected O advice creates no main-review or delivery gate.
+Give it a continuous O ID, title, source link or location, evidence and impact, independence, and recommendation or benefit. Report Format places it with its source file when attributable. It adds no main file, modification, progress, or automatic Viewed eligibility. Unselected O advice creates no main-review or delivery gate.
 
 Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user explicitly expands scope or selects them. A selected O repair receives separate evidence, checks, and re-review of its change and affected context, using O IDs and two judgments without new main M IDs or progress. Its changes enter delivery coverage; resulting failures or unresolved findings can block delivery. Delivery determines any whole-file Viewed eligibility.
 
@@ -122,11 +126,11 @@ Offer Pass proactively alongside Continue/Finish when applicable delivery effect
 
 Selecting Pass starts Delivery's inventory, supplementary review, and checks; explicit preparation requests can start that work without authorizing writes. Disclose the resulting concrete plan before executing its effects, reusing the selection's authority while scope, destination, and effects remain within it. If supplementary review has no new actionable finding or optional improvement, complete the prerequisites and deliver without a second Pass question. New items require the supplementary-review decision below. Pass explicitly retains only the assessed optional items named in its choice; Continue can defer them without declining them.
 
-Use one option per action type. State the default selected IDs and effects inside that option; subsets and compound requests remain available in natural language. Consolidate supported M and O remedies under the same Fix or Optimize label, while distinguishing the default M scope from O items requiring explicit selection. An option can explicitly select named O items when that is its disclosed scope; merely mentioning O alternatives does not add them to a bulk M action. Unselected O advice does not delay an already authorized delivery.
+Use one option per action type. Offer Optimize when at least one concrete, outstanding optional improvement has been disclosed for selection. State the default selected IDs and effects inside that option. Subsets and compound requests remain available in natural language. Consolidate supported M and O remedies under the same Fix or Optimize label, while distinguishing the default M scope from O items requiring explicit selection. An option can explicitly select named O items when that is its disclosed scope. Merely mentioning O alternatives does not add them to a bulk M action. Unselected O advice does not delay an already authorized delivery.
 
 The four stage tables specify common situations, with a fixed recommendation and choice order. Apply the principles to other situations rather than extending the tables with exhaustive combinations. Use the applicable row, label its choices consecutively with the recommended choice at A, and include each applicable action once. Describe concrete IDs, consequences, and effects. A recommendation or sole option never selects itself.
 
-Start each option with a short bold action label. In Chinese, Continue's label is exactly **继续**; put purpose and next position afterward. Use Finish at scope end. Preparation supplies the first table, for workspace choices before review. The remaining tables below govern group results, repairs, and supplementary review during delivery.
+Render these choices using Report Format. Use Continue with its purpose and next position in the description, and Finish at scope end. Preparation supplies the first table, for workspace choices before review. The remaining tables below govern group results, repairs, and supplementary review during delivery.
 
 ### After a review group
 
@@ -173,9 +177,9 @@ Reuse complete applicable guidance and supported verification procedures, and re
 
 ### Establish the repaired result
 
-Limit edits to selected remedies and necessary supporting changes. After reviewed content changes, including selected O work, run required checks through the project's supported verification methods and refresh before/after evidence and links. Reusing evidence never waives a check required on the repaired contents. Independently re-review the changed and affected previously reviewed parts, including unexpected changes. Failed or unavailable required checks leave dependent work incomplete.
+Limit edits to selected remedies and necessary supporting changes. After reviewed content changes, including selected O work, run required checks through the project's supported verification methods and refresh before/after evidence and links. Reusing evidence never waives a check required on the repaired contents. Independently re-review every changed non-test file, including necessary supporting and unexpected changes, and affected previously reviewed parts. Tests retain their evidence and required-check role under the repository's classification. Failed or unavailable required checks leave dependent work incomplete.
 
-Report the repair in a dedicated reply apart from unseen main files using Report Format. Preserve IDs and groups without recounting main progress. A repair or optimization is complete only when checks and re-review confirm it; retained burdens remain trade-offs.
+Report the repair in a dedicated reply apart from unseen main files using Report Format's common file layout. Cover every changed non-test file and retain existing IDs and groups without recounting main progress. A repair or optimization is complete only when checks and re-review confirm it; retained burdens remain trade-offs.
 
 ### Resume the remaining authorized work
 

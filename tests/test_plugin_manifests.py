@@ -7,7 +7,7 @@ import subprocess
 import unittest
 import xml.etree.ElementTree as ET
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -83,23 +83,30 @@ def markdown_structure(text: str) -> tuple[str, ...]:
     return tuple(structure)
 
 
+def fenced_code_spans(text: str) -> Iterator[tuple[int, int]]:
+    opening: re.Match[str] | None = None
+    for match in re.finditer(r'^ {0,3}(`{3,}|~{3,})([^\n]*)$', text, re.MULTILINE):
+        fence, suffix = match.groups()
+        if opening is None:
+            if fence[0] != '`' or '`' not in suffix:
+                opening = match
+        elif fence.startswith(opening[1]) and not suffix.strip():
+            yield opening.start(), match.end()
+            opening = None
+
+
 def fenced_code_blocks(text: str) -> tuple[str, ...]:
-    return tuple(
-        re.findall(
-            r'^(?:```[^\n]*\n.*?^```\s*$|~~~[^\n]*\n.*?^~~~\s*$)',
-            text,
-            re.MULTILINE | re.DOTALL,
-        )
-    )
+    return tuple(text[start:end] for start, end in fenced_code_spans(text))
 
 
 def without_fenced_code(text: str) -> str:
-    return re.sub(
-        r'^(?:```[^\n]*\n.*?^```\s*$|~~~[^\n]*\n.*?^~~~\s*$)',
-        '',
-        text,
-        flags=re.MULTILINE | re.DOTALL,
-    )
+    prose = []
+    previous_end = 0
+    for start, end in fenced_code_spans(text):
+        prose.append(text[previous_end:start])
+        previous_end = end
+    prose.append(text[previous_end:])
+    return ''.join(prose)
 
 
 def inline_code_literals(text: str) -> Counter[str]:

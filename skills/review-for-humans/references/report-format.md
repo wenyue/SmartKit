@@ -1,22 +1,14 @@
 # Report Format
 
-The [Skill entry](../SKILL.md) owns inspection standards, required findings and conclusions, M/O identity, grouping, progress, and decisions. This reference owns report depth and presentation; examples illustrate it without defining another format.
+The [Skill entry](../SKILL.md) owns inspection, findings, M/O identity, grouping, progress, action labels, and decisions. This reference owns the common report layout, explanation depth, and menu rendering. Ordinary, supplementary, repair, and selected-O reports use the same file blocks and closing order.
+
+## Use one report skeleton
 
 Start the first report using a local workspace and the first report after changing to another local workspace with the working-directory label. Follow it with the full absolute path to the selected workspace's physical root in a separate `text` code block for copying. Place both before any report heading, summary, finding, or group introduction. This covers current checkouts and existing or newly created linked worktrees.
 
-## Choose the report depth
+Then give the scope needed to understand this report, the file blocks, and the closing. An ordinary introduction identifies the group; a supplementary introduction identifies the additional delivery coverage; a repair introduction names the selected original M/O items and connects their supporting changes. Keep repair and supplementary coverage separate from unseen main groups.
 
-Use the complete file blocks below for ordinary and supplementary reviews.
-
-For a dedicated repair or optimization, including selected-O work, default to a concise report: identify the selected M/O items and source links, explain the repair and whether the original findings are resolved, give current reasonableness and elegance judgments with any changed reasons, and state checks, limits, and unresolved decisions. Keep new incidental O observations separate.
-
-Expand an affected file into a complete block for a material design choice, contract change, or risk introduced by the repair or revealed during re-review, or when the user requests the detail. A concise report retains full evidence, inspection coverage, required checks, and affected re-review without recounting main progress.
-
-## Arrange complete file blocks
-
-Place any group introduction after the working directory if shown and before the first separator. Repeat the file block from its leading separator for each file. Thus every file, including the first, has a separator before it; adjacent files share one boundary.
-
-After the final complete file block, place the complete O observations section when present, with one separator before it and one before the group closing. Without O observations, use exactly one separator between the final file and the group closing.
+Use a single horizontal rule before the first file, between file blocks, and before the closing. Each file heading is 📄 followed by the bold, full repository-relative filename link returned by `local_web`, unchanged. A short file overview is optional. Use the filename as the diff link; add other links only for distinct evidence the reader needs.
 
 ````markdown
 <!-- First report using a local workspace, or after a workspace change. -->
@@ -26,61 +18,101 @@ After the final complete file block, place the complete O observations section w
 <absolute physical root of the selected workspace>
 ```
 
-<group introduction, when needed>
+<report scope and original-item relationship, when needed>
 
 ---
 
 📄 **[<full/repository-relative/path>](<returned-url>)**
 
-<responsibility and change overview>
+M1 · <one natural sentence explaining the change and why it matters>
 
-⚖️ **<verdict>** — <reasons and item-keyed findings>
+---
 
-🎨 **<verdict>** — <reasons and item-keyed findings>
+📄 **[<another/full/path>](<returned-url>)**
 
-**M1 — <change title>**
+**M2** · **<detailed change title>**
 
-> ⏪ <sentence describing the earlier implementation>
+> ⚖️ ❌ **Unreasonable** · **P2** · <defect and user or caller consequence>\
+> 🎨 ❌ **Needs improvement** · <design problem and remedy>
+>
+> ⏪ <earlier implementation>
 >
 > ```<language>
-> <relevant earlier code>
+> <relevant actual earlier code>
 > ```
 >
-> ⏩ <sentence describing the changed implementation>
+> ⏩ <changed implementation>
 >
 > ```<language>
-> <relevant changed code>
+> <relevant actual changed code>
 > ```
 
 ---
 
-<!-- Include this O section and its trailing separator when observations are present. -->
-<complete O observations section>
+<result, unresolved findings or decisions, and accepted trade-offs>
 
----
-<!-- End of conditional O section. -->
+<checks, re-review coverage when applicable, and evidence limits>
 
-<group conclusion, cumulative main progress, checks and limits, pending decisions>
+📊 **Reviewed 7 / 42 files, with 10 modifications.**
 
-<applicable lettered choices when a decision remains>
+<state-appropriate choices, when a decision remains>
 ````
 
-The title is its own paragraph: 📄 followed by the bold returned filename link showing the full repository-relative path, never a basename or shortened path. Put the responsibility/change overview in the next paragraph. The two leading judgments use only their icon and verdict, without dimension or file-level prefixes. Keep the title, overview, judgments, and modification items separate; put no horizontal rule inside a file.
+The progress line above belongs to an ordinary main group. Supplementary and repair closings state their own coverage and, when useful, that the saved main progress is unchanged; they do not add reviewed main files or modifications.
 
-## Present judgments and implementation comparisons
+## Keep files and item identities clear
 
-Multiple findings may use separate paragraphs or a short list within the appropriate judgment; do not repeat the verdict for every item. Make consequential design comparisons visible in the existing elegance reasons: name the concrete alternative and the deciding trade-off, at the depth required by the entry. A brief explanation can suffice for localized low-impact changes; use prose suited to the decision rather than a per-declaration checklist or fixed questionnaire.
+Show each changed non-test file in a repair report, including supporting files. Test changes appear with verification evidence under the repository's classification, rather than as semantic review items. The entry's complete repair and affected-context assessment still applies to compact explanations.
 
-Repeat the modification portion as needed, using the entry's assigned IDs. A separate selected-O report uses its O IDs in titles and judgments instead of M IDs. Make the whole ID and title bold without a modification icon, adding an unreasonable finding's severity, for example `**M2 — <title> (P1)**`. Keep intrinsic path/code punctuation. The leading judgments own all problems, triggers, impacts, remedies, and benefits; modification bodies show only the implementation before and after, without repeating finding explanations.
+Use the entry's continuous M sequence. Keep the original ID for an existing item, place that item once under the file that owns its explanation, and use the next unused M IDs for additional separately explained modifications. State their relationship to the repaired finding in the introduction. For example, after M1–M10 have been assigned, a repair of M2 can contain M2, M11, and M12 in three files; all three belong to the repair, and main progress stays unchanged. References to M2 explain correspondence rather than introducing another M2 item.
 
-Each before/after pair stays in one Markdown blockquote. The ⏪ and ⏩ icons each lead a natural descriptive sentence, with no Before/After labels. Replace the code placeholders with concise actual snippets that preserve the error, state, and lifecycle context needed to understand the change. A simple prose or text change may use inline code in those sentences instead of fenced snippets. Label faithful illustrative simplifications and never present invented snippets as source evidence.
+Accompanying changes without a separate item may use a short file overview. In selected-O work, keep the selected O IDs and describe supporting-file changes in their file overviews; supporting edits do not create new incidental observations or M items. Retain both judgments and disclose any resulting finding under the responsible selected item.
 
-Choose comparison detail by understanding difficulty and consequences, not line count. A straightforward item needs only a compact pair; difficult mechanisms, contracts, lifetimes, risks, or evidence gaps need enough implementation context and supporting evidence to make the cause clear. Keep the corresponding finding's explanation in the judgment block. A one-line change may need full explanation, while a large mechanical edit may be concise.
+Place incidental O items after M items under their source file. A file containing only O items uses the same heading with a verified source link and follows the main file blocks. Put O items without useful single-file attribution in a separate observations section after the files, with a horizontal rule before it and before the closing. Their placement changes neither main progress nor delivery or Viewed eligibility.
 
-Keep rare machinery in the internal analysis unless it changes the user's choice.
+## Choose compact or detailed items
+
+Use the compact form for a straightforward change without an actionable issue, worthwhile optional improvement, or material evidence gap. Put the plain ID, a middle dot, and one natural sentence on the same line: `M1 · <change and purpose>`. Omit a separate title, bold, blockquote, judgment icons, and code block. A file with one such item contains just its heading and that sentence; the same compact form can appear beside detailed items in a mixed file. Both axes still receive full assessment.
+
+Use the detailed form for an actionable finding, worthwhile optional improvement, material evidence gap, or consequential mechanism the reader needs to understand. Put the bold ID and bold title on one unindented line, separated by a plain middle dot. Below it, keep both judgment lines and the before/after evidence in one aligned Markdown blockquote. Separate items with ordinary paragraph spacing.
+
+Give each axis its icon, verdict, and one sentence explaining the cause and consequence or trade-off. Join the two judgment lines with a Markdown hard break. Add ❌ immediately after the axis icon only for an actual defect, and put severity on the unreasonable line. For a structural defect, the reasonableness line explains the user or caller effect and the elegance line explains the design problem, using one item and one Fix remedy. Name a concrete alternative when it decides the judgment.
+
+Use concise actual before/after snippets that preserve the error, state, or lifecycle context needed to understand the change. Align the ⏪ and ⏩ sentences and their code fences with the judgments inside the same blockquote. Inline code may serve as evidence for a short change. Label illustrative simplifications. Repair evidence compares the pre-repair and repaired contents; it does not silently substitute the original pinned PR comparison.
+
+Apply the same depth choice after a repair or optimization: resolved straightforward changes can be compact; a material design choice, contract change, introduced or newly revealed risk, or requested explanation needs detail. State the selected items' current reasonableness and elegance judgments in their detailed items or in one closing sentence for compact items with the same judgments. Explain changed reasons and retain unresolved decisions.
+
+Detailed selected-O items use the same presentation with O IDs. Incidental observations include the entry's source evidence, impact, independence, and recommendation or benefit; any judgment lines follow the same icon and severity conventions.
+
+## Close in a fixed order
+
+Keep the closing short, in this order:
+
+1. **Result and decisions.** State the group conclusion or the repair's actual completion status. Name pending unreasonable IDs with severity and impact, retained trade-offs, and outstanding optional remedies and benefits. Give compact repair items their current judgments here when those are not already displayed. Omit empty categories.
+2. **Evidence and limits.** State the checks actually performed, results, and material gaps. For a repair, identify coverage of all changed non-test files and affected previously reviewed context, with verification records and available logs. Distinguish successful code changes from unavailable required checks or incomplete re-review; those limits keep the dependent remedy incomplete. Tests are evidence, and author-reported checks remain distinguishable from executed checks.
+3. **Progress or coverage.** For a main group, show only the cumulative reviewed-file fraction and actual main-modification count in the report language, as in the skeleton. For supplementary, repair, or selected-O work, state that coverage separately; preserve the saved main total and position.
+4. **Choices or remaining authorized work.** Render the applicable menu from the entry, with concrete IDs, effects, and next position. If delivery is already selected, preserve that pending intent and use its decision table; when no new decision remains, state and continue the authorized next work instead of asking for Pass again. For an unavailable prerequisite without a selectable remedy, explain the actual limitation.
+
+## Render the selected choices
+
+Selection, labels, recommendation, ordering, and scope come from the entry and its stage tables. Render those choices with consecutive uppercase letters. Join all options in one paragraph with Markdown hard breaks, without blank lines between them. Begin each line with exactly one `&ensp;`, then the letter, short bold action label, optional recommendation outside the bold span, colon, and concrete effects. Bold only the action label.
+
+Use these literal punctuation and spacing patterns; the descriptions below are illustrative, not a choice of actions for the current state:
+
+```markdown
+&ensp;A. **Pass** (recommended): Prepare and complete applicable delivery, then review the next group.\
+&ensp;B. **Continue**: Review the next group without delivery.
+```
+
+For Chinese, use full-width `．` and `：`, spaces on both sides of the bold label, and `（推荐）` outside it. Pass renders as `通过`, Continue as `继续`, and Finish as `结束`; other action labels retain their corresponding meanings.
+
+```markdown
+&ensp;A． **通过** （推荐）：准备并完成适用的交付，然后审阅下一组。\
+&ensp;B． **继续** ：从下一组开始只读审阅。
+```
+
+Use the same rendering for workspace menus. At scope end use Finish rather than Continue, following the entry's action semantics.
 
 ## Check the report before sending
 
-When the working directory is required, confirm that its label and path block are the first visible content.
-
-For a concise repair, confirm the required summary content and whether an affected file needs expansion. For complete file blocks, check the first-file and between-file separators, then confirm that any complete O section follows the final complete file and precedes the group closing, with one separator at each boundary. With no O section, confirm exactly one separator between the final file and closing. Check the full-path title on its own; separate overview; two leading judgments; bold item titles; and paired quoted comparisons. Confirm conditional findings, evidence gaps, and decisions are present where needed. Keep the fixed structure and use friendly, direct language within it.
+Confirm the working-directory block comes first when required, full-path links match the assessed version, and every required file is covered. Check that item IDs are stable and appear as standalone items only once, compact items contain no redundant title or quote, and detailed items align both judgments and actual before/after evidence. Confirm O placement, accurate repair status and checks, unchanged main progress for additional coverage, and the exact menu punctuation, scope, recommendation, and effects.
