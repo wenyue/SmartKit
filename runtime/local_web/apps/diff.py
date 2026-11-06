@@ -307,6 +307,22 @@ def find_vscode() -> Optional[Path]:
     return None
 
 
+def _windows_cli_entry(launcher: Path) -> Path:
+    root = launcher.parent
+    entry = root / "resources/app/out/cli.js"
+    script_name = "code-insiders.cmd" if launcher.stem.lower().endswith("insiders") else "code.cmd"
+    script = root / "bin" / script_name
+    if script.is_file():
+        # An update can leave multiple versions installed. Follow the bundled launcher's choice.
+        match = re.search(r'"%~dp0\.\.\\([0-9a-f]{10,40})\\resources\\app\\out\\cli\.js"',
+                          script.read_text(encoding="utf-8-sig", errors="replace"), re.IGNORECASE)
+        if match:
+            entry = root / match[1] / "resources/app/out/cli.js"
+    if not entry.is_file():
+        raise OSError("找不到 VS Code 命令行入口。")
+    return entry
+
+
 def open_editor(target: Target) -> Dict[str, str]:
     """Send a VS Code CLI request or return a web destination."""
     if (target.head and target.view == "auto") or target.base.startswith("commit:"):
@@ -353,14 +369,20 @@ def open_editor(target: Target) -> Dict[str, str]:
                 after_uri = captured.files[after_name].path.as_uri()
 
         arguments = window + ["--diff", "--file-uri", before_uri, "--file-uri", after_uri]
+        command = [str(launcher)]
         environment = dict(os.environ)
         environment.pop("ELECTRON_RUN_AS_NODE", None)
+        if sys.platform == "win32":
+            # Use the CLI's Node entry without passing URI arguments through cmd.exe.
+            command.append(str(_windows_cli_entry(launcher)))
+            environment.pop("VSCODE_DEV", None)
+            environment["ELECTRON_RUN_AS_NODE"] = "1"
         log_path = prepare_state() / "vscode-launch.log"
         if redirected(log_path):
             raise ValueError("editor launch log redirects")
         descriptor = os.open(str(log_path), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "wb") as log:
-            process = subprocess.Popen([str(launcher)] + arguments,
+            process = subprocess.Popen(command + arguments,
                                        env=environment, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                                        start_new_session=True)
             try:

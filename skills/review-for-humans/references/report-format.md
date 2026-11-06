@@ -4,20 +4,11 @@ The [Skill entry](../SKILL.md) owns inspection, findings, M/O identity, grouping
 
 ## Use one report skeleton
 
-Start the first report using a local workspace and the first report after changing to another local workspace with the working-directory label. Follow it with the full absolute path to the selected workspace's physical root in a separate `text` code block for copying. Place both before any report heading, summary, finding, or group introduction. This covers current checkouts and existing or newly created linked worktrees.
-
-Then give the scope needed to understand this report, the file blocks, and the closing. An ordinary introduction identifies the group; a supplementary introduction identifies the additional delivery coverage; a repair introduction names the selected original M/O items and connects their supporting changes. Keep repair and supplementary coverage separate from unseen main groups.
+Give the scope needed to understand this report, the file blocks, and the closing. An ordinary introduction identifies the group; a supplementary introduction identifies the additional delivery coverage; a repair introduction names the selected original M/O items and connects their supporting changes. Keep repair and supplementary coverage separate from unseen main groups.
 
 Use a single horizontal rule before the first file, between file blocks, and before the closing. Each file heading is 📄 followed by the bold, full repository-relative filename link returned by `local_web`, unchanged. A short file overview is optional. Use the filename as the diff link; add other links only for distinct evidence the reader needs.
 
 ````markdown
-<!-- First report using a local workspace, or after a workspace change. -->
-**Working directory**
-
-```text
-<absolute physical root of the selected workspace>
-```
-
 <report scope and original-item relationship, when needed>
 
 ---
@@ -115,4 +106,4 @@ Use the same rendering for workspace menus. At scope end use Finish rather than 
 
 ## Check the report before sending
 
-Confirm the working-directory block comes first when required, full-path links match the assessed version, and every required file is covered. Check that item IDs are stable and appear as standalone items only once, compact items contain no redundant title or quote, and detailed items align both judgments and actual before/after evidence. Confirm O placement, accurate repair status and checks, unchanged main progress for additional coverage, and the exact menu punctuation, scope, recommendation, and effects.
+Confirm full-path links match the assessed version, and every required file is covered. Check that item IDs are stable and appear as standalone items only once, compact items contain no redundant title or quote, and detailed items align both judgments and actual before/after evidence. Confirm O placement, accurate repair status and checks, unchanged main progress for additional coverage, and the exact menu punctuation, scope, recommendation, and effects.

@@ -169,13 +169,15 @@ cleanup returns elapsed_seconds, scanned_groups, removed_groups, preserved_group
 and reason counts. Add --details for per-group paths/reasons/diagnostics.
 Publication failure retains the complete group; publish its ID to retry.
 
-ensure/hook reuse the same or a newer compatible plugin version at the fixed port.
-Older authenticated hosts, including legacy hosts without a version, are replaced
-while retaining private-page credentials and application mode. Versions are fixed
-at process startup; same-version code edits require a manual restart. Invalid
-versions and unknown port occupation fail without stopping the existing host.
-status includes the running plugin_version and starts no process. stop ends only the verified shared instance, when
-requested, never merely because a chat ends.
+ensure reuses a compatible authenticated host or replaces an older one.
+Session hooks also check the installation that loaded them. At the same version
+a changed commit or content identity from a previously seen installation can
+replace the host. An unfamiliar same-version copy is recorded for later checks.
+Hook replacements keep the private-page credential and running mode. Status
+reports the version and identity loaded at startup. Invalid versions and
+unknown port occupation fail without stopping the host.
+stop ends only the verified shared instance, when requested, never merely
+because a chat ends.
 Manual stop followed by ensure creates a new private-page credential.
 Private readiness and setup URLs contain an instance credential; keep them private.
 Readiness and setup read observations without checks or repair.

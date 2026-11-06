@@ -21,12 +21,14 @@ from urllib.parse import quote
 
 from . import HOST, PORT, ORIGIN, SERVICE_SCHEMA
 from . import artifacts
+from .installation import identity_changed, installation_identity, InstallationObservation
 from .storage import prepare_cache, prepare_state, read_json, redirected, state_dir, write_json, file_lock
 from .apps.status import hook_page_links, record_project
 
 START_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
-PLUGIN_MANIFEST = Path(__file__).resolve().parents[2] / ".claude-plugin/plugin.json"
+PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+PLUGIN_MANIFEST = PLUGIN_ROOT / ".claude-plugin/plugin.json"
 _SEMVER = re.compile(
     r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
     r"(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -78,6 +80,7 @@ def service_info(state: dict, running: Optional[dict] = None) -> dict:
     running = state if running is None else running
     return {"origin": ORIGIN, "pid": running["pid"], "mode": running["mode"],
             "plugin_version": running.get("plugin_version"),
+            "plugin_identity": running.get("plugin_identity"),
             "apps": {feature: ORIGIN + "/" + feature + "/?key=" + state["key"]
                      for feature in ("readiness", "setup")}}
 
@@ -117,27 +120,35 @@ def port_available() -> bool:
         return True
 
 
-def ensure_service(mode: str = "applications") -> dict:
+def ensure_service(mode: str = "applications", *, session_start: bool = False) -> dict:
     """Return a verified fixed-origin host; an unknown port owner is never stopped.
 
     Native failures may leave a child host running, but never return an unverified
-    URL. Older and legacy authenticated peers are replaced while retaining their
-    credential and mode; newer compatible peers are reused. Invalid versions fail
-    before replacement. Preview callers cannot downgrade an application host.
+    URL. Replace an older or outdated authenticated installation while retaining
+    its credential. Reuse newer compatible peers. Invalid versions fail before
+    replacement. Preview callers cannot downgrade an application host.
     """
     if mode not in ("applications", "previews"):
         raise ValueError("unknown local host mode")
     deadline = time.monotonic() + START_TIMEOUT
-    required_version = _version_key(_installed_version())
     with start_lock(deadline=deadline):
+        required_version = _version_key(_installed_version())
+        observation = InstallationObservation.read(PLUGIN_ROOT) if session_start else None
         prepare_cache()
         state = load_state()
         running = health(state) if state else None
         if running:
             state["pid"] = running["pid"]
-            state["mode"] = ("applications" if "applications" in (mode, state["mode"], running["mode"])
-                             else "previews")
-            if "plugin_version" not in running or _version_key(running["plugin_version"]) < required_version:
+            running_version = _version_key(running["plugin_version"]) if "plugin_version" in running else None
+            same_version_update = (observation is not None and running_version == required_version
+                                   and _same_version_update(running, observation))
+            replacing = running_version is None or running_version < required_version or same_version_update
+            if session_start and replacing:
+                state["mode"] = running["mode"]
+            else:
+                state["mode"] = ("applications" if "applications" in (mode, state["mode"], running["mode"])
+                                 else "previews")
+            if replacing:
                 _stop_owned(state, running, deadline=min(deadline, time.monotonic() + 4))
                 state["pid"] = 0
             else:
@@ -149,9 +160,13 @@ def ensure_service(mode: str = "applications") -> dict:
                     running = health(state)
                     if running is None:
                         raise OSError("local host stopped during mode activation")
+                if observation is not None:
+                    observation.save()
                 return service_info(state, running)
-        else:
+        elif state is None or state["pid"] != 0:
             state = {"schema": SERVICE_SCHEMA, "port": PORT, "key": secrets.token_hex(32), "mode": mode, "pid": 0}
+        elif mode == "applications" and not session_start:
+            state["mode"] = mode
         if not port_available():
             raise OSError("127.0.0.1:47821 is occupied by an unverified process; it was not stopped")
         if time.monotonic() >= deadline:
@@ -172,24 +187,47 @@ def ensure_service(mode: str = "applications") -> dict:
                 current = load_state()
                 running = health(current) if current else None
                 if (running and running["pid"] == process.pid and "plugin_version" in running
-                        and _version_key(running["plugin_version"]) >= required_version):
+                        and _version_key(running["plugin_version"]) >= required_version
+                        and (observation is None or running.get("plugin_identity") == observation.identity)):
                     current["pid"] = running["pid"]
-                    threading.Thread(target=process.wait, daemon=True).start()
-                    return service_info(current, running)
+                    break
                 if process.poll() is not None:
                     raise OSError("SmartKit local host startup failed; inspect " + str(log_path))
                 time.sleep(0.05)
-            raise TimeoutError("SmartKit local host startup timed out; inspect " + str(log_path))
-        except BaseException:
+            else:
+                raise TimeoutError("SmartKit local host startup timed out; inspect " + str(log_path))
+        except BaseException as startup_error:
             # Only our child is eligible for cleanup after any readiness failure or cancellation.
             if process.poll() is None:
                 process.terminate()
                 try:
                     process.wait(timeout=3)
-                except subprocess.TimeoutExpired as error:
+                except subprocess.TimeoutExpired as stop_error:
                     threading.Thread(target=process.wait, daemon=True).start()
-                    raise TimeoutError("local host startup failed and its child did not stop; inspect " + str(log_path)) from error
+                    raise TimeoutError("local host startup failed and its child did not stop; inspect " + str(log_path)) from stop_error
+            # A zero PID keeps the verified credential and mode available for a startup retry.
+            try:
+                write_json(state_dir() / "service.json", state)
+            except (OSError, ValueError) as state_error:
+                raise OSError("local host startup failed and pending state could not be restored: "
+                              + str(state_error)) from startup_error
             raise
+        threading.Thread(target=process.wait, daemon=True).start()
+        if observation is not None:
+            observation.save()
+        return service_info(current, running)
+
+
+def _same_version_update(running: dict, observation: InstallationObservation) -> bool:
+    served = running.get("plugin_identity")
+    if served == observation.identity:
+        return False
+    if served is None:
+        # A host started before identity reporting needs a single replacement.
+        return True
+    if running.get("plugin_root") == observation.source:
+        return identity_changed(served, observation.identity)
+    return identity_changed(observation.previous, observation.identity)
 
 
 def cleanup_artifacts() -> None:
@@ -248,6 +286,7 @@ def serve() -> None:
     from .http_server import WebServer, WebHandler
 
     plugin_version = _installed_version()
+    plugin_identity = installation_identity(PLUGIN_ROOT)
     state = load_state()
     if state is None:
         raise ValueError("start the local host through ensure, not serve")
@@ -262,6 +301,8 @@ def serve() -> None:
             server.web_state = state
             # Keep this outside service.json: legacy callers reject extra state fields.
             server.plugin_version = plugin_version
+            server.plugin_identity = plugin_identity
+            server.plugin_root = os.path.normcase(str(PLUGIN_ROOT))
             server.timeout = 0.5
             stopping = False
 
@@ -303,7 +344,9 @@ def hook_project(harness: str) -> str:
         raise ValueError("hook project path must be a string")
     target = Path(project) if project else Path.cwd()
     record_project(target, harness)
-    info = ensure_service()
+    info = ensure_service(session_start=True)
+    if info["mode"] != "applications":
+        return ""
     links = hook_page_links(target, harness, info["apps"])
     if not links:
         return ""

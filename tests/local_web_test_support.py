@@ -37,6 +37,7 @@ def isolate_local_web(test: unittest.TestCase, directory: Path) -> Path:
         'from local_web import service\n'
         'service.__file__ = __file__\n'
         'from pathlib import Path\n'
+        f'service.PLUGIN_ROOT = Path({str(directory)!r})\n'
         f'service.PLUGIN_MANIFEST = Path({str(manifest)!r})\n'
         'from local_web.cli import main\n'
         'raise SystemExit(main())\n',
@@ -53,7 +54,8 @@ def isolate_local_web(test: unittest.TestCase, directory: Path) -> Path:
     patcher = patch.object(service, '__file__', str(entry))
     patcher.start()
     test.addCleanup(patcher.stop)
-    patcher = patch.object(service, 'PLUGIN_MANIFEST', manifest)
-    patcher.start()
-    test.addCleanup(patcher.stop)
+    for name, path in (('PLUGIN_ROOT', directory), ('PLUGIN_MANIFEST', manifest)):
+        patcher = patch.object(service, name, path)
+        patcher.start()
+        test.addCleanup(patcher.stop)
     return entry

@@ -53,6 +53,10 @@ class DiffFixture:
         self.oid = self.run_git("rev-parse", ":" + self.name).decode().strip()
         self.target = diff.Target(self.repo, self.name, "blob:" + self.oid)
         self.file.write_bytes(b"first edit\n")
+        self.launcher = self.base / "Code.exe"
+        self.cli_entry = self.base / "resources/app/out/cli.js"
+        self.cli_entry.parent.mkdir(parents=True)
+        self.cli_entry.touch()
 
     def run_git(self, *arguments):
         result = subprocess.run(["git", "-C", str(self.repo)] + list(arguments), capture_output=True, timeout=10)
@@ -73,7 +77,7 @@ class DiffFixture:
         process.wait.return_value = status
         editor = SimpleNamespace(Popen=Mock(return_value=process), DEVNULL=subprocess.DEVNULL,
                                  TimeoutExpired=subprocess.TimeoutExpired)
-        with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff, "subprocess", editor):
+        with patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(diff, "subprocess", editor):
             yield editor.Popen
 
 class TargetValidationTests(unittest.TestCase):
@@ -233,19 +237,64 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         comparison = diff.read_comparison(self.target)
         process = Mock()
         process.wait.return_value = 0
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process) as launch, patch.dict(os.environ, ELECTRON_RUN_AS_NODE="1"):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(diff.subprocess, "Popen", return_value=process) as launch, patch.dict(os.environ, ELECTRON_RUN_AS_NODE="1"):
             value = diff.open_editor(self.target)
         self.assertEqual(value["viewer"], "vscode")
         self.assertNotIn("url", value)
         command = launch.call_args[0][0]
-        self.assertEqual(command[:4], ["Code.exe", "--folder-uri", self.repo.as_uri(), "--diff"])
+        self.assertEqual(command[-7:-4], ["--folder-uri", self.repo.as_uri(), "--diff"])
         self.assertEqual(file_uri_path(command[-3]).read_bytes(), b"baseline\n")
         self.assertEqual(file_uri_path(command[-1]), self.file)
-        self.assertNotIn("ELECTRON_RUN_AS_NODE", launch.call_args[1]["env"])
+        environment = launch.call_args.kwargs["env"]
+        if sys.platform == "win32":
+            self.assertEqual(command[:-7], [str(self.launcher), str(self.cli_entry)])
+            self.assertEqual(environment["ELECTRON_RUN_AS_NODE"], "1")
+        else:
+            self.assertEqual(command[:-7], [str(self.launcher)])
+            self.assertNotIn("ELECTRON_RUN_AS_NODE", environment)
         temporary = artifacts.load_artifact(file_uri_path(command[-3]).parent.parent.name)
         self.assertFalse(temporary.published)
         artifacts.cleanup_expired(temporary.expires_at)
         self.assertFalse(file_uri_path(command[-3]).exists())
+
+    def test_windows_editor_uses_the_cli_selected_by_the_installed_launcher(self):
+        comparison = diff.read_comparison(self.target)
+        for executable, script in (("Code.exe", "code.cmd"), ("Code - Insiders.exe", "code-insiders.cmd")):
+            with self.subTest(executable=executable):
+                install = self.base / Path(executable).stem
+                launcher = install / executable
+                script_path = install / "bin" / script
+                script_path.parent.mkdir(parents=True)
+                script_path.write_text(
+                    rf'"%~dp0..\{executable}" "%~dp0..\261c84cb1e\resources\app\out\cli.js" %*',
+                    encoding="utf-8",
+                )
+                stale = install / "resources/app/out/cli.js"
+                stale.parent.mkdir(parents=True)
+                stale.touch()
+                entry = install / "261c84cb1e/resources/app/out/cli.js"
+                entry.parent.mkdir(parents=True)
+                entry.touch()
+                process = Mock()
+                process.wait.return_value = 0
+                with patch.object(diff, "sys", SimpleNamespace(platform="win32")), \
+                     patch.object(diff, "read_comparison", return_value=comparison), \
+                     patch.object(diff, "find_vscode", return_value=launcher), \
+                     patch.object(diff.subprocess, "Popen", return_value=process) as launch, \
+                     patch.dict(os.environ, VSCODE_DEV="1", ELECTRON_RUN_AS_NODE="0"):
+                    value = diff.open_editor(self.target)
+                    self.assertEqual(value["viewer"], "vscode")
+                    command = launch.call_args.args[0]
+                    self.assertEqual(command[:2], [str(launcher), str(entry)])
+                    self.assertEqual(command[-1], self.file.as_uri())
+                    self.assertEqual(launch.call_args.kwargs["env"]["ELECTRON_RUN_AS_NODE"], "1")
+                    self.assertNotIn("VSCODE_DEV", launch.call_args.kwargs["env"])
+
+                    entry.unlink()
+                    launch.reset_mock()
+                    value = diff.open_editor(self.target)
+                    self.assertEqual(value["url"], self.target.url(html_only=True))
+                    launch.assert_not_called()
 
     def test_editor_fallback_on_absence_failure_or_materialization_error(self):
         with patch.object(diff, "find_vscode", return_value=None):
@@ -254,9 +303,9 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         with patch.object(diff, "find_vscode", return_value=None):
             self.assertEqual(diff.open_editor(remote)["url"], remote.github)
         comparison = diff.read_comparison(self.target)
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", side_effect=OSError("launcher failed")):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(diff.subprocess, "Popen", side_effect=OSError("launcher failed")):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
-        with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(artifacts, "create_artifact", side_effect=OSError("cache failed")):
+        with patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(artifacts, "create_artifact", side_effect=OSError("cache failed")):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
 
     def test_deletion_does_not_recreate_the_worktree_file(self):
@@ -264,7 +313,7 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         comparison = diff.read_comparison(self.target)
         process = Mock()
         process.wait.return_value = 0
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process) as launch:
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(diff.subprocess, "Popen", return_value=process) as launch:
             diff.open_editor(self.target)
         self.assertEqual(file_uri_path(launch.call_args[0][0][-1]).read_bytes(), b"")
         self.assertFalse(self.file.exists())
@@ -282,10 +331,10 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         comparison = diff.read_comparison(self.target)
         process = Mock()
         process.wait.return_value = 2
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(diff.subprocess, "Popen", return_value=process):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
         process.wait.side_effect = [subprocess.TimeoutExpired("Code.exe", 1), 0]
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=self.launcher), patch.object(diff.subprocess, "Popen", return_value=process):
             self.assertEqual(diff.open_editor(self.target)["viewer"], "vscode")
 
     @unittest.skipUnless(os.name == "nt", "requires native Windows junctions")
@@ -459,7 +508,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         capture.assert_not_called()
         launch.assert_called_once()
         command = launch.call_args[0][0]
-        self.assertEqual(command[:4], ["Code.exe", "--folder-uri", self.repo.as_uri(), "--diff"])
+        self.assertEqual(command[-7:-4], ["--folder-uri", self.repo.as_uri(), "--diff"])
         before = urllib.parse.urlsplit(command[-3])
         self.assertEqual(before.scheme, "git")
         self.assertEqual(json.loads(urllib.parse.unquote(before.query)), {"path": str(self.file), "ref": self.before})
@@ -478,7 +527,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
                 self.assertEqual(result["viewer"], "vscode")
                 launch.assert_called_once()
                 command = launch.call_args[0][0]
-                self.assertEqual(command[1:4], ["--folder-uri", linked.as_uri(), "--diff"])
+                self.assertEqual(command[-7:-4], ["--folder-uri", linked.as_uri(), "--diff"])
                 before = urllib.parse.urlsplit(command[-3])
                 self.assertEqual(before.scheme, "git")
                 self.assertEqual(json.loads(urllib.parse.unquote(before.query)),
@@ -585,7 +634,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(file_uri_path(command[-3]).read_bytes(), b"baseline\n")
         self.assertEqual(file_uri_path(command[-1]).read_bytes(), b"first edit\n")
         self.assertNotEqual(file_uri_path(command[-1]), self.file)
-        self.assertEqual(command[1:3], ["--reuse-window", "--diff"])
+        self.assertEqual(command[-6:-4], ["--reuse-window", "--diff"])
         with patch.object(diff, "find_vscode", return_value=None):
             self.assertEqual(diff.open_editor(target)["url"], target.url(html_only=True))
 

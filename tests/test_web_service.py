@@ -23,6 +23,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'runtime'))
 from local_web import service as web, artifacts, storage, http_server
+from local_web.installation import INSTALL_RECORD
 from local_web.apps import status as apps
 from local_web.apps import diff
 from local_web_test_support import isolate_local_web
@@ -58,6 +59,9 @@ class WebServiceTests(unittest.TestCase):
 
     def set_plugin_version(self, version):
         web.PLUGIN_MANIFEST.write_text(json.dumps({'version': version}), encoding='utf-8')
+
+    def install_revision(self, revision):
+        storage.write_json(web.PLUGIN_ROOT / INSTALL_RECORD, {'source_type': 'git', 'revision': revision})
 
     def start_protocol_server(self, fields=None, *, legacy=False):
         """Start a real peer with an older or incompatible health response."""
@@ -113,6 +117,76 @@ class WebServiceTests(unittest.TestCase):
         self.assertEqual(web.health(web.load_state()).get('plugin_version'), '1.2.21')
         self.assertEqual(web.load_state()['pid'], first['pid'])
         self.assertEqual(set(web.load_state()), {'schema', 'port', 'key', 'mode', 'pid'})
+
+    def run_hook(self, harness, entry=None):
+        result = subprocess.run([sys.executable, '-B', str(entry or self.entry), 'hook', '--harness', harness],
+                                input=json.dumps({'cwd': str(self.project)}), text=True,
+                                capture_output=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, '')
+
+    def running_host(self):
+        state = web.load_state()
+        return web.service_info(state, web.health(state))
+
+    def test_same_version_session_hook_replaces_its_own_installation_and_preserves_preview_mode(self):
+        self.install_revision('a' * 40)
+        before = web.ensure_service('previews')
+        self.install_revision('b' * 40)
+        self.run_hook('codex')
+
+        after = self.running_host()
+        self.assertNotEqual(after['pid'], before['pid'])
+        self.assertEqual(after['plugin_identity'], 'git:' + 'b' * 40)
+        self.assertEqual(after['apps'], before['apps'])
+        self.assertEqual(after['mode'], 'previews')
+
+    def test_copilot_installation_change_replaces_codex_without_alternating_restarts(self):
+        self.install_revision('a' * 40)
+        self.run_hook('codex')
+        before = self.running_host()
+        copilot = self.base / 'copilot installation'
+        runtime = copilot / 'runtime'
+        runtime.mkdir(parents=True)
+        payload = runtime / 'fixture.py'
+        payload.write_text('# first payload\n', encoding='utf-8')
+        entry = copilot / '__main__.py'
+        original = self.entry.read_text(encoding='utf-8')
+        entry.write_text(original.replace(f'service.PLUGIN_ROOT = Path({str(self.base)!r})',
+                                          f'service.PLUGIN_ROOT = Path({str(copilot)!r})'), encoding='utf-8')
+
+        self.run_hook('copilot', entry)
+        self.assertEqual(self.running_host()['pid'], before['pid'])
+        payload.write_text('# updated payload\n', encoding='utf-8')
+        self.run_hook('copilot', entry)
+        after = self.running_host()
+        self.assertNotEqual(after['pid'], before['pid'])
+        self.assertTrue(after['plugin_identity'].startswith('content:'))
+        self.assertEqual(after['plugin_version'], before['plugin_version'])
+        self.assertEqual(after['apps'], before['apps'])
+        self.assertEqual(after['mode'], before['mode'])
+        self.assertEqual(self.request(before['apps']['setup'])[0], 200)
+
+        cache = runtime / '__pycache__'
+        cache.mkdir()
+        (cache / 'fixture.pyc').write_bytes(b'generated')
+        self.run_hook('codex')
+        self.run_hook('copilot', entry)
+        self.assertEqual(self.running_host()['pid'], after['pid'])
+
+    def test_failed_hook_replacement_retries_with_original_access_and_mode(self):
+        self.install_revision('a' * 40)
+        before = web.ensure_service('previews')
+        self.install_revision('b' * 40)
+        with patch.object(web.subprocess, 'Popen', side_effect=OSError('launch denied')):
+            with self.assertRaisesRegex(OSError, 'launch denied'):
+                web.ensure_service(session_start=True)
+        self.assertTrue(web.port_available())
+
+        after = web.ensure_service(session_start=True)
+        self.assertEqual(after['apps'], before['apps'])
+        self.assertEqual(after['mode'], 'previews')
+        self.assertEqual(after['plugin_identity'], 'git:' + 'b' * 40)
 
     def test_diff_generation_upgrades_service_and_preserves_existing_links(self):
         first = web.ensure_service()

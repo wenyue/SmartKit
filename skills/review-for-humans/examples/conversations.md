@@ -4,13 +4,7 @@ These synthetic cases illustrate judgment and transitions; they are not executio
 
 ## A complete file report
 
-Premise: a fixed PR comparison contains two production files. Inspection found a cancellation regression in a cleanup edit omitted from the author's summary and two observations in draft display paths unaffected by the save changes. This is the first report using the selected workspace. The paths, links, and source below are illustrative.
-
-**Working directory**
-
-```text
-/work/app
-```
+Premise: a fixed PR comparison contains two production files. Inspection found a cancellation regression in a cleanup edit omitted from the author's summary and two observations in draft display paths unaffected by the save changes. The paths, links, and source below are illustrative.
 
 This final group contains both non-test files in the fixed PR comparison; tests and Viewed files were excluded before counting.
 
@@ -132,7 +126,7 @@ These are abbreviated decision notes. Supplementary and repair reports use the c
 
 ## Re-review every file in a repair
 
-Premise: in a separate review, M1–M10 have been assigned and main progress is 4/9 files with 10 modifications. M2 found that category-list lookup uses a translated name even though stored lists and callers already have stable category IDs. The user selected Fix M2, without delivery. The repair changes the lookup and both callers, plus a test file. The workspace is unchanged, so its label is not repeated. Links, source, and results are illustrative.
+Premise: in a separate review, M1–M10 have been assigned and main progress is 4/9 files with 10 modifications. M2 found that category-list lookup uses a translated name even though stored lists and callers already have stable category IDs. The user selected Fix M2, without delivery. The repair changes the lookup and both callers, plus a test file. Links, source, and results are illustrative.
 
 M2 is repaired across the lookup and its two callers. M11 and M12 describe the supporting caller changes; all three items belong to this repair of M2.
 
