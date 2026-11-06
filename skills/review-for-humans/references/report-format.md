@@ -2,7 +2,7 @@
 
 The [Skill entry](../SKILL.md) owns inspection standards, required findings and conclusions, M/O identity, grouping, progress, and decisions. This reference owns report depth and presentation; examples illustrate it without defining another format.
 
-When the review uses a local workspace, start its first report with the selected workspace's full absolute physical root in a separate `text` code block for copying. This covers current checkouts and existing or newly created linked worktrees. Show the updated path before the next report when the selected workspace changes.
+Start the first report using a local workspace and the first report after changing to another local workspace with the working-directory label. Follow it with the full absolute path to the selected workspace's physical root in a separate `text` code block for copying. Place both before any report heading, summary, finding, or group introduction. This covers current checkouts and existing or newly created linked worktrees.
 
 ## Choose the report depth
 
@@ -14,7 +14,7 @@ Expand an affected file into a complete block for a material design choice, cont
 
 ## Arrange complete file blocks
 
-Any group introduction precedes the first separator. Repeat the file block from its leading separator for each file. Thus every file, including the first, has a separator before it; adjacent files share one boundary.
+Place any group introduction after the working directory if shown and before the first separator. Repeat the file block from its leading separator for each file. Thus every file, including the first, has a separator before it; adjacent files share one boundary.
 
 After the final complete file block, place the complete O observations section when present, with one separator before it and one before the group closing. Without O observations, use exactly one separator between the final file and the group closing.
 
@@ -25,6 +25,8 @@ After the final complete file block, place the complete O observations section w
 ```text
 <absolute physical root of the selected workspace>
 ```
+
+<group introduction, when needed>
 
 ---
 
@@ -78,5 +80,7 @@ Choose comparison detail by understanding difficulty and consequences, not line 
 Keep rare machinery in the internal analysis unless it changes the user's choice.
 
 ## Check the report before sending
+
+When the working directory is required, confirm that its label and path block are the first visible content.
 
 For a concise repair, confirm the required summary content and whether an affected file needs expansion. For complete file blocks, check the first-file and between-file separators, then confirm that any complete O section follows the final complete file and precedes the group closing, with one separator at each boundary. With no O section, confirm exactly one separator between the final file and closing. Check the full-path title on its own; separate overview; two leading judgments; bold item titles; and paired quoted comparisons. Confirm conditional findings, evidence gaps, and decisions are present where needed. Keep the fixed structure and use friendly, direct language within it.

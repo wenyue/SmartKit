@@ -12,7 +12,9 @@ Decide whether isolation is needed before creating a worktree. Read-only inspect
 
 When isolation is needed, prefer a compatible existing task worktree to a new one. Weigh the benefit against dependency restoration and generation costs before choosing a new checkout. Use `create-worktree` to select or create the isolated workspace and establish readiness; its required preparation still applies.
 
-Before performing task analysis or edits in a worktree other than the current workspace, whether newly created or reused, state its concrete path and obtain the user's explicit agreement unless the conversation already contains agreement covering that execution location. Direct instructions and workspace choices made through another Skill count; reuse that consent without asking again.
+Before creating a worktree or branch, switching branches in a checkout, or performing task analysis or edits in another worktree, explain the planned operations, concrete target path and branch as applicable, and effects on existing work; obtain the user's explicit agreement before proceeding. Branch creation requires this agreement even without a new worktree or a branch switch.
+
+Reuse agreement already present in the conversation when it covers the planned operations and target. Direct instructions and workspace or branch choices made through another Skill count; one choice may cover both a worktree and its branch. General permission to implement does not by itself authorize these operations.
 
 ## Keep commit authority scoped
 

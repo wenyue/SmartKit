@@ -8,16 +8,16 @@ import html
 import json
 import os
 import re
-import shutil
 import subprocess
-import sys
 import threading
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Sequence
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from .. import artifacts
+from .. import editor_bridge
 from ..storage import prepare_state, redirected
+from . import editor_settings
 from .presentation import icon, page
 from .comparisons import (Comparison, Target, git, github_pr_url, inspect_worktrees, parse_pr, pin_baseline,
                           read_comparison, resolve_targets, target_from_fields, target_from_query, validate_base)
@@ -179,14 +179,17 @@ def target_description(target: Target) -> str:
 def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
     github = ('<a class="github-link" href="' + html.escape(target.github, quote=True) + '">'
               + icon("external") + '查看 GitHub PR diff</a>') if target.github else ""
-    endpoint = "/api/diff/open?" + target.query()
-    encoded = json.dumps(endpoint).replace("<", "\\u003c")
+    query = json.dumps(target.query()).replace("<", "\\u003c")
     initial = "正在尝试打开 VS Code…" if automatic else "点击按钮尝试打开 VS Code，或选择网页 diff。"
     body = ('<div id="opening"' + (' class="is-opening"' if automatic else '') + '>'
             '<div class="opening-heading"><span class="spinner" aria-hidden="true"'
             + ('' if automatic else ' hidden') + '></span><h1 id="opening-title">'
             + ('正在打开 VS Code' if automatic else '打开文件对比') + '</h1></div>'
             '<p id="status" class="opening-status" role="status" aria-live="polite">' + initial + '</p>'
+            '<form id="bridge-install" hidden><label for="bridge-profile">目标 VS Code 配置</label> '
+            '<input id="bridge-profile" name="profile" required maxlength="128" value="'
+            + editor_settings.DEFAULT_PROFILE + '">'
+            '<div class="actions"><button class="button primary" type="submit">安装并打开 Diff</button></div></form>'
             '<div class="file-context">' + icon("file") + '<div><p class="file-path">'
             + html.escape(target.path) + '</p><p class="project-name">' + html.escape(target.repo.name)
             + '</p></div></div><p>' + html.escape(target_description(target)) + '</p><div class="actions"><button id="open" class="button primary" type="button">'
@@ -194,49 +197,85 @@ def render_open_page(target: Target, *, automatic: bool = True) -> bytes:
             '<a class="button" href="' + html.escape(target.url(html_only=True), quote=True) + '">'
             + icon("browser") + '在网页中查看</a></div>' + github
             + '<footer class="closing-note">' + icon("info") + '<div><p>请求发出后将尝试自动关闭本页。</p>'
-            '<p>若页面未关闭，可使用上方网页入口查看。</p><p id="bridge-setup" hidden></p></div></footer></div>'
-            '<script>const automatic=' + ('true' if automatic else 'false') + ';let started=false;async function openDiff(){if(started||document.prerendering||document.visibilityState!=="visible"||window.top!==window.self)return;started=true;document.getElementById("open").disabled=true;'
-            'document.getElementById("opening").classList.add("is-opening");document.querySelectorAll(".spinner").forEach(item=>item.hidden=false);document.getElementById("open-label").textContent="正在打开…";document.getElementById("opening-title").textContent="正在打开 VS Code";'
-            'try{const response=await fetch(' + encoded + ',{method:"POST",credentials:"omit"});const result=await response.json();'
-            'document.getElementById("status").textContent=result.message;'
-            'if(response.ok&&result.url)location.replace(result.url);'
-            'else if(response.ok&&result.viewer==="vscode"){document.getElementById("opening-title").textContent="已发送打开请求";document.getElementById("open-label").textContent="已发送请求";'
-            'if(result.bridge_setup){const hint=document.getElementById("bridge-setup");hint.textContent=result.bridge_setup;hint.hidden=false;}else{window.close();}}'
-            'else{document.getElementById("opening-title").textContent="打开请求未完成";document.getElementById("open-label").textContent="请求未完成";}'
-            '}catch(error){document.getElementById("status").textContent="启动请求未完成，请使用下方入口查看 diff。";document.getElementById("opening-title").textContent="打开请求未完成";document.getElementById("open-label").textContent="请求未完成";}'
-            'finally{document.getElementById("opening").classList.remove("is-opening");document.querySelectorAll(".spinner").forEach(item=>item.hidden=true);}}'
-            'document.getElementById("open").addEventListener("click",openDiff);if(automatic){document.addEventListener("prerenderingchange",openDiff);document.addEventListener("visibilitychange",openDiff);openDiff();}</script>')
+            '<p>若页面未关闭，可使用上方网页入口查看。</p></div></footer></div>'
+            '<script>const automatic=' + ('true' if automatic else 'false') + ';const query=' + query + ';'
+            """
+const opening=document.getElementById("opening");
+const title=document.getElementById("opening-title");
+const status=document.getElementById("status");
+const openButton=document.getElementById("open");
+const openLabel=document.getElementById("open-label");
+const form=document.getElementById("bridge-install");
+const profile=document.getElementById("bridge-profile");
+const installButton=form.querySelector("button");
+let started=false;
+
+async function requestDiff(endpoint) {
+    const response=await fetch(endpoint,{method:"POST",credentials:"omit"});
+    const result=await response.json();
+    if (!response.ok) throw new Error(result.message);
+    status.textContent=result.message;
+    if (result.install_required) {
+        title.textContent="安装 SmartKit Diff Bridge";
+        document.body.classList.add("bridge-required");
+        form.hidden=false;
+        openButton.hidden=true;
+        installButton.focus();
+    } else if (result.url) {
+        location.replace(result.url);
+    } else if (result.viewer==="vscode") {
+        form.hidden=true;
+        title.textContent="已发送打开请求";
+        openLabel.textContent="已发送请求";
+        window.close();
+    }
+}
+
+async function openDiff() {
+    if (started || document.prerendering || document.visibilityState!=="visible" || window.top!==window.self) return;
+    started=true;
+    openButton.disabled=true;
+    opening.classList.add("is-opening");
+    document.querySelectorAll(".spinner").forEach(item=>item.hidden=false);
+    title.textContent="正在打开 VS Code";
+    openLabel.textContent="正在打开…";
+    try {
+        await requestDiff("/api/diff/open?"+query);
+    } catch (error) {
+        // Network and response failures both leave the manual diff links available.
+        title.textContent="打开请求未完成";
+        openLabel.textContent="请求未完成";
+        status.textContent=error.message || "请使用网页入口查看 Diff。";
+    } finally {
+        opening.classList.remove("is-opening");
+        document.querySelectorAll(".spinner").forEach(item=>item.hidden=true);
+    }
+}
+
+form.addEventListener("submit",async event=>{
+    event.preventDefault();
+    if (!event.isTrusted || form.hidden || installButton.disabled || document.visibilityState!=="visible") return;
+    installButton.disabled=true;
+    profile.disabled=true;
+    status.textContent="正在检查并安装扩展，确认后将自动打开 Diff…";
+    try {
+        await requestDiff("/api/diff/install?"+query+"&profile="+encodeURIComponent(profile.value));
+    } catch (error) {
+        // The request may have reached VS Code. Retrying verifies installation before writing again.
+        status.textContent=error.message || "安装或打开结果未确认，请重试。";
+    } finally {
+        profile.disabled=false;
+        installButton.disabled=false;
+    }
+});
+openButton.addEventListener("click",openDiff);
+if (automatic) {
+    document.addEventListener("prerenderingchange",openDiff);
+    document.addEventListener("visibilitychange",openDiff);
+    openDiff();
+}
+</script>""")
     return page("打开 Diff", body, label="文件对比", compact=True)
-
-
-def find_vscode() -> Optional[Path]:
-    for name in ("code", "code-insiders"):
-        candidate = shutil.which(name)
-        if candidate:
-            path = Path(candidate)
-            if sys.platform != "win32" or path.suffix.lower() == ".exe":
-                return path
-            # Avoid passing user paths through Windows batch-file interpretation.
-            for executable in ("Code.exe", "Code - Insiders.exe"):
-                native = path.parent.parent / executable
-                if native.is_file():
-                    return native
-    if sys.platform == "win32":
-        for variable in ("LOCALAPPDATA", "ProgramFiles", "ProgramFiles(x86)"):
-            value = os.environ.get(variable)
-            if value:
-                root = Path(value) / ("Programs" if variable == "LOCALAPPDATA" else "")
-                for directory, executable in (("Microsoft VS Code", "Code.exe"), ("Microsoft VS Code Insiders", "Code - Insiders.exe")):
-                    native = root / directory / executable
-                    if native.is_file():
-                        return native
-    elif sys.platform == "darwin":
-        for root in (Path("/Applications"), Path.home() / "Applications"):
-            for name in ("Visual Studio Code", "Visual Studio Code - Insiders"):
-                native = root / (name + ".app") / "Contents/Resources/app/bin/code"
-                if native.is_file():
-                    return native
-    return None
 
 
 def git_base_uri(comparison: Comparison) -> Optional[str]:
@@ -268,8 +307,8 @@ def git_base_uri(comparison: Comparison) -> Optional[str]:
     return urlunsplit(("git", "", urlsplit(history.as_uri()).path, query, ""))
 
 
-def open_editor(target: Target) -> Dict[str, str]:
-    """Dispatch a fixed launcher, or return the contracted GitHub/HTML fallback."""
+def open_editor(target: Target, *, installation_verified: bool = False) -> Dict[str, str]:
+    """Dispatch a comparison after the required extension is confirmed, or return a browser disposition."""
     if (target.head and target.view == "auto") or target.base.startswith("commit:"):
         resolution = resolve_targets(target)
         if not resolution.targets:
@@ -284,12 +323,24 @@ def open_editor(target: Target) -> Dict[str, str]:
         if target.github:
             return {"viewer": "web", "url": target.url(), "message": "本地比较不可用：" + str(error)}
         raise
-    launcher = find_vscode()
+    launcher = editor_settings.find_vscode()
     if launcher is None:
         return {"viewer": "web", "url": fallback, "message": "未找到 VS Code，正在打开网页 diff。"}
     suffix = Path(target.path).suffix
     try:
         before_uri = git_base_uri(comparison) if comparison.worktree_file is not None else None
+        after = comparison.worktree_file
+        needs_after_file = after is None or comparison.after is None
+        if before_uri is not None and after is not None and comparison.after is not None and editor_bridge.open_registered_diff(target.repo, before_uri, after):
+            return {"viewer": "vscode", "message": "已在 VS Code 中打开文件对比。"}
+        if not installation_verified:
+            try:
+                installed = editor_settings.installed_version(launcher)
+            except OSError as error:
+                return {"install_required": "true", "message": "无法确认 Diff Bridge 安装状态。" + str(error)}
+            if installed is None:
+                return {"install_required": "true", "message": "默认 VS Code 配置缺少必需的扩展。请确认仓库窗口使用的配置后安装。"}
+
         payloads = {}  # type: Dict[str, bytes]
         before_name, after_name = "before" + suffix, "after" + suffix
         if target.view == "snapshot":
@@ -297,21 +348,18 @@ def open_editor(target: Target) -> Dict[str, str]:
             after_name = "head-" + target.head[:12] + suffix
         if before_uri is None:
             payloads[before_name] = comparison.before or b""
-        if comparison.worktree_file is None or comparison.after is None:
+        if needs_after_file:
             payloads[after_name] = comparison.after or b""
-        after = comparison.worktree_file
         if payloads:
             captured = artifacts.create_artifact(payloads)
-            if before_uri is None:
-                before = captured.files[before_name].path
-            if comparison.worktree_file is None or comparison.after is None:
+            if needs_after_file:
                 after = captured.files[after_name].path
-        if before_uri is not None:
-            from ..editor_bridge import open_registered_diff
-            if open_registered_diff(target.repo, before_uri, after):
-                return {"viewer": "vscode", "message": "已在 VS Code 中打开文件对比。"}
-            captured = artifacts.create_artifact({before_name: comparison.before or b""})
+        if before_uri is None:
             before = captured.files[before_name].path
+        else:
+            if needs_after_file and after is not None and editor_bridge.open_registered_diff(target.repo, before_uri, after):
+                return {"viewer": "vscode", "message": "已在 VS Code 中打开文件对比。"}
+            before = artifacts.create_artifact({before_name: comparison.before or b""}).files[before_name].path
         arguments = [str(before), str(after)]
         environment = dict(os.environ)
         environment.pop("ELECTRON_RUN_AS_NODE", None)
@@ -332,9 +380,7 @@ def open_editor(target: Target) -> Dict[str, str]:
             raise OSError("VS Code launcher exited with status " + str(status))
     except (OSError, ValueError) as error:
         return {"viewer": "web", "url": fallback, "message": "VS Code 比较结果未确认，正在打开网页 diff：" + str(error)}
-    result = {"viewer": "vscode", "message": "已向 VS Code 发送 diff 请求；如果未显示，请使用下方网页入口。"}
+    message = "已向 VS Code 发送 diff 请求；如果未显示，请使用网页入口。"
     if before_uri is not None:
-        result["bridge_setup"] = ("本次左侧使用临时文件。可在 SmartKit 的编辑器设置中启用 Git 基线对比，"
-                                  "或聚焦已启用 Diff Bridge 的仓库窗口后重开链接。"
-                                  "运行 local_web ensure 可获取 apps.editor 设置页地址。")
-    return result
+        message += " 当前窗口未通过扩展打开 Git 历史，本次左侧使用临时文件。"
+    return {"viewer": "vscode", "message": message}

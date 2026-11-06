@@ -80,8 +80,11 @@ class WebPageTests(unittest.TestCase):
             links = [attrs["href"] for tag, attrs in document.tags if tag == "a"]
             self.assertEqual(links, [target.url(html_only=True), target.github])
             buttons = [attrs for tag, attrs in document.tags if tag == "button"]
-            self.assertEqual(len(buttons), 1)
-            self.assertEqual(buttons[0]["id"], "open")
+            self.assertEqual(len(buttons), 2)
+            self.assertTrue(any(tag == "form" and attrs.get("id") == "bridge-install"
+                                and "hidden" in attrs for tag, attrs in document.tags))
+            self.assertEqual(buttons[0]["type"], "submit")
+            self.assertEqual(buttons[1]["id"], "open")
             self.assertTrue(any(tag == "p" and attrs.get("role") == "status" for tag, attrs in document.tags))
 
 

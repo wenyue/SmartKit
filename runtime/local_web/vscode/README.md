@@ -1,6 +1,6 @@
 # SmartKit Diff Bridge
 
-这个可选 VS Code 扩展只负责当前窗口内的比较选择：
+使用 VS Code 查看 SmartKit diff 需要安装 SmartKit Diff Bridge（`wenyue.smartkit-diff-bridge`）。扩展负责当前窗口内的比较选择：
 
 - 请求对应的仓库已注册，且历史基线可以读取：在该窗口直接打开 Git 基线与当前文件的比较。
 - 仓库未注册、只注册了父仓库或历史读取失败：通知 SmartKit 使用已核实 blob 的临时基线。
@@ -10,10 +10,9 @@
 
 ## 本地启用
 
-运行已安装 SmartKit 的 `local_web ensure`，打开返回的 `apps.editor` 本机设置页。
-填入仓库窗口正在使用的 VS Code 配置名称，点击「安装或更新 Diff Bridge」。
-安装器核对目标配置中的版本。聚焦仓库窗口并重新打开原 diff 链接，确认左侧可读取 Git 历史。
-如窗口尚未加载扩展，重载该窗口后重试。
+SmartKit 在会话启动时检查 VS Code 默认配置中的扩展。打开 diff 时，如果扩展尚未安装，浏览器会在页面中央显示安装表单并等待。核对配置名后点击「安装并打开 Diff」，SmartKit 会安装随包附带的 VSIX，核对该配置中的安装版本，然后自动继续打开原 diff。
+
+也可以运行已安装 SmartKit 的 `local_web ensure`，打开返回的 `apps.editor` 本机设置页。填入仓库窗口正在使用的 VS Code 配置名称，点击「安装或更新 Diff Bridge」。默认配置填 `Default`。如果窗口还没加载扩展，重载仓库窗口后可重新打开 diff，验证能否直接读取 Git 历史。
 
 ## 打包
 

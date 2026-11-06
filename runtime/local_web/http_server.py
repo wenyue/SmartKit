@@ -9,7 +9,7 @@ import mimetypes
 import os
 import socket
 import time
-from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.parse import parse_qs, parse_qsl, unquote, urlencode, urlsplit
 
 from . import HOST, PORT, ORIGIN, SERVICE_SCHEMA
 from . import artifacts
@@ -181,18 +181,42 @@ class WebHandler(BaseHTTPRequestHandler):
             except OSError as error:
                 self.json(409, {"message": str(error)})
             return
-        if parsed.path != "/api/diff/open":
+        install = parsed.path == "/api/diff/install"
+        if not install and parsed.path != "/api/diff/open":
             self.json(404, {"message": "Not found"})
             return
+        # Installation is available to the visible diff page's submit handler. Unlike diff
+        # launch, this write requires the browser to identify the caller as same-origin.
+        if install and self.headers.get("Sec-Fetch-Site") != "same-origin":
+            self.json(403, {"message": "Forbidden"})
+            return
         try:
-            target = diff.target_from_query(parsed.query)
+            query = parsed.query
+            if install:
+                fields = parse_qsl(query, keep_blank_values=True, strict_parsing=True, max_num_fields=11)
+                profiles = [value for name, value in fields if name == "profile"]
+                if len(profiles) != 1:
+                    raise ValueError("请选择一个 VS Code 配置。")
+                query = urlencode([(name, value) for name, value in fields if name != "profile"])
+            target = diff.target_from_query(query)
         except ValueError as error:
             self.json(400, {"message": str(error)})
             return
+        if install:
+            try:
+                editor_settings.install(profiles[0])
+            except ValueError as error:
+                self.json(400, {"message": str(error)})
+                return
+            except OSError as error:
+                self.json(409, {"message": str(error)})
+                return
         try:
-            self.json(200, diff.open_editor(target))
+            result = diff.open_editor(target, installation_verified=True) if install else diff.open_editor(target)
+            self.json(200, result)
         except (OSError, ValueError) as error:
-            self.json(409, {"message": "无法打开比较：" + str(error)})
+            message = "已确认扩展安装，但无法打开比较：" if install else "无法打开比较："
+            self.json(409, {"message": message + str(error)})
 
 
 class WebServer(ThreadingHTTPServer):

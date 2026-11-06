@@ -64,11 +64,17 @@ h2,h3,p{margin:0}h2{font-size:19px;line-height:1.5}h3{font-size:16px}
 .is-opening .spinner{animation:spin 1s linear infinite}.spinner[hidden]{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .opening-status{color:var(--muted);min-height:26px;overflow-wrap:anywhere}
+.bridge-required{display:grid;align-items:center;min-height:100vh}
+.bridge-required .compact{margin:20px auto}
+.bridge-required #bridge-install{margin-top:18px;padding:18px;background:var(--inset);border:1px solid var(--border);border-radius:10px}
+.bridge-required #bridge-install input{padding:8px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;font:inherit;max-width:100%}
+.bridge-required #bridge-install .actions{margin-top:14px}
 .file-context{gap:20px;padding:18px 22px;background:var(--inset);border:1px solid var(--border);border-radius:10px;margin:24px 0}
 .file-context>.icon{color:var(--muted);width:27px;height:27px}.file-context>div{min-width:0}
 .file-path{font:15px/1.6 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.project-name{font-size:13px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
 .actions{gap:16px}.button{justify-content:center;gap:10px;flex:1;padding:12px 18px;min-height:48px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);background:transparent;font:inherit;text-decoration:none;cursor:pointer}
 .button:hover{background:#152339;color:var(--blue)}.primary{background:#245ec7;color:#fff}.primary:hover{background:#2e6bd7;color:#fff}
+.button[hidden]{display:none}
 .primary:disabled{background:#20375e;border-color:#20375e;color:#c3d5f1;cursor:default}.button .spinner{width:18px;height:18px;border-width:2px}
 .github-link{display:inline-flex;align-items:center;gap:9px;margin-top:18px;text-decoration:none;font-size:14px}
 .closing-note{display:flex;align-items:flex-start;gap:16px;border-top:1px solid var(--border);padding-top:22px;margin-top:26px;color:var(--muted);font-size:13px}

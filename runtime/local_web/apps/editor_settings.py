@@ -5,20 +5,51 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import threading
 from typing import List, Optional, Tuple
 from urllib.parse import urlencode
 
-from .diff import find_vscode
 from .presentation import page
 
 
 EXTENSION_ID = "wenyue.smartkit-diff-bridge"
+DEFAULT_PROFILE = "Default"
 RUNTIME_DIR = Path(__file__).resolve().parents[1]
 VSIX = RUNTIME_DIR / "smartkit-diff-bridge.vsix"
 _INSTALL_LOCK = threading.Lock()
+
+
+def find_vscode() -> Optional[Path]:
+    for name in ("code", "code-insiders"):
+        candidate = shutil.which(name)
+        if candidate:
+            path = Path(candidate)
+            if sys.platform != "win32" or path.suffix.lower() == ".exe":
+                return path
+            # Invoke the executable directly so Windows never interprets user paths as batch commands.
+            for executable in ("Code.exe", "Code - Insiders.exe"):
+                native = path.parent.parent / executable
+                if native.is_file():
+                    return native
+    if sys.platform == "win32":
+        for variable in ("LOCALAPPDATA", "ProgramFiles", "ProgramFiles(x86)"):
+            value = os.environ.get(variable)
+            if value:
+                root = Path(value) / ("Programs" if variable == "LOCALAPPDATA" else "")
+                for directory, executable in (("Microsoft VS Code", "Code.exe"), ("Microsoft VS Code Insiders", "Code - Insiders.exe")):
+                    native = root / directory / executable
+                    if native.is_file():
+                        return native
+    elif sys.platform == "darwin":
+        for root in (Path("/Applications"), Path.home() / "Applications"):
+            for name in ("Visual Studio Code", "Visual Studio Code - Insiders"):
+                native = root / (name + ".app") / "Contents/Resources/app/bin/code"
+                if native.is_file():
+                    return native
+    return None
 
 
 def _version(value: str) -> Tuple[int, ...]:
@@ -27,21 +58,34 @@ def _version(value: str) -> Tuple[int, ...]:
     return tuple(int(part) for part in value.split("."))
 
 
-def _code(launcher: Path, arguments: List[str], *, failure: str) -> str:
+def _windows_cli_entry(launcher: Path) -> Path:
+    root = launcher.parent
+    relative = Path("resources/app/out/cli.js")
+    script = root / "bin" / ("code-insiders.cmd" if launcher.stem.lower().endswith("insiders") else "code.cmd")
+    if script.is_file():
+        # Updates can leave multiple commit directories. Use the one selected by the installed launcher.
+        match = re.search(r'"%~dp0\.\.\\([0-9a-f]{10,40})\\resources\\app\\out\\cli\.js"',
+                          script.read_text(encoding="utf-8-sig", errors="replace"), re.IGNORECASE)
+        if match:
+            relative = Path(match[1]) / relative
+    entry = root / relative
+    if not entry.is_file():
+        raise OSError("找不到 VS Code 命令行入口。")
+    return entry
+
+
+def _code(launcher: Path, arguments: List[str], *, failure: str, timeout: int = 30) -> str:
     command = [str(launcher)]
     environment = dict(os.environ)
     environment.pop("ELECTRON_RUN_AS_NODE", None)
     if sys.platform == "win32":
-        # Use the native executable and the same CLI entry as the Windows launcher.
-        entry = launcher.parent / "resources" / "app" / "out" / "cli.js"
-        if not entry.is_file():
-            raise OSError("找不到 VS Code 命令行入口。")
-        command.append(str(entry))
+        command.append(str(_windows_cli_entry(launcher)))
+        environment.pop("VSCODE_DEV", None)
         environment["ELECTRON_RUN_AS_NODE"] = "1"
     try:
         result = subprocess.run(command + arguments, env=environment, stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                encoding="utf-8", errors="replace", timeout=30, check=True)
+                                encoding="utf-8", errors="replace", timeout=timeout, check=True)
     except subprocess.TimeoutExpired as error:
         raise OSError("VS Code 命令超时。请在 VS Code 中确认扩展状态后重试。") from error
     except (OSError, subprocess.CalledProcessError) as error:
@@ -49,14 +93,16 @@ def _code(launcher: Path, arguments: List[str], *, failure: str) -> str:
     return result.stdout
 
 
-def _installed(launcher: Path, profile: str) -> Optional[str]:
+def installed_version(launcher: Path, profile: str = DEFAULT_PROFILE) -> Optional[str]:
+    """Return the extension's version in the selected profile, or None after a successful absence check."""
     output = _code(launcher, ["--profile", profile, "--list-extensions", "--show-versions"],
-                   failure="无法读取目标 VS Code 配置。请确认配置名称与当前仓库窗口一致。")
+                   failure="无法读取目标 VS Code 配置。请确认配置名称与当前仓库窗口一致。", timeout=5)
     for line in output.splitlines():
         identity, separator, version = line.strip().partition("@")
         if identity.lower() == EXTENSION_ID:
             if not separator:
                 raise OSError("无法确认目标配置中 Diff Bridge 的版本。")
+            _version(version)
             return version
     return None
 
@@ -71,14 +117,14 @@ def install(profile: str) -> dict:
         raise OSError("找不到 VS Code 桌面版。")
     bundled = json.loads((RUNTIME_DIR / "vscode" / "package.json").read_text(encoding="utf-8"))["version"]
     with _INSTALL_LOCK:
-        installed = _installed(launcher, profile)
+        installed = installed_version(launcher, profile)
         if installed is not None and _version(installed) >= _version(bundled):
             return {"profile": profile, "version": installed, "status": "already-installed"}
         if not VSIX.is_file():
             raise OSError("当前 SmartKit 安装包缺少 Diff Bridge 的 VSIX。")
         _code(launcher, ["--profile", profile, "--install-extension", str(VSIX)],
               failure="VS Code 未完成安装。请检查该配置的扩展权限。")
-        installed = _installed(launcher, profile)
+        installed = installed_version(launcher, profile)
         if installed is None or _version(installed) < _version(bundled):
             raise OSError("VS Code 返回后未能确认目标配置中的安装版本。")
         return {"profile": profile, "version": installed, "status": "installed"}

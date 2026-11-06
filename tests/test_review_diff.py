@@ -36,6 +36,9 @@ class DiffFixture:
         })
         self.environment.start()
         self.addCleanup(self.environment.stop)
+        installed = patch.object(editor_settings, "installed_version", return_value="0.1.0")
+        installed.start()
+        self.addCleanup(installed.stop)
         self.repo = self.base / "repo & 中文"
         self.repo.mkdir()
         self.run_git("init")
@@ -66,7 +69,7 @@ class DiffFixture:
         process.wait.return_value = status
         editor = SimpleNamespace(Popen=Mock(return_value=process), DEVNULL=subprocess.DEVNULL,
                                  TimeoutExpired=subprocess.TimeoutExpired)
-        with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff, "subprocess", editor), patch.object(editor_bridge, "open_registered_diff", return_value=registered):
+        with patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(diff, "subprocess", editor), patch.object(editor_bridge, "open_registered_diff", return_value=registered):
             yield editor.Popen
 
 class TargetValidationTests(unittest.TestCase):
@@ -188,7 +191,7 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         with self.assertRaises(FileNotFoundError):
             diff.read_comparison(missing)
         remote = diff.Target(missing.repo, missing.path, missing.base, "https://github.com/o/r/pull/1/files")
-        with patch.object(diff, "find_vscode") as find:
+        with patch.object(editor_settings, "find_vscode") as find:
             value = diff.open_editor(remote)
         find.assert_not_called()
         self.assertEqual(value["url"], remote.url())
@@ -226,7 +229,7 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         comparison = diff.read_comparison(self.target)
         process = Mock()
         process.wait.return_value = 0
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process) as launch, patch.dict(os.environ, ELECTRON_RUN_AS_NODE="1"):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process) as launch, patch.dict(os.environ, ELECTRON_RUN_AS_NODE="1"):
             value = diff.open_editor(self.target)
         self.assertEqual(value["viewer"], "vscode")
         self.assertNotIn("url", value)
@@ -241,15 +244,15 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         self.assertFalse(Path(command[3]).exists())
 
     def test_editor_fallback_on_absence_failure_or_materialization_error(self):
-        with patch.object(diff, "find_vscode", return_value=None):
+        with patch.object(editor_settings, "find_vscode", return_value=None):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
         remote = diff.Target(self.repo, self.name, self.target.base, "https://github.com/o/r/pull/1/files#diff-real")
-        with patch.object(diff, "find_vscode", return_value=None):
+        with patch.object(editor_settings, "find_vscode", return_value=None):
             self.assertEqual(diff.open_editor(remote)["url"], remote.github)
         comparison = diff.read_comparison(self.target)
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", side_effect=OSError("launcher failed")):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", side_effect=OSError("launcher failed")):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
-        with patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(artifacts, "create_artifact", side_effect=OSError("cache failed")):
+        with patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(artifacts, "create_artifact", side_effect=OSError("cache failed")):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
 
     def test_deletion_does_not_recreate_the_worktree_file(self):
@@ -257,7 +260,7 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         comparison = diff.read_comparison(self.target)
         process = Mock()
         process.wait.return_value = 0
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process) as launch:
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process) as launch:
             diff.open_editor(self.target)
         self.assertEqual(Path(launch.call_args[0][0][4]).read_bytes(), b"")
         self.assertFalse(self.file.exists())
@@ -275,10 +278,10 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         comparison = diff.read_comparison(self.target)
         process = Mock()
         process.wait.return_value = 2
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process):
             self.assertEqual(diff.open_editor(self.target)["url"], self.target.url(html_only=True))
         process.wait.side_effect = [subprocess.TimeoutExpired("Code.exe", 1), 0]
-        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(diff, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process):
+        with patch.object(diff, "read_comparison", return_value=comparison), patch.object(editor_settings, "find_vscode", return_value=Path("Code.exe")), patch.object(diff.subprocess, "Popen", return_value=process):
             self.assertEqual(diff.open_editor(self.target)["viewer"], "vscode")
 
     @unittest.skipUnless(os.name == "nt", "requires native Windows junctions")
@@ -452,7 +455,6 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(result["viewer"], "vscode")
         capture.assert_not_called()
         launch.assert_not_called()
-        self.assertNotIn("bridge_setup", result)
         self.assertEqual(request[0], self.repo)
         before = urllib.parse.urlsplit(request[1])
         self.assertEqual(before.scheme, "git")
@@ -464,11 +466,26 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         with self.editor_dispatch() as launch:
             result = diff.open_editor(target)
         self.assertEqual(result["viewer"], "vscode")
-        self.assertIn("apps.editor", result["bridge_setup"])
+        self.assertIn("本次左侧使用临时文件", result["message"])
         command = launch.call_args[0][0]
         self.assertFalse(command[3].startswith("--file-uri=git:"))
         self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
         self.assertEqual(Path(command[4]), self.file)
+
+    def test_missing_bridge_stops_before_launch_or_temporary_files(self):
+        target = self.prepare()
+        with self.editor_dispatch() as launch, patch.object(artifacts, "create_artifact") as capture:
+            for result in (None, OSError("无法查询")):
+                with self.subTest(result=result), patch.object(editor_settings, "installed_version") as installed:
+                    if result is None:
+                        installed.return_value = None
+                    else:
+                        installed.side_effect = result
+                    response = diff.open_editor(target)
+                    self.assertTrue(response["install_required"])
+                    self.assertNotIn("url", response)
+            launch.assert_not_called()
+            capture.assert_not_called()
 
     def test_registered_linked_checkout_opens_in_its_own_window(self):
         linked = self.linked(self.base / "registered worktree")
@@ -599,7 +616,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         self.assertEqual(Path(command[3]).read_bytes(), b"baseline\n")
         self.assertEqual(Path(command[4]).read_bytes(), b"first edit\n")
         self.assertNotEqual(Path(command[4]), self.file)
-        with patch.object(diff, "find_vscode", return_value=None):
+        with patch.object(editor_settings, "find_vscode", return_value=None):
             self.assertEqual(diff.open_editor(target)["url"], target.url(html_only=True))
 
     def test_linked_detached_checkout_is_found_and_binding_survives_later_commits(self):
@@ -624,7 +641,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
         (linked / self.name).write_bytes(b"different local edit\n")
         target = self.prepare()
         self.assertEqual(target.head, self.head)
-        with patch.object(diff, "find_vscode") as find:
+        with patch.object(editor_settings, "find_vscode") as find:
             page = diff.render_page(target).content.decode("utf-8")
             response = diff.open_editor(target)
         find.assert_not_called()
@@ -951,7 +968,7 @@ class PrDiffTests(DiffFixture, unittest.TestCase):
 
     def test_bound_pr_link_retains_diagnostics_when_objects_become_unavailable(self):
         target = self.prepare()
-        with patch.object(diff, "read_comparison", side_effect=OSError("retained blob unavailable")), patch.object(diff, "find_vscode") as find:
+        with patch.object(diff, "read_comparison", side_effect=OSError("retained blob unavailable")), patch.object(editor_settings, "find_vscode") as find:
             page = diff.render_page(target)
             self.assertIn(b"retained blob unavailable", page.content)
             self.assertIn(target.github.encode(), page.content)
@@ -1026,6 +1043,29 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
             self.assertEqual((code, json.loads(body)), (200, result))
             install.assert_called_once_with("Otaku 中文")
 
+    def test_diff_install_resumes_only_after_same_origin_installation_succeeds(self):
+        endpoint = self.origin + "/api/diff/install?" + self.target.query()
+        request = endpoint + "&" + urllib.parse.urlencode({"profile": "Otaku 中文"})
+        headers = {"Origin": self.origin, "Sec-Fetch-Site": "same-origin"}
+        dispatched = {"viewer": "vscode", "message": "dispatched"}
+        with patch.object(editor_settings, "install", side_effect=OSError("install failed")) as install, \
+                patch.object(diff, "open_editor", return_value=dispatched) as launch:
+            self.assertEqual(self.request(request, post=True, headers={"Origin": self.origin})[0], 403)
+            self.assertEqual(self.request(request, post=True, headers={
+                "Origin": "https://example.com", "Sec-Fetch-Site": "cross-site"})[0], 403)
+            self.assertEqual(self.request(request + "&profile=Default", post=True, headers=headers)[0], 400)
+            self.assertEqual(self.request(request + "&unknown=true", post=True, headers=headers)[0], 400)
+            install.assert_not_called()
+            code, _, body = self.request(request, post=True, headers=headers)
+            self.assertEqual((code, json.loads(body)), (409, {"message": "install failed"}))
+            launch.assert_not_called()
+            install.assert_called_once_with("Otaku 中文")
+
+            install.side_effect = None
+            code, _, body = self.request(request, post=True, headers=headers)
+            self.assertEqual((code, json.loads(body)), (200, dispatched))
+            launch.assert_called_once_with(self.target, installation_verified=True)
+
     def test_html_refresh_reads_current_content_and_rejects_foreign_hosts(self):
         url = self.target.url(html_only=True)
         self.assertEqual(self.request(url)[0], 200)
@@ -1058,7 +1098,7 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
         self.file.write_bytes(b"unrelated current contents\n")
         target = diff.Target(self.repo, self.name, self.target.base, "https://github.com/o/r/pull/1/files",
                              head, base_commit=before, view="snapshot")
-        with patch.object(diff, "find_vscode") as find:
+        with patch.object(editor_settings, "find_vscode") as find:
             status, _, body = self.request(target.url(html_only=True))
         find.assert_not_called()
         self.assertEqual(status, 200)
@@ -1084,7 +1124,7 @@ class DiffHttpTests(DiffFixture, unittest.TestCase):
         github = "https://github.com/o/r/pull/1/files"
         target = diff.Target(self.repo, self.name, self.target.base, github, "f" * 40)
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-        with patch.object(diff, "find_vscode") as find:
+        with patch.object(editor_settings, "find_vscode") as find:
             for url in (target.url(), target.url(html_only=True)):
                 with opener.open(url, timeout=5) as response:
                     self.assertEqual(response.code, 200)

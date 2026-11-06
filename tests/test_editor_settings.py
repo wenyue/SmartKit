@@ -1,14 +1,17 @@
 """Verify the shipped VSIX and profile-specific installation without modifying VS Code."""
 import json
+from io import StringIO
 from pathlib import Path
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
 from local_web.apps import editor_settings
+from local_web import service
 
 
 class EditorSettingsTests(unittest.TestCase):
@@ -67,8 +70,42 @@ class EditorSettingsTests(unittest.TestCase):
 
     def test_windows_uses_the_native_executable_and_cli_entry(self):
         entry = Path("resources/app/out/cli.js")
-        with patch.object(editor_settings.sys, "platform", "win32"), patch.object(Path, "is_file", return_value=True), \
+        with patch.object(editor_settings.sys, "platform", "win32"), \
+                patch.object(editor_settings, "_windows_cli_entry", return_value=entry), \
                 patch.object(editor_settings.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout="listed")) as run:
             self.assertEqual(editor_settings._code(self.launcher, self.list_command, failure="failed"), "listed")
             self.assertEqual(run.call_args.args[0], [str(self.launcher), str(entry), *self.list_command])
             self.assertEqual(run.call_args.kwargs["env"]["ELECTRON_RUN_AS_NODE"], "1")
+
+    def test_versioned_windows_layout_follows_the_installed_command(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "bin").mkdir()
+            relative = Path("resources/app/out/cli.js")
+            current = root / "123456789a" / relative
+            for entry in (root / relative, current, root / "abcdef0123" / relative):
+                entry.parent.mkdir(parents=True)
+                entry.touch()
+            script = root / "bin" / "code.cmd"
+            script.write_text(r'"%~dp0..\Code.exe" "%~dp0..\123456789a\resources\app\out\cli.js" %*', encoding="utf-8")
+            self.assertEqual(editor_settings._windows_cli_entry(root / "Code.exe"), current)
+            script.unlink()
+            self.assertEqual(editor_settings._windows_cli_entry(root / "Code.exe"), root / relative)
+
+    def test_session_hook_prompts_when_vscode_is_available_without_bridge(self):
+        editor_url = "http://127.0.0.1:47821/editor/?key=private"
+        with patch.object(service.sys, "stdin", StringIO("{}")), patch.object(service, "record_project"), \
+                patch.object(service, "hook_page_links", return_value={}), \
+                patch.object(service, "ensure_service", return_value={"apps": {"editor": editor_url}}), \
+                patch.object(editor_settings, "find_vscode", return_value=self.launcher) as find, \
+                patch.object(editor_settings, "installed_version", return_value=None) as installed:
+            notice = service.hook_project("codex")
+            self.assertIn("缺少必装扩展", notice)
+            self.assertIn(editor_url, notice)
+            installed.assert_called_once_with(self.launcher)
+            installed.return_value = self.version
+            self.assertEqual(service.hook_project("codex"), "")
+            find.return_value = None
+            installed.reset_mock()
+            self.assertEqual(service.hook_project("codex"), "")
+            installed.assert_not_called()

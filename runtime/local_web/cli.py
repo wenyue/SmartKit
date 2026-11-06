@@ -133,12 +133,15 @@ Live URLs compare the fixed blob with the current on-disk path; deletion is an
 absent current side and rename needs a new link. Snapshot URLs read the current
 path at the fixed PR head, using base_path only for the before side. An absent
 path at an existing commit is absence; missing commits/blobs are errors.
-VS Code uses a validated fixed-commit Git URI only when the optional Diff Bridge
+VS Code uses a validated fixed-commit Git URI only when SmartKit Diff Bridge
 confirms that the exact checkout is registered in the receiving window and reads
 that baseline there. The bridge opens the native comparison in that same window.
-Without the bridge, registration, or a readable Git baseline, materialize the
-pinned blob and compare ordinary files. Installation is separate; see the bundled
-runtime/local_web/vscode/README.md. Live worktree files remain the right side;
+Otherwise check for the required extension in the default VS Code profile.
+If it is missing, the browser keeps a centered installation form and waits for
+an explicit submission. Select the repository window's profile if it differs
+from Default. Confirmed installation resumes the same diff automatically.
+If the installed bridge cannot open a Git baseline, materialize the pinned blob
+and compare ordinary files. Live worktree files remain the right side;
 absent sides use empty temporary files. Snapshot comparisons materialize both sides.
 Live VS Code may show unsaved editor contents; live HTML reads the on-disk file.
 A sent bridge request with an unknown outcome is never automatically relaunched.
@@ -146,8 +149,6 @@ VS Code is attempted from a visible page; explicit launch failure falls back
 to GitHub for live PRs or HTML for fixed snapshots/non-PRs, in the same tab.
 A dispatched request tries to close the tab;
 if browser policy blocks closing, the page keeps manual fallback links.
-When a Git baseline is eligible but the window declines the bridge, the page
-keeps the editor-settings hint. It does not install extensions on diff open.
 GitHub may show the remote PR version. CLI exit does not prove editor display.
 
 create input: {"files":{"report.html":"captured.html","raw/data":"input.txt"},
@@ -186,6 +187,7 @@ Private readiness, setup and editor URLs contain an instance credential; keep
 them private. Readiness and setup read observations without checks or repair.
 Open apps.editor from ensure/status to install or update the bundled Diff Bridge
 in a user-selected VS Code profile. Opening the page does not run the editor CLI.
+The session hook reports a missing extension in the default profile when VS Code is available.
 After installing, focus the intended repository window and reopen the diff to
 verify bridge activation.
 Hook/CLI startup is bounded recovery. Explicit autostart enable/disable records
