@@ -86,20 +86,20 @@ Keep the closing short, in this order:
 
 ## Render the selected choices
 
-Selection, labels, recommendation, ordering, and scope come from the entry and its stage tables. Render those choices with consecutive uppercase letters. Join all options in one paragraph with Markdown hard breaks, without blank lines between them. Begin each line with exactly one `&ensp;`, then the letter, short bold action label, optional recommendation outside the bold span, colon, and concrete effects. Bold only the action label.
+Selection, labels, recommendation, ordering, and scope come from the entry and its stage tables. Render the choices as a Markdown unordered list with one option per list item, consecutive uppercase letters, and no blank lines between items. Begin each item with `- `, then the letter, short bold action label, optional recommendation outside the bold span, colon, and concrete effects. Bold only the action label.
 
 Use these literal punctuation and spacing patterns; the descriptions below are illustrative, not a choice of actions for the current state:
 
 ```markdown
-&ensp;A. **Pass** (recommended): Prepare and complete applicable delivery, then review the next group.\
-&ensp;B. **Continue**: Review the next group without delivery.
+- A. **Pass** (recommended): Prepare and complete applicable delivery, then review the next group.
+- B. **Continue**: Review the next group without delivery.
 ```
 
 For Chinese, use full-width `．` and `：`, spaces on both sides of the bold label, and `（推荐）` outside it. Pass renders as `通过`, Continue as `继续`, and Finish as `结束`; other action labels retain their corresponding meanings.
 
 ```markdown
-&ensp;A． **通过** （推荐）：准备并完成适用的交付，然后审阅下一组。\
-&ensp;B． **继续** ：从下一组开始只读审阅。
+- A． **通过** （推荐）：准备并完成适用的交付，然后审阅下一组。
+- B． **继续** ：从下一组开始只读审阅。
 ```
 
 Use the same rendering for workspace menus. At scope end use Finish rather than Continue, following the entry's action semantics.

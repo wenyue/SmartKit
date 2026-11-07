@@ -73,9 +73,9 @@ Source and control-flow inspection establish the cancellation defect. No repair 
 
 📊 **Reviewed 2 / 2 files, with 3 modifications.**
 
-&ensp;A. **Fix** (recommended): Restore M3's shared cleanup, run required checks, and show its dedicated re-review.\
-&ensp;B. **Optimize**: Apply O1 and O2 to share the comparator and label formatter, then check and re-review the changes.\
-&ensp;C. **Ignore**: Accept that cancellation can disable the next save under M3.
+- A. **Fix** (recommended): Restore M3's shared cleanup, run required checks, and show its dedicated re-review.
+- B. **Optimize**: Apply O1 and O2 to share the comparator and label formatter, then check and re-review the changes.
+- C. **Ignore**: Accept that cancellation can disable the next save under M3.
 
 ## Decide whether the capability belongs
 
@@ -101,9 +101,9 @@ Premise: at 4/9 PR files, no finding remains. The selected workspace also contai
 
 Premise: M21 has an optional simplification. O1 and O2 are unrelated, supported optimization suggestions. No main defect remains.
 
-&ensp;A. **Optimize** (recommended): Apply M21's simplification, then check and re-review. O1 and O2 can instead be selected explicitly by ID and are outside this option's default M21 scope.\
-&ensp;B. **Pass**: Retain M21's assessed trade-off, prepare and complete applicable delivery, then advance. O1 and O2 remain unselected.\
-&ensp;C. **Continue**: Review the next group without delivery, leaving M21 open.
+- A. **Optimize** (recommended): Apply M21's simplification, then check and re-review. O1 and O2 can instead be selected explicitly by ID and are outside this option's default M21 scope.
+- B. **Pass**: Retain M21's assessed trade-off, prepare and complete applicable delivery, then advance. O1 and O2 remain unselected.
+- C. **Continue**: Review the next group without delivery, leaving M21 open.
 
 **User:** Optimize O1 and O2.
 
@@ -175,8 +175,8 @@ Required project checks passed on the repaired contents. Independent re-review c
 
 Repair coverage is three non-test files; main progress remains 4/9 files with 10 modifications. Commit, publication, and Viewed recording have not occurred.
 
-&ensp;A. **Pass** (recommended): Prepare and deliver the outstanding changes in the selected workspace, publish the complete outgoing scope to the PR source, record eligible Viewed paths, then review the next group after verified readbacks.\
-&ensp;B. **Continue**: Review the next group without delivery, keeping the local repair.
+- A. **Pass** (recommended): Prepare and deliver the outstanding changes in the selected workspace, publish the complete outgoing scope to the PR source, record eligible Viewed paths, then review the next group after verified readbacks.
+- B. **Continue**: Review the next group without delivery, keeping the local repair.
 
 ## Preserve an incomplete repair or pending delivery
 
@@ -194,9 +194,9 @@ Premise: the related checkout is clean on main and can safely switch to the PR s
 
 **Agent:** This checkout is on main; the PR uses feature/export.
 
-&ensp;A. **Switch current workspace** (recommended): Switch /work/app to feature/export, fast-forward to the verified target, and verify preservation.\
-&ensp;B. **Create workspace**: Create /work/app/.worktrees/export-review at the fixed target on review/export, assess its environment, and preserve the current checkout.\
-&ensp;C. **Snapshot review**: Review fixed PR contents without changing this workspace.
+- A. **Switch current workspace** (recommended): Switch /work/app to feature/export, fast-forward to the verified target, and verify preservation.
+- B. **Create workspace**: Create /work/app/.worktrees/export-review at the fixed target on review/export, assess its environment, and preserve the current checkout.
+- C. **Snapshot review**: Review fixed PR contents without changing this workspace.
 
 **User:** Create.
 

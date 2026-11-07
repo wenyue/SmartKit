@@ -86,20 +86,20 @@ M1 · <one natural sentence explaining the change and why it matters>
 
 ## 呈现选定的选项
 
-选项选择、名称、推荐、顺序和范围由入口及其阶段表确定。呈现时使用连续的大写字母，每类动作只保留一个选项。所有选项放在同一段落内，用 Markdown 硬换行连接，中间不留空行。每行以恰好一个 `&ensp;` 开头，后接字母、简短的加粗动作名、位于加粗范围外的可选推荐标记、冒号及具体效果。只加粗动作名。
+选项选择、名称、推荐、顺序和范围由入口及其阶段表确定。使用 Markdown 无序列表呈现，每个列表项一个选项，使用连续的大写字母，每类动作只保留一个选项，列表项之间不留空行。每项以 `- ` 开头，后接字母、简短的加粗动作名、位于加粗范围外的可选推荐标记、冒号及具体效果。只加粗动作名。
 
 严格使用下列标点与空格格式；说明文字只是示意，不代表为当前状态选择了这些动作：
 
 ```markdown
-&ensp;A. **Pass** (recommended): Prepare and complete applicable delivery, then review the next group.\
-&ensp;B. **Continue**: Review the next group without delivery.
+- A. **Pass** (recommended): Prepare and complete applicable delivery, then review the next group.
+- B. **Continue**: Review the next group without delivery.
 ```
 
 中文使用全角 `．` 和 `：`，加粗动作名两侧各留一个空格，`（推荐）` 放在加粗范围之外。Pass 显示为 `通过`，Continue 显示为 `继续`，Finish 显示为 `结束`；其他动作名称保持对应含义。
 
 ```markdown
-&ensp;A． **通过** （推荐）：准备并完成适用的交付，然后审阅下一组。\
-&ensp;B． **继续** ：从下一组开始只读审阅。
+- A． **通过** （推荐）：准备并完成适用的交付，然后审阅下一组。
+- B． **继续** ：从下一组开始只读审阅。
 ```
 
 工作区菜单使用相同格式。范围结束时按入口的动作语义使用结束，而非继续。
