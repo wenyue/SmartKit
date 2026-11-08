@@ -17,6 +17,7 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `implement` | [Matt Pocock](https://github.com/mattpocock/skills) | Implements a piece of work from a spec or tickets. |
 | `implement-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | Implements a spec’s dependency graph with parallel agents and a shared integration branch. |
 | `grill-me` | [Matt Pocock](https://github.com/mattpocock/skills) | Sharpens a plan or design through an in-depth interview and identifies unresolved decisions. |
+| `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | Reviews accumulated intended changes in a read-only scope report, then asks whether to begin implementation once open choices are resolved. |
 | `what-if` | [SmartKit](https://github.com/wenyue/SmartKit) | Judges whether an idea you are unsure about beats current practice and alternatives, giving an independent verdict with pros and cons without making changes. |
 | `to-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | Synthesizes the discussion into a spec and publishes it to the project's tracker. |
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | Breaks a plan or spec into incrementally deliverable tickets with declared dependencies. |
@@ -38,11 +39,10 @@ Ask for these skills by name; the assistant does not select them automatically.
 
 ### User-invokable task Skills
 
-Use these Skills for a specific task. Ask for them by name, or let the assistant select them when the task fits. They are ordered by purpose: scope review, research and validation, development and improvement, audit and delivery, then setup and session diagnosis.
+Use these Skills for a specific task. Ask for them by name, or let the assistant select them when the task fits. They are ordered by purpose: research and validation, development and improvement, audit and delivery, then setup and session diagnosis.
 
 | Skill | Source | What it does and when to use it |
 | --- | --- | --- |
-| `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | When you ask to execute many accumulated edits or broad changes, reviews the intended scope and asks whether to begin implementation; you can also invoke it by name. |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | Investigates a question against trusted primary sources and saves the findings as a Markdown document in the repo. |
 | `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | Creates architecture diagrams, flowcharts, and other HTML/SVG figures, with PNG export and diagram imports; uses the default style immediately unless a brand is configured or requested. |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds a throwaway prototype to check a design, state model, or interface. |
@@ -76,6 +76,12 @@ The Agent usually selects these supporting Skills as part of its work. You can a
 ## Use SmartKit Skills
 
 The sections below cover SmartKit Skills from the first two groups, in their overview order. Ask for a Skill by name in your message, as in the examples below. Manual-only Skills require that explicit request; user-invokable task Skills can also be selected automatically when the task fits.
+
+### `what-changes`
+
+Manually invoke this Skill to reconcile accumulated edits before implementation. It reports the current goals, exclusions, unresolved choices, and intended file changes without editing anything. After unresolved choices are settled, it asks whether to begin implementation.
+
+Example: “Use `what-changes` to review the accumulated changes from this conversation; do not implement them yet.”
 
 ### `what-if`
 
@@ -119,12 +125,6 @@ Examples: “Use `setup-project-agents` to upgrade this repository's agent confi
 Manually invoke this Skill to check configuration, maintain and synchronize it, or explicitly adopt selected project edits into its source. First use `setup-project-agents` to choose Project shared, This machine only, or Separate configuration repository. The latter uses a private personal GitHub repository that can serve multiple projects; maintenance verifies the applied configuration and saves only the accepted changes to GitHub.
 
 Example: “Use `maintain-project-config` to update this project’s Rules and synchronize the accepted changes.”
-
-### `what-changes`
-
-Use this Skill to reconcile accumulated edits before implementation. You can ask for it by name; the Agent may also select it when you ask to execute many accumulated edits. It reports the current goals, exclusions, unresolved choices, and intended file changes without editing anything. After unresolved choices are settled, it asks whether to begin implementation.
-
-Example: “Use `what-changes` to review the accumulated changes from this conversation; do not implement them yet.”
 
 ### `refactor-code`
 

@@ -1,13 +1,12 @@
 ---
 name: what-changes
-description: Review accumulated intended changes in a read-only scope report when the user asks to execute many edits or edits discussed far apart in the active conversation.
+description: Review accumulated intended changes in a read-only scope report before implementation.
+disable-model-invocation: true
 ---
 
 # What Changes
 
 Before implementation, turn accumulated intended changes into a scope the user can review. Reconcile active goals, displaced ideas, and unresolved questions, then connect the proposed file changes to those outcomes.
-
-Run this workflow on explicit invocation, or when the user asks to execute many accumulated edits or edits discussed far apart in the active conversation. Judge autonomous invocation by the intended changes, not conversation length alone. Carry out small, clear requests normally.
 
 The review is read-only. Invocation authorizes the inspection needed for the report, not implementation or other changes.
 

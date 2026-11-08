@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Setup Project Agents
 
-Use this Skill only on the user's explicit invocation. Choose the requested outcome first: full setup, restoration from a configuration repository, or limited local synchronization. Each route owns different effects and completion conditions.
+Choose the requested outcome first: full setup, restoration from a configuration repository, or limited local synchronization. Each route owns different effects and completion conditions.
 
 Full setup reassesses every declared blueprint and project custom Agent, including unchanged fingerprints, and prepares CodeGraph for the target. Restoration copies the accepted backup's bytes into the current project and checks this machine's prerequisites; it does not regenerate configuration.
 
@@ -54,7 +54,7 @@ Explain the effects before asking for the choice. Full setup reassesses configur
 
 Wait for the user's operation choice, then continue that route without asking the same question again. This choice settles what to do. Source confirmation, acceptance of actual differences, maintenance mode and startup synchronization remain their own decisions where required; an operation recommendation settles none of them.
 
-Inspection failures block only decisions that need the missing evidence. Report those gaps; restoration does not require entering full setup, Matt initialization or CodeGraph preparation. New checkouts invoke this Skill manually. Session hooks neither discover missing configuration nor ask to restore it; configuration startup handling serves only an explicitly enabled, valid existing checkout binding. Other readiness checks retain their owners.
+Inspection failures block only decisions that need the missing evidence. Report those gaps; restoration does not require entering full setup, Matt initialization or CodeGraph preparation. Session hooks neither discover missing configuration nor ask to restore it; configuration startup handling serves only an explicitly enabled, valid existing checkout binding. Other readiness checks retain their owners.
 
 ## Update or restore local configuration from the configuration repository
 

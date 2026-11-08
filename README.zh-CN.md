@@ -17,6 +17,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `implement` | [Matt Pocock](https://github.com/mattpocock/skills) | 根据规格或工单实现一项工作。 |
 | `implement-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | 通过并行 Agent 实现规格的依赖工单，汇入统一集成分支。 |
 | `grill-me` | [Matt Pocock](https://github.com/mattpocock/skills) | 通过深入追问梳理计划或设计，找出尚未明确的决定。 |
+| `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | 以只读范围报告核对累积的预期修改，待未决选择明确后，再询问是否开始实施。 |
 | `what-if` | [SmartKit](https://github.com/wenyue/SmartKit) | 判断你不确定的想法是否优于当前做法和替代方案，给出带优缺点的独立结论，且不做任何修改。 |
 | `to-spec` | [Matt Pocock](https://github.com/mattpocock/skills) | 将已讨论的内容整理成规格，发布到项目任务跟踪器。 |
 | `to-tickets` | [Matt Pocock](https://github.com/mattpocock/skills) | 将计划或规格拆成可逐步交付的工单，并声明依赖关系。 |
@@ -38,11 +39,10 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 ### 用户可主动调用的任务 Skill
 
-针对一项具体任务使用。用户可以明确指定 Skill 名称，助手也可以在任务匹配时自行选用。此类按核对范围、调查与验证、开发与改进、审计与交付、配置与会话诊断的用途顺序排列。
+针对一项具体任务使用。用户可以明确指定 Skill 名称，助手也可以在任务匹配时自行选用。此类按调查与验证、开发与改进、审计与交付、配置与会话诊断的用途顺序排列。
 
 | Skill | 出处 | 用途与使用时机 |
 | --- | --- | --- |
-| `what-changes` | [SmartKit](https://github.com/wenyue/SmartKit) | 用户要求执行累积较多或跨度较大的修改时，先核对范围，再询问是否开始实施；也可以明确指定调用。 |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | 对照可信的一手资料调查问题，将结论保存为仓库中的 Markdown 文档。 |
 | `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | 绘制架构图、流程图等 HTML/SVG 图解，支持 PNG 导出和已有图表导入；未配置或指定品牌时直接使用默认样式。 |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | 构建可丢弃的原型，验证设计、状态模型或界面是否可行。 |
@@ -76,6 +76,12 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 ## SmartKit Skill 用法
 
 以下只展开前两类中来源为 SmartKit 的 Skill，并按一览中的出现顺序排列。在消息中明确写出 Skill 名称即可调用，下面的例子可供参考。必须手动调用的 Skill 需要用户明确指定；用户可主动调用的任务 Skill 也可以由助手自动选用。
+
+### `what-changes`
+
+手动调用此 Skill，在实施前核对累积的修改。它会只读整理当前目标、排除项、未决选择和计划修改的文件。未决选择明确后，再询问是否开始实施。
+
+例子：“用 `what-changes` 核对这次对话中累积的修改，暂不实施。”
 
 ### `what-if`
 
@@ -119,12 +125,6 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 手动调用此 Skill 来检查配置、维护并同步配置，或明确采纳项目中的选定修改到配置源。首次使用时，先通过 `setup-project-agents` 选择“项目共享”“仅本机”或“独立配置仓库”。最后一种使用个人私有 GitHub 仓库，一个配置库可以服务多个项目；维护时会核验应用结果，并将本次接受的修改保存到 GitHub。
 
 例子：“用 `maintain-project-config` 更新这个项目的 Rules，并同步本次接受的修改。”
-
-### `what-changes`
-
-实施前需要核对累积的修改时使用。用户可以明确指定调用；要求执行累积较多的修改时，Agent 也可以自行选用。它会只读整理当前目标、排除项、未决选择和计划修改的文件。未决选择明确后，再询问是否开始实施。
-
-例子：“用 `what-changes` 核对这次对话中累积的修改，暂不实施。”
 
 ### `refactor-code`
 

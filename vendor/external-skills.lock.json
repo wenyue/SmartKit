@@ -383,7 +383,7 @@
           "source_path": "skills/engineering/wizard",
           "destination": "skills/wizard",
           "files": {
-            "SKILL.md": "bdf31d48211ea559878f95a4f344aeabf8d85897488ba564382bab0b000daac1",
+            "SKILL.md": "63ba3ea3763987dc67286bfc986e971efb8f39d61ebb05fd59969198830aecf0",
             "agents/openai.yaml": "8c8518a611523c2ba068e4db2569d26b8d1c1c821c9422ff47302b5cb0e32d84",
             "assets/icon.svg": "28d21f0784ea9c07ccb433b6f805bfa0e59834534ecf471735e262f137e1bb70",
             "template.sh": "33cbe9dfb1d0e9185b60248a52aabed14bc64785a00cac695e302e739dd6c153"
@@ -391,7 +391,7 @@
           "patches": [
             {
               "path": "vendor/patches/mattpocock/wizard.openai.patch",
-              "sha256": "786701596eae2b8df1028413a28fcd007a29bd7e51252ac76d296a133735cf88"
+              "sha256": "9177ab4dc55022c35c6ee4121a7f4f0bb8c46d7a1280d1b6cc16b71e589a7bdf"
             }
           ]
         },

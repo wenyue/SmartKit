@@ -6,8 +6,6 @@ disable-model-invocation: true
 
 # Collect Todos
 
-Use this Skill only when the user explicitly requests `collect-todos`.
-
 Save deferred work with enough context for a future session to pick it up. Keep capture lightweight: use evidence already available in the conversation and relevant project sources, then return to the main task. Collect the tasks the user selected or an established capture instruction covers; spotting an unrelated improvement alone does not authorize a tracker write.
 
 ## 1. Establish the destination and capture scope

@@ -6,4 +6,4 @@ interface:
   brand_color: "#2563EB"
   default_prompt: "使用 $what-changes，核对当前讨论中仍需实施的修改并列出文件范围。"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false
