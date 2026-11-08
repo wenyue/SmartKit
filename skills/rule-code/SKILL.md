@@ -36,9 +36,11 @@ Keep state mutation and lifecycle transitions predictable from creation through 
 
 Keep side effects, failure modes, retries, fallbacks, and lifecycle transitions visible in the contract or control flow.
 
-## Follow the project's established design
+## Align implementation style with comparable code
 
-Before editing code, inspect the target file and nearby implementations for comparable work. Follow their established naming, structure, control flow, and API patterns unless a more specific rule or an explicitly approved design requires a deliberate departure.
+Keep code of the same kind consistent in organization and style. Use the codebase's existing implementations and project conventions as references for clarity, cohesion, and visual appeal.
+
+If comparable implementations are inconsistent or absent, follow an established project convention where one exists; otherwise choose a cohesive style that fits the surrounding code. A more specific rule or an explicitly approved design can justify deliberate departures.
 
 ## Resolve diagnostics before considering suppression
 
