@@ -11,6 +11,8 @@ Keep a package's public behavior deliberate: its API, error identities, initiali
 
 Let product needs shape public APIs. Tests and speculative reuse alone do not justify exported names, interfaces, or new seams.
 
+Keep simple calls simple; use cohesive parameter structs with keyed literals when positional arguments obscure intent. Name them by role (`Request`, `Options`, `Config`), make defaults and meaningful zero values explicit, and distinguish omission only when needed. For grouped parameters, prefer plain structs; use functional options when composition or encapsulation benefits justify the added machinery.
+
 Initialize explicitly through constructors, `main`, or package-owned setup functions rather than adding `init()` functions. Keep package globals deliberate, stable, and initialized in one place.
 
 ## Handle every error through its owning contract
