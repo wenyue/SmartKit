@@ -1808,6 +1808,11 @@ class SetupCliTest(unittest.TestCase):
 class SetupEndToEndTest(unittest.TestCase):
     """The public setup path, without depending on retired synchronizer fixtures."""
 
+    @mock.patch.dict(os.environ, {
+        'GIT_CONFIG_COUNT': '1',
+        'GIT_CONFIG_KEY_0': 'core.autocrlf',
+        'GIT_CONFIG_VALUE_0': 'true',
+    })
     def test_source_fixtures_exclude_local_state_and_isolate_git_changes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

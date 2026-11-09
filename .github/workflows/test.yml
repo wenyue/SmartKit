@@ -11,7 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # Python 3.8 is not available on every ubuntu-latest image.
+        os: [ubuntu-24.04, windows-latest]
         python: ['3.8']
     steps:
       - uses: actions/checkout@v4

@@ -24,8 +24,9 @@ def copy_plugin_source(destination: Path) -> None:
 
 
 def _git(directory: Path, *arguments: str) -> None:
+    # Host autocrlf defaults must not rewrite cloned fixture bytes.
     subprocess.run(
-        ('git', '-C', str(directory), *arguments),
+        ('git', '-c', 'core.autocrlf=false', '-C', str(directory), *arguments),
         check=True,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
