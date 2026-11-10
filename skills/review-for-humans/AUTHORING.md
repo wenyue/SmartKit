@@ -22,7 +22,7 @@ Main progress follows the fixed comparison. Delivery can require more non-test r
 
 Existing finding IDs remain stable through repair, while additional separately explained M changes consume the next unused IDs. Their relationship belongs in the repair introduction, not repeated item labels or a second numbering system. Consequently, the highest M ID is not a main-progress count. Selected-O supporting files use file explanations rather than new M IDs or invented incidental observations, preserving the separate scope the user selected.
 
-The entry preserves pending Pass versus only-deliver; Delivery preserves actual completed and uncertain effects. Their distinct records allow recovery without repeated publication or unintended advancement.
+The entry preserves pending Pass versus only-deliver; Delivery preserves actual completed and uncertain effects. Their distinct records allow recovery without repeated publication or unintended advancement. Viewed runs beside read-only review to avoid network waits; its completion remains separate from review progress.
 
 ## Keep the mechanical interface beside its implementation
 

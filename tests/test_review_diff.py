@@ -40,6 +40,7 @@ class DiffFixture:
         self.environment = patch.dict(os.environ, {
             "HOME": str(self.base), "USERPROFILE": str(self.base), "LOCALAPPDATA": str(self.base / "local"),
             "XDG_CACHE_HOME": str(self.base / "cache"), "XDG_STATE_HOME": str(self.base / "state"),
+            "DISPLAY": ":smartkit-test",
         })
         self.environment.start()
         self.addCleanup(self.environment.stop)
@@ -256,6 +257,115 @@ with patch.object(comparisons.subprocess, "run", side_effect=probe_console):
         self.assertFalse(temporary.published)
         artifacts.cleanup_expired(temporary.expires_at)
         self.assertFalse(file_uri_path(command[-3]).exists())
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux desktop session recovery")
+    def test_linux_background_editor_recovers_desktop_environment(self):
+        launcher = self.base / "code"
+        receipt = self.base / "editor-environment.json"
+        authority = str(self.base / "desktop authority")
+        launcher.write_text(
+            f"#!{sys.executable}\n"
+            "import json, os, sys\n"
+            "from pathlib import Path\n"
+            "keys = ('DISPLAY', 'XAUTHORITY', 'PATH', 'UNRELATED_VALUE', 'ELECTRON_RUN_AS_NODE')\n"
+            f"Path({str(receipt)!r}).write_text(json.dumps({{k: os.environ[k] for k in keys if k in os.environ}}))\n"
+            "sys.exit(0 if os.environ.get('DISPLAY') == ':73' else 9)\n",
+            encoding="utf-8",
+        )
+        launcher.chmod(0o700)
+        background = dict(os.environ)
+        for name in ("DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS"):
+            background.pop(name, None)
+        background["PATH"] = os.defpath
+        background["XDG_RUNTIME_DIR"] = str(self.base / "session")
+        desktop = (f"DISPLAY=:73\nXAUTHORITY='{authority}'\n"
+                   "UNRELATED_VALUE=not-inherited\nPATH=/not-the-launch-path\nELECTRON_RUN_AS_NODE=1\n")
+        editor = SimpleNamespace(
+            run=Mock(return_value=subprocess.CompletedProcess([], 0, desktop, "")),
+            Popen=subprocess.Popen, DEVNULL=subprocess.DEVNULL, TimeoutExpired=subprocess.TimeoutExpired,
+        )
+        with patch.dict(os.environ, background, clear=True), \
+             patch.object(diff, "find_vscode", return_value=launcher), \
+             patch.object(diff, "subprocess", editor):
+            result = diff.open_editor(self.target)
+            self.assertNotIn("DISPLAY", os.environ)
+        self.assertEqual(result["viewer"], "vscode", result)
+        environment = json.loads(receipt.read_text())
+        self.assertEqual(environment["DISPLAY"], ":73")
+        self.assertEqual(environment["XAUTHORITY"], authority)
+        self.assertEqual(environment["PATH"], os.defpath)
+        self.assertNotIn("UNRELATED_VALUE", environment)
+        self.assertNotIn("ELECTRON_RUN_AS_NODE", environment)
+        editor.run.assert_called_once()
+        self.assertEqual(editor.run.call_args.args[0], ["systemctl", "--user", "show-environment"])
+        query_environment = editor.run.call_args.kwargs["env"]
+        self.assertEqual(query_environment["DBUS_SESSION_BUS_ADDRESS"],
+                         "unix:path=" + str(self.base / "session/bus"))
+        self.assertLessEqual(editor.run.call_args.kwargs["timeout"], 5)
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux desktop session recovery")
+    def test_linux_editor_preserves_existing_desktop_environment(self):
+        with self.editor_dispatch() as launch:
+            result = diff.open_editor(self.target)
+        self.assertEqual(result["viewer"], "vscode")
+        self.assertEqual(launch.call_args.kwargs["env"]["DISPLAY"], ":smartkit-test")
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux desktop session recovery")
+    def test_linux_editor_accepts_a_wayland_session_without_x11(self):
+        background = dict(os.environ)
+        for name in ("DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR",
+                     "DBUS_SESSION_BUS_ADDRESS"):
+            background.pop(name, None)
+        process = Mock()
+        process.wait.return_value = 0
+        desktop = "WAYLAND_DISPLAY=wayland-9\nXDG_RUNTIME_DIR=/run/user/1234\n"
+        editor = SimpleNamespace(
+            run=Mock(return_value=subprocess.CompletedProcess([], 0, desktop, "")),
+            Popen=Mock(return_value=process), DEVNULL=subprocess.DEVNULL,
+            TimeoutExpired=subprocess.TimeoutExpired,
+        )
+        with patch.dict(os.environ, background, clear=True), \
+             patch.object(diff, "find_vscode", return_value=self.launcher), \
+             patch.object(diff, "subprocess", editor):
+            result = diff.open_editor(self.target)
+        self.assertEqual(result["viewer"], "vscode")
+        environment = editor.Popen.call_args.kwargs["env"]
+        self.assertEqual(environment["WAYLAND_DISPLAY"], "wayland-9")
+        self.assertEqual(environment["XDG_RUNTIME_DIR"], "/run/user/1234")
+        self.assertNotIn("DISPLAY", environment)
+        self.assertEqual(editor.run.call_args.kwargs["env"]["DBUS_SESSION_BUS_ADDRESS"],
+                         "unix:path=/run/user/" + str(os.getuid()) + "/bus")
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux desktop session recovery")
+    def test_linux_editor_falls_back_when_desktop_recovery_fails(self):
+        background = dict(os.environ)
+        background.pop("DISPLAY", None)
+        background.pop("WAYLAND_DISPLAY", None)
+        failures = [
+            subprocess.CompletedProcess([], 1, "", "no user manager"),
+            subprocess.CompletedProcess([], 0, "LANG=C\n", ""),
+            subprocess.CompletedProcess([], 0, "DISPLAY=\n", ""),
+            subprocess.CompletedProcess([], 0, "DISPLAY='unclosed\n", ""),
+            subprocess.TimeoutExpired("systemctl", 2),
+            FileNotFoundError("systemctl is not installed"),
+        ]
+        for failure in failures:
+            with self.subTest(failure=failure):
+                editor = SimpleNamespace(
+                    run=Mock(), Popen=Mock(), DEVNULL=subprocess.DEVNULL,
+                    TimeoutExpired=subprocess.TimeoutExpired,
+                )
+                if isinstance(failure, Exception):
+                    editor.run.side_effect = failure
+                else:
+                    editor.run.return_value = failure
+                with patch.dict(os.environ, background, clear=True), \
+                     patch.object(diff, "find_vscode", return_value=self.launcher), \
+                     patch.object(diff, "subprocess", editor):
+                    result = diff.open_editor(self.target)
+                self.assertEqual(result["viewer"], "web")
+                self.assertEqual(result["url"], self.target.url(html_only=True))
+                self.assertFalse(editor.Popen.called)
 
     def test_windows_editor_uses_the_cli_selected_by_the_installed_launcher(self):
         comparison = diff.read_comparison(self.target)

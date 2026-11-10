@@ -92,7 +92,7 @@ Premise: at 4/9 PR files, no finding remains. The selected workspace also contai
 | Delivery intent and evidence | Response |
 | --- | --- |
 | The user requested review only; delivery preparation has not started. | Offer A **Pass** to prepare and deliver the selected workspace's outstanding changes, publish the complete outgoing scope, record eligible Viewed paths, and advance; B **Continue** to review the next group without delivery. The staged deletions do not suppress Pass. |
-| The user selects Pass. Supplementary review of the staged deletions finds no actionable defect or optional improvement. | Complete full-scope checks and the remaining preparation, disclose the concrete plan, commit/push/record as applicable, verify the effects, and advance. Do not ask for Pass again. |
+| The user selects Pass. Supplementary review of the staged deletions finds no actionable defect or optional improvement. | Complete full-scope checks and preparation, disclose the plan, commit/push as applicable, and pin the comparison. Let the script record Viewed while reviewing the next group read-only. No second Pass is needed. |
 | The user selects Pass. Supplementary review finds M11's contract defect and M12's optional simplification. | Pause writes and offer A **Fix**, B **Optimize**, C **Ignore**, naming each scope. A choice resolves only its selected items; once both decisions and required checks are complete, resume the original delivery. |
 | Delivery is selected, but an explicit request excludes the deletions and the intended resolution cannot be derived. | Ask directly how to resolve that preservation conflict. Keep Pass pending while the user-owned scope decision remains open. |
 | A verified publication limitation prevents delivery while review itself remains valid. | Before delivery selection, explain the limitation and offer **Continue**. If Pass is already pending, retain it and report the blocker without substituting advancement. |
@@ -102,7 +102,7 @@ Premise: at 4/9 PR files, no finding remains. The selected workspace also contai
 Premise: M21 has an optional simplification. O1 and O2 are unrelated, supported optimization suggestions. No main defect remains.
 
 - A. **Optimize** (recommended): Apply M21's simplification, then check and re-review. O1 and O2 can instead be selected explicitly by ID and are outside this option's default M21 scope.
-- B. **Pass**: Retain M21's assessed trade-off, prepare and complete applicable delivery, then advance. O1 and O2 remain unselected.
+- B. **Pass**: Retain M21's assessed trade-off, deliver and advance. O1 and O2 remain unselected.
 - C. **Continue**: Review the next group without delivery, leaving M21 open.
 
 **User:** Optimize O1 and O2.
@@ -120,7 +120,7 @@ These are abbreviated decision notes. Supplementary and repair reports use the c
 | Only-deliver is pending at 4/9. Inventory discovers an unpublished commit, staged production work, and tests from another conversation. Supplementary review finds M11's optional improvement. | Inventory/check everything, semantically review uncovered non-test content, and offer **Optimize** then **Ignore** for M11. After resolution, checks, and dedicated re-review, resume delivery and stay at 4/9. |
 | M2 can lose a promised flush, while M7 duplicates cleanup. The user says “Only optimize M7 first,” with no delivery pending. | Repair and re-review M7; summarize the change, resolved burden, current judgments, checks, and remaining M2. The subset request supplies no delivery or advancement authority. |
 | Nine main files and one supplementary production file have complete current PR-delta coverage. Four main files were advanced with Continue. Only recording remains. | Viewed covers all ten eligible paths, while progress stays 9/9. Unreviewed tests and repair-only fragments remain unmarked. Selected Pass reads back all ten and the unchanged PR version before finishing. |
-| Pass committed and pushed, but only two of four Viewed paths have confirmed results. | Report confirmed, unknown, and pending effects. On supported resume, inspect actual markings, complete missing effects, and read back the full set/version before advancing. Repeating commit/push would not repair the uncertainty. |
+| Pass committed and pushed, but only two of four Viewed paths have confirmed results. | Keep delivery pending and report confirmed, unknown, and remaining effects. Reconcile actual markings before retrying; continue independently valid review read-only. Repeating commit/push cannot resolve Viewed uncertainty. |
 | No M issue remains; O1 has a supported normalization simplification. Delivery is unselected. | Offer **Optimize** explicitly scoped to O1, **Pass** leaving O1 unchanged, then **Continue**. Selecting the unambiguous Optimize leads to a separate O1 report, no M/progress increase, and delivery coverage of its changes. |
 | A necessary main finding remains alongside O1's supported optimization. | Offer **Fix** for the main finding, **Optimize** explicitly scoped to O1, then **Ignore** for the named main finding. Explain that optimizing O1 leaves the main defect unresolved. O advice cannot displace the necessary remedy. |
 
@@ -175,7 +175,7 @@ Required project checks passed on the repaired contents. Independent re-review c
 
 Repair coverage is three non-test files; main progress remains 4/9 files with 10 modifications. Commit, publication, and Viewed recording have not occurred.
 
-- A. **Pass** (recommended): Prepare and deliver the outstanding changes in the selected workspace, publish the complete outgoing scope to the PR source, record eligible Viewed paths, then review the next group after verified readbacks.
+- A. **Pass** (recommended): Prepare and deliver the selected workspace's outstanding changes, publish the complete outgoing scope to the PR source, and review the next group read-only while the script records eligible Viewed paths.
 - B. **Continue**: Review the next group without delivery, keeping the local repair.
 
 ## Preserve an incomplete repair or pending delivery

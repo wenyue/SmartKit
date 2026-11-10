@@ -8,6 +8,7 @@ import html
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -323,6 +324,37 @@ def _windows_cli_entry(launcher: Path) -> Path:
     return entry
 
 
+def _editor_environment() -> Dict[str, str]:
+    environment = dict(os.environ)
+    environment.pop("ELECTRON_RUN_AS_NODE", None)
+    if not sys.platform.startswith("linux") or environment.get("DISPLAY") or environment.get("WAYLAND_DISPLAY"):
+        return environment
+
+    # Login-started hosts may predate the graphical session; resolve it when opening the editor.
+    runtime = environment.get("XDG_RUNTIME_DIR") or "/run/user/" + str(os.getuid())
+    environment["XDG_RUNTIME_DIR"] = runtime
+    environment["DBUS_SESSION_BUS_ADDRESS"] = (environment.get("DBUS_SESSION_BUS_ADDRESS")
+                                              or "unix:path=" + runtime + "/bus")
+    try:
+        session = subprocess.run(["systemctl", "--user", "show-environment"], env=environment,
+                                 stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=2)
+    except subprocess.TimeoutExpired as error:
+        raise OSError("Timed out reading the Linux desktop session") from error
+    if session.returncode != 0:
+        raise OSError("Linux desktop session environment is unavailable")
+    for line in session.stdout.splitlines():
+        name, separator, _ = line.partition("=")
+        if separator and name in ("DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR",
+                                  "DBUS_SESSION_BUS_ADDRESS"):
+            assignment = shlex.split(line)
+            if len(assignment) != 1:
+                raise ValueError("Invalid Linux desktop session assignment")
+            environment[name] = assignment[0].split("=", 1)[1]
+    if not environment.get("DISPLAY") and not environment.get("WAYLAND_DISPLAY"):
+        raise OSError("Linux desktop session has no display")
+    return environment
+
+
 def open_editor(target: Target) -> Dict[str, str]:
     """Send a VS Code CLI request or return a web destination."""
     if (target.head and target.view == "auto") or target.base.startswith("commit:"):
@@ -344,6 +376,7 @@ def open_editor(target: Target) -> Dict[str, str]:
         return {"viewer": "web", "url": fallback, "message": "未找到 VS Code，正在打开网页 diff。"}
     suffix = Path(target.path).suffix
     try:
+        environment = _editor_environment()
         if target.view == "snapshot":
             window = ["--reuse-window"]
             before_uri = after_uri = None
@@ -370,8 +403,6 @@ def open_editor(target: Target) -> Dict[str, str]:
 
         arguments = window + ["--diff", "--file-uri", before_uri, "--file-uri", after_uri]
         command = [str(launcher)]
-        environment = dict(os.environ)
-        environment.pop("ELECTRON_RUN_AS_NODE", None)
         if sys.platform == "win32":
             # Use the CLI's Node entry without passing URI arguments through cmd.exe.
             command.append(str(_windows_cli_entry(launcher)))

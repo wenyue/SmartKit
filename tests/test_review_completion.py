@@ -12,6 +12,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import Mock, patch
 
@@ -29,6 +30,7 @@ class FakeGitHub:
         self.fail_after_mark = False
         self.page_size = 100
         self.viewer = 'reviewer'
+        self.source = 'owner/repo'
         self.override_head = None
         self.override_base = None
         self.fail_next_snapshot = False
@@ -67,7 +69,7 @@ class FakeGitHub:
         end = start + len(entries)
         return {'viewer': {'login': self.viewer}, 'repository': {'pullRequest': {
             'id': 'PR_test', 'baseRefOid': base, 'headRefOid': head, 'headRefName': 'feature',
-            'headRepository': {'id': 'REPO_source', 'nameWithOwner': 'owner/repo'},
+            'headRepository': {'id': 'REPO_source', 'nameWithOwner': self.source},
             'files': {'totalCount': len(self.states),
                       'nodes': [{'path': name, 'viewerViewedState': state} for name, state in entries],
                       'pageInfo': {'hasNextPage': end < len(self.states), 'endCursor': str(end)}}}}}
@@ -151,7 +153,8 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
         self.git('remote', 'add', 'origin', str(self.remote))
         self.git('push', 'origin', 'HEAD:refs/heads/feature')
         self.github = FakeGitHub(self)
-        self.patches = [patch.object(completion.Commands, 'graphql', lambda commands, query, variables: self.github.graphql(commands, query, variables)),
+        self.original_graphql = completion.Commands.graphql
+        self.patches = [patch.object(completion.Commands, 'graphql', lambda commands, query, variables, **options: self.github.graphql(commands, query, variables)),
                         patch.object(completion.Commands, 'commit', lambda commands, source, head: self.github.commit(commands, source, head)),
                         patch.object(completion.Commands, 'api', lambda commands, method, path, payload=None: self.github.api(commands, method, path, payload)),
                         patch.object(completion, 'source_slug', return_value='owner/repo')]
@@ -327,6 +330,173 @@ class ReviewCompletionTests(CompletionFixture, unittest.TestCase):
         self.assertEqual(self.github.marked, ['file.txt'])
         self.run_completion(prepared)
         self.assertEqual(self.github.marked, ['file.txt', 'already.txt'])
+
+    def test_transient_initial_snapshot_retries_from_first_page(self):
+        self.github.page_size = 1
+        original = self.github.graphql
+        cursors = []
+        failed = []
+        def snapshot(commands, query, variables):
+            cursors.append(variables['cursor'])
+            if variables['cursor'] == '1' and not failed:
+                failed.append(True)
+                raise completion.ViewedRequestFailure()
+            return original(commands, query, variables)
+        with patch.object(self.github, 'graphql', snapshot), patch.object(completion.time, 'sleep') as sleep:
+            self.prepare()
+        self.assertEqual(cursors, [None, '1', None, '1'])
+        sleep.assert_called_once_with(1)
+        self.assertFalse(self.github.marked)
+
+    def test_transient_lost_mark_reconciles_and_skips_confirmed_write(self):
+        self.github.states['already.txt'] = 'UNVIEWED'
+        prepared = self.prepare()
+        original = self.github.graphql
+        failed = []
+        def lost_response(commands, query, variables):
+            result = original(commands, query, variables)
+            if query == completion.MARK_QUERY and not failed:
+                failed.append(True)
+                raise completion.ViewedRequestFailure()
+            return result
+        with patch.object(self.github, 'graphql', lost_response), patch.object(completion.time, 'sleep') as sleep:
+            result = self.run_completion(prepared)
+        self.assertEqual(result['status'], 'complete')
+        self.assertEqual(self.github.marked, ['file.txt', 'already.txt'])
+        sleep.assert_called_once_with(1)
+
+    def test_transient_final_readback_retries_without_repeating_mark(self):
+        prepared = self.prepare()
+        original = self.github.graphql
+        failed = []
+        def final_readback(commands, query, variables):
+            if query == completion.PR_QUERY and self.github.marked and not failed:
+                failed.append(True)
+                raise completion.ViewedRequestFailure()
+            return original(commands, query, variables)
+        with patch.object(self.github, 'graphql', final_readback), patch.object(completion.time, 'sleep'):
+            self.assertEqual(self.run_completion(prepared)['status'], 'complete')
+        self.assertEqual(self.github.marked, ['file.txt'])
+
+    def test_successful_header_body_transport_failures_retry_and_reconcile(self):
+        prepared = self.prepare()
+        original_call = completion.Commands.call
+        for phase, stderr in (('initial', b'unexpected EOF'), ('mark', b'connection reset by peer'),
+                              ('final', b'unexpected EOF')):
+            self.github.states['file.txt'] = 'UNVIEWED'
+            self.github.marked.clear()
+            failed = []
+            events = []
+            def github_call(commands, arguments, **options):
+                if arguments[0] != 'gh':
+                    return original_call(commands, arguments, **options)
+                payload = options['input_value']
+                query, variables = payload['query'], payload['variables']
+                kind = 'mark' if query == completion.MARK_QUERY else 'snapshot'
+                events.append(kind)
+                value = self.github.graphql(commands, query, variables)
+                should_fail = ((phase == 'initial' and len(events) == 1) or
+                               (phase == 'mark' and kind == 'mark') or
+                               (phase == 'final' and kind == 'snapshot' and self.github.marked))
+                if should_fail and not failed:
+                    failed.append(len(events))
+                    prefix = commands.logs / 'body-read-failure'
+                    prefix.with_suffix('.stdout').write_bytes(b'HTTP/2.0 200 OK\r\nContent-Type: application/json\r\n\r\n')
+                    prefix.with_suffix('.stderr').write_bytes(stderr)
+                    raise completion.CommandFailure(arguments, 1, prefix)
+                return b'HTTP/2.0 200 OK\r\n\r\n' + completion.encoded({'data': value})
+            with self.subTest(phase=phase), patch.object(completion.Commands, 'graphql', self.original_graphql), \
+                    patch.object(completion.Commands, 'call', github_call), \
+                    patch.object(completion.time, 'sleep') as sleep:
+                self.assertEqual(self.run_completion(prepared)['status'], 'complete')
+                sleep.assert_called_once_with(1)
+                self.assertEqual(len(failed), 1)
+                self.assertEqual(events[failed[0]], 'snapshot')
+                self.assertEqual(self.github.marked, ['file.txt'])
+
+    def test_viewed_retries_stop_after_five_attempts_and_preserve_pending_phase(self):
+        prepared = self.prepare()
+        original = self.github.graphql
+        attempts = []
+        def unavailable(commands, query, variables):
+            if query == completion.MARK_QUERY:
+                attempts.append(variables['path'])
+                raise completion.ViewedRequestFailure()
+            return original(commands, query, variables)
+        with patch.object(self.github, 'graphql', unavailable), patch.object(completion.time, 'sleep') as sleep:
+            with self.assertRaisesRegex(RuntimeError, 'retry budget exhausted'):
+                self.run_completion(prepared)
+        self.assertEqual(attempts, ['file.txt'] * 5)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [1, 2, 4, 8])
+        self.assertEqual(completion.read_json(self.state / 'progress.json')['phase'], 'viewed')
+        self.assertFalse((self.state / 'result.json').exists())
+        self.assertEqual(self.remote_head(), self.base)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.base)
+
+    def test_viewed_retry_revalidates_version_viewer_source_workspace_and_evidence(self):
+        prepared = self.prepare()
+        original = self.github.graphql
+        for drift, undo in (
+                (lambda: setattr(self.github, 'override_head', 'c' * 40), lambda: setattr(self.github, 'override_head', None)),
+                (lambda: setattr(self.github, 'viewer', 'another'), lambda: setattr(self.github, 'viewer', 'reviewer')),
+                (lambda: setattr(self.github, 'override_base', 'c' * 40), lambda: setattr(self.github, 'override_base', None)),
+                (lambda: setattr(self.github, 'source', 'another/repo'), lambda: setattr(self.github, 'source', 'owner/repo')),
+                (lambda: self.git('rm', '--cached', 'file.txt'), lambda: self.git('reset', '--', 'file.txt')),
+                (lambda: self.evidence.write_bytes(b'drift'), lambda: self.evidence.write_text('Checks passed and whole-file review complete. Prior action is authorized.', encoding='utf-8')),
+                (lambda: (self.repository / 'file.txt').write_bytes(b'drift'), lambda: (self.repository / 'file.txt').write_bytes(b'baseline\n'))):
+            failed = []
+            def unavailable(commands, query, variables):
+                if query == completion.MARK_QUERY:
+                    failed.append(True)
+                    raise completion.ViewedRequestFailure()
+                return original(commands, query, variables)
+            with self.subTest(drift=drift), patch.object(self.github, 'graphql', unavailable), \
+                    patch.object(completion.time, 'sleep', side_effect=lambda delay: drift()):
+                with self.assertRaises(ValueError):
+                    self.run_completion(prepared)
+            undo()
+            self.assertEqual(len(failed), 1)
+        self.assertFalse(self.github.marked)
+
+    def test_recording_shares_deadline_across_requests_and_rate_waits(self):
+        prepared = self.prepare()
+        original = self.github.graphql
+        now = [0]
+        attempts = []
+        def unavailable(commands, query, variables):
+            if query == completion.MARK_QUERY:
+                attempts.append(variables['path'])
+                now[0] += 30
+                raise completion.ViewedRequestFailure(60)
+            return original(commands, query, variables)
+        def sleep(delay):
+            now[0] += delay
+        with patch.object(self.github, 'graphql', unavailable), \
+                patch.object(completion.time, 'monotonic', side_effect=lambda: now[0]), \
+                patch.object(completion.time, 'sleep', side_effect=sleep) as waits:
+            with self.assertRaisesRegex(RuntimeError, 'retry budget exhausted'):
+                self.run_completion(prepared)
+        self.assertEqual(attempts, ['file.txt', 'file.txt'])
+        waits.assert_called_once_with(60)
+        self.assertEqual(now[0], 120)
+        self.assertEqual(completion.read_json(self.state / 'progress.json')['phase'], 'viewed')
+
+    def test_publication_failure_is_not_automatically_retried(self):
+        (self.repository / 'file.txt').write_bytes(b'new\n')
+        prepared = self.prepare('commit-push')
+        original = completion.Commands.git
+        pushes = []
+        def unavailable(commands, *arguments, **options):
+            if arguments[0] == 'push':
+                pushes.append(arguments)
+                raise RuntimeError('connection reset')
+            return original(commands, *arguments, **options)
+        with patch.object(completion.Commands, 'git', unavailable), patch.object(completion.time, 'sleep') as sleep:
+            with self.assertRaises(RuntimeError):
+                self.run_completion(prepared)
+        self.assertEqual(len(pushes), 1)
+        sleep.assert_not_called()
+        self.assertFalse(self.github.marked)
 
     def test_lost_push_response_resumes_from_actual_remote(self):
         (self.repository / 'file.txt').write_bytes(b'new\n')
@@ -748,6 +918,113 @@ class CommandAndCliTests(CompletionFixture, unittest.TestCase):
                 commands.call([sys.executable, '-c', 'import time; time.sleep(0.05)'])
         self.assertIsNotNone(children[0].poll())
 
+    def test_command_timeout_stops_owned_child_before_lock_release(self):
+        commands = completion.Commands(self.repository, self.directory)
+        original_spawn = subprocess.Popen
+        children = []
+        def spawn(*arguments, **options):
+            process = original_spawn(*arguments, **options)
+            children.append(process)
+            return process
+        started = time.monotonic()
+        with completion.operation_lock(self.directory):
+            with patch.object(completion.subprocess, 'Popen', spawn), self.assertRaises(subprocess.TimeoutExpired):
+                commands.call([sys.executable, '-c', 'import time; time.sleep(60)'], timeout=0.05)
+            self.assertIsNotNone(children[0].poll())
+        self.assertLess(time.monotonic() - started, 5)
+        with completion.operation_lock(self.directory):
+            pass
+        log = completion.read_json(next(commands.logs.glob('*.command.json')))
+        self.assertTrue(log['timed_out'])
+        self.assertIsNotNone(log['exit_code'])
+
+    def test_viewed_request_classifies_http_graphql_and_network_failures(self):
+        commands = completion.Commands(self.repository, self.directory)
+        prefix = commands.logs / 'failed'
+        prefix.with_suffix('.stderr').write_bytes(b'')
+        cases = [
+            (200, {'errors': [{'type': 'RATE_LIMITED', 'message': 'API rate limit exceeded'}]},
+             {'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '110'}, 11),
+            (200, {'errors': [{'message': 'You have exceeded a secondary rate limit'}]}, {}, 60),
+            (403, {'message': 'You have exceeded a secondary rate limit'}, {'retry-after': '12'}, 12),
+            (429, {'message': 'slow down'}, {'retry-after': '5'}, 5),
+            (200, {'errors': [{'message': 'secondary rate limit'}]},
+             {'retry-after': 'Thu, 01 Jan 1970 00:02:00 GMT'}, 20),
+            (200, {'errors': [{'type': 'INTERNAL', 'message': 'server failed'}]}, {}, 0),
+            (500, {'message': 'server failed'}, {}, 0),
+            (502, None, {}, 0), (503, None, {}, 0), (504, None, {}, 0),
+        ]
+        for status, body, headers, delay in cases:
+            raw = ('HTTP/2.0 %s Status\r\n' % status + ''.join(
+                '%s: %s\r\n' % item for item in headers.items()) + '\r\n').encode()
+            raw += completion.encoded(body) if body is not None else b'unavailable'
+            prefix.with_suffix('.stdout').write_bytes(raw)
+            failure = completion.CommandFailure(['gh'], 1, prefix)
+            with self.subTest(status=status, body=body), patch.object(commands, 'call', side_effect=failure), \
+                    patch.object(completion.time, 'time', return_value=100):
+                with self.assertRaises(completion.ViewedRequestFailure) as caught:
+                    commands.graphql(completion.MARK_QUERY, {})
+                self.assertEqual(caught.exception.delay, delay)
+        for stderr in (b'TLS handshake timeout', b'connection reset by peer', b'no such host', b'unexpected EOF', b'Post https://api.github.com/graphql: EOF'):
+            prefix.with_suffix('.stdout').write_bytes(b'')
+            prefix.with_suffix('.stderr').write_bytes(stderr)
+            with self.subTest(stderr=stderr), patch.object(commands, 'call', side_effect=completion.CommandFailure(['gh'], 1, prefix)):
+                with self.assertRaises(completion.ViewedRequestFailure):
+                    commands.graphql(completion.PR_QUERY, {})
+        with patch.object(commands, 'call', side_effect=subprocess.TimeoutExpired(['gh'], 30)):
+            with self.assertRaises(completion.ViewedRequestFailure):
+                commands.graphql(completion.MARK_QUERY, {})
+
+    def test_permanent_graphql_failures_and_other_mutations_have_no_retry_disposition(self):
+        commands = completion.Commands(self.repository, self.directory)
+        prefix = commands.logs / 'failed'
+        prefix.with_suffix('.stderr').write_bytes(b'permission denied; unexpected EOF')
+        for status, body in (
+                (401, {'message': 'Bad credentials'}), (403, {'message': 'Forbidden'}),
+                (404, {'message': 'Not found'}), (422, {'message': 'Invalid request'}),
+                (200, {'errors': [{'type': 'FORBIDDEN', 'message': 'Not accessible'}]}),
+                (200, {'errors': [{'type': 'RATE_LIMITED'}, {'type': 'FORBIDDEN'}]})):
+            prefix.with_suffix('.stdout').write_bytes(('HTTP/2.0 %s Status\n\n' % status).encode() + completion.encoded(body))
+            failure = completion.CommandFailure(['gh'], 1, prefix)
+            with self.subTest(status=status, body=body), patch.object(commands, 'call', side_effect=failure):
+                with self.assertRaises(completion.CommandFailure):
+                    commands.graphql(completion.MARK_QUERY, {})
+        for status, body, stderr in (
+                (401, b'', b'unexpected EOF'),
+                (403, b'', b'connection reset by peer'),
+                (200, b'{"data":', b'unexpected end of JSON input'),
+                (200, b'{"unexpected": "body"}', b'unexpected EOF')):
+            prefix.with_suffix('.stdout').write_bytes(('HTTP/2.0 %s Status\n\n' % status).encode() + body)
+            prefix.with_suffix('.stderr').write_bytes(stderr)
+            failure = completion.CommandFailure(['gh'], 1, prefix)
+            with self.subTest(status=status, body=body), patch.object(commands, 'call', side_effect=failure):
+                with self.assertRaises(completion.CommandFailure):
+                    commands.graphql(completion.PR_QUERY, {})
+        with patch.object(commands, 'call', return_value=b'HTTP/2.0 200 OK\n\nnot JSON'):
+            with self.assertRaises(ValueError):
+                commands.graphql(completion.PR_QUERY, {})
+        with patch.object(commands, 'call', side_effect=subprocess.TimeoutExpired(['gh'], 30)):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                commands.graphql(completion.UPDATE_QUERY, {})
+
+    def test_viewed_deadline_limits_requests_and_does_not_shorten_rate_waits(self):
+        with patch.object(completion.time, 'monotonic', return_value=100):
+            self.assertEqual(completion.viewed_timeout(280), 30)
+            self.assertEqual(completion.viewed_timeout(112), 12)
+            with self.assertRaisesRegex(ValueError, 'deadline'):
+                completion.viewed_timeout(100)
+            with patch.object(completion.time, 'sleep') as sleep:
+                completion.pause_viewed(completion.ViewedRequestFailure(60), 0, 280)
+                completion.pause_viewed(completion.ViewedRequestFailure(60), 1, 280)
+                with self.assertRaisesRegex(RuntimeError, 'budget exhausted'):
+                    completion.pause_viewed(completion.ViewedRequestFailure(180), 0, 280)
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], [60, 120])
+        commands = completion.Commands(self.repository, self.directory)
+        with patch.object(commands, 'call', return_value=b'HTTP/2.0 200 OK\n\n{"data": {}}') as call:
+            commands.graphql(completion.PR_QUERY, {}, timeout=12)
+        self.assertEqual(call.call_args.kwargs['timeout'], 12)
+        self.assertIn('--include', call.call_args.args[0])
+
     def test_stale_command_instances_never_overwrite_prior_logs(self):
         first = completion.Commands(self.repository, self.directory)
         second = completion.Commands(self.repository, self.directory)
@@ -795,7 +1072,7 @@ class CommandAndCliTests(CompletionFixture, unittest.TestCase):
         commands = Mock(spec=completion.Commands)
         cursors = []
 
-        def page(query, variables):
+        def page(query, variables, **options):
             cursors.append(variables['cursor'])
             return github.graphql(commands, query, variables)
 

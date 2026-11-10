@@ -6,6 +6,7 @@ import argparse
 import base64
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 import hashlib
 import json
 import os
@@ -132,6 +133,27 @@ TRANSPORT (--transport ON run)
   automatic fallback. The helper first reconciles actual source/PR state, reuses
   confirmed publication, and uploads or publishes only missing work.
 
+VIEWED RETRIES AND BACKGROUND WORK
+  Complete PR snapshots (including initial preparation/revalidation) and the
+  Viewed recording/readback batch each allow at most five attempts within 180
+  seconds. Each Viewed-related gh request has a 30-second timeout, shortened to
+  the remaining batch budget. Transient network, timeout, server and rate-limit
+  failures retry; ordinary backoff is 1/2/4/8 seconds. Retry-After and primary
+  reset times are minimum waits; rate-limit waits grow exponentially. A rate
+  limit without timing waits at least 60 seconds. A wait that cannot fit the
+  deadline leaves the operation incomplete instead of retrying early.
+  Authentication, invalid responses, changed identity/version/content/evidence,
+  and other permanent failures stop. Every recording retry first reads the
+  complete actual Viewed state, checks the frozen identity/version, and skips
+  VIEWED paths, including a write whose response was lost. Only the Viewed
+  requests receive automatic retries; commit, push, object uploads and source-ref
+  mutations retain the explicit recovery route below.
+
+  phase=viewed in progress.json, with its resulting head, means local/publication
+  prerequisites are verified and only recording/readback remains. The operation
+  lock protects this helper, not external workspace/evidence edits. Follow
+  Delivery for concurrent review, managed-session lifetime, and status collection.
+
 OUTPUT AND EXIT STATUS
   Stdout is compact JSON with status, version/counts, plan/progress paths, and
   private logs. Status is prepared or complete on success, incomplete on a caught
@@ -229,6 +251,37 @@ def operation_lock(state: Path) -> Iterator[None]:
         yield
 
 
+class CommandFailure(RuntimeError):
+    """Retain failed command evidence for the owning integration boundary."""
+
+    def __init__(self, arguments: list[str], code: int, prefix: Path) -> None:
+        super().__init__('%s exited %s; see %s' % (arguments[0], code, prefix))
+        self.output = prefix.with_suffix('.stdout').read_bytes()
+        self.stderr = prefix.with_suffix('.stderr').read_bytes()
+
+
+class ViewedRequestFailure(RuntimeError):
+    """A transient Viewed request may be retried after its minimum wait."""
+
+    def __init__(self, delay: float = 0) -> None:
+        super().__init__('Transient GitHub Viewed request failure; inspect private logs')
+        self.delay = delay
+
+
+def viewed_timeout(deadline: float) -> float:
+    remaining = deadline - time.monotonic()
+    require(remaining > 0, 'Viewed batch exceeded its 180-second deadline; resume the same state')
+    return min(30, remaining)
+
+
+def pause_viewed(error: ViewedRequestFailure, attempt: int, deadline: float) -> None:
+    # Server timing is a minimum; repeated rate limits also receive exponential backoff.
+    delay = max(1, error.delay) * (2 ** attempt)
+    if attempt == 4 or time.monotonic() + delay >= deadline:
+        raise RuntimeError('Viewed retry budget exhausted; resume the same state') from error
+    time.sleep(delay)
+
+
 class Commands:
     """Own raw subprocess evidence without sending it through the Agent context."""
 
@@ -243,7 +296,8 @@ class Commands:
         self.environment['GIT_OPTIONAL_LOCKS'] = '0'
 
     def call(self, arguments: list[str], *, input_value: Optional[dict] = None,
-             environment: Optional[dict[str, str]] = None, allow_failure: bool = False) -> bytes:
+             environment: Optional[dict[str, str]] = None, allow_failure: bool = False,
+             timeout: Optional[float] = None) -> bytes:
         descriptor, name = tempfile.mkstemp(prefix='command-', suffix='.command.json', dir=str(self.logs))
         os.close(descriptor)
         prefix = Path(name[:-len('.command.json')])
@@ -261,7 +315,13 @@ class Commands:
             try:
                 metadata['pid'] = process.pid
                 write_json(prefix.with_suffix('.command.json'), metadata)
-                process.communicate(input_bytes)
+                try:
+                    process.communicate(input_bytes, timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    metadata['timed_out'] = True
+                    process.kill()
+                    process.communicate()
+                    raise
             finally:
                 # Every post-spawn exit retains ownership until the child stops, including log failures.
                 try:
@@ -272,17 +332,75 @@ class Commands:
                 metadata.update(exit_code=process.returncode, elapsed_seconds=time.monotonic() - started)
                 write_json(prefix.with_suffix('.command.json'), metadata)
         if process.returncode and not allow_failure:
-            raise RuntimeError('%s exited %s; see %s' % (arguments[0], process.returncode, prefix))
+            raise CommandFailure(arguments, process.returncode, prefix)
         return prefix.with_suffix('.stdout').read_bytes()
 
     def git(self, *arguments: str, **options: object) -> bytes:
         return self.call(['git', '-C', str(self.repository)] + list(arguments), **options)
 
-    def graphql(self, query: str, variables: dict) -> dict:
-        raw = self.call(['gh', 'api', 'graphql', '--hostname', 'github.com', '--input', '-'],
-                        input_value={'query': query, 'variables': variables})
-        value = json.loads(raw)
-        require(isinstance(value, dict) and not value.get('errors'),
+    def graphql(self, query: str, variables: dict, *, timeout: Optional[float] = None) -> dict:
+        viewed = query in (PR_QUERY, MARK_QUERY)
+        arguments = ['gh', 'api', 'graphql', '--hostname', 'github.com', '--input', '-']
+        if viewed:
+            arguments.append('--include')
+        failure = None
+        try:
+            raw = self.call(arguments, input_value={'query': query, 'variables': variables}, timeout=timeout)
+        except subprocess.TimeoutExpired as error:
+            if not viewed:
+                raise
+            raise ViewedRequestFailure() from error
+        except CommandFailure as error:
+            if not viewed:
+                raise
+            failure = error
+            raw = error.output
+        status = None
+        headers = {}
+        if viewed and raw.startswith(b'HTTP/'):
+            header, raw = re.split(rb'\r?\n\r?\n', raw, maxsplit=1)
+            lines = header.decode('utf-8', errors='replace').splitlines()
+            status = int(lines[0].split()[1])
+            headers = {key.lower(): value.strip() for key, value in
+                       (line.split(':', 1) for line in lines[1:] if ':' in line)}
+        try:
+            value = json.loads(raw)
+        except (ValueError, UnicodeDecodeError):
+            value = None
+        errors = value.get('errors', []) if isinstance(value, dict) else []
+        details = [item for item in errors if isinstance(item, dict)]
+        message = str(value.get('message', '')).lower() if isinstance(value, dict) else ''
+        rate_limited = (status == 429 or (bool(errors) and len(details) == len(errors)
+                        and all(item.get('type') == 'RATE_LIMITED' or 'rate limit' in
+                                str(item.get('message', '')).lower() for item in details))
+                        or (status == 403 and 'rate limit' in message))
+        if viewed and rate_limited:
+            delay = 0.0
+            if 'retry-after' in headers:
+                try:
+                    delay = float(headers['retry-after'])
+                except ValueError:
+                    delay = max(0, parsedate_to_datetime(headers['retry-after']).timestamp() - time.time())
+                require(delay >= 0, 'Invalid GitHub Retry-After header')
+            if headers.get('x-ratelimit-remaining') == '0' and 'x-ratelimit-reset' in headers:
+                delay = max(delay, float(headers['x-ratelimit-reset']) - time.time() + 1)
+            if not delay:
+                delay = 60
+            raise ViewedRequestFailure(max(0, delay)) from failure
+        server_error = (bool(errors) and len(details) == len(errors) and all(
+            item.get('type') in ('INTERNAL', 'INTERNAL_SERVER_ERROR', 'SERVICE_UNAVAILABLE')
+            for item in details))
+        # gh can emit 2xx headers before its GraphQL body read fails; parsed API errors retain their disposition.
+        if viewed and (status in (500, 502, 503, 504) or server_error or
+                       (failure is not None and value is None
+                        and (status is None or 200 <= status < 300) and re.search(
+                           rb'timeout|timed out|connection (?:reset|refused)|\bEOF\b|'
+                           rb'TLS handshake|temporary failure|no such host|network is unreachable|'
+                           rb'could not resolve host', failure.stderr, re.IGNORECASE))):
+            raise ViewedRequestFailure() from failure
+        if failure is not None:
+            raise failure
+        require(isinstance(value, dict) and not errors,
                 'GitHub GraphQL failed; inspect private logs')
         require(isinstance(value.get('data'), dict), 'GitHub response has no data')
         return value['data']
@@ -300,13 +418,23 @@ class Commands:
 
 
 def pr_snapshot(commands: Commands, request: dict) -> dict:
+    deadline = time.monotonic() + 180
+    for attempt in range(5):
+        try:
+            return read_pr_snapshot(commands, request, deadline)
+        except ViewedRequestFailure as error:
+            pause_viewed(error, attempt, deadline)
+    raise RuntimeError('Viewed snapshot retries exhausted')
+
+
+def read_pr_snapshot(commands: Commands, request: dict, deadline: float) -> dict:
     owner, name = request['pull_request'].split('/')
     variables = {'owner': owner, 'name': name, 'number': request['number'], 'cursor': None}
     identity = None
     files = {}
     cursors = set()
     while True:
-        data = commands.graphql(PR_QUERY, variables)
+        data = commands.graphql(PR_QUERY, variables, timeout=viewed_timeout(deadline))
         pr = data['repository']['pullRequest']
         require(isinstance(pr, dict) and isinstance(pr.get('headRepository'), dict),
                 'PR or source repository is unavailable')
@@ -736,24 +864,42 @@ def run(state: Path, confirmed: str, transport: str = 'git') -> dict:
         require(references(request) == plan['evidence'], 'Evidence changed during completion')
         progress.update(phase='viewed', head=head)
         write_json(state / 'progress.json', progress)
-        for path in request['viewed_paths']:
-            if pr['files'][path] == 'VIEWED':
-                continue
-            data = commands.graphql(MARK_QUERY, {'id': pr['id'], 'path': path})
-            result = data['markFileAsViewed']['pullRequest']
-            require(result['baseRefOid'] == plan['pr']['base'] and result['headRefOid'] == head,
-                    'PR version changed during Viewed recording')
-        final = pr_snapshot(commands, request)
-        check_pr(final, plan, head)
-        require(all(final['files'][path] == 'VIEWED' for path in request['viewed_paths']),
-                'Viewed recording is incomplete; resume the same operation')
-        require(workspace(commands) == completion_workspace,
-                'Local state changed during Viewed recording')
+        record_viewed(commands, plan, head, completion_workspace)
         progress.update(phase='complete', head=head, viewed=request['viewed_paths'])
         write_json(state / 'progress.json', progress)
         result = summary(state, plan, 'complete', head=head)
         write_json(state / 'result.json', result)
         return result
+
+
+def record_viewed(commands: Commands, plan: dict, head: str, expected_workspace: dict) -> None:
+    request = plan['request']
+    deadline = time.monotonic() + 180
+    for attempt in range(5):
+        require(references(request) == plan['evidence'], 'Evidence changed during Viewed recording')
+        require(workspace(commands) == expected_workspace, 'Local state changed during Viewed recording')
+        try:
+            # A failed mutation may already have succeeded: reconcile the full set before any repeat.
+            pr = read_pr_snapshot(commands, request, deadline)
+            check_pr(pr, plan, head)
+            for path in request['viewed_paths']:
+                if pr['files'][path] == 'VIEWED':
+                    continue
+                data = commands.graphql(MARK_QUERY, {'id': pr['id'], 'path': path},
+                                        timeout=viewed_timeout(deadline))
+                result = data['markFileAsViewed']['pullRequest']
+                require(result['baseRefOid'] == plan['pr']['base'] and result['headRefOid'] == head,
+                        'PR version changed during Viewed recording')
+            final = read_pr_snapshot(commands, request, deadline)
+            check_pr(final, plan, head)
+            require(all(final['files'][path] == 'VIEWED' for path in request['viewed_paths']),
+                    'Viewed recording is incomplete; resume the same operation')
+            require(workspace(commands) == expected_workspace, 'Local state changed during Viewed recording')
+            require(references(request) == plan['evidence'], 'Evidence changed during Viewed recording')
+            return
+        except ViewedRequestFailure as error:
+            pause_viewed(error, attempt, deadline)
+    raise RuntimeError('Viewed recording retries exhausted')
 
 
 def workspace_after_commit(commands: Commands, plan: dict, head: str) -> dict:

@@ -40,10 +40,18 @@ python "<skill-root>/scripts/complete_review.py" --help
 CLI help owns capabilities, request fields, commands, private state, transport requirements, and retries. Supply the selected workspace, established PR/source identity and viewer, intended effects, and existing review, verification, and authorization records. Hashes bind records; they do not establish semantic coverage or permission.
 
 1. **Prepare.** Call `prepare` to obtain the complete current inventory and frozen plan. Compare that plan with the coverage and authority above, using the retained inventory rather than compact counts alone. Resolve any uncovered or changed scope before execution; prepare a replacement only when the settled plan or its evidence changes.
-2. **Run.** Execute the covered, authorized plan with `run`. The helper revalidates current state, runs normal hooks, verifies the commit and outgoing scope, publishes to the exact source conditionally, and reads back the PR version and every selected Viewed path. Use those results as the evidence for its mechanical responsibilities.
-3. **Finish.** A successful `complete` result, together with the established coverage and authority, completes delivery. Report its resulting workspace, commit, publication, and Viewed state to the entry and resume the selected review action. Further inspection is needed only for an incomplete or uncertain result or evidence of a subsequent change.
+2. **Run.** Execute the covered, authorized plan with `run`. The helper revalidates current state, runs normal hooks, verifies the commit and outgoing scope, publishes to the exact source conditionally, and reads back the PR version and every selected Viewed path. Its Viewed requests retry transient failures by default, reconciling uncertain writes before repeating them. Use those results as the evidence for its mechanical responsibilities.
+3. **Finish.** A successful `complete` result, together with the established coverage and authority, completes delivery. Report its resulting workspace, commit, publication, and Viewed state to the entry. Further inspection is needed only for an incomplete or uncertain result or evidence of a subsequent change.
 
 The helper's private state is the delivery recovery record. Keep it outside the worktree in task-managed private temporary storage, referencing existing review and verification evidence. The task owns its retention and cleanup: preserve it while delivery or recovery is pending and until the required result and evidence have been handed off. Use the existing records directly; delivery requires no second archive, copied log collection, or rewritten evidence summary. Any separately requested retention or export keeps its own scope and lifecycle.
+
+### Review the next group while Viewed runs
+
+For authorized Viewed work, use the Harness's managed background process/session while reviewing the next group read-only after Pass or explicit continuation. Retain the handle, output and final exit status; use foreground execution if managed sessions are unavailable.
+
+Finish applicable commit/publication prerequisites first. For publication plans, wait for `phase=viewed` or successful completion, verify the resulting head, and pin the comparison through Preparation; Viewed-only uses its existing comparison. Keep the frozen request, paths, viewer/version, workspace and evidence unchanged.
+
+Collect status near the next report's end: incomplete Viewed leaves delivery pending without blocking independently valid read-only review. Before repairs, Git/evidence changes or scope exit, join the process or safely stop it and wait for its owned child to exit; retain recovery state for incomplete delivery. Manual Viewed workers retain these lifetime rules and their reconciliation/readback duties.
 
 ## Use manual execution for unsupported plans
 
