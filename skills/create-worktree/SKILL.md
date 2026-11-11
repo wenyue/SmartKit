@@ -7,13 +7,6 @@ description: Use when state-changing repository work needs an isolated linked Gi
 
 Select or create one linked Git worktree and establish its Agent configuration and environment readiness without disturbing existing work. Return `ready` or `non-ready`. Carry the source's current work by default; inherited changes remain protected under their original ownership rather than automatically becoming the caller's task.
 
-## Responsibility boundaries
-
-| Artifact | Responsibility |
-| --- | --- |
-| [Create Worktree](SKILL.md) | Workspace selection, preservation, and configuration and environment readiness before handoff. |
-| [Maintain Project Config](../maintain-project-config/SKILL.md) | Configuration sources, scoped copying or restoration, conflict handling, and Git exclusions. |
-
 ## 1. Select the workspace and starting state
 
 Start from the established need for isolation and the accepted task scope. Use existing choices of source, target, base, and permitted effects. Ask for unresolved required choices or permission, reusing decisions that already cover the operation. Resolve the source checkout, primary project checkout, and physical Git common directory from repository topology; the invoking linked checkout need not be the primary checkout.
@@ -76,9 +69,9 @@ Inspect what actually exists before retrying after interruption or failure. Reta
 
 Before discovering target project Skills, establish which project instructions, Rules, Skills, custom Agents, MCP declarations, and host settings the accepted task requires. Check the selected worktree first and preserve its usable configuration on reuse. When no project configuration is required, report configuration `not-needed` and continue.
 
-For missing required configuration, read the supported [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) reference from this SmartKit installation and use its linked-worktree preparation route. That route owns source selection, mode-specific copying or restoration, conflict decisions, and exclusions; consulting it does not invoke the user-only maintenance Skill. Use the caller's accepted source and scope, resolving project locations through Git topology. Keep the selected worktree as the code and operation target even when the configuration source is elsewhere; finding a parent directory's configuration does not establish target readiness.
+Git-shared configuration (`local`) arrives through checkout or carry and needs no extra transfer. For `local-only` and `repository`, use the accepted, initialized source checkout and follow [Worktree configuration](references/configuration.md) to prepare missing configuration. Resolve corresponding project directories through Git topology; the source need not be a physical parent. Keep code and project operations rooted in the selected worktree.
 
-Account for configuration writes as preparation under the caller's accepted permissions, separately from clean or carry source transfer. Preserve a continued worktree's configuration rather than refreshing it merely to match another checkout. Unresolved source or scope, unavailable required configuration or maintenance capability, refused differences, or unauthorized preparation yields `non-ready`; retain the worktree and report the needed resolution.
+Treat configuration preparation separately from clean or carry transfer, within the caller's accepted permissions. Preserve usable target configuration. Missing required source content, unresolved scope or conflicts, and incomplete preparation yield `non-ready`; retain the worktree and report the needed resolution.
 
 Make the selected configuration available through the active host's supported loading route. Before environment preparation, verify that required instructions and Skills can be resolved for the target and that settings and capabilities needed for preparation are usable. Reuse still-applicable evidence. Copied files, setup markers, or synchronization receipts alone do not prove activation; a required host reload, trust decision, or unavailable preparation capability yields `non-ready` with its next action. When a task-required capability depends on the project environment being prepared, verify it after preparation, before returning `ready`.
 
@@ -97,7 +90,7 @@ Recheck target identity and expected state after the assessments and any prepara
 Give the caller a concise readiness handoff:
 
 - Status, target path, branch, immutable base, and current `HEAD`.
-- Whether the worktree was created or reused, its carried/inherited-state summary and any carry decision, configuration source and scope with its readiness status, and environment status.
+- Whether the worktree was created or reused, its carried/inherited-state summary and any carry decision, configuration source and scope with link/copy provenance and readiness, and environment status.
 - For `non-ready`, the blocker, retained partial state, and concrete next action.
 
 Keep supporting observations available; the handoff need not reproduce the full evidence inventory.

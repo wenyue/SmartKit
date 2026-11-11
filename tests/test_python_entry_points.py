@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY_POINTS = (
+    'skills/create-worktree/scripts/prepare_configuration.py',
     'skills/maintain-project-config/scripts/maintain.py',
     'runtime/recommended-tools/codegraph_runtime.py',
     'runtime/rules/dispatch.py',

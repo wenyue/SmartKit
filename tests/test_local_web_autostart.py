@@ -379,6 +379,10 @@ class DailyConsentTests(unittest.TestCase):
         c = self.checker
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             root = Path(directory)
+            for project in ('one', 'two'):
+                config = root / project / '.agents' / 'config.json'
+                config.parent.mkdir(parents=True)
+                config.write_text('{}\n', encoding='utf-8')
             for name, value in {"load_policy": {"tools": []}, "check_policy": [],
                                 "check_config_requirements": [], "check_mcp_readiness": [],
                                 "check_setup_migrations": [], "check_smartkit_version": [],
@@ -490,6 +494,8 @@ class DailyConsentTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             root = Path(directory)
+            (root / '.agents').mkdir()
+            (root / '.agents' / 'config.json').write_text('{}\n', encoding='utf-8')
             for name, value in {'load_policy': {'tools': []}, 'check_policy': [],
                                 'check_config_requirements': [], 'check_mcp_readiness': [],
                                 'check_setup_migrations': [], 'check_smartkit_version': [],

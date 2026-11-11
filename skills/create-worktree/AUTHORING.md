@@ -10,4 +10,6 @@ The workflow verifies identity, preservation, required Agent configuration, and 
 
 ## Establish Agent configuration before project Skill discovery
 
-Configuration readiness belongs to the shared worktree workflow because ignored project configuration may be absent in both local-only and repository modes, including the environment preparation Skill itself. Establish required configuration before discovering that Skill; its optional absence must not conceal missing configuration. Configuration maintenance retains source, copy or restore, conflict, and exclusion mechanisms. This preparation supplies the selected worktree rather than creating continuous synchronization between checkouts, and file availability remains distinct from host activation.
+Ignored configuration can be absent in both local-only and repository modes, including the environment preparation Skill itself. Establish it before Skill discovery, using the initialized source checkout regardless of where that checkout obtained its configuration. This keeps worktree preparation independent of configuration-repository restoration.
+
+Prefer symbolic links so configuration edits share their source even when editors replace files atomically. Copies retain origin mappings for equivalent edits and safe cleanup; they do not create a background synchronization service. File availability remains distinct from host activation.

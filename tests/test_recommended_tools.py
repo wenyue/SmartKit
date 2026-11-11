@@ -233,6 +233,8 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         checker = self.checker
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            (root / '.agents').mkdir()
+            (root / '.agents' / 'config.json').write_text('{}\n', encoding='utf-8')
             policy = root / 'policy.json'
             policy.write_text('{"harness":"codex","tools":[]}\n', encoding='utf-8')
             finding = checker.Finding('tool-missing', 'Example Tool', 'missing', 'Install it.')

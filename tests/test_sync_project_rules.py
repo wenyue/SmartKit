@@ -136,7 +136,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 + '### Required rules\n\n'
                 + '| Rule | Strength |\n'
                 + '| --- | --- |\n'
-                + '| `.agents/rules/project-policy.md` | Mandatory? no |\n'
+                + '| `.agents/rules/constraints.md` | Mandatory? no |\n'
                 + '| `docs/rules.md` | Local |\n'
                 + '| `.agents/rules/20-old-common.md` | Advisory |\n'
                 + '| `.agents/rules/30-testing.md` | Default |\n'
@@ -181,7 +181,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertTrue(updated.startswith(prefix.encode()))
             self.assertTrue(updated.endswith(suffix.encode()))
             self.assertIn(
-                b'- `.agents/rules/project-policy.md`',
+                b'- `.agents/rules/constraints.md`',
                 updated,
             )
             self.assertIn(
