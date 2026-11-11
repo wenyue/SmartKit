@@ -69,7 +69,7 @@ description: 当会改变仓库状态的工作需要隔离的关联 Git worktree
 
 发现目标项目 Skills 前，确定已接受任务需要哪些项目指令、Rules、Skills、自定义 Agents、MCP 声明和宿主设置。先检查选定 worktree，复用时保留其中可用的配置。不需要项目配置时，将配置状态报告为 `not-needed` 并继续。
 
-由 Git 共享的配置（`local`）随检出或携带提供，无需额外传递。对于 `local-only` 和 `repository`，使用已接受且完成初始化的源检出，并遵循 [Worktree 配置](references/configuration.md) 准备缺少的配置。通过 Git 拓扑解析对应项目目录；源不必是物理父目录。代码和项目操作仍以选定 worktree 为根。
+由 Git 共享的配置（`local`）随检出或携带提供，无需额外传递。对于 `local-only` 和 `repository`，使用已接受且完成初始化的源检出，并遵循 [Worktree 配置](references/configuration.md) 准备缺少的配置，以及处理链接配置或配置副本的后续编辑与清理。通过 Git 拓扑解析对应项目目录；源不必是物理父目录。代码和项目操作仍以选定 worktree 为根。
 
 在调用方已接受的权限内，将配置准备与干净或携带传递分别处理。保留目标中可用的配置。缺少必要的源内容、范围或冲突未解决，或准备未完成时，返回 `non-ready`；保留 worktree 并报告需要解决的事项。
 

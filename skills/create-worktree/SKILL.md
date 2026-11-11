@@ -69,7 +69,7 @@ Inspect what actually exists before retrying after interruption or failure. Reta
 
 Before discovering target project Skills, establish which project instructions, Rules, Skills, custom Agents, MCP declarations, and host settings the accepted task requires. Check the selected worktree first and preserve its usable configuration on reuse. When no project configuration is required, report configuration `not-needed` and continue.
 
-Git-shared configuration (`local`) arrives through checkout or carry and needs no extra transfer. For `local-only` and `repository`, use the accepted, initialized source checkout and follow [Worktree configuration](references/configuration.md) to prepare missing configuration. Resolve corresponding project directories through Git topology; the source need not be a physical parent. Keep code and project operations rooted in the selected worktree.
+Git-shared configuration (`local`) arrives through checkout or carry and needs no extra transfer. For `local-only` and `repository`, use the accepted, initialized source checkout and follow [Worktree configuration](references/configuration.md) to prepare missing configuration and handle later edits and cleanup of linked or copied configuration. Resolve corresponding project directories through Git topology; the source need not be a physical parent. Keep code and project operations rooted in the selected worktree.
 
 Treat configuration preparation separately from clean or carry transfer, within the caller's accepted permissions. Preserve usable target configuration. Missing required source content, unresolved scope or conflicts, and incomplete preparation yield `non-ready`; retain the worktree and report the needed resolution.
 
