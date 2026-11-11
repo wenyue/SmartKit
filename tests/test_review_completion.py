@@ -1081,6 +1081,100 @@ class CommandAndCliTests(CompletionFixture, unittest.TestCase):
         self.assertEqual(result['files'], github.states)
         self.assertEqual(cursors, [None, '1'])
 
+    def test_snapshot_cli_saves_all_pages_and_read_only_candidates(self):
+        identity = Mock()
+        identity.remote_head.return_value = self.base
+        identity.comparison = self.comparison
+        github = FakeGitHub(identity)
+        github.page_size = 2
+        github.states = {'already.txt': 'VIEWED', 'changed.txt': 'DISMISSED', 'tests/test_feature.py': 'UNVIEWED'}
+        cursors = []
+
+        def page(arguments, *, input_value, timeout):
+            self.assertEqual(arguments, ['gh', 'api', 'graphql', '--hostname', 'github.com', '--input', '-', '--include'])
+            self.assertEqual(input_value['query'], completion.PR_QUERY)
+            variables = input_value['variables']
+            self.assertEqual(variables, {'owner': 'owner', 'name': 'repo', 'number': 7, 'cursor': variables['cursor']})
+            self.assertGreater(timeout, 0)
+            cursors.append(variables['cursor'])
+            return completion.encoded({'data': github.graphql(None, completion.PR_QUERY, variables)})
+
+        output = io.StringIO()
+        with patch.object(completion.Commands, 'call', side_effect=page), patch('sys.stdout', output):
+            self.assertEqual(completion.main(['snapshot', '--pull-request', 'owner/repo', '--number', '7',
+                                             '--state', str(self.state)]), 0)
+        self.assertEqual(cursors, [None, '2'])
+        summary = json.loads(output.getvalue())
+        evidence = completion.read_json(Path(summary['snapshot']))
+        self.assertEqual(summary['status'], 'complete')
+        self.assertEqual(summary['file_count'], 3)
+        self.assertEqual(summary['candidate_count'], 2)
+        self.assertEqual(summary['counts'], {'VIEWED': 1, 'UNVIEWED': 1, 'DISMISSED': 1})
+        self.assertEqual(evidence['counts'], summary['counts'])
+        self.assertEqual((evidence['pull_request'], evidence['number']), ('owner/repo', 7))
+        self.assertEqual((evidence['viewer'], evidence['base'], evidence['head']),
+                         ('reviewer', self.comparison, self.base))
+        self.assertEqual(evidence['files'], github.states)
+        self.assertCountEqual(evidence['candidate_paths'], ['changed.txt', 'tests/test_feature.py'])
+        self.assertNotIn('files', summary)
+        self.assertNotIn('candidate_paths', summary)
+        self.assertFalse(github.marked)
+
+    def test_snapshot_cli_rejects_incomplete_or_inconsistent_pages(self):
+        identity = Mock()
+        identity.remote_head.return_value = self.base
+        identity.comparison = self.comparison
+        github = FakeGitHub(identity)
+        github.page_size = 1
+
+        for case, message in (('truncated', 'Incomplete PR file pagination'),
+                              ('count', 'PR file count changed during pagination'),
+                              ('head', 'PR identity/version changed during pagination'),
+                              ('base', 'PR identity/version changed during pagination'),
+                              ('viewer', 'PR identity/version changed during pagination')):
+            with self.subTest(case=case):
+                def page(arguments, *, input_value, timeout):
+                    self.assertEqual(input_value['query'], completion.PR_QUERY)
+                    variables = input_value['variables']
+                    result = github.graphql(None, completion.PR_QUERY, variables)
+                    pr = result['repository']['pullRequest']
+                    if case == 'truncated':
+                        pr['files']['totalCount'] += 1
+                    if variables['cursor'] is not None:
+                        if case == 'count':
+                            pr['files']['totalCount'] += 1
+                        if case == 'head':
+                            pr['headRefOid'] = 'c' * 40
+                        if case == 'base':
+                            pr['baseRefOid'] = 'c' * 40
+                        if case == 'viewer':
+                            result['viewer']['login'] = 'other-reviewer'
+                    return completion.encoded({'data': result})
+
+                state = self.state / case
+                output = io.StringIO()
+                with patch.object(completion.Commands, 'call', side_effect=page) as call, patch('sys.stdout', output):
+                    self.assertEqual(completion.main(['snapshot', '--pull-request', 'owner/repo', '--number', '7',
+                                                     '--state', str(state)]), 1)
+                self.assertEqual(call.call_count, 2)
+                summary = json.loads(output.getvalue())
+                self.assertEqual(summary['status'], 'incomplete')
+                self.assertIn(message, summary['error'])
+                self.assertNotIn('snapshot', summary)
+                self.assertFalse((state / 'snapshot.json').exists())
+                self.assertTrue(Path(summary['logs']).is_dir())
+
+    def test_snapshot_cli_preserves_an_existing_state_directory(self):
+        self.state.mkdir()
+        existing = self.state / 'snapshot.json'
+        existing.write_bytes(b'prior evidence')
+        with patch.object(completion.Commands, 'call') as call, patch('sys.stdout', io.StringIO()):
+            self.assertEqual(completion.main(['snapshot', '--pull-request', 'owner/repo', '--number', '7',
+                                             '--state', str(self.state)]), 1)
+        call.assert_not_called()
+        self.assertEqual(list(self.state.iterdir()), [existing])
+        self.assertEqual(existing.read_bytes(), b'prior evidence')
+
     def test_cli_summary_is_bounded_and_counts_the_full_plan(self):
         plan = {
             'request': {'mode': 'commit-push', 'viewed_paths': ['file-{}'.format(i) for i in range(1000)]},

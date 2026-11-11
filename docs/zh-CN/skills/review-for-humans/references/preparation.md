@@ -6,7 +6,15 @@
 
 使用当前权威 PR 元数据确定所属仓库、源仓库或 fork、源分支和目标提交。选定历史版本时保留该目标，本地跟踪不能证明当前 PR head。
 
-对 PR，获取当前已认证查看者完整的文件状态，完成所有分页，并核验 base/head 保持不变。排除 `VIEWED`，纳入 `UNVIEWED` 和 `DISMISSED`。审批、评论、先前聊天展示，以及历史快照对应的当前状态，都不能建立所需筛选。要求包含已查看文件时覆盖该筛选。
+使用 Viewed 筛选时，获取已认证查看者的完整文件状态，并确认所有分页的 base/head 一致。对于 `github.com` 上的当前 PR，运行已加载技能中的 `snapshot`，并在工作树外指定一个新的私有证据目录。
+
+```text
+python "<skill-root>/scripts/complete_review.py" snapshot --pull-request owner/repo --number 123 --state "/private/viewed-snapshot"
+```
+
+从所选版本的证据中选取状态为 `UNVIEWED` 和 `DISMISSED` 的路径，历史比较同样适用。使用 `snapshot.json` 时，先核对其中的查看者及 base/head 是否与本次审查目标一致，再使用 `candidate_paths`。审批、评论和先前在聊天中展示过的内容都无法证明文件状态。
+
+用户要求包含已查看文件时，选取已验证比较中的全部路径。若当前的 `snapshot.json` 与比较匹配，完整的 `files` 映射包含这些路径。无论是否启用 Viewed 筛选，都应用项目的测试文件排除规则。
 
 已授权获取后，完整 Viewed 筛选仍不可用时，先直接询问真正必要的用户事实。否则，固定比较证据就绪时，直接询问用户是否愿意不按 Viewed 筛选，审查所有其他符合条件文件。只有明确选择后才采用这个更大范围；不虚构历史或当前 Viewed 状态。
 

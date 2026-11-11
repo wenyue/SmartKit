@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Freeze and resume authorized PR completion; full evidence stays in private state."""
+"""Read PR Viewed state and freeze or resume authorized PR completion."""
 from __future__ import annotations
 
 import argparse
@@ -22,6 +22,10 @@ from urllib.parse import quote
 
 
 CLI_HELP = r"""
+READ-ONLY SNAPSHOT
+  snapshot reads the current github.com PR through authenticated gh and writes
+  private evidence without a Git checkout. See snapshot --help for its contract.
+
 SUPPORTED PLANS
   A verified github.com PR on its selected local branch, with one effect mode.
   viewed-only records Viewed. commit-push creates a commit when content changed,
@@ -98,6 +102,7 @@ PRIVATE STATE AND EVIDENCE
 
 COMMANDS
   Resolve <skill-root> from the actual loaded Skill, not the target cwd.
+  python "<skill-root>/scripts/complete_review.py" snapshot --pull-request owner/repo --number 123 --state "/private/viewed-snapshot"
   python "<skill-root>/scripts/complete_review.py" prepare --input "/private/request.json" --state "/private/completion-state"
   python "<skill-root>/scripts/complete_review.py" run --state "/private/completion-state" --confirm "<plan_id>"
 
@@ -159,8 +164,9 @@ OUTPUT AND EXIT STATUS
   private logs. Status is prepared or complete on success, incomplete on a caught
   failure, or interrupted on KeyboardInterrupt. Every Git/gh subprocess retains
   arguments, identity, stdout/stderr, exit status, and duration in private logs.
-  Exit 0: requested command succeeded (prepare froze a plan; run completed all
-  required effects/readbacks). Exit 1: incomplete. Exit 2: CLI usage error.
+  Exit 0: requested command succeeded (snapshot saved the full Viewed inventory,
+  prepare froze a plan, or run completed all required effects/readbacks).
+  Exit 1: incomplete. Exit 2: CLI usage error.
   Exit 130: interrupted. Inspect failures and residue; no automatic rollback.
 
 RECOVERY
@@ -179,6 +185,17 @@ RECOVERY
   failed run as completed delivery.
 """
 
+SNAPSHOT_HELP = """Read every current file Viewed state for the authenticated gh viewer.
+Requires gh with read access to the github.com PR. Use a new private --state
+directory outside the worktree. Choose a fresh directory for each invocation.
+
+On success, snapshot.json contains the PR identity, viewer, base/head, complete
+files map, state counts, and candidate_paths (UNVIEWED and DISMISSED). Stdout
+contains compact JSON with status, counts, and private snapshot and log paths.
+Compare the saved viewer and base/head with the intended review before filtering.
+A failed read retains available diagnostics and leaves no complete snapshot.
+This command calls no Git commands and makes no changes to GitHub."""
+
 PREPARE_HELP = """Freeze exact effects and private recovery evidence without committing, pushing,
 or marking Viewed. Read the top-level --help for supported plans and the request
 JSON contract. --state must be a new private directory outside the worktree.
@@ -196,6 +213,7 @@ recovery evidence. This command never advances the human review."""
 
 SHA = re.compile(r'[0-9a-f]{40}')
 SLUG = re.compile(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+')
+VIEWED_STATES = ('VIEWED', 'UNVIEWED', 'DISMISSED')
 GIT_ROUTING = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE',
                'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES',
                'GIT_PREFIX', 'GIT_NAMESPACE', 'GIT_CONFIG', 'GIT_CONFIG_COUNT')
@@ -270,7 +288,7 @@ class ViewedRequestFailure(RuntimeError):
 
 def viewed_timeout(deadline: float) -> float:
     remaining = deadline - time.monotonic()
-    require(remaining > 0, 'Viewed batch exceeded its 180-second deadline; resume the same state')
+    require(remaining > 0, 'Viewed batch exceeded its 180-second deadline')
     return min(30, remaining)
 
 
@@ -278,7 +296,7 @@ def pause_viewed(error: ViewedRequestFailure, attempt: int, deadline: float) -> 
     # Server timing is a minimum; repeated rate limits also receive exponential backoff.
     delay = max(1, error.delay) * (2 ** attempt)
     if attempt == 4 or time.monotonic() + delay >= deadline:
-        raise RuntimeError('Viewed retry budget exhausted; resume the same state') from error
+        raise RuntimeError('Viewed retry budget exhausted') from error
     time.sleep(delay)
 
 
@@ -431,6 +449,7 @@ def read_pr_snapshot(commands: Commands, request: dict, deadline: float) -> dict
     owner, name = request['pull_request'].split('/')
     variables = {'owner': owner, 'name': name, 'number': request['number'], 'cursor': None}
     identity = None
+    total_count = None
     files = {}
     cursors = set()
     while True:
@@ -442,17 +461,27 @@ def read_pr_snapshot(commands: Commands, request: dict, deadline: float) -> dict
                    'source': pr['headRepository']['nameWithOwner'], 'source_id': pr['headRepository']['id'],
                    'ref': 'refs/heads/' + pr['headRefName'],
                    'viewer': data['viewer']['login']}
+        require(all(isinstance(value, str) and value for value in current.values())
+                and SHA.fullmatch(current['base']) is not None and SHA.fullmatch(current['head']) is not None,
+                'Invalid PR identity/version')
         require(identity is None or current == identity, 'PR identity/version changed during pagination')
         identity = current
         page = pr['files']
+        count = page['totalCount']
+        require(type(count) is int and count >= 0, 'Invalid PR file count')
+        require(total_count is None or count == total_count, 'PR file count changed during pagination')
+        total_count = count
         for entry in page['nodes']:
-            require(entry['path'] not in files, 'Duplicate PR file during pagination')
-            require(entry['viewerViewedState'] in ('VIEWED', 'UNVIEWED', 'DISMISSED'),
-                    'Unknown Viewed state')
-            files[entry['path']] = entry['viewerViewedState']
+            path = entry['path']
+            viewed = entry['viewerViewedState']
+            require(isinstance(path, str) and bool(path), 'Invalid PR file path')
+            require(path not in files, 'Duplicate PR file during pagination')
+            require(viewed in VIEWED_STATES, 'Unknown Viewed state')
+            files[path] = viewed
         info = page['pageInfo']
+        require(type(info['hasNextPage']) is bool, 'Invalid PR pagination status')
         if not info['hasNextPage']:
-            require(len(files) == page['totalCount'], 'Incomplete PR file pagination')
+            require(len(files) == total_count, 'Incomplete PR file pagination')
             break
         cursor = info['endCursor']
         require(isinstance(cursor, str) and cursor and cursor not in cursors, 'Invalid pagination cursor')
@@ -460,6 +489,27 @@ def read_pr_snapshot(commands: Commands, request: dict, deadline: float) -> dict
         variables['cursor'] = cursor
     identity['files'] = files
     return identity
+
+
+def snapshot(pull_request: str, number: int, state: Path) -> dict:
+    require(SLUG.fullmatch(pull_request) is not None, 'Invalid owner/repository')
+    require(number > 0, 'Invalid PR number')
+    state.mkdir(mode=0o700, parents=True, exist_ok=False)
+    commands = Commands(state, state)
+    request = {'pull_request': pull_request, 'number': number}
+    pr = pr_snapshot(commands, request)
+    counts = dict.fromkeys(VIEWED_STATES, 0)
+    candidate_paths = []
+    for path, viewed in pr['files'].items():
+        counts[viewed] += 1
+        if viewed in ('UNVIEWED', 'DISMISSED'):
+            candidate_paths.append(path)
+
+    evidence = state / 'snapshot.json'
+    write_json(evidence, {**request, **pr, 'counts': counts, 'candidate_paths': candidate_paths})
+    return {'status': 'complete', 'state': str(state), 'logs': str(commands.logs),
+            'snapshot': str(evidence), 'file_count': len(pr['files']),
+            'candidate_count': len(candidate_paths), 'counts': counts}
 
 
 def check_pr(observed: dict, plan: dict, head: str) -> None:
@@ -914,6 +964,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, epilog=CLI_HELP,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(dest='operation', required=True)
+    inspection = subparsers.add_parser('snapshot', help='Read current PR file Viewed states',
+                                      description=SNAPSHOT_HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
+    inspection.add_argument('--pull-request', required=True, help='PR owner/repository on github.com')
+    inspection.add_argument('--number', required=True, type=int, help='Positive PR number')
+    inspection.add_argument('--state', required=True, type=Path, help='New private evidence directory outside the worktree')
     preparation = subparsers.add_parser('prepare', help='Freeze a reviewable plan and private recovery evidence',
                                        description=PREPARE_HELP, formatter_class=argparse.RawDescriptionHelpFormatter)
     preparation.add_argument('--input', required=True, type=Path, help='Request JSON file; full schema is in top-level --help')
@@ -927,8 +982,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     arguments = parser.parse_args(argv)
     state = arguments.state.resolve()
     try:
-        result = (prepare(arguments.input, state) if arguments.operation == 'prepare'
-                  else run(state, arguments.confirm, arguments.transport))
+        if arguments.operation == 'snapshot':
+            result = snapshot(arguments.pull_request, arguments.number, state)
+        elif arguments.operation == 'prepare':
+            result = prepare(arguments.input, state)
+        else:
+            result = run(state, arguments.confirm, arguments.transport)
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return 0
     except KeyboardInterrupt:

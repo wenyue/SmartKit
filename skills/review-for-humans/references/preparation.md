@@ -6,7 +6,15 @@ Read for PR or remote-aligned branch review, before choosing a workspace or prep
 
 Use current authoritative PR metadata for owning repository, source repository/fork, source branch, and target commit. A selected historical version remains the target; local tracking cannot establish current PR head.
 
-For a PR, acquire complete file states for the current authenticated viewer, including all pages, while verifying unchanged base/head. Exclude `VIEWED`; include `UNVIEWED` and `DISMISSED`. Approval, comments, earlier chat display, and current states for a historical snapshot do not establish the required filter. A request to include viewed files overrides it.
+To apply the Viewed filter, obtain complete file states for the authenticated viewer with unchanged base/head across all pages. For a current `github.com` PR, run `snapshot` from the loaded Skill with a new private evidence directory outside the worktree.
+
+```text
+python "<skill-root>/scripts/complete_review.py" snapshot --pull-request owner/repo --number 123 --state "/private/viewed-snapshot"
+```
+
+Select `UNVIEWED` and `DISMISSED` paths from evidence for the selected version, including for historical comparisons. With `snapshot.json`, match its viewer and base/head to the intended review before using `candidate_paths`. Approval, comments, and earlier chat display cannot establish file states.
+
+If the user asks to include viewed files, select all paths from the verified comparison. A matching current `snapshot.json` supplies these paths in the full `files` map. Apply the project's test-file exclusions with or without the Viewed filter.
 
 If complete Viewed filtering remains unavailable after authorized acquisition, first ask directly for any genuinely needed user fact. Otherwise, when fixed comparison evidence is ready, ask directly whether the user wants to review all otherwise eligible files without the Viewed filter. Proceed with that broader scope only after an explicit choice; never fabricate historical or current Viewed states.
 
