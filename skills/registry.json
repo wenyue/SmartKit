@@ -76,6 +76,15 @@
       "skills": [
         {"id": "cathrynlavery/diagram-design", "path": "skills/diagram-design", "patches": ["vendor/patches/diagram-design/diagram-design.patch", "vendor/patches/diagram-design/diagram-design.openai.patch"]}
       ]
+    },
+    {
+      "id": "langchain-ai/openwiki",
+      "url": "https://github.com/langchain-ai/openwiki",
+      "ref": "b7027e3299c666e426cf218b3412a05767f702b6",
+      "license": {"spdx": "MIT", "path": "LICENSE"},
+      "skills": [
+        {"id": "langchain-ai/openwiki", "path": "integrations/openwiki", "patches": ["vendor/patches/openwiki/openwiki.patch", "vendor/patches/openwiki/openwiki.openai.patch"]}
+      ]
     }
   ]
 }

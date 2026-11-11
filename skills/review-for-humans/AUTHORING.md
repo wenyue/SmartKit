@@ -14,7 +14,9 @@ Necessity and implementation belong in one assessment path. Splitting them into 
 
 Report Format owns one file-based layout, item depth, closing order, and menu rendering across ordinary, supplementary, repair, and selected-O reports. The entry retains assessment, identity, action semantics, and choice ordering. A separate repair-summary format caused presentation to drift and made supporting changes easy to hide; choosing depth per item keeps compact reports within the same visible coverage.
 
-One complete ordinary report and one complete multi-file repair demonstrate the shared layout, including compact items without a redundant title. Abbreviated transitions illustrate other decisions without reproducing each report. Examples and these notes explain the design; operative requirements stay in the entry and Report Format.
+Examples are grouped by review situation, with direct links from the entry. Each supplies concrete premises, a report or exchange, and the reason those facts lead to that response. A single mixed conversation file made unrelated decisions and generic instructions compete with the relevant case. General presentation belongs in Report Format; examples do not carry a second reporting contract.
+
+One complete group report and one complete multi-file repair demonstrate the shared layout, including compact items without a redundant title. Other examples show the consequential part of their scenario without reproducing a whole report. This preserves concrete coverage without turning each small variation into another file. These notes explain the design; operative decisions stay in the entry.
 
 ## Separate progress, coverage, and effects
 

@@ -329,6 +329,52 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.apply_reviewed()
         self.assertFalse(asset.exists())
 
+    def test_default_backup_restores_complete_openwiki_bundle(self):
+        wiki = {
+            'openwiki/quickstart.md': '# Quickstart\n',
+            'openwiki/.claims/quickstart.json': '{"claims": []}\n',
+            'openwiki/.page-manifest.json': '{"pages": []}\n',
+            'openwiki/.last-update.json': '{"interrupted": false}\n',
+            'openwiki/INSTRUCTIONS.md': 'Write documentation in English.\n',
+            '.openwikiignore': 'private/\n',
+        }
+        for path, value in wiki.items():
+            self.write(self.target, path, value)
+        self.module.initialize_entry(self.target, self.entry, [])
+        manifest = json.loads((self.entry / 'manifest.json').read_text())
+        self.assertIn('openwiki', manifest['directories'])
+        self.assertIn('.openwikiignore', manifest['files'])
+        self.module.apply(self.target)
+        for path in wiki:
+            (self.target / path).unlink()
+        self.write(self.target, 'business.dart', 'keep source\n')
+        self.apply_reviewed()
+        for path, value in wiki.items():
+            self.assertEqual((self.target / path).read_text(), value)
+            self.assertEqual((self.entry / 'files' / path).read_bytes(), (self.target / path).read_bytes())
+        self.assertEqual((self.target / 'business.dart').read_text(), 'keep source\n')
+
+    def test_openwiki_adoption_extends_existing_scope_and_preserves_active_run(self):
+        self.initialize()
+        self.write(self.target, 'openwiki/quickstart.md', '# First\n')
+        self.write(self.target, 'openwiki/.claims/quickstart.json', '{"claims": []}\n')
+        self.module.adopt(self.target, ['openwiki'])
+        self.module.apply(self.target)
+        self.write(self.target, 'openwiki/quickstart.md', '# Pending update\n')
+        self.write(self.target, 'openwiki/.run.json', '{"phase": "writing"}\n')
+        before = {path: path.read_bytes() for root in (self.target, self.entry)
+                  for path in root.rglob('*') if path.is_file()}
+        for operation in (lambda: self.module.adopt(self.target, ['openwiki']),
+                          lambda: self.module.apply(self.target)):
+            with self.assertRaisesRegex(ValueError, 'not a configuration backup path'):
+                operation()
+            self.assertEqual({path: path.read_bytes() for root in (self.target, self.entry)
+                              for path in root.rglob('*') if path.is_file()}, before)
+        (self.target / 'openwiki/.run.json').unlink()
+        self.module.adopt(self.target, ['openwiki'])
+        self.module.apply(self.target)
+        self.assertEqual((self.entry / 'files/openwiki/quickstart.md').read_text(), '# Pending update\n')
+
     def test_source_fingerprint_skips_unchanged_writes_but_cannot_accept_local_drift(self):
         self.initialize()
         path = self.target / '.agents/rules/personal.md'
@@ -474,8 +520,8 @@ class ProjectConfigurationTest(unittest.TestCase):
         with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
             self.assertEqual(setup_project_agents.main(['finish', '--target', str(self.target),
                 '--session', str(session), *helper.source_args()]), 0)
-        self.assertEqual((self.entry / 'files/.agents/rules/tools.md').read_bytes(),
-                         (self.target / '.agents/rules/tools.md').read_bytes())
+        self.assertEqual((self.entry / 'files/.agents/rules/constraints.md').read_bytes(),
+                         (self.target / '.agents/rules/constraints.md').read_bytes())
         self.assertEqual(self.module.inspect(self.target)['changes'], [])
         session = helper.private_session(self.root)
         with redirect_stdout(StringIO()):
@@ -681,7 +727,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertEqual(shared.read_bytes(), original)
         self.assertEqual((self.entry / 'files/AGENTS.local.md').read_bytes(),
                          (self.target / 'AGENTS.local.md').read_bytes())
-        self.assertIn(b'- `.agents/rules/tools.md`', (self.target / 'AGENTS.local.md').read_bytes())
+        self.assertIn(b'- `.agents/rules/constraints.md`', (self.target / 'AGENTS.local.md').read_bytes())
         self.assertEqual(self.module.inspect(self.target)['changes'], [])
 
     def test_full_setup_retains_source_and_rolls_back_target_on_late_source_drift(self):
@@ -698,7 +744,7 @@ class ProjectConfigurationTest(unittest.TestCase):
         helper.write_generated_outputs(session)
         original_apply = setup_project_agents.apply_plan
         def apply_after_source_edit(target, plan, **kwargs):
-            self.write(self.entry, 'files/.agents/rules/tools.md', '# Concurrent source edit\n')
+            self.write(self.entry, 'files/.agents/rules/constraints.md', '# Concurrent source edit\n')
             return original_apply(target, plan, **kwargs)
         with mock.patch.object(setup_project_agents, 'apply_plan', side_effect=apply_after_source_edit):
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
@@ -706,7 +752,7 @@ class ProjectConfigurationTest(unittest.TestCase):
                     '--session', str(session), *helper.source_args()]), 2)
         self.assertIn('configuration', errors.getvalue())
         self.assertEqual({p.relative_to(self.target): p.read_bytes() for p in self.target.rglob('*') if p.is_file()}, before)
-        self.assertEqual((self.entry / 'files/.agents/rules/tools.md').read_text(), '# Concurrent source edit\n')
+        self.assertEqual((self.entry / 'files/.agents/rules/constraints.md').read_text(), '# Concurrent source edit\n')
 
     def test_native_agent_adoption_saves_source_before_target_transaction(self):
         import adopt_project_agents as adoption
@@ -966,6 +1012,16 @@ class MaintenanceModeTest(unittest.TestCase):
         self.assert_ignored('.agents/config.json', False)
         self.assert_ignored('AGENTS.md', False)
         self.assert_ignored('keep-local.txt')
+
+    def test_wiki_uses_the_recorded_personal_or_shared_git_treatment(self):
+        for path in ('openwiki/quickstart.md', 'openwiki/.claims/page.json', '.openwikiignore'):
+            self.write(path, 'example\n')
+        self.bind('local-only')
+        for path in ('openwiki/quickstart.md', 'openwiki/.claims/page.json', '.openwikiignore'):
+            self.assert_ignored(path)
+        self.bind('local', '--replace-binding')
+        for path in ('openwiki/quickstart.md', 'openwiki/.claims/page.json', '.openwikiignore'):
+            self.assert_ignored(path, False)
 
     def test_unapproved_switch_and_edited_exclude_block_refuse_before_binding_changes(self):
         self.bind('local-only')

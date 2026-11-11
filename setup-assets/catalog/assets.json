@@ -1,7 +1,7 @@
 {
   "plugin": {
     "id": "smartkit",
-    "version": "1.2.29",
+    "version": "1.2.30",
     "repository": "https://github.com/wenyue/SmartKit.git",
     "ref": "master"
   },
@@ -13,42 +13,10 @@
       "control_plane": true
     },
     {
-      "id": "blueprint-project-tools",
+      "id": "blueprint-constraints",
       "kind": "blueprint",
-      "source": "setup-assets/blueprints/rules/tools.md",
-      "target": ".agents/rules/tools.md",
-      "metadata": {
-        "section": "project",
-        "loading": "always",
-        "cursor": {
-          "alwaysApply": true
-        },
-        "github": {
-          "applyTo": "**"
-        }
-      }
-    },
-    {
-      "id": "blueprint-project-contracts",
-      "kind": "blueprint",
-      "source": "setup-assets/blueprints/rules/contracts.md",
-      "target": ".agents/rules/contracts.md",
-      "metadata": {
-        "section": "project",
-        "loading": "always",
-        "cursor": {
-          "alwaysApply": true
-        },
-        "github": {
-          "applyTo": "**"
-        }
-      }
-    },
-    {
-      "id": "blueprint-project-structure",
-      "kind": "blueprint",
-      "source": "setup-assets/blueprints/rules/structure.md",
-      "target": ".agents/rules/structure.md",
+      "source": "setup-assets/blueprints/rules/constraints.md",
+      "target": ".agents/rules/constraints.md",
       "metadata": {
         "section": "project",
         "loading": "always",

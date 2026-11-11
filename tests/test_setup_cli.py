@@ -226,13 +226,11 @@ class SetupCliTest(unittest.TestCase):
             self.assertNotIn('hooks_enabled', request)
             self.assertNotIn('selected_agents', request)
             self.assertNotIn('model_requests', request)
-            self.assertEqual(len(request['generation_requests']), 5)
+            self.assertEqual(len(request['generation_requests']), 3)
             self.assertEqual(
                 {item['target'] for item in request['generation_requests']},
                 {
-                    '.agents/rules/tools.md',
-                    '.agents/rules/contracts.md',
-                    '.agents/rules/structure.md',
+                    '.agents/rules/constraints.md',
                     '.agents/skills/change-set-verification/SKILL.md',
                     '.agents/skills/prepare-worktree-environment/SKILL.md',
                 },
@@ -456,7 +454,7 @@ class SetupCliTest(unittest.TestCase):
 
     def test_project_source_edits_are_allowed_before_prepare_but_frozen_after_it(self):
         for relative in (
-            '.agents/rules/contracts.md',
+            '.agents/rules/constraints.md',
             '.agents/skills/change-set-verification/SKILL.md',
             '.agents/skills/change-set-verification/references/checks.md',
         ):
@@ -512,23 +510,23 @@ class SetupCliTest(unittest.TestCase):
                     self.assertEqual(setup_project_agents.main(['finish', *arguments]), 0)
                 return request['generation_requests']
 
-            self.assertEqual(len(sync()), 5)
-            rule = target / '.agents/rules/tools.md'
+            self.assertEqual(len(sync()), 3)
+            rule = target / '.agents/rules/constraints.md'
             skill = target / '.agents/skills/change-set-verification/SKILL.md'
             rule.write_bytes(b'project rule edit\n')
             skill.write_bytes(b'project skill edit\n')
-            self.assertEqual(len(sync()), 5)
+            self.assertEqual(len(sync()), 3)
             self.assertNotEqual(rule.read_bytes(), b'project rule edit\n')
             self.assertNotEqual(skill.read_bytes(), b'project skill edit\n')
             catalog_path = source / 'setup-assets/catalog/assets.json'
             catalog = json.loads(catalog_path.read_bytes())
             catalog['assets'] = [
                 item for item in catalog['assets'] if item['id'] not in {
-                    'blueprint-project-tools', 'blueprint-change-set-verification',
+                    'blueprint-constraints', 'blueprint-change-set-verification',
                 }
             ]
             catalog_path.write_text(json.dumps(catalog), encoding='utf-8')
-            self.assertEqual(len(sync()), 3)
+            self.assertEqual(len(sync()), 1)
             self.assertFalse(rule.exists())
             self.assertFalse(skill.exists())
 
@@ -1383,8 +1381,7 @@ class SetupCliTest(unittest.TestCase):
                 ),
                 0,
             )
-            self.assertTrue((target / '.agents/rules/tools.md').is_file())
-            self.assertTrue((target / '.agents/rules/tools.md').is_file())
+            self.assertTrue((target / '.agents/rules/constraints.md').is_file())
             self.assertTrue((target / '.agents/skills/change-set-verification/SKILL.md').is_file())
             self.assertFalse((target / '.agents/lock.json').exists())
 
@@ -1548,7 +1545,7 @@ class SetupCliTest(unittest.TestCase):
             session = self.private_session(root)
             self.assertEqual(self.prepare(target, session), 0)
             self.write_generated_outputs(session)
-            collision = target / '.agents/rules/tools.md'
+            collision = target / '.agents/rules/constraints.md'
             collision.parent.mkdir(parents=True)
             collision.write_text('user-owned\n', encoding='utf-8')
             before = self.snapshot_tree(target)
@@ -1608,7 +1605,7 @@ class SetupCliTest(unittest.TestCase):
             self.assertEqual(finish_result['phase'], 'finish')
             self.assertEqual(finish_result['source_commit'], self.source_commit)
             self.assertEqual(finish_result['changed_paths'], sorted(finish_result['changed_paths']))
-            self.assertIn('.agents/rules/tools.md', finish_result['changed_paths'])
+            self.assertIn('.agents/rules/constraints.md', finish_result['changed_paths'])
             self.assertEqual(
                 finish_result['harnesses'], ['codex', 'cursor', 'copilot', 'qoder']
             )

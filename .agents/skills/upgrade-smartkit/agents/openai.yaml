@@ -5,3 +5,5 @@ interface:
   icon_large: "./assets/icon.svg"
   brand_color: "#15803D"
   default_prompt: "使用 $upgrade-smartkit，评估我指定的 SmartKit 版本升级及其项目迁移要求。"
+policy:
+  allow_implicit_invocation: false

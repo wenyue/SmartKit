@@ -224,7 +224,7 @@ class SetupWorkflowTest(unittest.TestCase):
                 self.assertEqual(result['ownership']['initialized'], initialized)
                 self.assertTrue(result['migrations']['provisional'])
                 self.assertTrue(result['migrations']['setup_required'])
-                self.assertIn('.agents/rules/structure.md', [item['target'] for item in result['project_discovery']['generation_requests']])
+                self.assertIn('.agents/rules/constraints.md', [item['target'] for item in result['project_discovery']['generation_requests']])
                 self.assertIn('additional_rules', result['project_discovery'])
                 self.assertTrue(result['pending_assessment'])
                 self.assertEqual(result['agents']['role_declarations'][0]['id'], 'reviewer')
@@ -489,7 +489,7 @@ class SetupWorkflowTest(unittest.TestCase):
                     scope, files = configuration.backup.read_backup(entry)
                     receipt = json.loads((target / '.agents/project-config-sync.json').read_bytes())
                     self.assertEqual(receipt['sourceFingerprint'], configuration.backup.fingerprint(scope, files))
-                    self.assertTrue((entry / 'files/.agents/rules/tools.md').is_file())
+                    self.assertTrue((entry / 'files/.agents/rules/constraints.md').is_file())
                     if fail_backup:
                         self.assertIn('injected final backup write failure', error.getvalue())
                         self.assertEqual(output.getvalue(), '')
@@ -577,7 +577,7 @@ class SetupWorkflowTest(unittest.TestCase):
                 ],
             )
             self.assertIn(
-                '.agents/rules/tools.md', finish['changed_paths']
+                '.agents/rules/constraints.md', finish['changed_paths']
             )
             self.assertFalse(session.exists())
             self.assertTrue((target / 'AGENTS.md').is_file())
@@ -587,7 +587,7 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(set(ownership), {'sources', 'assets', 'contracts', 'project_sync'})
             self.assertEqual(ownership['sources'], [])
             owned_paths = {item['path'] for item in ownership['assets']}
-            self.assertNotIn('.agents/rules/tools.md', owned_paths)
+            self.assertNotIn('.agents/rules/constraints.md', owned_paths)
             self.assertNotIn(
                 '.agents/skills/change-set-verification/SKILL.md', owned_paths,
             )
@@ -639,7 +639,7 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(json.loads(config.read_bytes())['setupVersion'], workflow.load_catalog(REPO_ROOT).plugin_version)
             self.assertFalse(session.exists())
             self.assertEqual(shared.read_bytes(), original)
-            self.assertIn(b'- `.agents/rules/tools.md`', (target / 'AGENTS.local.md').read_bytes())
+            self.assertIn(b'- `.agents/rules/constraints.md`', (target / 'AGENTS.local.md').read_bytes())
             self.assertIn(b'## Agent skills', (target / 'AGENTS.local.md').read_bytes())
 
     def test_pinned_result_rejects_malformed_external_source_provenance(self):
@@ -795,7 +795,7 @@ class SetupWorkflowTest(unittest.TestCase):
             self.assertEqual(finish['phase'], 'finish')
             self.assertEqual(finish['check'], 'clean')
             for relative in (
-                '.agents/rules/tools.md',
+                '.agents/rules/constraints.md',
                 '.agents/skills/change-set-verification/SKILL.md',
             ):
                 self.assertTrue((target / relative).is_file())

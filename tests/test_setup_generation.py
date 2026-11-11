@@ -113,7 +113,7 @@ class SetupGenerationTest(unittest.TestCase):
         first, _ = self.sync(helper=True)
         self.assertTrue(first)
         self.assertEqual(self.requests(), first)
-        rule = self.target / '.agents/rules/contracts.md'
+        rule = self.target / '.agents/rules/constraints.md'
         skill = self.target / '.agents/skills/change-set-verification/SKILL.md'
         helper = skill.parent / 'references/checks.md'
         for path in (rule, skill, helper):
@@ -125,20 +125,20 @@ class SetupGenerationTest(unittest.TestCase):
         self.assertEqual(rule.read_bytes(), b'generated content\n')
         self.assertEqual(skill.read_bytes(), b'generated content\n')
         self.assertFalse(helper.exists())
-        contract = self.source / 'setup-assets/blueprints/rules/contracts.md'
+        contract = self.source / 'setup-assets/blueprints/rules/constraints.md'
         contract.write_bytes(contract.read_bytes() + b'\nChanged contract.\n')
         self.assertEqual(self.requests(), first)
 
     def test_removed_contract_deletes_edited_outputs_but_preserves_unrecorded_files(self):
         self.sync(helper=True)
-        rule = self.target / '.agents/rules/tools.md'
+        rule = self.target / '.agents/rules/constraints.md'
         skill = self.target / '.agents/skills/change-set-verification/SKILL.md'
         helper = skill.parent / 'references/checks.md'
         local = skill.parent / 'notes.md'
         local.write_bytes(b'project notes\n')
         for path in (rule, skill, helper):
             path.write_bytes(b'project edit\n')
-        retired = {'blueprint-project-tools', 'blueprint-change-set-verification'}
+        retired = {'blueprint-constraints', 'blueprint-change-set-verification'}
         self.catalog = replace(self.catalog, assets=tuple(
             asset for asset in self.catalog.assets if asset.id not in retired
         ))
@@ -147,7 +147,7 @@ class SetupGenerationTest(unittest.TestCase):
         for path in (rule, skill, helper):
             self.assertFalse(path.exists())
         self.assertEqual(local.read_bytes(), b'project notes\n')
-        self.assertNotIn(b'.agents/rules/tools.md', rendered.files_by_path['AGENTS.md'])
+        self.assertNotIn(b'.agents/rules/constraints.md', rendered.files_by_path['AGENTS.md'])
         self.assertTrue(retired.isdisjoint(
             item.id for item in load_ownership(self.target).contracts
         ))
@@ -172,11 +172,11 @@ class SetupGenerationTest(unittest.TestCase):
 
     def test_renamed_contract_destination_retires_old_recorded_path(self):
         self.sync()
-        old = self.target / '.agents/rules/contracts.md'
+        old = self.target / '.agents/rules/constraints.md'
         old.write_bytes(b'project intent before rename\n')
         self.catalog = replace(self.catalog, assets=tuple(
             replace(asset, target=PurePosixPath('.agents/rules/03-renamed-contracts.md'))
-            if asset.id == 'blueprint-project-contracts' else asset
+            if asset.id == 'blueprint-constraints' else asset
             for asset in self.catalog.assets
         ))
         requests, _ = self.sync()
@@ -184,28 +184,41 @@ class SetupGenerationTest(unittest.TestCase):
         self.assertTrue((self.target / '.agents/rules/03-renamed-contracts.md').is_file())
         self.assertEqual(len(requests), len(self.requests()))
 
-    def test_numbered_contract_targets_migrate_with_stable_ownership_ids(self):
+    def test_three_old_rule_contracts_consolidate_without_deleting_project_owned_files(self):
         current = self.catalog
         old_names = {
             'blueprint-project-tools': '00-project-tools.md',
-            'blueprint-project-contracts': '01-project-contracts.md',
-            'blueprint-project-structure': '02-project-structure.md',
+            'blueprint-project-contracts': 'contracts.md',
+            'blueprint-project-structure': 'structure.md',
         }
+        policy = next(asset for asset in current.assets if asset.id == 'blueprint-constraints')
+        old_assets = tuple(replace(policy, id=identity, target=PurePosixPath('.agents/rules') / name)
+                           for identity, name in old_names.items())
         self.catalog = replace(current, assets=tuple(
-            replace(asset, target=PurePosixPath('.agents/rules') / old_names[asset.id])
-            if asset.id in old_names else asset for asset in current.assets
-        ))
-        self.sync()
+            asset for asset in current.assets if asset.id != policy.id
+        ) + old_assets)
+        self.sync(helper=True)
         for name in old_names.values():
             (self.target / '.agents/rules' / name).write_bytes(b'project intent\n')
+        unrecorded = self.target / '.agents/rules/tools.md'
+        unrecorded.write_bytes(b'# Independent tooling policy\n')
+        custom = self.target / '.agents/skills/change-set-verification/custom.py'
+        custom.write_bytes(b'print("project-owned")\n')
         self.catalog = current
-        requests, rendered = self.sync()
-        self.assertTrue(set(old_names).issubset(item['id'] for item in requests))
+        requests, rendered = self.sync(helper=True)
+        self.assertEqual({item['id'] for item in requests}, {
+            'blueprint-constraints', 'blueprint-change-set-verification',
+            'blueprint-prepare-worktree-environment',
+        })
         for name in old_names.values():
             self.assertFalse((self.target / '.agents/rules' / name).exists())
             self.assertNotIn(name.encode(), rendered.files_by_path['AGENTS.md'])
-        for name in ('tools.md', 'contracts.md', 'structure.md'):
-            self.assertTrue((self.target / '.agents/rules' / name).is_file())
+        self.assertTrue((self.target / policy.target).is_file())
+        self.assertEqual(unrecorded.read_bytes(), b'# Independent tooling policy\n')
+        self.assertEqual(custom.read_bytes(), b'print("project-owned")\n')
+        self.assertIn(b'.agents/rules/tools.md', rendered.files_by_path['AGENTS.md'])
+        self.assertEqual({contract.id for contract in load_ownership(self.target).contracts},
+                         {item['id'] for item in requests})
 
     def test_full_setup_refuses_legacy_conditional_policy_before_target_mutation(self):
         self.sync()

@@ -27,7 +27,7 @@ class SyncMcpAdaptersTest(unittest.TestCase):
     def test_repository_registry_generates_four_current_adapters(self):
         servers = self.module.load_registry(REPO_ROOT / 'mcp/registry.json')
 
-        self.assertEqual([server['id'] for server in servers], ['playwright', 'codegraph'])
+        self.assertEqual([server['id'] for server in servers], ['playwright', 'codegraph', 'openwiki'])
         for harness, relative in self.module.OUTPUTS.items():
             with self.subTest(harness=harness):
                 self.assertEqual(
@@ -49,6 +49,12 @@ class SyncMcpAdaptersTest(unittest.TestCase):
         self.assertEqual(copilot['mcpServers']['playwright']['type'], 'local')
         self.assertEqual(copilot['mcpServers']['playwright']['tools'], ['*'])
         self.assertEqual(codex['mcpServers']['codegraph']['args'], ['serve', '--mcp'])
+        self.assertEqual(codex['mcpServers']['openwiki']['args'],
+                         ['-y', 'openwiki@0.9.0', 'mcp', '--host', 'smartkit'])
+        self.assertEqual(servers[2]['readiness']['checks'], [
+            {'kind': 'runtime-version', 'runtime': 'node', 'minimum': '22.22.0'},
+            {'kind': 'command-exists', 'command': 'npx'},
+        ])
         self.assertEqual(servers[1]['readiness']['checks'], [
             {'kind': 'command-exists', 'command': 'codegraph'},
         ])

@@ -1,6 +1,7 @@
 ---
 name: upgrade-smartkit
 description: 推进本仓库的 SmartKit 发布版本，并评估这些改动是否需要项目 setup 迁移。
+disable-model-invocation: true
 ---
 
 # 升级 SmartKit

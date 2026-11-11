@@ -23,6 +23,20 @@
       "tools": [
         "*"
       ]
+    },
+    "openwiki": {
+      "type": "local",
+      "command": "npx",
+      "args": [
+        "-y",
+        "openwiki@0.9.0",
+        "mcp",
+        "--host",
+        "smartkit"
+      ],
+      "tools": [
+        "*"
+      ]
     }
   }
 }

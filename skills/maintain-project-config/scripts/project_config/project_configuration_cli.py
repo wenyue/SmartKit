@@ -16,6 +16,7 @@ from project_state.paths import confined_target
 
 from . import project_configuration as configuration
 from . import repository
+from .worktree_configuration import copy_worktree
 from .catalog import load_project_config, parse_maintenance
 from .models import DesiredFile
 from .ownership import load_ownership
@@ -60,6 +61,18 @@ def add_arguments(parser: argparse.ArgumentParser, *, include_sync: bool = False
             command.add_argument('--message', help='Commit message for the selected scope')
             command.add_argument('--commit', help='Retry a retained verified scope commit; mutually exclusive with --path/--message')
     if include_sync:
+        command = commands.add_parser('copy-worktree', allow_abbrev=False,
+                                      help='Copy selected local configuration into a linked worktree without replacing files',
+                                      description='Copy missing local/local-only configuration from an explicitly selected '
+                                      'same-repository checkout. Hold exclusive access to both checkouts. '
+                                      'Existing differences refuse before copying; later failures retain partial progress. '
+                                      'Clean covers selected files only, not host loading or complete worktree readiness.')
+        command.add_argument('--source', type=Path, required=True)
+        command.add_argument('--target', type=Path, required=True)
+        command.add_argument('--file', action='append', required=True,
+                             help='Accepted project-relative configuration file or directory; repeat. No implicit default scope')
+        command.add_argument('--check', action='store_true',
+                             help='Read-only: selected files agree exits 0, missing/differing files exit 1, refusal/failure exits 2')
         for name, help_text in (
             ('sync-project', 'Synchronize established local Rule/Skill discovery and Agent/MCP/settings mappings'),
             ('sync-project-rules', 'Synchronize only the selected Project rules entry; no setup ownership required'),
@@ -156,7 +169,7 @@ def sync_git_exclusions(target: Path, catalog: Catalog, paths: list[str] | None 
         return []
     if selected.mode == 'local':
         return exclude_local(target, [], enabled=False)
-    personal = {'.agents/', 'AGENTS.md', 'CLAUDE.md', *(paths or [])}
+    personal = {'.agents/', 'AGENTS.md', 'CLAUDE.md', 'openwiki/', '.openwikiignore', *(paths or [])}
     if selected.mode == 'repository':
         entry = configuration.entry_root(target)
         manifest, files = backup.read_backup(entry)
@@ -276,6 +289,21 @@ def run(args: argparse.Namespace) -> int:
         command = args.configuration_command
         if command == 'bind':
             result = _bind(args, catalog)
+        elif command == 'copy-worktree':
+            # Validate exclusions before copying, then report any later failure with retained content.
+            exclude_local(target, [], enabled=False, check_only=True)
+            load_project_config(args.source.absolute() / configuration.CONFIG, catalog=catalog)
+            load_project_config(target / configuration.CONFIG, catalog=catalog)
+            result = copy_worktree(args.source.absolute(), target, args.file, check_only=args.check)
+            if not args.check:
+                try:
+                    result['tracked_paths'] = sync_git_exclusions(target, catalog, args.file)
+                except (OSError, ValueError, subprocess.SubprocessError, TransactionError):
+                    print('Configuration files were copied; Git exclusions remain incomplete. '
+                          'Preserve copied files and retry after resolving the exclusion failure.', file=sys.stderr)
+                    raise
+            print(json.dumps({'operation': command, **result}, ensure_ascii=False))
+            return 1 if result['check'] == 'drift' else 0
         elif command == 'inspect':
             result = configuration.inspect(target)
         elif command == 'apply':

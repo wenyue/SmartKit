@@ -636,10 +636,13 @@ class PluginManifestTest(unittest.TestCase):
         }
         self.assertEqual(
             plugin_skills,
-            {*custom, *MATT_PROMOTED, *PONYTAIL_PROMOTED, 'diagram-design'},
+            {*custom, *MATT_PROMOTED, *PONYTAIL_PROMOTED, 'diagram-design', 'openwiki'},
         )
         lock = load_json('vendor/external-skills.lock.json')
         self.assertEqual(set(lock), {'sources'})
+        openwiki = next(source for source in lock['sources'] if source['id'] == 'langchain-ai/openwiki')
+        self.assertEqual(openwiki['commit'], 'b7027e3299c666e426cf218b3412a05767f702b6')
+        self.assertEqual([skill['source_path'] for skill in openwiki['skills']], ['integrations/openwiki'])
         matt = lock['sources'][0]
         self.assertEqual(matt['id'], 'mattpocock/skills')
         self.assertEqual(matt['requested_ref'], 'v1.3.1')

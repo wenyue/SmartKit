@@ -462,8 +462,8 @@ class SyncProjectTest(unittest.TestCase):
         self.assertFalse((self.target / '.qoder/agents/local.md').exists())
         self.assertEqual((self.target / '.codex/agents/change-set-verifier.toml').read_bytes(),
                          before['.codex/agents/change-set-verifier.toml'])
-        self.assertEqual((self.target / '.agents/rules/tools.md').read_bytes(),
-                         before['.agents/rules/tools.md'])
+        self.assertEqual((self.target / '.agents/rules/constraints.md').read_bytes(),
+                         before['.agents/rules/constraints.md'])
         self.assertEqual(self.sync().changed_paths, ())
 
     def test_external_declaration_changes_require_full_setup_without_writing(self):

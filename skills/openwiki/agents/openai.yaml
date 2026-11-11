@@ -1,0 +1,7 @@
+interface:
+  display_name: "OpenWiki"
+  short_description: "检索、生成和更新项目 Wiki，沿用项目配置同步方式"
+  default_prompt: "使用 $openwiki，根据当前源码和测试生成或更新英文项目 Wiki。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#2563EB"

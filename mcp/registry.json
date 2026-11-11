@@ -16,7 +16,9 @@
         "copilot",
         "qoder"
       ],
-      "tools": ["*"],
+      "tools": [
+        "*"
+      ],
       "readiness": {
         "checks": [
           {
@@ -45,12 +47,48 @@
         "copilot",
         "qoder"
       ],
-      "tools": ["*"],
+      "tools": [
+        "*"
+      ],
       "readiness": {
         "checks": [
           {
             "kind": "command-exists",
             "command": "codegraph"
+          }
+        ]
+      }
+    },
+    {
+      "id": "openwiki",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "openwiki@0.9.0",
+        "mcp",
+        "--host",
+        "smartkit"
+      ],
+      "harnesses": [
+        "codex",
+        "cursor",
+        "copilot",
+        "qoder"
+      ],
+      "tools": [
+        "*"
+      ],
+      "readiness": {
+        "checks": [
+          {
+            "kind": "runtime-version",
+            "runtime": "node",
+            "minimum": "22.22.0"
+          },
+          {
+            "kind": "command-exists",
+            "command": "npx"
           }
         ]
       }

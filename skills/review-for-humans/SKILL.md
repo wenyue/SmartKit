@@ -8,7 +8,17 @@ disable-model-invocation: true
 
 Make fixed changes understandable enough for the human to judge them and choose what happens next. Establish why the behavior is needed before judging how it is implemented. Review authorizes evidence capture and link preparation. Explain complete file groups before acting on selected review remedies, delivery, or advancement.
 
-This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report and before presenting an action menu. Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete. [Conversation Examples](examples/conversations.md) illustrate difficult choices without adding policy.
+This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report and before presenting an action menu. Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete.
+
+Use an optional example when its situation helps explain the current decision:
+
+| Situation | Example |
+| --- | --- |
+| A review group contains a defect and independent observations | [Review group](examples/review-group.md) |
+| Requirements or design context change the confidence of a judgment | [Design judgments](examples/design-judgments.md) |
+| A selected repair changes several files or lacks a required check | [Repair report](examples/repair-report.md) |
+| Delivery encounters supplementary findings or partially completed effects | [Delivery follow-through](examples/delivery-follow-through.md) |
+| Workspace, comparison, or Viewed evidence needs a decision | [Review preparation](examples/review-preparation.md) |
 
 ## Fix the comparison and reading order
 
@@ -48,15 +58,17 @@ Inspect the whole scoped change and its necessary context: affected callers, exi
 
 For a meaningful design choice, establish the required user or caller outcome from the task, supported contracts, and actual use. Verify existing behavior and framework or library guarantees. First consider retaining that behavior or removing the added capability; only then compare mechanisms for a capability that is needed. A passing test demonstrates behavior under its assumptions, not the necessity of the policy it exercises.
 
-Judge validation, recovery, and other protection by the requirement, credible trigger, and consequential impact they address. Supported requirements and trust-boundary risks can justify protection before any production incident; established invariants can make repeated checks unnecessary. Missing extra protection is not itself a defect without a credible trigger and potentially serious consequence, while ordinary supported behavior and promised failure handling remain correctness obligations. If material evidence for the need is missing, use **Insufficient evidence** for the affected judgment rather than approving the implementation or presuming the capability is a defect.
+Judge validation, recovery, and other protection by the requirement, credible trigger, and consequential impact they address. Supported requirements and trust-boundary risks can justify protection before any production incident; established invariants can make repeated checks unnecessary. Missing extra protection is not itself a defect without a credible trigger and potentially serious consequence, while ordinary supported behavior and promised failure handling remain correctness obligations. If material evidence for the need is missing, use **Uncertain** for the affected judgment rather than approving the implementation or presuming the capability is a defect.
 
 For supported behavior, compare the chosen design with a smaller sufficient alternative: keep an existing interface, use an accurate existing owner, call directly, or remove a layer with no unique responsibility. A justified safeguard may cover a slightly broader range of cases if that simplifies the implementation and the effects on normal use are acceptable. Required feedback, logging, recovery, and lifecycle protection still need owners. A proposal to change supported behavior or contracts is a scope decision, not behavior-preserving optimization.
 
-Scrutinize every added file and added or changed declaration or contract, including functions, types, members, and state in existing files. A tiny file or trivial forwarder still introduces a boundary. New files need especially strong evidence for a distinct responsibility and why an existing owner or local placement would not suffice. Scale further scrutiny by actual exposure, caller dependence, lifetime, and change impact: shared interfaces and long-lived state need stronger evidence and concrete alternatives than local helpers. Ordinary local variables need no separate necessity rationale; visibility keywords do not establish actual exposure.
+Scrutinize every added file and added or changed declaration or contract, including functions, types, members, and state in existing files. Give refactors and externally visible behavior changes particular attention for lost directness, hidden dependencies, and structural burden. A tiny file or trivial forwarder still introduces a boundary. New files need especially strong evidence for a distinct responsibility and why an existing owner or local placement would not suffice. Scale further scrutiny by actual exposure, caller dependence, lifetime, and change impact: shared interfaces and long-lived state need stronger evidence and concrete alternatives than local helpers. Ordinary local variables need no separate necessity rationale; visibility keywords do not establish actual exposure.
 
 Short bodies, caller counts, uniform presentation, speculative reuse, and testing convenience alone justify no boundary. A real responsibility can justify one with a single caller. Source, tasks, and contracts can supply the reason without rationale comments or one report item per declaration.
 
 ### Judge each modification on both axes
+
+Give a definitive verdict only with high confidence grounded in relevant evidence. This applies to positive and negative judgments, including optional improvements; finding no defect does not establish reasonableness or elegance. Judge the axes independently, using **Uncertain** only where a material unknown prevents a confident conclusion. Missing original conversation alone need not undermine otherwise sufficient evidence.
 
 | Judgment | Basis |
 | --- | --- |
@@ -64,12 +76,16 @@ Short bodies, caller counts, uniform presentation, speculative reuse, and testin
 | ⚖️ **Unreasonable** | A material task, behavior, or contract defect, including a violated structural obligation, unnecessary scope, or unjustified operating cost or risk. Identify severity, affected conditions, impact, and correction. |
 | 🎨 **Elegant** | Responsibilities, boundaries, and interfaces earn their understanding and maintenance cost. Expression is readable; abstraction, state, branching, repetition, and defense have concrete benefits. Comparable patterns and interfaces are consistent, with justified departures. |
 | 🎨 **Needs improvement** | A structural defect violates a supported obligation. Explain the obligation, concrete consequence, and necessary correction; record the same item as an unreasonable finding for Fix. |
-| 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
-| **Insufficient evidence** on either axis | Name the missing material evidence and how to obtain it. Keep any supported judgment on the other axis. |
+| 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent behavior-preserving alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
+| **Uncertain** on either axis | State the established facts, the material uncertainty, and what would resolve it. Keep any supported judgment on the other axis. |
 
-Attach judgments to the responsible modification and explain concrete causes and user or caller consequences. Assess both axes even when Report Format allows a compact explanation. One good change cannot cancel another change's defect, burden, or evidence gap. Explicit retention preserves the judgment and consequences.
+Attach judgments to the responsible modification and explain concrete causes and user or caller consequences. Assess both axes even when Report Format allows a compact explanation. One good change cannot cancel another change's defect, burden, or uncertainty. Explicit retention preserves the judgment and consequences; an unchanged accepted burden does not need another optimization request.
 
-Keep the axes independent. An avoidable structural burden alone supports an optional improvement. A behavioral defect alone does not prove poor structure. A structural requirement violation also needs a correctness finding, with one modification ID and one Fix remedy across both judgments. Missing need or ownership evidence establishes neither elegance nor a structural defect. Omit preference and low-benefit polish, and combine remedies for the same underlying problem.
+Functional correctness or user approval does not establish elegant structure. Distinguish an observed burden from its justification and acceptance. When missing requirements, rationale, or user decisions materially affect whether the complexity is necessary or a simplification is safe, mark the affected judgment **Uncertain** rather than presuming acceptance, needless complexity, or a remedy.
+
+A behavioral defect alone does not prove poor structure. A structural requirement violation also needs a correctness finding, with one modification ID and one Fix remedy across both judgments. Omit preference and low-benefit polish, and combine remedies for the same underlying problem.
+
+Keep uncertainty about a scoped modification under its M ID and summarize it as a warning. It is not an established finding or optional improvement: exclude it from Fix and Optimize scopes, and create neither an incidental O item nor an Optimize choice from it. Retain independently supported judgments and remedies on the same modification.
 
 Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Optimization is always optional. A correction necessary to meet a supported obligation is Fix, even when the defect is structural.
 
@@ -120,7 +136,7 @@ A ready selected action proceeds without routine reconfirmation. Recommendations
 
 Offer choices for the user's remaining decisions after completing the current report and any required repair checks and affected re-review. Resolve derivable facts needed to describe a choice; ask directly for a genuinely user-owned missing fact or scope/preservation decision. Fact questions are not action menus. A verified external blocker with no supported selectable remedy needs an explanation, not an invented Wait/Resolve choice.
 
-Pass and Continue/Finish share the reviewed-group prerequisites: current correctness/version evidence, successful applicable repair or explicitly requested verification checks, completed affected re-review, and resolution or explicit retention of pending unreasonable findings, including earlier groups. Missing elegance evidence alone does not block advancement. Optional improvements and unselected O advice remain optional.
+Pass and Continue/Finish share the reviewed-group prerequisites: current correctness/version evidence, successful applicable repair or explicitly requested verification checks, completed affected re-review, and resolution or explicit retention of pending unreasonable findings, including earlier groups. Elegance uncertainty alone does not block advancement or delivery; a warning does not waive missing correctness evidence or required checks. Optional improvements and unselected O advice remain optional.
 
 Offer Pass proactively alongside Continue/Finish when applicable delivery effects remain. A prior delivery request and finished delivery preparation are not prerequisites for offering it. Describe the selected workspace, applicable full-workspace commit/outgoing publication/Viewed effects, and subsequent advancement. Unreviewed local or staged changes, uncovered outgoing commits, and remaining delivery checks are work that selecting Pass starts. They do not by themselves remove the choice. Verified limitations and user-owned unresolved scope decisions still constrain the effects that can be offered; use these principles for cases outside the common tables.
 

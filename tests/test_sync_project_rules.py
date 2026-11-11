@@ -20,6 +20,35 @@ from project_config import project_rules, transaction  # noqa: E402
 
 
 class SyncProjectRulesTest(unittest.TestCase):
+    def test_sync_preserves_external_managed_section_including_its_opening_marker(self):
+        for newline in ('\n', '\r\n'):
+            with self.subTest(newline=repr(newline)), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory)
+                self.write_rule(target, 'policy.md', body='Project policy.')
+                suffix = newline.join([
+                    '<!-- OPENWIKI:START -->', '', '## OpenWiki', '',
+                    'Read openwiki/quickstart.md.', '<!-- OPENWIKI:END -->', '',
+                ]).encode()
+                entry = target / 'AGENTS.md'
+                entry.write_bytes(b'# Project\n\n## Project rules\n\nOld rules.\n\n' + suffix)
+                for _ in range(2):
+                    with redirect_stdout(StringIO()):
+                        self.assertEqual(workflow.main(['sync-project-rules', '--target', str(target)]), 0)
+                    self.assertTrue(entry.read_bytes().endswith(suffix))
+                    self.assertEqual(entry.read_bytes().count(b'<!-- OPENWIKI:START -->'), 1)
+
+    def test_managed_marker_example_inside_owned_section_is_replaced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            self.write_rule(target, 'policy.md', body='Project policy.')
+            entry = target / 'AGENTS.md'
+            entry.write_text('## Project rules\n\n```markdown\n<!-- OPENWIKI:START -->\n```\n\n'
+                             '## Agent skills\n\nKeep this.\n', encoding='utf-8')
+            with redirect_stdout(StringIO()):
+                self.assertEqual(workflow.main(['sync-project-rules', '--target', str(target)]), 0)
+            self.assertNotIn('OPENWIKI', entry.read_text())
+            self.assertTrue(entry.read_text().endswith('## Agent skills\n\nKeep this.\n'))
+
     def test_repository_rule_index_uses_supported_declarations(self):
         project_rules.validate_project_rule_index(REPO_ROOT)
 
@@ -42,7 +71,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 '### Required rules\n\n'
                 '| Rule | Strength |\n'
                 '| --- | --- |\n'
-                '| `.agents/rules/tools.md` | Mandatory |\n'
+                '| `.agents/rules/project-policy.md` | Mandatory |\n'
                 '| `.agents/rules/20-local.md` | Default |\n\n'
                 'Apply SmartKit plugin Rules for shared precedence. Keep project Rule policy in the\n'
                 'files listed above.\n\n'
@@ -107,7 +136,7 @@ class SyncProjectRulesTest(unittest.TestCase):
                 + '### Required rules\n\n'
                 + '| Rule | Strength |\n'
                 + '| --- | --- |\n'
-                + '| `.agents/rules/tools.md` | Mandatory? no |\n'
+                + '| `.agents/rules/project-policy.md` | Mandatory? no |\n'
                 + '| `docs/rules.md` | Local |\n'
                 + '| `.agents/rules/20-old-common.md` | Advisory |\n'
                 + '| `.agents/rules/30-testing.md` | Default |\n'
@@ -152,7 +181,7 @@ class SyncProjectRulesTest(unittest.TestCase):
             self.assertTrue(updated.startswith(prefix.encode()))
             self.assertTrue(updated.endswith(suffix.encode()))
             self.assertIn(
-                b'- `.agents/rules/tools.md`',
+                b'- `.agents/rules/project-policy.md`',
                 updated,
             )
             self.assertIn(

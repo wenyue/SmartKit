@@ -17,6 +17,17 @@
         "serve",
         "--mcp"
       ]
+    },
+    "openwiki": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "openwiki@0.9.0",
+        "mcp",
+        "--host",
+        "smartkit"
+      ]
     }
   }
 }

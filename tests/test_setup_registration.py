@@ -64,23 +64,23 @@ class SetupRegistrationTest(unittest.TestCase):
             return workflow.main(['finish', '--session', str(self.session)])
 
     def test_register_aggregates_exact_rule_and_skill_outputs(self):
-        rule = '.agents/rules/tools.md'
+        rule = '.agents/rules/constraints.md'
         self.output(rule)
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 0)
         skill = self.output('.agents/skills/change-set-verification/SKILL.md')
         helper = self.output('.agents/skills/change-set-verification/references/checks.md')
         status, output, _ = self.register('blueprint-change-set-verification', skill, helper)
         self.assertEqual(status, 0)
         result = json.loads(output)
         self.assertFalse(result['ready'])
-        self.assertEqual(len(result['remaining_requests']), 3)
+        self.assertEqual(len(result['remaining_requests']), 1)
         manifest = json.loads(self.manifest.read_bytes())
         self.assertEqual(manifest['version'], 2)
         self.assertEqual([
             {'id': entry['id'], 'outputs': [item['path'] for item in entry['outputs']]}
             for entry in manifest['requests']
         ], [
-            {'id': 'blueprint-project-tools', 'outputs': [rule]},
+            {'id': 'blueprint-constraints', 'outputs': [rule]},
             {'id': 'blueprint-change-set-verification', 'outputs': [
                 '.agents/skills/change-set-verification/SKILL.md',
                 '.agents/skills/change-set-verification/references/checks.md',
@@ -94,7 +94,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertFalse((self.session / workflow._SESSION_CLAIM).exists())
 
     def test_invalid_registration_preserves_manifest_target_and_retryable_session(self):
-        rule = self.output('.agents/rules/tools.md')
+        rule = self.output('.agents/rules/constraints.md')
         extra_rule = self.output('.agents/rules/extra.md')
         skill = self.output('.agents/skills/change-set-verification/SKILL.md')
         helper = self.output('.agents/skills/change-set-verification/checks.md')
@@ -102,14 +102,14 @@ class SetupRegistrationTest(unittest.TestCase):
         outside.write_bytes(b'outside')
         cases = (
             ('unknown-request', (rule,)),
-            ('blueprint-project-tools', (rule, rule)),
-            ('blueprint-project-tools', (rule, extra_rule)),
+            ('blueprint-constraints', (rule, rule)),
+            ('blueprint-constraints', (rule, extra_rule)),
             ('blueprint-change-set-verification', (helper,)),
             ('blueprint-change-set-verification', (skill, extra_rule)),
-            ('blueprint-project-tools', (outside,)),
-            ('blueprint-project-tools', ('../outside.md',)),
-            ('blueprint-project-tools', ('.agents/rules/missing.md',)),
-            ('blueprint-project-tools', (rule.parent,)),
+            ('blueprint-constraints', (outside,)),
+            ('blueprint-constraints', ('../outside.md',)),
+            ('blueprint-constraints', ('.agents/rules/missing.md',)),
+            ('blueprint-constraints', (rule.parent,)),
         )
         original = self.manifest.read_bytes()
         for request_id, paths in cases:
@@ -119,18 +119,18 @@ class SetupRegistrationTest(unittest.TestCase):
                 self.assertEqual(list(self.target.iterdir()), [])
                 self.assertTrue(self.session.exists())
                 self.assertFalse((self.session / workflow._SESSION_CLAIM).exists())
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 0)
 
     def test_duplicate_request_is_rejected_without_replacing_registration(self):
-        rule = self.output('.agents/rules/tools.md')
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
+        rule = self.output('.agents/rules/constraints.md')
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 0)
         original = self.manifest.read_bytes()
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 2)
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 2)
         self.assertEqual(self.manifest.read_bytes(), original)
 
     def test_incomplete_registration_cannot_mutate_target(self):
-        rule = self.output('.agents/rules/tools.md')
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 0)
+        rule = self.output('.agents/rules/constraints.md')
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 0)
         self.assertEqual(self.finish(), 2)
         self.assertEqual(list(self.target.iterdir()), [])
 
@@ -141,7 +141,7 @@ class SetupRegistrationTest(unittest.TestCase):
             self.assertEqual(status, 0)
         self.assertTrue(json.loads(output)['ready'])
         self.assertEqual(self.finish(), 0)
-        rule = self.target / '.agents/rules/tools.md'
+        rule = self.target / '.agents/rules/constraints.md'
         rule.write_bytes(b'project edit\n')
         self.prepare()
         self.assertTrue(self.request['generation_requests'])
@@ -154,12 +154,12 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertNotEqual(rule.read_bytes(), b'project edit\n')
 
     def test_target_drift_rejects_registration(self):
-        rule = self.output('.agents/rules/tools.md')
+        rule = self.output('.agents/rules/constraints.md')
         original = self.manifest.read_bytes()
         config = self.target / '.agents/config.json'
         config.parent.mkdir(parents=True)
         config.write_bytes(b'{}\n')
-        status, _, error = self.register('blueprint-project-tools', rule)
+        status, _, error = self.register('blueprint-constraints', rule)
         self.assertEqual(status, 2)
         self.assertIn('target changed', error)
         self.assertEqual(self.manifest.read_bytes(), original)
@@ -252,22 +252,22 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(list(self.target.iterdir()), [])
 
     def test_claimed_session_cannot_register(self):
-        rule = self.output('.agents/rules/tools.md')
+        rule = self.output('.agents/rules/constraints.md')
         original = self.manifest.read_bytes()
         workflow._claim_session(self.session)
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 2)
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 2)
         self.assertEqual(self.manifest.read_bytes(), original)
         self.assertEqual(
             (self.session / workflow._SESSION_CLAIM).read_bytes(), workflow._SESSION_CLAIM_CONTENT,
         )
 
     def test_failed_manifest_replacement_keeps_previous_state(self):
-        rule = self.output('.agents/rules/tools.md')
+        rule = self.output('.agents/rules/constraints.md')
         original = self.manifest.read_bytes()
         entries = set(self.session.iterdir())
         with mock.patch.object(setup.os, 'replace', side_effect=OSError('injected failure')), redirect_stderr(StringIO()):
             status = setup.main([
-                'register', *self.arguments, '--request-id', 'blueprint-project-tools',
+                'register', *self.arguments, '--request-id', 'blueprint-constraints',
                 '--output', str(rule),
             ])
         self.assertEqual(status, 2)
@@ -276,9 +276,9 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(list(self.target.iterdir()), [])
 
     def test_claim_cleanup_failure_does_not_report_success(self):
-        rule = self.output('.agents/rules/tools.md')
+        rule = self.output('.agents/rules/constraints.md')
         with mock.patch.object(Path, 'unlink', side_effect=OSError('injected cleanup failure')):
-            status, output, error = self.register('blueprint-project-tools', rule)
+            status, output, error = self.register('blueprint-constraints', rule)
         self.assertEqual(status, 2)
         self.assertEqual(output, '')
         self.assertIn(str(self.session), error)
@@ -286,7 +286,7 @@ class SetupRegistrationTest(unittest.TestCase):
         self.assertEqual(list(self.target.iterdir()), [])
 
     def test_linked_output_is_rejected(self):
-        rule = self.generated / '.agents/rules/tools.md'
+        rule = self.generated / '.agents/rules/constraints.md'
         outside = Path(self.temp.name) / 'outside.md'
         outside.write_bytes(b'outside')
         try:
@@ -294,5 +294,5 @@ class SetupRegistrationTest(unittest.TestCase):
         except OSError:
             self.skipTest('symlinks are unavailable')
         original = self.manifest.read_bytes()
-        self.assertEqual(self.register('blueprint-project-tools', rule)[0], 2)
+        self.assertEqual(self.register('blueprint-constraints', rule)[0], 2)
         self.assertEqual(self.manifest.read_bytes(), original)

@@ -73,7 +73,7 @@ class SetupRendererTest(unittest.TestCase):
 
     def generated_tree(self, root: Path) -> Path:
         generated = root / 'generated'
-        rule = generated / '.agents/rules/tools.md'
+        rule = generated / '.agents/rules/constraints.md'
         rule.parent.mkdir(parents=True, exist_ok=True)
         rule.write_text(
             '# generated tooling rule\n\n',
@@ -760,7 +760,7 @@ class SetupRendererTest(unittest.TestCase):
             first = self.render(target, generated)
             self.materialize(target, first.files)
             paths = (
-                '.agents/rules/tools.md',
+                '.agents/rules/constraints.md',
                 '.agents/skills/change-set-verification/SKILL.md',
             )
             for relative in paths:
@@ -787,7 +787,7 @@ class SetupRendererTest(unittest.TestCase):
             target.mkdir()
             first = self.render(target, self.generated_tree(root))
             self.materialize(target, first.files)
-            old = PurePosixPath('.agents/rules/tools.md')
+            old = PurePosixPath('.agents/rules/constraints.md')
             new = PurePosixPath('.agents/rules/05-project-tools.md')
             assets = tuple(
                 replace(asset, target=new)
@@ -1473,8 +1473,7 @@ class SetupRendererTest(unittest.TestCase):
             rendered = self.render(target, self.generated_tree(root))
             agents = rendered.files_by_path['AGENTS.md'].decode()
             self.assertIn('- `.agents/rules/local-policy.md`', agents)
-            self.assertIn('- `.agents/rules/tools.md`', agents)
-            self.assertIn('- `.agents/rules/structure.md`', agents)
+            self.assertIn('- `.agents/rules/constraints.md`', agents)
             self.assertNotIn('| Rule | Strength |', agents)
             self.assertNotIn('| Description |', agents)
             self.assertNotIn('### On-demand rules', agents)

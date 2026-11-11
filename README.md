@@ -6,7 +6,7 @@ WenYue SmartKit is a plugin for Codex, Cursor, GitHub Copilot, and Qoder. It pro
 
 ## Skills at a glance
 
-Includes SmartKit workflows, Matt Pocock's skills, the ponytail series, and Diagram Design. Each group is organized by purpose to help you find the Skill for your current task.
+Includes SmartKit workflows, Matt Pocock's skills, the ponytail series, Diagram Design, and OpenWiki. Each group is organized by purpose to help you find the Skill for your current task.
 
 ### Requires manual invocation
 
@@ -43,6 +43,7 @@ Use these Skills for a specific task. Ask for them by name, or let the assistant
 
 | Skill | Source | What it does and when to use it |
 | --- | --- | --- |
+| `openwiki` | [OpenWiki](https://github.com/langchain-ai/openwiki) | Searches repository knowledge or generates and updates an English Wiki from source and tests. |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | Investigates a question against trusted primary sources and saves the findings as a Markdown document in the repo. |
 | `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | Creates architecture diagrams, flowcharts, and other HTML/SVG figures, with PNG export and diagram imports; uses the default style immediately unless a brand is configured or requested. |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | Builds a throwaway prototype to check a design, state model, or interface. |
@@ -155,22 +156,26 @@ SmartKit includes selected Skills from the following projects, with SmartKit-spe
 | [Matt Pocock Skills](https://github.com/mattpocock/skills) | Planning, specifications, implementation, research, and review workflows. | [MIT](licenses/mattpocock-skills-LICENSE.txt) |
 | [ponytail](https://github.com/DietrichGebert/ponytail) | Simple coding solutions, change reviews, codebase audits, and technical debt tracking. | [MIT](licenses/DietrichGebert-ponytail-LICENSE.txt) |
 | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | Branded diagrams, diagram imports, and HTML/SVG/PNG output. | [MIT](licenses/cathrynlavery-diagram-design-LICENSE.txt) |
+| [OpenWiki](https://github.com/langchain-ai/openwiki) | Repository Wiki generation, updates, and retrieval. | [MIT](licenses/langchain-ai-openwiki-LICENSE.txt) |
+
+Ask “Use `openwiki` to initialize this repository’s Wiki” or “Update the Wiki from the current source and tests.” Pages are written in English under `openwiki/` and follow the project’s Agent configuration storage mode: project-shared, machine-only, or the same separate configuration repository. Existing Rules, execution Skills, and ADRs retain their responsibilities.
 
 ### Tools
 
-SmartKit configures or recommends the following tools. Full project setup prepares CodeGraph on the current machine: it installs the tool when missing, initializes or synchronizes the project's index, and verifies the running service. Setup requires authorization for those effects. Every session in an initialized SmartKit project checks CodeGraph again and reminds you when it needs attention. Tokscale is installed separately. The plugin owns the MCP configuration for CodeGraph and Playwright: at session start, SmartKit removes same-named entries from your user-level MCP configuration.
+SmartKit configures or recommends the following tools. Full project setup prepares CodeGraph on the current machine: it installs the tool when missing, initializes or synchronizes the project's index, and verifies the running service. Setup requires authorization for those effects. Every session in an initialized SmartKit project checks CodeGraph again and reminds you when it needs attention. Tokscale is installed separately. The plugin owns the MCP configuration for CodeGraph, Playwright, and OpenWiki: at session start, SmartKit removes same-named entries from your user-level MCP configuration.
 
 | Tool | Purpose | Installation and use |
 | --- | --- | --- |
 | [CodeGraph](https://github.com/colbymchenry/codegraph) | Navigates indexed code through symbols and call relationships. | Required for projects initialized by SmartKit. Full setup prepares the local installation, index and service; the plugin includes MCP configuration. Index databases remain local to each working tree. |
 | [Tokscale](https://github.com/junhoyeo/tokscale) | Supplies token usage and estimated cost evidence for `diagnose-agent-session`. | Make `tokscale` available on PATH; available diagnostic data depends on the client and its recorded usage. |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | Provides browser automation. | The plugin includes MCP configuration; the client uses `npx` to obtain and launch `@playwright/mcp`. Requires Node.js 18 or newer and `npx` on PATH. |
+| [OpenWiki](https://github.com/langchain-ai/openwiki) | Searches and maintains repository Wikis. | The plugin supplies the Skill and pinned MCP launcher. Requires Node.js 22.22.0 or newer and `npx` on PATH; generation uses the coding assistant’s model session. |
 
 Hook launchers warn on stderr when execution exceeds 0.2 seconds. Timing includes the Python preflight and handler; it preserves the original output and exit status and never blocks a task because of elapsed time.
 
 ## Install the plugin
 
-Install your preferred coding assistant and Python 3.8 or newer first, with `python` available on PATH for SmartKit Hooks and project setup. To use Playwright MCP, also install Node.js 18 or newer with `npx` on PATH. Then follow your assistant's instructions below.
+Install your preferred coding assistant and Python 3.8 or newer first, with `python` available on PATH for SmartKit Hooks and project setup. OpenWiki requires Node.js 22.22.0 or newer; Playwright MCP requires Node.js 18 or newer. Both need `npx` on PATH. Then follow your assistant's instructions below.
 
 ### Codex
 

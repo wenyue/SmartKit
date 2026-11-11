@@ -95,6 +95,12 @@ def project_rules_section_bounds(content: str) -> tuple[int, int] | None:
         (item.start for item in headings[match + 1:] if item.level <= 2),
         len(content),
     )
+    if end < len(content):
+        # The next section's managed-block opener belongs with its heading, not our Rule list.
+        marker = re.search(r'(?m)^[ \t]*<!-- [A-Za-z0-9_-]+:START -->[ \t]*\r?\n(?:[ \t]*\r?\n)*\Z',
+                           content[start:end])
+        if marker and live_text(content)[start + marker.start():end].lstrip().startswith('<!--'):
+            end = start + marker.start()
     return start, end
 
 

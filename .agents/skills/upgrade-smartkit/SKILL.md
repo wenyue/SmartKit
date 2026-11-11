@@ -1,6 +1,7 @@
 ---
 name: upgrade-smartkit
 description: Advance this repository's SmartKit release version and assess whether its changes require project setup migration.
+disable-model-invocation: true
 ---
 
 # Upgrade SmartKit

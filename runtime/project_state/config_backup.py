@@ -13,17 +13,20 @@ SYNC_PATH = PurePosixPath('.agents/project-config-sync.json')
 DEFAULT_FILES = (
     'AGENTS.md', 'CLAUDE.md', '.agents/config.json', '.codex/config.toml',
     '.cursor/cli.json', '.cursor/mcp.json', '.mcp.json', '.qoder/mcp.json', '.vscode/mcp.json',
+    '.openwikiignore',
 )
 DEFAULT_DIRECTORIES = (
     '.agents/rules', '.agents/skills', '.agents/agents', '.codex/agents',
     '.codex/rules', '.cursor/rules', '.cursor/agents', '.github/agents', '.qoder/agents', '.qoder/rules',
+    'openwiki',
 )
 
 
 def backup_path(value: str) -> PurePosixPath:
     path = safe_relative(value, 'configuration backup path')
     if (any(part in {'.git', '.codegraph', '__pycache__'} for part in path.parts)
-            or path == SYNC_PATH):
+            or path in {SYNC_PATH, PurePosixPath('openwiki/.run.json')}):
+        # An active Wiki queue belongs to this worktree; finish it before snapshotting or restoring.
         raise ValueError(f'not a configuration backup path: {path}')
     return path
 

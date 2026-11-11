@@ -6,7 +6,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 ## Skill 一览
 
-包含 SmartKit 工作流、Matt Pocock 技能集、ponytail 系列和 Diagram Design。各组按用途组织，方便按当前任务查找所需 Skill。
+包含 SmartKit 工作流、Matt Pocock 技能集、ponytail 系列、Diagram Design 和 OpenWiki。各组按用途组织，方便按当前任务查找所需 Skill。
 
 ### 必须由用户手动调用
 
@@ -43,6 +43,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 | Skill | 出处 | 用途与使用时机 |
 | --- | --- | --- |
+| `openwiki` | [OpenWiki](https://github.com/langchain-ai/openwiki) | 检索项目知识，或根据源码与测试生成、更新英文 Wiki。 |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | 对照可信的一手资料调查问题，将结论保存为仓库中的 Markdown 文档。 |
 | `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | 绘制架构图、流程图等 HTML/SVG 图解，支持 PNG 导出和已有图表导入；未配置或指定品牌时直接使用默认样式。 |
 | `prototype` | [Matt Pocock](https://github.com/mattpocock/skills) | 构建可丢弃的原型，验证设计、状态模型或界面是否可行。 |
@@ -155,22 +156,26 @@ SmartKit 收录了以下项目的部分 Skills，并作了适配。它们随插�
 | [Matt Pocock Skills](https://github.com/mattpocock/skills) | 计划、规格、实现、研究与审查工作流。 | [MIT](licenses/mattpocock-skills-LICENSE.txt) |
 | [ponytail](https://github.com/DietrichGebert/ponytail) | 简洁的编码方案、改动审查、代码库审计与技术债跟踪。 | [MIT](licenses/DietrichGebert-ponytail-LICENSE.txt) |
 | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | 品牌图解、已有图表导入，以及 HTML/SVG/PNG 输出。 | [MIT](licenses/cathrynlavery-diagram-design-LICENSE.txt) |
+| [OpenWiki](https://github.com/langchain-ai/openwiki) | 生成、更新与检索项目 Wiki。 | [MIT](licenses/langchain-ai-openwiki-LICENSE.txt) |
+
+例如：“用 `openwiki` 初始化这个项目的 Wiki”，或“根据当前源码和测试更新 Wiki”。页面以英文写在项目内的 `openwiki/`，沿用项目 Agent 配置的保存模式：随项目共享、仅本机保存，或同步到同一个独立配置仓库。现有 Rules、执行型 Skills 和 ADR 继续承担各自职责。
 
 ### 工具
 
-SmartKit 配置或推荐以下工具。完整项目 setup 会准备当前电脑上的 CodeGraph：缺失时安装工具，初始化或同步项目索引，并验证运行中的服务。setup 需要获得这些操作的授权。已初始化的 SmartKit 项目在每次会话中都会重新检查 CodeGraph，需要处理时提醒用户。Tokscale 需单独安装。CodeGraph 和 Playwright 的 MCP 配置由插件维护：会话开始时，SmartKit 会从用户级 MCP 配置中删除同名条目。
+SmartKit 配置或推荐以下工具。完整项目 setup 会准备当前电脑上的 CodeGraph：缺失时安装工具，初始化或同步项目索引，并验证运行中的服务。setup 需要获得这些操作的授权。已初始化的 SmartKit 项目在每次会话中都会重新检查 CodeGraph，需要处理时提醒用户。Tokscale 需单独安装。CodeGraph、Playwright 和 OpenWiki 的 MCP 配置由插件维护：会话开始时，SmartKit 会从用户级 MCP 配置中删除同名条目。
 
 | 工具 | 用途 | 安装与使用 |
 | --- | --- | --- |
 | [CodeGraph](https://github.com/colbymchenry/codegraph) | 通过符号和调用关系导航已索引的代码。 | SmartKit 已初始化项目的必需工具。完整 setup 准备本机安装、索引和服务；插件提供 MCP 配置。索引数据库保留在各自的本地工作区。 |
 | [Tokscale](https://github.com/junhoyeo/tokscale) | 为 `diagnose-agent-session` 提供 token 用量和费用估算证据。 | 将 `tokscale` 加入 PATH；可用诊断数据取决于客户端及其已记录的用量。 |
 | [Playwright MCP](https://github.com/microsoft/playwright-mcp) | 提供浏览器自动化。 | 插件提供 MCP 配置，客户端通过 `npx` 获取并启动 `@playwright/mcp`。需要 Node.js 18 或更新版本，并将 `npx` 加入 PATH。 |
+| [OpenWiki](https://github.com/langchain-ai/openwiki) | 检索与维护项目 Wiki。 | 插件提供 Skill 和固定版本的 MCP 启动配置。需要 Node.js 22.22.0 或更新版本，并将 `npx` 加入 PATH；生成过程使用编程助手的模型会话。 |
 
 Hook 启动器在执行超过 0.2 秒时向 stderr 输出警告。计时包含 Python 前置检查和处理程序；监测保留原始输出和退出状态，不会因耗时而拦截任务。
 
 ## 安装插件
 
-先安装你使用的编程助手和 Python 3.8 或更新版本，并将 `python` 加入 PATH，供 SmartKit Hooks 和项目配置使用。使用 Playwright MCP 时，还需安装 Node.js 18 或更新版本，并将 `npx` 加入 PATH。然后按对应步骤安装插件。
+先安装你使用的编程助手和 Python 3.8 或更新版本，并将 `python` 加入 PATH，供 SmartKit Hooks 和项目配置使用。OpenWiki 需要 Node.js 22.22.0 或更新版本；Playwright MCP 需要 Node.js 18 或更新版本，两者都需要将 `npx` 加入 PATH。然后按对应步骤安装插件。
 
 ### Codex
 

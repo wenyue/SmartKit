@@ -440,6 +440,16 @@ class MappedLinksTest(unittest.TestCase):
         self.assertIn("input is outside", as_input.stderr)
         self.assertEqual(sibling.read_text(), "Wrapped\nprose\n")
 
+    def test_consolidated_rule_cannot_link_to_retired_rule_still_in_live_target(self):
+        retired = '.agents/rules/tools.md'
+        self.write(self.target, retired, '# Tools\n')
+        self.document = '.agents/rules/constraints.md'
+        source = '[Tools](tools.md).\n'
+        self.assertEqual(self.check(source).returncode, 0)
+        result = self.check_with_context(source, retired)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('link target does not exist', result.stdout)
+
     def test_context_paths_need_mapping_and_valid_paths_disjoint_from_scope(self):
         document = self.write(self.candidate, self.document, "# Good\n")
         alone = run_cli(self.root, "--context-path", "other.md", "--", document)

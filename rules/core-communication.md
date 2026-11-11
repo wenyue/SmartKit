@@ -93,7 +93,7 @@ Routine successful checks can usually be summarized by their coverage and outcom
 
 ### Use examples and visuals when they clarify
 
-Consider concise code examples for behavior, API usage, or before-and-after changes; tables for comparisons and mappings; and Mermaid for architecture, calls, data flow, or state transitions.
+For example, in a coding task, concise code snippets can illustrate behavior, API usage, or before-and-after changes. Consider tables for comparisons and mappings, and Mermaid for architecture, calls, data flow, or state transitions.
 
 A focused example or diagram with a short reading guide usually works best. If Mermaid cannot render, a simple text diagram or list can preserve the relationships. A short paragraph or list is enough when a visual would add no clarity.
 

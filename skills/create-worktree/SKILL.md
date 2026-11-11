@@ -5,13 +5,20 @@ description: Use when state-changing repository work needs an isolated linked Gi
 
 # Create Worktree
 
-Select or create one linked Git worktree and establish its environment readiness without disturbing existing work. Return `ready` or `non-ready`. Carry the source's current work by default; inherited changes remain protected under their original ownership rather than automatically becoming the caller's task.
+Select or create one linked Git worktree and establish its Agent configuration and environment readiness without disturbing existing work. Return `ready` or `non-ready`. Carry the source's current work by default; inherited changes remain protected under their original ownership rather than automatically becoming the caller's task.
+
+## Responsibility boundaries
+
+| Artifact | Responsibility |
+| --- | --- |
+| [Create Worktree](SKILL.md) | Workspace selection, preservation, and configuration and environment readiness before handoff. |
+| [Maintain Project Config](../maintain-project-config/SKILL.md) | Configuration sources, scoped copying or restoration, conflict handling, and Git exclusions. |
 
 ## 1. Select the workspace and starting state
 
 Start from the established need for isolation and the accepted task scope. Use existing choices of source, target, base, and permitted effects. Ask for unresolved required choices or permission, reusing decisions that already cover the operation. Resolve the source checkout, primary project checkout, and physical Git common directory from repository topology; the invoking linked checkout need not be the primary checkout.
 
-Before creating a worktree, check whether an existing task worktree can serve the accepted work. Verify a candidate's physical path, Git registration, branch, `HEAD`, base relationship, and local changes against the task context. Reuse it when they agree, preserving its inherited and task changes. Do not repurpose another task's worktree or copy fresh source changes over a continued one. If a selected worktree's identity or ownership is unclear, return `non-ready`; otherwise skip creation and assess environment readiness.
+Before creating a worktree, check whether an existing task worktree can serve the accepted work. Verify a candidate's physical path, Git registration, branch, `HEAD`, base relationship, and local changes against the task context. Reuse it when they agree, preserving its inherited and task changes. Do not repurpose another task's worktree or copy fresh source changes over a continued one. If a selected worktree's identity or ownership is unclear, return `non-ready`; otherwise skip creation and assess configuration and environment readiness.
 
 For a new worktree, resolve the base to an immutable commit and choose the starting state:
 
@@ -43,7 +50,7 @@ For project placement, verify effective Git exclusion. If necessary, resolve the
 
 For either mode, capture the source's `HEAD`, branch, index, working contents, and untracked nonignored state sufficiently to check that creation leaves them unchanged. An unresolved index conflict, in-progress operation, or unsupported file/index semantics stops creation unless the chosen mechanism can faithfully preserve that state.
 
-For **clean**, skip transfer capture, counting, and carry approval. For **carry**, capture staged and unstaged changes separately, including when both affect one path, plus untracked inputs. Preserve contents, additions, deletions, renames, binary files, executable modes, and symlinks. Exclude ignored files, dependency caches, and nested worktrees; route necessary omitted inputs to environment preparation. Establish the expected target state before copying, including any agreed cross-base transformation.
+For **clean**, skip transfer capture, counting, and carry approval. For **carry**, capture staged and unstaged changes separately, including when both affect one path, plus untracked inputs. Preserve contents, additions, deletions, renames, binary files, executable modes, and symlinks. Exclude ignored files, dependency caches, and nested worktrees; route required Agent configuration through configuration preparation below and other necessary omitted inputs through environment preparation. Establish the expected target state before copying, including any agreed cross-base transformation.
 
 ### Carry counts and approval
 
@@ -57,7 +64,7 @@ A material change to the reviewed snapshot or target requires a fresh summary an
 
 Immediately before creation, recheck the source snapshot, selected base and mode, decisions, and absence of the target path, branch, and registration. Use the host's applicable creation interface or Git with conflict-rejecting semantics. Account for material hooks, filters, and subprocess effects within the permitted operation before running it.
 
-Create at the selected commit. For clean mode, copy no source changes. For carry mode, reproduce the captured index and working state, including untracked inputs. Keep source bytes, index, `HEAD`, and branch unchanged: stash, commit, reset, and moving source files are not transfer methods.
+Create at the selected commit. For clean mode, copy no source changes during this transfer; configuration and environment preparation follow under their own accepted scope. For carry mode, reproduce the captured index and working state, including untracked inputs. Keep source bytes, index, `HEAD`, and branch unchanged: stash, commit, reset, and moving source files are not transfer methods.
 
 Verify the registered target path, named branch, and `HEAD` at the chosen base. Compare its index and working state to the expected result, including file contents, types, modes, and staged versus unstaged changes. Compare index semantics, not binary index-extension metadata. Confirm that the source stayed unchanged and that container, exclusion, and creation effects match the chosen plan. Drift or an incomplete comparison yields `non-ready`.
 
@@ -65,7 +72,17 @@ Verify the registered target path, named branch, and `HEAD` at the chosen base. 
 
 Inspect what actually exists before retrying after interruption or failure. Retain partial paths, branches, registrations, and copied work with enough context to continue safely; do not replay a copy over later changes. Remove partial artifacts only when they belong solely to this attempt, contain no other work, and removal is authorized. Recheck the applicable choices before resuming.
 
-## 4. Assess environment readiness
+## 4. Establish Agent configuration readiness
+
+Before discovering target project Skills, establish which project instructions, Rules, Skills, custom Agents, MCP declarations, and host settings the accepted task requires. Check the selected worktree first and preserve its usable configuration on reuse. When no project configuration is required, report configuration `not-needed` and continue.
+
+For missing required configuration, read the supported [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) reference from this SmartKit installation and use its linked-worktree preparation route. That route owns source selection, mode-specific copying or restoration, conflict decisions, and exclusions; consulting it does not invoke the user-only maintenance Skill. Use the caller's accepted source and scope, resolving project locations through Git topology. Keep the selected worktree as the code and operation target even when the configuration source is elsewhere; finding a parent directory's configuration does not establish target readiness.
+
+Account for configuration writes as preparation under the caller's accepted permissions, separately from clean or carry source transfer. Preserve a continued worktree's configuration rather than refreshing it merely to match another checkout. Unresolved source or scope, unavailable required configuration or maintenance capability, refused differences, or unauthorized preparation yields `non-ready`; retain the worktree and report the needed resolution.
+
+Make the selected configuration available through the active host's supported loading route. Before environment preparation, verify that required instructions and Skills can be resolved for the target and that settings and capabilities needed for preparation are usable. Reuse still-applicable evidence. Copied files, setup markers, or synchronization receipts alone do not prove activation; a required host reload, trust decision, or unavailable preparation capability yields `non-ready` with its next action. When a task-required capability depends on the project environment being prepared, verify it after preparation, before returning `ready`.
+
+## 5. Assess environment readiness
 
 Preparation applies on a newly created worktree's first use, when evidence shows a missing or stale environment prerequisite for the current task, or when the user explicitly requests preparation. Otherwise report `not-needed` and use the existing environment. A linked-worktree location or invalid cached preparation record alone establishes no preparation need.
 
@@ -73,12 +90,14 @@ When preparation applies, discover the selected target's project `prepare-worktr
 
 If the Skill is absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness. If the absent Skill is indispensable, return `non-ready` and identify project setup as the route to provide it.
 
-Recheck target identity and expected state after the assessment and any preparation, accounting for authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, environment status is `environment-ready`, `not-needed`, or `not-provided`, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
+After preparation, verify any remaining task-required host settings and MCP capabilities, including that their project operations target this worktree. Report configuration `ready` only when the required configuration is usable; unresolved activation or a required unavailable capability yields `non-ready` with its next action.
+
+Recheck target identity and expected state after the assessments and any preparation, accounting for authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, configuration status is `ready` or `not-needed`, environment status is `environment-ready`, `not-needed`, or `not-provided`, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
 
 Give the caller a concise readiness handoff:
 
 - Status, target path, branch, immutable base, and current `HEAD`.
-- Whether the worktree was created or reused, its carried/inherited-state summary and any carry decision, and environment status.
+- Whether the worktree was created or reused, its carried/inherited-state summary and any carry decision, configuration source and scope with its readiness status, and environment status.
 - For `non-ready`, the blocker, retained partial state, and concrete next action.
 
 Keep supporting observations available; the handoff need not reproduce the full evidence inventory.

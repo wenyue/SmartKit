@@ -41,7 +41,7 @@ class UserMcpCleanupTest(unittest.TestCase):
     def test_plugin_server_ids_follow_the_registry(self):
         self.assertEqual(
             self.module.plugin_server_ids(REGISTRY_PATH, 'copilot'),
-            ['playwright', 'codegraph'],
+            ['playwright', 'codegraph', 'openwiki'],
         )
 
     def test_json_harnesses_remove_only_plugin_owned_entries(self):

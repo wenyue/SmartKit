@@ -1,0 +1,85 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -49,15 +49,57 @@
+ provenance, and finalization. You own semantic repository research and the prose
+ for the single page OpenWiki assigns you.
+
++## SmartKit project integration
++
++For generation, use this worktree's `openwiki/`; keep code knowledge separate
++from operative Rules, execution Skills, and accepted ADRs. Link those owners
++when explaining their behavior. Write page titles, prose, diagram labels, and
++Claim statements in English; keep code and identifiers unchanged.
++
++Before a new run, read the supported [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md)
++reference from this SmartKit installation. Use its commands and the project's
++existing maintenance binding for this Wiki too. Resolve a missing binding
++through that reference; retain an established mode. In repository mode, update
++and reconcile the existing backup before generation under its normal contract.
++Reapply the same binding when needed to establish its Git exclusions before
++creating files. Preserve and report already tracked files as that owner requires.
++
++An active `openwiki/.run.json` belongs to its current worktree. Resume that run
++before restoring or adopting the Wiki; configuration backup refuses active
++queues. If an inherited run has another language, finish its recorded queue
++without changing that language, then run an English update before accepting the
++result. Preserve pending output through failures and worktree handoff.
++
++After a full successful run, preserve the complete `openwiki/` directory,
++including Claims, manifests, update metadata, and `INSTRUCTIONS.md`, plus the
++root `.openwikiignore` when present. Use project Git in `local` mode and local
++exclusions in `local-only` mode. In `repository` mode, use the maintenance
++reference's deliberate adoption route for `openwiki`, `.openwikiignore` when
++present, and the changed `AGENTS.md` / existing `CLAUDE.md` entry files. Select
++complete files, review their changes, then validate, apply, and publish through
++that same owner's existing authority and failure handling. Existing manifests
++need explicit scope adoption; adding a default path does not expand them.
++A deferred-Claims run remains incomplete and must finish reconciliation before
++adoption. On `noop`, still close any pending accepted backup work. Report Wiki
++generation, saved backup, and remote synchronization according to their actual
++outcomes; use no separate Wiki synchronization protocol.
++
++Generation requires the OpenWiki lifecycle MCP tools supplied by SmartKit.
++If they are unavailable, report that prerequisite and leave generation
++incomplete; the Markdown retrieval fallback above remains available.
++
+ ## Required sequence
+
+ 1. Resolve the exact Git top-level with `git rev-parse --show-toplevel` (or
+    `git -C <path> rev-parse --show-toplevel` for an explicit target).
+-2. Call `openwiki_begin` with that absolute root and mode `init` or `update`.
+-   An active run may have been started by native OpenWiki or another supported
+-   host; always continue the durable run and queue returned by `openwiki_begin`.
+-3. If `openwiki_begin` returns `status: "noop"`, report that no update is needed
+-   and stop.
++2. For a new run, call `openwiki_begin` with that absolute root,
++   `mode: "update"`, and `language: "en"`. Update also creates a missing Wiki;
++   use it for first generation to avoid the scheduled GitHub workflow that
++   upstream `init` creates. For an active `openwiki/.run.json`, read and resume
++   its recorded mode and language first, as described above. Continue the
++   durable run and queue even when another supported host started them.
++3. If `openwiki_begin` returns `status: "noop"`, report that no page update is
++   needed and complete the maintenance handoff above.
+ 4. If it returns `phase: "planning"`:
+    - long lists in the result are capped, with exact totals in `changedPathCount`
+      and `claimIssueCount`. When a `changedPathsTruncated` flag is true, find the
+@@ -81,7 +123,8 @@
+      unrelated top-level pages; do not plan generated `index.md` pages;
+    - populate `relatedPages` with useful conceptual and workflow neighbors so
+      readers can navigate across system boundaries;
+-   - for init, include `/openwiki/quickstart.md`;
++   - for first generation, a missing quickstart, or a resumed init, include
++     `/openwiki/quickstart.md`;
+    - for update, never delete `/openwiki/quickstart.md`; if the update adds,
+      deletes, moves, or materially regroups wiki pages, include quickstart so its
+      task-routing map is refreshed;
+@@ -114,7 +157,8 @@
+      and retry; completion requires one successful submission.
+ 7. When `openwiki_next_page` returns `status: "complete"`, call
+    `openwiki_finish`.
+-8. Report success only after `openwiki_finish` returns `complete`.
++8. Report generation success only after `openwiki_finish` returns `complete`,
++   then complete the maintenance handoff above.
+
+ If any lifecycle call reports that repository source drift invalidated the
+ plan, call `openwiki_begin` again, submit a replacement plan, and resume the
