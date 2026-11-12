@@ -8,6 +8,6 @@ Setup and enabled startup synchronization consume the supported reference and co
 
 Full-file backup deliberately copies native configuration and selected setup markers without regeneration or field conversion. A copied marker or successful restore cannot prove that this checkout ran setup or has its local prerequisites. Keep restoration, deliberate rendering, and full setup distinct so recovery neither rewrites accepted bytes nor bypasses required initialization.
 
-## Require acceptance of actual differences
+## Use the receipt to establish which side changed
 
-Automatic synchronization is an explicit startup preference, not advance acceptance of future source/target differences. The exact inspected-state choice covers the whole synchronization, while the receipt advances only after agreement is verified. A source-only fingerprint or silent three-way merge would weaken that accepted boundary.
+Maintenance records the successfully synchronized scope with the source fingerprint so it can compare complete local contents against the baseline after a repository update. Older receipts remain readable but supply no proof that only the repository changed. Both sides changing always requires a choice, avoiding a separate containment or merge analysis. Keeping this decision and the guarded write together lets Setup and startup use the same evidence. The caller owns the accepted scope and permissions. The receipt advances after source and target agree.

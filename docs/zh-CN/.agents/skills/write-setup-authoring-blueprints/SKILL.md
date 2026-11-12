@@ -37,7 +37,7 @@ description: 编写或修订 setup-assets/blueprints 下的项目创作蓝图，
 
 当 Author 能识别必要含义、找到决定项目特定形式的事实，并在不虚构事实或权限的前提下选择相关细节，方向就足够。结构和措辞保持开放，除非它们承载已接受的行为契约。
 
-定义目标关系时，阅读[工件关系](../../../skills/write-rules-and-skills/references/artifact-relationships.md)和本地 [SmartKit 依赖政策](../write-shared-rules-and-skills/SKILL.md#smartkit-dependency-policy)。在独立编写和 Setup 驱动的编写输入中，保留已接受的 SmartKit 提供方、蓝图来源、已声明的扩展身份和目标特有约束。公共关系契约随公共 writer 一起提供，经过确认的所有者事实作为输入传递；蓝图无需复述政策，也无需链接到其复制资源包之外。协调集合的调用者提供依赖顺序。
+定义目标关系时，阅读[工件关系](../../../skills/write-rules-and-skills/references/artifact-relationships.md)和本地 [SmartKit 依赖政策](../write-shared-rules-and-skills/references/dependency-policy.md)。在独立编写和 Setup 驱动的编写输入中，保留已接受的 SmartKit 提供方、蓝图来源、已声明的扩展身份和目标特有约束。公共关系契约随公共 writer 一起提供，经过确认的所有者事实作为输入传递；蓝图无需复述政策，也无需链接到其复制资源包之外。协调集合的调用者提供依赖顺序。
 
 对于 Skill 蓝图，`description` 就是目标 Skill 的描述，原样复制到目标。蓝图是编写输入，没有自身的发现触发条件。按公共 writer 的元数据约定提供目标 `agents/openai.yaml` 界面字段和打包图标。仓库特定的选择与执行细节放在目标正文中。每个固定值或资源只存储一份，并通过 writer 的固定内容接口声明来源到目标的约束。对选定元数据字段要求一致，同时保留独立字段和项目补充；只有完整字节均固定的资源才要求整个文件一致。
 

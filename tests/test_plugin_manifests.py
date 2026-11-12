@@ -376,7 +376,7 @@ class PluginManifestTest(unittest.TestCase):
                 'runner.md',
                 'shared-terms.md',
             },
-            'write-shared-rules-and-skills': set(),
+            'write-shared-rules-and-skills': {'dependency-policy.md'},
             'write-setup-authoring-blueprints': set(),
             'translate-agent-artifacts': set(),
         }

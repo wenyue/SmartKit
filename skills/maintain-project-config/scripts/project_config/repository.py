@@ -12,7 +12,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 
 _REPOSITORY = re.compile(r'[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]*\Z')
@@ -282,7 +282,7 @@ def update(path: Path, branch: str) -> dict:
     return {'commit': after, 'remoteCommit': remote, 'updated': after != before, 'localChanges': local_changes}
 
 
-def _paths(path: Path, paths: Sequence[str]) -> list:
+def _paths(path: Path, paths: Sequence[str]) -> list[str]:
     if isinstance(paths, (str, bytes)) or not paths:
         raise ValueError('commit scope requires exact relative file paths')
     selected = []
@@ -344,7 +344,7 @@ def commit_scope(path: Path, branch: str, paths: Sequence[str], message: str) ->
     return commit
 
 
-def _check_receipt(path: Path, branch: str, commit: str) -> None:
+def _check_receipt(path: Path, branch: str, commit: str) -> list[str]:
     receipt = _safe_path(path / '.git' / 'smartkit-project-config-commits' / (commit + '.json'))
     try:
         record = json.loads(receipt.read_text(encoding='utf-8'))
@@ -359,6 +359,7 @@ def _check_receipt(path: Path, branch: str, commit: str) -> None:
     specs = [':(literal)' + value for value in selected]
     if _git(path, 'status', '--porcelain', '--untracked-files=all', '--', *specs):
         raise ValueError('selected configuration files have uncommitted changes after verification')
+    return selected
 
 
 def _check_outgoing(path: Path, commit: str, remote: str) -> None:
@@ -377,7 +378,8 @@ def _check_outgoing(path: Path, commit: str, remote: str) -> None:
         raise ValueError('the requested commit is not the sole outgoing configuration commit')
 
 
-def publish(path: Path, branch: str, commit: str) -> dict:
+def publish(path: Path, branch: str, commit: str, *,
+            verify_scope: Callable[[Sequence[str]], None] | None = None) -> dict:
     """Normally push one explicitly selected commit and confirm remote reachability.
 
     The named commit needs a locally recorded, rechecked scope receipt and must
@@ -394,7 +396,9 @@ def publish(path: Path, branch: str, commit: str) -> dict:
         raise ValueError('publish requires a full commit object ID')
     if _head(path) != commit:
         raise ValueError('configuration HEAD changed after the caller verified its source')
-    _check_receipt(path, branch, commit)
+    selected = _check_receipt(path, branch, commit)
+    if verify_scope is not None:
+        verify_scope(selected)
     _personal_repository(_origin(path), create=False)
     remote = _fetch(path, branch)
     if remote and _ancestor(path, commit, remote):

@@ -56,13 +56,7 @@ from operative Rules, execution Skills, and accepted ADRs. Link those owners
 when explaining their behavior. Write page titles, prose, diagram labels, and
 Claim statements in English; keep code and identifiers unchanged.
 
-Before a new run, read the supported [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md)
-reference from this SmartKit installation. Use its commands and the project's
-existing maintenance binding for this Wiki too. Resolve a missing binding
-through that reference; retain an established mode. In repository mode, update
-and reconcile the existing backup before generation under its normal contract.
-Reapply the same binding when needed to establish its Git exclusions before
-creating files. Preserve and report already tracked files as that owner requires.
+Before a new run, read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) and use the selected project's established binding. Setup supplies the project target and any current preparation evidence. In standalone use, establish which existing project binding applies. Use `wiki prepare` under that binding to reconcile the backup and establish Git treatment, and use its Git root for the OpenWiki lifecycle. Report a missing project binding as a prerequisite.
 
 An active `openwiki/.run.json` belongs to its current worktree. Resume that run
 before restoring or adopting the Wiki; configuration backup refuses active
@@ -73,12 +67,7 @@ result. Preserve pending output through failures and worktree handoff.
 After a full successful run, preserve the complete `openwiki/` directory,
 including Claims, manifests, update metadata, and `INSTRUCTIONS.md`, plus the
 root `.openwikiignore` when present. Use project Git in `local` mode and local
-exclusions in `local-only` mode. In `repository` mode, use the maintenance
-reference's deliberate adoption route for `openwiki`, `.openwikiignore` when
-present, and the changed `AGENTS.md` / existing `CLAUDE.md` entry files. Select
-complete files, review their changes, then validate, apply, and publish through
-that same owner's existing authority and failure handling. Existing manifests
-need explicit scope adoption; adding a default path does not expand them.
+exclusions in `local-only` mode. In repository mode, follow the maintenance reference for `wiki save` and `wiki publish` under the same binding. When Setup owns the first-run recovery note, hand off the verified generation result so Setup can record the save plan before any backup write.
 A deferred-Claims run remains incomplete and must finish reconciliation before
 adoption. On `noop`, still close any pending accepted backup work. Report Wiki
 generation, saved backup, and remote synchronization according to their actual

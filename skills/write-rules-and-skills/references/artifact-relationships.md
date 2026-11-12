@@ -1,10 +1,10 @@
 # Artifact Relationships
 
-This supported public reference defines dependencies between Agent artifacts. Read it directly from the selected writer source; consultation does not invoke the writer's workflow. Apply these relationships with the artifact owner's accepted dependency scope and supported interfaces.
+This supported public reference defines dependencies between Agent artifacts. Apply it with the artifact owner's accepted dependency scope and supported interfaces.
 
 ## What constitutes a dependency
 
-An artifact depends on another when its instructions require that other's guidance, capability, result, or resources: invoking a Skill, delegating work to it, reading a specified section, or using its script are all dependencies. Point the edge from the artifact that needs something to the artifact supplying it. An operative body reference counts even when it asks only for a read rather than execution.
+An artifact depends on another when its instructions require that other's guidance, capability, result, or resources. Invoking a Skill, delegating work to it, requiring its documentation, and using its script all count. Point the edge from the artifact that needs something to the artifact supplying it.
 
 The unit is a Rule or Skill together with its owned resources. Reading its own references or composing its own workflow does not create a dependency between artifacts. Neither do attribution, the artifact being worked on, or a self-contained example whose needed material is supplied locally. Classify the reference by the behavior it requires, not its wording or link format.
 
@@ -32,9 +32,15 @@ A project Skill is above the ordinary Skills of its accepted shared provider and
 
 A shared provider may explicitly expose selected project Skills as reverse-dependency extension interfaces. Those declared targets are visible to the provider as ordinary Skill dependencies and may themselves depend on other project Skills. This exception does not expose arbitrary project Skills or relax the global no-cycle constraint: trace edges through the extension and its dependencies back into the provider. The owning policy identifies the supported targets and how they are found.
 
+## Authorize new peer Skill dependencies
+
+Before adding or expanding a dependency between ordinary Skills provided by the same project or bundled by the same shared provider, obtain the user's explicit approval of both Skills and the intended use.
+
 ## Keep access, availability, and authority distinct
 
 Use another artifact through its supported entry or an explicitly supported public resource interface. Consulting a public resource creates a dependency on its owner without invoking its workflow; it grants neither permission to invoke a restricted Skill nor authority for its operations. Private resources require explicit owning-policy permission. Preserve the resource's owner, loading and failure requirements, and the consumer's task-specific inputs, outputs, permissions, and lifetime constraints.
+
+When adding or changing a cross-artifact documentation dependency, do not reference a section or paragraph of another Rule or Skill as the dependency. Use a complete supported document. For a narrower contract, use a standalone reference from its owner.
 
 Within the permitted scope, treat a Skill as available when the supported environment provides it with the depending artifact, through its accepted provider, or through the same project. Handle its failing result through ordinary result handling. A permitted extension that a project may or may not provide needs outcomes for both presence and absence: skip and report the omitted work when the outcome remains meaningful, or stop and identify the missing prerequisite when it is indispensable. Installation does not extend dependency permission or prove a successful result.
 

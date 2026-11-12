@@ -91,18 +91,38 @@ class ConfigurationBackupHookTest(unittest.TestCase):
                 value = json.loads(self.checker.render_hook_result(result, harness, delivery='context'))
                 context = (value['hookSpecificOutput']['additionalContext'] if harness in {'codex', 'qoder'}
                            else value['additional_context' if harness == 'cursor' else 'additionalContext'])
-                self.assertIn('authorized automatic configuration synchronization', context)
+                self.assertIn('authorizes startup synchronization', context)
                 self.assertIn('target ' + json.dumps(str(self.target)), context)
-                self.assertIn('update command before inspect/apply', context)
-                self.assertIn('without applying a stale copy', context)
-                self.assertIn('even when only the repository changed', context)
-                self.assertIn('show the changed paths and content differences, including additions and deletions', context)
-                self.assertIn('Wait for that choice before applying any changes', context)
-                self.assertIn('preserve target contents and the prior receipt', context)
-                self.assertIn('--accept-existing and the exact inspected fingerprint', context)
-                self.assertIn('Automatic synchronization permission alone never accepts differences', context)
-                self.assertIn('Do not adopt local drift, publish, regenerate MCP', context)
+                self.assertIn('Run `update`, then `reconcile` without `--adopt-local`', context)
+                self.assertIn('Preserve both sides on update failure', context)
+                self.assertIn('On `source-updated`, restore automatically with `apply --accept-existing`', context)
+                self.assertIn('For `local_updates_only`, ask whether to save local changes', context)
+                self.assertIn('Otherwise ask whether to save local, use the configuration repository or defer', context)
+                self.assertIn('normal commit/push without a second confirmation', context)
+                self.assertIn('Deferral preserves local files and the prior receipt', context)
                 self.assertNotIn('ask whether to restore or defer', context)
+
+    def test_enabled_receipt_accepts_a_valid_saved_scope(self):
+        self.established(automatic=True)
+        state = json.loads((self.target / backup.SYNC_PATH).read_bytes())
+        state['sourceManifest'] = {'files': ['.cursor/mcp.json'], 'directories': []}
+        self.write(self.target, str(backup.SYNC_PATH), json.dumps(state).encode())
+        findings, context = self.checker.check_project_configuration(self.target)
+        self.assertEqual(findings, ())
+        self.assertIn('authorizes startup synchronization', context)
+
+    def test_invalid_saved_scope_is_reported_without_replacing_receipt(self):
+        self.established(automatic=True)
+        state = json.loads((self.target / backup.SYNC_PATH).read_bytes())
+        for scope in (None, [], {'files': ['../outside'], 'directories': []}):
+            with self.subTest(scope=scope):
+                state['sourceManifest'] = scope
+                content = json.dumps(state).encode()
+                self.write(self.target, str(backup.SYNC_PATH), content)
+                findings, context = self.checker.check_project_configuration(self.target)
+                self.assertEqual(findings[0].code, 'project-config-error')
+                self.assertEqual(context, '')
+                self.assertEqual((self.target / backup.SYNC_PATH).read_bytes(), content)
 
     def test_new_checkout_stays_silent_across_sessions(self):
         with mock.patch.object(self.checker, '_run_daily_hook', return_value=self.checker.HookResult(False)), \

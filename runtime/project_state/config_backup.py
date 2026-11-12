@@ -10,6 +10,7 @@ from .catalog import safe_relative
 from .paths import confined_target, is_link_like
 
 SYNC_PATH = PurePosixPath('.agents/project-config-sync.json')
+WIKI_SYNC_PATH = PurePosixPath('.agents/openwiki-config-sync.json')
 DEFAULT_FILES = (
     'AGENTS.md', 'CLAUDE.md', '.agents/config.json', '.codex/config.toml',
     '.cursor/cli.json', '.cursor/mcp.json', '.mcp.json', '.qoder/mcp.json', '.vscode/mcp.json',
@@ -25,7 +26,7 @@ DEFAULT_DIRECTORIES = (
 def backup_path(value: str) -> PurePosixPath:
     path = safe_relative(value, 'configuration backup path')
     if (any(part in {'.git', '.codegraph', '__pycache__'} for part in path.parts)
-            or path in {SYNC_PATH, PurePosixPath('openwiki/.run.json')}):
+            or path in {SYNC_PATH, WIKI_SYNC_PATH, PurePosixPath('openwiki/.run.json')}):
         # An active Wiki queue belongs to this worktree; finish it before snapshotting or restoring.
         raise ValueError(f'not a configuration backup path: {path}')
     return path
@@ -133,11 +134,12 @@ def selected_manifest(target: Path, paths: Sequence[str]) -> dict:
     return manifest
 
 
-def read_receipt(target: Path, selected: dict) -> dict | None:
-    if read_file(target, SYNC_PATH) is None:
+def read_receipt(target: Path, selected: dict, *, path: PurePosixPath = SYNC_PATH) -> dict | None:
+    if read_file(target, path) is None:
         return None
-    state = read_object(target, SYNC_PATH)
-    if (set(state) != {'binding', 'source', 'sourceFingerprint', 'appliedPaths', 'automatic'}
+    state = read_object(target, path)
+    required = {'binding', 'source', 'sourceFingerprint', 'appliedPaths', 'automatic'}
+    if (not required <= set(state) <= required | {'sourceManifest'}
             or state['binding'] != selected
             or not isinstance(state['source'], str) or not Path(state['source']).is_absolute()
             or not isinstance(state['automatic'], bool) or not isinstance(state['appliedPaths'], list)):
@@ -147,4 +149,8 @@ def read_receipt(target: Path, selected: dict) -> dict | None:
         raise ValueError('invalid configuration source fingerprint')
     for value in state['appliedPaths']:
         backup_path(value)
+    if 'sourceManifest' in state:
+        if not isinstance(state['sourceManifest'], dict):
+            raise ValueError('invalid synchronized configuration manifest')
+        manifest_paths(state['sourceManifest'])
     return state

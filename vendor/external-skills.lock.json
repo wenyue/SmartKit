@@ -967,7 +967,7 @@
           "source_path": "integrations/openwiki",
           "destination": "skills/openwiki",
           "files": {
-            "SKILL.md": "34d876b2df301715c7dfbe31d0985fe76f7104c0166b3b01c2a3676591ba504b",
+            "SKILL.md": "195be720790bfe79a1080ec6623f375049ed53fee27fef21ce8b95c317f156a6",
             "agents/bob.yaml": "01eeaf2b7f709ae511f444e2b8e34f27a4a38885fc9b34a1ef8b2bb158d41362",
             "agents/openai.yaml": "5bdf980b10f3eeb7c07cc975fb99cee79b6fd08f9c26be60f45cd453ec2f2b7d",
             "assets/icon.svg": "7d65d5a290ba3c6a821870fdf43874faf23ca22be4cf34a5993158d3e6b51ef0"
@@ -975,7 +975,7 @@
           "patches": [
             {
               "path": "vendor/patches/openwiki/openwiki.patch",
-              "sha256": "ad0db351535959d10591d99274cee92feab38e84f11348f41b2fdb227710b57b"
+              "sha256": "cbbfa8c8cdf96645d99b519d35a0a9d884af1a8d5885446892d1f0f91da9a3a7"
             },
             {
               "path": "vendor/patches/openwiki/openwiki.openai.patch",

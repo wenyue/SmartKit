@@ -41,14 +41,7 @@ python "<maintain>" update --target "<target-root>"
 
 在仓库中编写时，编辑条目 `files/` 下选中的文件；已接受的范围变化时同时修改清单。完整保留每个选定文件，包括原生 MCP 和设置文件；备份不查阅 `smartkit.lock.json`，也不重新生成这些文件。本地同步记录不纳入备份。编写或修订 Rule 或 Skill 时，以来源文件作为 Candidate，并提供合格的业务项目证据，使用[编写 Rule 和 Skill](../write-rules-and-skills/SKILL.md)；保留其中的作者与评审职责。
 
-采纳操作会有意将已接受的目标内容写入备份。先检查当前来源和目标，再选择要替换的内容；可以使用精确文件或目录，也可以刷新整个已声明范围：
-
-```text
-python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --file ".agents/rules"
-python "<maintain>" adopt --target "<target-root>" --all
-```
-
-阅读 `adopt --help`，了解当前选项。`--all` 只刷新清单中已声明的文件和目录。保留未选中的来源工作。采纳只保存来源内容，之后仍需验证、恢复和发布。记录精确的仓库相对改动文件，包括清单变更和删除，供最终发布使用。
+按参考中的[采纳流程](references/maintenance.md#adopt-accepted-target-changes)处理更新的本地配置，或保存明确选定的内容。保留已接受的完整结果 JSON，供按精确范围发布时使用。
 
 ## 4. 验证并恢复
 
@@ -61,7 +54,7 @@ python "<maintain>" apply --target "<target-root>"
 
 两种本地模式的规范输入已位于目标中。直接使用下文既有的本地同步路径，不调用 `apply`，也不访问配置仓库。
 
-每次仓库应用只要存在差异，就必须在写入前遵循参考中完整的用户选择与精确检查状态接受路径。该路径既约束首次使用，也约束后续恢复、自动同步和仅配置库发生变化的情况。整次同步的接受、保留本地的结果、状态偏移、跳过内容写入的条件及同步记录的推进，都由该路径规定；遵循这些条件，不把保存的来源指纹视为双方一致的证明。
+仓库应用存在差异时，先遵循参考中的[整次同步选择](references/maintenance.md#apply-the-users-whole-synchronization-choice)。采纳使来源与目标一致后，按[同步记录流程](references/maintenance.md#record-verified-agreement-and-the-startup-preference)记录一致状态。
 
 整文件快照恢复以目标精确一致并完成本地前置条件检查为终点。仅恢复的请求不编写来源、不生成配置、不执行完整初始化，也不发布。如果请求的配置变更还需要有意执行本地生成，使用参考中既有的 `sync-project` 或更窄的 `sync-project-rules` 路径及其所有权检查。将有意改变的已备份输出采纳到来源中，并在发布前重新确认一致。恢复和维护均不能证明完整初始化成功；尚未满足的初始化或迁移前提，仍需用户显式调用所属 Skill 处理。
 
@@ -69,13 +62,7 @@ python "<maintain>" apply --target "<target-root>"
 
 ## 5. 发布经过验证的来源范围
 
-仓库模式下的配置写入操作遵循共享参考中按精确范围发布的默认约定，除非用户要求仅保留本地结果。仅恢复的操作无论手动还是自动，始终不发布。如果本次操作既没有已接受的待提交来源改动，也没有自身保留的已验证提交，则不发布即可完成。
-
-```text
-python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"
-```
-
-对每项已接受的来源变更重复使用 `--path`，包括清单和删除。保留无关暂存项和工作改动。发布失败或结果不确定时，遵循参考中正常提交 hook 的处理方式及受保护的 `publish --commit` 重试路径；维护不授权强推或改写历史。
+已授权的仓库写入按[精确范围发布](references/maintenance.md#publish-an-exact-verified-scope)执行，用户要求仅保留本地结果时除外。保留的 JSON 涵盖完整已接受范围时，通过 `--plan` 传入。范围来自直接编辑或多个操作时，按参考对各路径分别使用 `--path`。保留无关的暂存项和工作区改动。失败时遵循参考中的提交 hook 处理和保留提交恢复流程。
 
 完成要求来源已验证、目标一致、适用检查通过，且发布结果明确：已验证远端发布、用户显式要求本地结果，或本次操作无需发布。本地模式不需要配置仓库发布。
 

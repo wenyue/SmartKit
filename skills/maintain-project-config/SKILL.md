@@ -41,14 +41,7 @@ Use business-project evidence to decide what configuration should say. The confi
 
 For repository authoring, edit the selected files under the entry's `files/` and its manifest when the accepted scope changes. Preserve each selected file in full, including native MCP and settings files; backup does not consult `smartkit.lock.json` or regenerate those files. Keep the local synchronization receipt outside the backup. When writing or revising a Rule or Skill, use [Write Rules and Skills](../write-rules-and-skills/SKILL.md) with the source files as its Candidate and qualified business-project evidence; preserve its author and review responsibilities.
 
-Adoption deliberately carries accepted target content into the backup. Inspect current source and target before choosing what to replace, then use exact files or directories, or refresh the entire declared scope:
-
-```text
-python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --file ".agents/rules"
-python "<maintain>" adopt --target "<target-root>" --all
-```
-
-Read `adopt --help` for current options. `--all` refreshes only the files and directories already declared in the manifest. Preserve unselected source work. Adoption saves source content; validation, restoration and publication still follow. Record the exact changed repository-relative files, including manifest changes and deletions, for the final publication.
+Use the reference's [adoption routes](references/maintenance.md#adopt-accepted-target-changes) to reconcile newer local configuration or save an explicit selection. Retain the complete accepted result JSON for exact-scope publication.
 
 ## 4. Validate and restore
 
@@ -61,7 +54,7 @@ python "<maintain>" apply --target "<target-root>"
 
 In either local mode, canonical inputs already reside in the target. Continue directly through the established local synchronization route below, without `apply` or configuration-repository access.
 
-For every differing repository application, follow the reference's complete user-choice and exact inspected-state acceptance route before writing. That route governs later restoration, automatic synchronization, and repository-only changes as well as first use. It owns whole-synchronization acceptance, keep-local outcomes, drift, the conditions for skipping content writes, and receipt advancement; use those conditions rather than treating a saved source fingerprint as agreement.
+Follow the reference's [whole-synchronization choice](references/maintenance.md#apply-the-users-whole-synchronization-choice) before any differing repository application. When adoption brings source and target into agreement, use the [receipt route](references/maintenance.md#record-verified-agreement-and-the-startup-preference) to record the agreed state.
 
 Restoring a full-file snapshot ends with exact target agreement and checks of local prerequisites. A restore-only request performs no source authoring, generation, full setup or publication. If the requested configuration change also requires deliberate local rendering, use the reference's established `sync-project` or narrower `sync-project-rules` route and its ownership checks. Adopt any intentionally changed backed-up outputs into the source and re-establish agreement before publication. Neither restoration nor maintenance establishes full setup success; unmet setup or migration prerequisites remain for the user to explicitly invoke through the owning Skill.
 
@@ -69,13 +62,7 @@ Verify the selected mode's Git treatment, including paths already tracked by bus
 
 ## 5. Publish the verified source scope
 
-Repository-mode configuration-writing operations follow the shared reference's exact-scope publication default, unless the user requests a local result. Restore-only operations, whether manual or automatic, never publish. If this operation has no accepted pending source changes and no retained verified commit of its own, finish without publication.
-
-```text
-python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"
-```
-
-Repeat `--path` for every accepted source change, including manifests and deletions. Preserve unrelated index entries and working changes. Follow the reference's normal commit-hook handling and protected `publish --commit` retry route when publication fails or is uncertain; maintenance grants no force push or history rewrite.
+Use [exact-scope publication](references/maintenance.md#publish-an-exact-verified-scope) for authorized repository writes unless the user requests a local result. Pass the retained JSON through `--plan` when it covers the complete accepted scope. For a scope assembled from direct edits or multiple operations, use repeated `--path` as documented in the reference. Preserve unrelated index entries and working changes. On failure, follow the reference's commit-hook and retained-commit recovery routes.
 
 Completion requires validated source, target agreement, applicable checks, and the established publication outcome: verified remote publication, an explicitly requested local result, or no publication needed for this operation. Local modes require no configuration-repository publication.
 

@@ -22,13 +22,13 @@ SmartKit Skills 可以共享自身目录之外的文档、脚本和资产，前�
 
 这种受支持路径意味着 Skill 不必能被独立复制。它允许使用已声明的插件共享资源；该路径本身不会公开私有资源或任意项目、外部文件。它不授予打包、发布或安装权限。
 
-定义或评估 Rule 与 Skill 的关系前，直接阅读公共[工件关系](../../skills/write-rules-and-skills/references/artifact-relationships.md)和本仓库的 [SmartKit 依赖政策](../skills/write-shared-rules-and-skills/SKILL.md#smartkit-dependency-policy)。将经过确认的所有权、来源和适用政策作为编写输入提供，不将公共政策复制到蓝图中。
+将经过确认的所有权、来源和适用政策作为编写输入提供，不将公共政策复制到蓝图中。
 
 ## 为文档的读者编写内容
 
 ### 区分 Skill 调用与资源查阅
 
-通过 `SKILL.md` 调用 Skill，不将内部章节链接用作替代入口。Rule 和 Skill 可以按声明的加载条件，直接查阅明确支持的资源或文件内 reference 章节；查阅不会调用资源所属 Skill 的工作流。这不会公开任意私有资源，也不会绕过调用限制。
+通过 `SKILL.md` 调用 Skill。按声明的加载和访问条件查阅资源。调用工作流和执行操作各自遵循相应的权限要求。
 
 ### 保持根 README 简洁且可操作
 

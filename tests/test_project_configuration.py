@@ -194,6 +194,8 @@ class ProjectConfigurationTest(unittest.TestCase):
                     report = self.module.inspect(self.target)
                     self.assertTrue(report['changes'])
                     self.assertEqual(report['conflicts'], report['changes'])
+                    self.assertEqual(report['local_updates_only'], change in (
+                        'target-edit', 'target-add-empty', 'target-delete', 'binary-edit'))
                     self.assertTrue(all(report['diffs'].values()))
                     before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
                               for directory in (self.target, self.entry)
@@ -219,6 +221,189 @@ class ProjectConfigurationTest(unittest.TestCase):
                 self.module.apply(self.target, accept_existing=report['fingerprint'])
             self.assertEqual(receipt.read_bytes(), previous)
             self.write(root, relative, '# Personal\n')
+
+    def test_guarded_adoption_preserves_newer_local_files_and_updates_receipt(self):
+        relative = '.agents/rules/personal.md'
+        self.write(self.target, relative, '# Original\n')
+        self.module.initialize_entry(self.target, self.entry, ['.agents/rules'])
+        self.module.apply(self.target, automatic=True)
+        receipt = self.target / '.agents/project-config-sync.json'
+        previous = receipt.read_bytes()
+        self.write(self.target, relative, '# Local change\n')
+        added = '.agents/rules/added.md'
+        self.write(self.target, added, '# Local addition\n')
+        report = self.module.inspect(self.target)
+        self.assertTrue(report['local_updates_only'])
+        self.assertEqual(report['changes'], [added, relative])
+        self.assertEqual(self.module.reconcile(self.target)['status'], 'needs-choice')
+        self.assertEqual((self.entry / 'files' / relative).read_text(), '# Original\n')
+        with self.assertRaisesRegex(ValueError, 'requires exact differing files'):
+            self.module.adopt(self.target, ['.agents/rules'], accept_existing=report['fingerprint'])
+        for root, path, text in ((self.target, relative, '# Local change\n'),
+                                 (self.entry, 'files/' + relative, '# Original\n')):
+            self.write(root, path, '# Edited since inspection\n')
+            with self.assertRaisesRegex(ValueError, 'reviewed configuration fingerprint changed'):
+                self.module.adopt(self.target, report['changes'], accept_existing=report['fingerprint'])
+            self.assertEqual(receipt.read_bytes(), previous)
+            self.write(root, path, text)
+        build_plan = self.module.build_plan
+
+        def edit_after_planning(*args, **kwargs):
+            plan = build_plan(*args, **kwargs)
+            self.write(self.target, relative, '# Concurrent local edit\n')
+            return plan
+
+        with mock.patch.object(self.module, 'build_plan', side_effect=edit_after_planning):
+            with self.assertRaisesRegex(ValueError, 'configuration changed during backup planning'):
+                self.module.adopt(self.target, report['changes'], accept_existing=report['fingerprint'])
+        self.assertEqual((self.entry / 'files' / relative).read_text(), '# Original\n')
+        self.write(self.target, relative, '# Local change\n')
+        self.write(self.entry, 'files/' + relative, '# Independent backup change\n')
+        self.assertEqual(self.module.reconcile(self.target, adopt_local=True)['status'], 'needs-choice')
+        self.assertEqual((self.entry / 'files' / relative).read_text(), '# Independent backup change\n')
+        self.write(self.entry, 'files/' + relative, '# Original\n')
+        plan = self.module.reconcile(self.target, adopt_local=True)
+        self.assertEqual(plan['status'], 'planned')
+        self.assertFalse((self.entry / 'files' / added).exists())
+        self.write(self.target, added, '# Changed after review\n')
+        with self.assertRaisesRegex(ValueError, 'reviewed adoption plan changed'):
+            self.module.reconcile(self.target, adopt_local=True, accept_plan=plan['plan_fingerprint'])
+        self.write(self.target, added, '# Local addition\n')
+        adopted = self.module.reconcile(self.target, adopt_local=True, accept_plan=plan['plan_fingerprint'])
+        self.assertEqual(adopted['status'], 'adopted')
+        self.assertEqual(set(adopted['source_changes']), {'projects/app/files/' + added, 'projects/app/files/' + relative})
+        self.assertEqual(receipt.read_bytes(), previous)
+        self.assertEqual(self.module.reconcile(self.target)['status'], 'in-sync')
+        self.module.apply(self.target)
+        self.assertEqual((self.entry / 'files' / relative).read_text(), '# Local change\n')
+        self.assertEqual((self.entry / 'files' / added).read_text(), '# Local addition\n')
+        self.assertTrue(json.loads(receipt.read_bytes())['automatic'])
+        self.assertNotEqual(receipt.read_bytes(), previous)
+
+    def test_reconcile_distinguishes_source_updates_from_local_changes_without_writes(self):
+        cases = {
+            'equal': 'in-sync',
+            'source-edit': 'source-updated',
+            'source-add': 'source-updated',
+            'source-delete': 'source-updated',
+            'local-edit': 'needs-choice',
+            'local-add': 'needs-choice',
+            'local-delete': 'needs-choice',
+            'both-edit': 'needs-choice',
+            'source-includes-local': 'needs-choice',
+            'new-scope-conflict': 'needs-choice',
+            'retired-scope-local-add': 'needs-choice',
+        }
+        relative = '.agents/rules/personal.md'
+        for change, expected in cases.items():
+            target, entry = self.root / change / 'target', self.root / change / 'entry'
+            entry.mkdir(parents=True)
+            with self.subTest(change=change), mock.patch.object(self.module, 'entry_root', return_value=entry):
+                self.write(target, '.agents/config.json', json.dumps({'maintenance': self.binding}))
+                self.write(target, relative, '# Original\n')
+                self.module.initialize_entry(target, entry, ['.agents/rules'])
+                self.module.apply(target, automatic=True)
+                if change in ('source-edit', 'both-edit'):
+                    self.write(entry, 'files/' + relative, '# Repository update\n')
+                if change in ('local-edit', 'both-edit'):
+                    self.write(target, relative, '# Local update\n')
+                if change in ('source-add', 'source-includes-local'):
+                    self.write(entry, 'files/.agents/rules/added.md', '')
+                if change in ('local-add', 'source-includes-local', 'retired-scope-local-add'):
+                    self.write(target, '.agents/rules/added.md', '# Local addition\n')
+                if change == 'source-includes-local':
+                    self.write(entry, 'files/.agents/rules/added.md', '# Local addition\n')
+                    self.write(entry, 'files/.agents/rules/another.md', '# Repository addition\n')
+                if change == 'source-delete':
+                    (entry / 'files' / relative).unlink()
+                if change == 'local-delete':
+                    (target / relative).unlink()
+                if change == 'new-scope-conflict':
+                    self.write(target, '.cursor/mcp.json', '{"local":true}\n')
+                    self.write(entry, 'files/.cursor/mcp.json', '{"repository":true}\n')
+                    self.write(entry, 'manifest.json', json.dumps({
+                        'files': ['.cursor/mcp.json'], 'directories': ['.agents/rules']}))
+                if change == 'retired-scope-local-add':
+                    self.write(entry, 'manifest.json', json.dumps({'files': [], 'directories': []}))
+                before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                          for root in (target, entry) for path in root.rglob('*') if path.is_file()}
+                report = self.module.reconcile(target)
+                self.assertEqual(report['status'], expected)
+                self.assertEqual(report['local_updates_only'], change.startswith('local-'))
+                self.assertEqual({path: (path.read_bytes(), path.stat().st_mtime_ns)
+                                  for root in (target, entry) for path in root.rglob('*') if path.is_file()}, before)
+                if expected == 'source-updated':
+                    self.module.apply(target, accept_existing=report['fingerprint'])
+                    self.assertEqual(self.module.reconcile(target)['status'], 'in-sync')
+
+    def test_retired_scope_includes_local_additions_in_review_and_adoption(self):
+        added = '.agents/rules/added.md'
+        original = '.agents/rules/original.md'
+        for populated in (False, True):
+            target, entry = self.root / str(populated) / 'target', self.root / str(populated) / 'entry'
+            entry.mkdir(parents=True)
+            with self.subTest(populated=populated), mock.patch.object(self.module, 'entry_root', return_value=entry):
+                self.write(target, '.agents/config.json', json.dumps({'maintenance': self.binding}))
+                (target / '.agents/rules').mkdir()
+                if populated:
+                    self.write(target, original, '# Original\n')
+                self.module.initialize_entry(target, entry, ['.agents/rules'])
+                self.module.apply(target)
+                receipt = (target / self.module.STATE).read_bytes()
+                self.write(target, added, '# Local addition\n')
+                self.write(entry, 'manifest.json', json.dumps({'files': [], 'directories': []}))
+                report = self.module.reconcile(target, adopt_local=True)
+                self.assertEqual(report['status'], 'needs-choice')
+                self.assertEqual(set(report['changes']), {added, original} if populated else {added})
+                self.assertIn('# Local addition', report['diffs'][added])
+                self.assertEqual((target / self.module.STATE).read_bytes(), receipt)
+                with self.assertRaisesRegex(ValueError, 'configuration conflict'):
+                    self.module.apply(target)
+                self.module.adopt(target, report['changes'], accept_existing=report['fingerprint'])
+                self.module.apply(target)
+                self.assertEqual((entry / 'files' / added).read_text(), '# Local addition\n')
+                self.assertEqual(self.module.reconcile(target)['status'], 'in-sync')
+
+    def test_retired_scope_restoration_removes_reviewed_local_additions(self):
+        (self.target / '.agents/rules').mkdir()
+        self.module.initialize_entry(self.target, self.entry, ['.agents/rules'])
+        self.module.apply(self.target)
+        added = '.agents/rules/added.md'
+        self.write(self.target, added, '# Local addition\n')
+        self.write(self.target, 'notes.txt', 'Preserve\n')
+        self.write(self.entry, 'manifest.json', json.dumps({'files': [], 'directories': []}))
+        report = self.module.inspect(self.target)
+        self.assertEqual(report['changes'], [added])
+        self.module.apply(self.target, accept_existing=report['fingerprint'])
+        self.assertFalse((self.target / added).exists())
+        self.assertEqual((self.target / 'notes.txt').read_text(), 'Preserve\n')
+        self.assertEqual(self.module.reconcile(self.target)['status'], 'in-sync')
+
+    def test_legacy_receipt_cannot_prove_source_only_update(self):
+        self.initialize()
+        path = self.target / self.module.STATE
+        state = json.loads(path.read_bytes())
+        state.pop('sourceManifest', None)
+        path.write_text(json.dumps(state))
+        previous = path.read_bytes()
+        self.write(self.entry, 'files/.agents/rules/personal.md', '# Repository update\n')
+        self.assertEqual(self.module.reconcile(self.target)['status'], 'needs-choice')
+        self.assertEqual(path.read_bytes(), previous)
+        self.apply_reviewed()
+        self.assertEqual(json.loads(path.read_bytes())['sourceManifest'], self.module.inspect(self.target)['scope'])
+
+    def test_agreement_upgrades_legacy_receipt_without_rewriting_files(self):
+        self.initialize()
+        path = self.target / self.module.STATE
+        state = json.loads(path.read_bytes())
+        state.pop('sourceManifest', None)
+        path.write_text(json.dumps(state))
+        rule = self.target / '.agents/rules/personal.md'
+        before = (rule.read_bytes(), rule.stat().st_mtime_ns)
+        self.assertEqual(self.module.reconcile(self.target)['status'], 'in-sync')
+        self.module.apply(self.target)
+        self.assertEqual((rule.read_bytes(), rule.stat().st_mtime_ns), before)
+        self.assertIn('sourceManifest', json.loads(path.read_bytes()))
 
     def test_public_apply_refuses_differences_without_writes_and_accepts_reviewed_state(self):
         from contextlib import redirect_stdout, redirect_stderr
@@ -383,7 +568,8 @@ class ProjectConfigurationTest(unittest.TestCase):
         self.assertTrue(self.module.apply(self.target)['skipped'])
         self.assertEqual((path.stat().st_mtime_ns, state.stat().st_mtime_ns, state.read_bytes()), before)
         receipt = json.loads(state.read_bytes())
-        self.assertEqual(set(receipt), {'binding', 'source', 'sourceFingerprint', 'appliedPaths', 'automatic'})
+        self.assertEqual(set(receipt), {'binding', 'source', 'sourceFingerprint', 'sourceManifest',
+                                       'appliedPaths', 'automatic'})
         self.assertEqual(receipt['appliedPaths'], ['.agents/rules/personal.md'])
         self.write(self.target, '.agents/rules/personal.md', '# Drift\n')
         with self.assertRaisesRegex(ValueError, 'configuration conflict'):
@@ -1022,6 +1208,162 @@ class MaintenanceModeTest(unittest.TestCase):
         self.bind('local', '--replace-binding')
         for path in ('openwiki/quickstart.md', 'openwiki/.claims/page.json', '.openwikiignore'):
             self.assert_ignored(path, False)
+
+    def test_nested_wiki_uses_inherited_git_treatment_at_the_root(self):
+        self.bind('local-only')
+        (self.root / 'AGENTS.md').write_text('# Tracked root instructions\n')
+        self.git('add', 'AGENTS.md')
+        index = (self.root / '.git/index').read_bytes()
+        code, result, error = self.command('wiki', 'prepare')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(result['status'], 'ready')
+        self.assertEqual(result['mode'], 'local-only')
+        self.assertEqual(Path(result['wiki_root']), self.root.resolve())
+        self.assertEqual(result['tracked_paths'], ['AGENTS.md'])
+        self.assertEqual(self.git('check-ignore', '--quiet', 'openwiki/quickstart.md', check=False).returncode, 0)
+        self.assertEqual(self.git('check-ignore', '--quiet', 'other/openwiki/quickstart.md', check=False).returncode, 1)
+        self.assertEqual((self.root / '.git/index').read_bytes(), index)
+        self.assertFalse((self.root / '.agents/config.json').exists())
+        self.bind('local', '--replace-binding')
+        self.assertEqual(self.git('check-ignore', '--quiet', 'openwiki/quickstart.md', check=False).returncode, 1)
+
+    def test_nested_wiki_preserves_independently_bound_git_root(self):
+        self.bind('local-only')
+        root_config = self.root / '.agents/config.json'
+        root_config.parent.mkdir()
+        root_config.write_text('{"maintenance":{"mode":"local"}}\n')
+        before = self.exclude.read_bytes()
+        code, _, error = self.command('wiki', 'prepare')
+        self.assertEqual(code, 2)
+        self.assertIn('Git root already owns', error)
+        self.assertEqual(self.exclude.read_bytes(), before)
+
+    def test_nested_wiki_repository_backup_publishes_and_restores_at_git_root(self):
+        from test_project_config_repository import RepositoryGitTests
+
+        fixture = RepositoryGitTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+
+        def command(*args):
+            code, result, error = self.command(*args)
+            self.assertEqual(code, 0, error)
+            return result
+
+        result = self.bind('repository', '--repository', 'alice/config', '--branch', 'main', '--entry', 'app')
+        entry = Path(result['source'])
+        command('apply')
+        command('publish', '--path', 'projects/app/manifest.json', '--path', 'projects/app/files/AGENTS.md',
+                '--path', 'projects/app/files/.agents/config.json', '--path', 'projects/app/files/.agents/rules/example.md',
+                '--message', 'Set up nested configuration')
+        command('update')
+        self.assertEqual(command('wiki', 'prepare')['status'], 'ready')
+        root_wiki = self.root / 'openwiki'
+        root_wiki.mkdir()
+        (root_wiki / 'quickstart.md').write_text('# Root wiki\n')
+        (self.root / 'AGENTS.md').write_text('# Root instructions\n')
+        (self.root / 'business.txt').write_text('Preserve\n')
+        self.assertEqual(self.command('wiki', 'save', '--file', 'business.txt')[0], 2)
+        (root_wiki / '.run.json').write_text('{}')
+        self.assertEqual(self.command('wiki', 'save')[0], 2)
+        (root_wiki / '.run.json').unlink()
+        plan = command('wiki', 'save', '--file', 'AGENTS.md')
+        self.assertEqual(plan['status'], 'planned')
+        self.assertFalse((entry / 'wiki').exists())
+        (root_wiki / 'quickstart.md').write_text('# Changed after review\n')
+        save = ['wiki', 'save', '--file', 'AGENTS.md', '--accept-plan', plan['plan_fingerprint']]
+        code, _, error = self.command(*save)
+        self.assertEqual(code, 2)
+        self.assertIn('reviewed adoption plan changed', error)
+        self.assertFalse((entry / 'wiki').exists())
+        (root_wiki / 'quickstart.md').write_text('# Root wiki\n')
+        saved = command(*save)
+        self.assertEqual(saved['source_changes'], plan['source_changes'])
+        self.assertEqual((entry / 'files/AGENTS.md').read_text(), '# Project\n')
+        self.assertEqual((entry / 'wiki/files/AGENTS.md').read_text(), '# Root instructions\n')
+        self.assertFalse((self.root / '.agents/config.json').exists())
+        self.assertFalse((self.target / 'openwiki').exists())
+        source_page = entry / 'wiki/files/openwiki/quickstart.md'
+        source_page.write_text('# Independent backup edit\n')
+        code, _, error = self.command('wiki', 'save')
+        self.assertEqual(code, 2)
+        self.assertIn('backup changed since its last application', error)
+        self.assertEqual(source_page.read_text(), '# Independent backup edit\n')
+        source_page.write_text('# Root wiki\n')
+        self.assertEqual(set(saved['source_changes']), {
+            'projects/app/wiki/manifest.json', 'projects/app/wiki/files/AGENTS.md',
+            'projects/app/wiki/files/openwiki/quickstart.md',
+        })
+        scope = ['--message', 'Back up OpenWiki']
+        for path in saved['source_changes']:
+            scope.extend(['--path', path])
+        self.assertEqual(self.command('publish', *scope)[0], 2)
+        plan_path = self.root / 'publication-plan.json'
+        plan_path.write_text(json.dumps(plan), encoding='utf-8')
+        target_page = root_wiki / 'quickstart.md'
+        for path in (source_page, target_page):
+            path.write_text('# Changed after saving\n')
+        publish = ['wiki', 'publish', '--plan', str(plan_path), '--message', 'Back up OpenWiki']
+        code, _, error = self.command(*publish)
+        self.assertEqual(code, 2)
+        self.assertIn('publication file changed after adoption was reviewed', error)
+        for path in (source_page, target_page):
+            path.write_text('# Root wiki\n')
+        published = command(*publish)
+        self.assertEqual(fixture.git(fixture.remote, 'rev-parse', 'main'), published['commit'])
+        self.assertEqual(self.command('publish', '--commit', published['commit'])[0], 2)
+        self.assertTrue(command('wiki', 'publish', '--plan', str(plan_path), '--commit', published['commit'])['published'])
+        (root_wiki / 'quickstart.md').unlink()
+        report = command('wiki', 'prepare')
+        self.assertEqual(report['status'], 'needs-choice')
+        self.assertEqual(report['changes'], ['openwiki/quickstart.md'])
+        self.assertFalse((root_wiki / 'quickstart.md').exists())
+        self.assertEqual(self.command('wiki', 'prepare', '--accept-existing', '')[0], 2)
+        self.assertEqual(command('wiki', 'prepare', '--accept-existing', report['fingerprint'])['status'], 'ready')
+        self.assertEqual((root_wiki / 'quickstart.md').read_text(), '# Root wiki\n')
+        self.assertEqual((self.root / 'business.txt').read_text(), 'Preserve\n')
+        self.assertEqual(command('inspect')['changes'], [])
+        new_binding = self.bind('repository', '--repository', 'alice/config', '--branch', 'main',
+                                '--entry', 'app-next', '--replace-binding')
+        self.assertFalse((self.root / '.agents/openwiki-config-sync.json').exists())
+        self.assertEqual((root_wiki / 'quickstart.md').read_text(), '# Root wiki\n')
+        self.assertEqual((entry / 'wiki/files/openwiki/quickstart.md').read_text(), '# Root wiki\n')
+        self.assertEqual(Path(command('wiki', 'prepare')['source']), Path(new_binding['source']) / 'wiki')
+
+    def test_nested_wiki_save_accepts_optional_ignore_deletion(self):
+        from test_project_config_repository import RepositoryGitTests
+
+        fixture = RepositoryGitTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+
+        def command(*args):
+            code, result, error = self.command(*args)
+            self.assertEqual(code, 0, error)
+            return result
+
+        result = self.bind('repository', '--repository', 'alice/config', '--branch', 'main', '--entry', 'app')
+        entry = Path(result['source']) / 'wiki'
+        command('apply')
+        command('wiki', 'prepare')
+        (self.root / 'openwiki').mkdir()
+        (self.root / 'openwiki/quickstart.md').write_text('# Wiki\n')
+        ignore = self.root / '.openwikiignore'
+        ignore.write_text('private/\n')
+        plan = command('wiki', 'save')
+        command('wiki', 'save', '--accept-plan', plan['plan_fingerprint'])
+        ignore.unlink()
+        plan = command('wiki', 'save')
+        self.assertEqual(plan['status'], 'planned')
+        self.assertIsNone(plan['source_changes']['projects/app/wiki/files/.openwikiignore'])
+        self.assertTrue((entry / 'files/.openwikiignore').exists())
+        saved = command('wiki', 'save', '--accept-plan', plan['plan_fingerprint'])
+        self.assertEqual(saved['status'], 'saved')
+        self.assertFalse(ignore.exists())
+        self.assertFalse((entry / 'files/.openwikiignore').exists())
+        self.assertNotIn('.openwikiignore', json.loads((entry / 'manifest.json').read_text())['files'])
+        self.assertEqual(command('wiki', 'prepare')['status'], 'ready')
+        self.assertFalse(ignore.exists())
 
     def test_unapproved_switch_and_edited_exclude_block_refuse_before_binding_changes(self):
         self.bind('local-only')
