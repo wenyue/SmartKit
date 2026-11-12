@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4c5dbb4421bb76cb3e9d5f7f35dee0e3836c89bca5d514349f05cc14f00fca94",
+  "claims": [
+    {
+      "id": "claim_c0f4b5c5364b47d0a4032b716919550d",
+      "statement": "The Codex manifest exposes shared Skills, Codex lifecycle hooks, and a harness-specific MCP adapter from the repository plugin root.",
+      "evidence": [
+        {
+          "resource": "repo://.codex-plugin/plugin.json#L12-L18",
+          "version": "repo-lines-v1:sha256:be50fd8a533ff17602b60124a10ef89bed8cfa9ce210eaaaf93ba8087fb4140b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY5MDkyMDIwYjYzZGJmOWQ5ZmFkMjMwNjJkNWI2ZWQ2NzdiN2QyMjY5MmNmYzYyNGNjZTI3MGU5YzFjZTcwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZlMDg4MGJhYjExNWExNGJhMmI0YmQzZTdjMDkzZDFkNjVjMTZiOWU4MzJlYTI0YmZiOTJhZDFhZDkxOWQ2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdmYjU0ZGEzYzY1MzM4NTVkYzAyMmI4MGYzMDAxODUyZDQwZWU5YmM4YzJlYjc2MDEyZGU5Zjg3N2M5MmI1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWM4NTExODc2MGRjNjU4MGRiYWY4NWE5MzNlZDM3ZjZjZGZkNmRkYmE0NzBiODUwYjFjNjUyYWQzZTRmNDIzNCJ9"
+        },
+        {
+          "resource": "repo://tests/test_plugin_manifests.py#L534-L570",
+          "version": "repo-lines-v1:sha256:733e0a5e9f4be474b7c6864b406e05a7856ddc771c5cb7b34423cb4742190b70:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZjNhOTM5MWViZDkxZjIzNmM3ZDZkMDhhNThlZDUxNzJlNjkyOGIwMGZjMGY3MWZiNDMxZTllMWNlMDc3ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkOTVkN2U4MDQ2MTYxYjIwMWFmMThmMzU0ZDUxNmYzNjcwYTRhZGM0N2RjM2UxOWM1NTY1MThjMGE4Yzk1NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwODdkOWQxMWY3ZTYxOGYzMmFhZjA4NmE5NWNlM2YxNzgwODY5MzFmZjMzYTNhODQ1NGU3YWY2MGE3NGZiZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13053ec48f964fd598eb368bd03683f1",
+      "statement": "The Agent and MCP synchronizers derive native harness adapters from their registries, and check mode detects adapter drift without writing the outputs.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/sync_agent_adapters.py#L199-L251",
+          "version": "repo-lines-v1:sha256:11e1d2f8bab2c4276f39b6a1c402567a8737addce8aefd1c657bdcb4abf9a8bd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYmU0OWY3MDFjMGJiZTU4YWYxNTFmODkyYmQ0ZmI5ZjE4ZjlmMDcwNGJhY2FlMDc2M2I4M2UwYzIxMTUxZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDg2NmUxYmNjNWFiNzZlM2VmNTkwMTJkMGFkMzlhNjg3YWJlMDAyM2I0MzhhY2IxMTMwYTE4ODI1ZTgxOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZGZkZjljMTMyZjM5YTFhZWYyMGNlMjc1ZDA4NzMyOWQ5MTVkMDA3OTI4NTc2ZDU2ZTFiNjI2MmFmMzg1NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNDUwNmMwNDRjOTk4YzFkYWRhZDQwZmY0ZTIwMzU3MGNiZDNiMGVmZmI5ZDFjMzRiOWE3ZDI1ZDZmMjc0NjQifQ"
+        },
+        {
+          "resource": "repo://scripts/sync_mcp_adapters.py#L207-L270",
+          "version": "repo-lines-v1:sha256:0808f242e4463b6626f309b1dccded74895bbe6e5926505f6b4f3574b02c5a4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZWEzZDZlNjEwYWFkMWRlYTcyZTI5YTRmZGYyOThjNjM5ZWJhNTcwZDlkZGU4NWIwZDQzM2I0ZGRhZDM3MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDg2NmUxYmNjNWFiNzZlM2VmNTkwMTJkMGFkMzlhNjg3YWJlMDAyM2I0MzhhY2IxMTMwYTE4ODI1ZTgxOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNGQ2NTBjMTVlNTZjMDZkNTU5ZGExMmNlNDM1MGFhYWQ4MjFhOTNiN2M2ZTUyNjAyYjU5MTg5Mzc1NzI1MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3MDMxNTc5MjJkNDM4ZjMxOTNhZDY5YWUyYTkxMjk1YTIzMzdjOTI2NzJlZWQ5Yzk3ODE2NmIzNmVjYTBmZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b434038c439b456f904cb6c810d8505d",
+      "statement": "The external Skill updater refuses a moved recorded tag and checks previously managed snapshot content for drift before replacing it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/update_external_skills.py#L642-L668",
+          "version": "repo-lines-v1:sha256:e0894ca79ada9cfe00a6ee07c026188d12d4995f33fccd320c8521216145156c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNDU1Yjg5NmJkMTBhODcxYjAxOGE1Mzc5MDZmNTVkZmU3MmMzZmFhOGViMmFjNTIwYjhlYzkyY2RlNjM4YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZmYwMGViMzFhZTQyZTJlMTJhYzIwNjllZDgzNDU2YTNlZjA0OWQ0NGYyMmMzYmI2NTM4NWViNDhjNmUwNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2MjY1NzM4ZWJkNDI2OTI1YjRjODM3MzVkNzc0Zjg5YTgyMTkyOGU0MDUxMmZkNWYzYjhmZWEwODMxMjFlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ODdjODNmZWM3ZWU2YTQ1NzRlNTExOTZiZmQxNjI4YWY3NDA4YmMwNjk2NjM3ZTdiY2Y3OTA1NGRlMjY3ZjgifQ"
+        },
+        {
+          "resource": "repo://scripts/update_external_skills.py#L689-L733",
+          "version": "repo-lines-v1:sha256:16a22a473f58438d06651151f88511939ed8f17d748de1683def2a0ef728f402:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMGQ0NTk1ZTgzMDlmOWY2NGNmMDE2Nzg4MzA2ZjkyMDNiZGYwODRlMzJlNzI5MzhiY2ZmY2M2NWFjZmYzNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYzJkMmM1YTJmN2U0MWFmNjM4NTkwYWQ1OTNlYjNmOWNjN2Q4YWJhNGY5NzIzYjg4NzQ3NDJlNjI4ZTA5OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjZmY4Y2VhYTZhZTgzM2VhYmFkZTVlNjRjYWUxOTE4ZmM1NmZhZTk4ZDI1NDI2NDMxNGU0YTAxNmRlMzBiZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2Y2ViN2Q0YzRjY2M3MTMzZjhhZWNjZDUwYjczMTYwZGM3MzNkZWRjYWEwYWE3MDVlMDQ1MjJmNDcwMDU2ZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c4debac40fd49afa63b55b9de5af508",
+      "statement": "The repository test workflow runs version synchronization in check mode, Python unittests, and a whitespace check on Linux and Windows with Python 3.8.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/test.yml#L7-L31",
+          "version": "repo-lines-v1:sha256:be275ebceb73e2e6112b85a4b32323a75ad098cb56c266d2022fb5432b0dc81a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NzEyYzdhNjQ0MDlkYmEyZjE1ZmYwMmU5OGMyMWRhMzIzYTU4M2ExMjlmZjYzMzdiMjk0NDg0M2UzNjQwYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2N2FjMTE2NjQ3MzFmMjdkYjkxZjMwNzg4MDFlNjk3YTVmMzUwNTEzYjZkNzZmYmM3ZjBiNzUwZTRmNmFmNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

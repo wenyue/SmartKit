@@ -1,6 +1,6 @@
 ---
 name: setup-project-agents
-description: Initialize or upgrade project agent configuration, or update or restore local configuration from a configuration repository.
+description: Set up project agents and the initial OpenWiki, or update or restore local configuration from a configuration repository.
 disable-model-invocation: true
 ---
 
@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Choose the requested outcome first: full setup, restoration from a configuration repository, or limited local synchronization. Each route owns different effects and completion conditions.
 
-Full setup reassesses every declared blueprint and project custom Agent, including unchanged fingerprints, and prepares CodeGraph for the target. Restoration copies the accepted backup's bytes into the current project and checks this machine's prerequisites; it does not regenerate configuration.
+When the migration gate requires configuration work, full setup reassesses every declared blueprint and project custom Agent, including unchanged fingerprints, and prepares CodeGraph for the target. Full setup also reuses the repository's existing OpenWiki or generates the first one. Restoration copies the accepted backup's bytes into the current project and checks this machine's prerequisites.
 
 ## 1. Choose the requested operation
 
@@ -18,7 +18,7 @@ When the user has named an operation, follow it directly:
 
 | Requested work | Route | Why this route fits |
 | --- | --- | --- |
-| Initialize, upgrade or migrate project configuration | The migration gate at step 2, then full setup when required | Initialization, a missing successful baseline or applicable migrations require full setup. |
+| Initialize, upgrade or migrate project configuration | The migration gate at step 2, then OpenWiki at step 9 | Initialization, a missing successful baseline or applicable migrations require the configuration session. The OpenWiki step also handles Wiki-only continuation. |
 | Update or restore local configuration from a configuration repository | The restoration branch below | The request needs an existing backup applied to this project. |
 | Synchronize local Rule/Skill discovery and declared Agent/MCP mappings only | Local synchronization | The request is limited to rendering established local inputs. |
 | Update only the `AGENTS.md` Rule index | The narrower Rule-index branch under Local synchronization | Only the generated Rule list needs updating. |
@@ -46,11 +46,11 @@ Use those answers to present the applicable choices in the user's language:
 
 | Situation | Choices to offer | Recommendation and reason |
 | --- | --- | --- |
-| Local managed configuration is usable, including in a fresh checkout | A. Check for required project migrations. Also offer B. Update or restore from the configuration repository when its binding is established or the user confirms its source. | Recommend A: the migration gate determines whether setup is needed. Retain its maintenance choice. Confirm a copied binding before treating restoration as ready. |
+| Local managed configuration is usable, including in a fresh checkout | A. Check for required project migrations and complete initial OpenWiki if needed. Also offer B. Update or restore from the configuration repository when its binding is established or the user confirms its source. | Recommend A. The migration gate determines whether configuration work is needed. Retain its maintenance choice. Confirm a copied binding before treating restoration as ready. |
 | Local managed configuration is absent or established as unusable, and a confirmed source has an existing backup entry | A. Update or restore from the configuration repository. B. Initialize configuration. | Recommend A: the user already has configuration to reuse. Initialization remains available and preserves existing content under Ownership. |
 | Local managed configuration is absent or established as unusable, and there is no known backup and no unresolved source evidence | A. Initialize configuration. B. I already have a configuration backup. | Recommend A. Choice B starts source confirmation; it does not claim a restoration is ready to run. |
 
-Explain the effects before asking for the choice. Full setup reassesses configuration and prepares local CodeGraph. Restoration runs from **configuration repository → current project** and may add, overwrite or delete local files within the accepted snapshot's scope. Saving local changes back to that repository is a separate adoption/publication operation. For a known source, show available changed paths and say whether they come from the local snapshot; inspection without an update does not establish the remote's latest contents.
+Explain the effects before asking for the choice. Full setup covers configuration, local CodeGraph and first OpenWiki generation. Restoration runs from **configuration repository → current project** and may add, overwrite or delete local files within the accepted snapshot's scope. Saving local changes back to that repository is a separate adoption/publication operation. For a known source, show available changed paths and say whether they come from the local snapshot; inspection without an update does not establish the remote's latest contents.
 
 Wait for the user's operation choice, then continue that route without asking the same question again. This choice settles what to do. Source confirmation, acceptance of actual differences, maintenance mode and startup synchronization remain their own decisions where required; an operation recommendation settles none of them.
 
@@ -111,7 +111,7 @@ python "<skill-root>/scripts/workflow.py" inspect --help
 python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
 ```
 
-If inspection reports `skipped: true`, report that no migration is needed and stop, leaving `setupVersion` unchanged.
+If inspection reports `skipped: true`, report that no configuration migration is due and go to [step 9](#9-complete-openwiki-and-hand-off). Recover any evidenced pending configuration publication through step 8 first. Keep the recorded `setupVersion` and use the existing configuration instead of opening another configuration session.
 
 When the gate requires full setup, obtain the maintenance inspection:
 
@@ -120,6 +120,8 @@ python "<maintain>" inspect --target "<target-root>"
 ```
 
 Read the findings alongside complete project configuration, ownership, existing generated content and decision records reached through the project's documentation conventions. Resolve prerequisite errors before their dependent step. For a full run, exit 0 from setup inspection still leaves its `pending_assessment` to Setup; it is not a completed assessment. Missing Matt context is completed below, within this invocation after the maintenance source is settled.
+
+If an active OpenWiki queue blocks inspection or application of a backup that selects `openwiki/`, preserve the queue and defer the overlapping configuration work until the Wiki owner resolves it. Report the blocked operation and resume configuration through this gate once the backup can be reconciled.
 
 ### Choose where configuration will be maintained
 
@@ -133,7 +135,7 @@ This decision is the same for first setup and upgrade. When inspection reports `
 
 Record a newly accepted choice through the maintenance command's `bind` route. Switch a recorded mode or entry only when the user requests it, after comparing and preserving old source and target work. Follow the maintenance reference for Git exclusions and already tracked files: choosing a mode does not itself untrack existing files.
 
-For C, explain that full setup includes an exact scoped source commit and normal push after successful local finish, unless the user requests a local result. The shared publication contract governs that outcome; establishing a binding alone does not complete setup.
+For C, explain that the configuration result includes an exact scoped source commit and normal push after successful local finish, unless the user requests a local result. The shared publication contract governs that result and any applicable Wiki publication at step 9.
 
 ### Establish the source and account for existing work
 
@@ -145,7 +147,7 @@ Update the persistent repository source before editing it. If binding or earlier
 
 Before applying repository files, follow the maintenance reference's full-file backup scope, target-local state boundaries and difference-acceptance contract. When source and target differ, show the actual differences, including changes made only in the repository, and offer **A. Keep local** or **B. Use the configuration repository** for the whole synchronization. A skips synchronization and leaves dependent full setup pending. B applies the complete reviewed result using its exact inspection fingerprint; changes on either side require inspection and a new choice. When both sides agree, no difference-acceptance token is needed. Saving intended target edits back to the source requires the separate accepted adoption route.
 
-Apply accepted source changes through the maintenance command before freezing a session. Continue preparation when the maintenance choice is recorded, the source is available, and initial imports or collisions have accepted resolutions. Full setup completes only after applicable migrations, successful local finish and the publication outcome required by step 8.
+Apply accepted source changes through the maintenance command before freezing a session. Continue preparation when the maintenance choice is recorded, the source is available, and initial imports or collisions have accepted resolutions.
 
 ### Choose automatic startup synchronization separately
 
@@ -255,7 +257,7 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 
 Before the first `finish` attempt, confirm CodeGraph readiness and follow the protocol's runtime-refresh branch if its daemon idle-exited. In repository mode, finish saves accepted generated project sources to the entry before applying the ordinary target plan; preserve both source and target evidence if either part fails. Accept only the protocol's successful local finish result, including cleanup and the final setup-version record, before proceeding to publication. A failed finish blocks this operation's publication and follows the original-attempt recovery route.
 
-## 8. Publish and hand off the verified result
+## 8. Publish the configuration result
 
 After successful local finish, complete repository-mode publication under [Publish an exact verified scope](../maintain-project-config/references/maintenance.md#publish-an-exact-verified-scope). That contract governs the accepted scope, required checks, publication exceptions, normal push verification and retained-commit recovery. Neither local maintenance mode has a configuration-repository push. Use the supported command directly, without invoking the user-only maintenance Skill:
 
@@ -264,7 +266,34 @@ python "<maintain>" publish --help
 python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/manifest.json" --path "projects/<entry>/files/.agents/rules/example.md" --message "Set up project configuration"
 ```
 
-Replace the example paths with the complete exact accepted source-file scope retained through this setup; repeat `--path` for each file. A verified retained commit uses the command's `--commit` route and the shared recovery contract instead. Confirm the remote result before reporting repository-mode completion. A publication failure preserves the successful local `setupVersion` and requires reporting local setup success with incomplete remote synchronization.
+Replace the example paths with the complete exact accepted source-file scope retained through this setup; repeat `--path` for each file. A verified retained commit uses the command's `--commit` route and the shared recovery contract instead. Continue to step 9 when configuration publication is verified or the maintenance contract's applicable exception is established. On publication failure, report the successful local configuration finish and incomplete remote synchronization, and preserve the version, source scope and any retained commit for recovery.
+
+## 9. Complete OpenWiki and hand off
+
+Resolve the Wiki root as the accepted repository's absolute Git top-level. Find its worktree Git directory with `git -C "<wiki-root>" rev-parse --absolute-git-dir`. The Setup recovery note is `smartkit-setup-openwiki` in that directory. If Git metadata is protected, use `recovery` in a private OS temporary directory named `smartkit-setup-openwiki-<digest>`, where `<digest>` is the SHA-256 of the canonical absolute Git directory path encoded in UTF-8 without a trailing newline. Verify that the fallback directory is private to the current user and the note belongs to this worktree. Check both locations before deciding whether to reuse the Wiki. Keep using the verified note for the same attempt and preserve conflicting notes for resolution.
+
+| Local evidence | Action |
+| --- | --- |
+| Matching Setup recovery note | Resume the evidenced first generation or its pending maintenance handoff. If the completed English baseline is already verified, recover backup and publication directly under the maintenance contract. |
+| Usable Wiki from a completed baseline | Reuse it. An independent refresh may be interrupted or active. Preserve its output and queue. |
+| Missing Wiki or an attributable unfinished first run | Complete the first Wiki in this worktree. |
+| Unclear run ownership, unusable output from an independent run, or a note that does not match | Preserve the files and report the unresolved evidence before any Wiki write. |
+
+Use the actual pages and completion evidence to identify a usable baseline. OpenWiki records `status: complete` in `openwiki/.last-update.json`, and an active queue in `openwiki/.run.json` records its `previousLastUpdate`. A prior record can describe pages no longer present, and a quickstart or page manifest can be partial. If the latest record is interrupted after an independent refresh, reuse a usable Wiki only when earlier completion is independently established.
+
+Match a recovery note to the current worktree, maintenance binding and accepted effect limits. If an initial run has yet to start, verify the recorded absence of a usable baseline still holds. To resume, confirm that the active run ID matches the recorded operation. If `openwiki_begin` persisted a queue before its ID could be recorded, match the native queue to the recorded dispatch and prior queue state, then record its ID once attribution is established. To recover a finalized run, verify that OpenWiki's `.page-manifest.json` ties the factual pages and their current byte versions to the recorded run IDs. Recheck the exact accepted bytes of the complete backup scope, including Wiki support files and changed entry files, before any adoption or publication. Preserve any output whose attribution or accepted content cannot be established.
+
+An explicit full Setup includes first Wiki generation for the accepted repository. A nested target may reuse a usable repository-root Wiki. Before writing at that root, establish authority for the repository-wide effects and use its own maintenance binding. If that binding is missing, establish it through the maintenance owner. Use the nested target's configuration result for Setup.
+
+For a new run in repository mode, reconcile the Wiki root's backup under the maintenance owner's refresh and difference-acceptance requirements. Reuse still-current refresh and agreement evidence for the same binding and carry forward its accepted source scope, including any intentionally unpublished local result. Refresh only when that evidence is missing or stale. If applying the backup changes inputs affecting `<target-root>`, rerun the configuration gate at step 2 and reestablish the affected configuration and CodeGraph evidence. Reassess the Wiki after that application and reuse a restored usable baseline. Pass the resulting evidence and local-result limit to OpenWiki when generation remains due.
+
+Before starting a new first run on the skipped-migration route without verified local finish evidence, establish usable configuration at `<target-root>` using the local evidence in step 1. Check CodeGraph there with `python "<skill-root>/../../runtime/recommended-tools/codegraph_runtime.py" check --target "<target-root>"`. If readiness is missing, use the scoped preparation command in step 4 with its required authority, then continue here.
+
+Before starting or resuming first generation, save a plain-text recovery note at the applicable path above. Record the Setup target, Wiki root and worktree Git directory, evidence that a usable baseline was absent, maintenance choice and binding, and accepted effect limits. Record whether a queue already exists, its ID if present, and the intended mode, language and dispatch time before calling `openwiki_begin`. Record each run ID when OpenWiki starts or resumes it, then retain completion evidence and the exact accepted backup files and their content digests before changing the source. Retain any resulting commit ID for publication recovery.
+
+Invoke the bundled [OpenWiki Skill](../openwiki/SKILL.md) next to this loaded Setup Skill for generation. Resume an existing initial queue in its worktree before restoring or adopting the Wiki, and wait for any operator already using the queue. Verify usable output and durable completion in English. A closed initial queue can still need reconciliation or the owner's English follow-up. Complete the applicable maintenance handoff and clear the note after verification, including any accepted local-result exception.
+
+If the Skill, tools or another required prerequisite is unavailable, or work fails, report what is pending and preserve completed configuration, the Wiki state and the recovery note. Include the fallback note path if used. On retry, use the migration gate and resume the pending work from the evidence.
 
 Assess the complete direct project Rule set's always-loaded context cost. Recommend native `rule-<domain>` Skills only for substantial policy conditional on identifiable cases; size alone does not justify moving unconditional policy.
 
@@ -275,8 +304,9 @@ Make the handoff easy to inspect across these concerns:
 | Source and scope | Maintenance mode and repository entry when applicable, SmartKit source provenance, previous/resulting setup versions, migrations, enabled hosts, changed/preserved paths, and external provenance. |
 | Decisions | Custom Agent/model decisions and the direct Rule set's context assessment. |
 | Verification and limitations | Actual configuration checks, Git exclusions and already tracked paths, CodeGraph installation/index/runtime results, incomplete verification, and recovery evidence. |
+| OpenWiki | The reused baseline or completed initial generation, applicable backup and remote results, or the pending step and evidence for recovery. |
 
-Report local setup and remote publication separately, including the exact saved source scope, local finish evidence, and verified remote result or the shared contract's applicable publication exception. Distinguish a failed required publication from intentional local-result deferral or a setup with neither owned source changes nor a retained verified commit to publish; preserve saved source and retained commits for recovery.
+Report full Setup complete when the configuration work required by the gate, applicable publication and the OpenWiki step are satisfied. For `skipped: true`, report that configuration migration was skipped and report the Wiki outcome. Include the exact saved source scope and evidence for work performed, including verified remote results or the applicable publication exception.
 
 ## Local synchronization
 

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:74cdc4409c342ebc9f8521e4426da05c16563033605c227dbb4013aab57a2a5f",
+  "claims": [
+    {
+      "id": "claim_ffd976f6896f4da3a06d9c8732b87653",
+      "statement": "Full setup, snapshot restoration, and limited synchronization are distinct routes with different prerequisites and effects.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L7-L26",
+          "version": "repo-lines-v1:sha256:52a6bcb853ce0231bf5681a2be79aea11114afbe94ea8d30125f682467587d49:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDFhMmIzNGJkNTg5NjhiYzYwOGNlMzNiODQ2YTQ3ZWM5Yjk4Y2IwODVjZjQ0MTI0OWE3Y2Y3NzBmMTc4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0OGQzMTYxMmVkMWY0YjA5YjM1MmQ0ZGY3OTM0NTI5MDA0NWQ5MGZmNjk0YmRiODUzZDJiNTIxNGYzODFkZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5NmM4NWY4NTAzY2EzMWY3ZWU1MmU2N2FkNTE1YzQyYzMyZDNhODM0YTFkZWUzYmMxZTNlNzJhYWUyNThmOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmOGQwZmZhMWUwYmNiY2Y4NzMwNjlmNWZlOGY0NTAyODIwOWM5YTgzNGU0MWJlYWRkZDJkNDVhMDdmMjVmMjIifQ"
+        },
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L97-L115",
+          "version": "repo-lines-v1:sha256:ac49bb0f1da58ed0c53627e9bae9ad8e76c27e092aa6524affdab19ace3824e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Y2MxZTkyNWMwZGJmYzM2MGI1OTVkNDJlOTNkMDk1M2RmMmVmYjAyYjk5ZjFlZDFhMDY0MmY2ZDU3ZmEwNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhOTZmMzlkYTY4NzkzMjA5Y2FjM2E5OWM0NDhiNjJlNzczMDRiZjE0YTc2NzgyZDkyY2UyYjE5YTI5MGY5NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4ZTI5ZDgxNzI1OTNhZDU3M2YwZDI5NDU4Y2ZlNDYxNDM4Mjc3NjI5ZjQ0MTMzMTA1MTY5ZDkzMjJiNmQ3MmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5fd243e3ed04d868a2551a1b4e1728a",
+      "statement": "Blueprint ownership records bind retirement to exact output paths, and temporary session registration separately seals writer output bytes.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/references/ownership.md#L45-L55",
+          "version": "repo-lines-v1:sha256:54316c7ee0ad924042954630ee75fe22569a7a135d7ca1b1c18c8a5b4fc609af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNGNhOTAwYjA2ZjRjMDcyMDUyZGNmNGEzODU0MmJmMjU2MzhkMTc1OGM5NjM2YjQyMmNiNzQzZGIwZDZhN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYTRiMTI0YjFjN2FmODgyNTZkOTFjZDI1OWI4MzYxMzExY2U2YTcxMjllNTU1MTdiMWEyNTIwYmNmZWJiMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5Zjk1NjZjYmY3OTM5YWM2ZjJiMTljNDM1MzdiOWI2OGVjNmM3NTAwMjEwNGIyM2I3MGExZDA5Yzc5ZTU3YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3YTliMzRiYzQ0ZDc3ZmE0OGM4YzkwYTEwMjVmZDQ0MjJjYTE3MjExNDdhZTFjMjBjZGUzMmZjNWY3MDljYmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76682e0764904ece832289f8d329c190",
+      "statement": "Setup and local synchronization render only the selected entry's Project rules section and preserve bytes outside the owned section.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/references/ownership.md#L57-L63",
+          "version": "repo-lines-v1:sha256:4322cc7534c84551415d5ed5b7ba195e89329223c4343db91e14399ba7d54064:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNhMmNlY2I4NmE4NTYwNjYxYTk2NTc4ZTVkMDIxNjZhMGQ1MzQyZThjNTRkMDM5MWYzOTU0OGE0YThkYTlmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGEwMTllNDgwM2U4MjhjYjFjZTc3MTBmNzY4Mzg3Mjc1MWQ5NGQwMDZlZjUyYTVkNmZkMmE4NDEwZDc2MmZkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTYxMzMzMjE2ZDE5NzhmMDI3NTUzMWJmNjBjMWIzMDlkMWZiYjVmZmExNDljNDc5YzQ1NmRkZmU0ZWE0MjEyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGNjMjRmZDQ2MWMyN2EwOWVmNjcwMzQ3MDFmZTEyNGNlNDliODJkODdmZTVjOGE1N2FlYWRiMDJkMTQ1NjlhZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c41231c7f1f84806bcbdd174069d8029",
+      "statement": "The pinned setup finish applies a plan with a postcondition, and the public workflow updates setupVersion after CodeGraph verification, configuration completion, and session cleanup.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/scripts/setup_project_agents.py#L1311-L1333",
+          "version": "repo-lines-v1:sha256:11f505917b476aec3af2539e9fcb0d3a58152144ec29004c62cd493b0f8e9be0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTNmZjRmYmU0NjNjMTVjOTQ5ODEzOTNmMzgzMmYwNDM1YjU1MjIxMDA2ZmQ5M2MxNTQ0N2EyMGUwZGJkMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMTY4MDljMDc1ZGIzMDllMDliYmM5YWI3ZWZlZTY5ZWZiNWY0MTliZDRkODkzMGQwMzgwNjYwMmRkMDJmZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1YTA1YzdiMDIyNGRlNDAxNzc4OGFiMTNhNzI1ZDVjZGNlM2QxZmRjMWEwYmYxODA4MjM1YzI2MjI5YTNkNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMjZiYzgwZDViNWYyOTNjZThiOWE2Y2ZmMTI3YTViODliZTE4Y2NhMGQyNGJjYTdhZDI5NmVhM2NmYTJlNjAifQ"
+        },
+        {
+          "resource": "repo://skills/setup-project-agents/scripts/workflow.py#L584-L642",
+          "version": "repo-lines-v1:sha256:a680dc07b8807a148550e547fa0bfc7b1de08c84855710a3eb59605a9edb8ded:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMGEwNDEwNDU2Yzc3NDgwNTE1Y2RmNjA0YWFjNjg3MWI2Nzc0NzdmNzNlZjFjODY4NzQzNTJiZjE1ZjU5YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YmQyMGYzZTBlMWYwZTdjZDYzMWJiNDU2ZDg1MzZjNDQ0N2QyYzU4NjFkMjQ5NDFhOWFlOWY1Nzc0ZDJiM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MzE2MmM4MjA1NTU4ODVmYWJlZWJhNjFiZTUyZTcyNjUzYjNkYmIyM2UyMjZmNjc3ZTE1YTQyODUwN2QwNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YmJlZmZkYzFhMTlhOGE0ZjRlNGU0MmFkODllZDA0NGIxNzhjN2U1YzJhMWJkMzQ2YmY1NjQ2MGQ5Y2Y0ZTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e328d7427d24522a80febfb773a8c8f",
+      "statement": "Full Setup includes an initial OpenWiki handoff even when the migration gate skips the configuration session, and setupVersion records the local configuration finish.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L103-L116",
+          "version": "repo-lines-v1:sha256:c227d91dc2f51b81e20b105954091d30a951dbc5f93592903be23da34a956288:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZjQ5MzZiZDliMmZlYzVjODcxZmM4NmM4ZmI5ZDJiMzUyMTQ2ZWFiZWFhMTMwZDgyZGM2NzY5YmQ0MzBmOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OTc5OGJmMDdlYmFlNTMxNTAzOThmOTJhMDVlNjhhYTkzY2QwN2ExZjFmYWJiYmI1NDRkNDFjMjliZGQzMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MTcxMDMyNTI5NDgwNGZhOWEwYmZkZjhmNTQyNWQ0NWI1NmU4OWRkN2MzZDMyMDUzYTc1ZjQ2OTY0ZjlkODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NTViMmI4ZGYyOTU4YTRmMDgyMmQ5NzBjNzVmZDU3ZDFjMTc0N2IyMmUyYzAyNWU2ZjRiZTg0MzZmZWRhYmYifQ"
+        },
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L271-L307",
+          "version": "repo-lines-v1:sha256:c8fcd8beb131d29b30812df90bc4d5ac50fd2f39fe78d7c00bc20c4fc386b97b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OGM4YTQ4YTc0Y2Q2NmJmYjg0NGIzNGJmNGVlMmJmNmM0MzI5ZDkxMzBkOTFkYTM3ZjM5NTBlM2UzYzU2NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YmRhNTA1NDFmMTgwMjYxNjU3ZTg2NzQzNzhiOGM1ZmM5ZjQ3MmM2YzQ1NDA1OTQ3MTJjMDA1NWVlYzgyZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2YmY0ZDQxMzA3YzBiNzBmMzY4ODFjYjgxYWUwOGJjOWNlMDI2ZDNmYTI4ZjJiN2M3OTUwMGY2ZmQzMzEwYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjZjMzZjNjMwNDY1OTNhMmU3MWE5N2NiOGFkZWMxNWVlNDM4Njc4YTg2OGFhMjcyZDY4OWU5MGE2MjMxMWEifQ"
+        },
+        {
+          "resource": "repo://skills/setup-project-agents/references/ownership.md#L19-L25",
+          "version": "repo-lines-v1:sha256:85139ddf7021724c970673e971a266fff6fa93a540c796b7155d63ac2209ab29:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzY3ZGQwOGY3YThiODRjN2YxZWU3ZTA2MmVhN2VlMzJjYzkwNzI0OWNkNzExZGU0NTcwYWI3N2MzYTZlZTkzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzEyN2ZjMjIwZGU5MmI4MmNkOWRiOGZmZmM2NDIwNzA5MDM3YjBjNTlhODM3ZDMxMjQ0NTJjMzFiZjI4ZTFmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDcyN2JjYWEwNDlmYzIzODQyNzhlOTQxNDZiNjViZjUwN2NiMjg2ODkxY2RkZmMwZDMyNTA2ZTAyMjdmYTliMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGNkZWEwYmIwZTM0YjQ5NTEwNTM1NGI0Mzg3NjExMDJjZWE3ZGQ4Mzk1MmQwZGI1OTYzMzM3NjczNTJlY2JkYSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:39:35.516Z"
+  }
+}

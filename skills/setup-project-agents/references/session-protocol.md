@@ -1,6 +1,6 @@
 # Full Session Protocol
 
-Full setup owns one immutable private session from source selection through registration, ending with one terminal `finish` or `cancel`. Explicit local synchronization does not enter this protocol.
+The configuration phase of full setup owns one immutable private session from source selection through registration, ending with one terminal `finish` or `cancel`. The Setup entry owns the OpenWiki step after the configuration result.
 
 ## Preflight
 
@@ -58,7 +58,7 @@ Local finish succeeds only when every required observation is present:
 - `check: clean` and `codegraph.ready: true`.
 - The reported successful setup version and completed cleanup.
 
-Configuration convergence alone is insufficient. CodeGraph preparation occurred outside this transaction and is not rolled back by a later setup failure. The resulting `setupVersion` records local full setup success even if subsequent source publication fails.
+CodeGraph preparation occurs outside this transaction. Use live checks for current runtime readiness. The resulting `setupVersion` records local configuration finish. The Setup entry verifies configuration publication and OpenWiki completion independently of that version.
 
 Keep exclusive access to planned target and source paths through apply and recovery. Guards cannot prevent an uncooperative writer from changing a path between check and mutation.
 

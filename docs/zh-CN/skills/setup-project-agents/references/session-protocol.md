@@ -1,6 +1,6 @@
 # 完整会话协议
 
-完整 setup 从来源选择到登记拥有一个不可变的私有会话，并以一次终止操作 `finish` 或 `cancel` 结束。明确的本地同步不进入此协议。
+完整 Setup 的配置阶段从来源选择到登记使用一个不可变的私有会话，以一次终态 `finish` 或 `cancel` 结束。配置结果确定后，OpenWiki 步骤由 Setup 入口负责。
 
 ## 预检 <a id="preflight"></a>
 
@@ -58,7 +58,7 @@ Finish 重新检查 CodeGraph，但不准备它，然后验证完整输出、冻
 - `check: clean` 且 `codegraph.ready: true`。
 - 已报告成功的 setup 版本，且清理已完成。
 
-仅配置收敛不足以证明成功。CodeGraph 准备发生在此事务之外，不会因后续 setup 失败而回滚。即使后续来源发布失败，最终 `setupVersion` 仍记录本地完整 setup 成功。
+CodeGraph 准备发生在此事务之外，后续步骤失败时仍保留准备结果。最终 `setupVersion` 记录本地配置成功完成。Setup 入口依据各自的证据验证配置发布和 OpenWiki 是否完成。
 
 应用和恢复期间，保持对计划目标路径和来源路径的独占访问。保护检查无法阻止不配合的写入者在检查与变更之间修改路径。
 

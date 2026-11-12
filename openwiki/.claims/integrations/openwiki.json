@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a409e43f047faca76e08586295883c618181ed268f8206829c027ca341df1633",
+  "claims": [
+    {
+      "id": "claim_5e1f888c25d640a7bd23dc2f2208d111",
+      "statement": "The SmartKit MCP registry exposes OpenWiki as a pinned stdio launcher for all four supported harnesses and declares Node.js and npx readiness checks.",
+      "evidence": [
+        {
+          "resource": "repo://mcp/registry.json#L62-L95",
+          "version": "repo-lines-v1:sha256:67ed13bf305f7a6524c9b727f6223ce29a401d32766a1a2635930da6c64ec1be:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZjNmNzVkNDI3MTBkNTUyYjQzOWNjYzM3NTM4YTFiODBhZDY0ZWEzOGYwZGM1MmNiNzAzNTYyYWU0ZDYyYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjY5OTZlM2IxNWRmYjQzODYzMDAxYzcyZDNhNTM5ZGU3MGUzOGUyYTllZDIwZGU1OTExMDRhODI4NjRmNjYifQ"
+        },
+        {
+          "resource": "repo://tests/test_sync_mcp_adapters.py#L45-L55",
+          "version": "repo-lines-v1:sha256:56c56602ae4be4e21fdc11420cda0181870fbc6eccfd5460de91bddacbe2be86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiZmJiOGMyY2Y5Yjk3NGI4YjU0YjVhNmYzNWI5N2NjZDU1NmFkMjVjZGQwNmZhY2Q3NDU0ZTE2MzZkNGE0NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZGIyMWIyYTBhOTk5NGI0YTAwMjU3Mjk2Yzg5YmMzNTYzODI2OGE1YjIzMTcxMWQyNzM0Y2ZhMTVhMjU2MWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNGQ4MTFkYTk0MzI1NGE2NmYzZGUzZTAzYjJmODdhNjNkOWJiNzdiMTIwYjhhNWNmZjg3OWI3NjJlYmFmOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5OTY5ODRhMDVhNDUzNjkyYzMxZTA5MDY3YTYyM2ExZTAwMTYyZDQ3Y2QyNTQ1NWViZWIzNzA2ZDhjNWU3NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7686bb900cc7476b92e2731e931c77eb",
+      "statement": "OpenWiki search and read are read-only retrieval operations, and linked search results identify the source wiki and exact page section.",
+      "evidence": [
+        {
+          "resource": "repo://skills/openwiki/SKILL.md#L15-L46",
+          "version": "repo-lines-v1:sha256:6cf9621c64b31cc6d778e36e98c33809692b30b448fe5f937d1c9fa41de48e07:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDZlNGFkYTJiMmY1NmM2ZWZlODExMTYwZjBmMThiMjBkYzYzMDE4ZmUyZDRhOTI3MTc4YjgzYjNjNjg2Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YTgzNWU3Nzk4OTAzNGI2ZGIwMjg0ZDlkYmEyYThjYzA3MWE1OWNkOGJjOWNjOWY2MDZiNDUxNmYyZjVmYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OTAxY2NhMzE3ZTY2NWI2OGEyN2Y5ZDcwZjU5YWJmYzQ4ZWIzZmNlMzk2NzFkOGZlMzRiZTBiYjM5OTM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1ZjhiMTIzMjBjMDk5MDQ1ZDkwNmQyYzJlMDA5ZTRlMWRhNjkxYjRiMDdkZWY2MzIwN2E1NzJjNTBhN2I0OWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b0ae7a3078743f5ac5e6a141bbb849a",
+      "statement": "SmartKit starts a new Wiki with an English update, processes persisted page jobs one at a time, and requires finish after the queue is complete.",
+      "evidence": [
+        {
+          "resource": "repo://skills/openwiki/SKILL.md#L139-L165",
+          "version": "repo-lines-v1:sha256:0e31174b3cb639d463d1e65de558f5e605fda1653937b4550f76b7edade969e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MTJiMjNmNzg0ZjNjYzQwNWI3MDRmMjIyZWQ0N2YwNGI1MGViNjdiMGJmZWY3NTczMGFiYTczMzgyZjFlMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTk0ZTJhM2ZlYTM4NWU0OGE3MzQ4OTkxMjQ2NjI2ODUxNGJhZTcyZDcyNTk3NDNiYjZiNzMxYzk5YjhmYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3ZmExZDQyNmE5N2Q4ZTEzNjkxMmU5Njc4OTgxNGViZjZlYjk0ZTEyZDcyOGYwODJhM2NiZTJmN2NlM2UzNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYTUwODJlOTM2NGJhZDQ4YzQwNDA4MzMwYTZiYzU2MmM5NjU1MmNjODhiZDU2NjdiMDlkNmY1ZjMwZTE5NzgifQ"
+        },
+        {
+          "resource": "repo://skills/openwiki/SKILL.md#L91-L102",
+          "version": "repo-lines-v1:sha256:70dd52ea2f72e924a2928ea8f355fb7d6bc5749adb06f992d0fecf1fd853ace1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNDFhOWI2MTY4YjUyODdhYTNmNWZkM2FmOTJkOTExNTA5YjY1ZDUxMTQ1Y2U4MzI3YjM0YWZhZDU4MWUxOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMzg0NjZkNGI5MTc0ODQ2YTk2OGE3NDNiNTAzY2FhZjk4ZjkzMDlkZDA1NGFjMGZkYmY4ZTRkYTU4N2NmZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxY2I2NWJhMzAxMzAwOTQwMWI3OTEzMzZkNTk5ZTlmOGQzMmRkZTMzZDdmOTRiYzk3OWFhMTE4MDk4OGNiNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNmQxZWZkNjhiZmFkMzQ1MDcwZWQ4ODUzY2MyMzcyN2YwODZhYjMzMjBiYTQwM2Y1OTM3MTRjNGFiOWEzMWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_090448701e734ae09445730aa8994c8e",
+      "statement": "Current Claims are retained when omitted, while stale or unresolved Claims require an explicit confirmation, revision or retraction.",
+      "evidence": [
+        {
+          "resource": "repo://skills/openwiki/SKILL.md#L218-L240",
+          "version": "repo-lines-v1:sha256:4c9ce86cfccda3bfe062ee95c0784f677bff471d170168dc9eb8e2869bf023e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNTExYzM4OGE0OTQyMzNkODgyYjc4MzViNDgxMTA4NDY4ZjhjYzhmZDkyZTk4YTI1MDY3MmEzZDg4NWU1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMWY0OGU1NDIzNWU4NjkzNzY1MGZmNDg4ODkxNmI5OGMwNWJjNzE0YWRlZTk1ZTA0Njg1NmU0ZDBmZDMyMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0M2Q5MDMwYjIwZmI4ODc5NWFlZjE3MzYzZDU1MGVlNTc2M2Q3MGFmMTkwNDkyYWIzZmZmYmE4ZmYyNjIyZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMWI4ODAyNmJjOTYzODg5Y2EwZTljYmQ4MDBiYWNjZjM1M2I1ZWUzZDlkM2Y3MDY4OGMyNDY2YjdlYTI2MjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82de2fa062a64b66b06e4a9a6cc35a0a",
+      "statement": "The Wiki follows the project's maintenance binding, and backup refuses a worktree's active OpenWiki run.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/project_state/config_backup.py#L12-L31",
+          "version": "repo-lines-v1:sha256:9113ab0949bb52e570975952295ac00be53e0fefb7dea4c4565281b148582d07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NGExYTExNTU0NjhhYjM3YjQxMmM1YTVlNjZlMDI0NzNhNzE5NGIxODI1ZDVjMjI2ZDEwY2YwZGRmOTYwYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2JjMjU0NDU0OWNmOTY4OGUzZjIwNjhhNmFjY2Y3YWEzMmMzOGQ2YjFkMDRhYTY1Y2IzM2ZiMTU2ZTE1N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5YWMxYTIyMTM2NzNhNzFlODExZTU0NTcxNWFmNjZlOGU4ZmQ1NTM5OWQwOTcyNWM0Mjk5ZjVkMTAwMzQ1OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZDVjYjRhNTRkNTk3MTVjODcxNTE2ZjA4MjNjYjY5NjA0YWEyMTdlNTM1ZWIzNzM3YTQ3Mzg3ZDVmZDFmOWUifQ"
+        },
+        {
+          "resource": "repo://skills/openwiki/SKILL.md#L59-L85",
+          "version": "repo-lines-v1:sha256:3ee3ed146fea12cf823b73a455251282e1f2105abaa66a6e2fe3e84e7e9b845e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMWY0YTc3NTZlM2UwODQyNzc1ODdkOTlkMGM1ZDRlMjJhYjEzZjllZmI4MWFjNDE0NjAxNDEzOTNiMDQ1OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OTlhYzA1YjU0NGFmNGEwZDZhZGExYmYxMzRmYmJiYTY1ZTIzNTUwNGE5MGVkYWUzYjA1MTIwZmQ4MDBiOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2YTU4Nzc0ZDgzMmExYmFkMWQzODk3MWE5NWIyZDQ0YjkwZmQyMWM3ZjI1MWUyYTNkNzU2MTZhZmYzNDMwMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4MWEyMGJlNmQ2MjJlNDNjZTFjOWRiYWEwN2EyMzhjNjVhZWVhNDA1NmY1MDc5YTE5MmQ1MWVhNTIzYmI1ODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d5985d9265c4befa48a2cc7be729d15",
+      "statement": "Full Setup verifies repository-root Wiki completion using its pages and update metadata and hands missing or attributable incomplete first generation to the bundled OpenWiki Skill under the root maintenance binding.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L271-L284",
+          "version": "repo-lines-v1:sha256:0e4b4a098fed2ac76162f993cc22b3eeb599834e5c46dbc943e60353ee9f0fa9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OGM4YTQ4YTc0Y2Q2NmJmYjg0NGIzNGJmNGVlMmJmNmM0MzI5ZDkxMzBkOTFkYTM3ZjM5NTBlM2UzYzU2NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkZWVmYjViNzliMWRiNjg1YTQ5OTExYWVjMzY1NTVlMjdiYThiODJlYjI2MWViNmM3ODgzY2FiYjQ2OGNhOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2YmY0ZDQxMzA3YzBiNzBmMzY4ODFjYjgxYWUwOGJjOWNlMDI2ZDNmYTI4ZjJiN2M3OTUwMGY2ZmQzMzEwYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NGJjMGQzNGM3ZmFlM2UyZDZlYTk4ODM3ODU3ZmVkMjJhYzE0N2UzMjI3YzhiY2M0MDNmZDllZTBmYmFiY2UifQ"
+        },
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L288-L292",
+          "version": "repo-lines-v1:sha256:ab6caa1a219ec7322ee9aaa71e4e7cbaaaa1608efc7d4b45ed22a28382f0d765:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRiNGEwZWFmYjYxNzRkOGYzMTEzMDhlOWQ1M2NiMDJhZTgxZDRjZTQwZjMxZGVhYjU3NzAzNzZlYjRiZDA0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTM4NjdmYzczMTE5ODM1NDQyYTI2NmU3ZmVjNDRkMWY1YTMyNDI5ZjA0ODJjODEyYTAxZWVjOTliY2EwOTI3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk0YmMwZDM0YzdmYWUzZTJkNmVhOTg4Mzc4NTdmZWQyMmFjMTQ3ZTMyMjdjOGJjYzQwM2ZkOWVlMGZiYWJjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEzNjJhYTI0Njc3OGU0NDUzZmYyNDIxZGNhY2JhNzA1NTNmYzI5NTg5ZmNlMzU5MGY4NGYzNmQzNjg5NDFlNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9396f82741024252911a218dec647222",
+      "statement": "Full Setup retains a worktree-scoped recovery note for first OpenWiki generation and any pending maintenance handoff until completion is verified.",
+      "evidence": [
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L271-L280",
+          "version": "repo-lines-v1:sha256:3a9f5bdae3dd42f820076f627714aa0bc34ad1a33971e8b5f60c2180e6b68b5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OGM4YTQ4YTc0Y2Q2NmJmYjg0NGIzNGJmNGVlMmJmNmM0MzI5ZDkxMzBkOTFkYTM3ZjM5NTBlM2UzYzU2NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMjMxY2ZlMTJiOTRkYjI2MjIxMjVmM2VhZTg1ZjRmNGZmNDAzZWRjYTUxNTY1NGM1NzI4YTZhOGIyY2U4ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2YmY0ZDQxMzA3YzBiNzBmMzY4ODFjYjgxYWUwOGJjOWNlMDI2ZDNmYTI4ZjJiN2M3OTUwMGY2ZmQzMzEwYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NTE5OWJmYjlhZDEzNDVkOWZhNDMxYWYxZjJmMmE1MGI5YjdmN2JhNzQ1N2NjZDhlMTQwMzlkNzcxNmM3ZjAifQ"
+        },
+        {
+          "resource": "repo://skills/setup-project-agents/SKILL.md#L288-L294",
+          "version": "repo-lines-v1:sha256:ae61e4aae7b5ed7beae01a821fc9a025fcd0b3302368062c361cc5076a30d878:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRiNGEwZWFmYjYxNzRkOGYzMTEzMDhlOWQ1M2NiMDJhZTgxZDRjZTQwZjMxZGVhYjU3NzAzNzZlYjRiZDA0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjliZTA1MzJhOWI0NDQ0YzM4MmIzOTRkZGVhZmUyMjkzNmFkMDg0ZDkwNzIxMjFmMmRiZDljMDlhMTBhMWZjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk0YmMwZDM0YzdmYWUzZTJkNmVhOTg4Mzc4NTdmZWQyMmFjMTQ3ZTMyMjdjOGJjYzQwM2ZkOWVlMGZiYWJjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWM0Y2FmMTcyZTQ2NzAyY2I3NzA5MWM1ZTFiOGM0ODI4YzRmODAyMzQwMGUzYTJkOGU2MjQwMWVhMmVkN2JiZSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:39:35.516Z"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:feec170ce7ff87ecd531e97a83c836df7469eba38f73ae158fb9be18ad07501b",
+  "claims": [
+    {
+      "id": "claim_38288f4b96294be2a123f3eb9861a263",
+      "statement": "Carry reproduces staged, unstaged and untracked nonignored changes as distinct layers and verifies source preservation as well as target state.",
+      "evidence": [
+        {
+          "resource": "repo://skills/create-worktree/SKILL.md#L42-L62",
+          "version": "repo-lines-v1:sha256:7c7de693fe1557f6ed55863a7ffd8596e33095a69e09bc9f22c87bc8e098afd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NzRhNmE4ZWMwZjljODVjZjJiMjY0ZjhjZDIzNDlmMWM4NGM0ZTlmN2YwMjg2MjIwYjg0NGQzZTliZDlmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YmY2MDU1Y2JhZjc5ZjIwNzcxNmIyN2NiYmI4NmIyNjk5MDdhZjkzYWRkYTE4MmExODk1MDI5YjZlMDc0YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNDlmNzMwMGQ3ZWZjYmMzYmIxODFhYjFmNDBkMDliZDIwYjIzYzhlMjhiYzQ4OTVmZTZjZTU4NzkzZDYyZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhMTQyMGM1MWI1M2RjZGExNmRkNGFmNGExNjdmMmRjNzBmM2E2N2M4NzI2ZDYwODQ0MGMyMGJmYmNkMjEwZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ba77e31eb7d246ba92ff259552ecef23",
+      "statement": "Worktree configuration preparation verifies a same-repository linked target and transfers selected missing personal configuration with recorded origin, while shared mode performs no transfer.",
+      "evidence": [
+        {
+          "resource": "repo://skills/create-worktree/scripts/prepare_configuration.py#L221-L268",
+          "version": "repo-lines-v1:sha256:5230a0c86ebcfa101de8c96155d810d57ea24a5c41fdba26fe50d6a9de98c6bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzZGI0NGIyZDljNzEzMTgxMGVmZjk3ZmNlNGE4ZDAwZjc0NmU4OTZlMTM0OTY4MTJmNjM0MWUyN2QzNDE3NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZWI4MTM2ZTM4NTk1OGM5YTExN2YxMGU5NWRhZjc3MGM2OWE2NjU5MmIyMmMzZDYxYjU2OTQ1OTRlZDljNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmMWIwYjk2ZTg5NDQ5Yzk4ZTA2Nzg3MzNhM2M5NzkzYmUyMTcwMTNiZjNhZGQ0OTY0YzhlNjJmMmI4ZWIzOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxNzdlNjc4NjlmMmEwYTY2YmFmMDczYWRmNWM3MDU5MjhjYzRlNTc1NzFkYTRkYWY3MTQxNTI2MGQzZjkzYjUifQ"
+        },
+        {
+          "resource": "repo://skills/create-worktree/scripts/prepare_configuration.py#L269-L294",
+          "version": "repo-lines-v1:sha256:2f8ee6f0d8d36156ccced6f4cc3383eff58bfdaaaeeb54c691f5f1878cfa71fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MWU1YmM1ODc0Nzk0ZGQ1OWZmNWEyMTI2MTk4NjdkZDZkNjM2OWI3ZTc1OTBlYjNiNDZhMmVkNjRkZmIwZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOTEwZDdmODFlOGY3M2EzOGQ4M2ZiNjNjYmNiZTA3ZDNmZGExMzZjYzhhMjBkNDY0NmFhYjk2OGQ1OTA4ODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlZGU2YmI3ZWZhMzRlNTllZThjNjY5M2JhMTQyNGJmYjk4ZmE3ZjdkYjMwNmU4ZTRiMGVlODMwNjJmNzllM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMzI1OWEwNzk4ODk0OTE1NGU4ODA2ZDQzZTE3MTg0ODEwY2Y3MDkxNjMwZmFmZDE1MWFlN2NlYjdmOTUzNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de7f293969884c908218f4b4548f79a5",
+      "statement": "History preparation preserves commits by default and requires authorized unpublished consolidation to preserve the accepted tree through normal hooks.",
+      "evidence": [
+        {
+          "resource": "repo://skills/finish-worktree/references/history.md#L7-L35",
+          "version": "repo-lines-v1:sha256:efcb317d050f7b076e136bd41ca0232c223042b184d6fc5863043c35b832bf1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZmRiZmQwZWM0ZjNiMDY1MGE2NDAyMGE1ZmI2OGJkMzg4MWZhOWYxMTUwNDlhOTU0ZWFhNzUwNjliOTI3ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMTM4Mzk4NGEyOGZmNzdhNGI4MmRiZDljNTE1OTVmZjZkNmNmM2U5NmNhOWJjNmQ0YjFjNWQwY2FmMzQyMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0ZjIyYzNiNTlhMjA5MjI2Yzc4ZWZjMzk3ZWJlNzMyYjk2NTU5MGQxMzc4Y2NiYzIzOGFiNTExOTkwMTUwNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_344d0248f42f4a2a875e22b061d56e39",
+      "statement": "Worktree cleanup inventories staged, unstaged, untracked and ignored contents before removal, retaining the workspace if protected work or evidence would be lost.",
+      "evidence": [
+        {
+          "resource": "repo://skills/finish-worktree/SKILL.md#L34-L44",
+          "version": "repo-lines-v1:sha256:d3291cb81a5a0ba6fe3651e4b1757422e6b58d8e45a6217de9d6b40cc41d6e36:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOGE2OGE1Y2E5Y2I5MzViY2RjNzkzOGYwZDQ0NzcyNGRjNTNmNDE1MjI5Nzk0YmExOTZjNmY2ZWY1NWJmMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMjYxYzJmMzE0NjcyYWRmOWU4OTk1NTM5YzdlMmU5NTFhZDRmN2U0MGU3M2EwMTE1OWZjZmRjNjM1ZWFlNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YzE3M2FjMzNhOGIyYjIwNDdhMjEyODAyMzY1OWVlMzdmODE0N2RjZmM4YTc5NDA0ZjAwZjRmMzdmZWMxN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

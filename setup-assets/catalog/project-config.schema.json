@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "properties": {
     "$schema": {"type": "string"},
-    "setupVersion": {"type": "string", "description": "SmartKit release used by the last successful full setup; written only by finish.", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},
+    "setupVersion": {"type": "string", "description": "SmartKit release recorded by the most recent successful setup finish command.", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"},
     "ruleEntry": {
       "enum": ["AGENTS.md", "AGENTS.local.md"],
       "default": "AGENTS.md",

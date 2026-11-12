@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ff70037243c8d47f41b9ca2099c73c4cd81fe57b67e75bca447ce0d181453f18",
+  "claims": [
+    {
+      "id": "claim_1601d2eb558a43fb934cb78ca3859b26",
+      "statement": "The registry requires an inline Instruction Governance entry first, and the context dispatcher renders separate inline Rule bodies plus absolute source pointers for indexed Rules.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/rules/contract.py#L34-L57",
+          "version": "repo-lines-v1:sha256:0d52857f1ab4e0110d0fd8c573e9665d51430139cbaaeed2c48a7365947bf4ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMjA1MmRmZjQxY2VhNWIwYjBhMWFmODVlODExZDFiYjQxNmVkM2MxNDcyN2UyYmQ2YmI4ZGJiZWMwZjJhOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTkzYzZlZjI4MTdhOGNjMWM3OGE4YTA5OTEwY2U4N2QyODA2NmExNGQ2MzZjNjRlYWIyM2FkZjZkYTViZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4ODhjNDUwODQ3NDhlZTU2NzI4YjdkNmU2YjRkZGZkMzdiZTYzNjExMDU3ZDVmY2E2NWQwNTc4OGI0NTE0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://runtime/rules/dispatch.py#L33-L75",
+          "version": "repo-lines-v1:sha256:de057b1539e7a3f6c1562f9864f844c7f640edf134376cf091651e6072072bcd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMmRiMTI0ZGZhNjg5ODFmODQwMzIwNDkwM2U5MzQwZDY5Zjc3ZTcyYzBmMzAwNzI5OGVmNDljMDlmYTFmOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYjMwMmNkOTYwY2VjMjlhODdmZWY0YzQ0NjRkY2JiOWM3MjBlZWUzN2RjOTk0Mjc4ZmRjZWYyMjBjZWMxZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5MjExYmRjMzNkZGJhODg0MDQyMzZlZDVkZjkyOWVhZjQxYWI0NzQ3ODc5NWJjNDljMWY1OTY0Mjg4YTZiZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkN2U5Njk1ODM5ZWQzNjA1N2E2MWM5NjNkNTUxNDc0MTRiM2MyOTY4MGNlMjI2Njc3ZTE5OTk1YTI1YmNkYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e549d9d7a152451681bb02e7581552f4",
+      "statement": "Cursor and Copilot track pending context restoration with session generations and acknowledge restoration only after constructing the complete response.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/rules/dispatch.py#L131-L152",
+          "version": "repo-lines-v1:sha256:e334ba5aba886151d35d2c9cf779de07c75e7466c7524edf9c8022c95900040a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZTYyY2NhMDFlYmNmY2QwMDg0NzZmNWYyZWNhMWEyNjZhN2I3YWM3NGQyMGQ3NGNjNjRjNWMyMjY5YWM5YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NjY3ZGZlZGI5ZmE3ZmYzNDI0NTI5OTEwMTZiNDQ5YWQ4ZTU5YTMwYmYxZWFjMDQ3ZTQwODNlY2RiNGYxYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0Y2I4YTUyYjNkNTBiNzQ4YzliMWEwMzQwMTUzZjFkYmQ5YWNmYjVhNmM4ZDAzNTJlMzE1Yjc0YjY0NjI3MmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjYTMwMDRlZjgzOWVkYTNkY2E1YjNjYTUwNGI2YjE3OTU4ODBhNDNkNjRiMDllYzM5NzUxZTIxNmI4NTYyNTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0dff2daa1adf46269df46f59538c3e46",
+      "statement": "The hook dispatcher emits native response fields for each supported host and event, including a prompt prefix on Copilot and a follow-up message on Cursor's completed stop.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/rules/dispatch.py#L138-L172",
+          "version": "repo-lines-v1:sha256:18dcc15eb7527596d8783c9cf20d05fcbda7456fc423cec6085124addfe350e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYmU0Y2E2NDNkNGY0MmQzNGZkMWJhZjk1OTIwOTI5YWI3YWQ0OTM5YzczYzdhZWI0NmRhNGQ5MGUwMGYwOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYTFiZGUxYTM5MTEwOTNmNzc1ZjAyZDFkNDc1ZTM4YzMwZGQyOGI4NGVlZTIxOTQ4YzU2MmFkZmJmNmNkOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxZTg0YThmZWYzNGY0YjM3OTJhYjYwZmQ3MDI5NzZiZDlkMWNhOWJiNmIxMzFiMjk5NWQyYTAxYjI0YmI2YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3YjcyN2E3Yjc3NzYyODY0MTYzMGMzMGE5NGYyOTI2YWRiZGZjMjU2MjMyNmI4MDkwN2RmYjc3Mjk0YzVjOWIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

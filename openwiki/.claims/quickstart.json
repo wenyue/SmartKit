@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1880057a032a9e00efe4d70a212d14c45166787a3eb26197c3506c6708fa5a6b",
+  "claims": [
+    {
+      "id": "claim_bff2af2c8a944aeda08878483f2f5ff0",
+      "statement": "In SmartKit's self-hosting checkout, an unqualified Rule or Skill reference selects the corresponding checkout source when it exists, and required Skill resources come from the same source tree.",
+      "evidence": [
+        {
+          "resource": "repo://.agents/rules/self-hosting-authority.md#L12-L29",
+          "version": "repo-lines-v1:sha256:0f2c54b1e22d83d488759728e15dea55d736f718c01f5850b4544c39908f6734:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYTFmZDk5N2I1MDI4Y2YyMWFjNmE5ZjQ3YjZjYmE5NGU2NzYzNjljMzk1NjdmOTQ4OWYzZDFjMDk2MTJlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZDU4ZjAxMjJmOTYzZGZjM2UzODBkMzRjZWQ1MTNhMTRmMGM0MWNmZWViMGEyNjdjMzAyNGY5Zjk5NmY4NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkM2E4Nzc4MzE0OTIwYzg0ZjNhY2VhNTY4NjY5YjI1NmUwMTU2YTIyMzgzNjFiYzIxMjA1OGRmYzg2ZmVjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmMGYyMTc1Nzc2M2NmMjUyMWYzMmZjMjM2MDUzZjlkZWVjYTY0YmU4ZTdjNzJjMzRkZTc0YjRhM2UyODZkMjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38cf9476128148c98e1a8089485ac6c5",
+      "statement": "The repository organizes terminology and architectural records around SmartKit, Authoring Evaluation, and Worktree Lifecycle contexts.",
+      "evidence": [
+        {
+          "resource": "repo://GLOSSARY-MAP.md#L3-L18",
+          "version": "repo-lines-v1:sha256:e71b24d479cebc06feea48f911f6cbba666aed4dc670624273e663379f7e76b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYjk0MDUyMjY4MjUxM2QzYzE5Y2Q1NjNlNTllMmE2ZjZmMjVmN2JiNjI1YmY2N2ExYzFmMjMzZDIzNmMzNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOGQ0N2E3NGYyMTE1MzU3MWFiNDM4NzNkYzg1ZTkxYjJmYTg1ODM2ZjNlZmUxYmZhYjA1ZjgwNDg2Zjg4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MWE2NjAxYWQ0YzBlNTllMDkzOTQwMjk4ZTllNWFmNWNiMDNiNzA1N2M5ZThkODRkZmE0MjUxMzMxZTMwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_381416765b8a4beebaa0bdfd05bbcd49",
+      "statement": "SmartKit's distribution CI checks synchronized versions and runs the repository Python unit suite on Linux and Windows.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/test.yml#L7-L31",
+          "version": "repo-lines-v1:sha256:be275ebceb73e2e6112b85a4b32323a75ad098cb56c266d2022fb5432b0dc81a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NzEyYzdhNjQ0MDlkYmEyZjE1ZmYwMmU5OGMyMWRhMzIzYTU4M2ExMjlmZjYzMzdiMjk0NDg0M2UzNjQwYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2N2FjMTE2NjQ3MzFmMjdkYjkxZjMwNzg4MDFlNjk3YTVmMzUwNTEzYjZkNzZmYmM3ZjBiNzUwZTRmNmFmNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

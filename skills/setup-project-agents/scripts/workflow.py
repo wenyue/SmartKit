@@ -680,7 +680,7 @@ def _sync_project(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description='Inspect prerequisites, run full setup (start/writer-inputs/register/finish/cancel), or synchronize local configuration.',
+        description='Inspect prerequisites, run the configuration session (start/writer-inputs/register/finish/cancel), or synchronize local configuration.',
         allow_abbrev=False,
     )
     phases = parser.add_subparsers(dest='phase', required=True)
@@ -692,8 +692,9 @@ def build_parser() -> argparse.ArgumentParser:
             'JSON reports Matt context, configuration/Agent sources, ownership, additional project Rules/Skills '
             'and blueprint requests, native Agents, provisional migrations, and CodeGraph health. '
             'errors collects failures; pending_assessment identifies remaining judgment. '
-            'Initialized targets without required migrations return skipped=true before full preflight. '
-            'Exit 0: no setup required or mechanical checks passed, not full setup readiness. Exit 2: prerequisite errors; '
+            'Initialized targets without required migrations return skipped=true before configuration preflight. '
+            'Exit 0: no configuration migration required or mechanical checks passed. The Setup Skill handles OpenWiki after configuration. '
+            'Exit 2: prerequisite errors; '
             'independent findings remain available. Migrations use the loaded source until start selects one.'
         ),
     )
@@ -702,7 +703,7 @@ def build_parser() -> argparse.ArgumentParser:
     codegraph.add_argument('--target', type=Path, required=True)
     codegraph.add_argument('--harness', required=True, choices=('codex', 'cursor', 'copilot', 'qoder'))
     codegraph.add_argument('--approved', action='store_true', help='Record existing authorization for installation, indexing and startup')
-    start = phases.add_parser('start', help='Start full setup; request every current generated contract', allow_abbrev=False)
+    start = phases.add_parser('start', help='Start the configuration session and request every current generated contract', allow_abbrev=False)
     start.add_argument('--target', type=Path, required=True)
     writer_inputs = phases.add_parser(
         'writer-inputs', help='Prepare inputs for the pinned writer; no authoring or registration', allow_abbrev=False,

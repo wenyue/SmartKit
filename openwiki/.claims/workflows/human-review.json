@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ea19b69be77122bb1b8948b02bfc63aef2db61947f793526ce934416c7513072",
+  "claims": [
+    {
+      "id": "claim_efc66f24590b491f8d307ac739505742",
+      "statement": "PR, branch, and local review use different pinned comparison inputs, and assessment filters do not restrict the scope of a later commit or required checks.",
+      "evidence": [
+        {
+          "resource": "repo://skills/review-for-humans/SKILL.md#L23-L38",
+          "version": "repo-lines-v1:sha256:54a1eb34ebbedf89562b38a5fc30ea48a3675cf7f0c435f2b03ff8406a265b25:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMmJiZjlhM2RlZDU4NjMyNjAwY2EwZTA1OTE2MGI5ZDg2NjNjMjYwMmFkYjJlMzJhYzIwNTBmNDA3Zjg4YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMmExNGJmYmIwMmU3MDY0ZTc1YzI3YzYxYzUzMjgxOGVmNjVjNTczZmM1OWQ2ZjNlZGYzOGZjZTQ0MTJmYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlYmQxMjliYTJiNjdjZDMxYmVjYTVlNjQ3MjkyMTlmYWJkYjIxYWVhYWZjNDc3YWJiZDA0Njk0N2ZhMDk4Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMGMyNjAxYWJmY2FmZmE1ODFmMmI0NDc0YWNhZmE1ZThjYjMyM2NjNGVkODNjY2EzYjQyZmMxM2IwYmYyZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b8e0001673fc43e3bbffb6647459ddb9",
+      "statement": "PR completion validates the staged tree and outgoing ancestry, then reads back the published source ref and PR version before Viewed recording.",
+      "evidence": [
+        {
+          "resource": "repo://skills/review-for-humans/scripts/complete_review.py#L865-L922",
+          "version": "repo-lines-v1:sha256:57ba3eeb03b506b2abf8176734a69e4198206e287aed493a7e38a983a1a50116:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NGQwYzZmZTFmZDZmZWY4ZGEzNmUwZjJhODFhNzVlYWYzZjEzNmRlNWE1ZWQ1NDVmNTY3Mjc1NzllYmM0Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MmY5Njk1Yzc0NjdjNzQ3NzNjOWNlN2ZjNDI5YzVkMGQwZTQ4N2YzYzUxZDE1ZDY2NjhhM2QyNDA3MmJiOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyOWE0NjJiZTgxOGZlYWM2ZDZkZDE0NjA3MTVlMzllOWJkOWYzNTYwMzhkY2JlZDdmNDQzNmQzMDdjNmQzZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMjQxZTg0YzgyMDA4ZTdhNTY4MTg2MThlOTFhNDAyMzg1YTE3ZTY0YzdjZTljYTMwZWE1Nzk1NTQxYWQ1OGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f93cd115642e41a78da04ab95e7fbedc",
+      "statement": "Viewed recording reconciles the full set on retries, skips confirmed files, and verifies every selected path along with the workspace and evidence before completion.",
+      "evidence": [
+        {
+          "resource": "repo://skills/review-for-humans/scripts/complete_review.py#L925-L952",
+          "version": "repo-lines-v1:sha256:7ef032a87f7ab4364afb32bcc6302e4397c1eb50b5620982bb802b385fae5575:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMmY1YWMzNzc4YTI1MmU2YmEzYWNiODc5YjlmYmQxNjkwMjA2NjJmMmFiZjZiNDEwOThkMWExODMyN2RhOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1YmNkNGI1NDRiODVlYzhiYjQxZjg5MjMxMWRmZDU4OWFiYjYxYzUzYmE4NmJmOTFiYWEzOGIwN2YwMGU4YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMTQzMDJmNWFlMmI5ZjNiOWMyZDEyNjE2YjQwM2M4MzgxODc0OTEyMGY2MjhmZDY0NGJmY2JmYTM5MTI2ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMzAwMmY2MTg1OWFlZjQyZjdhNjYyMTNhOTJjMWZlYjNhMGRjODk0OTJjNDkzYTdjNDAwOTJjZTkzNzZkNTMifQ"
+        },
+        {
+          "resource": "repo://tests/test_review_completion.py#L324-L381",
+          "version": "repo-lines-v1:sha256:cc40b824cdb6864dbc99db63b789cfc72a01e2d98658ad9234c62ea065271261:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNzg2MTEwY2VjYjAyZGQ3YTNiMDFhMzkxMmQxMGZhYjA3YzdhZDY2NWE0OThkNmFkYTMzMzk4N2I0NDYxYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZGU0OWI5OTcwNjdkOTUwMmE3MWRmZGFlMmU0ZGQ1NDFjOTAxNTQ4YzlkZTFmZWYwMjJhZTgxNjM0ZmQzN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYWRlNzBkZGU1N2FmOTRhNTMwMmZhMDQ3OGQyMmIwN2NjZjUwZjA4MjgyYzFhZjYzM2ZjNzVhM2Q5MDhlZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0NzAwNzc5MWU0MTFmMDg0MmNiYmE4Y2NmNDQyMzRmMmVlODhhNzI1ZDJiZjI2MzZlNGIwMDc3ZDNiYWUyMGEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

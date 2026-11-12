@@ -20,7 +20,7 @@ schema 的可选字段 `ruleEntry` 选择包含生成 `Project rules` 章节的�
 
 ### Setup 完成与来源验证
 
-`setupVersion` 是上次成功完整 setup 使用的 SmartKit 发布版本，不是当前已安装插件的版本，也不记录该用户的运行时状态。公开工作流只有在 CodeGraph 就绪、配置收敛和私有会话清理完成后，才写入这一个字段。准备、失败和本地同步均保留原值。保留其他项目配置值；绝不能手动推进该字段来消除 hook 提示。会话 hook 根据项目 setup 记录要求重新检查本地 CodeGraph，不会把这个持久版本当作运行时仍然就绪的证明。
+`setupVersion` 记录上次成功完成本地配置时使用的 SmartKit 发布版本。由公开工作流在 CodeGraph 就绪、配置收敛和私有会话清理完成后写入，并保留其他项目配置值。[Setup 入口](../SKILL.md#9-complete-openwiki-and-hand-off) 规定整体完成条件，包括 OpenWiki 结果和适用的发布。会话 hook 根据该持久项目记录要求重新检查本地 CodeGraph。
 
 完整设置中，`start` 在冻结请求前，根据选定规范来源或已安装回退来源验证输入。如果该来源拒绝按已加载 schema 准备的输入，遵循[预检](session-protocol.md#preflight)：在已接受权限内修正报告的原因，并启动新调用。返回来源和请求保持不可变。
 

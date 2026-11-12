@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2e05903320baefbe8735c505bb05c98f8f980dd65875fc2c5a4fb8e2f377919d",
+  "claims": [
+    {
+      "id": "claim_ba9ab9f5d6404628ad2050d335db5346",
+      "statement": "Service startup serializes host discovery and reuse, verifies the running instance, and refuses to stop an unverified port owner.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/local_web/service.py#L123-L174",
+          "version": "repo-lines-v1:sha256:30574b93e274e57c8fb6ab55bbdaaff173eec96137fb37b6d929dc319db6930f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NDdiODU0Y2YwYWIwZjE4ZmUwYmE3ZDAwMjA5ZDQ2ZTliMjRmYjQ3YWFiNTBhNDI3MDI3YTJhYjE1ZmVmYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ODUzNjNjMmQxNTgzNjZhN2NlNDhhNWViZjZlMjM3ODQzZjk1ZDcyNGNmNjdmMDhmMDc5NTFlN2JkZjk5ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4YTE5YzQ5NGE0NDJkNGUyMzJhMzJkNGE0NzZmNjE1YjVlMDhkZjZiODkzMjhmNmJiNWI1ZjBkZDc1NjU2MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2Mzc4ODVjYmQyZTY1NjhkNTgwMmM5NmY2NjNkNThlNDMzMjExYTJmYjM5MGY3Zjg4MzQwYzQ3NDNhN2RjYWIifQ"
+        },
+        {
+          "resource": "repo://runtime/local_web/service.py#L248-L265",
+          "version": "repo-lines-v1:sha256:761d6fe8e404e5364ee5cd7c5477f3f63fea9464740c5dc69b0d441946723245:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MWU2YjliNTU0MDlkMWIwNDJhZDYzZmI0MmU4ZDk2NTUyYzA0NTg2YTk3YmYwZDAwZmE5NjRhODljNTQxMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MjcyMWY1NWNhYmNhYWIxMTg0ZjQwNmUwZDZjNWIyZmQ3YTA2OTZiYzQzNmFjZjQ1NDQyNjhkYTgyYzI2OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzNzMyYWExOGE2OGViODBiZWQzODU1MzA0NmJiMzgxZTg1MTQzMWUzZmEwODdmNDMzYjNiMjYxNmRjM2RjOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YTE5YzQ5NGE0NDJkNGUyMzJhMzJkNGE0NzZmNjE1YjVlMDhkZjZiODkzMjhmNmJiNWI1ZjBkZDc1NjU2MjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_252d116a59a9445587f5bb4d030c897f",
+      "statement": "Artifact capture is private by default, and publishing enables only declared public files without extending their retention.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/local_web/artifacts.py#L288-L310",
+          "version": "repo-lines-v1:sha256:fd882b857bc610c19bfc9b8bfd507629800c980bc357d4c795118c0a3303244a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlMTZiZTRmMTliNmU4ZWNhYWU4MTU0ZWQzYzM2NmQzZWQ2ZDYxMGRiODU3MWY3Y2JhZDZkNmE0NzIyZGY5OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNzU2NDdkZjJiMzllMDFjOWQxNDMxNzVlNDM5NThhZDQwNDJmNjZkM2I3MjQzNjQ4MDlkMjlkZDZmODgyNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNzBiN2UzOWFkMzEzMzJkYjFkZjRjMmY0ODFkZTE0NjEwMzI3ZTYyMjQ5Zjk5YTA3ZjIxN2YwY2JhNWExZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3OWE5MzA5YjM5NjYxOGZjZDcyZDliMGNlNmQ2ZDAyN2U4MmY3MGMxNzdhYThlNzQwMzRkMjA2YjI5MTQ3ODYifQ"
+        },
+        {
+          "resource": "repo://runtime/local_web/artifacts.py#L377-L401",
+          "version": "repo-lines-v1:sha256:c5d1c534d65aa173d9e2de7ec26a688c5241f2c47bb4df2a7405b07c2758cb4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YzM3MzVmODI1NmI0NGRmMDA5Y2RmMzUwMjM0YzIwMjQ2MjUyZDhlZDg4YjJhZGQ4ZmYwNGRhMWM4N2JkMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiM2I1OGNmNjIxZGQxNTFhMTQwYWI1YjkyZDNjYTdhYzNhMzM4Y2IxODE3YjRkMTAyZjBiNmI1OGI2MmIyZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiYmRlOTg3NDU4M2VhNDFhMDQ0NzZhOTAyMWEzYmMxODRmNWQyNzllZmExNGE1NWRkNzVhMGE1MWJiMjJiNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMjQ4YTYzMjIwZGNmMDA2ZWI2NGI2OTQ3NWU4YzRjMzA0NGU5ZmM4NmIxY2JiYzNjZmMzMzdiMTQ3NmZjYWYifQ"
+        },
+        {
+          "resource": "repo://runtime/local_web/service.py#L248-L253",
+          "version": "repo-lines-v1:sha256:b3848909d051cb949cd52ea0344f661844652baf1976bcc734707da5bee5db54:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgxZTZiOWI1NTQwOWQxYjA0MmFkNjNmYjQyZThkOTY1NTJjMDQ1ODZhOTdiZjBkMDBmYTk2NGE4OWM1NDEyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM1YWFhZDA3ODFkMGRlZDEwMGJkNWU2YjRiZTM5MjdlZDQ3MzFjNzlmNDI4YzM4YjFjYTg1NTU5YjAzZGUwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM3MzJhYTE4YTY4ZWI4MGJlZDM4NTUzMDQ2YmIzODFlODUxNDMxZTNmYTA4N2Y0MzNiM2IyNjE2ZGMzZGM4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzBhYzc1MmQ4NWRhOTk2NWNkZjZmYWJjOGYzY2YyMTIzZWIwMTI0Nzk5ZThiNjBlOWJjZGFlMjg4ZmRlY2RhMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e87ba0be46a241ae813868dcc7a1929d",
+      "statement": "The preview route rejects unpublished or expired artifacts and serves only a declared public file whose captured bytes still verify.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/local_web/http_server.py#L94-L118",
+          "version": "repo-lines-v1:sha256:7762e91f81926ed0a71f29e13aec882211539d26053e64c27786f73dc5e824f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNDRlY2YwN2ZmZDBlMjg0YThkNGVjMzRmNmFiMGUxZDExMmYxNWE5ZGYyYzVjZWU1YTFiYjNmZDc0OTJiMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyYWI1NmFjMGE4NjliZjgwOWVlZTFiZGRjZTM4OGFmMDc3YzlmYjM2NzI1MjFkYzdmYzk1ZTIwOWExMTc3Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNjUxNTVmNDc3OGJjNGNhZTFiNWM3ZTEzNzI4YTJiZjAzMWZhY2ZkOGU4NjI0YzBiZDQ1M2VkZTQyMWU0MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZTc0OTJkNzM0OGFlNzZlMTBkOGFkMmQ0NjJhZGU0Y2ZhMmE1ZmY5ZDQyMGMzZWQ1MTA2ZWNiZDJmMzViZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc67007d92c44120893aa21fa15ea69e",
+      "statement": "Login startup stores explicit user-wide intent separately from native registration, and disable removes only unchanged owned files.",
+      "evidence": [
+        {
+          "resource": "repo://docs/adr/0022-enable-explicit-current-user-login-startup-for-local-web.md#L12-L31",
+          "version": "repo-lines-v1:sha256:b8db22280130c6762d5dcf1e0897e217fc67d5a5371950771c897339d1499444:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNjMxYmZiODBkZDhiOWYxNWMzYjE1NmQzMDAyNDdiMmY4NzA2NzE4ZGU1YmJlNzNhNTFlMzIwMzI2MDMyNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWJhOGRlZGEzNDUwNjM0YWFkZWRiMzE4ZjU5ZWQ4NmJjMGFiNWQ2OGUxMzllMzA2NjdmMjcxOTI0ZTk1NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1MWQ5YmI1NmNlYTY5NGE3YjY3MWFmNzIzYzBjMjdmNmQ5ZmQzYTIwZTI0ZjA1ZWU0Njg5YmZiZWVlZDM5ZWUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

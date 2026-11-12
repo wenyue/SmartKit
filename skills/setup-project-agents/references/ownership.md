@@ -20,7 +20,7 @@ The user explicitly selects initialization/upgrade or restoration through Setup.
 
 ### Setup completion and source validation
 
-`setupVersion` is the last successful full setup's SmartKit release, not the currently installed plugin version or a record of this user's runtime state. The public workflow writes this one field only after CodeGraph readiness, configuration convergence and private-session cleanup. Preparation, failure and local synchronization leave the prior value intact. Preserve the other project configuration values; never advance the field by hand to silence a hook. Session hooks use the project setup record to require a fresh local CodeGraph check, rather than treating this durable version as proof that a runtime is still ready.
+`setupVersion` records the SmartKit release of the last successful local configuration finish. Leave updates to the public workflow, which writes it only after CodeGraph readiness, configuration convergence and private-session cleanup while preserving other project configuration values. The [Setup entry](../SKILL.md#9-complete-openwiki-and-hand-off) governs overall completion, including the OpenWiki result and any applicable publication. Session hooks use the durable project record to require a fresh local CodeGraph check.
 
 For full setup, `start` validates input against its selected canonical or installed-fallback source before freezing the request. If that source rejects input prepared under the loaded schema, follow [Preflight](session-protocol.md#preflight): correct the reported cause within accepted authority and start a fresh invocation. The returned source and request stay immutable.
 

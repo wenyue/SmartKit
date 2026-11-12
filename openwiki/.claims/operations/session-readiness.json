@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ea08d5c666aaaf7e664ebe11f19bc0bdc65c6c07eb7e9659882893de21389418",
+  "claims": [
+    {
+      "id": "claim_5b41451e3991456ab64f7a6cddb78e53",
+      "statement": "Daily readiness is gated per resolved project and harness, then evaluates independent checks concurrently.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/recommended-tools/check_recommended_tools.py#L1367-L1370",
+          "version": "repo-lines-v1:sha256:adc896180d6d8ffcc530e790f36c9f027c7b17a1cc2397220b233f21cde46a95:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM3MzA2YWI3NGEwYTc2YTFhZmFlMzFmM2VmOGRmMTczZWNhY2ExOTNhZTFlY2VlZGUxZmFkYmRiN2EwZTU1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJmYTg5ZjZjYTE4MDVkZDZlZjllOWVmZWIyODBmNmQ0ZDEwZDFmNWU5YWJkNjYzYzY2YzI0NDNlZWU4YzNjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA1YzgyZTkwNDgwMzRlZWQyZDEyMTM5MjhjNzFhMDUyZWRlZjA1YWY0ODU5YjZjYjdjMTBkZTU1NTAwMGE0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDdmNDA0M2NhYzg3ODg3NTIxNzg2ZDdkYWI1NTIyNGQ4ODFmYjYzOWEyY2I3MzI3NTA5ZjUzMGRmMDgyMGM5MiJ9"
+        },
+        {
+          "resource": "repo://runtime/recommended-tools/check_recommended_tools.py#L1489-L1532",
+          "version": "repo-lines-v1:sha256:60a9c0adeab93cefbffd5f533bc0a4d070b96e4af8e996593a17efa62cb20f9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMjUzMGFmMjQwZGJhN2Y0MjkwNzIyNWU4YTJmYjk0NWVhNDhmZWVhNzgyNGNmM2U2ZjNkYjk0MDkzNDY4Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MzcyNDhjYzRkYTNhNmVlMGUyMTc0OTgwYTA5YzQ1MjM0ZjY1ZTEwZGJjYjVjNjYzOWVhY2Q4MmJmYzhmMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5YTdmZTAzNzVjNWY3YzgyYmMzNGQzNmZiNDFhYTk5NzJkNzZiMzgwZGJjODdhYjZhN2Q0YmFhYjJlNmVmOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxYzYxMjhkOGFmMDNmOGRhOGEzNmE3ZjY4MDg0NTEzNzFiZGU1ODFlYTY0NDIwM2FkOWQwMDY4ZDg2OWFlYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bec04737b5344705ac457f1a8f16a0b6",
+      "statement": "Initialized projects receive a CodeGraph check before the daily readiness gate, and the probe checks the local index and existing daemon without installing or starting it.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/recommended-tools/check_recommended_tools.py#L1583-L1632",
+          "version": "repo-lines-v1:sha256:41930d2975df847c90339aef43058a8fbe314f055819b5b4bbfd57d199744e1d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNDA2MDE2NGE3YmUyYTJiOWRhZTE4MmM5YTk3NmE5OWQyOTVjNjZlNzY1MzFiNzIxMmI0ZDdmZDJlZWMwZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZDIyMWJhYmMxZTdjNDQyMWM4OTMxODBiNWZhYjg0ZTY4Y2E0YTBjN2Y3MjIyY2ZiMGM4MmUyZmUyN2I0MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMzk5MjI0NzcyN2ZmY2ZlMTgwMDIyZGE1NDcyYjA0ZDViYmFlYzFlYjk4NjJmYTQ5NjQ4MWE3OGEwOWYyMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2Nzg0MWNiMTM0Y2JjYmFlOThmMDc3MDdhNDI0ODQ5MDhjOTk1OWVhZjM1MjFhZGJjNGM2MDRiNjRkMzNjMzYifQ"
+        },
+        {
+          "resource": "repo://runtime/recommended-tools/codegraph_runtime.py#L141-L166",
+          "version": "repo-lines-v1:sha256:6aad529029ac5dd2f28b86cab326d5da5c0461a01a9ab739d3e55d6b6e6b926b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMmZiZmE2ZDY5N2E4OWE0MjVmZDJlOGY5MzFjMWQyN2U3NTdhNTA0MDFjMWFiMGY2MTkwZDVmNzU0ODZlNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiOTUxNDQyZDFiMzIxYjg0YjFkZDE5NDNiOTM2NzQzYmU3NzI3ZTNlMTIzOTEzMGM1MWFjY2JhN2FkYjRjNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2Y2RjOTJjYjVmYjkwYjNiMzQ5NTIzZTg1NjA5NDkyZmI2ZTcyNDNjNTMyZWNjYzQ3N2QwMTg4ZTZlYTU2MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc435005ec8b489bae4751c2712abdad",
+      "statement": "The startup configuration hook emits synchronization guidance only for an enabled local receipt matching the repository binding.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/recommended-tools/check_recommended_tools.py#L1635-L1661",
+          "version": "repo-lines-v1:sha256:972044807b3692154c9cf5bb1e7f066c8d2ffe734298b9c162e9df415fa4e39e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3OTk5NDBiZWUyNmFiODlmOTIyZmVmNjI0ZTE4NTJkZGI5NTk2OGQzYTdjNThmY2VkNmU5ZDgxYTY2ZGE4YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YTIzYzNkMGJhODJmYjBjOWYwNmQyY2M0MmYzMjEwMzJiZmE5ODFkODcxNmI1OGZjY2M0ODljODcxNjdmZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYjc0MzIzNzZhNWI3NjgwOTQ5NzY1ZWE0YzlhOTQwOWNhNWE0YWQ1NDkwNzYyYmE5MDkwOTViNWZlYmRmMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5YTUzMTZiZWVlZTdlZDRlNDViN2UyMzczODhmMmNjNjI5MjE0OGM0YTFlZDE1OTQ2MTRkZTc0ZWE5MzY4ZGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_808a00deeeaf48c3a5fa5204df615911",
+      "statement": "Diagnosis treats the immutable Codex log and whole-session Tokscale capture as separate observations and retains usable local evidence if the provider fails.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnose-agent-session/SKILL.md#L45-L85",
+          "version": "repo-lines-v1:sha256:66ba7c403cf1d7631f06a87431bfb378d86c7ad1cb5b17e99a72934c44604b9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOWVmOWZmMTE5Yjg3NmMxYTg5MzgwOTRmZWIyYTNjODEwZWYzNGMxZjA1ZjhlY2EyOGNkOGE2ODc3ZDQxOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMGUxYzYyNjg0MWNmMDQzZWFmOGVmNDBhNjg4MjI4MTNkNzdmYmQ5ZmU1MWY5MjY2YjU0ZDNlMmY1MTg3NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1ZTYwMTNkNWZkZjI0ZmU3NTZiZjM2NjJlMjBjNDI2OGU0YjAwM2Q1NWNjODFkMWEwN2QwOWFlYWViMGQzMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyOTgyODlhY2NiZDg3Yzk4ZjBhYmU4YjYxNTI1YmJhNDE1ZmQ1MGVkNGRkMWEyNzcxNmY5M2QyZTdiN2JkZjkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

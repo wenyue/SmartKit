@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b8a645be67e3c6252e7eddc4b6c529d9abb0efc548195ac43343839bdc993059",
+  "claims": [
+    {
+      "id": "claim_af99412229b842cea25810db4528450b",
+      "statement": "Backup manifests select exact files or recursive directories, and the backup reader rejects the local synchronization receipt and active OpenWiki queues.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/project_state/config_backup.py#L12-L31",
+          "version": "repo-lines-v1:sha256:9113ab0949bb52e570975952295ac00be53e0fefb7dea4c4565281b148582d07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NGExYTExNTU0NjhhYjM3YjQxMmM1YTVlNjZlMDI0NzNhNzE5NGIxODI1ZDVjMjI2ZDEwY2YwZGRmOTYwYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2JjMjU0NDU0OWNmOTY4OGUzZjIwNjhhNmFjY2Y3YWEzMmMzOGQ2YjFkMDRhYTY1Y2IzM2ZiMTU2ZTE1N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5YWMxYTIyMTM2NzNhNzFlODExZTU0NTcxNWFmNjZlOGU4ZmQ1NTM5OWQwOTcyNWM0Mjk5ZjVkMTAwMzQ1OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZDVjYjRhNTRkNTk3MTVjODcxNTE2ZjA4MjNjYjY5NjA0YWEyMTdlNTM1ZWIzNzM3YTQ3Mzg3ZDVmZDFmOWUifQ"
+        },
+        {
+          "resource": "repo://runtime/project_state/config_backup.py#L53-L88",
+          "version": "repo-lines-v1:sha256:20ea2fdf51c1d9573385548a99597408cae9b8ce6141245b78761611d93339b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjY2IwMjk5NmQ3ZDU0NTc2OTI3YmJkMTk0OWExZTgyZTNmZjMzMmFiYzhmY2FmMjA4YTAxYjkxY2ZlZmQ2ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NWViMWYzYTRmNjMxMjExOTgxNzViODMxMmM1NGZhY2JmNGE2ZDFiZTMyNGVmOTIzMTBlZjU0ZTI0MjNhYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNGM5N2EwMzRhN2Q5NGQ5MzEzYWZhMWYyMTlhOGJkMDAzMjlmYjYxMjk3YjI5OWNmZjI4ZDg3MDBjYTBmMjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_186bb24cdf48482381f882c0e48d8665",
+      "statement": "Inspection reads without fetching or writing, and differing restoration requires the exact observation fingerprint before applying and verifying the whole planned snapshot.",
+      "evidence": [
+        {
+          "resource": "repo://skills/maintain-project-config/scripts/project_config/project_configuration.py#L207-L235",
+          "version": "repo-lines-v1:sha256:429fca9d204607b592585d26e5d4d7ba95f2b607eba821bbadd21d643588925b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzZWQwNDA3MDY4ZTBjNTRjMzc4NWY5MjQ2ZGNhMDY1YjcwZGE3M2RmNTczZmUyMjM5YzQ1NDQ1MDM5YzY3Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwOGZkYzA5NWUwZDM3NTNiYWEyOWIzZTEyZmQ5ZGU5YTE5Y2M1YzdlYTczYjVhNTJjNGYwMDA4Y2IyMzU1NWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2M2Y2YjRjNTIyNmVlYmM4MjQ2YjMyZTExYmQyYWJhZmMwYjZlYmQ4MDUwYzRjYjQzNDc0Yjc1N2FmNzRmZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5M2I1NTdhZjg2OTY1YjNlOTczYjRmMDcyMTAwYTJjZThiZGUwYjhlZTBlYTM3YWI5YWI4ZjUzNjM2MjY1N2QifQ"
+        },
+        {
+          "resource": "repo://skills/maintain-project-config/scripts/project_config/project_configuration.py#L247-L284",
+          "version": "repo-lines-v1:sha256:0506c436f9e9385a205437834dd4d3e821dc4c5a1499b8e97dc024e5a238d561:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMmZiZDg1YmE2OWM3ZjJhNzg5MDQ1Njc0NDgyMjViM2YyOGM2MzIzYWM4OWY5MGU2YTIwYWQ0ZTE1NTYwYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMDZkMzJjMjIzNzQ2NDljOWY2OTg3NTMwOWI0NTAzYTQzZTYwMmJmMDkxOWFiZmFjYmQ0MmQ3Mjc3NjkxNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZGM2MmE4YTc4YzBiNTQwY2NhNjRlZGExZWIyNzZjMjUxYjc1ZmU5ZWE2ODE5NjUwNjMwZDllN2JlNzJjMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0NDViM2VhZThiNWIzNWNlZmQ4MDJkOGM2ZGRlNTIyNzc4ZWFlMjU0MjQ2OTNlZTcyMDQ0NjE5YjAzMTU2MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d370c56cbcaf4cc7aedfd64fba50746e",
+      "statement": "Adoption with --all refreshes the existing manifest scope, while explicit paths can add complete files or directories to it.",
+      "evidence": [
+        {
+          "resource": "repo://skills/maintain-project-config/scripts/project_config/project_configuration.py#L287-L331",
+          "version": "repo-lines-v1:sha256:29d60c44bf779560853a2798c07a4551bd404981ca50ea6bcac4946f0f6b58df:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMGQzNzgzZTBmMDRjZmRkN2VjMWU0MDhlMDBiMWQyNGVmOGMzNDE4NzMzZjg5MDJhNTZiODQ3ODUyMmIzMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NDY4ODQ3MjY2OWMxMGU0OGJhZDBkM2M4YTdmNzExOTk1YWI3ZjczMTE4MmFiNWViYmI3NWJkYWM2MzlmMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwODIwNDI3MjJmMGNkY2YxYWJjZTEwYjlhOTM2NTlkMTMzZDYzOGZlYTc1NTUzNGU3MGNkMmQ5OTI4NmNhZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViMDhkMDcwYjdiNmExZWY4N2Q5ZTI4ZjQwZWJlZTU3NzIxMWIxYTUwYjBjMDkwMzcwNmRjMWIwYjhmN2EyMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa8494a73ef14445af3bd59245104098",
+      "statement": "Publication rechecks the scoped commit, refuses additional outgoing commits before a push, and checks remote reachability afterward.",
+      "evidence": [
+        {
+          "resource": "repo://skills/maintain-project-config/scripts/project_config/repository.py#L347-L377",
+          "version": "repo-lines-v1:sha256:845468b239a45eef7268d2936702ef2c6cddef3aec0d143db97378c72379a8f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWE5MTRjMzNhM2Q0ZDI5MWVlMWNmZjQ2MDExNjM3YWU3YzlhYjI1ZjRmNmRhZTBkMzIzY2EwZGIxYTg2MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMWIyZTViMzZiNzhkMzgwYzZiMTUzNzVjNGVjOWYwMjdlMjQ2NTNmNGNhOTk1MTJlZmFlNzE5MzBiNWRjZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0OGM4ZmYyNjU5NDVkMGFiOTU1OWU5ZGNkYzQwZTVlNmIzMjg1NGZhZWQ4ZjVkYjE3ZDI4NWVjZTNkODI4NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMGJkMDQzNzBiYTY4ZWY3MjE4OTk5ZDEwOTkxMzc2MzY1MmU2ZjUzNTE4Y2RlNGU2MWJmN2M5ZWZlMDY2NzMifQ"
+        },
+        {
+          "resource": "repo://skills/maintain-project-config/scripts/project_config/repository.py#L380-L414",
+          "version": "repo-lines-v1:sha256:079d89d8cc091764e2d5cbb030cfea7b49cc3ceac30752e22c0088e639f7d46a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMWI1YmQzYzczNjY5ZWMwMTEwZjY1MWI3MmJiMDYwNWFmMjIyY2ZlYzZmYmM0MTYxZDYzNDkzYWFiNWEwMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ODg0OWI1NTE2ZmY2YjBlMGIxNTY2OGMzYTBlNTBkN2M3NDEzY2YzMDcyODA4ODFlYTFjODBmMjQzY2YyNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MTI3ZmYwZGVmZGUxNzJhYmViODBlZjNlZGViNDlkYTY3MzVmYzRmMTBhNDExMTM0ZTdlZGQ2M2M1ODAzZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}

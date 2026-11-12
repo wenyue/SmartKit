@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9feb65ae42cf6bffb935857fdf5ac5f31103e65a8e6470e58ff557debfd1db70",
+  "claims": [
+    {
+      "id": "claim_a6af49e0c4ff406dbb8e5a7555e53ff6",
+      "statement": "The authoring workflow assigns one Candidate to a resident Author, and the Controller keeps the three review judgments tied to the same checked version.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-rules-and-skills/SKILL.md#L10-L32",
+          "version": "repo-lines-v1:sha256:7ddaf2fb6e5af2870331d19483eb1c3c2beac63ab9553f8c03356e39c69a88a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YmQwOGJlYzA4MGIxOTQ5MjEwNDVhNzlmNzE5ZDA2MDQ3ZTc0YmExYWI5YzVjZjAxYWQyNzk3MjM5ZWQ3MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3ZjkxMWNkNDlmYzNlYjAzOGY0Zjg1YTBkMDE5Zjg5M2MzMGI1MzNkNWEwOTYyNzFhMjBkODJhNzgzN2E1N2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViY2Q0MmFmODE5NzE4MzU4ZjBiYjVhMzYyYjQzNjRkMGZkYWFkNjkxOTJkMjQ0MDdkNGEyNDc5NGZjNWEwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlN2E0MmY2N2I2OTFiMDU2ZjVhZDI1ZGUzODBjNjg0YmIyOTZlZDg1MWRhZjg0NGI0ZGI0ZjBlYzhhZDM3MDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8a097c475cb483eb4d089be1f416502",
+      "statement": "Baseline capture records existing and absent scoped paths, bytes, and supported executable bits outside the Candidate root for later comparison.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-rules-and-skills/references/controller.md#L42-L52",
+          "version": "repo-lines-v1:sha256:fd7977c2022494080164201c4cfaabc16e559e640b8d75b4fce7b5012791f511:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3ZTBlNTM5YzM0NjdjOGMzN2ExNmI5Njg1MzQ1MzA5YmIyY2UxNjE0MGMyMzYxZmYzMjVmMGVjNzI1YjE4NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMzk1NjE0M2QxYjdhOGZkMGRjZTIzYTk1M2E5NTZkMDAzMDYxMzc3MTIwNGZlMzY5YTI4MWYyZmZkOTQ4ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MTc1ZjZkMjIzMTcyMjU1YTk3ZGUwY2E5NjJhNGU4NzUwODA1OWZiYzg3YTU0YmYwODBmZTllZjE2NTZlNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjYzRlYzA4OGMyZjcyZDEwNmI2YzQxMzZlMmVjMTc0M2I1NzlkODk2Yjk2OGNkZGNhMzNiODA0MjA2YTFlNGEifQ"
+        },
+        {
+          "resource": "repo://tests/test_write_rules_and_skills_evidence.py#L114-L178",
+          "version": "repo-lines-v1:sha256:062d2c6ff6a8fb76ee3a8a84f13eb5a26a1ef150a71669a091124008e5961815:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NjNjMmI5NWRjMWQwMGE2ODg2Mjk0OTJkM2Y2NDkzZTk2MGUxOTk5ZGViN2U3MGY4MDUzN2ViZTgwMzE5MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMjQ1ZTk0ZWEzZTQ2Y2UxYWZlY2E0ZjliYjViZTgwNzJmMDBkMzc0MTEyMGJiM2FkN2U2MzYzNmJkZjJiNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZGZlMzg2Nzg2ZjViOTU1NjZlMDRiZjU0NjdjZjFkOTY2Nzg5OTU2YzQ4N2M2ZTcwMThkNDg0N2JhNzViYWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2f1973e6d6b4dd4b6ccf7bcceda9693",
+      "statement": "Candidate link mapping resolves scoped content against staging and retained content against the target while limiting document checks to the Candidate.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-rules-and-skills/references/controller.md#L94-L108",
+          "version": "repo-lines-v1:sha256:01271a0b6efdfab49c5fe61bd2a47f3ad64f484d138ff044ee407c300ff88126:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMGYwNzU3MDMyZThlZGVkMjU1YjhjM2RhNjM5YWE0NWIyNDcxYmZlNzlhZTU3YzIxYjEwMTRhYTg5MDE3ZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1OGFlNDczMTM1OWRhYjI1MWU1YzhiNWY0ZmQ2NWFiMGE5ZmQ4NjYwYmFkNDg4Y2I4ZTdjMTY0OTNiY2M2MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4NjkzMjkzNWEwZDJiODlhODEzMWI2MDRkZGRjNjE2NjAyYTllMzQxNzlhNTAwMTk3ODQ1MjU2NWIyMzQ4OTEifQ"
+        },
+        {
+          "resource": "repo://tests/test_write_rules_and_skills_checks.py#L266-L301",
+          "version": "repo-lines-v1:sha256:112b7b4ad39eb5d87a4b4434eeba1e191bd916fa74617529a198666f0248f8a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NzllMDQ1Yzg5NDEzYTFhYjI4NjhjYTQyOWM2MzUyZTQzOGNiOGY1ODU2YTliMzlhMTY2MjYwODJlZDk5NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZTg0NmNkNTBhYmQ1YmRlYzQyMzAzYzllOTVkYTU1MGY0YTk3YzQ5NzI2ODJjYTBiZDZjOTUwZTA1MDE0MzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NWM5ZGY5MjZkNjM0NmMxNDYzY2E1MGZkODA3Mjk1ZTNlM2QwOTAxYjgzMzliNjIxNzRjNDljNGE0YzUyOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4NDFhZDY1Y2JhNDI3Y2Y2N2U0YzAxMTBiODgxN2IxMzNhMWY1OTAzZjE2OTY3N2Q1ODIxZjg3ZGVlNjY2ODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_100976dc4ba849ee8ff7b8445c864d8f",
+      "statement": "Artifact dependencies are defined by required behavior and must remain acyclic, with setup authoring dependencies before consumers.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-rules-and-skills/references/artifact-relationships.md#L21-L33",
+          "version": "repo-lines-v1:sha256:1f9510cb6215dcd0b114baee236c170b8e5751a3018aa0d5ecf863ab6a9adfe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNzcyOWM1YThlNTcyMWZjZGU3OTQ3Y2FlYTY5NDdjZDQwZWFmZjE4ZWY0NWE0NjIzNTFlZjRiMWQ3ODQ2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzOTBhM2M2YjEzYzgwNmExMWM4YzE5MjhmMTU1YjdlMzIyM2UxMjQzMDY5MmE3NTE2ZWNmMmRjNDZlMDVhYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlOTI5NWI4M2I0MGY2NTc3NWFmYjJjZmI4NmZlMzFiMGEwZTliMzdjZGNhN2M4MGM3ZDg3MjdhNmYzYzkxNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZDdkYmJlZmFiM2NjMzRlYzBjNmUyNDllMTlhOTQ5ODYyNGI4MzQwNTY5OTQ5YzFlMTJlY2I0NDU2NjMwMjIifQ"
+        },
+        {
+          "resource": "repo://skills/write-rules-and-skills/references/artifact-relationships.md#L43-L45",
+          "version": "repo-lines-v1:sha256:0647e9b49ca0288c6cda1d3eb0857a82a0545757c6aefe4e7d9924fe9c339edb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTVjYjNkYmJjMzYzMzVhNTkwNjczM2ZiMzE4MzZlZmRiMjMyNzg2ZGExNTYzY2NhMjkxYjg0ZTFiM2M1MDUxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5Nzc1ZTIwMTQyN2E5NDk5NzNkNDc1MjZjNGM3ODM0MmU1MjAzYTE5MzFlZWIxY2MwMWJlNGZkMWMxMGJjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjUxYTM2MWI0OWI0NTNjOWEzZTc4NDJhNWZkMTMzYjY5ZTQ0NGMxMDQ0ZjZlYzM2NzZhMGZlYjRlNDgyNDE0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://skills/write-rules-and-skills/references/artifact-relationships.md#L5-L11",
+          "version": "repo-lines-v1:sha256:6686072ebc46f684497be17866d96e4443a7d1b6159f838a4dfa48fb1e5a704b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZkODk3M2UzNTk0M2FjM2M3YTQ1YTJkZmU0YmE3NDM5YmZjODEyYmY5YTgzMmE3MGVhNTdhYWJiNDBkOTg1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2EwMmM0OGQ3MzIyZGYwMWVhZWFjNTI3OTQ5MTdkYWMwNDg3NGVmYjg1ZmRjOWMwYTI3NTM3OGRiZjM4MmMzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM5ZWI2ODI1YzVkMmJiMThiMDM2NDAzN2QwYzFkNmMxY2JhMjIxNzE1ODYxODEyMzZjMzlmMWUxZGVlMTdlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTgxYzczMDZmNzY1Zjk0N2U3YmE3ZmE2MmJhNzBmZWQ0NTZkM2NiY2NjNTg5MDk2MzBiZTY2MWZiNTRhOTBhZSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-12T04:28:05.666Z"
+  }
+}
