@@ -2,11 +2,17 @@
 
 These fictional cases concern changes whose mechanisms look defensible until their requirements and costs are examined. Each starts with the facts available to that reviewer; the conclusions are not interchangeable between cases.
 
-## An extra snapshot around an existing transaction
+## An extra completer before a deferred cleanup callback
 
-An inventory update needs atomic visibility. The reviewer verifies that the existing library transaction already supplies it and that every caller uses that transaction. The PR adds a second snapshot owner around the same writes; its fault-injection tests pass, but it supplies no additional supported guarantee.
+A service's `stop()` method must return the same future on repeat calls, including a call from the cleanup callback. The PR adds a completer to store the future before cleanup starts, and its reentrancy test passes. The reviewer verifies that the mutex defers the cleanup callback even when the lock is free. The method can already store the future returned by the mutex before the callback runs.
 
-The report can judge the behavior reasonable while offering **Optional improvement**: remove the duplicate snapshot layer and retain the existing transaction. The reviewed caller paths establish that the simpler alternative preserves the contract, and the second state owner explains the maintenance benefit. Passing the new tests establishes the tested behavior, not a requirement for the added layer.
+The report can judge the behavior **Reasonable** and offer **Optional improvement** to store and return the mutex's future directly. The simpler design preserves publication order and returns the same future on repeat calls while removing the extra completion bookkeeping.
+
+## Shutdown cleanup and rebuild may overlap
+
+Shutdown queues a callback that clears the active worker slot. Rebuild assigns a replacement to that same slot. If a rebuild finishes while cleanup is queued, the old callback can clear the replacement's registration. The available evidence leaves the ordering between cleanup and rebuild open.
+
+The report marks reasonableness **Uncertain**. A supported restart sequence that can finish rebuilding while cleanup is pending would justify reporting the registration loss as a defect. A lifecycle guarantee that cleanup finishes before rebuilding would rule out the trigger.
 
 ## A parser rejects values without a confirmed policy change
 
