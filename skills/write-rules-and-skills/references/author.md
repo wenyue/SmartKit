@@ -36,7 +36,13 @@ For a rewrite, reconsider the content, structure, and mechanisms rather than tre
 
 ### Keep ownership and availability clear
 
-A Rule owns persistent policy; a task Skill owns guidance toward its outcome. Code, configuration, schemas, and other active contracts retain their facts. Inspect related owners and any accepted allocation plan before treating overlapping passages as redundant. Remove a duplicate only when the remaining owner supplies the full meaning, conditions, and exceptions through a supported route.
+- **Rules and rule-led Skills** state enduring policy for the work they govern, including constraints and exceptions. Revise these requirements when the accepted policy changes.
+- **Task Skills** guide the work and help readers judge completion, including any required steps and acceptance criteria. Revise these requirements when the accepted task contract changes.
+- **Wikis and comparable project documentation** can explain current behavior, point readers to sources and evidence, and provide troubleshooting context. These explanations can change as the underlying evidence changes.
+
+Make each of these requirements reachable through its owning Rule or Skill before the decision it governs. That route must work without wiki access. Code, configuration, schemas, and other active contracts are authoritative for the facts they define.
+
+Inspect related owners and any accepted allocation plan before treating overlapping passages as redundant. Remove a duplicate only when the remaining owner supplies the full meaning, conditions, and exceptions through a supported route.
 
 Read [Artifact Relationships](artifact-relationships.md) before designing references and dependencies. Apply it with the accepted owner-policy sources from the brief. Make each consequential relationship and its required context, availability, and failure behavior usable at the decision that needs it; send an unsupported dependency or missing policy input to the Controller.
 
