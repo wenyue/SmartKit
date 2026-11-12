@@ -1,46 +1,22 @@
 # Design Judgments from Different Evidence
 
-These fictional cases concern changes whose mechanisms look defensible until their requirements and costs are examined. Each starts with the facts available to that reviewer; the conclusions are not interchangeable between cases.
+These fictional excerpts illustrate individual judgments and their effects on the next decision. Use [Report Format](../references/report-format.md) for the complete item and report.
 
-## An extra completer before a deferred cleanup callback
+## When an extra result wrapper can be removed
 
-A service's `stop()` method must return the same future on repeat calls, including a call from the cleanup callback. The PR adds a completer to store the future before cleanup starts, and its reentrancy test passes. The reviewer verifies that the mutex defers the cleanup callback even when the lock is free. The method can already store the future returned by the mutex before the callback runs.
+A service's `stop()` must return the same future on repeat calls, including re-entry from its cleanup callback. The PR adds a completer to make the result available before cleanup. The reviewer verifies that this mutex always defers the callback, even when idle, so `stop()` can cache the mutex's future before any re-entry and return it on every call. That evidence supports **Reasonable** for the behavior and **Optional improvement** to remove the extra completion bookkeeping. If the callback could run inline, direct caching after the call would leave a re-entry window.
 
-The report can judge the behavior **Reasonable** and offer **Optional improvement** to store and return the mutex's future directly. The simpler design preserves publication order and returns the same future on repeat calls while removing the extra completion bookkeeping.
+## When an adapter earns its boundary
 
-## Shutdown cleanup and rebuild may overlap
+The only shared loading step for two configuration readers calls a third-party loader whose fixed interface takes a current-schema file and returns validated settings. The application still supports files saved in the previous schema, so a new application adapter converts them before calling the loader. Checks confirm the same settings and error behavior for both readers. Compatibility supports **Reasonable**. The shared adapter supports **Elegant** because converting inside the loader would require widening the library's schema contract and converting in each reader would duplicate the mapping. If all supported inputs already used the current schema and the adapter only forwarded calls, calling the loader directly could be an **Optional improvement**.
 
-Shutdown queues a callback that clears the active worker slot. Rebuild assigns a replacement to that same slot. If a rebuild finishes while cleanup is queued, the old callback can clear the replacement's registration. The available evidence leaves the ordering between cleanup and rebuild open.
+## When uncertainty affects the next decision
 
-The report marks reasonableness **Uncertain**. A supported restart sequence that can finish rebuilding while cleanup is pending would justify reporting the registration loss as a defect. A lifecycle guarantee that cleanup finishes before rebuilding would rule out the trigger.
+A parser starts rejecting a value the old version accepted. The new test proves rejection, and the supported input policy remains unresolved. Mark reasonableness **Uncertain**, name the missing policy decision and possible compatibility effect, and keep advancement pending until the correctness evidence is resolved.
 
-## A parser rejects values without a confirmed policy change
+In a separate review, M12 adds implicit context while preserving verified callback order and error handling. Source and checks establish supported behavior, and the reason for this extra mechanism remains open. Pass is pending and all other delivery prerequisites are satisfied.
 
-A configuration parser now rejects a previously accepted value. Its rejection tests pass, but the task and caller records do not establish that the accepted input contract changed. The reviewer can verify the new rejection path while remaining unable to judge whether rejecting that value is correct.
+> ⚖️ **Reasonable** · The changed path preserves the confirmed callback order and failure behavior.\
+> 🎨 **Uncertain** · Implicit context makes ownership harder to follow, and the design constraints needed to judge whether it can safely be simplified are missing.
 
-The reasonableness verdict is **Uncertain**. The report names the disputed input and missing contract decision, then warns about the compatibility consequence. It proposes neither removal nor retention as an established Fix or Optimize remedy. A tidy adapter does not resolve the missing policy, and the missing correctness basis remains a limit on advancement.
-
-## A bound for allocation controlled by an untrusted peer
-
-A peer-supplied length reaches an allocation without a library limit. The service has a confirmed availability requirement, and the reviewer traces a request that can exhaust memory. The PR adds a bound at the parsing boundary and reports invalid lengths through the existing error path.
-
-The observed path and requirement support **Reasonable** without a prior production incident. The single boundary check can also support **Elegant** when it keeps validation with the parser and adds no second state owner. This case has a concrete trust-boundary risk; the unresolved parser-policy case above does not establish an equivalent need merely by having rejection tests.
-
-## Callback ordering is confirmed, but the coordinator's rationale is missing
-
-M12 preserves a confirmed callback-ordering contract but introduces ambient context and deferred callbacks. The source and relevant checks establish ordering and failure behavior. They do not establish why this mechanism was chosen or whether its structural cost was accepted. Pass was already selected, and the rest of the delivery prerequisites are satisfied.
-
-The affected item's judgment and closing excerpts read:
-
-> ⚖️ **Reasonable** · The changed path preserves the confirmed ordering and failure behavior.\
-> 🎨 **Uncertain** · Ambient context makes callback ownership harder to follow; the missing design constraints and trade-off decision prevent a confident judgment about whether this complexity is necessary or can safely be simplified.
-
-⚠️ M12's callback ownership is harder to follow, while the mechanism's justification and acceptance remain unknown. This is an unresolved elegance concern, not a supported optimization proposal.
-
-The Agent continues the selected delivery with that warning. It has no evidence-backed remedy to add to Optimize and no unrelated observation to turn into an O item. The confirmed callback contract and completed checks distinguish this case from the parser's missing correctness basis.
-
-### Design context arrives later
-
-If the user supplies the earlier decision accepting this mechanism for a confirmed constraint, the reviewer records that constraint and retained cost. Approval does not itself establish elegance or require another request to optimize the same accepted burden.
-
-If instead the reviewer establishes a simpler implementation that preserves the confirmed contract with worthwhile benefit, and no earlier decision declined it, the report can offer **Optional improvement** with the concrete remedy. The new evidence changes the confidence of that proposal; the earlier uncertainty was not permission to implement it.
+⚠️ M12's callback ownership is harder to follow, and the need for implicit context remains unverified. Continue the selected delivery with the warning.

@@ -10,15 +10,15 @@ disable-model-invocation: true
 
 本入口负责审查范围、评估、发现、进度及用户决定。PR 或需对齐远端的分支证据和工作区选择需加载[准备](references/preparation.md)。每次普通、补充、修复或选定 O 项报告前，以及展示动作菜单前，完整阅读[报告格式](references/report-format.md)。提供通过、准备或执行选定交付，或修复涉及尚未完整审查的 PR 文件而需判断整文件 Viewed 资格时，加载[交付](references/delivery.md)。必要指南不可用时，依赖工作仍未完成。
 
-当某个情景有助于解释当前决定时，可选读相应示例：
+需要了解报告布局，或想看已核实的事实如何支持决定时，可查阅对应示例。根据适用指南和本次审查的证据，确定判词、报告内容和可选动作。
 
 | 情景 | 示例 |
 | --- | --- |
-| 一组审查包含缺陷和独立观察 | [分组审查](examples/review-group.md) |
-| 需求或设计背景影响判断置信度 | [设计判断](examples/design-judgments.md) |
-| 选定修复涉及多个文件，或缺少必要检查 | [修复报告](examples/repair-report.md) |
-| 交付遇到补充发现，或部分效果已经完成 | [交付跟进](examples/delivery-follow-through.md) |
-| 工作区、比较基准或 Viewed 证据需要决定 | [审查准备](examples/review-preparation.md) |
+| 编排含简写条目、详写条目和独立观察的完整分组报告 | [分组审查](examples/review-group.md) |
+| 判断新增边界是否有必要，或不确定性是否影响推进 | [设计判断](examples/design-judgments.md) |
+| 编排涉及配套文件的修复报告，或说明必要检查缺失 | [修复报告](examples/repair-report.md) |
+| 在处理补充发现或 Viewed 只记录了一部分后恢复已选交付 | [交付跟进](examples/delivery-follow-through.md) |
+| 提供工作区选项或处理 Viewed 证据缺失 | [审查准备](examples/review-preparation.md) |
 
 ## 固定比较与阅读顺序
 

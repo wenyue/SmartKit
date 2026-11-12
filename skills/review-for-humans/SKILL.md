@@ -10,15 +10,15 @@ Make fixed changes understandable enough for the human to judge them and choose 
 
 This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report and before presenting an action menu. Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete.
 
-Use an optional example when its situation helps explain the current decision:
+Consult an example when you need to see the report layout or how verified facts support a decision. Use the applicable guide and evidence from the current review to determine judgments, report content, and available actions.
 
 | Situation | Example |
 | --- | --- |
-| A review group contains a defect and independent observations | [Review group](examples/review-group.md) |
-| Requirements or design context change the confidence of a judgment | [Design judgments](examples/design-judgments.md) |
-| A selected repair changes several files or lacks a required check | [Repair report](examples/repair-report.md) |
-| Delivery encounters supplementary findings or partially completed effects | [Delivery follow-through](examples/delivery-follow-through.md) |
-| Workspace, comparison, or Viewed evidence needs a decision | [Review preparation](examples/review-preparation.md) |
+| Format a full group with compact and detailed items and independent observations | [Review group](examples/review-group.md) |
+| Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
+| Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
+| Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |
+| Present a workspace choice or resolve missing Viewed evidence | [Review preparation](examples/review-preparation.md) |
 
 ## Fix the comparison and reading order
 

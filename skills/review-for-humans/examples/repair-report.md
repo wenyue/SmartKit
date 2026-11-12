@@ -1,8 +1,8 @@
 # A Repair that Changes the Lookup and Its Callers
 
-In this fictional review, M1–M10 have been assigned and main progress is 4 / 9 files with 10 modifications. M2 found that category-list lookup uses a translated name even though stored lists and callers already have stable IDs. The user selected Fix M2 without delivery. The repair changes the lookup and both callers, plus a test file.
+In this fictional PR review, the user selected Fix M2 without delivery in `/work/catalog`. Main progress was 4 / 9 files with M1–M10 displayed.
 
-M2 is repaired across the lookup and its two callers. M11 and M12 describe supporting caller changes; all three belong to this repair of M2.
+M2 replaces translated names with stable IDs in the category-list lookup. M11 and M12 update its two callers as part of the same repair.
 
 ---
 
@@ -49,17 +49,13 @@ Required project checks passed on the repaired contents. Independent re-review c
 
 Repair coverage is three non-test files; main progress remains 4 / 9 files with 10 modifications. Commit, publication, and Viewed recording have not occurred.
 
-- A. **Pass** (recommended): Prepare and deliver the selected workspace's outstanding changes, publish the complete outgoing scope to the PR source, and review the next group read-only while eligible Viewed paths are recorded.
+- A. **Pass** (recommended): Prepare and commit outstanding changes in `/work/catalog`, publish the complete outgoing scope to the PR source, and record eligible Viewed paths. Once only Viewed remains, review the next group read-only under the delivery guide.
 - B. **Continue**: Review the next group without delivery, keeping the local repair.
 
 ## A required check cannot run
 
-In this variation, all three files were re-reviewed, but the project-required application check cannot run because its runner is unavailable. The source evidence still supports the lookup change; it does not replace that check.
-
-The report keeps the same three file blocks, names the missing check in its evidence paragraph, and describes M2's repair as incomplete. It offers neither Pass nor Continue. The next useful step is to restore the required runner; no selectable in-scope workaround has been established, so the Agent does not manufacture a Wait option.
+If all three files were re-reviewed but the required application check could not run, keep the three file blocks and report M2 as incomplete. Name the missing check and the unavailable runner in the evidence paragraph. With no selectable workaround, close by explaining that the runner must be restored to finish the repair.
 
 ## The selected item was an independent observation
 
-In a separate review, the user selected Optimize O1 to use an existing label formatter in `draft_menu.ts` and `draft_toolbar.ts`. Both files change, and the relevant label test is updated. The repair report explains O1 once under the menu file, describes the toolbar change in that file's overview, and reports the test with verification evidence.
-
-Here O1 remains the selected incidental observation; the supporting toolbar edit does not create a new M or O item. The report covers both changed non-test files and affected callers while keeping that review's main counts unchanged.
+If Optimize O1 updates `draft_menu.ts`, `draft_toolbar.ts`, and a label test, show O1 once under the menu file and describe the supporting change in the toolbar file's overview. Report the test with the verification evidence and keep main counts unchanged.
