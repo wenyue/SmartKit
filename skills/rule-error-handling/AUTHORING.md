@@ -8,6 +8,10 @@ Keep diagnostic evidence and caller-inspectable failure identities as separate d
 
 Keep the maintainer comment requirement tied to broad interception with a common disposition. A broad catch can silently absorb unrelated defects unless the reader can see why every covered failure is safe to handle. Routine returned-error propagation is deliberately excluded; applying the requirement there would produce repetitive comments without the same risk.
 
-## Disclose recovery guidance by the decision it serves
+## Give each recovery strategy one home
 
-Keep ordinary handling, ownership, and feedback policy in the entry. Load the longer recovery, persisted-data, and remediation references only for their stated decisions. Making them universal reads would burden routine propagation; hiding fundamental policy there would make ordinary reviews incomplete.
+Keep common outcome, propagation, diagnosis, authority, responsibility, and recovery criteria in the entry. Disclose strategies through five decision-based references, loading several for overlapping cases. Domain policy may retain its state invariants and completion contracts; duplicating recovery methods there would create competing owners.
+
+## Simplify within the accepted outcome
+
+Prefer direct handling and an established bounded recovery over additional protective machinery when both meet the accepted outcome. Deletion of invalid stored data is conditional on loss authority and a valid resulting state: a project's migration and reconstruction guarantees cannot establish that permission for other projects. Losing this distinction would turn a useful simplification into unauthorized data loss.
