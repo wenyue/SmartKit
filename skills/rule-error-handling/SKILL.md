@@ -41,6 +41,14 @@ Give each independently initiated operation a final owner. Required asynchronous
 
 Consuming a failure or delegating reporting retains responsibility for remaining state, cleanup, retry, and feedback. Carry unresolved outcomes and consequential effects to their final owner.
 
+## Choose the simplest acceptable recovery
+
+Prefer the simplest recovery that leaves the system in a valid state and preserves user input and completed work as the contract requires. Accept minor inconvenience, such as a short wait or a safe manual retry, when those affected have a practical way to proceed. Add recovery complexity only when it protects a required outcome or materially reduces the impact of failure.
+
+Choose a feasible, bounded recovery within the owner's authority. Establish any accepted loss, what effects remain, and the outcome if recovery fails. Keep the current outcome explicit when recovery only restores future usability. Disclose remaining effects that matter to callers when the contract accepts partial completion.
+
+A retry needs a reason the cause can be overcome and a stopping bound.
+
 ## Handle only failures with an established disposition
 
 When evidence supports normal conditions usually holding and failure being exceptional, prefer direct execution with local handling of the failures this boundary owns over repetitive prechecks. When normal validity is uncertain, prefer a reliable, low-cost explicit check.
@@ -67,17 +75,20 @@ Use project-owned severity and alerting according to impact, operational expecta
 
 Final feedback must convey useful context, impact, and disposition through the owning boundary, including material loss or unavailability even when its audience cannot repair it.
 
-At final handling, rely on human remediation only when the actual actor has the capability, authority, and available tools to perform it with reasonable effort. Exposing a failure does not establish that the human receiving it can resolve it.
+Rely on human remediation only when the actor has the access, authority, tools, and ability to act with reasonable effort. Use the actual deployment and audience to identify that actor. Operators normally own infrastructure repair for a staffed service. Client applications normally handle failures within their authority or provide a supported action for ordinary users or a qualified actor.
 
-## Load detail for consequential recovery decisions
+When direct repair is unavailable, offer a feasible supported escalation route if one exists. If the disposition depends on human action and no capable, authorized actor can act, settle ownership and disposition before implementing it. A runtime prompt may collect a bounded choice under an established product contract. Resolve missing recovery or data-loss decisions with their owner before implementing the dependent behavior.
 
-Ordinary propagation, clear translation or capture, routine review, I/O failure transfer, and asynchronous ownership use the policy above. Read the following resources before choosing, changing, or reviewing the corresponding behavior:
+Connect feedback to the resulting state and the action the audience can take. When another component or role takes over, carry the impact and evidence it needs and establish who owns completion and final feedback. Make the action's success, failure, and any material interruption observable to those who need to act.
 
-| Decision | Required reading and boundary |
+## Load detail for persisted data and side effects
+
+Use the entry for ordinary error handling. Before choosing, changing, or reviewing a decision below, read its reference. Apply both when both conditions hold.
+
+| Decision | Required reading |
 | --- | --- |
-| Recovery, retry, compensation, or accepted partial completion needs constraints on effects, replay, or resulting state | [Recovery and effects](references/recovery-and-effects.md). |
-| Repair, reconstruction, discard, or degraded use of persistent or serialized data needs decisions about authority, loss, later reads, or interpretation | [Persisted data](references/persisted-data.md). Ordinary I/O failure propagation alone does not trigger this branch. |
-| A final disposition relies on human action, or cross-role resolution and feedback responsibilities need to be established | [Remediation](references/remediation.md). Changing diagnostics or feedback alone does not trigger it when the established disposition and responsibilities remain intact. |
+| Repair, reconstruction, discard, or degraded use of persistent or serialized data depends on authority, loss, later reads, or interpretation. | [Persisted data](references/persisted-data.md) |
+| Recovery, retry, compensation, or partial completion depends on which effects happened, may recur, or remain after interruption. | [Retries and side effects](references/recovery-and-effects.md) |
 
 ## Resolve and verify within the current task
 

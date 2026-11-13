@@ -183,7 +183,7 @@ class PluginRuleContractTest(unittest.TestCase):
             self.assertNotIn(f'smartkit/{retired}', public_ids)
             self.assertFalse((ROOT / 'skills' / retired).exists())
         owned_references = {
-            'rule-error-handling': ('recovery-and-effects.md', 'persisted-data.md', 'remediation.md'),
+            'rule-error-handling': ('persisted-data.md', 'recovery-and-effects.md'),
             'rule-code-comment': ('examples.md',),
         }
         for owner, resources in owned_references.items():

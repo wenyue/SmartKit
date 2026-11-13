@@ -10,4 +10,4 @@ Keep the maintainer comment requirement tied to broad interception with a common
 
 ## Disclose recovery guidance by the decision it serves
 
-Keep ordinary handling, ownership, and feedback policy in the entry. Load the longer recovery, persisted-data, and remediation references only for their stated decisions. Making them universal reads would burden routine propagation; hiding fundamental policy there would make ordinary reviews incomplete.
+Keep general handling, recovery, ownership, and feedback in the entry. Disclose persisted-data guidance for decisions about loss and later reads, and retries and side effects for decisions about replay, partial effects, and interruption. An operation can need both references.
