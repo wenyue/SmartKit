@@ -5,7 +5,19 @@ description: Use for work involving operation outcomes or error behavior, includ
 
 # Error Handling
 
-An operation's promise determines whether it succeeded and what its caller needs to know. Keep that outcome, consequential effects, and responsibility visible through recovery and final handling.
+Keep error handling simple and direct. An operation's promise determines success; its owner chooses the least complicated handling that covers required state, accepted loss, permission, and completion. Preserve the failed outcome and consequential effects through recovery and final handling.
+
+## Load the guidance for affected decisions
+
+Apply the common principles below to ordinary substantive work and assessment. Before choosing, changing, or reviewing a decision in this table, read the corresponding reference. Load every matching reference: a cancelled remote write can involve external operations, asynchronous completion, and persistence together. If a required reference is unavailable, report the gap and pause the dependent decision.
+
+| Affected decision | Required reading |
+| --- | --- |
+| Stored or serialized data: corruption, reconstruction, discard, migrations, repaired reads, or partial writes. | [Persistence](references/persistence.md) |
+| Filesystem, network, subprocess, or other external operations: dispatch, uncertain outcomes, replay, reconciliation, or compensation. | [External operations](references/external-operations.md) |
+| Concurrent or deferred work: completion, cancellation, timeouts, stale results, streams, or lifecycle cleanup. | [Async work and streaming](references/async-and-streaming.md) |
+| Authentication, authorization, integrity checks, security fallback, or diagnostics containing credentials or private payloads. | [Identity and security](references/identity-and-security.md) |
+| User-facing recovery: retained input, remedial actions, human repair, or handoff to another actor. | [User recovery](references/user-recovery.md) |
 
 ## Start with the promised outcome
 
@@ -37,13 +49,13 @@ Establish that preservation through the language's native matching or classifica
 
 Handle failures for owned recovery, cleanup, compensation, required contract translation, or final handling; otherwise propagate faithfully through the accepted contract. A library may fulfill its responsibility by transferring the failed outcome to its caller.
 
-Give each independently initiated operation a final owner. Required asynchronous work belongs to the operation's completion promise; detached work needs its own completion, failure, and lifecycle ownership. Guarantee owned cleanup through success, failure, cancellation, and interruption.
+Give each independently initiated operation a final owner for completion, failure, and remaining state. Guarantee owned cleanup through success, failure, cancellation, and interruption.
 
 Consuming a failure or delegating reporting retains responsibility for remaining state, cleanup, retry, and feedback. Carry unresolved outcomes and consequential effects to their final owner.
 
 ## Choose the simplest acceptable recovery
 
-Prefer the simplest recovery that leaves the system in a valid state and preserves user input and completed work as the contract requires. Accept minor inconvenience, such as a short wait or a safe manual retry, when those affected have a practical way to proceed. Add recovery complexity only when it protects a required outcome or materially reduces the impact of failure.
+Prefer the simplest recovery that leaves the system in a valid state and preserves user input and completed work as the contract requires. Accept minor inconvenience, such as a short wait or a safe manual retry, when those affected have a practical way to proceed. Reuse an established recovery path; add wrappers, fallback state, or automatic repair only when they protect a required outcome or materially reduce the impact of failure.
 
 Choose a feasible, bounded recovery within the owner's authority. Establish any accepted loss, what effects remain, and the outcome if recovery fails. Keep the current outcome explicit when recovery only restores future usability. Disclose remaining effects that matter to callers when the contract accepts partial completion.
 
@@ -63,7 +75,7 @@ At each broad interception site in authored code, leave a meaningful nearby main
 
 ## Preserve evidence without widening the public contract
 
-Distinguish primary failures from failures of recovery, cleanup, or compensation. Preserve available originating errors, cause chains, stacks, and useful context through translation and final handling. Filter sensitive data, including credentials and needless private information. Human explanations supplement this evidence rather than replacing it.
+Distinguish primary failures from failures of recovery, cleanup, or compensation. Preserve available originating errors, cause chains, stacks, and useful audience-safe context through translation and final handling. If a secondary failure determines the caller's disposition, retain the original as complementary evidence; otherwise preserve the original outcome and handle the secondary failure at its owner. Human explanations supplement this evidence rather than replacing it.
 
 Decide diagnostic retention separately from public error recognition. Making an underlying error inspectable through native matching or unwrapping can expose it as a caller dependency. Preserve already promised recognition, and apply the public failure-contract policy above before adding such a promise. Retaining useful evidence does not by itself justify a new public wrapper or inspection contract, nor does it require every native error representation to carry a stack.
 
@@ -73,22 +85,7 @@ Give each reportable incident one final report owner. Complementary diagnostics 
 
 Use project-owned severity and alerting according to impact, operational expectations, and needed response, rather than channel or recovery alone. Successful recovery may still warrant investigation.
 
-Final feedback must convey useful context, impact, and disposition through the owning boundary, including material loss or unavailability even when its audience cannot repair it.
-
-Rely on human remediation only when the actor has the access, authority, tools, and ability to act with reasonable effort. Use the actual deployment and audience to identify that actor. Operators normally own infrastructure repair for a staffed service. Client applications normally handle failures within their authority or provide a supported action for ordinary users or a qualified actor.
-
-When direct repair is unavailable, offer a feasible supported escalation route if one exists. If the disposition depends on human action and no capable, authorized actor can act, settle ownership and disposition before implementing it. A runtime prompt may collect a bounded choice under an established product contract. Resolve missing recovery or data-loss decisions with their owner before implementing the dependent behavior.
-
-Connect feedback to the resulting state and the action the audience can take. When another component or role takes over, carry the impact and evidence it needs and establish who owns completion and final feedback. Make the action's success, failure, and any material interruption observable to those who need to act.
-
-## Load detail for persisted data and side effects
-
-Use the entry for ordinary error handling. Before choosing, changing, or reviewing a decision below, read its reference. Apply both when both conditions hold.
-
-| Decision | Required reading |
-| --- | --- |
-| Repair, reconstruction, discard, or degraded use of persistent or serialized data depends on authority, loss, later reads, or interpretation. | [Persisted data](references/persisted-data.md) |
-| Recovery, retry, compensation, or partial completion depends on which effects happened, may recur, or remain after interruption. | [Retries and side effects](references/recovery-and-effects.md) |
+Final feedback must convey useful context, impact, and disposition through the owning boundary, including material loss or unavailability even when its audience cannot repair it. Connect it to the resulting state and any supported next action. When another component or role takes over, carry the impact and evidence it needs and establish who owns completion and final feedback.
 
 ## Resolve and verify within the current task
 

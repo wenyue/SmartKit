@@ -183,7 +183,7 @@ class PluginManifestTest(unittest.TestCase):
 
         self.assertEqual(
             {path.name for path in (REPO_ROOT / '.agents').iterdir()},
-            {'plugins', 'rules', 'skills'},
+            {'config.json', 'plugins', 'rules', 'skills'},
         )
 
     def test_chinese_documentation_has_one_to_one_english_mirrors(self):
