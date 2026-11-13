@@ -1,32 +1,24 @@
 # External Operations
 
-Use this reference when filesystem, network, subprocess, or other external effects determine recovery, replay, or completion. Base handling on what the operation actually did and what its contract acknowledges.
-
 ## Establish the outcome before replay
 
-Trace consequential writes, remote mutations, held resources, notifications, and visible state through the failed step and recovery. Include in-flight work and effects whose outcome is uncertain. Establish what remains after cleanup, compensation, cancellation, or interruption, and who owns that state. Inspect the native failure mechanism when a secondary failure could replace the first error or obscure a retained resource.
+Identify known and uncertain effects, including in-flight work, held resources, and visible state, before choosing recovery. Establish what remains and who owns it after cleanup, compensation, or interruption. Check native cleanup semantics when they could hide the original failure or a retained resource.
 
 | Evidence | Consequence for handling |
 | --- | --- |
-| The request was not dispatched. | No remote effect occurred through that attempt; local preparation may still need cleanup. |
-| An authoritative response refused the request. | Follow the refusal contract, including any effects it permits; preserve unrelated infrastructure failures separately. |
-| The request was accepted or an effect was confirmed. | Establish whether the promised operation is complete or still needs acknowledgement, follow-up, or reconciliation. |
-| The response was lost, timed out, or otherwise leaves completion unknown. | Preserve uncertainty. Reconcile through a supported status or identity when available, or transfer the unresolved outcome to its owner before unsafe replay. |
+| The request was not dispatched. | This attempt caused no remote effect; local preparation may need cleanup. |
+| An authoritative response refused the request. | Follow the refusal contract, including effects it permits; keep unrelated infrastructure failures distinct. |
+| The request was accepted or an effect confirmed. | Determine whether the promise is complete or still needs acknowledgement or follow-up. |
+| The response was lost, timed out, or leaves completion unknown. | Preserve uncertainty; a missing response does not prove that a mutation failed. |
 
-A timeout or broken connection after dispatch does not prove that a mutation failed. Prefer a status check or retry of only the unfinished step when it can establish the promised result. Use an existing idempotency or deduplication contract where needed; a fresh attempt identifier may defeat that protection.
+Reconcile uncertainty through a supported status or operation identity when available; otherwise transfer the unresolved outcome before unsafe replay. Prefer retrying only the unfinished step. Use existing idempotency or deduplication guarantees where needed; a fresh attempt identifier may defeat them.
 
-For ordinary optional-file access, select a skip or default only when the caller accepts the native query's possible lookup failure or type mismatch. Required access and failures the caller must observe belong to the actual operation. A preliminary existence check supplies neither exclusive creation nor atomic replacement; use the protocol that supplies the required guarantee.
+For optional-file access, skip or default only when the caller accepts the native query's possible lookup failure or type mismatch. Let required access expose the actual operation's failures. An existence check supplies neither exclusive creation nor atomic replacement; use an operation with the required guarantee.
 
 ## Make the whole replay path safe
 
-Examine the complete replay path, including restoration and compensation, for repeated or irreversible effects. A reusable checkpoint needs evidence that arguments, current state, resources, and already completed effects still permit the promised result. Establish any idempotency or compensation the full path requires. Explain why retry is safe beside replay logic when code, types, and referenced contracts leave that reasoning unclear.
+Check the full replay path, including restoration and compensation, for repeated or irreversible effects. Arguments, current state, resources, and completed effects must still permit the promised result at the retry point. Establish required idempotency or compensation, and explain replay safety beside the logic when it is otherwise unclear.
 
-Suppose an operation promises remote creation followed by a required local refresh. Creation succeeds but refresh fails: remote state has changed, so a full retry needs protection against duplicate creation. Depending on the accepted contract, the owner can retry only refresh, compensate creation, or report an accepted partial result. If none is supported, propagate the failure and remaining remote state to its owner.
+If remote creation succeeds but a required refresh fails, a full retry risks duplicate creation. Retry only refresh, compensate creation, or report a partial result when the contract supports it; otherwise propagate the failure and remaining remote state. Failed creation must skip refresh, and refresh-only recovery must not create again.
 
-Compensation has its own completion and failure outcome; attempting it does not establish rollback. Avoid building a compensation system when direct propagation with known remaining effects or a safe manual retry meets the accepted contract.
-
-## Verify what repeats and what remains
-
-Check the public operation or responsible boundary for the effects it promises to repeat, retain, or compensate. Exercise the stopping bound, failed compensation, and interruption where they can change that outcome.
-
-In the creation example, failed creation must not proceed to refresh. Refresh-only recovery must not create again. Failed compensation must retain both the refresh failure and remaining remote object. Test a stop after creation or during compensation when supported by the path.
+Compensation has its own completion and failure outcome; attempting it proves no rollback. In the example, failed compensation must preserve both the refresh failure and remaining remote object. Verify stops after creation or during compensation when they can change the outcome.
