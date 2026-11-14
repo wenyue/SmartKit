@@ -5,6 +5,8 @@ description: Use for work involving code in any language, including requested co
 
 # Code Design
 
+Treat code quality as part of the outcome, not optional polish. Aim for elegant, well-crafted implementations: clear intent and direct control flow that solve the actual problem with the minimum necessary machinery. Favor maintainable clarity over cleverness; preserve correctness and keep improvements within the requested scope.
+
 Keep behavior understandable through its owners. Choose structure for the work needed to understand and change it, rather than for shorter callers or more reusable-looking interfaces.
 
 ## Choose a boundary that earns its cost
