@@ -94,12 +94,23 @@ class ConfigurationBackupHookTest(unittest.TestCase):
                 self.assertIn('authorizes startup synchronization', context)
                 self.assertIn('target ' + json.dumps(str(self.target)), context)
                 self.assertIn('Run `update`, then `reconcile` without `--adopt-local`', context)
-                self.assertIn('Preserve both sides on update failure', context)
-                self.assertIn('On `source-updated`, restore automatically with `apply --accept-existing`', context)
-                self.assertIn('For `local_updates_only`, ask whether to save local changes', context)
-                self.assertIn('Otherwise ask whether to save local, use the configuration repository or defer', context)
+                self.assertIn(
+                    '| Update failure | Preserve both sides and report the failure; '
+                    'do not proceed to application. |', context)
+                self.assertIn(
+                    '| `source-updated` | Restore automatically with `apply --accept-existing` '
+                    'and the exact inspection fingerprint. |', context)
+                self.assertIn('| `in-sync` | Use `apply` to record agreement. |', context)
+                self.assertIn(
+                    '| `needs-choice` with `local_updates_only` | Show changed paths and content differences; '
+                    'ask whether to save local changes to the configuration repository or defer. |', context)
+                self.assertIn(
+                    '| Other `needs-choice` | Show changed paths and content differences; '
+                    'ask whether to save local, use the configuration repository or defer. |', context)
                 self.assertIn('normal commit/push without a second confirmation', context)
-                self.assertIn('Deferral preserves local files and the prior receipt', context)
+                self.assertIn(
+                    'Deferral preserves local files and the prior receipt; report it and continue independent original work.',
+                    context)
                 self.assertNotIn('ask whether to restore or defer', context)
 
     def test_enabled_receipt_accepts_a_valid_saved_scope(self):

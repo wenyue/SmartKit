@@ -27,7 +27,7 @@
  6. If this changes the **frontier** of available tickets, kick off more **implementer subagents** to work on the new tickets. This allows for maximum concurrency.
 
 -7. Once all tickets are complete, load and apply the `code-review` skill on the integration branch. Fix all issues raised by the code review in a single **implementer subagent**.
-+7. Once all tickets are complete, load and apply the `code-review` skill on the integration branch. Fix all issues raised by the code review in a single **implementer subagent**. Verify the final integrated result and obtain blocker-free review of that state before finalization.
++7. Once all tickets are complete, load and apply the `code-review` skill on the integration branch. Resolve blocking findings through a single **implementer subagent**. Include optional improvements only when they offer a concrete benefit within the existing authorized scope; otherwise retain them as suggestions, not blockers. Verify the final integrated result and obtain blocker-free review of that state before finalization.
 
 -8. If a draft PR exists, mark it ready for review. Otherwise, resolve each ticket the way the issue tracker closes work, and report the integration branch.
 +8. Use `finish-worktree` to finalize the integration worktree through the agreed route. For a PR handoff, reuse the draft PR from step 3 and mark it ready after verified publication. Resolve the spec and tickets only when the issue tracker's closure conditions are met.

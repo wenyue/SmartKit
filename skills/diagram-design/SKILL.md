@@ -283,7 +283,7 @@ Run before producing any diagram.
 - [ ] **§6 rule 4:** a distinct attach point per connector on a shared edge, 12px or more apart, none hiding another?
 - [ ] **§6 rule 5:** no transit behind a non-endpoint box, except the unavoidable case (dashed, label at the visible end)?
 - [ ] **§6 rule 6:** no label mask overlapping a node drawn after it? (From a repository checkout, run `python3 <repo-root>/scripts/verify-geometry.py <file>`.)
-- [ ] Every arrow label has an opaque `fill="#f5f5f5"` rect behind it?
+- [ ] Every arrow label has an opaque mask rect matching the background it sits on in the effective skin?
 - [ ] Legend is a horizontal bottom strip, not floating?
 - [ ] No vertical `writing-mode` text?
 - [ ] `viewBox` expanded for the legend strip (~60px)?
@@ -295,10 +295,10 @@ Run before producing any diagram.
 **Typography:**
 
 - [ ] Brand match uses exact public families/weights, verified via `getComputedStyle`; fallbacks disclosed?
-- [ ] Human-readable names in Geist sans, not Geist Mono?
-- [ ] Technical sublabels (ports, commands, URLs) in Geist Mono?
-- [ ] Page title in Instrument Serif?
-- [ ] Annotation callouts (if any) in *italic* Instrument Serif? (see [primitive-annotation.md](references/primitive-annotation.md))
+- [ ] Human-readable names use the effective style guide's `node-name` family and weight?
+- [ ] Technical sublabels (ports, commands, URLs) use the effective style guide's `sublabel` family and weight?
+- [ ] Page title uses the effective style guide's `title` family and weight?
+- [ ] Annotation callouts (if any) use the effective style guide's `callout` family and weight, in *italic*? (see [primitive-annotation.md](references/primitive-annotation.md))
 - [ ] No JetBrains Mono anywhere?
 
 ---
@@ -312,7 +312,7 @@ Every diagram ships in three variants (see `assets/`):
 | **Minimal light** (default) | `assets/template.html`, `example-<type>.html` | Screenshot-ready. Diagram + title. Warm paper. |
 | **Minimal dark** | `assets/template-dark.html`, `example-<type>-dark.html` | Dark mode sites, slides, high-contrast posts. |
 | **Full editorial** | `assets/template-full.html`, `example-<type>-full.html` | Long-form posts where the diagram is the hero. |
-| **Consultant special** (quadrant only) | `example-quadrant-consultant.html` | BCG/McKinsey-style 2×2 scenario matrix. See [type-quadrant.md](references/type-quadrant.md#consultant-special-2x2-scenario-matrix). |
+| **Consultant special** (quadrant only) | `example-quadrant-consultant.html` | BCG/McKinsey-style 2×2 scenario matrix. See [type-quadrant.md](references/type-quadrant.md#consultant-special-22-scenario-matrix). |
 
 **Sketchy variant** (optional, applied to any of the above): a hand-drawn stroke filter for essays, not technical docs. See [primitive-sketchy.md](references/primitive-sketchy.md).
 
