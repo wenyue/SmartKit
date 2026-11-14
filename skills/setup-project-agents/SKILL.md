@@ -222,9 +222,10 @@ For conflicts, show the paths, fields and values, effects of the alternatives an
 
 ## 4. Prepare CodeGraph and start one frozen session
 
-After target, active harness and input decisions are settled, read [CodeGraph Preparation](references/codegraph.md) and establish the protocol's effect authority. Prepare the runtime through that scoped interface before freezing:
+After target, active harness and input decisions are settled, establish the protocol's CodeGraph effect authority and prepare the runtime before freezing:
 
 ```text
+python "<skill-root>/scripts/workflow.py" setup-codegraph --target "<target-root>" --harness "<active-harness>" --approved
 python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 

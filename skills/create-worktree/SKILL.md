@@ -83,9 +83,19 @@ When preparation applies, discover the selected target's project `prepare-worktr
 
 If the Skill is absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness. If the absent Skill is indispensable, return `non-ready` and identify project setup as the route to provide it.
 
-For a project already using CodeGraph, prepare a local index when the selected tree will support sustained implementation and repeated code-relationship queries. Do so on first use or when current evidence shows missing or stale readiness, reusing a healthy local index. Read [CodeGraph Preparation](../setup-project-agents/references/codegraph.md) and use its scoped interface within accepted permissions. A short review or one-off verification does not need index preparation merely because it uses a worktree.
+For a project already using CodeGraph, prepare a local index when the selected tree will support sustained implementation and repeated code-relationship queries. Do so on first use or when current evidence shows a missing or stale index, reusing a current local index. A short review or one-off verification does not need index preparation merely because it uses a worktree.
 
-Treat this CodeGraph branch as an aid unless the accepted task requires it. Report unavailable preparation and continue through direct source inspection where sufficient; this alone does not change the project environment result or make the workspace `non-ready`. A genuinely task-required CodeGraph capability follows the required-capability checks below. Include its prepared, reused, skipped or unavailable disposition in the handoff.
+Use the already-installed CodeGraph CLI within accepted local preparation permissions, checking its version and help for the supported interface. Bind `<target-root>` to the selected physical worktree. Keep its database at `<target-root>/.codegraph/codegraph.db`, rather than copying or linking another tree's index. Initialize only when that local database is absent. For an existing database, inspect status and synchronize pending changes only when it identifies a usable index for this exact tree; preserve and report a mismatched index or one requiring repair or rebuilding:
+
+```text
+codegraph init "<target-root>"
+codegraph status "<target-root>" --json
+codegraph sync "<target-root>"
+```
+
+These are conditional operations, not a sequence to run on every visit. Status and sync can resolve a parent index, so require the local database and a matching status `projectPath` before sync. Keep any interactive choice limited to local indexing and manual synchronization; decline hook installation or expansion of the scan scope. Account for tool-owned `.codegraph` metadata updates, including during status checks. Recheck status after indexing and confirm that the reported project and worktree identity match the target and that indexing is complete. Subsequent CodeGraph queries must explicitly identify this tree with `projectPath`. This branch neither installs CodeGraph nor configures or manages its services.
+
+Treat this CodeGraph branch as an aid unless the accepted task requires it. If the tool is unavailable or preparation fails, retain existing and partial index state, report the gap and continue through direct source inspection where sufficient; this alone does not change the project environment result or make the workspace `non-ready`. A genuinely task-required CodeGraph capability follows the required-capability checks below. Include its prepared, reused, skipped or unavailable disposition in the handoff.
 
 After preparation, verify any remaining task-required host settings and MCP capabilities, including that their project operations target this worktree. Report configuration `ready` only when the required configuration is usable; unresolved activation or a required unavailable capability yields `non-ready` with its next action.
 

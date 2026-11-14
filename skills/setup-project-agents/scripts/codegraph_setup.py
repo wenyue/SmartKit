@@ -1,4 +1,4 @@
-"""Prepare CodeGraph installation, index, and service for an authorized target."""
+"""Prepare CodeGraph installation, index, and service for an authorized full setup."""
 from __future__ import annotations
 
 import os

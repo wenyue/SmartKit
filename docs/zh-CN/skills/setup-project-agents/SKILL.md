@@ -222,9 +222,10 @@ python "<skill-root>/scripts/adopt_project_agents.py" apply --target "<target-ro
 
 ## 4. 准备 CodeGraph 并启动一个冻结会话
 
-目标、当前宿主和输入决策确定后，阅读 [CodeGraph 准备](references/codegraph.md)，并按照协议确定效果权限。冻结前，通过该限定接口准备运行时：
+目标、当前宿主和输入决策确定后，按照协议确定 CodeGraph 效果权限，并在冻结前准备运行时：
 
 ```text
+python "<skill-root>/scripts/workflow.py" setup-codegraph --target "<target-root>" --harness "<active-harness>" --approved
 python "<skill-root>/scripts/workflow.py" start --target "<target-root>"
 ```
 
