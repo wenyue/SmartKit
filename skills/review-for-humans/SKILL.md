@@ -186,7 +186,9 @@ Fix or Optimize can leave other items unresolved. After the selected remedy and 
 
 ### Carry the review forward
 
-Keep the fixed comparison, selected workspace, item and group identities, and saved review position. Carry the selected findings and their supporting paths and context, accepted trade-offs, and disclosed effects into the repair. Retain any pending compound request, including the distinction between Pass and only-deliver, through supplementary review, repairs, and interruptions.
+Keep the fixed comparison, selected workspace, item and group identities, and saved review position. Carry the selected findings and their supporting paths and context, verified review corrections and their reasons, accepted trade-offs, and disclosed effects into the repair. Retain any pending compound request, including the distinction between Pass and only-deliver, through supplementary review, repairs, and interruptions.
+
+Retaining behavior and forbidding edits are different decisions. Within an authorized repair or its necessary supporting changes, assess whether the verified reason for retaining behavior calls for a comment under applicable guidance. Retention alone grants no comment-edit authority: in read-only review, under an explicit no-edit instruction, or for an unrelated unselected item, recommend rather than edit. If a preservation request leaves unclear whether behavior or all edits must remain untouched, clarify that boundary before the affected edit.
 
 Reuse complete applicable guidance and supported verification procedures, and reuse evidence only while it remains valid for the exact contents, dependencies, and effects being assessed. Keep its supporting records, including full logs where available. Pinned PR evidence continues to describe the fixed comparison; verification of unpublished repairs must establish the repaired contents separately.
 
