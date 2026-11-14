@@ -50,7 +50,7 @@ https://github.com/DietrichGebert/ponytail
 
 Upstream revision: `e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156`. Source path: `skills/ponytail/SKILL.md`.
 
-Inspected version: SmartKit's checkout-authoritative adaptation of that source, including the local `vendor/patches/ponytail/ponytail.patch` changes. `writing-lessons.md` quotes its opening posture and confirmed-requirements boundary and summarizes its decision ladder. It does not establish Ponytail's coding policies for other artifacts.
+Inspected version: SmartKit's historical adaptation at commit `cc387918baa0d8dc041bb5e918b6786f80eadc6e`, including the `vendor/patches/ponytail/ponytail.patch` changes at that commit, not the current Ponytail version. `writing-lessons.md` quotes its opening posture and confirmed-requirements boundary and summarizes its decision ladder. It does not establish Ponytail's coding policies for other artifacts.
 
 ```text
 MIT License
