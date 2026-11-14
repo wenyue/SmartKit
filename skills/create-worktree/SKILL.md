@@ -83,6 +83,10 @@ When preparation applies, discover the selected target's project `prepare-worktr
 
 If the Skill is absent, report `not-provided` and skip it; a known indispensable missing input or preparation still prevents readiness. If the absent Skill is indispensable, return `non-ready` and identify project setup as the route to provide it.
 
+For a project already using CodeGraph, prepare a local index when the selected tree will support sustained implementation and repeated code-relationship queries. Do so on first use or when current evidence shows missing or stale readiness, reusing a healthy local index. Read [CodeGraph Preparation](../setup-project-agents/references/codegraph.md) and use its scoped interface within accepted permissions. A short review or one-off verification does not need index preparation merely because it uses a worktree.
+
+Treat this CodeGraph branch as an aid unless the accepted task requires it. Report unavailable preparation and continue through direct source inspection where sufficient; this alone does not change the project environment result or make the workspace `non-ready`. A genuinely task-required CodeGraph capability follows the required-capability checks below. Include its prepared, reused, skipped or unavailable disposition in the handoff.
+
 After preparation, verify any remaining task-required host settings and MCP capabilities, including that their project operations target this worktree. Report configuration `ready` only when the required configuration is usable; unresolved activation or a required unavailable capability yields `non-ready` with its next action.
 
 Recheck target identity and expected state after the assessments and any preparation, accounting for authorized changes. Return `ready` only when creation or reuse is verified, existing work is preserved, configuration status is `ready` or `not-needed`, environment status is `environment-ready`, `not-needed`, or `not-provided`, and no unresolved choice, unauthorized effect, or indispensable prerequisite remains. Otherwise return `non-ready` and preserve the workspace and partial state for safe continuation.
