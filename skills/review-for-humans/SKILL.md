@@ -8,7 +8,11 @@ disable-model-invocation: true
 
 Make fixed changes understandable enough for the human to judge them and choose what happens next. Establish why the behavior is needed before judging how it is implemented. Review authorizes evidence capture and link preparation. Explain complete file groups before acting on selected review remedies, delivery, or advancement.
 
-This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection. Read [Report Format](references/report-format.md) in full before every ordinary, supplementary, repair, or selected-O report and before presenting an action menu. Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete.
+This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection.
+
+Apply the complete [Report Format](references/report-format.md) to every ordinary, supplementary, repair, or selected-O report and action menu. Read it in full before first use; reuse its complete, current content already in context. Restore the full guide when content is missing, including after compaction, and reload it when it changes.
+
+Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete.
 
 Consult an example when you need to see the report layout or how verified facts support a decision. Use the applicable guide and evidence from the current review to determine judgments, report content, and available actions.
 
@@ -113,6 +117,12 @@ Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user expli
 
 ## Turn the findings into a real choice
 
+After explaining a complete group, use its result to choose the next step:
+
+1. Establish what remains unresolved. Correctness evidence, applicable required checks, and pending unreasonable findings constrain advancement; optional improvements and elegance uncertainty alone do not.
+2. Present the applicable [group or repaired-result choices](#after-a-review-group-or-completed-repair). Resolve derivable facts first; ask directly for a genuinely user-owned missing fact or scope/preservation decision. A fact question is not an action menu, and a verified external blocker with no supported remedy needs an explanation rather than an invented Wait/Resolve choice.
+3. Carry out the selected effect. A remedy goes through [checks and re-review](#establish-the-repaired-result) before the updated decision. Pass enters Delivery; Continue/Finish advances or ends without delivery. If delivery is already pending, use the [supplementary-review decisions](#during-supplementary-review-for-selected-delivery) instead of asking for Pass again.
+
 ### Interpret actions and their authority
 
 | Action | Selected effect |
@@ -134,8 +144,6 @@ A ready selected action proceeds without routine reconfirmation. Recommendations
 
 ### Apply the decision principles
 
-Offer choices for the user's remaining decisions after completing the current report and any required repair checks and affected re-review. Resolve derivable facts needed to describe a choice; ask directly for a genuinely user-owned missing fact or scope/preservation decision. Fact questions are not action menus. A verified external blocker with no supported selectable remedy needs an explanation, not an invented Wait/Resolve choice.
-
 Pass and Continue/Finish share the reviewed-group prerequisites: current correctness/version evidence, successful applicable repair or explicitly requested verification checks, completed affected re-review, and resolution or explicit retention of pending unreasonable findings, including earlier groups. Elegance uncertainty alone does not block advancement or delivery; a warning does not waive missing correctness evidence or required checks. Optional improvements and unselected O advice remain optional.
 
 Offer Pass proactively alongside Continue/Finish when applicable delivery effects remain. A prior delivery request and finished delivery preparation are not prerequisites for offering it. Describe the selected workspace, applicable full-workspace commit/outgoing publication/Viewed effects, and subsequent advancement. Unreviewed local or staged changes, uncovered outgoing commits, and remaining delivery checks are work that selecting Pass starts. They do not by themselves remove the choice. Verified limitations and user-owned unresolved scope decisions still constrain the effects that can be offered; use these principles for cases outside the common tables.
@@ -144,13 +152,15 @@ Selecting Pass starts Delivery's inventory, supplementary review, and checks; ex
 
 Use one option per action type. Offer Optimize when at least one concrete, outstanding optional improvement has been disclosed for selection. State the default selected IDs and effects inside that option. Subsets and compound requests remain available in natural language. Consolidate supported M and O remedies under the same Fix or Optimize label, while distinguishing the default M scope from O items requiring explicit selection. An option can explicitly select named O items when that is its disclosed scope. Merely mentioning O alternatives does not add them to a bulk M action. Unselected O advice does not delay an already authorized delivery.
 
-The four stage tables specify common situations, with a fixed recommendation and choice order. Apply the principles to other situations rather than extending the tables with exhaustive combinations. Use the applicable row, label its choices consecutively with the recommended choice at A, and include each applicable action once. Describe concrete IDs, consequences, and effects. A recommendation or sole option never selects itself.
+The common-case tables fix recommendation and choice order for recurring situations. Apply the principles to other situations rather than extending the tables with exhaustive combinations. Use the applicable row, label its choices consecutively with the recommended choice at A, and include each applicable action once. Describe concrete IDs, consequences, and effects. A recommendation or sole option never selects itself.
 
-Render these choices using Report Format. Use Continue with its purpose and next position in the description, and Finish at scope end. Preparation supplies the first table, for workspace choices before review. The remaining tables below govern group results, repairs, and supplementary review during delivery.
+Render these choices using Report Format. Use Continue with its purpose and next position in the description, and Finish at scope end. Preparation supplies the first table, for workspace choices before review. The tables below cover group or repaired results and supplementary review during delivery.
 
-### After a review group
+### After a review group or completed repair
 
-Include still-outstanding items from earlier groups. The improvement rows also cover selectable O improvements under their separate scope rules; unselected O defects do not create a main-review gate.
+Use the same choices for an ordinary group and a checked, re-reviewed repair result. Include still-outstanding items from earlier groups. After a remedy, first complete its required checks, affected re-review, and dedicated repair report; a failed or unavailable required check leaves dependent work incomplete, not ready for Pass or Continue. A completed remedy does not itself advance or deliver. With delivery pending, retain that request and use the supplementary-review table instead; preserve any other explicit compound request.
+
+The improvement rows also cover selectable O improvements under their separate scope rules; unselected O defects do not create a main-review gate.
 
 | Current situation | Recommended action | Choices, in order |
 | --- | --- | --- |
@@ -158,17 +168,6 @@ Include still-outstanding items from earlier groups. The improvement rows also c
 | Unreasonable findings remain; optional improvements are also offered | **Fix** | **Fix**; **Optimize**; **Ignore** |
 | Only optional improvements are offered | **Optimize** | **Optimize**; **Pass**; **Continue** |
 | No outstanding finding or improvement is offered | **Pass** | **Pass**; **Continue** |
-
-### After repair or optimization
-
-Show the dedicated repair report first. With no pending delivery or other compound request, use the resulting state below; a completed remedy does not itself advance or deliver. With delivery pending, retain that request and use the supplementary-review table for remaining decisions.
-
-| Current situation | Recommended action | Choices, in order |
-| --- | --- | --- |
-| Re-review leaves unreasonable findings; no optional improvement is offered | **Fix** | **Fix**; **Ignore** |
-| Re-review leaves unreasonable findings and optional improvements | **Fix** | **Fix**; **Optimize**; **Ignore** |
-| Required checks and re-review pass; only optional improvements are offered | **Optimize** | **Optimize**; **Pass**; **Continue** |
-| Required checks and re-review pass; no outstanding finding or improvement is offered | **Pass** | **Pass**; **Continue** |
 
 ### During supplementary review for selected delivery
 
