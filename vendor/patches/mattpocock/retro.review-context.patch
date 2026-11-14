@@ -1,0 +1,10 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -30,6 +30,6 @@
+
+ Remember that all work goes through two stages: implementation and review. The implementation agent has the most **context pressure**. They are responsible for exploration, writing code, and debugging failures.
+
+-The review agent has the least context pressure - it receives a diff, so no exploration needed. It often does not need to write code or debug.
++The review agent has the least context pressure - it starts from the selected diff and reads the callers, contracts, tests, and spec context needed to judge it, without repeating unrelated implementation exploration. It often does not need to write code or debug.
+
+ This means that the review agent should be responsible for imposing coding standards, not the implementation agent.

@@ -1,75 +1,130 @@
 --- a/references/type-dp-integration.md
 +++ b/references/type-dp-integration.md
-@@ -235,5 +235,5 @@
+@@ -195,7 +195,7 @@
+
+ ## 3. Connector rules (mandatory)
+
+-Five styles, bound to topology. Don't let user override style on focal-touching, bar-originating, or Trino → consumer edges — those are fixed by rule.
++Five styles, bound to topology. Footer service connections use `auth` even when the covered component is focal; otherwise styles on focal-touching, bar-originating, or Trino → consumer edges are fixed by rule.
+
+ | `style` | Stroke | Width | Dash | Marker | When required |
+ |---|---|---|---|---|---|
+@@ -203,7 +203,7 @@
+ | `secondary` | `muted` | 1.2 | — | `arrow` | Default for internal platform-component edges and source → platform edges that don't touch focal. |
+ | `federated` | `link` | 1.0 | `4,3` | `arrow-link` | Federation queries (e.g., source DB → Trino). |
+ | `trigger` | `muted` | 1.0 | `4,3` | `arrow` | Every edge originating from a `kind: bar` component (Airflow drops). Unlabelled. |
+-| `auth` | `accent` | 1.2 | `5,4` | `arrow-accent` | Every edge from a footer node up to the zone bottom edge. **Never to a specific component.** |
++| `auth` | `accent` | 1.2 | `5,4` | `arrow-accent` | Every footer service connection: to the zone for confirmed layer-wide coverage, or to the specific covered component (§9). |
+
+ **Defs block** (required, five markers — exactly):
+
+@@ -226,7 +226,7 @@
+ | Bar → row node (vertical drop) | **bottom** of bar at `node_cx(target)` | **top** of target |
+ | Platform → consumer | **right** of source platform component | **left** of consumer |
+ | Footer → zone | **top** of footer (at `footer_auth_x(k)`) | zone bottom edge `y = zone_y + zone_h` |
+-| Footer → component (any specific one) | **forbidden** |
++| Footer → component (confirmed local coverage) | **top** of footer | **bottom** of the covered component |
+
+ ### 3.2 Routing
+
+@@ -234,13 +234,13 @@
+ - **Fan-out staggering:** when one node fans out to N targets on the same side, stagger the exit y by ±4 px per index so arrows don't overlap (e.g., Trino → 4 consumers exits at y=124, 132, 140, 148). The vertical segments run in the corridor between the zone edge and the consumer column, also y-staggered.
  - **Z-order:** all connectors drawn **before** any rect (so node fills mask the line ends).
  - **Markers:** exactly one `marker-end` per `<line>` / `<path>`. Never `marker-start`.
 -- **Labels:** every `primary`, `secondary`, `federated`, `auth` edge gets a protocol label (the `arrow-label` role at 8 px, paper-filled rect mask with 6–10 px clear gap above the stroke). `trigger` edges are unlabelled.
 +- **Labels:** every `primary`, `secondary`, `federated` edge gets a protocol label; footer `auth` edges get a service-function label such as `AUTH` for authentication or `LOGGING` for logging (§9). Use the `arrow-label` role at 8 px and a paper-filled rect mask with 6–10 px clear gap above the stroke. `trigger` edges are unlabelled.
 
  ### 3.3 Footer → zone trunk
-@@ -241,5 +241,5 @@
+
  When N=1 footer: single vertical line at `x = zone_cx` from `footer_y(0)` to `zone_y + zone_h`.
 
 -When N≥2 footers: stagger AUTH lines so they don't overlap stacked footers. For footer index `k`:
 +When N≥2 footers: stagger footer service lines so they don't overlap stacked footers. For footer index `k`:
 
  ```
-@@ -252,5 +252,5 @@
+ footer_auth_x(k) = zone_cx + (k - (N-1)/2) * 32     # 32-px stride per footer
+@@ -251,7 +251,7 @@
+ - N=2 → 544, 576
  - N=3 → 528, 560, 592
 
 -Each AUTH line goes from `(footer_auth_x(k), footer_y(k))` up to `(footer_auth_x(k), zone_y + zone_h)`. AUTH labels sit just above the arrowhead at the zone bottom edge.
 +Each footer service line goes from `(footer_auth_x(k), footer_y(k))` up to `(footer_auth_x(k), zone_y + zone_h)`. Service-function labels sit just above the arrowhead at the zone bottom edge. The `auth` style and `footer_auth_x` name also apply to non-authentication footer services; the label identifies the actual function.
 
  ### 3.4 Crossings
-@@ -363,7 +363,7 @@
- ## 9. Identity, common services → connect to the layer, not to components
 
+@@ -335,7 +335,7 @@
+ 7. **Exactly 2** focal components (`focal: true`).
+ 8. Every edge originating from a `kind: bar` component uses `style: trigger` (dashed, unlabelled).
+ 9. Every Trino → consumer edge uses `style: primary` (the serve-flow rule).
+-10. Footer nodes connect only to the zone bottom edge via `auth` style. **No** edge from a footer to a specific component.
++10. Footer service connections use `auth` style and reflect confirmed coverage: zone bottom for the whole layer, or the specific covered component for local coverage (§9).
+ 11. Custom component colors ≤ 2 (in addition to the focal pair). Connectors never recolored by component `color`.
+ 12. All connectors emitted before any node rect (z-order rule).
+
+@@ -360,11 +360,11 @@
+
+ ---
+
+-## 9. Identity, common services → connect to the layer, not to components
+-
 -**Active Directory** (or Keycloak, IAM, OPA, any cross-cutting identity / policy / secrets store) authenticates *every* component in the platform. Wiring it to one specific tool would understate the trust scope. Connect it instead with a single arrow to the bottom edge of the platform zone, labeled `AUTH` (§3.3).
 -
 -The same rule applies to any other layer-wide service: centralized logging, secrets vault, observability stack, audit sink, mTLS root. Each goes in the `footer` list, each gets its own row, each gets its own AUTH line up to the zone bottom edge (staggered by index per §3.3). The visual reading is "the platform layer delegates to all of these," which is the architectural truth.
-+Use a `footer` entry only when the supplied architecture establishes that the service applies to the whole platform layer. A service name alone does not establish that scope. For a layer-wide authentication service, connect it to the zone bottom edge and label the line `AUTH` (§3.3).
++## 9. Identity and common services — connect to the confirmed scope
 +
-+Other confirmed layer-wide services each get their own footer row and staggered line to the zone bottom edge (§3.3), labeled with their actual function, such as `LOGGING` for centralized logging. These lines show service coverage of the layer, not payload flow or its direction. If coverage is partial or unknown, use Architecture or a suitable detail diagram instead; this type's footer-to-zone connection cannot express a component subset and must not imply broader coverage.
++Determine service coverage from the supplied architecture, not its name. For confirmed layer-wide coverage, connect the footer to the zone bottom edge (§3.3). For confirmed local coverage, connect only to the covered component using the existing orthogonal routing (§3.1–3.2); do not draw a zone-wide connection. If scope is unknown, clarify it before drawing a coverage claim.
++
++Label each service connection with its actual function, such as `AUTH` for authentication or `LOGGING` for logging. These lines show service coverage, not payload flow or its direction. Preserve the footer layout and existing routing; if a component subset cannot be shown clearly, use a suitable detail diagram rather than implying whole-layer coverage.
 
  ---
-@@ -393,5 +393,5 @@
+
+@@ -392,7 +392,7 @@
+ - **Per-tool color coding** (teal-NiFi, magenta-MinIO, yellow-Jupyter) inside the zone — collapses hierarchy; only the two focal accents earn coral, plus up to 2 custom colors on cross-cutting components (§4 cap).
  - **More than 2 focal components** — focal exists to distinguish "platform" from "pile of tools"; >2 erases the signal (same rule as SKILL.md §1).
  - **`color` override on a focal component** — ignored. Focal_accent always wins.
 -- **Footer wired to one specific tool** (e.g., AD → Airflow only) — wrong unless that service truly only protects one tool. The default is the layer-wide connection.
-+- **Footer wired to one specific tool** (e.g., AD → Airflow only) — this type reserves footers for confirmed layer-wide coverage. For partial or unknown coverage, use Architecture or a suitable detail diagram rather than a footer-to-component edge or an unsupported layer-wide claim.
++- **Footer coverage inferred from a service name** — a component-only edge understates confirmed layer-wide coverage, while a zone edge overstates local coverage. Connect to the supported scope (§9); a known one-tool service may connect to that tool.
  - **Footer or identity inside the zone** — identity gates the layer from outside. Drawing it inside misrepresents the trust model.
  - **Phase chevrons across the top** — those belong on `high-level`.
-@@ -402,5 +402,5 @@
+ - **Custom-colored connectors** — connectors are topology-driven. Style picks the color; `color` on a component never spreads to its edges.
+@@ -401,6 +401,6 @@
+
  ## 12. Examples
 
 -- `assets/example-dp-integration.html` — minimal light (1 footer = AD). Gallery default.
 +- `assets/example-dp-integration.html` — minimal light (2 footers: identity provider and centralized logging). Gallery default.
  - `assets/example-dp-integration-dark.html` — same, dark skin.
  - `assets/example-dp-integration-full.html` — same, editorial-card frame.
---- a/assets/example-dp-integration.html
-+++ b/assets/example-dp-integration.html
-@@ -51,5 +51,5 @@
-       <!-- Protocol labels retain an 8px gap from their connector segment. -->
-       <g text-anchor="middle"><rect class="label-mask" x="252" y="104" width="44" height="12" rx="2"/><text class="edge-label" x="274" y="113">REST</text><rect class="label-mask" x="272" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="296" y="201">CSV</text><rect class="label-mask" x="248" y="280" width="56" height="12" rx="2"/><text class="edge-label" x="276" y="289">EVENTS</text><rect class="label-mask" x="584" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="608" y="201">READ</text><rect class="label-mask" x="856" y="168" width="48" height="12" rx="2"/><text class="edge-label" x="880" y="177">JDBC</text><rect class="label-mask" x="872" y="192" width="56" height="12" rx="2"/><text class="edge-label" x="900" y="201">KERNEL</text><rect class="label-mask" x="856" y="216" width="56" height="12" rx="2"/><text class="edge-label" x="884" y="225">HTTPS</text></g>
--      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="652" y="429" text-anchor="middle">AUTH</text></g>
-+      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="48" height="12" rx="2"/><text class="edge-label" x="660" y="429" text-anchor="middle">LOGGING</text></g>
-       <!-- Zone label -->
-       <rect class="zone-mask" x="548" y="68" width="120" height="16" rx="2"/><text class="zone-label" x="608" y="79" text-anchor="middle">DATA PLATFORM</text>
 --- a/assets/example-dp-integration-dark.html
 +++ b/assets/example-dp-integration-dark.html
-@@ -51,5 +51,5 @@
+@@ -50,7 +50,7 @@
+       <line class="connector auth" x1="624" y1="524" x2="624" y2="408" marker-end="url(#arrow-accent)"/>
        <!-- Protocol labels retain an 8px gap from their connector segment. -->
        <g text-anchor="middle"><rect class="label-mask" x="252" y="104" width="44" height="12" rx="2"/><text class="edge-label" x="274" y="113">REST</text><rect class="label-mask" x="272" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="296" y="201">CSV</text><rect class="label-mask" x="248" y="280" width="56" height="12" rx="2"/><text class="edge-label" x="276" y="289">EVENTS</text><rect class="label-mask" x="584" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="608" y="201">READ</text><rect class="label-mask" x="856" y="168" width="48" height="12" rx="2"/><text class="edge-label" x="880" y="177">JDBC</text><rect class="label-mask" x="872" y="192" width="56" height="12" rx="2"/><text class="edge-label" x="900" y="201">KERNEL</text><rect class="label-mask" x="856" y="216" width="56" height="12" rx="2"/><text class="edge-label" x="884" y="225">HTTPS</text></g>
 -      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="652" y="429" text-anchor="middle">AUTH</text></g>
 +      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="48" height="12" rx="2"/><text class="edge-label" x="660" y="429" text-anchor="middle">LOGGING</text></g>
        <!-- Zone label -->
        <rect class="zone-mask" x="548" y="68" width="120" height="16" rx="2"/><text class="zone-label" x="608" y="79" text-anchor="middle">DATA PLATFORM</text>
+       <!-- Sources -->
 --- a/assets/example-dp-integration-full.html
 +++ b/assets/example-dp-integration-full.html
-@@ -54,5 +54,5 @@
+@@ -53,7 +53,7 @@
+       <line class="connector auth" x1="624" y1="524" x2="624" y2="408" marker-end="url(#arrow-accent)"/>
        <!-- Protocol labels retain an 8px gap from their connector segment. -->
        <g text-anchor="middle"><rect class="label-mask" x="252" y="104" width="44" height="12" rx="2"/><text class="edge-label" x="274" y="113">REST</text><rect class="label-mask" x="272" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="296" y="201">CSV</text><rect class="label-mask" x="248" y="280" width="56" height="12" rx="2"/><text class="edge-label" x="276" y="289">EVENTS</text><rect class="label-mask" x="584" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="608" y="201">READ</text><rect class="label-mask" x="856" y="168" width="48" height="12" rx="2"/><text class="edge-label" x="880" y="177">JDBC</text><rect class="label-mask" x="872" y="192" width="56" height="12" rx="2"/><text class="edge-label" x="900" y="201">KERNEL</text><rect class="label-mask" x="856" y="216" width="56" height="12" rx="2"/><text class="edge-label" x="884" y="225">HTTPS</text></g>
 -      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="652" y="429" text-anchor="middle">AUTH</text></g>
 +      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="48" height="12" rx="2"/><text class="edge-label" x="660" y="429" text-anchor="middle">LOGGING</text></g>
        <!-- Zone label -->
        <rect class="zone-mask" x="548" y="68" width="120" height="16" rx="2"/><text class="zone-label" x="608" y="79" text-anchor="middle">DATA PLATFORM</text>
+       <!-- Sources -->
+--- a/assets/example-dp-integration.html
++++ b/assets/example-dp-integration.html
+@@ -50,7 +50,7 @@
+       <line class="connector auth" x1="624" y1="524" x2="624" y2="408" marker-end="url(#arrow-accent)"/>
+       <!-- Protocol labels retain an 8px gap from their connector segment. -->
+       <g text-anchor="middle"><rect class="label-mask" x="252" y="104" width="44" height="12" rx="2"/><text class="edge-label" x="274" y="113">REST</text><rect class="label-mask" x="272" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="296" y="201">CSV</text><rect class="label-mask" x="248" y="280" width="56" height="12" rx="2"/><text class="edge-label" x="276" y="289">EVENTS</text><rect class="label-mask" x="584" y="192" width="48" height="12" rx="2"/><text class="edge-label" x="608" y="201">READ</text><rect class="label-mask" x="856" y="168" width="48" height="12" rx="2"/><text class="edge-label" x="880" y="177">JDBC</text><rect class="label-mask" x="872" y="192" width="56" height="12" rx="2"/><text class="edge-label" x="900" y="201">KERNEL</text><rect class="label-mask" x="856" y="216" width="56" height="12" rx="2"/><text class="edge-label" x="884" y="225">HTTPS</text></g>
+-      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="652" y="429" text-anchor="middle">AUTH</text></g>
++      <g><rect class="label-mask" x="548" y="420" width="32" height="12" rx="2"/><text class="edge-label" x="564" y="429" text-anchor="middle">AUTH</text><rect class="label-mask" x="636" y="420" width="48" height="12" rx="2"/><text class="edge-label" x="660" y="429" text-anchor="middle">LOGGING</text></g>
+       <!-- Zone label -->
+       <rect class="zone-mask" x="548" y="68" width="120" height="16" rx="2"/><text class="zone-label" x="608" y="79" text-anchor="middle">DATA PLATFORM</text>
+       <!-- Sources -->

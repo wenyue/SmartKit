@@ -195,7 +195,7 @@ All side-column nodes use fixed `w=160 h=64`. Same fill / stroke pattern: fill `
 
 ## 3. Connector rules (mandatory)
 
-Five styles, bound to topology. Don't let user override style on focal-touching, bar-originating, or Trino → consumer edges — those are fixed by rule.
+Five styles, bound to topology. Footer service connections use `auth` even when the covered component is focal; otherwise styles on focal-touching, bar-originating, or Trino → consumer edges are fixed by rule.
 
 | `style` | Stroke | Width | Dash | Marker | When required |
 |---|---|---|---|---|---|
@@ -203,7 +203,7 @@ Five styles, bound to topology. Don't let user override style on focal-touching,
 | `secondary` | `muted` | 1.2 | — | `arrow` | Default for internal platform-component edges and source → platform edges that don't touch focal. |
 | `federated` | `link` | 1.0 | `4,3` | `arrow-link` | Federation queries (e.g., source DB → Trino). |
 | `trigger` | `muted` | 1.0 | `4,3` | `arrow` | Every edge originating from a `kind: bar` component (Airflow drops). Unlabelled. |
-| `auth` | `accent` | 1.2 | `5,4` | `arrow-accent` | Every edge from a footer node up to the zone bottom edge. **Never to a specific component.** |
+| `auth` | `accent` | 1.2 | `5,4` | `arrow-accent` | Every footer service connection: to the zone for confirmed layer-wide coverage, or to the specific covered component (§9). |
 
 **Defs block** (required, five markers — exactly):
 
@@ -226,7 +226,7 @@ Five styles, bound to topology. Don't let user override style on focal-touching,
 | Bar → row node (vertical drop) | **bottom** of bar at `node_cx(target)` | **top** of target |
 | Platform → consumer | **right** of source platform component | **left** of consumer |
 | Footer → zone | **top** of footer (at `footer_auth_x(k)`) | zone bottom edge `y = zone_y + zone_h` |
-| Footer → component (any specific one) | **forbidden** |
+| Footer → component (confirmed local coverage) | **top** of footer | **bottom** of the covered component |
 
 ### 3.2 Routing
 
@@ -335,7 +335,7 @@ Before emitting SVG, verify **every** item:
 7. **Exactly 2** focal components (`focal: true`).
 8. Every edge originating from a `kind: bar` component uses `style: trigger` (dashed, unlabelled).
 9. Every Trino → consumer edge uses `style: primary` (the serve-flow rule).
-10. Footer nodes connect only to the zone bottom edge via `auth` style. **No** edge from a footer to a specific component.
+10. Footer service connections use `auth` style and reflect confirmed coverage: zone bottom for the whole layer, or the specific covered component for local coverage (§9).
 11. Custom component colors ≤ 2 (in addition to the focal pair). Connectors never recolored by component `color`.
 12. All connectors emitted before any node rect (z-order rule).
 
@@ -360,11 +360,11 @@ If you need more icons, browse `assets/icons.html` and define matching `<symbol>
 
 ---
 
-## 9. Identity, common services → connect to the layer, not to components
+## 9. Identity and common services — connect to the confirmed scope
 
-Use a `footer` entry only when the supplied architecture establishes that the service applies to the whole platform layer. A service name alone does not establish that scope. For a layer-wide authentication service, connect it to the zone bottom edge and label the line `AUTH` (§3.3).
+Determine service coverage from the supplied architecture, not its name. For confirmed layer-wide coverage, connect the footer to the zone bottom edge (§3.3). For confirmed local coverage, connect only to the covered component using the existing orthogonal routing (§3.1–3.2); do not draw a zone-wide connection. If scope is unknown, clarify it before drawing a coverage claim.
 
-Other confirmed layer-wide services each get their own footer row and staggered line to the zone bottom edge (§3.3), labeled with their actual function, such as `LOGGING` for centralized logging. These lines show service coverage of the layer, not payload flow or its direction. If coverage is partial or unknown, use Architecture or a suitable detail diagram instead; this type's footer-to-zone connection cannot express a component subset and must not imply broader coverage.
+Label each service connection with its actual function, such as `AUTH` for authentication or `LOGGING` for logging. These lines show service coverage, not payload flow or its direction. Preserve the footer layout and existing routing; if a component subset cannot be shown clearly, use a suitable detail diagram rather than implying whole-layer coverage.
 
 ---
 
@@ -392,7 +392,7 @@ When this gets unwieldy:
 - **Per-tool color coding** (teal-NiFi, magenta-MinIO, yellow-Jupyter) inside the zone — collapses hierarchy; only the two focal accents earn coral, plus up to 2 custom colors on cross-cutting components (§4 cap).
 - **More than 2 focal components** — focal exists to distinguish "platform" from "pile of tools"; >2 erases the signal (same rule as SKILL.md §1).
 - **`color` override on a focal component** — ignored. Focal_accent always wins.
-- **Footer wired to one specific tool** (e.g., AD → Airflow only) — this type reserves footers for confirmed layer-wide coverage. For partial or unknown coverage, use Architecture or a suitable detail diagram rather than a footer-to-component edge or an unsupported layer-wide claim.
+- **Footer coverage inferred from a service name** — a component-only edge understates confirmed layer-wide coverage, while a zone edge overstates local coverage. Connect to the supported scope (§9); a known one-tool service may connect to that tool.
 - **Footer or identity inside the zone** — identity gates the layer from outside. Drawing it inside misrepresents the trust model.
 - **Phase chevrons across the top** — those belong on `high-level`.
 - **Custom-colored connectors** — connectors are topology-driven. Style picks the color; `color` on a component never spreads to its edges.

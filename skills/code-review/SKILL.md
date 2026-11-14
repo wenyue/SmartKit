@@ -16,13 +16,11 @@ The issue tracker should have been provided to you. If `docs/agents/issue-tracke
 
 ### 1. Pin the review scope
 
-Distinguish committed-only review from work-in-progress review. For a branch, PR, or committed range, keep the user’s fixed point (commit, branch, tag, etc.); ask if it is missing or the intended scope is ambiguous. For current uncommitted work alone, use `HEAD` as the baseline unless the user specifies otherwise. Do not stage or commit files to make them reviewable.
+Select committed-only or work-in-progress scope. Keep the user's fixed point for a branch, PR, or range; ask if it is missing or ambiguous. Uncommitted work alone defaults to `HEAD`. Resolve the ref with `git rev-parse --verify <fixed-point>^{commit}`; stop on a bad ref. Record `HEAD` and do not stage or commit files for review.
 
-Resolve the selected ref to a commit with `git rev-parse --verify <fixed-point>^{commit}` and record `HEAD`. A bad ref stops here. For committed changes since a fixed point, capture `git diff <fixed-point>...HEAD` and `git log <fixed-point>..HEAD --oneline`; exclude unrelated working-tree changes. For work-in-progress since that point, use the resolved `git merge-base <fixed-point> HEAD` as `<baseline>`; for uncommitted work alone, `<baseline>` is the recorded `HEAD`.
+For committed-only scope, capture `git diff <fixed-point>...HEAD` and `git log <fixed-point>..HEAD --oneline`, excluding unrelated working-tree changes. For work-in-progress since a fixed point, use `git merge-base <fixed-point> HEAD` as `<baseline>`; for uncommitted work alone, use the recorded `HEAD`. Capture `git diff <baseline>`, `git diff --cached`, and `git diff` to cover the final tracked state and distinguish staged from unstaged changes. Include contents of relevant nonignored untracked files listed by `git ls-files --others --exclude-standard`. Retain index differences even when staged and unstaged changes cancel in the final working-tree diff.
 
-For work-in-progress, capture `git diff <baseline>` for the final tracked working-tree changes, `git status --short`, `git diff --cached`, and `git diff` to distinguish staged and unstaged changes. Enumerate nonignored untracked files with `git ls-files --others --exclude-standard` and include the contents of those belonging to the selected work. Staged and unstaged changes can cancel in the final working-tree diff: identify that case explicitly and retain the index differences rather than declaring the scope clean.
-
-Capture the selected diffs, relevant file contents, and commit list once, then give both reviewers that same material and scope, not only commands to rerun against a changing workspace. If the workspace changes during capture, recapture before dispatch. Stop as empty only when the complete selected scope is empty, including index differences and relevant untracked files for work-in-progress.
+Give both reviewers the same captured scope, diffs, relevant file contents, and commit list, rather than commands against a changing workspace. If the workspace changes during capture, refresh the material before dispatch. Stop as empty only when the complete selected scope is empty, including index differences and relevant untracked files for work-in-progress.
 
 ### 2. Identify the spec source
 
@@ -59,6 +57,8 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
+Give both sub-agents this finding classification along with their axis-specific brief: distinguish **blocking findings**, supported by evidence of a defect or unmet requirement that must be resolved for correctness, the accepted spec, or a mandatory repo standard, from **optional improvements** that do not prevent acceptance. Explain the evidence and consequence of each finding. A smell label alone does not establish a blocker; its actual effect and repo context determine whether it warrants a change.
+
 **Standards sub-agent prompt** should include:
 
 - The captured review scope, diffs, relevant file contents, and commit list from step 1.
@@ -77,7 +77,7 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 
 Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
-End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+Keep blocking findings and optional improvements distinct within each report. End with a one-line summary: counts of each category per axis, and the worst blocking issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
 
 ## Why two axes
 

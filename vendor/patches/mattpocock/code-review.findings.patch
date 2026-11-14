@@ -1,0 +1,19 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -57,6 +57,8 @@
+
+ ### 4. Spawn both sub-agents in parallel
+
++Give both sub-agents this finding classification along with their axis-specific brief: distinguish **blocking findings**, supported by evidence of a defect or unmet requirement that must be resolved for correctness, the accepted spec, or a mandatory repo standard, from **optional improvements** that do not prevent acceptance. Explain the evidence and consequence of each finding. A smell label alone does not establish a blocker; its actual effect and repo context determine whether it warrants a change.
++
+ **Standards sub-agent prompt** should include:
+
+ - The captured review scope, diffs, relevant file contents, and commit list from step 1.
+@@ -75,6 +77,6 @@
+
+ Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
+
+-End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
++Keep blocking findings and optional improvements distinct within each report. End with a one-line summary: counts of each category per axis, and the worst blocking issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+
+ ## Why two axes

@@ -1,6 +1,6 @@
 # DP security matrix
 
-**Best for:** documenting per-role / per-component access permissions for a data platform — a grid where each row is a platform component (Keycloak, MinIO bucket, Trino catalog, JupyterHub, NiFi, …) and each column is a role / AD group (Data Administrators, Data Engineers, Data Scientists, Data Consumers, …). Each supplied intersection cell holds a permission value (Admin / Full / R/W / Read / SELECT / Login / No access) with a visual category that matches the permission level. One cell may be marked focal to flag a critical access rule (e.g., "Data Consumers can ONLY `SELECT` from the aggregated catalog — sole consumer access").
+**Best for:** documenting per-role / per-component access permissions for a data platform — a grid where each row is a platform component (Keycloak, MinIO bucket, Trino catalog, JupyterHub, NiFi, …) and each column is a role / AD group (Data Administrators, Data Engineers, Data Scientists, Data Consumers, …). Each intersection cell holds a permission value (Admin / Full / R/W / Read / SELECT / Login / No access) with a visual category that matches the permission level. One cell may be marked focal to flag a critical access rule (e.g., "Data Consumers can ONLY `SELECT` from the aggregated catalog — sole consumer access").
 
 Use when stakeholders need to audit *who can do what* across the platform. Prefer **DP integration** when the question is *who can talk to what* (topology/protocol) rather than *who can write/read what* (permissions).
 
@@ -30,7 +30,7 @@ components:                             # 2..14 rows, ordered top → bottom
   - { name: "JupyterHub" }
   - { name: "NiFi" }
 
-cells:                                  # explicit (row, col) entries; omitted → Unknown, no permission level
+cells:                                  # explicit (row, col) entries; omitted → defaults to "none"
   # value = displayed text (free-form)
   # level = visual category: full | rw | read | none  (closed vocabulary, drives styling)
   # focal: true (max 1)            — overrides level to focal styling
@@ -55,7 +55,7 @@ cells:                                  # explicit (row, col) entries; omitted �
 
   # ... rows 6..7 ...
 
-none_label: "No access"                 # fallback text only for an explicit level: "none"
+none_label: "No access"                 # default text rendered when a cell is omitted
 dark: false
 ```
 
@@ -69,7 +69,7 @@ dark: false
 - `cells[k].sub` — optional 2nd-line text (used with focal). Renders in the `sublabel` role at 8px below the primary value.
 - `cells[k].color: "#hex"` — optional per-cell color override (§4).
 
-An omitted cell means the permission is unknown, not denied. Render it as `Unknown` without assigning a `level`; `none` requires explicit input supporting no access. An explicit entry with an invalid level or missing required permission information needs clarification, not silent conversion to `none` or to an omitted cell. The focal example remains valid without `level` because its explicit `value` supplies the permission.
+For inputs explicitly using this sparse contract, omitted cells retain the documented `none` / `none_label` default. Do not infer that contract from incomplete source facts: clarify unknown permissions before completing the matrix, or state that the matrix remains incomplete without rendering those unknowns as denials. An explicit invalid level or missing required permission information also needs clarification; the focal example is valid without `level` because its explicit `value` supplies the permission.
 
 ---
 
@@ -101,8 +101,7 @@ header_y         = 72
 row_y(k)         = 140 + k * row_stride                  # 140, 180, 220, ...
 rows_bottom      = row_y(n_components - 1) + row_h       # 8 rows → 456
 legend_y_top     = rows_bottom + 20                      # 476 for 8-row canonical
-legend_rows      = number of laid-out legend rows (§2.5) # includes the Unknown note when needed
-viewBox_h        = legend_y_top + 24 + 20 * legend_rows   # 520 for 8-row canonical, one legend row
+viewBox_h        = legend_y_top + 44                     # 520 for 8-row canonical
 
 # Column positions
 comp_col_x       = left_pad                                                       # 12
@@ -139,7 +138,7 @@ Solid paper fill across the full viewBox. No dot pattern.
 
 **Value cells (one per role × component):**
 - Rect: `(role_col_x(j), row_y(k), role_col_w, row_h)`, `rx=4`, stroke `ink @ 0.12` 0.6
-- Fill and text-color depend on `level` (or focal flag); omitted cells use the Unknown style — see §2.4
+- Fill and text-color depend on `level` (or focal flag) — see §2.4
 - Value text centered at `(role_col_cx(j), row_y(k) + 22)`: `node-name` role at 10px
 - Focal cell uses a slightly raised primary text at `y=18` and a sub-line at `y=30` (`sublabel` role at 8px)
 
@@ -151,19 +150,17 @@ Solid paper fill across the full viewBox. No dot pattern.
 | `rw` | `#FFFFFF` | `ink @ 0.12` | `ink` | 400 |
 | `read` | `muted @ 0.08` | `ink @ 0.12` | `muted` | 400 |
 | `none` | `paper` | `ink @ 0.12` | `soft` | 400 |
-| omitted (no `level`) | `paper` | `ink @ 0.12`, dashed `3 2` | `muted` | 400 |
 | **focal** | `accent @ 0.07` | `accent` (1.4) | `accent` | 600 |
 
 The focal cell can carry a 2nd line (`sub:`) rendered in `accent` with the `sublabel` role at 8px and 0.85 opacity.
 
-### 2.5 Legend (`y_top = legend_y_top`)
+### 2.5 Legend (`y_top = legend_y_top, h ≈ 30`)
 
-Hairline separator at `legend_y_top`. Below the separator, lay out style swatches with their labels — only the styles actually used in the diagram appear in the legend.
+Hairline separator at `legend_y_top`. Below the separator, one row of style swatches with their labels — only the styles actually used in the diagram appear in the legend.
 
 - "LEGEND" eyebrow at `(left_pad, legend_y_top + 20)`: `eyebrow` role, muted, letter-spacing 0.14em
 - Each style: swatch rect (14×12 `rx=2`) followed by a `sublabel` role label
-- Item x-positions are tabulated left-to-right with ~120-px stride; wrap when measured labels would exceed `viewBox_w - right_pad`, using 20px between row baselines.
-- If any cells are omitted, add a separate row with the dashed neutral swatch and `Unknown: permission not supplied; not a denial`. Keep this explanation inside the SVG so it survives export. Wrap it if needed, count every row in `legend_rows`, and size `viewBox_h` using §2 before export.
+- Item x-positions are tabulated left-to-right with ~120-px stride; legend wraps onto a second visual row only if `n_roles ≥ 6` (otherwise fits in one line)
 
 ---
 
@@ -244,8 +241,6 @@ If zero or >1 `focal: true` cells are declared, halt and ask the user.
 
 ## 6. Dark mode
 
-Unknown cells and their legend use the effective skin’s `paper` fill, `muted` text, and `ink @ 0.12` dashed stroke in both modes. Resolve those tokens directly from the selected skin; do not invert them again through the table below.
-
 | Token | Light | Dark |
 |---|---|---|
 | Paper | `paper` | `ink` |
@@ -273,12 +268,12 @@ Before emitting SVG, verify **every** item:
 2. Header row at `y=72 h=52`. Component header cell white-filled with two-line `Component / vs. AD group` label. Role banners filled `ink` with name + AD-group code in white.
 3. Data rows start at `y=140`, stride 40, height 36. `rows_bottom = 140 + (n_components−1)·40 + 36`.
 4. Component label cell `rx=4`, name left-aligned at `x=24`, optional `hint` right-aligned at `x = comp_col_x + comp_col_w − 12`.
-5. Every value cell `rx=4`, stroke `ink @ 0.12` 0.6, fill + text matching §2.4 for its `level` or omitted-cell style.
+5. Every value cell `rx=4`, stroke `ink @ 0.12` 0.6, fill + text matching §2.4 for its `level`.
 6. Exactly **one** focal cell (or zero). Focal cell stroke `accent` width 1.4. Primary value at `y = row_y(k) + 18`; `sub` (if present) at `y = row_y(k) + 30`.
-7. Cells omitted from `cells:` render as `Unknown` with no `level`, neutral dashed styling, and the in-SVG explanation from §2.5. Only explicit `none` entries use `none_label` (default `"No access"`) when no value is supplied.
+7. Cells omitted from `cells:` render as `level: "none"` with `none_label` text (default `"No access"`).
 8. Custom-colored cells ≤ 2 (in addition to the focal cell).
 9. No connector elements anywhere in the SVG.
-10. Legend strip at `legend_y_top`, one swatch per style actually used, hairline separator above. Include the Unknown explanation when needed; all wrapped rows fit inside the computed viewBox.
+10. Legend strip at `legend_y_top`, one swatch per `level` actually used, hairline separator above.
 11. `viewBox_h` grows with `n_components`; `viewBox_w` grows with `n_roles`.
 
 ---
@@ -289,7 +284,7 @@ Before emitting SVG, verify **every** item:
 - **Connectors anywhere** — matrix is value-driven; arrows belong in DP integration / process diagrams.
 - **Freeform `level` values** — closed vocabulary is `full | rw | read | none`. Use `value` for free-form displayed text + `color` override for arbitrary tinting.
 - **Per-row or per-column color tints** — apply `color` per cell only. Whole-row or whole-column highlighting tends to over-emphasize and collapses the matrix into a list.
-- **Treating missing permission information as no access** — `none` means an explicitly supplied denial. Omitted cells render as `Unknown`, with the explanation inside the SVG; changing `none_label` to "TBD" would instead relabel known denials.
+- **Using omission or `none_label` for unknown permissions** — under the sparse contract, omission means *no access*, not "TBD". Resolve missing facts or clearly leave the matrix incomplete; do not encode unknowns as omitted cells or relabel known denials.
 - **More than 6 roles** — split into two matrices (e.g., human roles vs service accounts) before exceeding 6 columns.
 - **More than 14 components** — split by domain (storage / compute / observability / governance) before exceeding 14 rows.
 - **Using the matrix to document *how* permissions are granted** — that belongs in a process or sequence diagram. The matrix shows *what* each role can do, not the grant flow.

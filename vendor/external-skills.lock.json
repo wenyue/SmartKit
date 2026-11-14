@@ -20,7 +20,7 @@
           "destination": "skills/ask-matt",
           "files": {
             "PHASE-BOUNDARIES.md": "a8aa20158609ef39e2b308b6ba0660c91066838d07a867202e63a7744a88a3ed",
-            "SKILL.md": "1d01b53eb61fa516044d929dc1c96b50df198ea0d2d0ef1560606aa6acb6a2fc",
+            "SKILL.md": "95d9060aafd6c9ba95c092e893eb1cebc1b9ba195e81095bafa07c686e73f8f0",
             "agents/openai.yaml": "1c9997eacc0026d963d54f6ec2dc0b005257ab3ebbacf5c008ccdd325adf3beb",
             "assets/icon.svg": "fc5e830b132ca1f62a4c69bee4f24641dc374d9ab51b73e30a432fbc9ef739c3"
           },
@@ -28,6 +28,10 @@
             {
               "path": "vendor/patches/mattpocock/ask-matt.openai.patch",
               "sha256": "3ae0905b319bf85148546e3e63123830a30f21b50b694a9606e94f7fb17efa9f"
+            },
+            {
+              "path": "vendor/patches/mattpocock/ask-matt.diagnosis.patch",
+              "sha256": "076260f04c280c878332f5ffe802cba9c5e884da750b0a5cedb8742be54cf432"
             }
           ]
         },
@@ -36,7 +40,7 @@
           "source_path": "skills/engineering/diagnosing-bugs",
           "destination": "skills/diagnosing-bugs",
           "files": {
-            "SKILL.md": "9168404abda0967a5d32977e3498cd95fda6807018852f3de736a78357c82b40",
+            "SKILL.md": "480cb44cd488d77d621adc4f78fb2ab81dc0d92060dc71ec49e33d1df39bb9d7",
             "agents/openai.yaml": "175da994ec187c1ad6e0e7d759f9913f4f2a10542ac84626d5cab0932af63b7f",
             "assets/icon.svg": "41c0daec81dad52b3b6a9ff068f82da1d4740f3239a023bf6cf61afce615258b",
             "scripts/hitl-loop.template.sh": "35103539fc36873eea36074769ad454f9379d6fc8b2dc0e26ce987fd3bfe5503"
@@ -45,6 +49,10 @@
             {
               "path": "vendor/patches/mattpocock/diagnosing-bugs.openai.patch",
               "sha256": "963c8f28e977bd34ce1d70a61b8c668973250e26739e091322c25ac1401a3420"
+            },
+            {
+              "path": "vendor/patches/mattpocock/diagnosing-bugs.evidence.patch",
+              "sha256": "4be9bba6ad379c6407d40f0b70c6007f7bd0be95d5328cd5a30dd7864b47b278"
             }
           ]
         },
@@ -164,7 +172,7 @@
           "source_path": "skills/engineering/to-spec",
           "destination": "skills/to-spec",
           "files": {
-            "SKILL.md": "43ad9cf318e5e7d3d1fa360253a37021796dc87a0c2e595ad262661a10f85088",
+            "SKILL.md": "8bf50e8e376cfb7463fe00e696169b6fd0f3452f1606d23879fcb6c572b609da",
             "agents/openai.yaml": "25e047bc0fedfa314f7cb2c6fa1c4876e9074b8e79ea27f654507ee143836bea",
             "assets/icon.svg": "70b0c9e694c79da8aa80348cacce9895b9ff6dda6cded15c9a83533c960816c5"
           },
@@ -172,6 +180,10 @@
             {
               "path": "vendor/patches/mattpocock/to-spec.openai.patch",
               "sha256": "f87f70ee09dfc1845e187170b54d56280c66653ababd078c8d6b757a7e6ca4fa"
+            },
+            {
+              "path": "vendor/patches/mattpocock/to-spec.synthesis.patch",
+              "sha256": "b409cb296556dbd9ee8214b94407ee630dcaabe12e2af8d9e9f9f9810d6f98d2"
             }
           ]
         },
@@ -196,7 +208,7 @@
           "source_path": "skills/engineering/wayfinder",
           "destination": "skills/wayfinder",
           "files": {
-            "SKILL.md": "39a01bc49589b4d41351788ee2e5cc70b56bd8366db34baea1ae37ec3c53a97c",
+            "SKILL.md": "4777875531268cc857092f7b3695efaca83d923aa890c9e58a7f8d83fea110ff",
             "agents/openai.yaml": "cbeb430a3ab074878e1ee5d7597f1447be2500ba2de1755f7e7fde0e2a8c1f50",
             "assets/icon.svg": "b0be5fe2925dfe7a3d2c2f2eafd4f2705937a06e8641c2f7d95785bef9f8fe40"
           },
@@ -208,6 +220,10 @@
             {
               "path": "vendor/patches/mattpocock/wayfinder.harness.patch",
               "sha256": "b9cc67cb445877d9a55d2f264578b5bba820be9218a721ce68e457149dc17878"
+            },
+            {
+              "path": "vendor/patches/mattpocock/wayfinder.claims.patch",
+              "sha256": "837bed5501b3d5a138830cfb8414659673cf8a1026779d032de19c55a5bffbb9"
             }
           ]
         },
@@ -232,7 +248,7 @@
           "source_path": "skills/engineering/implement-spec",
           "destination": "skills/implement-spec",
           "files": {
-            "SKILL.md": "5d969ba0adefc7356b082655388a0a5502ccbbd074119745eb8f7fcefd314e87",
+            "SKILL.md": "b72f4c989f8b183593d445ca903af05cc4452cb666c103f2d976d891751403d3",
             "agents/openai.yaml": "5e8f2f78b5f4bba8c85be2696aa041b47023ef1e9bdac2f7ac1242bc4e17f8bc",
             "assets/icon.svg": "ae37af3b099a132178636434c4ef4f7a81ef7e096704d62ff0cea012d157d767"
           },
@@ -247,7 +263,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/implement-spec.worktree.patch",
-              "sha256": "52b99b9b7b3cf069333dd3aae891f749518ff30380296f9997128ce159a90e39"
+              "sha256": "6ee86fa8ae7c4ee2c5b5bf23ffbeb4820064c8f32c79b328e61eaf80a1a18a47"
             }
           ]
         },
@@ -273,7 +289,7 @@
           "source_path": "skills/engineering/retro",
           "destination": "skills/retro",
           "files": {
-            "SKILL.md": "f57a33082ec282bfed2804a44a90906bf329548b72d63419bffcb64daf6954c9",
+            "SKILL.md": "5d481fb23765f56cf4fb3f02e63e6425594601e58906c6ed0e6383d46dc7ea08",
             "agents/openai.yaml": "8c80d6a3c1c3af4ee78f253ae6886bda31930db3879fe5df00420aa34d024507",
             "assets/icon.svg": "8b3f1ee8e0cd08785104793d7604410a1d33492c978f750b6bf9e9acec72f8a2"
           },
@@ -285,6 +301,10 @@
             {
               "path": "vendor/patches/mattpocock/retro.harness.patch",
               "sha256": "3e00794ffcedfeef1889af263d6034e0e988cb4f6e8744b13eff4315d6e243be"
+            },
+            {
+              "path": "vendor/patches/mattpocock/retro.review-context.patch",
+              "sha256": "b58fcc4d68e16cf0a5a5844fa243d37cfeccbb5dabd2fc1d55a5bd4dda0137b0"
             }
           ]
         },
@@ -367,7 +387,7 @@
           "source_path": "skills/engineering/code-review",
           "destination": "skills/code-review",
           "files": {
-            "SKILL.md": "87356faf17a4e6e048c31475a9843b5be5dd668d68871c17dd25e0b40a3bebe8",
+            "SKILL.md": "0d59cb8115ea9a06d8d36cd2889d01276576bc7b4b755229f049008f0f15e452",
             "agents/openai.yaml": "916063ab21aacbc1666dde564264160357ab07314c638b3a7f56f37de8d72e22",
             "assets/icon.svg": "109246fe7fcd65c6856938511d8f0072aff5ceee2cc7ebe23b9dabae4e63a0b7"
           },
@@ -378,7 +398,11 @@
             },
             {
               "path": "vendor/patches/mattpocock/code-review.wip.patch",
-              "sha256": "2d8e8b01a9430f6e1bf607671b759b797e612c5c64f4d53db3492062db0976fa"
+              "sha256": "faa13dd58f5763ea10c99453dbaee1e03fd719997bee44fbe6a490a5f21fade3"
+            },
+            {
+              "path": "vendor/patches/mattpocock/code-review.findings.patch",
+              "sha256": "a79112fad3c6862939948a3323eb450ed84e70dad6f01b57e27f4a8a45aa3aad"
             }
           ]
         },
@@ -895,8 +919,8 @@
             "references/type-db-schema.md": "91f017b8813cfc63d775809d18659971d0aa5982967af94d47def31690713083",
             "references/type-dependency.md": "dd76bc521408b1cf0a3f86ee7c9ea93e4ad0650e4855c8f2be2358db7b721a43",
             "references/type-deployment.md": "296adfee79069e8fd8f9a19012cca731c5cc237990a0274ca1a8a807173c9fec",
-            "references/type-dp-integration.md": "f81df7e6bb948fc5ffcfc24b8e995371f7334d78c25b4200895e318e4c010010",
-            "references/type-dp-security-matrix.md": "8bdf41d0e716ba62723de962c32367b935fce4a56bfa906acf5d3b9af18640d3",
+            "references/type-dp-integration.md": "f459f57ea66321d541cb2d536d681677a40e900b328c572cc361f70e111a919e",
+            "references/type-dp-security-matrix.md": "fc84bcd1ed9bff62cfd228b60b6c1b00f9159fc6b7e4abfe5ab919d3b2e902ae",
             "references/type-er.md": "d1495abeb6f5004bd89fface17d3767ebab71c8450dca195b055e18bf3132c57",
             "references/type-exploded.md": "785b904ce1a1be806824c97a5719578a2c32c931fb424d0a1a69c4480a527152",
             "references/type-fishbone.md": "3441d3c73334813bf55cf1d0d96ea1aa4f9e46a60001ba83dfe9442be1745f8b",
@@ -950,7 +974,7 @@
             },
             {
               "path": "vendor/patches/diagram-design/security-matrix-unknown.patch",
-              "sha256": "8019691c7cfadca2c10a2dcde0db2c71444ba8b145c2ee4de7375b090633cf26"
+              "sha256": "d3162aa410781b962751bcb2aec38c61613d1650f7e243e5f0a48d588a21aa13"
             },
             {
               "path": "vendor/patches/diagram-design/chart-geometry.patch",
@@ -970,7 +994,7 @@
             },
             {
               "path": "vendor/patches/diagram-design/footer-semantics.patch",
-              "sha256": "c4f0dbf899afaf0116759c00597925752664a00723601e2cab072956ab037d57"
+              "sha256": "f9ddea1c0c782825e0801180cc6d8ef51cd4ba825a042f9f6b8a01f8092f3a59"
             }
           ]
         }

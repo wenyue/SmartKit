@@ -9,7 +9,7 @@
 
  - **Standards**: does the code conform to this repo's documented coding standards?
  - **Spec**: does the code faithfully implement the originating issue / spec?
-@@ -14,13 +14,15 @@
+@@ -14,13 +14,13 @@
 
  ## Process
 
@@ -17,19 +17,17 @@
 +### 1. Pin the review scope
 
 -Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
-+Distinguish committed-only review from work-in-progress review. For a branch, PR, or committed range, keep the user’s fixed point (commit, branch, tag, etc.); ask if it is missing or the intended scope is ambiguous. For current uncommitted work alone, use `HEAD` as the baseline unless the user specifies otherwise. Do not stage or commit files to make them reviewable.
++Select committed-only or work-in-progress scope. Keep the user's fixed point for a branch, PR, or range; ask if it is missing or ambiguous. Uncommitted work alone defaults to `HEAD`. Resolve the ref with `git rev-parse --verify <fixed-point>^{commit}`; stop on a bad ref. Record `HEAD` and do not stage or commit files for review.
 
 -Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base). Also note the list of commits via `git log <fixed-point>..HEAD --oneline`.
-+Resolve the selected ref to a commit with `git rev-parse --verify <fixed-point>^{commit}` and record `HEAD`. A bad ref stops here. For committed changes since a fixed point, capture `git diff <fixed-point>...HEAD` and `git log <fixed-point>..HEAD --oneline`; exclude unrelated working-tree changes. For work-in-progress since that point, use the resolved `git merge-base <fixed-point> HEAD` as `<baseline>`; for uncommitted work alone, `<baseline>` is the recorded `HEAD`.
++For committed-only scope, capture `git diff <fixed-point>...HEAD` and `git log <fixed-point>..HEAD --oneline`, excluding unrelated working-tree changes. For work-in-progress since a fixed point, use `git merge-base <fixed-point> HEAD` as `<baseline>`; for uncommitted work alone, use the recorded `HEAD`. Capture `git diff <baseline>`, `git diff --cached`, and `git diff` to cover the final tracked state and distinguish staged from unstaged changes. Include contents of relevant nonignored untracked files listed by `git ls-files --others --exclude-standard`. Retain index differences even when staged and unstaged changes cancel in the final working-tree diff.
 
 -Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
-+For work-in-progress, capture `git diff <baseline>` for the final tracked working-tree changes, `git status --short`, `git diff --cached`, and `git diff` to distinguish staged and unstaged changes. Enumerate nonignored untracked files with `git ls-files --others --exclude-standard` and include the contents of those belonging to the selected work. Staged and unstaged changes can cancel in the final working-tree diff: identify that case explicitly and retain the index differences rather than declaring the scope clean.
-+
-+Capture the selected diffs, relevant file contents, and commit list once, then give both reviewers that same material and scope, not only commands to rerun against a changing workspace. If the workspace changes during capture, recapture before dispatch. Stop as empty only when the complete selected scope is empty, including index differences and relevant untracked files for work-in-progress.
++Give both reviewers the same captured scope, diffs, relevant file contents, and commit list, rather than commands against a changing workspace. If the workspace changes during capture, refresh the material before dispatch. Stop as empty only when the complete selected scope is empty, including index differences and relevant untracked files for work-in-progress.
 
  ### 2. Identify the spec source
 
-@@ -59,12 +61,12 @@
+@@ -59,12 +59,12 @@
 
  **Standards sub-agent prompt** should include:
 
