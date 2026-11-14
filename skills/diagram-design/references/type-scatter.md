@@ -9,7 +9,7 @@
 - **Axes:** X at y=420 (baseline), Y at x=80. Both use `arrow-label` role 8px gridline labels. Gridlines 4–6 per axis at equal intervals.
 - **Point shape:** `<circle>` r=5 for standard points, r=6 for focal. Focal point in `accent` fill. Others in `muted @ 0.20` fill + `muted` stroke.
 - **Labels on points (optional):** `arrow-label` role 8px next to a point. Use a paper-fill rect mask behind the label. Label at most 2–3 points; not all.
-- **Trend line (optional):** `<line>` from lower-left to upper-right, stroke `ink @ 0.25` dashed 4,3. Never force a perfect fit — only add if the trend is visually obvious.
+- **Trend line (optional):** `<line>` whose direction and position follow the data, including a downward line for a negative relationship; stroke `ink @ 0.25` dashed 4,3. Never force a perfect fit — only add if the trend is visually obvious.
 - **Quadrant dividers (optional):** light dashed lines at the median x and y to split into quadrants. Label each quadrant in the `arrow-label` role at 8px, `muted`.
 
 ### Point pattern

@@ -234,13 +234,13 @@ Five styles, bound to topology. Don't let user override style on focal-touching,
 - **Fan-out staggering:** when one node fans out to N targets on the same side, stagger the exit y by ±4 px per index so arrows don't overlap (e.g., Trino → 4 consumers exits at y=124, 132, 140, 148). The vertical segments run in the corridor between the zone edge and the consumer column, also y-staggered.
 - **Z-order:** all connectors drawn **before** any rect (so node fills mask the line ends).
 - **Markers:** exactly one `marker-end` per `<line>` / `<path>`. Never `marker-start`.
-- **Labels:** every `primary`, `secondary`, `federated`, `auth` edge gets a protocol label (the `arrow-label` role at 8 px, paper-filled rect mask with 6–10 px clear gap above the stroke). `trigger` edges are unlabelled.
+- **Labels:** every `primary`, `secondary`, `federated` edge gets a protocol label; footer `auth` edges get a service-function label such as `AUTH` for authentication or `LOGGING` for logging (§9). Use the `arrow-label` role at 8 px and a paper-filled rect mask with 6–10 px clear gap above the stroke. `trigger` edges are unlabelled.
 
 ### 3.3 Footer → zone trunk
 
 When N=1 footer: single vertical line at `x = zone_cx` from `footer_y(0)` to `zone_y + zone_h`.
 
-When N≥2 footers: stagger AUTH lines so they don't overlap stacked footers. For footer index `k`:
+When N≥2 footers: stagger footer service lines so they don't overlap stacked footers. For footer index `k`:
 
 ```
 footer_auth_x(k) = zone_cx + (k - (N-1)/2) * 32     # 32-px stride per footer
@@ -251,7 +251,7 @@ Examples:
 - N=2 → 544, 576
 - N=3 → 528, 560, 592
 
-Each AUTH line goes from `(footer_auth_x(k), footer_y(k))` up to `(footer_auth_x(k), zone_y + zone_h)`. AUTH labels sit just above the arrowhead at the zone bottom edge.
+Each footer service line goes from `(footer_auth_x(k), footer_y(k))` up to `(footer_auth_x(k), zone_y + zone_h)`. Service-function labels sit just above the arrowhead at the zone bottom edge. The `auth` style and `footer_auth_x` name also apply to non-authentication footer services; the label identifies the actual function.
 
 ### 3.4 Crossings
 
@@ -362,9 +362,9 @@ If you need more icons, browse `assets/icons.html` and define matching `<symbol>
 
 ## 9. Identity, common services → connect to the layer, not to components
 
-**Active Directory** (or Keycloak, IAM, OPA, any cross-cutting identity / policy / secrets store) authenticates *every* component in the platform. Wiring it to one specific tool would understate the trust scope. Connect it instead with a single arrow to the bottom edge of the platform zone, labeled `AUTH` (§3.3).
+Use a `footer` entry only when the supplied architecture establishes that the service applies to the whole platform layer. A service name alone does not establish that scope. For a layer-wide authentication service, connect it to the zone bottom edge and label the line `AUTH` (§3.3).
 
-The same rule applies to any other layer-wide service: centralized logging, secrets vault, observability stack, audit sink, mTLS root. Each goes in the `footer` list, each gets its own row, each gets its own AUTH line up to the zone bottom edge (staggered by index per §3.3). The visual reading is "the platform layer delegates to all of these," which is the architectural truth.
+Other confirmed layer-wide services each get their own footer row and staggered line to the zone bottom edge (§3.3), labeled with their actual function, such as `LOGGING` for centralized logging. These lines show service coverage of the layer, not payload flow or its direction. If coverage is partial or unknown, use Architecture or a suitable detail diagram instead; this type's footer-to-zone connection cannot express a component subset and must not imply broader coverage.
 
 ---
 
@@ -392,7 +392,7 @@ When this gets unwieldy:
 - **Per-tool color coding** (teal-NiFi, magenta-MinIO, yellow-Jupyter) inside the zone — collapses hierarchy; only the two focal accents earn coral, plus up to 2 custom colors on cross-cutting components (§4 cap).
 - **More than 2 focal components** — focal exists to distinguish "platform" from "pile of tools"; >2 erases the signal (same rule as SKILL.md §1).
 - **`color` override on a focal component** — ignored. Focal_accent always wins.
-- **Footer wired to one specific tool** (e.g., AD → Airflow only) — wrong unless that service truly only protects one tool. The default is the layer-wide connection.
+- **Footer wired to one specific tool** (e.g., AD → Airflow only) — this type reserves footers for confirmed layer-wide coverage. For partial or unknown coverage, use Architecture or a suitable detail diagram rather than a footer-to-component edge or an unsupported layer-wide claim.
 - **Footer or identity inside the zone** — identity gates the layer from outside. Drawing it inside misrepresents the trust model.
 - **Phase chevrons across the top** — those belong on `high-level`.
 - **Custom-colored connectors** — connectors are topology-driven. Style picks the color; `color` on a component never spreads to its edges.
@@ -401,6 +401,6 @@ When this gets unwieldy:
 
 ## 12. Examples
 
-- `assets/example-dp-integration.html` — minimal light (1 footer = AD). Gallery default.
+- `assets/example-dp-integration.html` — minimal light (2 footers: identity provider and centralized logging). Gallery default.
 - `assets/example-dp-integration-dark.html` — same, dark skin.
 - `assets/example-dp-integration-full.html` — same, editorial-card frame.

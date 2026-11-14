@@ -217,7 +217,7 @@ Resolve `{ink @ 0.10}`, `{muted}`, and `{accent}` against the active skin in [`s
 
 ### 3.2 Crossings
 
-Avoid. The corridor x position (8 px before destination node) is the only routing column — if two arrows would cross there, **swap step assignments** or **split into two diagrams** rather than introducing a bend-around. Crossings hide the underlying control flow.
+Avoid. The corridor x position (8 px before destination node) is the only routing column — if two arrows would cross there, **swap step assignments** only when this preserves the established step order, stage membership, and dependencies; otherwise **split into two diagrams** rather than introducing a bend-around. Crossings hide the underlying control flow.
 
 ---
 
@@ -462,10 +462,10 @@ Run §2 of this reference with these inputs:
 - `viewBox_w = 140 + 11 * 112 + 28 = 1400`. ✓
 - `legend_h = 100`, `viewBox_h = 36 + 6 * 80 + 100 = 616`. ✓
 - Lane y_top = [36, 116, 196, 276, 356, 436]; lane mid = [76, 156, 236, 316, 396, 476]. ✓
-- Step cx = [198, 310, 422, 534, 646, 758, 870, 982, 1094, 1208, 1320] (the 8-px content-area gutter shifts every value by 8 from `140 + j*112 + 50`). ✓
+- Step cx = [198, 310, 422, 534, 646, 758, 870, 982, 1094, 1206, 1318] (the 8-px content-area gutter shifts every value by 8 from `140 + j*112 + 50`). ✓
 - Node 4 (HQ Review): step=3, lane="SVY" (k=3) → x = 534-50 = 484, y = 276+8 = 284. ✓
 - Node 5 (Error Checks): step=4, lane="IT" (k=1) → x = 646-50 = 596, y = 116+8 = 124. ✓
-- Node 10 (Public Release): step=9, lane="CMM" (k=5) → x = 1208-50 = 1158, y = 436+8 = 444. ✓
+- Node 10 (Public Release): step=9, lane="CMM" (k=5) → x = 1206-50 = 1156, y = 436+8 = 444. ✓
 
 A fresh generation from this YAML produces deterministic coordinates directly from the formula without manual tweaking.
 
