@@ -247,9 +247,9 @@ footer_auth_x(k) = zone_cx + (k - (N-1)/2) * 32     # 32-px stride per footer
 ```
 
 Examples:
-- N=1 → 560
-- N=2 → 544, 576
-- N=3 → 528, 560, 592
+- N=1 → 608
+- N=2 → 592, 624
+- N=3 → 576, 608, 640
 
 Each footer service line goes from `(footer_auth_x(k), footer_y(k))` up to `(footer_auth_x(k), zone_y + zone_h)`. Service-function labels sit just above the arrowhead at the zone bottom edge. The `auth` style and `footer_auth_x` name also apply to non-authentication footer services; the label identifies the actual function.
 

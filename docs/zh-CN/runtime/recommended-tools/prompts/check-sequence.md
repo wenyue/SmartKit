@@ -22,6 +22,6 @@
 
 等待或恢复时，在对话中保留已完成动作、待处理步骤、当前问题和原任务。更新或重启后，从当前加载的插件重新解析命令入口，并在行动前重新检查待处理步骤的状态。
 
-当加载的插件安装目录变化，或这些指令已不在上下文中时，从 `runtime/recommended-tools/prompts/check-sequence.md` 重新加载本流程，并从 `runtime/recommended-tools/prompts/automatic-configuration.md`、`runtime/recommended-tools/prompts/readiness-consent.md` 或 `runtime/local_web/prompts/autostart-consent.md` 加载适用步骤；这些路径均相对于该安装的 plugin_root 资源。当前需要的步骤指令已一起提供；用户回复不需要再次触发会话 Hook。
+当加载的插件安装目录变化，或这些指令已不在上下文中时，从 `runtime/recommended-tools/prompts/check-sequence.md` 重新加载本流程，并从 `runtime/recommended-tools/prompts/automatic-configuration.md`、`runtime/recommended-tools/prompts/readiness-consent.md`、`runtime/local_web/prompts/autostart-consent.md` 或 `runtime/recommended-tools/prompts/configuration-sync.md` 加载适用步骤；这些路径均相对于该安装的 plugin_root 资源。当前需要的步骤指令已一起提供；用户回复不需要再次触发会话 Hook。
 
 提供的步骤均处理妥当后，继续原任务，并将用户明确暂缓的问题保留为未解决项。
