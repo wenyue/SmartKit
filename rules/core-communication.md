@@ -79,27 +79,19 @@ In all Chinese Markdown (including final replies, progress messages, documents, 
 
 ## Format final replies for human readers
 
-The following are presentation suggestions for human-facing final responses, not progress messages or authored artifacts. They offer familiar defaults, not a mandatory template: choose the parts that help, and adapt their layout and detail to the situation. This flexibility concerns presentation; factual accuracy, required content, authorization, and tool or output-interface contracts retain their force.
+These are presentation preferences for human-facing final replies, not a mandatory template or a format for progress messages and authored artifacts. Use only what helps the reader: an ordinary short answer can be a paragraph; a substantive result may need evidence, unresolved matters, and a next decision. Factual accuracy, required content, authorization, and tool or output-interface contracts still apply.
 
-### Choose the structure for the result
+### Make the result easy to assess
 
-Paragraphs suit connected explanations, lists suit parallel or sequential points, and emphasis helps scanning. For ordinary replies, prefer short paragraphs and bold labels over Markdown headings; longer reports may benefit from headings.
+Prefer short paragraphs and bold labels for ordinary replies; use headings for longer reports, lists for parallel or sequential points, and emphasis for scanning. For implementation, a useful default is the main changed files with a one- or two-sentence change summary. For review, lead with findings in severity order and file/line references where possible. For plans and design notes, make material trade-offs easy to compare.
 
-- For implementation, a list of the main changed files and a one- or two-sentence change summary is a useful default.
-- For review, lead with findings in severity order, with file and line references where possible.
-- For plans and design notes, make material trade-offs easy to compare.
+Summarize routine successful checks by coverage and outcome. Include counts, commands, or logs when they help assess, reproduce, or diagnose the result; detailed evidence can stay in the owning workflow's record, linked when useful.
 
-Routine successful checks can usually be summarized by their coverage and outcome. Counts, commands, and logs are useful when they help assess, reproduce, or diagnose the result; detailed evidence can remain in the owning workflow's record with a link when helpful.
+Use examples or visuals when they clarify a relationship better than prose: concise code for behavior, API usage, or before/after changes; tables for comparisons and mappings; Mermaid for architecture, calls, data flow, or state transitions. Keep the example focused and add a short reading guide. If Mermaid cannot render, preserve the relationships in a text diagram or list. Otherwise a short paragraph or list is enough.
 
-### Use examples and visuals when they clarify
+### Label substantive results when useful
 
-For example, in a coding task, concise code snippets can illustrate behavior, API usage, or before-and-after changes. Consider tables for comparisons and mappings, and Mermaid for architecture, calls, data flow, or state transitions.
-
-A focused example or diagram with a short reading guide usually works best. If Mermaid cannot render, a simple text diagram or list can preserve the relationships. A short paragraph or list is enough when a visual would add no clarity.
-
-### Label substantive results with emoji
-
-For substantive final replies, including analysis, implementation reports, reviews, and plans, prefer the applicable labels below and omit empty ones. Brief acknowledgments or simple factual answers often need none.
+For substantive analysis, implementation reports, reviews, and plans, prefer the applicable emoji labels below, omitting empty categories. Brief acknowledgments and simple factual answers often need none.
 
 | Tag | Purpose |
 | --- | --- |
@@ -111,24 +103,14 @@ For substantive final replies, including analysis, implementation reports, revie
 | `❓` | Needed user input. |
 | `➡️` | A supported recommendation or next action. |
 
-A useful default order is `🎯 → ⚠️ → ✅ or ❌ → 📊 → ❓ → ➡️`: goal, material limits, result, progress, decision, then recommendation or next action. Progress usually follows the current result to show overall advancement; a brief report can combine them in one paragraph. Omit, combine, or rearrange parts to suit the content. Material review findings or blockers may deserve the first position, making a goal preface unnecessary.
+When several labels help, the default order is `🎯 → ⚠️ → ✅ or ❌ → 📊 → ❓ → ➡️`. Omit, combine, or reorder parts for the actual result: material review findings or blockers can lead without a goal preface; progress usually follows the result and can share its paragraph. A goal preface, when useful, stays first and contains only the goal.
 
-Usually start a labeled passage with its icon and associated text in the same paragraph. If a goal preface helps, keep it first and limited to the goal. Prefer at most three warning items for easy scanning, expanding when material information needs more space. For the overall result, one of `✅` or `❌` is usually enough; mixed results may need separate labels with clearly stated scopes.
+Usually keep each icon with its associated text in the same paragraph. Prefer at most three warning items, expanding as needed to retain material information. Usually one overall result label, `✅` or `❌`, suffices; distinguish the scopes of mixed results when both help.
 
-When user input is needed, ❓ can introduce the question and choices, followed by a supported recommendation with ➡️. If the next action is already authorized, ➡️ can close with that action without adding another question. When this closing completes the reply, no further summary is needed. A completed task needs no closing question.
+### Ask only for the decision that remains
 
-### Make questions easy to answer
+Use a natural, unnumbered sentence for one independent question, with ❓ and a short, specific decision title when helpful. Number multiple questions in one round, or questions needing stable references, consecutively as `Q1`, `Q2`, and so on; use consistent titles and optionally `---` between longer blocks.
 
-For a single independent question, default to an unnumbered question, with a short, specific title when useful. A supported recommendation can follow in its own paragraph:
+A concrete question before an A/B/C list is usually enough. Refer to choices that already explain their effects rather than repeating the menu or asking twice. Put a supported recommendation beside its option or in a separate ➡️ paragraph when its reason needs space. Fact-only questions need no preferred answer.
 
-```text
-❓ **<short title>**: <question and any concrete choices>
-
-➡️ <recommended answer and brief reason>
-```
-
-Number questions only when asking several questions in the same round or when later discussion needs stable references. Use consecutive labels such as `Q1` and `Q2` and consistent titles to make replies easier to match; `---` can separate longer blocks. A simple question can be a natural sentence, with or without ❓. A title is useful when it names the actual decision rather than merely saying “Next step.”
-
-A concrete question before an A/B/C list is usually enough. If the choices already explain their effects, refer to them without repeating the menu or asking for the same choice again. A brief recommendation can sit beside its option; a separate ➡️ paragraph is useful when the reasoning deserves more space. Fact-only questions need no preferred answer.
-
-These formats are references, not reasons to ask or add approval steps. Harness question controls retain their own interface requirements.
+If the next action is already authorized, ➡️ can state it without another question. A completed task needs no closing question, and a closing decision or next action needs no further summary. These formats create no approval steps; harness question controls retain their own interface requirements.

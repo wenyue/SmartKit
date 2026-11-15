@@ -27,25 +27,25 @@
       "ref": "v1.3.1",
       "license": {"spdx": "MIT", "path": "LICENSE"},
       "skills": [
-        {"id": "mattpocock/ask-matt", "path": "skills/engineering/ask-matt", "patches": ["vendor/patches/mattpocock/ask-matt.openai.patch"]},
-        {"id": "mattpocock/diagnosing-bugs", "path": "skills/engineering/diagnosing-bugs", "patches": ["vendor/patches/mattpocock/diagnosing-bugs.openai.patch"]},
+        {"id": "mattpocock/ask-matt", "path": "skills/engineering/ask-matt", "patches": ["vendor/patches/mattpocock/ask-matt.openai.patch", "vendor/patches/mattpocock/ask-matt.diagnosis.patch"]},
+        {"id": "mattpocock/diagnosing-bugs", "path": "skills/engineering/diagnosing-bugs", "patches": ["vendor/patches/mattpocock/diagnosing-bugs.openai.patch", "vendor/patches/mattpocock/diagnosing-bugs.evidence.patch"]},
         {"id": "mattpocock/grill-with-docs", "path": "skills/engineering/grill-with-docs", "patches": ["vendor/patches/mattpocock/grill-with-docs.openai.patch", "vendor/patches/mattpocock/grill-with-docs.harness.patch"]},
         {"id": "mattpocock/triage", "path": "skills/engineering/triage", "patches": ["vendor/patches/mattpocock/triage.openai.patch", "vendor/patches/mattpocock/triage.harness.patch"]},
         {"id": "mattpocock/improve-codebase-architecture", "path": "skills/engineering/improve-codebase-architecture", "patches": ["vendor/patches/mattpocock/improve-codebase-architecture.openai.patch", "vendor/patches/mattpocock/improve-codebase-architecture.harness.patch"]},
         {"id": "mattpocock/setup-matt-pocock-skills", "path": "skills/engineering/setup-matt-pocock-skills", "patches": ["vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch", "vendor/patches/mattpocock/setup-matt-pocock-skills.workflow.patch"]},
         {"id": "mattpocock/tdd", "path": "skills/engineering/tdd", "patches": ["vendor/patches/mattpocock/tdd.openai.patch", "vendor/patches/mattpocock/tdd.harness.patch"]},
-        {"id": "mattpocock/to-spec", "path": "skills/engineering/to-spec", "patches": ["vendor/patches/mattpocock/to-spec.openai.patch"]},
+        {"id": "mattpocock/to-spec", "path": "skills/engineering/to-spec", "patches": ["vendor/patches/mattpocock/to-spec.openai.patch", "vendor/patches/mattpocock/to-spec.synthesis.patch"]},
         {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.openai.patch"]},
-        {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder", "patches": ["vendor/patches/mattpocock/wayfinder.openai.patch", "vendor/patches/mattpocock/wayfinder.harness.patch"]},
+        {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder", "patches": ["vendor/patches/mattpocock/wayfinder.openai.patch", "vendor/patches/mattpocock/wayfinder.harness.patch", "vendor/patches/mattpocock/wayfinder.claims.patch"]},
         {"id": "mattpocock/implement", "path": "skills/engineering/implement", "patches": ["vendor/patches/mattpocock/implement.openai.patch"]},
         {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch", "vendor/patches/mattpocock/implement-spec.worktree.patch"]},
         {"id": "mattpocock/pr", "path": "skills/engineering/pr", "patches": ["vendor/patches/mattpocock/pr.openai.patch"]},
-        {"id": "mattpocock/retro", "path": "skills/engineering/retro", "patches": ["vendor/patches/mattpocock/retro.openai.patch", "vendor/patches/mattpocock/retro.harness.patch"]},
+        {"id": "mattpocock/retro", "path": "skills/engineering/retro", "patches": ["vendor/patches/mattpocock/retro.openai.patch", "vendor/patches/mattpocock/retro.harness.patch", "vendor/patches/mattpocock/retro.review-context.patch"]},
         {"id": "mattpocock/prototype", "path": "skills/engineering/prototype", "patches": ["vendor/patches/mattpocock/prototype.openai.patch"]},
         {"id": "mattpocock/research", "path": "skills/engineering/research", "patches": ["vendor/patches/mattpocock/research.openai.patch"]},
         {"id": "mattpocock/domain-modeling", "path": "skills/engineering/domain-modeling", "patches": ["vendor/patches/mattpocock/domain-modeling.patch", "vendor/patches/mattpocock/domain-modeling.openai.patch"]},
         {"id": "mattpocock/codebase-design", "path": "skills/engineering/codebase-design", "patches": ["vendor/patches/mattpocock/codebase-design.openai.patch"]},
-        {"id": "mattpocock/code-review", "path": "skills/engineering/code-review", "patches": ["vendor/patches/mattpocock/code-review.openai.patch"]},
+        {"id": "mattpocock/code-review", "path": "skills/engineering/code-review", "patches": ["vendor/patches/mattpocock/code-review.openai.patch", "vendor/patches/mattpocock/code-review.wip.patch", "vendor/patches/mattpocock/code-review.findings.patch"]},
         {"id": "mattpocock/wizard", "path": "skills/engineering/wizard", "patches": ["vendor/patches/mattpocock/wizard.openai.patch"]},
         {"id": "mattpocock/grill-me", "path": "skills/productivity/grill-me", "patches": ["vendor/patches/mattpocock/grill-me.openai.patch", "vendor/patches/mattpocock/grill-me.harness.patch"]},
         {"id": "mattpocock/grilling", "path": "skills/productivity/grilling", "patches": ["vendor/patches/mattpocock/grilling.patch", "vendor/patches/mattpocock/grilling.openai.patch"]},
@@ -74,7 +74,7 @@
       "ref": "550fd66edff058bc73056c3416b76d69cfe865ba",
       "license": {"spdx": "MIT", "path": "LICENSE"},
       "skills": [
-        {"id": "cathrynlavery/diagram-design", "path": "skills/diagram-design", "patches": ["vendor/patches/diagram-design/diagram-design.patch", "vendor/patches/diagram-design/diagram-design.openai.patch"]}
+        {"id": "cathrynlavery/diagram-design", "path": "skills/diagram-design", "patches": ["vendor/patches/diagram-design/diagram-design.patch", "vendor/patches/diagram-design/diagram-design.openai.patch", "vendor/patches/diagram-design/security-matrix-unknown.patch", "vendor/patches/diagram-design/chart-geometry.patch", "vendor/patches/diagram-design/process-stage-order.patch", "vendor/patches/diagram-design/sidecar-authority.patch", "vendor/patches/diagram-design/skin-gate.patch", "vendor/patches/diagram-design/footer-semantics.patch"]}
       ]
     },
     {

@@ -1,0 +1,20 @@
+--- a/references/type-dp-security-matrix.md
++++ b/references/type-dp-security-matrix.md
+@@ -68,6 +68,8 @@
+ - `cells[k].focal: true` — exactly **one** cell may declare this. Overrides `level` to focal styling.
+ - `cells[k].sub` — optional 2nd-line text (used with focal). Renders in the `sublabel` role at 8px below the primary value.
+ - `cells[k].color: "#hex"` — optional per-cell color override (§4).
++
++For inputs explicitly using this sparse contract, omitted cells retain the documented `none` / `none_label` default. Do not infer that contract from incomplete source facts: clarify unknown permissions before completing the matrix, or state that the matrix remains incomplete without rendering those unknowns as denials. An explicit invalid level or missing required permission information also needs clarification; the focal example is valid without `level` because its explicit `value` supplies the permission.
+
+ ---
+
+@@ -282,7 +284,7 @@
+ - **Connectors anywhere** — matrix is value-driven; arrows belong in DP integration / process diagrams.
+ - **Freeform `level` values** — closed vocabulary is `full | rw | read | none`. Use `value` for free-form displayed text + `color` override for arbitrary tinting.
+ - **Per-row or per-column color tints** — apply `color` per cell only. Whole-row or whole-column highlighting tends to over-emphasize and collapses the matrix into a list.
+-- **Using `none_label` as a placeholder for "TBD"** — `none` means *no access*. If the permission is unknown, leave the cell empty in inputs but document it elsewhere; don't render an ambiguous state.
++- **Using omission or `none_label` for unknown permissions** — under the sparse contract, omission means *no access*, not "TBD". Resolve missing facts or clearly leave the matrix incomplete; do not encode unknowns as omitted cells or relabel known denials.
+ - **More than 6 roles** — split into two matrices (e.g., human roles vs service accounts) before exceeding 6 columns.
+ - **More than 14 components** — split by domain (storage / compute / observability / governance) before exceeding 14 rows.
+ - **Using the matrix to document *how* permissions are granted** — that belongs in a process or sequence diagram. The matrix shows *what* each role can do, not the grant flow.

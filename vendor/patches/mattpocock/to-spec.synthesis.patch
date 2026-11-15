@@ -1,0 +1,42 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -4,7 +4,7 @@
+ disable-model-invocation: true
+ ---
+
+-This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user; just synthesize what you already know.
++Synthesize the current conversation and codebase understanding into a spec. Carry forward the latest agreed goals, scope, design, and testing decisions, including corrections that supersede earlier ones. Do not restart an interview or ask the user to reconfirm settled decisions. Ask only about unresolved facts or choices that materially affect scope, safety, or acceptance and cannot be recovered from the available context.
+
+ The issue tracker and triage label vocabulary should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`.
+
+@@ -12,11 +12,9 @@
+
+ 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the spec, and respect any ADRs in the area you're touching.
+
+-2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better - the ideal number is one.
++2. Carry forward agreed testing decisions and fill any gaps from the codebase. Prefer existing seams; choose the smallest sufficient set of test levels that verifies the accepted behavior and material risks with useful failure signals, reasonable cost, and stable tests. Use a higher-level test where it can establish the behavior reliably; add a narrower test where it provides necessary coverage or diagnosis. A new seam needs a concrete coverage gap, not a preference for one ideal level.
+
+-Check with the user that these seams match their expectations.
+-
+-3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
++3. Write the spec using the template below, then publish it to the project issue tracker within the user's authorization. Apply `ready-for-agent` only when material decisions needed for implementation and acceptance are settled; no additional triage is needed then. If a material decision remains open, identify it and leave the spec as a draft without that label rather than inventing an answer.
+
+ <spec-template>
+
+@@ -30,7 +28,7 @@
+
+ ## User Stories
+
+-A LONG, numbered list of user stories. Each user story should be in the format of:
++A numbered list of user stories covering the agreed scope. Each user story should be in the format of:
+
+ 1. As an <actor>, I want a <feature>, so that <benefit>
+
+@@ -38,6 +36,6 @@
+ 1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
+ </user-story-example>
+
+-This list of user stories should be extremely extensive and cover all aspects of the feature.
++Cover the accepted outcomes and relevant boundary cases without adding features or splitting stories merely to lengthen the list.
+
+ ## Implementation Decisions

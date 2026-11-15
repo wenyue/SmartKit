@@ -20,7 +20,7 @@
           "destination": "skills/ask-matt",
           "files": {
             "PHASE-BOUNDARIES.md": "a8aa20158609ef39e2b308b6ba0660c91066838d07a867202e63a7744a88a3ed",
-            "SKILL.md": "1d01b53eb61fa516044d929dc1c96b50df198ea0d2d0ef1560606aa6acb6a2fc",
+            "SKILL.md": "95d9060aafd6c9ba95c092e893eb1cebc1b9ba195e81095bafa07c686e73f8f0",
             "agents/openai.yaml": "1c9997eacc0026d963d54f6ec2dc0b005257ab3ebbacf5c008ccdd325adf3beb",
             "assets/icon.svg": "fc5e830b132ca1f62a4c69bee4f24641dc374d9ab51b73e30a432fbc9ef739c3"
           },
@@ -28,6 +28,10 @@
             {
               "path": "vendor/patches/mattpocock/ask-matt.openai.patch",
               "sha256": "3ae0905b319bf85148546e3e63123830a30f21b50b694a9606e94f7fb17efa9f"
+            },
+            {
+              "path": "vendor/patches/mattpocock/ask-matt.diagnosis.patch",
+              "sha256": "076260f04c280c878332f5ffe802cba9c5e884da750b0a5cedb8742be54cf432"
             }
           ]
         },
@@ -36,7 +40,7 @@
           "source_path": "skills/engineering/diagnosing-bugs",
           "destination": "skills/diagnosing-bugs",
           "files": {
-            "SKILL.md": "9168404abda0967a5d32977e3498cd95fda6807018852f3de736a78357c82b40",
+            "SKILL.md": "480cb44cd488d77d621adc4f78fb2ab81dc0d92060dc71ec49e33d1df39bb9d7",
             "agents/openai.yaml": "175da994ec187c1ad6e0e7d759f9913f4f2a10542ac84626d5cab0932af63b7f",
             "assets/icon.svg": "41c0daec81dad52b3b6a9ff068f82da1d4740f3239a023bf6cf61afce615258b",
             "scripts/hitl-loop.template.sh": "35103539fc36873eea36074769ad454f9379d6fc8b2dc0e26ce987fd3bfe5503"
@@ -45,6 +49,10 @@
             {
               "path": "vendor/patches/mattpocock/diagnosing-bugs.openai.patch",
               "sha256": "963c8f28e977bd34ce1d70a61b8c668973250e26739e091322c25ac1401a3420"
+            },
+            {
+              "path": "vendor/patches/mattpocock/diagnosing-bugs.evidence.patch",
+              "sha256": "4be9bba6ad379c6407d40f0b70c6007f7bd0be95d5328cd5a30dd7864b47b278"
             }
           ]
         },
@@ -143,7 +151,7 @@
           "destination": "skills/tdd",
           "files": {
             "SKILL.md": "5404c6338e1beaa5af80ef4d47fb8df1c4746f4158684ecb4a7d1f6ab2179737",
-            "agents/openai.yaml": "fb4bcbfd8f7700c20ef5a671e7f3a173632e9370c5a978ba0259c29aa81c4b7e",
+            "agents/openai.yaml": "f869775131e143be89f8ec1b6b80894be4ab96976820bd084f4a750dfd1fa234",
             "assets/icon.svg": "bbe2a9567c7a3de57f04bb3fe0519d495b33098fd5c1ef52eb8b266fa472cfb5",
             "mocking.md": "3ceb807fdf4a47d6a93d4d9a891e5ba6d362a6247bd08adc451feebfc17361ef",
             "tests.md": "859f9e592c188fda4fc7277dd180e4ce9c7a2e13f6efe1f6f29eccc9d28c106a"
@@ -151,7 +159,7 @@
           "patches": [
             {
               "path": "vendor/patches/mattpocock/tdd.openai.patch",
-              "sha256": "123a848847ad76327a86945d5d8ec1d278ecb6faf64a1089b5bb43e49367b458"
+              "sha256": "8dd8f1595ecbec0061df3c965930f1ffb2d0a0a4de11638d9523c9b8037c4d99"
             },
             {
               "path": "vendor/patches/mattpocock/tdd.harness.patch",
@@ -164,7 +172,7 @@
           "source_path": "skills/engineering/to-spec",
           "destination": "skills/to-spec",
           "files": {
-            "SKILL.md": "43ad9cf318e5e7d3d1fa360253a37021796dc87a0c2e595ad262661a10f85088",
+            "SKILL.md": "8bf50e8e376cfb7463fe00e696169b6fd0f3452f1606d23879fcb6c572b609da",
             "agents/openai.yaml": "25e047bc0fedfa314f7cb2c6fa1c4876e9074b8e79ea27f654507ee143836bea",
             "assets/icon.svg": "70b0c9e694c79da8aa80348cacce9895b9ff6dda6cded15c9a83533c960816c5"
           },
@@ -172,6 +180,10 @@
             {
               "path": "vendor/patches/mattpocock/to-spec.openai.patch",
               "sha256": "f87f70ee09dfc1845e187170b54d56280c66653ababd078c8d6b757a7e6ca4fa"
+            },
+            {
+              "path": "vendor/patches/mattpocock/to-spec.synthesis.patch",
+              "sha256": "b409cb296556dbd9ee8214b94407ee630dcaabe12e2af8d9e9f9f9810d6f98d2"
             }
           ]
         },
@@ -196,7 +208,7 @@
           "source_path": "skills/engineering/wayfinder",
           "destination": "skills/wayfinder",
           "files": {
-            "SKILL.md": "39a01bc49589b4d41351788ee2e5cc70b56bd8366db34baea1ae37ec3c53a97c",
+            "SKILL.md": "4777875531268cc857092f7b3695efaca83d923aa890c9e58a7f8d83fea110ff",
             "agents/openai.yaml": "cbeb430a3ab074878e1ee5d7597f1447be2500ba2de1755f7e7fde0e2a8c1f50",
             "assets/icon.svg": "b0be5fe2925dfe7a3d2c2f2eafd4f2705937a06e8641c2f7d95785bef9f8fe40"
           },
@@ -208,6 +220,10 @@
             {
               "path": "vendor/patches/mattpocock/wayfinder.harness.patch",
               "sha256": "b9cc67cb445877d9a55d2f264578b5bba820be9218a721ce68e457149dc17878"
+            },
+            {
+              "path": "vendor/patches/mattpocock/wayfinder.claims.patch",
+              "sha256": "837bed5501b3d5a138830cfb8414659673cf8a1026779d032de19c55a5bffbb9"
             }
           ]
         },
@@ -232,7 +248,7 @@
           "source_path": "skills/engineering/implement-spec",
           "destination": "skills/implement-spec",
           "files": {
-            "SKILL.md": "5d969ba0adefc7356b082655388a0a5502ccbbd074119745eb8f7fcefd314e87",
+            "SKILL.md": "b72f4c989f8b183593d445ca903af05cc4452cb666c103f2d976d891751403d3",
             "agents/openai.yaml": "5e8f2f78b5f4bba8c85be2696aa041b47023ef1e9bdac2f7ac1242bc4e17f8bc",
             "assets/icon.svg": "ae37af3b099a132178636434c4ef4f7a81ef7e096704d62ff0cea012d157d767"
           },
@@ -247,7 +263,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/implement-spec.worktree.patch",
-              "sha256": "52b99b9b7b3cf069333dd3aae891f749518ff30380296f9997128ce159a90e39"
+              "sha256": "6ee86fa8ae7c4ee2c5b5bf23ffbeb4820064c8f32c79b328e61eaf80a1a18a47"
             }
           ]
         },
@@ -273,7 +289,7 @@
           "source_path": "skills/engineering/retro",
           "destination": "skills/retro",
           "files": {
-            "SKILL.md": "f57a33082ec282bfed2804a44a90906bf329548b72d63419bffcb64daf6954c9",
+            "SKILL.md": "5d481fb23765f56cf4fb3f02e63e6425594601e58906c6ed0e6383d46dc7ea08",
             "agents/openai.yaml": "8c80d6a3c1c3af4ee78f253ae6886bda31930db3879fe5df00420aa34d024507",
             "assets/icon.svg": "8b3f1ee8e0cd08785104793d7604410a1d33492c978f750b6bf9e9acec72f8a2"
           },
@@ -285,6 +301,10 @@
             {
               "path": "vendor/patches/mattpocock/retro.harness.patch",
               "sha256": "3e00794ffcedfeef1889af263d6034e0e988cb4f6e8744b13eff4315d6e243be"
+            },
+            {
+              "path": "vendor/patches/mattpocock/retro.review-context.patch",
+              "sha256": "b58fcc4d68e16cf0a5a5844fa243d37cfeccbb5dabd2fc1d55a5bd4dda0137b0"
             }
           ]
         },
@@ -367,7 +387,7 @@
           "source_path": "skills/engineering/code-review",
           "destination": "skills/code-review",
           "files": {
-            "SKILL.md": "47f4e52c21694def9c7c11cbfbf891ca35eac7a93e395797515be3c8a409ae50",
+            "SKILL.md": "7acf746e2f75864f3eb9d6c1f9bc2f722cf2451f100d565748fa3481482aab08",
             "agents/openai.yaml": "916063ab21aacbc1666dde564264160357ab07314c638b3a7f56f37de8d72e22",
             "assets/icon.svg": "109246fe7fcd65c6856938511d8f0072aff5ceee2cc7ebe23b9dabae4e63a0b7"
           },
@@ -375,6 +395,14 @@
             {
               "path": "vendor/patches/mattpocock/code-review.openai.patch",
               "sha256": "6fe010f18a6b642580b3f414498837f7a6715f2b8e7d6055bea8332521cb39d8"
+            },
+            {
+              "path": "vendor/patches/mattpocock/code-review.wip.patch",
+              "sha256": "f75c19197fe74d19672bef30ff9d26b2cfbedb407ac089cf6c28441d0af836ff"
+            },
+            {
+              "path": "vendor/patches/mattpocock/code-review.findings.patch",
+              "sha256": "a79112fad3c6862939948a3323eb450ed84e70dad6f01b57e27f4a8a45aa3aad"
             }
           ]
         },
@@ -386,12 +414,12 @@
             "SKILL.md": "63ba3ea3763987dc67286bfc986e971efb8f39d61ebb05fd59969198830aecf0",
             "agents/openai.yaml": "8c8518a611523c2ba068e4db2569d26b8d1c1c821c9422ff47302b5cb0e32d84",
             "assets/icon.svg": "28d21f0784ea9c07ccb433b6f805bfa0e59834534ecf471735e262f137e1bb70",
-            "template.sh": "33cbe9dfb1d0e9185b60248a52aabed14bc64785a00cac695e302e739dd6c153"
+            "template.sh": "e11c9575e11e52812d0be98435d4ee02a140f00ef450a7c8c14c897b905323c2"
           },
           "patches": [
             {
               "path": "vendor/patches/mattpocock/wizard.openai.patch",
-              "sha256": "9177ab4dc55022c35c6ee4121a7f4f0bb8c46d7a1280d1b6cc16b71e589a7bdf"
+              "sha256": "957c9212476d5827082b5c56b41dca541902bfc9b558f32bd5b37421d0aaa8cf"
             }
           ]
         },
@@ -645,7 +673,7 @@
           "source_path": "skills/diagram-design",
           "destination": "skills/diagram-design",
           "files": {
-            "SKILL.md": "3e24b1d004eb1caad875a96f30f6f54c3d3a899f5ab4eeeef2b619248591f375",
+            "SKILL.md": "2bbc80db03451568aa23d811d367731c80dd989d03f9dfcb6cc0a478da8af4fb",
             "agents/openai.yaml": "80f21e45cb2f50fc4d696292df12c138dedc391cf9eca9a2c5c96c2f7807558a",
             "assets/diagram-design.svg": "b4e6bc598240bbc1699c42f0b39f7b782d46d1181a4cc7bf1b22ad5305f4af06",
             "assets/example-architecture-containment-dark.html": "853399a330a541d63d5ca05834bb9f1545364fff61546754190899a49e54d28a",
@@ -699,9 +727,9 @@
             "assets/example-deployment-dark.html": "2c0c99d16f6d85fac54552bd4fe102ce9e0286fdf8eabd97ab4d90e5a97667e6",
             "assets/example-deployment-full.html": "9187eaafb9107e979c2e43bcde77edf63e974fc59cf72a50fef33ea8df460650",
             "assets/example-deployment.html": "8e4cee0bc1105dcd040b19d0000f84c69f81bde75d4cb16d2261fab617a7aee5",
-            "assets/example-dp-integration-dark.html": "b139d91cf88a77b4dbf202da4a1ec21e29ca1862f2e8249925b605ce25fe97f6",
-            "assets/example-dp-integration-full.html": "17cd685b6bd522a5eb7ae972f76787b57383779c2f0b9f08de32a7d8d9e49f94",
-            "assets/example-dp-integration.html": "d1624ee510d25780522637141e89dd95165d6cefa6b5aded0c0ad1beca2ecf24",
+            "assets/example-dp-integration-dark.html": "e1f3a830aa2ffeb96e5b26f39645c072a1c7b2a99ee94638789fe152197e6887",
+            "assets/example-dp-integration-full.html": "7a8b41ae9cf3d5a3b631007a90bd7a6888063a3aa1ee44347c23f37dfecfee93",
+            "assets/example-dp-integration.html": "76eadfa1861ef80e09fc59fd6cca8e2fa3b8667a4c3119cc03fcef76d5cb105b",
             "assets/example-dp-security-matrix-dark.html": "1d93ac4553013cbb5d5fe962517601a0dadf03a8d1bf9ae522f10d7a83e05968",
             "assets/example-dp-security-matrix-full.html": "8f34f504368ba9fd13c2bb20b028d2fc27800fbb46c238e73b0aa65101ca4ad0",
             "assets/example-dp-security-matrix.html": "9ae674dcec652483ea75a9368f88fd4c61a447b34354b2f2386049c10491e83f",
@@ -881,7 +909,7 @@
             "references/primitive-terminal.md": "7b52c2fb229c822a60b0061caa64ae6a68aacd4f1c22a1a98d1d0eaaa2333b55",
             "references/primitives-core.md": "9f61356d3c7814dd8c5adbfc2ecce736d05c64b9ec4dcaf64a53103e3c33e96c",
             "references/profiles.md": "1f0b9f2e4d2c9c21977644c0b4673ae1708517b074a2f2546cf2e9e10e6749c5",
-            "references/semantic-patterns.md": "7aa5f7a0840be234d2b10bc3742b17151f94f550a0d72afd820413859a898c8f",
+            "references/semantic-patterns.md": "268e1735853cd717a1c606f7020ba8978135ccd1cd14785d8f0cebc192533ee2",
             "references/style-guide.md": "4716fa1a4f4d31cf836e0b4363886aa7242657fb48c624e0b34c433179dc6673",
             "references/type-architecture-delta.md": "e5813f26e1fb924863efe70db36f112e1b9570e47335d7f6fa6e46473136e4e5",
             "references/type-architecture.md": "28260c9c0a72fe17ddf6eed7b1fff01c04f58f62bbb7147c45372574c9e38eea",
@@ -891,8 +919,8 @@
             "references/type-db-schema.md": "91f017b8813cfc63d775809d18659971d0aa5982967af94d47def31690713083",
             "references/type-dependency.md": "dd76bc521408b1cf0a3f86ee7c9ea93e4ad0650e4855c8f2be2358db7b721a43",
             "references/type-deployment.md": "296adfee79069e8fd8f9a19012cca731c5cc237990a0274ca1a8a807173c9fec",
-            "references/type-dp-integration.md": "6bf9b678d37e9f01f61ac8203e4ad5c29024ecd7a9f3ae0b42e71851522774f7",
-            "references/type-dp-security-matrix.md": "209f4870ec19d90eff1ab80ecfe0062f3a5075c3b666b1a3a900a27260ba8832",
+            "references/type-dp-integration.md": "b61924da6c7a8bb1b7b7534607526fd12472364a55f4d4b474b6662bc1171e6e",
+            "references/type-dp-security-matrix.md": "fc84bcd1ed9bff62cfd228b60b6c1b00f9159fc6b7e4abfe5ab919d3b2e902ae",
             "references/type-er.md": "d1495abeb6f5004bd89fface17d3767ebab71c8450dca195b055e18bf3132c57",
             "references/type-exploded.md": "785b904ce1a1be806824c97a5719578a2c32c931fb424d0a1a69c4480a527152",
             "references/type-fishbone.md": "3441d3c73334813bf55cf1d0d96ea1aa4f9e46a60001ba83dfe9442be1745f8b",
@@ -904,18 +932,18 @@
             "references/type-journey.md": "85be7b12d841aec1638d67ad9a599d313a9d42300e35af675a87a0a3e67d9b6f",
             "references/type-kanban.md": "447a8a231d5bb1e822945a02e8bd4adc219b0791bb0182cab48680fbbd88d045",
             "references/type-layers.md": "a822afe4e06ffaf9793f5466810e2504c020e6ae3abd0b9e53c6f7b1368f2609",
-            "references/type-line.md": "f7fa213f2398da9e6bf30402bc2c430e778e57d95e60174bf082ba67d629b831",
+            "references/type-line.md": "4194cd47934fcdf04cde40d198ae4fb7195a6ecaec423a72dbe8d9ad7bc86109",
             "references/type-loop.md": "9ac996dfa83f41064477f10b61b6bdd2b0ceaefa6053b87432554668adf22af6",
             "references/type-medallion.md": "a1af03521adb53431766a559e05c984ee07871fd3cf495cf63146999f56f6f42",
             "references/type-nested.md": "c16da375df52f047748c65276f564a1b0d7d2dd420170b92dbf7cdac68981516",
             "references/type-org-chart.md": "fd64716f3f419f41785c40fbabb96b36cfddcdfd0cc7ee444585f3e2b528f9c9",
             "references/type-polar.md": "11237fa0be82c3c6e963bc1aaed20283d839c7570dadfd0805e202ea129edba0",
-            "references/type-process.md": "cefb9669074ecbc7cd4c78dccb941db1ae52b5bbdc5f20b66edcdf05ea7e2928",
+            "references/type-process.md": "20b525da568fe7caaed014722acb5708e23c4da447a1d82ed2a5eba7ad20ce89",
             "references/type-pyramid.md": "c21ef0c6f3832eb30f0cd1aef0e0ec72b6758abbb1b8128acf36e81384679714",
             "references/type-quadrant.md": "eb7d542ddac72e2e1a75cb7ca64ddb67901283859413a133a332137e7fb9e5b1",
             "references/type-radar.md": "49c66e7921e1fd7575cf879852c41aa86e0db7f98b0c8105e3103202af49f563",
             "references/type-sankey.md": "874866a0867e56525f11f38a11b442b9c33f02f416b632ee76aced7f3bfc2bb5",
-            "references/type-scatter.md": "2f0770c4aaea747d14788805e45b13aee44350796ab4035bdfc2ab3d8c0c787f",
+            "references/type-scatter.md": "d4fbfb1711392abf30d57a8ce7f05ae319617957799e94187fd1b42d522dfad7",
             "references/type-sequence.md": "e3a109d4983a951ff670346c352529e48619c1e81db1774edfa6f05d3e93f778",
             "references/type-service-blueprint.md": "ae0475dc5972273d3ff2ab0bf53ae9947e8e35f59decef85f4422459c60c64ca",
             "references/type-state.md": "9c8ed85762d5bbb3672907bc1664ebf94bcc72850efbacf33d5ee12731053122",
@@ -943,6 +971,30 @@
             {
               "path": "vendor/patches/diagram-design/diagram-design.openai.patch",
               "sha256": "4e07a75e7294cfb7689cfe61075a9d9d399052dbd9fcd380ea17f35d3cc946f5"
+            },
+            {
+              "path": "vendor/patches/diagram-design/security-matrix-unknown.patch",
+              "sha256": "d3162aa410781b962751bcb2aec38c61613d1650f7e243e5f0a48d588a21aa13"
+            },
+            {
+              "path": "vendor/patches/diagram-design/chart-geometry.patch",
+              "sha256": "9be59d20fb1509dd7a645aa429999aa72740fced9c706ea115258734b02bc88e"
+            },
+            {
+              "path": "vendor/patches/diagram-design/process-stage-order.patch",
+              "sha256": "c280dd581b8a959d36513aba4118f72ac9f3143f79b27d2c5f76b2600fe55d58"
+            },
+            {
+              "path": "vendor/patches/diagram-design/sidecar-authority.patch",
+              "sha256": "602a7984a4a7cfb5d0259211d95c3b9f2da706e44bf1dadbcd5aa7458cb1dfdf"
+            },
+            {
+              "path": "vendor/patches/diagram-design/skin-gate.patch",
+              "sha256": "8cfa18b3712a998b8b4a53c9145c1d5408fb19a8be99781c38daff0afd1c23b9"
+            },
+            {
+              "path": "vendor/patches/diagram-design/footer-semantics.patch",
+              "sha256": "8d414da02998436034d6514dfbaee30af7a274ebd99a5c1f313eb9c0d0ac6413"
             }
           ]
         }

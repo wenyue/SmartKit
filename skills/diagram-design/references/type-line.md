@@ -6,7 +6,7 @@
 
 - **Plot area margins:** left 80px, bottom 60px, top 40px, right 40px — inside `0 0 1000 500` viewBox.
 - **Points:** 4–12 data points. Fewer → consider a summary stat; more → aggregate into periods.
-- **X-axis:** evenly spaced time/index labels below the plot. Use the `arrow-label` role at 8px, centered on each point x.
+- **X-axis:** position time or numeric-index values proportionally on a shared x-scale; use equal spacing only for equal intervals or an explicitly ordinal sequence. Put labels below the plot in the `arrow-label` role at 8px, centered on each point x.
 - **Y-axis gridlines:** 4–6 horizontals at regular intervals. Same faint treatment as bar chart.
 - **Lines:** `<polyline>` with `fill="none"`. Focal series `stroke-width="1.8"`, others `"1.2"`.
 - **Vertex dots:** only on the focal series (`r=4`, filled). Other series: line only.
