@@ -25,11 +25,15 @@ These considerations have no fixed priority; local practice does not decide the 
 
 When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
 
+For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code and link an existing issue or decision record when useful; reuse an adequate explanation rather than copying the discussion or creating a separate record by default. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
+
 For failures that matter to callers' decisions, explain in API documentation the failure conditions, any stable recognition the contract promises through a native type, category, or identity, and material state after failure. Cover returned and thrown failures, including those intentionally propagated across the boundary. Apply the coverage judgment above without cataloging incidental lower-level failures or repeating an already clear contract.
 
 ## Ground the explanation in the code
 
 Use the current implementation and its owning contracts to establish what is true. Expand the evidence when uncertainty could change the comment or its validation.
+
+When assessing such behavior or revising its explanation, read the relevant comments and referenced decisions and verify that they still apply. Distinguish unchanged, explicitly accepted consequences from new evidence or effects outside that acceptance; the former do not become unresolved repair items merely because they look surprising.
 
 If implementation and contract disagree, resolve the conflict within authorized scope or report it and its owner. Describe actual behavior truthfully; a comment must not present the intended contract as though it were already implemented.
 

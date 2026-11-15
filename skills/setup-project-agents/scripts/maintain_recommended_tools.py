@@ -145,6 +145,12 @@ def _configuration_required(
     *,
     snapshot: dict[str, Any] | None = None,
 ) -> bool:
+    if kind == 'required-value' and requirement['detectors'] == [{'kind': 'codex-multi-agent'}]:
+        response = snapshot if snapshot is not None else request(
+            'config/read', {'includeLayers': False, 'cwd': str(project_root)},
+        )
+        _key, enabled = checker.codex_multi_agent_setting(response, project_root=project_root)
+        return not enabled
     if kind == 'required-value':
         findings = checker._check_required_values({
             'required_values': [requirement],
@@ -289,10 +295,13 @@ def configure_setting(
         version = user_layer.get('version') if user_layer else None
         if not isinstance(version, str) or not version:
             raise MaintenanceError('user configuration version is unavailable')
+        write_key = maintenance['write_key_path']
+        if kind == 'required-value' and requirement['detectors'] == [{'kind': 'codex-multi-agent'}]:
+            write_key, _enabled = checker.codex_multi_agent_setting(snapshot, project_root=project_root)
         request(
             'config/value/write',
             {
-                'keyPath': maintenance['write_key_path'],
+                'keyPath': write_key,
                 'value': maintenance['write_value'],
                 'mergeStrategy': 'upsert',
                 'expectedVersion': version,

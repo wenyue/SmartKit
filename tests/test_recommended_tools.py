@@ -120,6 +120,71 @@ class RecommendedToolPolicyTest(unittest.TestCase):
                     ['parallel_agent_capacity'] if harness == 'codex' else [],
                 )
 
+    def test_multi_agent_detector_reads_effective_config(self):
+        checker = self.checker
+        for value in (True, False, None):
+            with self.subTest(value=value), mock.patch.object(checker, '_CodexConfigRpcClient') as client:
+                request = client.return_value.__enter__.return_value.request
+                request.return_value = {'config': {'agents': {'enabled': value}}}
+                self.assertEqual(
+                    checker.run_detector({'kind': 'codex-multi-agent'}, project_root=REPO_ROOT),
+                    'false' if value is False else 'true',
+                )
+                self.assertEqual(request.call_args.args, ('config/read', {
+                    'includeLayers': False, 'cwd': str(REPO_ROOT),
+                }))
+
+    def test_multi_agent_capability_selects_modern_or_legacy_key(self):
+        checker = self.checker
+        for feature, expected in (
+            ('deprecated true', ('agents.enabled', True)),
+            ('deprecated false', ('agents.enabled', True)),
+            ('stable true', ('features.multi_agent', True)),
+            ('stable false', ('features.multi_agent', False)),
+        ):
+            with self.subTest(feature=feature), mock.patch.object(checker, 'run_detector', return_value=feature):
+                self.assertEqual(checker.codex_multi_agent_setting({'config': {'agents': None}}), expected)
+
+    def test_explicit_agents_disabled_overrides_legacy_flag(self):
+        checker = self.checker
+        with mock.patch.object(checker, 'run_detector') as detector:
+            self.assertEqual(checker.codex_multi_agent_setting({
+                'config': {'agents': {'enabled': False}, 'features': {'multi_agent': True}},
+            }), ('agents.enabled', False))
+        detector.assert_not_called()
+
+    def test_enabled_v2_overrides_disabled_agents_without_changing_them(self):
+        checker = self.checker
+        with mock.patch.object(checker, 'run_detector') as detector:
+            self.assertEqual(checker.codex_multi_agent_setting({
+                'config': {'agents': {'enabled': False}, 'features': {'multi_agent_v2': True}},
+            }), ('agents.enabled', True))
+        detector.assert_not_called()
+
+    def test_multi_agent_config_errors_do_not_fall_back(self):
+        checker = self.checker
+        for response in ({}, {'config': []}, {'config': {'agents': []}},
+                         {'config': {'agents': {'enabled': 'false'}}},
+                         {'config': {'features': []}},
+                         {'config': {'features': {'multi_agent_v2': 'true'}}}):
+            with self.subTest(response=response), mock.patch.object(checker, 'run_detector') as detector:
+                with self.assertRaises(checker.DetectorError):
+                    checker.codex_multi_agent_setting(response)
+                detector.assert_not_called()
+        with mock.patch.object(checker, '_CodexConfigRpcClient', side_effect=checker.DetectorError('offline')):
+            policy = checker.load_policy(POLICY_ROOT / 'codex.json', 'codex')
+            findings = checker._check_required_values(policy)
+        self.assertEqual([f.code for f in findings], ['detector-error'])
+        self.assertFalse(findings[0].automatic_configuration)
+
+    def test_automatic_configuration_policy_requires_boolean(self):
+        policy = json.loads((POLICY_ROOT / 'codex.json').read_text())
+        for invalid in ('false', 0, None, []):
+            with self.subTest(invalid=invalid):
+                policy['required_values'][0]['automatic_configuration'] = invalid
+                with self.assertRaises(self.checker.PolicyError):
+                    self.checker._check_required_values(policy)
+
     def test_default_policy_path_resolves_feature_local_policy(self):
         for harness in ('codex', 'cursor', 'copilot', 'qoder'):
             with self.subTest(harness=harness):
@@ -331,7 +396,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             codex_policy['required_values'][0]['maintenance'],
             {
                 'kind': 'config-write',
-                'write_key_path': 'features.multi_agent',
+                'write_key_path': 'agents.enabled',
                 'write_value': True,
             },
         )
@@ -1142,7 +1207,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             policy = root / 'codex.json'
             policy.write_text('{"harness":"codex","tools":[]}', encoding='utf-8')
             day = datetime(2026, 10, 13, 9)
-            with mock.patch.object(checker, 'check_policy', side_effect=lambda *_: evaluate(findings[0])) as tools, \
+            with mock.patch.object(checker, 'check_policy', side_effect=lambda *_, **__: evaluate(findings[0])) as tools, \
                     mock.patch.object(checker, 'check_config_requirements', side_effect=lambda *_: evaluate(findings[1])) as config_check, \
                     mock.patch.object(checker, 'check_mcp_readiness', side_effect=lambda *_: evaluate(findings[2])) as mcp, \
                     mock.patch.object(checker, 'check_setup_migrations', side_effect=lambda *_: evaluate(findings[3])) as setup, \
@@ -1381,7 +1446,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             '',
         )
 
-    def test_codex_configuration_findings_deliver_actions_without_consent_question(self):
+    def test_codex_multi_agent_requires_consent_but_capacity_stays_automatic(self):
         checker = self.checker
         policy = json.loads((POLICY_ROOT / 'codex.json').read_text(encoding='utf-8'))
         with mock.patch.object(checker, 'run_detector', return_value='false'):
@@ -1398,7 +1463,7 @@ class RecommendedToolCheckerTest(unittest.TestCase):
             )
 
         self.assertTrue(result.ran)
-        self.assertFalse(result.requires_user_prompt)
+        self.assertTrue(result.requires_user_prompt)
         self.assertTrue(result.requires_automatic_configuration)
         with mock.patch.object(checker, '_prompt', side_effect=fixture_prompt):
             rendered = json.loads(checker.render_hook_result(result, 'codex'))
@@ -1406,6 +1471,8 @@ class RecommendedToolCheckerTest(unittest.TestCase):
         context = rendered['hookSpecificOutput']['additionalContext']
         self.assertIn('fixture automatic', context)
         self.assertIn('--setting multi_agent --approved', context)
+        self.assertFalse(findings[0].automatic_configuration)
+        self.assertIn('fixture maintenance question', context)
         self.assertIn('--setting parallel_agent_capacity --approved', context)
 
     def test_automatic_configuration_precedes_other_independent_questions(self):
@@ -2094,7 +2161,7 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
 
     def test_approved_multi_agent_configuration_uses_policy_write(self):
         rpc = mock.Mock(return_value={
-            'config': {},
+            'config': {'agents': {'enabled': False}},
             'layers': [{'name': {'type': 'user', 'profile': None}, 'version': 'snapshot-version'}],
         })
         with mock.patch.object(
@@ -2115,12 +2182,62 @@ class RecommendedToolMaintainerTest(unittest.TestCase):
         rpc.assert_any_call(
             'config/value/write',
             {
-                'keyPath': 'features.multi_agent',
+                'keyPath': 'agents.enabled',
                 'value': True,
                 'mergeStrategy': 'upsert',
                 'expectedVersion': 'snapshot-version',
             },
         )
+
+    def test_multi_agent_configuration_writes_supported_key_and_verifies(self):
+        checker = self.maintainer.checker
+        for modern in (True, False):
+            with self.subTest(modern=modern):
+                before = {'agents': {'enabled': False}} if modern else {'agents': None}
+                after = {'agents': {'enabled': True}} if modern else {'agents': None}
+                rpc = mock.Mock(side_effect=[
+                    {'config': before, 'layers': [{'name': {'type': 'user'}, 'version': 'v1'}]},
+                    {}, {'config': after},
+                ])
+                with mock.patch.object(checker, 'run_detector', side_effect=['stable false', 'stable false', 'stable true']):
+                    result = self.maintainer.configure_setting('codex', 'multi_agent', approved=True,
+                        project_root=REPO_ROOT, rpc=rpc)
+                self.assertEqual(result.status, 'completed')
+                self.assertEqual(rpc.call_args_list[1].args, ('config/value/write', {
+                    'keyPath': 'agents.enabled' if modern else 'features.multi_agent',
+                    'value': True, 'mergeStrategy': 'upsert', 'expectedVersion': 'v1',
+                }))
+
+    def test_multi_agent_failed_read_or_verification_does_not_claim_success(self):
+        checker = self.maintainer.checker
+        rpc = mock.Mock(side_effect=checker.DetectorError('unreadable'))
+        with self.assertRaises(self.maintainer.MaintenanceError):
+            self.maintainer.configure_setting('codex', 'multi_agent', approved=True,
+                project_root=REPO_ROOT, rpc=rpc)
+        self.assertEqual(rpc.call_count, 1)
+        rpc = mock.Mock(return_value={
+            'config': {'agents': {'enabled': False}},
+            'layers': [{'name': {'type': 'user'}, 'version': 'v1'}],
+        })
+        result = self.maintainer.configure_setting('codex', 'multi_agent', approved=True,
+            project_root=REPO_ROOT, rpc=rpc)
+        self.assertEqual(result.status, 'verification-failed')
+        self.assertEqual([call.args[0] for call in rpc.call_args_list],
+            ['config/read', 'config/value/write', 'config/read'])
+
+    def test_multi_agent_default_needs_no_write_and_rejection_has_no_effect(self):
+        checker = self.maintainer.checker
+        rpc = mock.Mock(return_value={'config': {'agents': None}})
+        with mock.patch.object(checker, 'run_detector', return_value='deprecated true'):
+            result = self.maintainer.configure_setting('codex', 'multi_agent', approved=True,
+                project_root=REPO_ROOT, rpc=rpc)
+        self.assertEqual(result.status, 'already-satisfied')
+        self.assertEqual(rpc.call_count, 1)
+        rpc.reset_mock()
+        with self.assertRaises(self.maintainer.ApprovalRequired):
+            self.maintainer.configure_setting('codex', 'multi_agent', approved=False,
+                project_root=REPO_ROOT, rpc=rpc)
+        rpc.assert_not_called()
 
     def test_configure_cli_dispatches_only_with_approved_marker(self):
         completed = self.maintainer.MaintenanceResult(
