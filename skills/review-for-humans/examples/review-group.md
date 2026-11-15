@@ -54,7 +54,7 @@ The editor asks for confirmation before saving and shows a message after saving 
 > }
 > ```
 >
-> ❌ ⚖️ **Unreasonable** · **P2** · Close the prompt before saving, then try to save again. The cancellation exits before either reset, so the editor still thinks a save is running and ignores the next attempt.
+> ❌ ⚖️ **Unreasonable** · **P2** · If you dismiss the prompt and try to save again, the editor ignores your next save attempt. Cancelling skips the code that clears the save-in-progress flag, so the editor still thinks a save is running.
 >
 > 💡 Restore one completion block that clears the flag on every exit after it is set, including cancellation.
 
