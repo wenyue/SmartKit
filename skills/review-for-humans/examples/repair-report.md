@@ -2,18 +2,15 @@
 
 In this fictional PR review, the user selected Fix M2 without delivery in `/work/catalog`. Main progress was 4 / 9 files with M1–M10 displayed.
 
-M2 replaces translated names with stable IDs in the category-list lookup. M11 and M12 update its two callers as part of the same repair.
+M2 restores access to a category's saved list when its translated name changes. M11 and M12 update [category selection](http://127.0.0.1:47821/diff?example=repair-editor) and [gallery updates](http://127.0.0.1:47821/diff?example=repair-gallery) to pass the same stable category ID.
 
 ---
 
-📄 **[src/catalog/category_index.ts](http://127.0.0.1:47821/diff?example=repair-index)**
+📄 **[src/catalog/category_index.ts](http://127.0.0.1:47821/diff?example=repair-index)** · `+2 / −2`
 
 **M2** · **Find category lists by stable identity**
 
-> ⚖️ **Reasonable** · Changing a category's translated name keeps its existing list reachable through the stored category ID.\
-> 🎨 **Elegant** · One lookup owner uses the existing identity contract for both callers, with no name-based fallback or second index.
->
-> ⏪ The lookup matches the display name supplied by the caller.
+> ⏪ The lookup compares names. After a rename, the caller sends the new name while the saved list still carries the old one, so the lookup returns an empty list even though the saved items are still there.
 >
 > ```typescript
 > function itemsFor(name: string) {
@@ -21,7 +18,7 @@ M2 replaces translated names with stable IDs in the category-list lookup. M11 an
 > }
 > ```
 >
-> ⏩ The repaired lookup matches the stable ID already stored on each list.
+> ⏩ The lookup uses the stable ID already stored on each list. It finds the same items after a name change.
 >
 > ```typescript
 > function itemsFor(categoryId: string) {
@@ -31,21 +28,29 @@ M2 replaces translated names with stable IDs in the category-list lookup. M11 an
 
 ---
 
-📄 **[src/catalog/editor_controller.ts](http://127.0.0.1:47821/diff?example=repair-editor)**
+📄 **[src/catalog/editor_controller.ts](http://127.0.0.1:47821/diff?example=repair-editor)** · `+1 / −1`
 
-M11 · Category selection passes the category ID to the lookup so editing the display name keeps the same list selected.
+**M11** · **Keep the selected list when its name changes**
 
----
-
-📄 **[src/catalog/gallery_controller.ts](http://127.0.0.1:47821/diff?example=repair-gallery)**
-
-M12 · Initialization and service updates use the category ID so a translated-name change still finds the original list.
+> ⏪ The editor passes the name to the [lookup](http://127.0.0.1:47821/diff?example=repair-index), so changing the name can lose the selected list.
+>
+> ⏩ The editor passes the category ID so selection continues to find the same list.
 
 ---
 
-M2's repair is complete, with no new findings or outstanding optional improvements. M11 and M12 are reasonable and elegant: both callers use the confirmed identity contract directly.
+📄 **[src/catalog/gallery_controller.ts](http://127.0.0.1:47821/diff?example=repair-gallery)** · `+2 / −2`
 
-Required project checks passed on the repaired contents. Independent re-review covered all three changed non-test files and the affected previously reviewed category-selection paths. The changed `tests/catalog/category_lookup.test.ts` supplies evidence for renamed and missing categories. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures, results, and available logs.
+**M12** · **Find the same list when opening or refreshing the gallery**
+
+> ⏪ Opening and refreshing the gallery send the translated name to the [lookup](http://127.0.0.1:47821/diff?example=repair-index), so a translation change can hide existing items.
+>
+> ⏩ Both operations send the category ID so they keep finding the same items.
+
+---
+
+M2's repair is complete, with no new findings or outstanding optional improvements.
+
+Required project checks passed on the repaired contents. Independent re-review covered all three changed non-test files and the affected previously reviewed category-selection paths. The [category lookup test](https://example.test/repo/blob/0123456/tests/catalog/category_lookup.test.ts) supplies evidence for renamed and missing categories. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures, results, and available logs.
 
 Repair coverage is three non-test files; main progress remains 4 / 9 files with 10 modifications. Commit, publication, and Viewed recording have not occurred.
 

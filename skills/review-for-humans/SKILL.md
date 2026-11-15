@@ -18,7 +18,7 @@ Consult an example when you need to see the report layout or how verified facts 
 
 | Situation | Example |
 | --- | --- |
-| Format a full group with compact and detailed items and independent observations | [Review group](examples/review-group.md) |
+| Format a first group with a purpose, before/after explanations, and independent observations | [Review group](examples/review-group.md) |
 | Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
 | Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
 | Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |
@@ -62,6 +62,12 @@ Inspect the whole scoped change and its necessary context: affected callers, exi
 
 For a meaningful design choice, establish the required user or caller outcome from the task, supported contracts, and actual use. Verify existing behavior and framework or library guarantees. First consider retaining that behavior or removing the added capability; only then compare mechanisms for a capability that is needed. A passing test demonstrates behavior under its assumptions, not the necessity of the policy it exercises.
 
+For each input to changed derived state, identify its owner and use source references to find every relevant production entry point that updates, removes, or resets the input or its source entity, including paths outside the diff. Keep an internal, source-backed check for each entry point. Record which owners update or clear their state and which can retain an earlier value. For each path, trace what the consumer receives before and after the change, including when one input updates or clears while another retains its earlier value. Carry material gaps in this coverage into the assessment as uncertainty.
+
+For changes to derived state or asynchronous feedback, use source and contracts to trace the relevant entry points that write, clear, or mark the state as handled, including other owners of its inputs. Check permitted event orders from when a result becomes available to when it reaches the user or caller. Include writes, clears, handling, interruption, or dismissal that can occur in between. A test that separates those events establishes the order it exercises.
+
+When a change shares a helper or moves side effects, compare the operations before and after for each affected production entry point and input path. Consider what happens if a newly introduced operation fails on its own while all the old operations would succeed. Trace what is persisted and what result the caller receives.
+
 When reporting a defect, explain how its trigger can occur, drawing on evidence such as a supported call sequence, an applicable contract, or a representative reproduction. Judge validation, recovery, and other protection by the requirement, credible trigger, and consequential impact they address. Supported requirements and trust-boundary risks can justify protection before any production incident; established invariants can make repeated checks unnecessary. Missing extra protection is not itself a defect without a credible trigger and potentially serious consequence, while ordinary supported behavior and promised failure handling remain correctness obligations. If material evidence for the need is missing, use **Uncertain** for the affected judgment rather than approving the implementation or presuming the capability is a defect.
 
 Compare the chosen design with simpler alternatives for the supported behavior, such as keeping an existing interface, using an accurate existing owner, calling directly, or removing a layer with no unique responsibility. When endorsing added complexity for a guarantee it provides or preserves, name that established guarantee and explain how the simpler design would fall short. A justified safeguard may cover a slightly broader range of cases if that simplifies the implementation and the effects on normal use are acceptable. Required feedback, logging, recovery, and lifecycle protection still need owners. A proposal to change supported behavior or contracts is a scope decision, not behavior-preserving optimization.
@@ -79,15 +85,15 @@ Give a definitive verdict only with high confidence grounded in relevant evidenc
 | ⚖️ **Reasonable** | Required outcomes, accepted scope, supported behavior/contracts, and justified operating costs and risks. |
 | ⚖️ **Unreasonable** | A material task, behavior, or contract defect, including a violated structural obligation, unnecessary scope, or unjustified operating cost or risk. Identify severity, affected conditions, impact, and correction. |
 | 🎨 **Elegant** | Responsibilities, boundaries, and interfaces earn their understanding and maintenance cost. Expression is readable; abstraction, state, branching, repetition, and defense have concrete benefits. Comparable patterns and interfaces are consistent, with justified departures. |
-| 🎨 **Needs improvement** | A structural defect violates a supported obligation. Explain the obligation, concrete consequence, and necessary correction; record the same item as an unreasonable finding for Fix. |
+| 🎨 **Needs improvement** | A structural defect violates a supported obligation. Explain the obligation, concrete consequence, and necessary correction. Record the same item as an unreasonable finding. |
 | 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent behavior-preserving alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
 | **Uncertain** on either axis | State the established facts, the material uncertainty, and what would resolve it. Keep any supported judgment on the other axis. |
 
-Attach judgments to the responsible modification and explain concrete causes and user or caller consequences. Assess both axes even when Report Format allows a compact explanation. One good change cannot cancel another change's defect, burden, or uncertainty. Explicit retention preserves the judgment and consequences; an unchanged accepted burden does not need another optimization request.
+Assess both axes for each modification and follow Report Format for what to show. Attach each finding to the responsible modification and establish its cause and user or caller consequences. One good change cannot cancel another change's defect, burden, or uncertainty. Explicit retention preserves the judgment and consequences; an unchanged accepted burden does not need another optimization request.
 
 Functional correctness or user approval does not establish elegant structure. Distinguish an observed burden from its justification and acceptance. When missing requirements, rationale, or user decisions materially affect whether the complexity is necessary or a simplification is safe, mark the affected judgment **Uncertain** rather than presuming acceptance, needless complexity, or a remedy.
 
-A behavioral defect alone does not prove poor structure. A structural requirement violation also needs a correctness finding, with one modification ID and one Fix remedy across both judgments. Omit preference and low-benefit polish, and combine remedies for the same underlying problem.
+A behavioral defect alone does not prove poor structure. A structural requirement violation is a correctness finding with unreasonable status. Apply the same treatment as for other unreasonable findings in Fix, Pass, Continue/Finish, and delivery, including Viewed-only delivery. Keep the defect under its modification's ID with one explanation and one remedy, even when it affects both axes. Omit preference and low-benefit polish.
 
 Keep uncertainty about a scoped modification under its M ID and summarize it as a warning. It is not an established finding or optional improvement: exclude it from Fix and Optimize scopes, and create neither an incidental O item nor an Optimize choice from it. Retain independently supported judgments and remedies on the same modification.
 
@@ -101,7 +107,7 @@ Keep an existing item's ID through supplementary review and repair. Additional s
 
 Every supported unreasonable finding and worthwhile optional improvement needs an actionable M item, using an existing item or adding one. Its judgments explain the concrete problem, severity when applicable, trigger, impact, and correction or benefit. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them. Associate each with the responsible M item.
 
-Internally size each main group by review units: a simple modification meeting Report Format's compact criteria counts as 1 unit; a normal modification requiring its detailed form counts as 2. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
+Internally size each main group by review units: a straightforward modification needing only the short explanations in Report Format counts as 1 unit. A modification needing more detail counts as 2. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
 
 Report progress using cumulative displayed main files out of eligible files, each once, and the actual cumulative number of displayed main modifications only. Supplementary items, repairs, and incidental observations add neither main-group units nor main progress. Progress implies neither successful delivery nor Viewed recording.
 
@@ -113,7 +119,7 @@ Necessary reading may reveal an unrelated pre-existing issue. Establish both its
 
 Give it a continuous O ID, title, source link or location, evidence and impact, independence, and recommendation or benefit. Report Format places it with its source file when attributable. It adds no main file, modification, progress, or automatic Viewed eligibility. Unselected O advice creates no main-review or delivery gate.
 
-Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user explicitly expands scope or selects them. A selected O repair receives separate evidence, checks, and re-review of its change and affected context, using O IDs and two judgments without new main M IDs or progress. Its changes enter delivery coverage; resulting failures or unresolved findings can block delivery. Delivery determines any whole-file Viewed eligibility.
+Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user explicitly expands scope or selects them. A selected O repair receives separate evidence, checks, and re-review of its change and affected context. Assess both axes and follow Report Format, retaining O IDs and main progress. Its changes enter delivery coverage; resulting failures or unresolved findings can block delivery. Delivery determines any whole-file Viewed eligibility.
 
 ## Turn the findings into a real choice
 
