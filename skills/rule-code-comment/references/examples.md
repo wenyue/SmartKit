@@ -112,6 +112,19 @@ for (final listener in listeners.toList()) {
 
 The comment explains why the snapshot exists, instead of narrating conversion to a list. The dispatch contract owns the delivery guarantee; this local note need not duplicate it. In a longer function, a sparse label such as `// Publish notifications` could also help readers find a coherent section even when it adds no hidden rationale.
 
+## Explicitly accepted trade-off
+
+Context: the product owner explicitly accepted showing cached preview titles for up to one minute so opening the list needs no network request. Opening an item fetches its current title. This is a lasting product choice, not a temporary implementation shortcut; a future maintainer could otherwise mistake the absence of a list-time refresh for a bug.
+
+```dart
+// accepted-decision: Preview titles may be stale for up to one minute.
+// The list uses the cache to open without a network request; opening an item
+// fetches its current title. A rename may therefore appear later in the list.
+final previews = previewCache.readWithin(const Duration(minutes: 1));
+```
+
+The comment exposes the accepted consequence and its boundary without requiring a tracker link. A new finding that titles stay stale beyond one minute would fall outside this decision. The marker makes this easily misjudged choice findable; ordinary explanations such as the listener snapshot above remain unmarked.
+
 ## Necessary longer explanation
 
 Context: an append-only log stores checksummed records. Its recovery contract permits discarding a final incomplete record after a crash and rejects complete records with invalid checksums, including at the end. The reader returns `io.EOF` only between records and `io.ErrUnexpectedEOF` only for an incomplete final record. The fragment runs inside a recovery method returning `error`; `truncateToLastRecord` removes only that incomplete tail, and the other helpers do not truncate.

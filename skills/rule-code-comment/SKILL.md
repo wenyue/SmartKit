@@ -25,7 +25,9 @@ These considerations have no fixed priority; local practice does not decide the 
 
 When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
 
-For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code and link an existing issue or decision record when useful; reuse an adequate explanation rather than copying the discussion or creating a separate record by default. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
+For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code; reuse an adequate explanation rather than copying the discussion or creating a separate record by default. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
+
+Use SmartKit's `accepted-decision: <accepted behavior or trade-off>` marker sparingly for these easily misjudged decisions, followed by the necessary explanation in ordinary prose. Leave ordinary comments unmarked; this is not a reason to label existing comments in bulk. The marker records a verified decision, not proof of acceptance or a defect exemption. A bounded temporary shortcut already described by Ponytail's `shortcut / trigger / upgrade` format needs no second marker; an accepted lasting trade-off needs no invented revisit condition or promise to replace it.
 
 For failures that matter to callers' decisions, explain in API documentation the failure conditions, any stable recognition the contract promises through a native type, category, or identity, and material state after failure. Cover returned and thrown failures, including those intentionally propagated across the boundary. Apply the coverage judgment above without cataloging incidental lower-level failures or repeating an already clear contract.
 
@@ -54,6 +56,8 @@ Choose the useful destination, then establish authority to change it. Recommend 
 Begin with concrete responsibility or behavior, followed by significant constraints on correct use. Spend detail in proportion to the reader's need: a longer account can clarify important relationships, while a sparse section label can help readers find a coherent part even without adding hidden knowledge.
 
 Use natural, precise, ordinary language. Omit generic praise, line-by-line narration, redundant names, and edit history.
+
+Keep comments understandable without the project's issue tracker or pull-request history. State the necessary behavior, reasons, constraints, and risks directly, and omit references to the project's own issues or pull requests, including numbers and links. References to repository-local decision documents, external standards, or third-party issues may supply useful background, but must not replace the explanation needed to maintain this code.
 
 Follow the target's documentation language, syntax, and explicit formatting requirements. Observed habits inform expression without becoming requirements. Where no convention applies, use an established native comment mechanism.
 
