@@ -18,7 +18,7 @@ Consult an example when you need to see the report layout or how verified facts 
 
 | Situation | Example |
 | --- | --- |
-| Format a full group with compact and detailed items and independent observations | [Review group](examples/review-group.md) |
+| Format a first group with a purpose, before/after explanations, and independent observations | [Review group](examples/review-group.md) |
 | Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
 | Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
 | Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |
@@ -79,15 +79,15 @@ Give a definitive verdict only with high confidence grounded in relevant evidenc
 | ⚖️ **Reasonable** | Required outcomes, accepted scope, supported behavior/contracts, and justified operating costs and risks. |
 | ⚖️ **Unreasonable** | A material task, behavior, or contract defect, including a violated structural obligation, unnecessary scope, or unjustified operating cost or risk. Identify severity, affected conditions, impact, and correction. |
 | 🎨 **Elegant** | Responsibilities, boundaries, and interfaces earn their understanding and maintenance cost. Expression is readable; abstraction, state, branching, repetition, and defense have concrete benefits. Comparable patterns and interfaces are consistent, with justified departures. |
-| 🎨 **Needs improvement** | A structural defect violates a supported obligation. Explain the obligation, concrete consequence, and necessary correction; record the same item as an unreasonable finding for Fix. |
+| 🎨 **Needs improvement** | A structural defect violates a supported obligation. Explain the obligation, concrete consequence, and necessary correction. Record the same item as an unreasonable finding. |
 | 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent behavior-preserving alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
 | **Uncertain** on either axis | State the established facts, the material uncertainty, and what would resolve it. Keep any supported judgment on the other axis. |
 
-Attach judgments to the responsible modification and explain concrete causes and user or caller consequences. Assess both axes even when Report Format allows a compact explanation. One good change cannot cancel another change's defect, burden, or uncertainty. Explicit retention preserves the judgment and consequences; an unchanged accepted burden does not need another optimization request.
+Assess both axes for each modification and follow Report Format for what to show. Attach each finding to the responsible modification and establish its cause and user or caller consequences. One good change cannot cancel another change's defect, burden, or uncertainty. Explicit retention preserves the judgment and consequences; an unchanged accepted burden does not need another optimization request.
 
 Functional correctness or user approval does not establish elegant structure. Distinguish an observed burden from its justification and acceptance. When missing requirements, rationale, or user decisions materially affect whether the complexity is necessary or a simplification is safe, mark the affected judgment **Uncertain** rather than presuming acceptance, needless complexity, or a remedy.
 
-A behavioral defect alone does not prove poor structure. A structural requirement violation also needs a correctness finding, with one modification ID and one Fix remedy across both judgments. Omit preference and low-benefit polish, and combine remedies for the same underlying problem.
+A behavioral defect alone does not prove poor structure. A structural requirement violation is a correctness finding with unreasonable status. Apply the same treatment as for other unreasonable findings in Fix, Pass, Continue/Finish, and delivery, including Viewed-only delivery. Keep the defect under its modification's ID with one explanation and one remedy, even when it affects both axes. Omit preference and low-benefit polish.
 
 Keep uncertainty about a scoped modification under its M ID and summarize it as a warning. It is not an established finding or optional improvement: exclude it from Fix and Optimize scopes, and create neither an incidental O item nor an Optimize choice from it. Retain independently supported judgments and remedies on the same modification.
 
@@ -101,7 +101,7 @@ Keep an existing item's ID through supplementary review and repair. Additional s
 
 Every supported unreasonable finding and worthwhile optional improvement needs an actionable M item, using an existing item or adding one. Its judgments explain the concrete problem, severity when applicable, trigger, impact, and correction or benefit. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them. Associate each with the responsible M item.
 
-Internally size each main group by review units: a simple modification meeting Report Format's compact criteria counts as 1 unit; a normal modification requiring its detailed form counts as 2. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
+Internally size each main group by review units: a straightforward modification needing only the short explanations in Report Format counts as 1 unit. A modification needing more detail counts as 2. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
 
 Report progress using cumulative displayed main files out of eligible files, each once, and the actual cumulative number of displayed main modifications only. Supplementary items, repairs, and incidental observations add neither main-group units nor main progress. Progress implies neither successful delivery nor Viewed recording.
 
@@ -113,7 +113,7 @@ Necessary reading may reveal an unrelated pre-existing issue. Establish both its
 
 Give it a continuous O ID, title, source link or location, evidence and impact, independence, and recommendation or benefit. Report Format places it with its source file when attributable. It adds no main file, modification, progress, or automatic Viewed eligibility. Unselected O advice creates no main-review or delivery gate.
 
-Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user explicitly expands scope or selects them. A selected O repair receives separate evidence, checks, and re-review of its change and affected context, using O IDs and two judgments without new main M IDs or progress. Its changes enter delivery coverage; resulting failures or unresolved findings can block delivery. Delivery determines any whole-file Viewed eligibility.
+Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user explicitly expands scope or selects them. A selected O repair receives separate evidence, checks, and re-review of its change and affected context. Assess both axes and follow Report Format, retaining O IDs and main progress. Its changes enter delivery coverage; resulting failures or unresolved findings can block delivery. Delivery determines any whole-file Viewed eligibility.
 
 ## Turn the findings into a real choice
 
