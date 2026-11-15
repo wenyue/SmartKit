@@ -577,14 +577,14 @@
           "source_path": "skills/ponytail",
           "destination": "skills/ponytail",
           "files": {
-            "SKILL.md": "51b079d9bcb9424030c5b7c43d011eb295fe703de3c1bd46093334556b04a0d1",
+            "SKILL.md": "3680c8e5f8373b316cc962c227ae46fe249a1ee1d6e680cbe42900a4f0c03ad8",
             "agents/openai.yaml": "7bc5912b83355c476aedf90d939db38da50dbafa0e81cc6424a5694c206f020a",
             "assets/background.svg": "5963bc9b3d3c766a896f2b36c756a556dec1dabf198c789edec160c4e39696d4"
           },
           "patches": [
             {
               "path": "vendor/patches/ponytail/ponytail.patch",
-              "sha256": "d6c44fb2c6791d44dc8a7ee325422efd04affb4a16223644e4c6e20884931f00"
+              "sha256": "c9a1f239d0081028d5ca9da76db20e48a6b667865126978bf2f5274ba8ef5bf0"
             },
             {
               "path": "vendor/patches/ponytail/ponytail.openai.patch",
