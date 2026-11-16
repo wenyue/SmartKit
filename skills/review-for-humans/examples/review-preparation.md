@@ -4,8 +4,8 @@
 
 In this fictional PR review, `/work/app` is clean on `main`. The verified local `feature/export` branch is free to check out and can fast-forward from `b1ce402` to the pinned head `38bf06d`. No existing task worktree qualifies.
 
-- A. **Switch** (recommended): Switch `/work/app` to `feature/export` and fast-forward it to `38bf06d`, preserving the clean state and the `main` tip.
-- B. **Create**: Create `/work/app/.worktrees/export-review` on `codex/export-review` at `38bf06d`, check its environment, and preserve `/work/app`.
+- A. **Create** (recommended): Create `/work/app/.worktrees/export-review` on `codex/export-review` at `38bf06d`, check its environment, and keep `/work/app` on `main`.
+- B. **Switch**: Switch `/work/app` to `feature/export` and fast-forward it to `38bf06d`, preserving the clean state and the `main` tip.
 - C. **Snapshot**: Review the verified fixed PR comparison without changing local work.
 
 The user chooses Create. Verify the resulting path, branch mapping, commit, environment, and preserved work. Refresh the PR comparison and Viewed evidence before beginning the review.

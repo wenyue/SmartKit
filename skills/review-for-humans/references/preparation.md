@@ -55,7 +55,7 @@ Honor an explicitly selected viable route first. Otherwise use the entry's decis
 | --- | --- | --- |
 | The current workspace matches, or a viable route is already selected | Begin the review | No new choice; complete the selected route's verification |
 | A safe current-workspace route and a verified existing workspace are available | **Switch** or **Sync** current workspace | **Switch** or **Sync**; **Use**; **Create**; **Snapshot** |
-| A safe current-workspace route is available; no existing workspace qualifies | **Switch** or **Sync** current workspace | **Switch** or **Sync**; **Create**; **Snapshot** |
+| A safe current-workspace route is available; no existing workspace qualifies | **Create** workspace | **Create**; **Switch** or **Sync**; **Snapshot** |
 | The current workspace is unsuitable; a verified existing workspace is available | **Use** existing workspace | **Use**; **Create**; **Snapshot** |
 | Neither the current workspace nor an existing workspace qualifies | **Create** workspace | **Create**; **Snapshot** |
 
