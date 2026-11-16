@@ -30,8 +30,8 @@ def _prompt(name: str) -> str:
     return (Path(__file__).resolve().parent / 'prompts' / name).read_text(encoding='utf-8').rstrip('\r\n')
 
 
-def context_for(root: Path) -> str:
-    """Deliver registered inline bodies and precise pointers for indexed Rules."""
+def context_for(root: Path, harness: str) -> str:
+    """Build Rule context and guidance for the selected Harness."""
     rules = load_registry(root)
     blocks = [
         _prompt('context-introduction.md'),
@@ -60,6 +60,8 @@ def context_for(root: Path) -> str:
             f'{RULE_FILE_START} path="rules/{rule["source"]}">\n'
             f'{body}\n{RULE_FILE_END}'
         )
+    if harness == 'codex':
+        blocks.append(_prompt('codex-coding-and-writing.md'))
     if indexed:
         rows = [
             _prompt('rule-index-introduction.md'),
@@ -141,7 +143,7 @@ def delivery(
         if harness == 'cursor' and event == 'stop' and payload.get('status') != 'completed':
             return {}
 
-    context = context_for(root)
+    context = context_for(root, harness)
     # Load the complete response before acknowledging this restoration.
     reason = ''
     if event in {'tool', 'stop'}:

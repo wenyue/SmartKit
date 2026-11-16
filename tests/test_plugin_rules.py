@@ -128,10 +128,14 @@ class PluginRuleContractTest(unittest.TestCase):
         self.assertNotIn('rules', json.loads((ROOT / '.cursor-plugin/plugin.json').read_text()))
 
     def test_every_host_gets_independent_core_rule_files_and_semantic_index(self):
+        codex_guidance = (ROOT / 'runtime/rules/prompts/codex-coding-and-writing.md').read_text(
+            encoding='utf-8',
+        ).strip()
         for harness in HARNESSES:
             with self.subTest(harness=harness):
                 context = self.session_context(harness, {'prompt': 'Discuss Python error handling'})
                 self.assert_core_and_index(context)
+                self.assertEqual(context.count(codex_guidance), 1 if harness == 'codex' else 0)
                 self.assertLess(len(context.encode()), 50000)
         self.assertFalse(self.state_root.exists())
 
