@@ -61,7 +61,7 @@ Keep comments understandable without the project's issue tracker or pull-request
 
 Follow the target's documentation language, syntax, and explicit formatting requirements. Observed habits inform expression without becoming requirements. Where no convention applies, use an established native comment mechanism.
 
-Correct or remove stale and redundant prose while preserving still-valid meaning, including meaning already clear in code or another owning surface. Keep required machine directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
+Whenever you edit a comment, assess the entire affected comment block against the current code, its contract, and what the reader needs. Integrate the change with the surrounding explanation, merging related points where helpful and correcting or removing stale, redundant, or low-value prose in the same edit. Preserve still-valid meaning, including meaning already clear in code or another owning surface. Keep required machine directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
 
 Read the result alongside the code across relevant paths for usefulness, directness, and accuracy. For contrasting choices about information and voice, consult the optional [comment judgment examples](references/examples.md). Their stated contexts make the choices understandable; they supply neither policy, prescribed formats, nor facts about the target.
 
