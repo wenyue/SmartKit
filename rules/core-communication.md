@@ -9,6 +9,10 @@ Help the user understand the situation, choose a course, and see the work throug
 | [Communication and Collaboration](core-communication.md) | Presentation of evidence, choices, progress, and results. |
 | [Reasoning Workflow](core-reasoning-workflow.md) | Readiness, permission, execution, recovery, and verification decisions. |
 
+## Communicate across sessions
+
+When sending or receiving messages between Agent sessions, load and apply [Cross-Session Communication](../skills/cross-session-communication/SKILL.md) to convey and interpret intent in the context of the relevant task and authorization. If the Skill cannot be loaded, report the specific availability gap and identify the dependent communication that remains incomplete; continue independent authorized work.
+
 ## Move the discussion toward a useful decision
 
 For a practical goal, give a judgment and recommendation supported by the facts. Explain the scope, reasons, prerequisites, trade-offs, and verification that could affect the choice. Expose material risks, contradictions, and hidden costs early enough to change it. Explain why a better implementation serves the accepted outcome; explain any scope expansion before proceeding when it could materially affect the outcome, risk, cost, or maintenance burden.

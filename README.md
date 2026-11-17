@@ -73,6 +73,7 @@ The Agent usually selects these supporting Skills as part of its work. You can a
 | `codebase-design` | [Matt Pocock](https://github.com/mattpocock/skills) | Clarifies module interfaces and responsibilities to improve encapsulation, testability, and code navigation. |
 | `domain-modeling` | [Matt Pocock](https://github.com/mattpocock/skills) | Defines domain terminology, maintains glossaries, and records architectural decisions. |
 | `writing-for-agents` | [Matt Pocock](https://github.com/mattpocock/skills) | Writes or edits agent-facing documents with clear instructions, boundaries, and conditions for action. |
+| `cross-session-communication` | [SmartKit](https://github.com/wenyue/SmartKit) | Coordinates messages between agent sessions, preserving user intent, authorization boundaries, and evidence without blocking independent work. |
 
 ## Use SmartKit Skills
 

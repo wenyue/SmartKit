@@ -12,6 +12,7 @@
     {"id": "smartkit/what-if", "path": "what-if"},
     {"id": "smartkit/finish-worktree", "path": "finish-worktree"},
     {"id": "smartkit/write-rules-and-skills", "path": "write-rules-and-skills"},
+    {"id": "smartkit/cross-session-communication", "path": "cross-session-communication"},
     {"id": "smartkit/rule-code", "path": "rule-code"},
     {"id": "smartkit/rule-error-handling", "path": "rule-error-handling"},
     {"id": "smartkit/rule-code-comment", "path": "rule-code-comment"},

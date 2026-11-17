@@ -73,6 +73,7 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 | `codebase-design` | [Matt Pocock](https://github.com/mattpocock/skills) | 梳理模块接口与职责，改善封装、可测试性和代码导航。 |
 | `domain-modeling` | [Matt Pocock](https://github.com/mattpocock/skills) | 明确领域术语、维护术语表并记录架构决策。 |
 | `writing-for-agents` | [Matt Pocock](https://github.com/mattpocock/skills) | 编写或修改面向 Agent 的文档，使指令、边界和行动条件清晰可执行。 |
+| `cross-session-communication` | [SmartKit](https://github.com/wenyue/SmartKit) | 协调 Agent 会话间的消息，保留用户意图、授权边界与证据，不阻塞独立工作。 |
 
 ## SmartKit Skill 用法
 
