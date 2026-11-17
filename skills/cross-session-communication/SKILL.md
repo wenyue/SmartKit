@@ -15,7 +15,12 @@ Identify your role for this exchange: relaying a decision, coordinating delegate
 
 ## Send the meaning the recipient needs
 
-Lead with the purpose and include only context needed to understand or act. Distinguish the following when the distinction affects what should happen; explicit labels are optional, not a message format or a source of authority.
+Use these fields in order for messages and replies. Include **Source** and **Next step** when applicable.
+
+1. **Message** — Name the type from the table and state the decision, request, suggestion, question, or update.
+2. **Context** — Identify the task and include only what the recipient needs to understand or act.
+3. **Source** — Cite a source the recipient can check when a claim, decision, or authorization needs verification.
+4. **Next step** — State any action or reply you need from the recipient.
 
 | Meaning | What to convey |
 | --- | --- |
@@ -26,7 +31,13 @@ Lead with the purpose and include only context needed to understand or act. Dist
 
 Quote the user's words when a consequential limit, ambiguous reply, correction, or disputed authorization needs exact wording. Include the question or context that gives a short reply its meaning. Otherwise, a faithful summary of intent is clearer than copying the conversation. Do not add a new commitment or broaden scope while summarizing.
 
-Use supported communication tools and share only information authorized for that destination. Give a usable source reference when the recipient needs to verify a claim, rather than unexplained internal shorthand or an inaccessible assertion. If the source cannot be inspected, make that limitation explicit.
+Use supported communication tools and share only information authorized for that destination. If the recipient cannot inspect a needed source, state that limitation.
+
+### Example factual update
+
+- **Message** — Factual update. The inventory export completed with 42 rows.
+- **Context** — The April inventory report uses this export for its active items.
+- **Source** — Inventory export job #218, completion log, April 30 at 14:20 UTC.
 
 ## Receive without inventing authority
 
