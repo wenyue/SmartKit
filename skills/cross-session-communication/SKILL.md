@@ -17,15 +17,14 @@ Identify your role for this exchange: relaying a decision, coordinating delegate
 
 Start each message with one keyword that signals its purpose. State the point directly in your own words, adding task context, a checkable source, or a requested next step as needed.
 
-| Common keyword | What to convey |
+| Keyword | What to convey |
 | --- | --- |
 | Decision | The user's decision, where it applies, and any limits. Provide a verifiable source when its authority or meaning needs checking. Convey settled constraints as requirements. |
 | Suggestion | The alternative and the evidence or concern behind it. Distinguish observations from your interpretation. |
 | Update | What was observed and any uncertainty that affects its use. Say where and when you checked if the recipient needs to verify the update. Distinguish a plan, an attempted action, a reported result, and a verified result. |
 | Question | The specific question and the context the recipient needs to answer it. Distinguish observed facts from your inferences. |
 | Authorization | What was authorized, by whom, and within what limits. Give a source the recipient can check when needed to establish the permission. |
-
-When coordinating authorized work, state the requested outcome, the existing authorization it relies on, and any constraints or dependencies the recipient may not know about. Leave implementation choices to the responsible session unless the user settled them.
+| Request | The work you want the recipient to do and its intended outcome. State the existing authorization it relies on and any constraints or dependencies the recipient may not know about. Leave implementation choices to the responsible session unless the user settled them. |
 
 Quote the user's words when a consequential limit, ambiguous reply, correction, or disputed authorization needs exact wording. Include the question or context that gives a short reply its meaning. Otherwise, a faithful summary of intent is clearer than copying the conversation. Do not add a new commitment or broaden scope while summarizing.
 
@@ -38,6 +37,7 @@ Use supported communication tools and share only information authorized for that
 - **Update** — The current GitHub PR has been merged.
 - **Question** — How many threads will the current design use?
 - **Authorization** — You may create a separate branch.
+- **Request** — Please investigate this CI failure and tell me what caused it.
 
 ## Receive without inventing authority
 
