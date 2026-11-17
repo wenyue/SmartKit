@@ -18,7 +18,7 @@ Present the question once and wait for the answer. A blocking choice control can
 
 ## 1. Choose the requested operation
 
-Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the business project as `<target-root>`. Read [Ownership](references/ownership.md) before the selected operation to establish canonical inputs and replacement boundaries. The catalog and schema define supported inputs; scripts validate and apply them. Setup chooses the operation, resolves project decisions, coordinates authors and checks that the resulting configuration works as a whole.
+Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the root of the selected existing business project as `<target-root>`. Run configuration setup directly against this checkout from inspection through finish. For a nested project, use its own root. Read [Ownership](references/ownership.md) before the selected operation to establish canonical inputs and replacement boundaries. The catalog and schema define supported inputs; scripts validate and apply them. Setup chooses the operation, resolves project decisions, coordinates authors and checks that the resulting configuration works as a whole.
 
 When the user has named an operation, follow it directly:
 
@@ -201,6 +201,8 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
 Before the first `finish` attempt, confirm CodeGraph readiness and follow the protocol's runtime-refresh branch if its daemon idle-exited. In repository mode, finish saves accepted generated project sources to the entry before applying the ordinary target plan; preserve both source and target evidence if either part fails. Accept only the protocol's successful local finish result, including cleanup and the final setup-version record, before proceeding to publication. A failed finish blocks this operation's publication and follows the original-attempt recovery route.
+
+After a successful `finish`, confirm that the registered project Rules, Skills, and supporting files are installed at their declared paths under `<target-root>` and that the `Project rules` section in the entry selected by `ruleEntry` lists the applicable project Rules. Verify the same local installation in every maintenance mode.
 
 ## 8. Publish the configuration result
 
