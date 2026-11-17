@@ -10,6 +10,12 @@ Choose the requested outcome first: full setup, restoration from a configuration
 
 When the migration gate requires configuration work, full setup reassesses every declared blueprint and project custom Agent, including unchanged fingerprints, and prepares CodeGraph for the target. Full setup also reuses the repository's existing OpenWiki or generates the first one. Restoration copies the accepted backup's bytes into the current project and checks this machine's prerequisites.
 
+## Ask and wait
+
+Read the question reference at the step that needs a decision. Reuse clear answers and still-current findings from this conversation. Give the user the decision, its immediate effect, and an easy way to reply in their language. Recommend an option when the project evidence supports it. Accept a clear answer in the user's own words.
+
+Present the question once and wait for the answer. A blocking choice control can collect the reply in the current turn. Use an asynchronous choice control only when its pending options are known to stay available after the turn ends, and end the turn without repeating the choices. Otherwise put the question in the final reply and end the turn with the decision pending. Resume from the actual answer before running more setup work. If the reply settles only part of the decision, ask only for the missing part.
+
 ## 1. Choose the requested operation
 
 Resolve this directory as `<skill-root>`, its sibling maintenance entry `<skill-root>/../maintain-project-config/scripts/maintain.py` as `<maintain>`, and the business project as `<target-root>`. Read [Ownership](references/ownership.md) before the selected operation to establish canonical inputs and replacement boundaries. The catalog and schema define supported inputs; scripts validate and apply them. Setup chooses the operation, resolves project decisions, coordinates authors and checks that the resulting configuration works as a whole.
@@ -40,19 +46,9 @@ Use the findings, existing managed content, and, where needed, `.agents/config.j
 1. **Is the local managed configuration usable?** A fresh checkout may already have usable configuration. Checkout age, copied setup records and runtime readiness do not answer this question. If usability is uncertain, resolve only the facts needed to classify it.
 2. **Is the backup source established?** Check that the binding has a matching local receipt recording successful application under the maintenance contract. A copied binding without that receipt is a source proposal to confirm with the user. It does not make otherwise usable local configuration unusable.
 
-A lock or copied `setupVersion` alone does not prove successful setup on this checkout. Likewise, `automatic: false` alone does not establish whether a successful receipt exists. Unavailable source evidence means the source is still unknown; report the gap and leave only source-dependent decisions pending. Obtain missing source details from the user rather than guessing from business remotes or scanning known repositories or other checkouts.
+A lock or copied `setupVersion` alone does not prove successful setup on this checkout. Likewise, `automatic: false` alone does not establish whether a successful receipt exists. Report unavailable source evidence and leave only source-dependent work pending. Ask for missing source details after the user chooses a route that needs them.
 
-Use those answers to present the applicable choices in the user's language:
-
-| Situation | Choices to offer | Recommendation and reason |
-| --- | --- | --- |
-| Local managed configuration is usable, including in a fresh checkout | A. Check for required project migrations and complete initial OpenWiki if needed. Also offer B. Update or restore from the configuration repository when its binding is established or the user confirms its source. | Recommend A. The migration gate determines whether configuration work is needed. Retain its maintenance choice. Confirm a copied binding before treating restoration as ready. |
-| Local managed configuration is absent or established as unusable, and a confirmed source has an existing backup entry | A. Update or restore from the configuration repository. B. Initialize configuration. | Recommend A: the user already has configuration to reuse. Initialization remains available and preserves existing content under Ownership. |
-| Local managed configuration is absent or established as unusable, and there is no known backup and no unresolved source evidence | A. Initialize configuration. B. I already have a configuration backup. | Recommend A. Choice B starts source confirmation; it does not claim a restoration is ready to run. |
-
-Explain the effects before asking for the choice. Full setup covers configuration, local CodeGraph and first OpenWiki generation. Restoration runs from **configuration repository → current project** and may add, overwrite or delete local files within the accepted snapshot's scope. Saving local changes back to that repository is a separate adoption/publication operation. For a known source, show available changed paths and say whether they come from the local snapshot; inspection without an update does not establish the remote's latest contents.
-
-Wait for the user's operation choice, then continue that route without asking the same question again. This choice settles what to do. Source confirmation, acceptance of actual differences, maintenance mode and startup synchronization remain their own decisions where required; an operation recommendation settles none of them.
+Use [Choose the operation](references/choose-operation.md) to ask from these findings. Wait for the answer before following the selected route.
 
 Inspection failures block only decisions that need the missing evidence. Report those gaps; restoration does not require entering full setup, Matt initialization or CodeGraph preparation. Session hooks neither discover missing configuration nor ask to restore it; configuration startup handling serves only an explicitly enabled, valid existing checkout binding. Other readiness checks retain their owners.
 
@@ -69,7 +65,7 @@ python "<skill-root>/scripts/workflow.py" inspect --target "<target-root>"
 
 If inspection reports `skipped: true`, report that no configuration migration is due and go to [step 9](#9-complete-openwiki-and-hand-off). Recover any evidenced pending configuration publication through step 8 first. Keep the recorded `setupVersion` and use the existing configuration instead of opening another configuration session.
 
-When the gate requires full setup, obtain the maintenance inspection:
+When the gate requires full setup, reuse the maintenance inspection from operation selection if still current. Otherwise obtain it:
 
 ```text
 python "<maintain>" inspect --target "<target-root>"
@@ -81,38 +77,28 @@ If an active OpenWiki queue blocks inspection or application of a backup that se
 
 ### Choose where configuration will be maintained
 
-This decision is the same for first setup and upgrade. When inspection reports `selection_required`, ask once in the user's language and present all three choices together. Otherwise retain the recorded mode, repository, branch and entry. Existing `local` means Project shared; a missing maintenance declaration alone does not mean the project is new.
-
-| Choice | What it does | Why choose it |
-| --- | --- | --- |
-| A. Project shared (`local`) | Keep canonical configuration in the business project for versioning with its repository. | The configuration belongs with the shared project. |
-| B. This machine only (`local-only`) | Keep canonical configuration in the business project and locally exclude it from business Git. No GitHub source is needed. | The configuration should stay local to this machine. |
-| C. Separate configuration repository (`repository`) | Maintain configuration in a personal private GitHub repository and locally exclude target configuration from business Git. | The configuration needs its own repository, separate from business-project history. |
-
-Record a newly accepted choice through the maintenance command's `bind` route. Switch a recorded mode or entry only when the user requests it, after comparing and preserving old source and target work. Follow the maintenance reference for Git exclusions and already tracked files: choosing a mode does not itself untrack existing files.
-
-For C, explain that the configuration result includes an exact scoped source commit and normal push after successful local finish, unless the user requests a local result. The shared publication contract governs that result and any applicable Wiki publication at step 9.
+Use [Choose the maintenance mode](references/choose-maintenance-mode.md) when inspection reports `selection_required` and the user has not chosen a mode, or when the user requests a mode switch without naming the new mode. Retain the recorded mode, repository, branch and entry unless the user requests a change. Once the mode and any required repository details and initial backup scope are accepted, record the choice through the maintenance command's `bind` route. For a requested switch, compare and preserve old source and target work first. Follow the maintenance reference for Git exclusions and already tracked files.
 
 ### Establish the source and account for existing work
 
 For first setup, identify existing project instructions, personal configuration and independent owners before deciding what setup will manage. For an upgrade, establish the last successful setup version and collect every applicable migration without guessing missing history. An initialized project with no successful version keeps its ownership record and content while this full setup establishes the baseline.
 
-Both local modes use the project's canonical inputs. In repository mode, establish the personal repository identity, branch and project entry. Connect an existing private repository, or create one only with the user's specified owner and name. Different projects may use separate entries in the same repository. Import only identified and accepted existing personal files; preserve tracked business-project content and independently owned configuration. Connecting an existing entry on another machine requires comparison with the current target before initial application.
+Both local modes use the project's canonical inputs. After repository mode is selected, use [Choose the configuration repository](references/choose-configuration-repository.md) for any unresolved source decision, including the Git address, branch, project entry, a requested source change, or authority to create a named repository. Import only identified and accepted existing personal files and preserve tracked business-project content and independently owned configuration. Use [Confirm configuration changes](references/confirm-configuration-changes.md) when accepting a new backup scope or before applying a differing existing entry.
 
 Update the persistent repository source before editing it. If binding or earlier maintenance already refreshed it and produced accepted pending changes, verify and retain that evidence, then continue from those changes. Another clean-checkout update would interrupt that accepted work. Assess migrations against both the business project and the selected source entry.
 
-After refreshing the backup, use `reconcile --adopt-local` to plan a save for proven local updates. When Setup covers saving the complete differing files, review their content, retain the accepted `planned` JSON and execute it with `--accept-plan`. Carry the returned `source_changes` into step 8.
+After refreshing the backup, use `reconcile --adopt-local` to plan a save for proven local updates. When Setup covers saving the complete differing files, review their content. Use [Confirm configuration changes](references/confirm-configuration-changes.md) if an acceptance is still needed. Retain the accepted `planned` JSON and execute it with `--accept-plan`. Carry the returned `source_changes` into step 8.
 
 ```text
 python "<maintain>" reconcile --target "<target-root>" --adopt-local
 python "<maintain>" reconcile --target "<target-root>" --adopt-local --accept-plan "<plan-fingerprint>"
 ```
 
-For `needs-choice`, obtain the user's whole-synchronization choice through the maintenance reference. A `source-updated` result identifies a proven repository-only update, but its automatic restoration permission applies only at enabled startup; full setup still needs acceptance of the differing application. Keeping local without reconciling the backup leaves dependent full setup pending. Make repository-mode configuration corrections in the selected source entry and reinspect after edits. Apply the accepted result before freezing a session, using the current fingerprint for a differing restore.
+For `needs-choice` or a differing application, use [Confirm configuration changes](references/confirm-configuration-changes.md) under the maintenance contract. Keeping local without reconciling the backup leaves dependent full setup pending. Make repository-mode configuration corrections in the selected source entry and reinspect after edits. Apply the accepted result before freezing a session, using the current fingerprint for a differing restore.
 
 ### Choose automatic startup synchronization separately
 
-Only repository mode has this preference. If none is recorded, offer **A. Enable** or **B. Disable**, default off. Explain the maintenance reference's startup behavior: proven repository-only updates restore automatically, local-only changes prompt for upload or deferral, and both sides changing or an unknown direction requires a choice. Upload acceptance includes its scoped commit and normal push; the startup preference alone permits no upload.
+Only repository mode has this preference. Use [Choose startup synchronization](references/choose-startup-sync.md) when neither an applicable recorded preference nor a clear answer for this checkout settles it, or when a requested change remains unclear.
 
 After source refresh, inspection and resolution of differences, record a new or deliberately changed preference through the maintenance command's `apply --auto-sync on|off` route. Retain an existing preference during routine setup or upgrade; use an explicit flag only to establish or deliberately change it. Startup synchronization requires a valid existing checkout binding and matching successful local receipt as well as this opt-in.
 
@@ -123,10 +109,8 @@ Once the maintenance choice, source and initial collisions are settled and accep
 | Finding | Action | Reason |
 | --- | --- | --- |
 | Context is present | Preserve it and continue. | This prerequisite is already met. |
-| Context is incomplete | Read and follow the complete shared reference at `<skill-root>/../setup-matt-pocock-skills/references/project-context.md` to initialize or supplement it within this invocation. | Full setup needs that project context before it can freeze the request. |
-| The reference or a required resource is unavailable, a material choice is unresolved, or a required write is declined or fails | Report the gap and leave dependent full setup incomplete; continue independent inspection if useful. | The prerequisite has not been met. |
-
-Use the reference directly without invoking the user-only Matt Skill. Reuse accepted project decisions, preserve existing content and obtain its draft acceptance for new or changed writes. Supply the business target for exploration and the authoritative output paths for writing: project canonical inputs in local modes, selected source copies in repository mode. Also tell the reference that triage configuration is required: full setup depends on SmartKit's bundled `triage` Skill, so an unavailable `triage` Skill means an incomplete plugin distribution; report it as such and leave full setup incomplete. Resolve any repository backup-scope addition under the maintenance contract, then apply accepted changes through its guarded route. Completing Matt context does not expand backup or replacement authority.
+| Context is incomplete | Read [Complete project context](references/confirm-project-context.md) to link verified existing documents or ask about a missing decision before authoring. | Full setup needs that project context before it can freeze the request. |
+| A required resource is unavailable, a material choice is unresolved, or a required write is declined or fails | Report the gap and leave dependent full setup incomplete. | The prerequisite has not been met. |
 
 Reinspect after application and continue this same invocation once `matt.present` is true. Other findings keep their own readiness requirements. Restoration, local synchronization and Rule-index-only operations do not enter this prerequisite.
 
@@ -157,9 +141,9 @@ Assess every Agent's model and reasoning settings on each full run, using curren
 | Situation | Action or choice | Reason |
 | --- | --- | --- |
 | A successor is appropriate and verified usable within the same responsibility and cost/latency class | Choose it with compatible reasoning settings, unless this changes an explicit project choice. | The Agent should retain its role and operating trade-offs. |
-| A proposed change crosses a model tier, materially increases cost or changes an explicit project choice | Explain the alternatives and effects, then ask the user before changing it. | This changes a decision the project owner needs to make. |
+| A proposed change crosses a model tier, materially increases cost or changes an explicit project choice | Use [Confirm changes to custom Agents](references/confirm-custom-agent-changes.md) before changing it. | The project owner needs to make this choice. |
 | Availability cannot be verified | Retain the values, report incomplete assessment and continue independent work. | Missing evidence does not justify replacing a setting. |
-| Evidence shows the model is unusable | Pause that Agent until a supported choice is settled. | A known unusable model cannot count as a working Agent. |
+| Evidence shows the model is unusable | Pause that Agent until a supported choice is settled. Use [Confirm changes to custom Agents](references/confirm-custom-agent-changes.md) when the user needs to select a replacement. | A known unusable model cannot count as a working Agent. |
 
 Use Ownership's `native_source` route when retaining a complete native document. An inventory item marked `requires_relocation` needs an explicit source-preserving relocation before adoption: resolve the active host reference and keep relative prompt/config references meaningful at the installed location. Copying a file alone does not redirect the host.
 
@@ -174,11 +158,11 @@ In repository mode, the guarded import first saves accepted source and configura
 
 For managed adapters, edit their selected canonical sources; full setup renders them under existing digest protection. Resolve source and setting ownership before converting structured declarations. The helper neither chooses models nor certifies semantic preservation.
 
-For conflicts, show the paths, fields and values, effects of the alternatives and needed decision. Preserve conflicting inputs and continue independent inspection. Continue to freezing only when every custom Agent is mapped and accounted for, reported issues are resolved, and model changes, retentions and incomplete verification are distinguished. An omitted Agent or unresolved conflict cannot count as completion.
+Use [Confirm changes to custom Agents](references/confirm-custom-agent-changes.md) if a conflict or relocation needs a user decision. Preserve conflicting inputs while resolving them. Continue to freezing only when every custom Agent is mapped and accounted for, reported issues are resolved, and model changes, retentions and incomplete verification are distinguished.
 
 ## 4. Prepare CodeGraph and start one frozen session
 
-After target, active harness and input decisions are settled, establish the protocol's CodeGraph effect authority and prepare the runtime before freezing:
+After target, active harness and input decisions are settled, establish the protocol's CodeGraph effect authority. Use [Confirm setup effects](references/confirm-setup-effects.md) if authority is still missing. Prepare the runtime before freezing:
 
 ```text
 python "<skill-root>/scripts/workflow.py" setup-codegraph --target "<target-root>" --harness "<active-harness>" --approved
@@ -246,13 +230,13 @@ Match recovery notes to the worktree, accepted project binding or binding transi
 
 ### Prepare a new run
 
-The selected project's binding governs Wiki maintenance. Establish authority to write at the Git root, then follow the maintenance reference's Wiki commands with `<target-root>` as the project target. If the Git root has an independent binding, leave affected Wiki writes pending for that owner.
+The selected project's binding governs Wiki maintenance. Establish authority to write at the Git root, using [Confirm setup effects](references/confirm-setup-effects.md) if needed. Then follow the maintenance reference's Wiki commands with `<target-root>` as the project target. If the Git root has an independent binding, leave affected Wiki writes pending for that owner.
 
 Record the accepted binding or transition and source scope in the recovery note before any ordinary configuration write. If the migration gate was skipped and Wiki work requires the first project binding, use [the project choice in step 2](#choose-where-configuration-will-be-maintained). Before binding or importing, record selected input digests and expected generated files. Verify the generated manifest and binding and retain their actual digests. Complete the applicable source, adoption and startup preference steps, then return here with the existing setup baseline.
 
 For proven local updates, retain the accepted `reconcile --adopt-local` plan in the note and execute it with `--accept-plan`. Apply and finish ordinary configuration publication under the maintenance contract before generation or returning a reused Wiki. Use `publish --plan` if the retained plan covers the complete accepted scope. Preserve any retained commit or accepted local-result evidence for recovery.
 
-Use `wiki prepare` under the inherited binding after refreshing the backup or reusing current evidence for that binding. When project and Wiki roots match, reconcile the ordinary project snapshot through the same recoverable adoption route if approved Setup scope covers proven local updates. Handle other differing restores through the maintenance reference. When `wiki prepare` reports `ready`, rerun the configuration gate and reestablish affected readiness if preparation changed Setup inputs. Then reuse any restored usable Wiki.
+Use `wiki prepare` under the inherited binding after refreshing the backup or reusing current evidence for that binding. When project and Wiki roots match, reconcile the ordinary project snapshot through the same recoverable adoption route if approved Setup scope covers proven local updates. If `wiki prepare` reports `needs-choice`, use [Confirm configuration changes](references/confirm-configuration-changes.md) for the Wiki backup decision and retain the exact inspection fingerprint. A decision to keep local leaves preparation and the recovery note pending. When `wiki prepare` reports `ready`, rerun the configuration gate and reestablish affected readiness if preparation changed Setup inputs. Then reuse any restored usable Wiki.
 
 On the skipped-migration route without verified local finish evidence, establish usable project configuration from step 1 and run `python "<skill-root>/../../runtime/recommended-tools/codegraph_runtime.py" check --target "<target-root>"`. Use the scoped preparation command in step 4 if readiness is missing.
 
@@ -260,7 +244,7 @@ On the skipped-migration route without verified local finish evidence, establish
 
 Before dispatch, save the recovery note with the Setup target, Wiki root and worktree Git directory, evidence that a usable baseline was absent, binding and authorized effects, and the prior queue state, intended mode, language and dispatch time. Pass the project target, Wiki root, binding, current maintenance evidence, any local-result limit and Setup ownership of the note to the bundled [OpenWiki Skill](../openwiki/SKILL.md). OpenWiki returns verified generation to Setup before any backup write. Record the run ID when OpenWiki starts or resumes. Resume an attributable active queue in its worktree before any Wiki backup operations. Wait for an existing operator. Verify durable completion and usable English output, including any required English follow-up.
 
-In repository mode, retain `wiki save` plan JSON and the accepted file selection in the note before saving with `--accept-plan`. On retry, use the original plan to identify already saved bytes and pending receipt or publication work. Publish the verified result with `wiki publish --plan` when required. Carry forward a retained commit or accepted local-result exception. Clear the recovery note only after verifying the applicable handoff, or after completing the recorded ordinary work and verifying a reused Wiki.
+In repository mode, use [Confirm the OpenWiki backup](references/confirm-wiki-backup.md) for any unresolved file-selection decision. Retain the `wiki save` plan JSON and the accepted file selection in the note before saving with `--accept-plan`. On retry, use the original plan to identify already saved bytes and pending receipt or publication work. Publish the verified result with `wiki publish --plan` when required. Carry forward a retained commit or accepted local-result exception. Clear the recovery note only after verifying the applicable handoff, or after completing the recorded ordinary work and verifying a reused Wiki.
 
 If a prerequisite or operation fails, report the pending work and preserve completed configuration, Wiki state and the recovery note. Include the fallback note path when used.
 
