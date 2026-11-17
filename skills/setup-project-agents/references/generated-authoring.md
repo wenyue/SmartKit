@@ -43,6 +43,8 @@ Pass the copied blueprint and its resource root as accepted task inputs. When th
 
 Each request receives exactly one Candidate under the public writer's own scope, validation, review and result protocol. Run jobs in the common plan's generation order so every referrer's checks receive its already accepted generated dependencies as context. Consume only an individual `COMPLETE` whose exact Candidate paths lie beneath `GENERATED` and satisfy that blueprint, retaining required evidence in its handoff. Blueprint readiness terminology is not a substitute.
 
+A writer may use a separately authorized test worktree for blueprint validation. Use that checkout only to gather validation evidence for the writer handoff. Keep the Candidate under `GENERATED` and make any corrections there through the writer's scoped review workflow.
+
 An unchanged artifact needs the same assessment and `COMPLETE`; the writer may return a verified exact copy with all supporting files that remain part of it. Matching bytes avoid target rewrites. Ownership governs retirement: omitting a recorded supporting output is not reuse.
 
 ## Reconcile before registration

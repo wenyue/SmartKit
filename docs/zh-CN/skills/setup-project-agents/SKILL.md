@@ -18,7 +18,7 @@ disable-model-invocation: true
 
 ## 1. 选择请求的操作
 
-将本目录解析为 `<skill-root>`，将相邻的维护入口 `<skill-root>/../maintain-project-config/scripts/maintain.py` 解析为 `<maintain>`，将业务项目解析为 `<target-root>`。执行选定操作前，阅读 [所有权](references/ownership.md)，确定权威输入和替换边界。目录清单和 schema 定义支持的输入；脚本验证并应用这些输入。Setup 选择操作、明确项目决策、协调编写者，并检查最终配置能否作为一个整体正常工作。
+将本目录解析为 `<skill-root>`，将相邻的维护入口 `<skill-root>/../maintain-project-config/scripts/maintain.py` 解析为 `<maintain>`，将所选现有业务项目的根目录解析为 `<target-root>`。从检查到结束，直接以这个检出为配置 Setup 的目标。若选的是嵌套项目，就使用该项目自己的根目录。执行选定操作前，阅读 [所有权](references/ownership.md)，确定权威输入和替换边界。目录清单和 schema 定义支持的输入；脚本验证并应用这些输入。Setup 选择操作、明确项目决策、协调编写者，并检查最终配置能否作为一个整体正常工作。
 
 用户已指明操作时，直接遵循：
 
@@ -201,6 +201,8 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 ```
 
 首次尝试 `finish` 前，确认 CodeGraph 就绪；若守护进程因空闲退出，遵循协议的运行时刷新分支。在仓库模式下，finish 先将已接受的生成项目源保存到条目，再应用常规目标计划；任一部分失败时，都要保留来源和目标两侧的证据。只有取得协议规定的成功本地 finish 结果，包括清理和最终 setup 版本记录，才能继续发布。finish 失败会阻止本次操作的发布，并须遵循原始尝试的恢复路径。
+
+`finish` 成功后，核对已登记的项目 Rules、Skills 和配套文件均已安装到 `<target-root>` 下声明的路径，并确认 `ruleEntry` 选定的入口文件在 `Project rules` 区块中列出了适用的项目 Rules。每种维护模式都要核验这项本地安装结果。
 
 ## 8. 发布配置结果
 
