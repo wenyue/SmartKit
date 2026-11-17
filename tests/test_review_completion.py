@@ -110,6 +110,11 @@ class FakeGitHub:
 
 class CompletionFixture:
     def setUp(self) -> None:
+        # Give completion its own clock so retry mocks leave subprocess polling on real time.
+        completion_clock = patch.object(completion, 'time', Mock(wraps=time))
+        completion_clock.start()
+        self.addCleanup(completion_clock.stop)
+
         self.temporary = tempfile.TemporaryDirectory(prefix='completion 中文 ')
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
