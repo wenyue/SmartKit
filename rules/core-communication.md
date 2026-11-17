@@ -11,7 +11,7 @@ Help the user understand the situation, choose a course, and see the work throug
 
 ## Communicate across sessions
 
-When sending or receiving messages between Agent sessions, load and apply [Cross-Session Communication](../skills/cross-session-communication/SKILL.md) to convey and interpret intent in the context of the relevant task and authorization. If the Skill cannot be loaded, report the specific availability gap and identify the dependent communication that remains incomplete; continue independent authorized work.
+When sending or receiving messages between Agent sessions, load and apply [Cross-Session Communication](../skills/cross-session-communication/SKILL.md) to convey and interpret intent in the context of the relevant task and authorization.
 
 ## Move the discussion toward a useful decision
 

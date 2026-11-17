@@ -11,7 +11,7 @@
 
 ## 跨会话沟通
 
-跨 Agent 会话收发消息时，加载并应用[跨会话通讯规则](../skills/cross-session-communication/SKILL.md)，结合任务和授权传达与理解意图。无法加载时，说明原因及受阻的通讯，继续独立且已获授权的工作。
+跨 Agent 会话收发消息时，加载并应用[跨会话通讯规则](../skills/cross-session-communication/SKILL.md)，结合任务和授权传达与理解意图。
 
 ## 将讨论推进到有用的决定
 
