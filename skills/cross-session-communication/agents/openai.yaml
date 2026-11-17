@@ -1,0 +1,7 @@
+interface:
+  display_name: "跨会话通讯规则"
+  short_description: "跨会话发送和接收决定、协调请求、建议与事实时，准确传达意图并核实授权。"
+  icon_small: "./assets/background.svg"
+  icon_large: "./assets/background.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $cross-session-communication，结合双方当前任务核实消息来源，准确沟通意图并跟进实际结果。"
