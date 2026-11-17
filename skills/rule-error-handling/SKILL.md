@@ -5,86 +5,94 @@ description: Use for work involving operation outcomes or error behavior, includ
 
 # Error Handling
 
-An operation's promise determines whether it succeeded and what its caller needs to know. Keep that outcome, consequential effects, and responsibility visible through recovery and final handling.
+Choose the simplest handling that fulfills the operation's promise, respects accepted loss and permission, and leaves valid state. Recovery that restores future usability does not by itself complete the failed operation.
+
+## Load the guidance for affected decisions
+
+Apply the common principles below to substantive work and assessment. Before choosing, changing, or reviewing a decision in this table, read every matching reference. A cancelled remote write may need several. If required guidance is unavailable, report the gap and pause the dependent decision.
+
+| Affected decision | Required reading |
+| --- | --- |
+| Stored or serialized data: interpretation, recovery, discard, migrations, or persistence guarantees. | [Persistence](references/persistence.md) |
+| Filesystem, network, subprocess, or other external operations: dispatch, uncertain outcomes, replay, reconciliation, or compensation. | [External operations](references/external-operations.md) |
+| Concurrent or deferred work: completion, cancellation, timeouts, stale results, streams, or lifecycle cleanup. | [Async work and streaming](references/async-and-streaming.md) |
+| Authentication, authorization, integrity checks, security fallback, or diagnostics containing credentials or private payloads. | [Identity and security](references/identity-and-security.md) |
+| User-facing recovery: retained input, remedial actions, human repair, or handoff to another actor. | [User recovery](references/user-recovery.md) |
 
 ## Start with the promised outcome
 
-Classify success, ordinary refusal or absence, contracted failure, and programming violations by the operation's promise, independently of their representation, frequency, or retryability.
+Distinguish success, ordinary refusal or absence, contracted failure, and programming violations by the operation's promise, rather than their representation, frequency, or retryability.
 
-Keep failed outcomes and partial effects visible. Catching an error, supplying a default, or restoring future usability does not establish success: the current operation must fulfill its promise or an accepted degraded or partial outcome.
+Report success only when the operation fulfills its promise or an accepted degraded or partial outcome. Catching an error or supplying a default is insufficient; preserve failures and remaining effects that matter to callers.
 
-Keep infallible operations direct. Use the language's native mechanisms and the project's actual contracts. Introduce stable distinctions where callers need different decisions, and translate at the boundary that owns the contract.
+Keep infallible operations direct. Use native language mechanisms and existing project contracts; translate failures at the boundary that owns the contract.
 
-Cover a closed business vocabulary exhaustively. For an open protocol, retain an explicit unknown-failure path and useful causes; incidental failures must not become ordinary refusal.
+Cover a closed business vocabulary exhaustively. An open protocol needs an explicit unknown-failure path with useful causes; incidental failures must not become ordinary refusal.
 
-Keep programming violations distinct from ordinary negatives. Production-required validation, control flow, side effects, and invariants must remain enforced when optional checks are disabled.
+Keep required validation, control flow, side effects, and invariants effective in production when optional checks are disabled.
 
-Validate data where its syntax and meaning are understood, distinguishing invalid content from failed I/O. Explain important caller obligations where code, types, and referenced contracts leave them unclear.
+Validate data where its syntax and meaning are understood, distinguishing invalid content from failed I/O. Explain consequential caller obligations left unclear by code, types, and referenced contracts.
 
 ## Choose public failure contracts deliberately
 
-Prefer a semantically accurate existing failure contract. A new public distinction can clarify handling or diagnosis, but it also adds caller knowledge, handling choices, and a compatibility commitment. Require a concrete benefit that justifies those costs, including when the distinction only provides optional detail.
+Prefer a semantically accurate existing failure contract. Add a public distinction only for a concrete handling or diagnostic benefit that justifies its caller knowledge and compatibility costs, including when the detail is optional.
 
-Before adding a publicly consumable failure distinction, ask the user and obtain explicit agreement to the concrete addition unless it qualifies as a faithful refinement below. This applies across native error mechanisms: exception types, error identities or codes, result cases, and newly inspectable underlying failures can all add a public failure contract. Existing explicit agreement covering the addition remains valid; general authorization to implement a feature is insufficient.
+Before adding a publicly consumable failure distinction, obtain the user's explicit agreement to that addition unless it qualifies as a faithful refinement below. Exception types, error identities or codes, result cases, and newly inspectable underlying failures can all add such a contract. Existing explicit agreement remains valid; general authorization to implement a feature is insufficient.
 
 ### When a refinement needs no additional agreement
 
-A faithful refinement preserves a semantically accurate, concrete language or standard-library failure category and its promised recognition, information, and handling behavior. Existing category-level handling must remain valid without caller adaptation; callers may opt into the specific detail.
+A faithful refinement preserves a semantically accurate, concrete language or standard-library failure category and its promised recognition, information, and handling. Existing category-level handling must work without caller adaptation; callers may opt into the specific detail.
 
-Establish that preservation through the language's native matching or classification mechanism; inheritance is not required. Merely inheriting a generic exception base or implementing a generic error interface does not qualify. This exception removes only the additional user-agreement requirement. The cost judgment and responsibility to preserve supported contracts still apply.
+Establish preservation through native matching or classification; inheritance is not required, and a generic exception base or error interface alone does not qualify. This exception removes only the additional agreement requirement; the benefit must still justify its costs and preserve supported contracts.
 
 ## Keep an owner through completion
 
-Handle failures for owned recovery, cleanup, compensation, required contract translation, or final handling; otherwise propagate faithfully through the accepted contract. A library may fulfill its responsibility by transferring the failed outcome to its caller.
+Intercept failures for owned recovery, cleanup, compensation, required contract translation, or final handling; otherwise propagate faithfully. A library may fulfill its responsibility by returning the failed outcome through its accepted caller contract.
 
-Give each independently initiated operation a final owner. Required asynchronous work belongs to the operation's completion promise; detached work needs its own completion, failure, and lifecycle ownership. Guarantee owned cleanup through success, failure, cancellation, and interruption.
+Give each independently initiated operation an owner for completion, failure, remaining state, and final feedback. Complete owned cleanup through success, failure, cancellation, and interruption.
 
-Consuming a failure or delegating reporting retains responsibility for remaining state, cleanup, retry, and feedback. Carry unresolved outcomes and consequential effects to their final owner.
+Consuming a failure or delegating reporting retains responsibility for remaining state and recovery. Transfer unresolved outcomes, consequential effects, and needed evidence to an identified owner; delegation alone does not complete the operation.
+
+## Choose the simplest acceptable recovery
+
+Reuse the simplest established recovery that preserves required state and work. A short wait or safe manual retry can suffice when those affected have a practical way to proceed. Add wrappers, fallback state, or automatic repair only to protect a required outcome or materially reduce failure's impact.
+
+Keep recovery feasible, bounded, and within the owner's authority. Establish accepted loss, remaining effects, and the outcome if recovery fails. Disclose material effects of accepted partial completion.
+
+A retry needs a reason the cause can be overcome and a stopping bound.
 
 ## Handle only failures with an established disposition
 
-When evidence supports normal conditions usually holding and failure being exceptional, prefer direct execution with local handling of the failures this boundary owns over repetitive prechecks. When normal validity is uncertain, prefer a reliable, low-cost explicit check.
+Prefer direct execution with local handling when evidence supports normal conditions usually holding. When validity is uncertain, prefer a reliable, low-cost explicit check.
 
-Preserve the language's safety preconditions; catching a failure cannot make undefined or otherwise unsafe execution safe. Prechecks of mutable state establish only check-time conditions. Handle or propagate actual operation failures even after a successful check.
+Preserve language safety preconditions; catching a failure cannot make unsafe execution safe. A precheck of mutable state establishes only check-time conditions, so handle or propagate actual operation failures after a successful check too.
 
-Use native matching or classification to handle only the failures for which this boundary has an established disposition. Keep handling local to the relevant operation, preserving required propagation or reporting of programming defects and unrelated failures. Respect the language and library's semantics for failure mechanisms: ordinary returned errors and panic or equivalent interruption may have different handling constraints. A name such as `Error` or the technical ability to intercept a failure does not alone decide its disposition; the actual contract and safe handling do.
+Use native matching or classification to handle only failures with an established disposition at this boundary. Keep handling local and preserve propagation or reporting of programming defects and unrelated failures. Respect language and library constraints on returned errors, exceptions, and panic-like interruption; a name such as `Error` or the ability to intercept it does not establish safe handling.
 
-A common recovery, fallback, or conversion is safe only when it applies to every failure it covers.
+A common recovery, fallback, or conversion must be safe for every failure it covers.
 
-At each broad interception site in authored code, leave a meaningful nearby maintainer comment explaining both why interception must be broad and why its disposition is safe for every intercepted failure. This includes broad exception capture and panic-like interception. Routine inspection of an operation's returned error followed by faithful propagation is not broad interception and needs no such comment.
+At each broad interception site in authored code, including broad exception capture and panic-like interception, leave a nearby maintainer comment explaining why interception must be broad and why its disposition is safe for every intercepted failure. Routine returned-error inspection with faithful propagation needs no such comment.
 
 ## Preserve evidence without widening the public contract
 
-Distinguish primary failures from failures of recovery, cleanup, or compensation. Preserve available originating errors, cause chains, stacks, and useful context through translation and final handling. Filter sensitive data, including credentials and needless private information. Human explanations supplement this evidence rather than replacing it.
+Preserve originating errors, cause chains, available stacks, and useful audience-safe context through translation and final handling. Distinguish the original failure from failed recovery, cleanup, or compensation. If a secondary failure determines the caller's disposition, retain the original as complementary evidence; otherwise preserve the original outcome and handle the secondary failure at its owner. Human explanations supplement this evidence.
 
-Decide diagnostic retention separately from public error recognition. Making an underlying error inspectable through native matching or unwrapping can expose it as a caller dependency. Preserve already promised recognition, and apply the public failure-contract policy above before adding such a promise. Retaining useful evidence does not by itself justify a new public wrapper or inspection contract, nor does it require every native error representation to carry a stack.
+Decide diagnostic retention separately from public error recognition: native matching or unwrapping can expose an underlying error as a caller dependency. Preserve promised recognition and apply the public-contract policy before adding it. Useful evidence alone justifies neither a new public wrapper nor an inspection contract, and does not require every native error representation to carry a stack.
 
 ## Make final feedback useful to its audience
 
-Give each reportable incident one final report owner. Complementary diagnostics and audience feedback may coexist; propagation should not create duplicate incident reports.
+Give each reportable incident one final report owner. Complementary diagnostics and audience feedback may coexist; propagation must not duplicate incident reports.
 
-Use project-owned severity and alerting according to impact, operational expectations, and needed response, rather than channel or recovery alone. Successful recovery may still warrant investigation.
+Use project-owned severity and alerting according to impact, operational expectations, and needed response. Neither the reporting channel nor successful recovery alone determines severity.
 
-Final feedback must convey useful context, impact, and disposition through the owning boundary, including material loss or unavailability even when its audience cannot repair it.
-
-At final handling, rely on human remediation only when the actual actor has the capability, authority, and available tools to perform it with reasonable effort. Exposing a failure does not establish that the human receiving it can resolve it.
-
-## Load detail for consequential recovery decisions
-
-Ordinary propagation, clear translation or capture, routine review, I/O failure transfer, and asynchronous ownership use the policy above. Read the following resources before choosing, changing, or reviewing the corresponding behavior:
-
-| Decision | Required reading and boundary |
-| --- | --- |
-| Recovery, retry, compensation, or accepted partial completion needs constraints on effects, replay, or resulting state | [Recovery and effects](references/recovery-and-effects.md). |
-| Repair, reconstruction, discard, or degraded use of persistent or serialized data needs decisions about authority, loss, later reads, or interpretation | [Persisted data](references/persisted-data.md). Ordinary I/O failure propagation alone does not trigger this branch. |
-| A final disposition relies on human action, or cross-role resolution and feedback responsibilities need to be established | [Remediation](references/remediation.md). Changing diagnostics or feedback alone does not trigger it when the established disposition and responsibilities remain intact. |
+Final feedback must convey useful context, impact, resulting state, and any supported next action, including material loss or unavailability even when the audience cannot repair it.
 
 ## Resolve and verify within the current task
 
-Scale investigation to affected outcomes, following implementation, caller, and contract evidence from origin through translation to final ownership and production enforcement. Distinguish observed behavior from proposed corrections, identifying the smallest coherent correction and its effects for each mismatch. Make authorized changes at the owning boundary, preserving unrelated outcomes and supported contracts. Assessment-only work remains read-only; this policy adds no remote or destructive permission.
+Trace affected outcomes through implementation, callers, translation, and final ownership before judging a correction. Change the owning boundary within the current task's authority, preserving unrelated outcomes and supported contracts. Assessment remains read-only; this policy adds no remote or destructive permission.
 
-Investigate derivable facts before asking for missing disposition, loss, ownership, or audience burden decisions. Unknown root causes permit an established safe disposition; use the applicable diagnostic workflow for needed root-cause investigation. If a required resource, material contract or decision, evidence, tool, access, or permission is unavailable, report the gap and pause dependent work. Independent authorized work may continue where its owner permits.
+Investigate derivable facts before asking for disposition, loss, ownership, or audience-burden decisions. A safe established disposition need not wait for a root cause. If material evidence, a contract or decision, a required resource or capability, or authority is missing, report the gap and pause dependent work; independent authorized work may continue.
 
-Verify changed outcomes through the responsible public operation or boundary using discovered owner checks and available tools. Cover meaningful success, absence or refusal, propagation, final feedback, and remaining state in scope, including secondary failure, cancellation, and interruption where they affect those outcomes. A failed check requires correction or an inconclusive result; failed or unavailable required validation leaves work incomplete.
+Verify changed outcomes, final feedback, and remaining state through the responsible public operation or boundary and its owner checks. Cover materially different success, absence or refusal, and failure paths, including recovery or stopping bounds and secondary failure, cancellation, or interruption when they can change the promise. Failed or unavailable required validation leaves work incomplete.
 
-Use the current task's validation and handoff without a separate routine audit or report. For investigated work, account for every identified path with a disposition or evidence gap, reporting scope, supported findings or corrected mismatches, actual verification, unresolved decisions, and untested surfaces. A gap is neither a verified path nor a completed correction.
+Use the current task's validation and handoff rather than a separate routine audit. Account for every identified path with a disposition or evidence gap, reporting scope, supported findings or corrections, actual checks, unresolved decisions, and untested surfaces. A gap is not a verified path or completed correction.

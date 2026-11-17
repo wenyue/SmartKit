@@ -4,64 +4,73 @@ The [Skill entry](../SKILL.md) owns assessment, findings, identities, progress, 
 
 ## Establish the report's scope
 
-Identify what the reader is about to assess. An ordinary introduction identifies the group. A supplementary introduction identifies the additional delivery coverage. A repair introduction names the selected original M/O items and connects their supporting changes. Keep supplementary and repair coverage separate from unseen main groups.
+Identify what the reader is about to assess. Open the first ordinary group with the purpose of the reviewed change, the prior situation that prompted it, and what users or callers should be able to do when it works. Give enough context for a reader new to the project. Put the summary of review findings in the closing. Later ordinary introductions identify the group. A supplementary introduction identifies the additional delivery coverage. A repair introduction names the selected original M/O items and connects their supporting changes. Keep supplementary and repair coverage separate from unseen main groups.
 
-Use one file block per assessed file, with a single horizontal rule before the first block, between blocks, and before the closing. The file heading is 📄 followed by the bold, full repository-relative filename link returned by `local_web`, unchanged. A short overview may explain the file's role or accompanying changes. Use the filename as the diff link; add other links only for distinct evidence the reader needs.
+Use one file block per assessed file, with a single horizontal rule before the first block, between blocks, and before the closing. For an assessed diff, start the heading with 📄 and the bold, full repository-relative filename link returned by `local_web`, unchanged. For text files, append a middle dot and `+N / −N`, the verified added and deleted line counts for the assessed versions. Binary diff and source-only headings omit the counts. A short overview may explain the file's role or accompanying changes.
+
+Place each cross-file link on the words that identify the other file, its symbol, or its behavior. Link to the verified diff or source. A file-level link is enough when discussing the file as a whole or a flow across files. Use link syntax the current viewer supports. For a Windows Markdown link to a local source file by path, start the destination immediately with the drive letter, as in `[label](D:/project/src/task.dart)`. Verify the file at the absolute path used in the link. Keep SmartKit diff targets exactly as generated.
+
+Fill the placeholders in the report language. The [worked review group](../examples/review-group.md) shows the wording for titles, verdicts, and progress.
 
 ````markdown
-<report scope and original-item relationship, when needed>
+<PURPOSE_AND_SCOPE>
 
 ---
 
-📄 **[<full/repository-relative/path>](<returned-url>)**
+📄 **[<PATH_1>](<URL_1>)** · `+1 / −1`
 
-M1 · <one natural sentence explaining the change and why it matters>
+**M1** · **<TITLE_1>**
+
+> ⏪ <PRIOR_BEHAVIOR_1>
+>
+> ⏩ <CHANGED_BEHAVIOR_1>
 
 ---
 
-📄 **[<another/full/path>](<returned-url>)**
+📄 **[<PATH_2>](<URL_2>)** · `+9 / −4`
 
-**M2** · **<detailed change title>**
+**M2** · **<TITLE_2>**
 
-> ⚖️ ❌ **Unreasonable** · **P2** · <defect and user or caller consequence>\
-> 🎨 ❌ **Needs improvement** · <design problem and remedy>
+> ⏪ <PRIOR_BEHAVIOR_2>
 >
-> ⏪ <earlier implementation>
->
-> ```<language>
-> <relevant actual earlier code>
+> ```<LANGUAGE>
+> <PRIOR_CODE>
 > ```
 >
-> ⏩ <changed implementation>
+> ⏩ <CHANGED_BEHAVIOR_2>
 >
-> ```<language>
-> <relevant actual changed code>
+> ```<LANGUAGE>
+> <CHANGED_CODE>
 > ```
+>
+> ❌ ⚖️ **<VERDICT>** · **P2** · <FINDING>
+>
+> 💡 <REMEDY>
 
 ---
 
-<result, unresolved decisions, warnings, and accepted trade-offs>
+<RESULT_AND_DECISIONS>
 
-<actual checks, re-review coverage, and evidence limits>
+<EVIDENCE_AND_LIMITS>
 
-📊 **Reviewed 7 / 42 files, with 10 modifications.**
+📊 **<MAIN_PROGRESS>**
 
-<state-appropriate choices or remaining authorized work>
+<CHOICES_OR_AUTHORIZED_WORK>
 ````
 
 The progress line shown here belongs to an ordinary main group. Supplementary and repair reports state their own coverage and, when useful, that saved main progress is unchanged; they add no reviewed main files or modifications.
 
 ## Explain modifications at the needed depth
 
-Use the compact form for a straightforward change without an actionable issue, worthwhile optional improvement, or material uncertainty: `M1 · <change and purpose>`. Keep the plain ID, middle dot, and natural sentence on one line, without a separate title, bold, blockquote, judgment icons, or code block. A single such change needs only its file heading and that sentence. Compact and detailed items can share a file; both receive complete assessment on both axes.
+Put the bold ID and bold title on one unindented line, separated by a plain middle dot. In one Markdown blockquote below it, start with ⏪ and describe the prior behavior and the concrete problem or limitation that motivated the change. Then use ⏩ to explain what changed and how it addresses that need. Start the prose immediately after each icon. When the old behavior already depends on a necessary guarantee, explain that guarantee and what prompted the proposed change.
 
-Use the detailed form for an actionable finding, worthwhile optional improvement, material uncertainty, or consequential mechanism the reader needs to understand. Put the bold ID and bold title on one unindented line, separated by a plain middle dot. Below it, align both judgments and the before/after evidence in one Markdown blockquote, as in the skeleton. Separate items with ordinary paragraph spacing.
+Give each item enough context to stand on its own for a reader new to the project. When behavior changes, explain its observable effects in the comparison. In a behavior finding, use everyday words to include both the trigger and what the user or caller sees or receives in the first sentence. Follow with the exact technical condition and cause. Explain unfamiliar terms where they first appear. When quoting UI text, use the wording displayed in the assessed version. Write paraphrases in plain language without quotation marks.
 
-Each judgment has its axis icon, verdict, and one sentence explaining the cause and consequence or trade-off. Join the two judgment lines with a Markdown hard break. Add ❌ immediately after the axis icon only for an actual defect, and place severity on the unreasonable line. For a structural defect, explain the user or caller effect on the reasonableness line and the design problem on the elegance line, using one item and one Fix remedy. Name a concrete alternative when it decides the judgment.
+For a straightforward modification without an actionable finding, worthwhile optional improvement, or material uncertainty, one natural sentence after each icon is enough. Use more detail for those findings and for consequential mechanisms the reader needs to understand. When code helps explain the behavior, show concise actual snippets beside the relevant explanation, retaining the error, state, or lifecycle context. Label illustrative simplifications. For a repair, compare the pre-repair and repaired contents. Separate items with ordinary paragraph spacing.
 
-Use concise actual before/after snippets that retain the error, state, or lifecycle context needed to understand the change. Keep the ⏪ and ⏩ explanations and code fences inside the same blockquote as the judgments. Inline code can supply evidence for a short change. Label illustrative simplifications. Repair evidence compares pre-repair and repaired contents; it does not substitute the original pinned PR comparison.
+After ⏩, show only actionable findings, worthwhile optional improvements, or material uncertainty. Write each issue once under the relevant axis, explaining the concrete cause and observable effect or trade-off. Use an example when it makes a trigger or consequence easier to understand. Prefix actual defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone. Keep these paragraphs in the same blockquote.
 
-After repair or optimization, resolved straightforward changes can become compact. A material design choice, contract change, introduced or newly revealed risk, or requested explanation still needs detail. State the selected items' current judgments in their detailed items, or in one closing sentence for compact items sharing the same judgments. Explain changed reasons and retain unresolved decisions.
+Use the same item layout after repair or optimization. Keep any remaining actionable findings, material uncertainty, or consequential design choice visible.
 
 ## Preserve identities and visible coverage
 
@@ -69,7 +78,7 @@ Show every changed non-test file in a repair report, including supporting files.
 
 Keep an existing item's ID and explain it once under its responsible file. Separately explained supporting modifications take the next unused M IDs from the entry's continuous sequence; connect them to the original repair in the introduction. For example, a repair after M1–M10 can contain M2, M11, and M12 across three files without changing main progress. References to M2 explain the relationship rather than creating another numbered item. Accompanying changes without a separate item can use a short file overview.
 
-In selected-O work, keep the selected O IDs and use file overviews for supporting changes; they create neither new O observations nor M items. Detailed selected-O items use the same two judgments and evidence layout. Report any resulting finding under the responsible selected item.
+In selected-O work, keep the selected O IDs and use file overviews for supporting changes; they create neither new O observations nor M items. Use the same before/after layout and surface any resulting finding under the responsible selected item.
 
 Place incidental O items after M items under their source file. A file containing only O items has the same heading with a verified source link and follows the main file blocks. If no single-file attribution is useful, put the observations after the file blocks with a horizontal rule before them and before the closing. Include the entry's required evidence, impact, independence, and recommendation or benefit; any judgment lines follow the same icon and severity conventions. Placement changes neither main progress nor delivery or Viewed eligibility.
 
@@ -77,8 +86,8 @@ Place incidental O items after M items under their source file. A file containin
 
 Keep these four parts in order and omit empty categories:
 
-1. **Result and decisions.** State the group conclusion or the repair's actual completion status. Name pending unreasonable IDs with severity and impact, retained trade-offs, and outstanding optional remedies and benefits. Give compact repair items their current judgments when those are not already displayed. Summarize material uncertainty separately with ⚠️, the corresponding item IDs, observed risks, and unresolved context. A lack of actionable findings does not establish that every change is elegant or free of uncertainty.
-2. **Evidence and limits.** State the checks actually performed, results, and material gaps. For a repair, identify coverage of all changed non-test files and affected previously reviewed context, with verification records and available logs. Distinguish successful edits from unavailable required checks or incomplete re-review, which leave the dependent remedy incomplete. Tests remain evidence, and author-reported checks remain distinguishable from executed checks.
+1. **Result and decisions.** State the group conclusion or the repair's actual completion status. Name pending unreasonable IDs with severity and impact, retained trade-offs, and outstanding optional remedies and benefits. Summarize material uncertainty separately with ⚠️, the corresponding item IDs, observed risks, and unresolved context.
+2. **Evidence and limits.** State the checks actually performed, results, and material gaps. When reporting a test coverage gap, check the existing cases and their setup paths. Name the specific condition or sequence left untested. For a repair, identify coverage of all changed non-test files and affected previously reviewed context, with verification records and available logs. Distinguish successful edits from unavailable required checks or incomplete re-review, which leave the dependent remedy incomplete. Tests remain evidence, and author-reported checks remain distinguishable from executed checks.
 3. **Progress or coverage.** For a main group, show only the cumulative reviewed-file fraction and actual main-modification count in the report language. For supplementary, repair, or selected-O work, state its coverage separately and preserve the saved main total and position.
 4. **Choices or remaining authorized work.** Render the entry's applicable menu with concrete IDs, effects, and next position. If delivery is already selected, retain its pending intent and use that decision table. When no new decision remains, state and continue the authorized work without asking for Pass again. Explain an unavailable prerequisite without a selectable remedy as a limitation, not an invented action choice.
 
@@ -104,4 +113,6 @@ Use the same rendering for workspace menus. At scope end use Finish rather than 
 
 ## Check the report before sending
 
-Confirm full-path links match the assessed version and every required file is visible. Check stable IDs, one standalone appearance per item, compact items without redundant titles or quotes, and detailed items with aligned judgments and actual evidence. Check O placement, accurate repair status and checks, unchanged main progress for additional coverage, visible uncertainty warnings, and the menu's punctuation, scope, recommendation, and effects.
+Confirm the first group's purpose explains why the change is needed. Read each item on its own, then read each finding's first sentence by itself from the perspective of a reader new to the project. If understanding a behavior finding's trigger or outcome requires knowing an internal state name, storage operation, or project-specific term, rewrite the opening. Describe the concrete action or situation in everyday words and state what the user or caller observes. Put the exact technical condition and cause in the following explanation and briefly define unfamiliar terms there. Verify that quoted UI text matches the displayed wording.
+
+Check that file counts and link destinations match the assessed versions. Check that every required file has a usable link and that each screen, caller, or owner named from another file is linked at its mention. Check stable IDs, one standalone appearance per item, and judgments after the comparison with each issue explained once. Check O placement, accurate repair status and checks, unchanged main progress for additional coverage, visible uncertainty warnings, and the menu's punctuation, scope, recommendation, and effects.

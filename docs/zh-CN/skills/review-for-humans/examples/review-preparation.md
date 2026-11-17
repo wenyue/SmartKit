@@ -4,8 +4,8 @@
 
 在这个虚构 PR 审查中，`/work/app` 位于干净的 `main` 分支。已核实本地 `feature/export` 分支可签出，并可从 `b1ce402` 快进到固定的 head `38bf06d`。现有任务工作树均不符合条件。
 
-- A． **切换** （推荐）：将 `/work/app` 切换到 `feature/export`，并快进至 `38bf06d`，保留干净状态及 `main` 的分支顶端。
-- B． **创建** ：在 `38bf06d` 上使用 `codex/export-review` 分支创建 `/work/app/.worktrees/export-review`，检查其环境并保留 `/work/app`。
+- A． **创建** （推荐）：在 `38bf06d` 上使用 `codex/export-review` 分支创建 `/work/app/.worktrees/export-review`，检查其环境，让 `/work/app` 继续停留在 `main` 分支。
+- B． **切换** ：将 `/work/app` 切换到 `feature/export`，并快进至 `38bf06d`，保留干净状态及 `main` 的分支顶端。
 - C． **快照** ：审查已经核实的固定 PR 比较，保留本地工作。
 
 用户选择创建。核实实际得到的路径、分支映射、提交、环境和已保留的工作。开始审查前，刷新 PR 比较和 Viewed 证据。

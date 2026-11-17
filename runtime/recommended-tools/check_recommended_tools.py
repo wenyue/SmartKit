@@ -235,10 +235,20 @@ def _read_manifest_version(pattern: str, json_path: str) -> str | None:
     return None
 
 
-def run_detector(detector: dict[str, Any]) -> str | None:
+def run_detector(
+    detector: dict[str, Any], *, project_root: Path | None = None,
+) -> str | None:
     if not isinstance(detector, dict):
         raise PolicyError('detector must be an object')
     kind = detector.get('kind')
+    if kind == 'codex-multi-agent':
+        project_root = resolve_project_root(project_root)
+        with _CodexConfigRpcClient(project_root) as client:
+            response = client.request(
+                'config/read', {'includeLayers': False, 'cwd': str(project_root)},
+            )
+        _key, enabled = codex_multi_agent_setting(response, project_root=project_root)
+        return str(enabled).lower()
     if kind == 'fixed':
         value = detector.get('value')
         return value if isinstance(value, str) and value else None
@@ -353,6 +363,8 @@ def _validate_required_value(requirement: Any) -> dict[str, Any]:
     detectors = requirement.get('detectors')
     if not isinstance(detectors, list) or not detectors:
         raise PolicyError('required value detectors must be a non-empty array')
+    if 'automatic_configuration' in requirement and type(requirement['automatic_configuration']) is not bool:
+        raise PolicyError('automatic_configuration must be a boolean')
     maintenance = requirement.get('maintenance')
     if maintenance is not None:
         validated_maintenance = _validate_maintenance(maintenance)
@@ -361,7 +373,9 @@ def _validate_required_value(requirement: Any) -> dict[str, Any]:
     return requirement
 
 
-def _check_required_values(policy: dict[str, Any]) -> list[Finding]:
+def _check_required_values(
+    policy: dict[str, Any], *, project_root: Path | None = None,
+) -> list[Finding]:
     requirements = policy.get('required_values', [])
     if not isinstance(requirements, list):
         raise PolicyError('policy required_values must be an array')
@@ -371,7 +385,11 @@ def _check_required_values(policy: dict[str, Any]) -> list[Finding]:
         actual = None
         for detector in requirement['detectors']:
             try:
-                actual = run_detector(detector)
+                actual = (
+                    run_detector(detector, project_root=project_root)
+                    if detector.get('kind') == 'codex-multi-agent'
+                    else run_detector(detector)
+                )
             except (PolicyError, re.error):
                 continue
             if actual is not None:
@@ -398,7 +416,11 @@ def _check_required_values(policy: dict[str, Any]) -> list[Finding]:
                     'setting' if requirement.get('maintenance') else None,
                     requirement['id'] if requirement.get('maintenance') else None,
                     'configure' if requirement.get('maintenance') else None,
-                    automatic_configuration=policy.get('harness') == 'codex' and bool(requirement.get('maintenance')),
+                    automatic_configuration=(
+                        policy.get('harness') == 'codex'
+                        and bool(requirement.get('maintenance'))
+                        and requirement.get('automatic_configuration', True)
+                    ),
                 )
             )
     return findings
@@ -611,6 +633,46 @@ class _CodexConfigRpcClient:
         self.close()
 
 
+def codex_multi_agent_setting(
+    response: dict[str, Any], *, project_root: Path | None = None,
+) -> tuple[str, bool]:
+    """Resolve the writable setting from the effective config and CLI capability."""
+    config = response.get('config')
+    if not isinstance(config, dict):
+        raise DetectorError('Codex effective configuration is unavailable')
+    features = config.get('features')
+    if features is not None and not isinstance(features, dict):
+        raise DetectorError('Codex feature configuration is invalid')
+    v2 = features.get('multi_agent_v2') if isinstance(features, dict) else None
+    if v2 is not None and type(v2) is not bool:
+        raise DetectorError('Codex multi_agent_v2 is invalid')
+    agents = config.get('agents')
+    if agents is not None and not isinstance(agents, dict):
+        raise DetectorError('Codex agent configuration is invalid')
+    if isinstance(agents, dict) and 'enabled' in agents:
+        enabled = agents['enabled']
+        if enabled is not None and type(enabled) is not bool:
+            raise DetectorError('Codex agents.enabled is invalid')
+        return 'agents.enabled', v2 is True or enabled is not False
+
+    if v2 is True:
+        return 'agents.enabled', True
+
+    # An absent agents table is also valid on modern Codex. Its deprecated V1
+    # flag identifies the new default without guessing a version boundary.
+    feature = run_detector({
+        'kind': 'command-regex',
+        'command': ['codex', '-C', str(resolve_project_root(project_root)), 'features', 'list'],
+        'pattern': r'(?m)^multi_agent\s+((?:stable|deprecated)\s+(?:true|false))\s*$',
+    })
+    if feature is None:
+        raise DetectorError('Codex multi-agent capability is unavailable')
+    stage, enabled = feature.split()
+    if stage == 'deprecated':
+        return 'agents.enabled', True
+    return 'features.multi_agent', enabled == 'true'
+
+
 def _effective_spawned_threads(
     response: dict[str, Any],
     key_paths: list[str],
@@ -704,7 +766,9 @@ def check_config_requirements(
     return findings
 
 
-def check_policy(policy: dict[str, Any]) -> list[Finding]:
+def check_policy(
+    policy: dict[str, Any], *, project_root: Path | None = None,
+) -> list[Finding]:
     tools = policy.get('tools')
     if not isinstance(policy.get('harness'), str) or not isinstance(tools, list):
         raise PolicyError('policy requires harness and tools')
@@ -801,7 +865,7 @@ def check_policy(policy: dict[str, Any]) -> list[Finding]:
                     'upgrade',
                 )
             )
-    findings.extend(_check_required_values(policy))
+    findings.extend(_check_required_values(policy, project_root=project_root))
     return findings
 
 
@@ -1518,7 +1582,7 @@ def _run_daily_hook(
                 checks = (
                     lambda: check_policy({**policy, 'tools': [
                         tool for tool in policy['tools'] if tool.get('id') != 'codegraph'
-                    ]}),
+                    ]}, project_root=project_root),
                     lambda: check_config_requirements(policy, project_root),
                     lambda: [finding for finding in check_mcp_readiness(
                         harness, project_root, mcp_registry_path,

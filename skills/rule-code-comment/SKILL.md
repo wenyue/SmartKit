@@ -1,6 +1,6 @@
 ---
 name: rule-code-comment
-description: Use for work involving code or documentation comments, including coverage decisions and requested assessment.
+description: Use for code or documentation comments, comment coverage and assessment, and recording or reviewing explicitly accepted code behavior or limitations that could be mistaken for defects.
 ---
 
 # Code Comments
@@ -25,11 +25,17 @@ These considerations have no fixed priority; local practice does not decide the 
 
 When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
 
+For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code; reuse an adequate explanation rather than copying the discussion or creating a separate record by default. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
+
+Use SmartKit's `accepted-decision: <accepted behavior or trade-off>` marker sparingly for these easily misjudged decisions, followed by the necessary explanation in ordinary prose. Leave ordinary comments unmarked; this is not a reason to label existing comments in bulk. The marker records a verified decision, not proof of acceptance or a defect exemption. A bounded temporary shortcut already described by Ponytail's `shortcut / trigger / upgrade` format needs no second marker; an accepted lasting trade-off needs no invented revisit condition or promise to replace it.
+
 For failures that matter to callers' decisions, explain in API documentation the failure conditions, any stable recognition the contract promises through a native type, category, or identity, and material state after failure. Cover returned and thrown failures, including those intentionally propagated across the boundary. Apply the coverage judgment above without cataloging incidental lower-level failures or repeating an already clear contract.
 
 ## Ground the explanation in the code
 
 Use the current implementation and its owning contracts to establish what is true. Expand the evidence when uncertainty could change the comment or its validation.
+
+When assessing such behavior or revising its explanation, read the relevant comments and referenced decisions and verify that they still apply. Distinguish unchanged, explicitly accepted consequences from new evidence or effects outside that acceptance; the former do not become unresolved repair items merely because they look surprising.
 
 If implementation and contract disagree, resolve the conflict within authorized scope or report it and its owner. Describe actual behavior truthfully; a comment must not present the intended contract as though it were already implemented.
 
@@ -51,9 +57,11 @@ Begin with concrete responsibility or behavior, followed by significant constrai
 
 Use natural, precise, ordinary language. Omit generic praise, line-by-line narration, redundant names, and edit history.
 
+Keep comments understandable without the project's issue tracker or pull-request history. State the necessary behavior, reasons, constraints, and risks directly, and omit references to the project's own issues or pull requests, including numbers and links. References to repository-local decision documents, external standards, or third-party issues may supply useful background, but must not replace the explanation needed to maintain this code.
+
 Follow the target's documentation language, syntax, and explicit formatting requirements. Observed habits inform expression without becoming requirements. Where no convention applies, use an established native comment mechanism.
 
-Correct or remove stale and redundant prose while preserving still-valid meaning, including meaning already clear in code or another owning surface. Keep required machine directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
+Whenever you edit a comment, assess the entire affected comment block against the current code, its contract, and what the reader needs. Integrate the change with the surrounding explanation, merging related points where helpful and correcting or removing stale, redundant, or low-value prose in the same edit. Preserve still-valid meaning, including meaning already clear in code or another owning surface. Keep required machine directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
 
 Read the result alongside the code across relevant paths for usefulness, directness, and accuracy. For contrasting choices about information and voice, consult the optional [comment judgment examples](references/examples.md). Their stated contexts make the choices understandable; they supply neither policy, prescribed formats, nor facts about the target.
 

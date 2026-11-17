@@ -4,7 +4,7 @@
 
 The entry owns assessment, findings, user intent, and advancement. Preparation handles the conditional PR/workspace branch; Delivery owns inventory, physical effects, and recovery. Delivery returns readiness and observed results rather than deciding what the user requested. This separation keeps an interrupted write or a supplementary finding from silently replacing a pending Pass.
 
-Principles govern uncommon situations; four common-case tables stabilize recommendations and ordering at the actual decision points. One option represents each action type, with IDs defining its scope. Treating each finding as an option would recreate duplicate Optimize choices and obscure the user’s decision.
+Principles govern uncommon situations; common-case tables stabilize recommendations and ordering at the actual decision points, sharing the same result choices after ordinary review and completed repair. One option represents each action type, with IDs defining its scope. Treating each finding as an option would recreate duplicate Optimize choices and obscure the user’s decision.
 
 Pass selects delivery preparation as well as its applicable effects. Requiring prepared delivery before offering Pass would hide that choice after ordinary review and repairs. New supplementary findings pause writes for a decision, while the original selection remains pending so resolving them needs no second Pass.
 
@@ -16,7 +16,7 @@ Report Format owns one file-based layout, item depth, closing order, and menu re
 
 Examples are grouped by review situation, with direct links from the entry. Each supplies concrete premises, a report or exchange, and the reason those facts lead to that response. A single mixed conversation file made unrelated decisions and generic instructions compete with the relevant case. General presentation belongs in Report Format; examples do not carry a second reporting contract.
 
-One complete group report and one complete multi-file repair demonstrate the shared layout, including compact items without a redundant title. Other examples show the consequential part of their scenario without reproducing a whole report. This preserves concrete coverage without turning each small variation into another file. These notes explain the design; operative decisions stay in the entry.
+One complete group report and one complete multi-file repair demonstrate the shared layout. Other examples show the consequential part of their scenario without reproducing a whole report. This preserves concrete coverage without turning each small variation into another file. The entry and Report Format retain their operative decisions.
 
 ## Separate progress, coverage, and effects
 

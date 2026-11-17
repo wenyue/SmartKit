@@ -5,16 +5,15 @@
       "id": "multi_agent",
       "name": "Codex multi-agent",
       "expected": "true",
+      "automatic_configuration": false,
       "detectors": [
         {
-          "kind": "command-regex",
-          "command": ["codex", "features", "list"],
-          "pattern": "(?m)^multi_agent\\s+.+\\s+(true|false)\\s*$"
+          "kind": "codex-multi-agent"
         }
       ],
       "maintenance": {
         "kind": "config-write",
-        "write_key_path": "features.multi_agent",
+        "write_key_path": "agents.enabled",
         "write_value": true
       },
       "guidance": "Enable multi-agent in the applicable Codex configuration, or ask your administrator if managed requirements disable it, then start a new session."

@@ -112,6 +112,19 @@ for (final listener in listeners.toList()) {
 
 注释解释为什么需要快照，而不是复述转换为列表的操作。派发契约负责定义投递保证，这条局部说明无需重复。在较长的函数中，`// Publish notifications` 这样的简短标题即使不增加隐藏的原因，也能帮助读者找到一个完整的逻辑段落。
 
+## 明确接受的取舍
+
+背景：产品负责人已明确接受预览标题最多滞后一分钟，以便打开列表时无需发起网络请求。打开条目时会获取其当前标题。这是一项长期产品选择，而不是临时实现捷径；否则，后续维护者可能会把打开列表时不刷新误认为缺陷。
+
+```dart
+// accepted-decision: Preview titles may be stale for up to one minute.
+// The list uses the cache to open without a network request; opening an item
+// fetches its current title. A rename may therefore appear later in the list.
+final previews = previewCache.readWithin(const Duration(minutes: 1));
+```
+
+注释直接呈现已接受的后果及其边界，无需依赖工单链接。如果新发现表明标题滞后超过一分钟，就超出了这项决定的范围。标记让这项容易被误判的选择便于查找；上面的监听器快照等普通说明仍不加标记。
+
 ## 必要的较长解释
 
 背景：只追加日志存储带校验和的记录。其恢复契约允许丢弃崩溃后最后一条不完整记录，但拒绝校验和无效的完整记录，即使它位于末尾也一样。读取器仅在记录之间返回 `io.EOF`，仅在最后一条记录不完整时返回 `io.ErrUnexpectedEOF`。片段运行在返回 `error` 的恢复方法内；`truncateToLastRecord` 只删除该不完整尾部，其他辅助函数不执行截断。

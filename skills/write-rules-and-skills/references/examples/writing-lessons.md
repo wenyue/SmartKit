@@ -6,15 +6,15 @@ Source identities, adaptation notes, and retained license notices are in [SOURCE
 
 ## Combine direction with a firm boundary
 
-Ponytail opens with a posture:
+The historical SmartKit adaptation of Ponytail identified in [SOURCES.md](SOURCES.md) opens with a posture:
 
 > You are a lazy senior developer. Lazy means efficient, not careless.
 
 It then gives a decision ladder: question the need, look for an existing solution, consider the standard library and native platform, and only then write the minimum code that works. The posture and ladder reinforce each other. "Lazy" makes an ordinary concern memorable; the ladder shows where to look for less work. Neither needs to enumerate every future programming problem.
 
-Ponytail applies that simplification advice within a settled boundary:
+That adaptation applies its simplification advice within a settled boundary:
 
-> Preserve confirmed requirements and observable behavior. Discuss and wait for the user's decision before reducing a confirmed feature, changing visible behavior, or introducing an important cost tradeoff.
+> Complex request? Preserve confirmed requirements and observable behavior. Discuss and wait for the user's decision before reducing a confirmed feature, changing visible behavior, or introducing an important cost tradeoff.
 
 The lesson is the combination. The reader has direction for open choices and a definite boundary where that direction could be over-applied. Turning the posture into dozens of mandatory checks would lose its range; leaving only the posture would invite a reduced result. The persona earns its place by focusing a useful habit. It is not a reason to add a persona to every Rule.
 
