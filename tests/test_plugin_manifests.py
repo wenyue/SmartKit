@@ -632,6 +632,7 @@ class PluginManifestTest(unittest.TestCase):
             'diagnose-agent-session', 'what-changes', 'review-for-humans', 'collect-todos',
             'what-if', 'finish-worktree',
             'write-rules-and-skills',
+            'cross-session-communication',
             'rule-code', 'rule-error-handling', 'rule-code-comment',
             'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
         }
