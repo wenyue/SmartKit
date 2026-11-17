@@ -4,16 +4,20 @@ The [Skill entry](../SKILL.md) owns assessment, findings, identities, progress, 
 
 ## Establish the report's scope
 
-Identify what the reader is about to assess. Open the first ordinary group with the purpose of the reviewed change, the prior situation that prompted it, and what users or callers should be able to do when it works. Give enough context for a reader new to the project. Put the summary of review findings in the closing. Later ordinary introductions identify the group. A supplementary introduction identifies the additional delivery coverage. A repair introduction names the selected original M/O items and connects their supporting changes. Keep supplementary and repair coverage separate from unseen main groups.
+Open the first ordinary group with the review target, the comparison, the eligible file count, and applicable exclusions. Mention relevant test files as behavior evidence. Identify the selected workspace or fixed snapshot mode. Include relevant facts already verified about environment readiness and Git state, including preservation of the original checkout when a separate workspace was prepared.
+
+Then explain why the change is needed and what users or callers should be able to do when it works. Give enough context for a reader new to the project. Use a numbered Markdown list for multiple independent scenarios and prose for a single scenario. Put the summary of review findings in the closing.
+
+Later ordinary introductions identify the group. A supplementary introduction identifies the additional delivery coverage. A repair introduction names the selected original M/O items and connects their supporting changes. Keep supplementary and repair coverage separate from unseen main groups.
 
 Use one file block per assessed file, with a single horizontal rule before the first block, between blocks, and before the closing. For an assessed diff, start the heading with 📄 and the bold, full repository-relative filename link returned by `local_web`, unchanged. For text files, append a middle dot and `+N / −N`, the verified added and deleted line counts for the assessed versions. Binary diff and source-only headings omit the counts. A short overview may explain the file's role or accompanying changes.
 
 Place each cross-file link on the words that identify the other file, its symbol, or its behavior. Link to the verified diff or source. A file-level link is enough when discussing the file as a whole or a flow across files. Use link syntax the current viewer supports. For a Windows Markdown link to a local source file by path, start the destination immediately with the drive letter, as in `[label](D:/project/src/task.dart)`. Verify the file at the absolute path used in the link. Keep SmartKit diff targets exactly as generated.
 
-Fill the placeholders in the report language. The [worked review group](../examples/review-group.md) shows the wording for titles, verdicts, and progress.
+Fill the placeholders in the report language. The [worked review group](../examples/review-group.md) shows the first group's opening, titles, verdicts, and progress.
 
 ````markdown
-<PURPOSE_AND_SCOPE>
+<REPORT_INTRODUCTION>
 
 ---
 
@@ -113,6 +117,6 @@ Use the same rendering for workspace menus. At scope end use Finish rather than 
 
 ## Check the report before sending
 
-Confirm the first group's purpose explains why the change is needed. Read each item on its own, then read each finding's first sentence by itself from the perspective of a reader new to the project. If understanding a behavior finding's trigger or outcome requires knowing an internal state name, storage operation, or project-specific term, rewrite the opening. Describe the concrete action or situation in everyday words and state what the user or caller observes. Put the exact technical condition and cause in the following explanation and briefly define unfamiliar terms there. Verify that quoted UI text matches the displayed wording.
+Confirm the first group's opening puts verified scope and workspace context before the purpose and explains why the change is needed. Read each item on its own, then read each finding's first sentence by itself from the perspective of a reader new to the project. If understanding a behavior finding's trigger or outcome requires knowing an internal state name, storage operation, or project-specific term, rewrite the opening. Describe the concrete action or situation in everyday words and state what the user or caller observes. Put the exact technical condition and cause in the following explanation and briefly define unfamiliar terms there. Verify that quoted UI text matches the displayed wording.
 
 Check that file counts and link destinations match the assessed versions. Check that every required file has a usable link and that each screen, caller, or owner named from another file is linked at its mention. Check stable IDs, one standalone appearance per item, and judgments after the comparison with each issue explained once. Check O placement, accurate repair status and checks, unchanged main progress for additional coverage, visible uncertainty warnings, and the menu's punctuation, scope, recommendation, and effects.

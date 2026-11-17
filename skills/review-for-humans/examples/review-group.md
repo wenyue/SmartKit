@@ -2,7 +2,12 @@
 
 This fictional report shows the first and only main group of a PR review.
 
-The editor asks for confirmation before saving and shows a message after saving succeeds. People need to know which draft was saved and be able to try again after dismissing the prompt. This PR aims to name the saved draft even when it has no name and make cleanup easier to follow. The fixed PR comparison covers two eligible files after excluding tests and previously Viewed files.
+The PR #42 review compares `0123456` → `89abcde` and covers two production files eligible after the Viewed filter. A changed test file provides evidence for the save message. The selected worktree `/projects/editor/.worktrees/pr-42` has its project dependencies installed and a clean Git status. The original checkout's branch, index, and local changes match their state before worktree creation.
+
+The PR changes two parts of the save flow.
+
+1. After a successful save, the message should tell the user which draft was saved. Until now it only reported success. For an unnamed draft, the message should use the same default label as the draft list.
+2. The editor asks for confirmation before saving. The PR aims to make cleanup easier to follow by moving it closer to each outcome. Dismissing the prompt should still allow another save attempt.
 
 ---
 
