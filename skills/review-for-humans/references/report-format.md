@@ -6,7 +6,7 @@ The [Skill entry](../SKILL.md) owns assessment, findings, identities, progress, 
 
 Open the first ordinary group with the review target, the comparison, the eligible file count, and applicable exclusions. Mention relevant test files as behavior evidence. Identify the selected workspace or fixed snapshot mode. Include relevant facts already verified about environment readiness and Git state, including preservation of the original checkout when a separate workspace was prepared.
 
-Then explain why the change is needed and what users or callers should be able to do when it works. Give enough context for a reader new to the project. Use a numbered Markdown list for multiple independent scenarios and prose for a single scenario. Put the summary of review findings in the closing.
+Then explain in everyday language why the change is needed, what it changes, and what users or callers should be able to do when it works. Give enough context for a reader new to the project. Choose natural paragraphs, bulleted lists, or numbered lists to make the situations and intended effects easy to follow. Put the summary of review findings in the closing.
 
 Later ordinary introductions identify the group. A supplementary introduction identifies the additional delivery coverage. A repair introduction names the selected original M/O items and connects their supporting changes. Keep supplementary and repair coverage separate from unseen main groups.
 
