@@ -117,7 +117,7 @@ for (final listener in listeners.toList()) {
 背景：产品负责人已明确接受预览标题最多滞后一分钟，以便打开列表时无需发起网络请求。打开条目时会获取其当前标题。这是一项长期产品选择，而不是临时实现捷径；否则，后续维护者可能会把打开列表时不刷新误认为缺陷。
 
 ```dart
-// accepted-decision: Preview titles may be stale for up to one minute.
+// DECISION: Preview titles may be stale for up to one minute.
 // The list uses the cache to open without a network request; opening an item
 // fetches its current title. A rename may therefore appear later in the list.
 final previews = previewCache.readWithin(const Duration(minutes: 1));
