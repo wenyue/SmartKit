@@ -1,96 +1,84 @@
 # 包含缺陷与独立观察的一组审查
 
-这份虚构报告展示了 PR 审查的首个主分组，也是唯一一组。
+这份虚构报告展示了 PR 审阅的首个主分组，也是唯一一组。文件路径、链接、代码片段和证据均来自一个虚构的文件上传应用。
 
-PR #42 的审阅版本为 `0123456` → `89abcde`，覆盖两个未标为 Viewed 的生产文件。另有一个变更的测试文件为保存结果消息提供行为证据。所选工作区 `/projects/editor/.worktrees/pr-42` 已安装项目依赖，Git 状态干净。原检出目录的分支、索引和本地改动均与创建工作区前一致。
+PR #42 的审阅版本为 `0123456` → `89abcde`。排除测试和已标为 Viewed 的文件后，共有两个生产文件纳入审阅。一个有改动的 [测试文件](https://example.test/repo/blob/89abcde/tests/uploads/upload_controller.test.ts) 为逐文件显示结果和重试单个失败文件提供证据。所选工作区 `/projects/uploader/.worktrees/pr-42` 已安装项目依赖，Git 状态干净。原检出目录的分支、索引和本地改动均与创建工作区前一致。
 
-这次 PR 改动涉及保存流程的两个环节。
+假设你一次上传三份文件，其中一份失败。以前，应用只会告诉你这批文件上传失败。点重试会把三份文件都再传一遍，包括已经传成功的两份。
 
-1. 保存成功后，结果消息应告诉用户保存了哪份草稿。此前消息只提示保存成功。草稿未命名时，消息应显示草稿列表里用的同一个默认名称。
-2. 编辑器在保存前弹窗询问是否继续。PR 将清理逻辑移到各结果分支，希望让保存流程更容易追踪。关掉弹窗后，用户仍应能再次尝试保存。
-
----
-
-📄 **[src/editor/labels.dart](http://127.0.0.1:47821/diff?example=labels)** · `+1 / −0`
-
-**M1** · **让其他地方也能用现有的草稿名称**
-
-> ⏪ [草稿列表](https://example.test/repo/blob/0123456/src/editor/draft_list.dart) 使用这里为未命名草稿提供的默认名称，格式化逻辑只在当前文件内可用。
->
-> ⏩ 新增公开的 `draftLabel` 函数，沿用原来的格式化逻辑，让 [保存结果消息](http://127.0.0.1:47821/diff?example=complete-report) 可以显示用户在列表里看到的同一个名称。
+这次 PR 想让你看清哪些文件上传成功、哪些失败，并能只重试失败的文件。已经传成功的文件应当继续显示在结果里，无需再次上传。
 
 ---
 
-📄 **[src/editor/save_controller.dart](http://127.0.0.1:47821/diff?example=complete-report)** · `+5 / −3`
+📄 **[src/uploads/batch_upload.ts](http://127.0.0.1:47821/diff?example=upload-results)** · `+9 / −1`
 
-**M2** · **在保存结果中写明草稿名称**
+**M1** · **返回每个文件的上传结果**
 
-> ⏪ 结果消息只说保存成功，用户得自己记得刚才保存的是哪份草稿。
+> ⏪ 一次上传多个文件时，程序只返回整批是否成功，因此 [上传页面](http://127.0.0.1:47821/diff?example=upload-controller) 无法告诉用户哪些文件需要重试。
 >
-> ⏩ 结果消息用 [共用的标签格式化逻辑](http://127.0.0.1:47821/diff?example=labels) 显示草稿名称。
+> ⏩ `uploadFiles` 为每个文件返回一项结果，记录文件及其 `uploaded` 或 `failed` 状态，让页面区分已成功上传和需要重试的文件。
 
-**M3** · **将清理移到各结果分支**
+---
 
-> ⏪ 每次保存尝试结束时，同一段清理代码会清除「正在保存」的标记。要看成功或失败时编辑器怎样恢复可用，得找到这段清理代码。
+📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+14 / −4`
+
+**M2** · **显示每个文件的上传结果**
+
+> ⏪ 页面只提示整批成功或失败，用户得自己判断哪些文件已经传到服务器。
 >
-> ```dart
-> if (pending) return;
-> pending = true;
-> try {
->   if (await confirmSave() == false) return;
->   await persistDraft(draft);
-> } finally {
->   pending = false;
+> ⏩ `runUploads` 根据 [每个文件的上传结果](http://127.0.0.1:47821/diff?example=upload-results) 显示每份尝试上传的文件是成功还是失败。重试失败文件时，页面会保留之前成功的记录。
+
+**M3** · **只重试失败的文件**
+
+> ⏪ 点重试会重新发送所有选中的文件，即使其中有些已经上传成功。
+>
+> ```typescript
+> async function retryUploads() {
+>   await runUploads(selectedFiles);
 > }
 > ```
 >
-> ⏩ 将清除标记的代码分别放到成功和失败的处理逻辑里，希望让每种结果更好追踪。
+> ⏩ 重试时会查找一项失败结果，把对应的文件交给 `runUploads`，目的是避免重传已经成功的文件。
 >
-> ```dart
-> if (pending) return;
-> pending = true;
-> if (await confirmSave() == false) return;
-> try {
->   await persistDraft(draft);
->   pending = false;
-> } catch (_) {
->   pending = false;
->   rethrow;
+> ```typescript
+> async function retryUploads() {
+>   const firstFailed = results.find(result => result.status === "failed");
+>   if (firstFailed) await runUploads([firstFailed.file]);
 > }
 > ```
 >
-> ❌ ⚖️ **不合理** · **P2** · 关掉保存前的确认框后再点保存，编辑器会忽略这次请求。取消时跳过了清除「正在保存」标记的代码，编辑器因此仍以为保存尚未结束。
+> ❌ ⚖️ **不合理** · **P2** · 如果有两份或更多文件上传失败，点一次重试只会重新上传第一份失败的文件，其余失败文件没有再次发送。页面提供的是重试全部失败文件的操作，但 `find` 只返回第一项符合条件的结果。
 >
-> 💡 恢复统一的清理代码。设置标记后，无论从哪里退出，包括取消，都清除标记。
+> 💡 找出所有失败结果，把对应的文件交给 `runUploads`，并在重试检查中覆盖同一批有多份文件失败的情况。
 
-**O1** · **使用既有草稿排序策略**
+**O1** · **沿用上传历史的排序规则**
 
-> 🎨 **可选改进** · `recentDrafts` 和 `pinnedDrafts` 各自实现了 [草稿列表](https://example.test/repo/blob/0123456/src/editor/draft_list.dart) 的排序逻辑。两个 getter 及调用方在固定的 base 和 head 版本中一样。保存和保存前的弹窗都用不到它们。
+> 🎨 **可选改进** · `recentUploads` 和 `pinnedUploads` 各自实现了 [上传历史](https://example.test/repo/blob/0123456/src/uploads/upload_history.ts) 的排序规则。两个 getter 及其调用方在固定的 base 和 head 版本中都一样。显示结果和重试时都用不到这两个 getter。
 >
-> 💡 共用草稿列表里的比较器，保留现有顺序，以后修改排序只需要改一处。
+> 💡 共用上传历史的比较器，保留现有顺序，以后调整排序只需改一处。
 
 ---
 
-📄 **[src/editor/draft_menu.dart](https://example.test/repo/blob/0123456/src/editor/draft_menu.dart#L25)**
+📄 **[src/uploads/upload_history.ts](https://example.test/repo/blob/0123456/src/uploads/upload_history.ts#L25)**
 
-**O2** · **使用既有未命名草稿标签**
+**O2** · **复用现有的文件大小格式化函数**
 
-> 🎨 **可选改进** · `renameAction` 和 `copyAction` 各自为未命名草稿提供默认名称。两个动作及 [标签格式化器里的默认名称](http://127.0.0.1:47821/diff?example=labels) 在固定的 base 和 head 版本中都一样。[保存结果消息](http://127.0.0.1:47821/diff?example=complete-report) 是共用标签函数的新调用方。
+> 🎨 **可选改进** · `formatRecentSize` 和 `formatArchivedSize` 各自实现了 [现有格式化函数](https://example.test/repo/blob/0123456/src/files/format_size.ts) 的显示规则。两个函数、各自的调用方和共用的格式化函数在固定的 base 和 head 版本中都一样。逐文件显示上传结果和重试时都用不到历史记录里的文件大小文案。
 >
-> 💡 两个菜单动作共用同一个格式化方法，未命名草稿的显示名称集中在一处维护。
+> 💡 两处都用同一个格式化函数，以后调整文件大小的单位或舍入规则只需改一处。
 
 ---
 
-M3 仍为 P2 不合理项，因为取消保存可能导致下一次保存不可用。O1 和 O2 分别建议复用比较器和格式化器，让两种策略各有一个维护位置。
+M3 仍是 P2 不合理项。多份文件上传失败时，点一次重试会漏掉其中一些。O1 和 O2 分别建议共用比较器和文件大小格式化函数，让两种显示规则各有一处维护。
 
-关闭保存前的确认框时，处理函数返回 `false`。源码检查追踪了这个结果如何触发提前退出，并使下一次保存被入口拦下。尚未运行修复检查。
+源码检查确认，重试通过 `find` 只选中第一项失败结果。改动中的测试设置了三份文件，其中一份上传失败，并检查重试只发送这一份文件，同时保留之前成功的记录。测试未覆盖同一批有两份或更多文件失败的情况。本次只读审阅未运行测试或修复检查。
 
 📊 **已审查 2 / 2 个文件，共 3 项修改。**
 
-- A． **修复** （推荐）：恢复 M3 的统一清理，运行必要检查，并展示专门的复审报告。
-- B． **优化** ：实施 O1 和 O2，复用比较器和标签格式化器，然后检查并复审这些改动。
-- C． **忽略** ：接受 M3 中取消保存可能导致下一次保存不可用的后果。
+- A． **修复** （推荐）：让 M3 重试所有失败文件，运行必要检查并覆盖多份文件失败的情况，然后展示专门的复审报告。
+- B． **优化** ：实施 O1 和 O2，共用比较器和文件大小格式化函数，然后检查并复审这些改动。
+- C． **忽略** ：接受 M3 中点一次重试可能漏掉其他失败文件的后果。
 
 ## M3 待处理时选择优化
 
-选择 B 授权处理两项已列明的观察。完成它们的检查和复审后，M3 仍待处理，主进度仍为 2 / 2 个文件、3 项修改。
+选择 B 授权处理两项已列明的观察。完成检查和复审后，M3 仍待处理，主进度仍为 2 / 2 个文件、3 项修改。
