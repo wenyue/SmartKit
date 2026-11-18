@@ -117,7 +117,7 @@ The comment explains why the snapshot exists, instead of narrating conversion to
 Context: the product owner explicitly accepted showing cached preview titles for up to one minute so opening the list needs no network request. Opening an item fetches its current title. This is a lasting product choice, not a temporary implementation shortcut; a future maintainer could otherwise mistake the absence of a list-time refresh for a bug.
 
 ```dart
-// accepted-decision: Preview titles may be stale for up to one minute.
+// DECISION: Preview titles may be stale for up to one minute.
 // The list uses the cache to open without a network request; opening an item
 // fetches its current title. A rename may therefore appear later in the list.
 final previews = previewCache.readWithin(const Duration(minutes: 1));
