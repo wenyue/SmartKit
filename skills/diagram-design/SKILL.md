@@ -246,7 +246,7 @@ Don't use 3 identical generic cards. Vary the treatment: column widths such as `
 
 ## 9. Pre-Output Checklist (Taste Gate)
 
-Run before producing any diagram.
+Use the design checks before drawing and verify the finished diagram before delivery.
 
 **Type fit:**
 
@@ -291,6 +291,10 @@ Run before producing any diagram.
 - [ ] Node origins, dimensions, gaps, padding on the 4px grid; type sizes on the role ramp?
 - [ ] From the installed skill directory, did `python3 scripts/self_check.py <file>` pass? (Accessible-SVG contract, single-file safety, content inside the viewBox, motion basics.)
 - [ ] If animated, does the complete static/no-JS frame work, does reduced motion hide/disable playback, and is the controller copied verbatim from `assets/template-motion.html`? From a repository checkout, also run `python3 <repo-root>/scripts/verify-motion.py path/to/generated.html` plus the skin linter; from an installed skill, manually check print and static-query states on top of the self-check.
+
+**Visual review:**
+
+- [ ] Rendered the diagram and inspected it at the intended viewing size (such as the target viewport, embed width, or print scale)? Check label readability, clipping, spacing, and visual hierarchy. Exercise the intended controls for animated output. Fix defects in the source, render again, and repeat the affected checks. If a suitable preview is unavailable, report the visual checks you could not perform.
 
 **Typography:**
 

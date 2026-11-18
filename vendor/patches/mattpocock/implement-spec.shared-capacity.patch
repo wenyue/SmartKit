@@ -1,0 +1,19 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -14,7 +14,7 @@
+
+ Communication to and from subagents should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, research notes, and previous commits. Don't duplicate information already available via pointers.
+
+-**Implementer subagents** should be run in the background where possible for maximum concurrency.
++Run ready, independent **implementer subagents** in the background where supported. When agents share a machine, coordinate concurrent builds and tests across worktrees using the available CPU and memory, including each command’s own parallelism. Limit overlapping jobs or give a demanding job the machine when needed. Start with a small batch if capacity is unclear and adjust to observed load.
+
+ ## Steps
+
+@@ -31,6 +31,6 @@
+
+ 5. Once an **implementer subagent** completes, merge its work to the integration branch with a **merger subagent**.
+
+-6. If this changes the **frontier** of available tickets, kick off more **implementer subagents** to work on the new tickets. This allows for maximum concurrency.
++6. After each merge, recompute the **frontier** and start ready tickets as capacity becomes available.
+
+ 7. Once all tickets are complete, load and apply the `code-review` skill on the integration branch. Resolve blocking findings through a single **implementer subagent**. Include optional improvements only when they offer a concrete benefit within the existing authorized scope; otherwise retain them as suggestions, not blockers. Verify the final integrated result and obtain blocker-free review of that state before finalization.

@@ -67,7 +67,11 @@ Reassess readiness when new evidence, failed verification, or changed scope mate
 
 Run supported independent read-only operations concurrently. Keep state changes, approvals, and waits sequential in dependency and permission order.
 
+Before starting a background operation, establish who will monitor and close it out. Keep the information needed to check its status and, where supported, stop it safely.
+
 Preserve long-running operations and their output. A timeout, bounded wait, or lost control channel does not establish completion. When uncertain, inspect the original operation and its saved output. Retry only after confirming it ended and repetition is safe; claim process-backed success only from authoritative final status.
+
+At completion or an early exit, account for the background operations the task owns. Safely stop any that are still running and no longer needed, and verify that they ended. Hand off authorized ongoing work to a named owner with its status and available controls. Report any unconfirmed termination or handoff, and retain the evidence needed for recovery. Remove task-owned temporary files once they are no longer needed.
 
 ## Change course when evidence requires it
 

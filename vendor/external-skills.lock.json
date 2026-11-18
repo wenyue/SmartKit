@@ -248,7 +248,7 @@
           "source_path": "skills/engineering/implement-spec",
           "destination": "skills/implement-spec",
           "files": {
-            "SKILL.md": "b72f4c989f8b183593d445ca903af05cc4452cb666c103f2d976d891751403d3",
+            "SKILL.md": "e32f8490cbcf56b11bfb1c683a61f69dd4d3230526e8dc90f5da8be8009dd345",
             "agents/openai.yaml": "5e8f2f78b5f4bba8c85be2696aa041b47023ef1e9bdac2f7ac1242bc4e17f8bc",
             "assets/icon.svg": "ae37af3b099a132178636434c4ef4f7a81ef7e096704d62ff0cea012d157d767"
           },
@@ -264,6 +264,10 @@
             {
               "path": "vendor/patches/mattpocock/implement-spec.worktree.patch",
               "sha256": "6ee86fa8ae7c4ee2c5b5bf23ffbeb4820064c8f32c79b328e61eaf80a1a18a47"
+            },
+            {
+              "path": "vendor/patches/mattpocock/implement-spec.shared-capacity.patch",
+              "sha256": "b3487b041f6bcac2c19ac4503d87116b942876b0dd172dc999837158cffe5a98"
             }
           ]
         },
@@ -545,7 +549,7 @@
           "destination": "skills/writing-for-agents",
           "files": {
             "SKILL-MECHANICS.md": "c768e6307c7c10728c401c213f2c4ba71c542127eeb7ad2956aabd15a0fa0059",
-            "SKILL.md": "551adca942227b44192edba88acd4e8db911f0121ce58ad16944ccf6a896a74a",
+            "SKILL.md": "f7e82e679c2d5bf8e6ead4daf2e62f5508f2250e473fd2eb9eb9195c5ec795ed",
             "agents/openai.yaml": "f73adf271a2d7abb72cca894233d0ca30a70181c5aff05a89634539fe878bb09",
             "assets/background.svg": "5963bc9b3d3c766a896f2b36c756a556dec1dabf198c789edec160c4e39696d4"
           },
@@ -553,6 +557,10 @@
             {
               "path": "vendor/patches/mattpocock/writing-for-agents.openai.patch",
               "sha256": "5f749425acd8e7e4e9dfa87d8dd9289083ee4bdd6a7fa6bf71b985ddaafffacc"
+            },
+            {
+              "path": "vendor/patches/mattpocock/writing-for-agents.prompt-wording.patch",
+              "sha256": "8618cceaf011f1b796d038b080bff0bfc6bc55bc57868d1ab9d5327d27df8495"
             }
           ]
         }
@@ -673,7 +681,7 @@
           "source_path": "skills/diagram-design",
           "destination": "skills/diagram-design",
           "files": {
-            "SKILL.md": "2bbc80db03451568aa23d811d367731c80dd989d03f9dfcb6cc0a478da8af4fb",
+            "SKILL.md": "e6730212c7f7f94f627d112164dbfd1507f945fef7b292a4ed4a17bcdc77fc6c",
             "agents/openai.yaml": "80f21e45cb2f50fc4d696292df12c138dedc391cf9eca9a2c5c96c2f7807558a",
             "assets/diagram-design.svg": "b4e6bc598240bbc1699c42f0b39f7b782d46d1181a4cc7bf1b22ad5305f4af06",
             "assets/example-architecture-containment-dark.html": "853399a330a541d63d5ca05834bb9f1545364fff61546754190899a49e54d28a",
@@ -995,6 +1003,10 @@
             {
               "path": "vendor/patches/diagram-design/footer-semantics.patch",
               "sha256": "8d414da02998436034d6514dfbaee30af7a274ebd99a5c1f313eb9c0d0ac6413"
+            },
+            {
+              "path": "vendor/patches/diagram-design/rendered-review.patch",
+              "sha256": "91ba87e28becb2ffeb56a0356959c1c7f10d68e1f435fb646f468e3bac67c9e8"
             }
           ]
         }

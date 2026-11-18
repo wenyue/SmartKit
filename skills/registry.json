@@ -39,7 +39,7 @@
         {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.openai.patch"]},
         {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder", "patches": ["vendor/patches/mattpocock/wayfinder.openai.patch", "vendor/patches/mattpocock/wayfinder.harness.patch", "vendor/patches/mattpocock/wayfinder.claims.patch"]},
         {"id": "mattpocock/implement", "path": "skills/engineering/implement", "patches": ["vendor/patches/mattpocock/implement.openai.patch"]},
-        {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch", "vendor/patches/mattpocock/implement-spec.worktree.patch"]},
+        {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch", "vendor/patches/mattpocock/implement-spec.worktree.patch", "vendor/patches/mattpocock/implement-spec.shared-capacity.patch"]},
         {"id": "mattpocock/pr", "path": "skills/engineering/pr", "patches": ["vendor/patches/mattpocock/pr.openai.patch"]},
         {"id": "mattpocock/retro", "path": "skills/engineering/retro", "patches": ["vendor/patches/mattpocock/retro.openai.patch", "vendor/patches/mattpocock/retro.harness.patch", "vendor/patches/mattpocock/retro.review-context.patch"]},
         {"id": "mattpocock/prototype", "path": "skills/engineering/prototype", "patches": ["vendor/patches/mattpocock/prototype.openai.patch"]},
@@ -54,7 +54,7 @@
         {"id": "mattpocock/teach", "path": "skills/productivity/teach", "patches": ["vendor/patches/mattpocock/teach.openai.patch"]},
         {"id": "mattpocock/to-questionnaire", "path": "skills/productivity/to-questionnaire", "patches": ["vendor/patches/mattpocock/to-questionnaire.openai.patch"]},
         {"id": "mattpocock/wait-what", "path": "skills/productivity/wait-what", "patches": ["vendor/patches/mattpocock/wait-what.patch", "vendor/patches/mattpocock/wait-what.openai.patch"]},
-        {"id": "mattpocock/writing-for-agents", "path": "skills/productivity/writing-for-agents", "patches": ["vendor/patches/mattpocock/writing-for-agents.openai.patch"]}
+        {"id": "mattpocock/writing-for-agents", "path": "skills/productivity/writing-for-agents", "patches": ["vendor/patches/mattpocock/writing-for-agents.openai.patch", "vendor/patches/mattpocock/writing-for-agents.prompt-wording.patch"]}
       ]
     },
     {
@@ -75,7 +75,7 @@
       "ref": "550fd66edff058bc73056c3416b76d69cfe865ba",
       "license": {"spdx": "MIT", "path": "LICENSE"},
       "skills": [
-        {"id": "cathrynlavery/diagram-design", "path": "skills/diagram-design", "patches": ["vendor/patches/diagram-design/diagram-design.patch", "vendor/patches/diagram-design/diagram-design.openai.patch", "vendor/patches/diagram-design/security-matrix-unknown.patch", "vendor/patches/diagram-design/chart-geometry.patch", "vendor/patches/diagram-design/process-stage-order.patch", "vendor/patches/diagram-design/sidecar-authority.patch", "vendor/patches/diagram-design/skin-gate.patch", "vendor/patches/diagram-design/footer-semantics.patch"]}
+        {"id": "cathrynlavery/diagram-design", "path": "skills/diagram-design", "patches": ["vendor/patches/diagram-design/diagram-design.patch", "vendor/patches/diagram-design/diagram-design.openai.patch", "vendor/patches/diagram-design/security-matrix-unknown.patch", "vendor/patches/diagram-design/chart-geometry.patch", "vendor/patches/diagram-design/process-stage-order.patch", "vendor/patches/diagram-design/sidecar-authority.patch", "vendor/patches/diagram-design/skin-gate.patch", "vendor/patches/diagram-design/footer-semantics.patch", "vendor/patches/diagram-design/rendered-review.patch"]}
       ]
     },
     {
