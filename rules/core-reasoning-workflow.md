@@ -61,8 +61,6 @@ Treat readiness and permission as separate questions:
 
 An instruction to implement after discussion covers the latest complete active plan, including concrete recommendations presented and left unopposed. Silence alone does not authorize execution, and unresolved material choices remain open. Answer questions raised during execution and continue unless the user changes or stops the task.
 
-When the user explicitly accepts a retained limitation or weaker guarantee in a coding task, including mid-task, use native Skill discovery to find and load applicable guidance for recording that decision before editing or resuming affected code. Before handoff, verify that the final changes preserve the rationale and any material remaining risks where that guidance requires them.
-
 Reassess readiness when new evidence, failed verification, or changed scope materially undermines it. Update the affected decisions before another state change and explain the changed basis and consequences.
 
 ### Keep execution observable
