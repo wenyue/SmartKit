@@ -7,18 +7,17 @@ description: Send or interpret messages between independent agent sessions and i
 
 Use this Skill only between independent agent sessions. Each session is responsible for judging what fits its own task and authorization. Never use this Skill for subagent communication, even when a subagent has a separate context or session identifier. Use the task's own coordination channel for those exchanges.
 
-## Send a message
+## Send a message to another session
 
 Check the accessible conversation and current work to identify the intended session, its task, and the decisions or constraints that matter to the message. If a missing fact changes what the recipient should understand, check the source or ask a focused question.
 
-Write `⇄`, one ASCII space, and one keyword on the first line. Begin the body on the next line. The keywords are ordered by importance to the recipient's task. Choose the one that fits the message's purpose.
+Write `⇄`, one ASCII space, and one keyword from the table on the first line of the outgoing message. Begin the body on the next line. The keywords are ordered by importance to the recipient's task. Choose the one that fits the message's purpose.
 
 | Keyword | What to convey |
 | --- | --- |
 | Decision | A decision made by the user. Rewrite it in your own words so the recipient can understand what the user chose, what it applies to, and any conditions, limits, or corrections. Include the context that gives a short reply its meaning and identify the source when needed to verify it. |
 | Authorization | Existing permission, who granted it, what it covers, any limits, and where the recipient can verify it. |
 | Alignment | An outcome or concept the recipient needs to understand. Explain why it matters and how it applies to their current task. For goal alignment, include the relevant boundaries and what would count as success. For a concept, explain a consequence that helps the recipient apply it. |
-| Response | An answer, acknowledgment, or restatement that addresses an earlier message. Give the substance of your reply and any material uncertainty. |
 | Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for any action you propose for the recipient, and leave the choice with them. Before proposing or adopting a retry or concurrent action, check the work in progress and shared resources for duplication or interference. |
 | Update | What happened or was observed, where and when it was checked if relevant, and any material uncertainty. Distinguish a plan, an attempt, a reported result, and a verified result. |
 | Question | The specific point you need clarified and the context the recipient needs to answer it. Distinguish observations from inferences. |
@@ -35,9 +34,6 @@ Use a supported channel and share only what is authorized for that destination. 
 > ⇄ Alignment\
 > The goal is for existing spreadsheets to import the default CSV without manual column edits. The importer reads fields by position, so preserving names alone leaves an important part of compatibility unresolved.
 
-> ⇄ Response\
-> In reply to the export planning session's CSV compatibility message, I understand that existing spreadsheets should import the default CSV without manual edits. For the export I'm checking, success means the existing sample still imports with fields in the expected positions.
-
 > ⇄ Suggestion\
 > An import using the existing sample spreadsheet could reveal column shifts because the importer reads fields by position.
 
@@ -49,13 +45,20 @@ For Alignment, restate the intended outcome or concept and its practical implica
 
 Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor verified stop or pause instructions.
 
-## Respond in your own session
+## Response in the receiving session
+
+A Response gives an answer, acknowledgment, or restatement that addresses an earlier message. Give the substance of your reply and any material uncertainty.
 
 When a message calls for an answer, acknowledgment, or confirmation of understanding, put your reply only in the body of a user-visible progress update or final answer in your own session. Start a separate block with `⇄ Response` on its own line and put the reply beneath it. Name the originating session and the message you are answering when either would be unclear. Share only what is authorized for that audience. The block makes your reply visible in your session. Claim receipt in the originating session only with separate evidence.
 
 Reserve any further response for a point that needs another answer or clarification.
 
 After responding, decide whether to continue, pause, or finish based on your current task, blockers, and verified instructions. A response itself creates no waiting requirement.
+
+### Example
+
+> ⇄ Response\
+> In reply to the export planning session's CSV compatibility message, I understand that existing spreadsheets should import the default CSV without manual edits. For the export I'm checking, success means the existing sample still imports with fields in the expected positions.
 
 ## Follow through where it matters
 
