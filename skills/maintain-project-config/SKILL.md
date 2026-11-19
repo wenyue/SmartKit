@@ -25,17 +25,17 @@ Inspection is read-only. Establish the maintenance mode, selected entry, backup 
 | Later maintenance of this checkout | Reuse its valid binding; infer no repository identity from business remotes or other checkouts. |
 | Initialization over existing configuration | Analyze actual contents and differences, propose the concrete plan, and obtain the user's replacement decision. |
 
-## 2. Establish repository state
+## 2. Separate authoring from restoration
 
-Preserve staged, unstaged, untracked and unpublished work in the business project and configuration checkout. In repository mode, [update and inspect the bound backup](references/maintenance.md#update-before-authoring-or-restoring) first. If current repository state cannot be verified, stop dependent maintenance or restoration rather than using a stale snapshot. Neither local mode needs configuration-repository access.
-
-For an explicit restoration request, follow the [restoration route](references/maintenance.md#restore-explicitly-or-synchronize-at-startup) instead of continuing below. Restoration performs no rendering, full setup or publication. Verify Git treatment and local prerequisites, and report any that remain unmet. Saving local content to the backup is a separate, explicitly authorized operation.
+Preserve staged, unstaged, untracked and unpublished work in the business project and configuration checkout. For explicit restoration, follow the [restoration route](references/maintenance.md#restore-explicitly-or-synchronize-at-startup): update the source first, never use a stale snapshot, then verify Git treatment and local prerequisites and report any that remain unmet. End the restoration there; it performs no rendering, full setup or publication. A decision during restoration to save local content to the backup is a separate, explicitly authorized operation.
 
 ## 3. Author and verify in the actual project
 
 Edit the files maintained in the business project, not the backup entry’s `files/` as a drafting area. Decide content and checks from business-project evidence; the backup layout does not establish project architecture. For a Rule or Skill, use [Write Rules and Skills](../write-rules-and-skills/SKILL.md) with the local project files as its Candidate.
 
-If the requested change requires deliberate local rendering, use the reference’s established `sync-project` or narrower `sync-project-rules` route. Verify the local result, including any rendered changes and applicable Git treatment; report configuration paths already tracked by business Git. In either local mode, finish here without `apply` or configuration-repository publication. Maintenance does not establish full setup success; unmet setup or migration prerequisites remain for the user to invoke through the owning Skill.
+Proceed with authorized local authoring and verification in known scope where the work does not depend on an upstream decision, even if the configuration repository is unavailable or a sync conflict is unresolved. Preserve existing local work, do not infer backup scope or override a user decision, and leave upstream-dependent steps pending. Neither local mode requires configuration-repository access.
+
+If the change requires local rendering, check that the command can run under the [local rendering route](references/maintenance.md#render-local-configuration-only-when-required). Complete independently runnable checks; if required rendering or checks are blocked, preserve the local result and report the missing verification without exporting it. Verify the local result, including any rendered changes and applicable Git treatment; report configuration paths already tracked by business Git. In either local mode, finish here without `apply` or configuration-repository publication. Maintenance does not establish full setup success; unmet setup or migration prerequisites remain for the user to invoke through the owning Skill.
 
 ## 4. Back up only the verified selection
 

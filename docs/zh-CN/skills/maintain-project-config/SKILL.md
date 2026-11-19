@@ -25,17 +25,17 @@ python "<maintain>" inspect --target "<target-root>"
 | 同一 checkout 的后续维护 | 复用其有效绑定；不从业务远端或其他 checkout 推断仓库身份。 |
 | 在已有配置上初始化 | 分析实际内容和差异，提出具体方案，并取得用户的替换决定。 |
 
-## 2. 确认仓库状态
+## 2. 区分编写与恢复
 
-保留业务项目和配置 checkout 中已暂存、未暂存、未跟踪和未发布的工作。对于仓库模式，先[更新并检查绑定备份](references/maintenance.md#update-before-authoring-or-restoring)。如果无法核实当前仓库状态，停止依赖它的维护或恢复步骤；不要使用过时快照。两种本地模式均不需要访问配置仓库。
-
-如果请求是显式恢复，按[恢复流程](references/maintenance.md#restore-explicitly-or-synchronize-at-startup)处理后结束。恢复不生成配置、不执行完整 setup，也不发布。验证 Git 处理方式和本地前置条件，报告未满足的要求。将本地内容保存到备份是另一项操作，须另有明确授权。
+保留业务项目和配置 checkout 中已暂存、未暂存、未跟踪和未发布的工作。显式恢复按[恢复流程](references/maintenance.md#restore-explicitly-or-synchronize-at-startup)先更新来源，不使用过时快照，然后验证 Git 处理方式和本地前置条件，报告未满足的要求。恢复到此结束，不生成配置、不执行完整 setup，也不发布。在恢复过程中决定将本地内容保存到备份，是另一项操作，须明确授权。
 
 ## 3. 在实际业务项目中编写并验证
 
 编辑业务项目中实际维护的文件，不编辑备份条目的 `files/` 来起草改动。根据业务项目的证据决定配置内容和适用检查；备份布局不是项目架构的证据。编写或修订 Rule 或 Skill 时，以本地项目文件作为 Candidate，使用[编写 Rule 和 Skill](../write-rules-and-skills/SKILL.md)。
 
-若要求的改动需要本地生成，按参考中的 `sync-project` 或更窄的 `sync-project-rules` 路径处理。验证本地结果，包括实际发生的生成变更以及适用的 Git 规则；报告业务 Git 已跟踪的配置路径。两种本地模式到此结束，不调用 `apply`，也不发布到配置仓库。维护不等同于完整 setup；未满足的 setup 或迁移要求由用户显式调用所属 Skill 处理。
+只要已知的本地范围已获授权，且工作不依赖上游决定，即使配置仓库无法访问或同步冲突尚未解决，也可在本地编写并验证。保留现有本地工作，不擅自推断备份范围，也不推翻已有的用户决定；依赖上游的步骤留待处理。两种本地模式均无需访问配置仓库。
+
+如果需要本地生成，按[本地生成流程](references/maintenance.md#render-local-configuration-only-when-required)确认命令可以运行。先完成能独立运行的检查；必要的生成或检查受阻时，保留本地结果并报告缺少的验证，不导出。通过适用检查验证本地结果，包括实际发生的生成变更和 Git 处理方式；报告业务 Git 已跟踪的配置路径。两种本地模式到此结束，不调用 `apply`，也不发布到配置仓库。维护不等同于完整 setup；未满足的 setup 或迁移要求由用户显式调用所属 Skill 处理。
 
 ## 4. 备份明确选定且已验证的内容
 
