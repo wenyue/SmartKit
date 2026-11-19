@@ -4,6 +4,8 @@ This fictional report shows the first and only main group of a PR review. Its pa
 
 The PR #42 review compares `0123456` → `89abcde` and covers two production files eligible after excluding tests and previously Viewed files. A changed [test file](https://example.test/repo/blob/89abcde/tests/uploads/upload_controller.test.ts) provides evidence for per-file results and retrying one failed file. The selected worktree `/projects/uploader/.worktrees/pr-42` has its project dependencies installed and a clean Git status. The original checkout's branch, index, and local changes match their state before worktree creation.
 
+## Change Overview
+
 Suppose you upload three files and one fails. Until now, the application only told you that the batch had failed. Choosing Retry sent all three files again, including the two that had already succeeded.
 
 This PR aims to show which files succeeded and which failed, then let you retry just the failed files. The files that already uploaded should stay in the results without being sent again.

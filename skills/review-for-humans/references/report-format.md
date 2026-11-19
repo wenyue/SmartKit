@@ -6,7 +6,17 @@ The [Skill entry](../SKILL.md) owns assessment, findings, identities, progress, 
 
 Open the first ordinary group with the review target, the comparison, the eligible file count, and applicable exclusions. Mention relevant test files as behavior evidence. Identify the selected workspace or fixed snapshot mode. Include relevant facts already verified about environment readiness and Git state, including preservation of the original checkout when a separate workspace was prepared.
 
-Then explain the purpose so a reader new to the project can understand the concrete problem, what changes, and the intended result for users or callers. Use everyday language and enough context to connect those points. Choose paragraphs, bulleted lists, or numbered lists according to what makes the explanation clearest. Put the summary of review findings in the closing.
+Before the first file block, add a standalone level-two Markdown section titled “Change Overview” in the report language. Explain the concrete problem, what changes, and the intended result for users or callers so a reader new to the project can follow. Use everyday language and enough context to connect those points. Choose paragraphs, bulleted lists, or numbered lists according to what makes the explanation clearest. Put the summary of review findings in the closing.
+
+Use this structure for the first group's `<REPORT_INTRODUCTION>`.
+
+```markdown
+<REVIEW_SCOPE_AND_WORKSPACE>
+
+## <CHANGE_OVERVIEW_HEADING>
+
+<CHANGE_OVERVIEW>
+```
 
 Later ordinary introductions identify the group. A supplementary introduction identifies the additional delivery coverage. A repair introduction names the selected original M/O items and connects their supporting changes. Keep supplementary and repair coverage separate from unseen main groups.
 
@@ -117,6 +127,6 @@ Use the same rendering for workspace menus. At scope end use Finish rather than 
 
 ## Check the report before sending
 
-Confirm the first group's opening puts verified scope and workspace context before the purpose and explains why the change is needed. Read each item on its own, then read each finding's first sentence by itself from the perspective of a reader new to the project. If understanding a behavior finding's trigger or outcome requires knowing an internal state name, storage operation, or project-specific term, rewrite the opening. Describe the concrete action or situation in everyday words and state what the user or caller observes. Put the exact technical condition and cause in the following explanation and briefly define unfamiliar terms there. Verify that quoted UI text matches the displayed wording.
+Confirm the first group places the standalone Change Overview section after verified scope and workspace context and before the horizontal rule that introduces the first file block. Check that the overview explains why the change is needed. Read each item on its own, then read each finding's first sentence by itself from the perspective of a reader new to the project. If understanding a behavior finding's trigger or outcome requires knowing an internal state name, storage operation, or project-specific term, rewrite the opening. Describe the concrete action or situation in everyday words and state what the user or caller observes. Put the exact technical condition and cause in the following explanation and briefly define unfamiliar terms there. Verify that quoted UI text matches the displayed wording.
 
 Check that file counts and link destinations match the assessed versions. Check that every required file has a usable link and that each screen, caller, or owner named from another file is linked at its mention. Check stable IDs, one standalone appearance per item, and judgments after the comparison with each issue explained once. Check O placement, accurate repair status and checks, unchanged main progress for additional coverage, visible uncertainty warnings, and the menu's punctuation, scope, recommendation, and effects.
