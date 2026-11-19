@@ -1,286 +1,128 @@
 # 项目配置维护
 
-本参考为管理项目配置的调用方提供共享维护约定与命令接口。从已加载的 Skill 安装解析 `<plugin-root>`，将业务项目解析为 `<target-root>`，以 `<plugin-root>/skills/maintain-project-config/scripts/maintain.py` 作为 `<maintain>`。资源必须来自同一套受支持的插件发行；命令或必需资源不可用时，依赖它们的工作保持未完成。阅读本参考并使用受支持命令，不会调用仅限用户调用的维护 Skill。
-
-```text
-python "<maintain>" --help
-```
-
-命令帮助负责参数和输出细节。`<plugin-root>/setup-assets/catalog/project-config.schema.json` 中的项目 schema 负责受支持的项目声明。调用方确定其请求的操作和前置条件。维护负责绑定、快照、应用、有意执行的本地同步和配置仓库发布。恢复快照不能证明新 checkout 已成功初始化。
+本参考及其命令供配置维护、完整 setup、启动同步和 OpenWiki 使用。`<maintain>` 指已加载插件中的 `skills/maintain-project-config/scripts/maintain.py`，`<target-root>` 指业务项目。用 `python "<maintain>" --help` 查看命令选项，按同一插件的 `setup-assets/catalog/project-config.schema.json` 确定项目支持哪些声明。所需资源不可用时，说明缺失项并暂缓依赖它的工作。
 
 ## 选择维护模式 <a id="choose-the-maintenance-mode"></a>
-
-目标的 `.agents/config.json` 记录模式；仓库模式还记录仓库、分支和项目条目。以用户语言一起提供以下三种选择：
-
-| 用户可见模式 | 存储模式 | 配置和 Git 处理 |
-| --- | --- | --- |
-| 项目共享 | `local` | 规范输入保留在业务项目中，通过其 Git 仓库共享。SmartKit 不添加个人配置排除。 |
-| 仅本机 | `local-only` | 规范输入保留在业务项目中，并在本地从业务 Git 排除配置路径。不需要访问配置仓库。 |
-| 独立配置仓库 | `repository` | 个人私有 GitHub 仓库存储选中的完整配置备份；目标配置路径在本地从业务 Git 排除。 |
-
-已有 `local` 绑定仍表示项目共享。缺少选择是可读取的旧状态，绑定前需要用户选择。两种本地模式均保留现有编写和生成行为；选择项目共享不会暂存、提交或推送业务项目文件。绑定不包含本机特定的 checkout 路径。
 
 ```text
 python "<maintain>" inspect --target "<target-root>"
 ```
 
-检查读取可用的绑定、来源、目标和同步状态，不拉取、不修复排除规则，也不写配置。报告不可用证据，不假定备份完整。仓库模式使用用户持有的持久 checkout，项目条目为 `projects/<entry>/`；它可能保存未发布工作的唯一副本，不能当作可丢弃缓存。各条目的范围相互独立。
+检查是只读操作，使用本地能取得的信息。项目尚未绑定时，用用户的语言同时列出三种模式。已有有效绑定时沿用该绑定。初始化要覆盖现有配置时，先请用户决定是否替换。
 
-## 完整备份文件和目录
+| 模式 | 存储值 | 配置保存位置 |
+| --- | --- | --- |
+| 随项目共享 | `local` | 保存在项目内，通过业务项目的 Git 仓库共享。 |
+| 仅本机 | `local-only` | 保存在项目内，通过本地规则从 Git 中排除。 |
+| 独立配置仓库 | `repository` | 保存在项目内，通过本地规则从 Git 中排除，并备份到个人私有 GitHub 仓库。 |
 
-条目包含 `manifest.json` 和 `files/`。清单在 `files` 中声明精确的目标相对文件，在 `directories` 中声明递归目录根：
-
-```json
-{
-  "files": [".agents/config.json", ".cursor/mcp.json", ".codex/config.toml"],
-  "directories": [".agents/rules", ".agents/skills"]
-}
-```
-
-清单仅支持 `files` 和 `directories` 字段。带版本的清单不受支持；报告格式错误并保留来源，不对其进行转换。
-
-`files/` 下的快照按字节保留选定文件，递归保留选定目录。通过 `ruleEntry` 选择 `AGENTS.local.md` 本身不会将该本地文件加入已有清单；需要恢复时，通过既有的备份范围接受流程明确选中它。原生 MCP 和设置文件、项目说明及选中的生成文件均可完整备份。备份不拆分字段，也不使用 `smartkit.lock.json` 决定复制哪些内容。lock 和现有初始化机制各自保留原有行为；恢复整文件快照不需要重新生成 MCP。显式范围可以将 lock 作为普通完整文件纳入；默认范围省略它和运行时状态。
-
-### 接受选中内容的完整范围 <a id="accept-the-complete-selected-content"></a>
-
-选择恢复用户配置所需的路径。接受范围前审阅完整内容：选中文件可能包含凭据和机器路径，而备份不筛除秘密值。凭据值仍应保留在原有凭据设施中，目标本地同步状态不纳入备份。
-
-选中 `.agents/config.json` 时，完整复制其中的绑定和 `setupVersion` 等内容。复制来的初始化标记不能证明当前 checkout 已完成初始化。其仓库绑定必须与选定来源匹配；有差异时解决差异，不静默改写快照字节。
-
-快照支持普通文件和目录。符号链接和命令校验拒绝的路径需要先解决再继续。来源内容不可用时应报告，不当作空备份。
-
-绑定和采纳中重复的 `--file` 参数接受文件或目录。创建条目时没有显式选择，命令会选择已有的默认项目配置路径和目录；发布前检查实际范围和全部选中内容。命令帮助和检查报告提供当前选择。默认范围包括项目入口文件、`.agents/config.json`、原生 MCP／设置文件，以及项目 Rule、Skill 和 Agent 目录；默认列表只是起始范围，不能证明覆盖了每个项目特有的配置。
-
-## 绑定或有意更换来源 <a id="bind-or-deliberately-change-a-source"></a>
-
-绑定、刷新和发布配置仓库时，使用 Git 和 GitHub CLI（`gh`），并以仓库所属的个人账户在对应的 github.com 或 GitHub Enterprise 主机上完成认证。绑定和发布会验证仓库由该个人账户拥有且为私有。刷新会验证绑定的 checkout 和所选分支的 Git 访问权限。当前所有权或私有状态不确定时，通过已认证的 GitHub 元数据单独核验。工具或访问权限缺失时，停止依赖仓库的工作并保留已有状态。凭据保留在用户原有的凭据管理设施中。
+## 绑定或更换配置来源 <a id="bind-or-deliberately-change-a-source"></a>
 
 ```text
-python "<maintain>" bind --help
 python "<maintain>" bind --target "<target-root>" --mode local
 python "<maintain>" bind --target "<target-root>" --mode local-only
 python "<maintain>" bind --target "<target-root>" --mode repository --repository "<repository>" --branch "<branch>" --entry "<entry>"
 ```
 
-本地模式不接受仓库参数或导入选择。仓库模式需要确定用户的个人私有仓库、分支和项目条目；远端默认分支是可选项，不能自行假定。创建仓库需要用户指定身份和名称，并显式传入 `--create-repository`。github.com 使用 `owner/repository`，GitHub Enterprise 使用不含凭据的 HTTPS URL，例如 `https://github.example/owner/repository.git`。主机名决定认证，并区分不同主机上同名仓库的持久 checkout。
+仓库操作使用 Git 和 `gh`，需要在对应的 GitHub 或 GitHub Enterprise 主机上以仓库所有者的个人账号登录。确认仓库、分支和条目。github.com 可用 `owner/repository`，指定主机时使用不含凭证的 HTTPS 地址。只有用户明确授权创建指定仓库时才使用 `--create-repository`。`bind` 和 `publish` 会验证所有权和私有性。`update` 成功表示已核实本地工作副本并成功拉取，若对所有权或私有性有疑问，另行核实。
 
-绑定前，确认所选条目已存在，或用户已授权新建并导入。连接已有条目时，使用当前已认证的只读仓库证据，确认 `bind` 刷新后实际使用的状态中有 `projects/<entry>/manifest.json`。首次克隆时检查选定的远端分支。复用持久 checkout 时，若刷新会保留已获接受的未发布条目，可使用该条目。条目缺失或无法核实时暂缓绑定，因为 `bind` 可能从本地文件初始化缺失的条目。连接已有条目时无需提供导入选择。后续普通维护按[备份经过验证的改动](#back-up-verified-local-changes)处理。
+连接已有条目前，确认 `bind` 刷新后会使用的版本中存在 `projects/<entry>/manifest.json`。首次克隆时检查选定的远端分支。复用已有工作副本时，检查其中会保留的条目，它可能包含已获认可但尚未发布的工作。如果条目缺失或无法核实，暂缓连接，因为 `bind` 可能会把本地文件导入新条目。只有用户已同意切换绑定时才使用 `--replace-binding`。先解决未决差异，包括嵌套项目负责的 Git 根目录 Wiki，并保留已有工作和条目。
 
-对于新条目，绑定前检查现有目标内容并接受完整备份范围。绑定成功后，目标记录选定的维护方式，初始的 `.agents/config.json` 整文件备份包含绑定后的文档。如果保存来源内容后绑定失败，保留这些来源工作，并与目标结果分开报告。例如，使用 `--file ".cursor/mcp.json" --file ".agents/rules"` 选择完整 MCP 配置和项目 Rule。
+## 完整备份文件和目录 <a id="back-up-complete-files-and-directories"></a>
 
-仅为有意切换模式或来源使用 `--replace-binding`。检查旧来源、目标和拟用来源，保留未发布工作，并在重试被拒绝的切换前确定预期内容。常规升级保留绑定。切换既不删除旧来源，也不授权丢弃待处理工作；绑定命令负责移除过时的本地同步状态。
+每个条目的 `manifest.json` 用 `files` 指定相对于目标项目的文件，用 `directories` 指定要递归备份的目录，内容保存在 `files/` 下。审阅文件的全部内容，留意凭证和本机路径。密钥应留在凭证管理工具中，同步记录应留在备份之外。选中的原生设置、MCP 文件和 `.agents/config.json` 均整份复制。备份范围由清单确定，配置锁文件不参与选择，单独设置 `ruleEntry` 也不会扩大范围。复制来的 setup 标记不能证明本机已完成 setup 或具备运行条件。遇到无法读取或不支持的状态，包括带版本字段的清单和同步记录，保留原状并报告。
 
-如果内嵌项目拥有 Git 根目录的 Wiki，有意切换时先验证 Wiki 与旧备份一致，再移除与旧绑定匹配的同步记录。保留 Wiki 文件和两个来源条目。切换到项目共享模式时，清除该项目管理的根目录 Wiki 排除规则。后续 Wiki 维护使用新绑定。
+### 将验证过的文件导入新条目 <a id="import-verified-files-into-a-new-entry"></a>
 
-### 将经过验证的文件导入新条目 <a id="import-verified-files-into-a-new-entry"></a>
+日常维护时，在首次执行 [`bind`](#bind-or-deliberately-change-a-source) 前，验证[所选文件的完整内容](#back-up-complete-files-and-directories)。重复使用 `--file` 指定文件或目录，也可以审阅实际的默认选择。如果选中了 `.agents/config.json`，备份将包含绑定后的配置。核对绑定结果，记下实际导入的文件和清单，以便使用 `--path` [发布](#publish-an-exact-verified-scope)。文件一致后，使用不带差异确认参数的 `apply` 记录一致状态。绑定失败时，配置仓库中可能已保存部分内容，应与业务项目的结果分别说明。
 
-普通维护时，在 `bind` 导入前落实[绑定前置条件](#bind-or-deliberately-change-a-source)，并在项目中验证[所选文件的完整内容](#accept-the-complete-selected-content)。如果选中了 `.agents/config.json`，将预期绑定纳入验证。执行 `bind` 后，核实实际绑定后的文档、范围已获接受以及保存的字节。保留确切的仓库相对路径和导入内容摘要，涵盖 `manifest.json`，用于通过重复的 `--path` 发布。绑定会刷新或克隆 checkout，可在该证据仍有效时复用它，并保留已接受但尚未发布的导入结果。
+## 备份验证过的本地改动 <a id="back-up-verified-local-changes"></a>
 
-检查完整范围。文件已经一致时，使用不带差异接受令牌的 `apply` [记录一致状态](#record-verified-agreement-and-the-startup-preference)。仍有差异时，保留来源和目标，解决差异后再继续。即使无需再采纳其他文件，首次导入的精确发布范围仍应保留。
-
-## 显式恢复或启动时同步 <a id="restore-explicitly-or-synchronize-at-startup"></a>
-
-显式恢复时，仅当匹配的本地记录表明此 checkout 已成功恢复，才复用已有仓库绑定。否则，询问用户配置仓库的 Git 地址、分支和已有项目条目。复制了绑定但没有本地成功记录时，同样需要这项选择。来源须经确认，不能从业务远端、已知仓库或其他本地 checkout 推断。绑定未经验证的来源前，先[核实已有条目](#bind-or-deliberately-change-a-source)。检查目标的具体差异，并在每次有差异的应用前按下文流程取得用户选择。
-
-仅恢复的操作通过绑定、[刷新](#refresh-the-repository-before-using-its-backup)、[检查和应用](#apply-the-authoritative-backup)，恢复选定备份的精确字节，再检查本地前置条件和 [Git 处理方式](#keep-personal-configuration-out-of-business-git)。恢复不编写来源、不生成配置、不调用完整 setup，也不发布来源改动。分别报告已恢复的内容和缺失的本地工具、凭据或服务。这些条件缺失不授权重写快照。
-
-启动自动同步是显式的本地偏好，默认为关闭。会话启动 hook 只为已绑定仓库、具有匹配的成功记录且已启用自动同步的 checkout 提供同步指导。更新备份，运行不带 `--adopt-local` 的 `reconcile`，再按[差异判定结果](#adopt-accepted-target-changes)处理。启动同步可直接恢复已确认仅配置仓库发生的更新，无需再次询问。保存本地改动需要用户接受本次上传；自动同步本身不授予上传权限。未绑定或已禁用的 checkout 保持静默。报告已启用状态中无效的绑定或记录。关闭自动同步时仍可显式手动恢复。其他就绪发现仍遵循各自的同意和初始化要求。
-
-## 使用备份前刷新配置仓库 <a id="refresh-the-repository-before-using-its-backup"></a>
-
-刷新备份前，落实[仓库访问前置条件](#bind-or-deliberately-change-a-source)。
+满足[仓库访问条件](#bind-or-deliberately-change-a-source)后，刷新配置仓库并检查哪一侧有改动。刷新失败时停止备份。完整 setup 沿用自身在配置仓库中编写的流程。对本次操作已在配置仓库中产生且已获认可的改动，保留其来源依据。
 
 ```text
 python "<maintain>" update --target "<target-root>"
+python "<maintain>" reconcile --target "<target-root>"
 ```
 
-`update` 验证持久 checkout 的仓库和分支身份，再获取远端状态并在支持的情况下安全快进。更新前保留已暂存、未暂存、未跟踪和未发布的工作。工作区有改动、分支已分叉或操作未完成时，更新可能被拒绝。处理命令报告的问题，避免 reset、自动 stash、强推或改写历史。认证、获取或更新失败时，保留现状，暂缓恢复、导出等依赖备份的工作。已获授权且能独立完成的本地工作可以继续。
+`reconcile` 将两侧与上次记录的一致状态比较。如果之前有可靠的检查结果，也要将条目的 `source_fingerprint` 和 `scope` 与之核对。如果 `local_updates_only` 为真，且此前没有相反证据，就保存任务已授权且已验证的文件。如果上游条目有改动或无法判定哪一侧发生了变化，审阅两侧并请用户[选择同步方式](#apply-the-users-whole-synchronization-choice)。
 
-完整 setup 刷新后沿用自身的来源编写流程。首次导入、setup 和采纳可能在同一次操作中留下已接受的来源变更。在验证、应用和发布期间保留这些变更的归属，无需在这些步骤之间重新要求干净 checkout 并刷新。
-
-## 应用权威备份 <a id="apply-the-authoritative-backup"></a>
+使用本次检查的 `fingerprint` 限定要采纳的差异文件。核对[完整内容](#back-up-complete-files-and-directories)仍与验证时一致。检查受影响的备份路径和清单上已暂存、未暂存、未跟踪及待推送的改动。如果保存会覆盖任务以外尚未处理的工作，暂缓保存。实际范围有变时须先取得认可，包括删除文件会同时移除清单声明的情况。采纳改动可能会重写清单的格式，而其选择范围仍相同。对于检查范围外的新路径，须先就扩大范围取得认可，核实本地内容和备份目的位置均已审阅且保持稳定，再按确切路径执行不带指纹保护的采纳。
 
 ```text
-python "<maintain>" apply --help
-python "<maintain>" inspect --target "<target-root>"
+python "<maintain>" adopt --target "<target-root>" --accept-existing "<inspect-fingerprint>" --file ".agents/rules/project.md" > "<adoption-result.json>"
 python "<maintain>" apply --target "<target-root>"
 ```
 
-仓库模式下，验证已接受的来源并检查对目标的影响。存在差异时，应用前需要用户对整次同步作出选择。已启用的启动同步能够确认仅配置仓库发生更新时除外。询问用户前，展示变更路径和内容差异，涵盖新增、删除和二进制文件差异。已授权的 setup 或维护任务要求保留较新的本地配置时，在应用前[确认并采纳](#adopt-accepted-target-changes)已接受的本地更新。选择未定时暂缓整次应用。已获授权的独立工作可以继续，因此继续同步前要重新检查两边。
+第一条命令把选定文件保存到备份。第二条在不接受任何差异的情况下记录一致状态。保留采纳结果，然后[按确切范围发布](#publish-an-exact-verified-scope)。如果指定的文件和范围已备份，跳过采纳，按需记录一致状态。如果仍有差异，保留两侧内容，解决差异后再发布。
 
-### 应用用户对整次同步的选择 <a id="apply-the-users-whole-synchronization-choice"></a>
-
-**将本地保存到配置仓库** 表示接受已审查的本地内容和备份范围，包括对来源文件的覆盖或删除。普通维护按[备份经过验证的改动](#back-up-verified-local-changes)处理。其他调用方按各自适用的采纳流程验证已接受的结果，再执行应用以记录一致状态。除非用户要求只保留本地结果或禁止发布，接受保存即包含发布精确验证过的范围，通过一次范围内提交和正常推送完成。
-
-**暂时保留本地** 会跳过本次同步，保留目标内容和原有同步记录。报告同步已跳过及仍存在的差异。独立工作可以继续；需要来源与目标收敛的工作保持待处理。这项选择既不采纳本地内容，也不将其发布到配置库。后续同步仍会检查这些差异。
-
-**使用配置库** 会应用完整的已审查恢复结果，通过 `--accept-existing <inspect-fingerprint>` 传入精确检查过的状态。检查后任一侧发生变化，都应重新检查、展示新差异并取得新的选择；过期令牌会被拒绝。不依赖逐文件历史或三方冲突处理。来源与目标已经一致时，应用不需要差异接受令牌。
-
-### 记录已验证的一致状态和启动偏好 <a id="record-verified-agreement-and-the-startup-preference"></a>
-
-仓库模式将成功达成的一致状态记录在目标本地的 `.agents/project-config-sync.json` 中，包含 `binding`、`source`、`sourceFingerprint`、`sourceManifest`、`appliedPaths` 和 `automatic`，不含格式版本。来源指纹覆盖所选条目的范围及实际快照内容，包括已接受但未发布的编辑，而非整个仓库提交。`sourceManifest` 记录该范围，使差异判定能在配置仓库变化后核验完整的本地基线。缺少此字段的旧记录仍可读取，但无法证明只有配置仓库发生变化；下一次成功应用时会记录范围。其他项目的变更不会使本记录失效。带版本的记录不受支持；报告格式错误并保留状态，不进行迁移。
-
-所选文件已经一致时，应用可以记录一致状态，无需重写这些文件。`appliedPaths` 用于提出删除备份已移除、此前应用过的文件。应用后才更新 Git 排除规则，排除规则更新可能在同步记录已更新后失败。失败后检查并报告内容、同步记录和排除规则的实际结果。
-
-通过受支持的应用路径显式设置当前 checkout 后续启动偏好，需要时按上述要求取得差异接受：
+如果调用方获准保存 **全部** 已确认仅发生在本地的改动，可先生成计划，审阅完整文件范围后再执行。显式使用 `adopt --all` 会刷新整个声明范围，并移除已缺失文件的声明。仅在获准刷新整个范围时使用。
 
 ```text
-python "<maintain>" apply --target "<target-root>" --auto-sync on
-python "<maintain>" apply --target "<target-root>" --auto-sync off
-```
-
-恢复复制选定快照并验证一致，不生成原生输出，也不能证明完整初始化成功。单独显示仍需进行的初始化或迁移，并等待用户显式调用其所属 Skill。操作失败时，保留已保存进度，分别报告来源、目标和同步记录的结果。
-
-## 采纳已接受的目标改动 <a id="adopt-accepted-target-changes"></a>
-
-更新后用 `reconcile` 对照上次成功的本地同步记录判断差异类型。只有完整本地内容与记录的基线范围一致，且来源新选中的路径不会覆盖有差异的本地内容时，才能确认仅配置仓库发生更新。配置仓库指纹发生变化，本身不能证明本地配置落后。仅本地变化，是指配置仓库快照仍与同步记录一致；本地新增、编辑和删除都算变化。双方都变，或基线无法确定同步方向时，即使配置仓库看起来包含本地改动，也要取得用户选择。
-
-启动时发现仅本地变化，应展示差异，询问是将这些改动保存到配置仓库，还是暂时保留本地。已获授权保存所有经证明确实只发生在本地的差异时，调用方可以传入 `--adopt-local` 生成计划。按备份范围约定审查计划范围和所选文件的完整内容。将已接受的 `planned` JSON 保存在私有任务状态中，再通过 `--accept-plan` 传入其 `plan_fingerprint` 执行。
-
-```text
-python "<maintain>" reconcile --target "<target-root>"
 python "<maintain>" reconcile --target "<target-root>" --adopt-local
 python "<maintain>" reconcile --target "<target-root>" --adopt-local --accept-plan "<plan-fingerprint>"
 ```
 
-| 结果 | 下一步 |
-| --- | --- |
-| `in-sync` | 本次操作需要记录一致状态时，应用已一致的快照。 |
-| `source-updated` | 在已启用的启动同步中，使用精确的检查指纹应用，无需再次询问。显式手动恢复仍需要用户对差异作出选择。 |
-| `adopted` | 执行应用以记录一致状态。保留 `source_changes`，供已授权的发布使用。 |
-| `planned` | 审查确切的保存计划，并在执行前保留其 JSON。 |
-| `needs-choice` | `local_updates_only` 为真时，补齐保存所选本地改动所需的授权。启动时询问是保存还是暂时保留本地。存在其他差异时，展示差异并提供整次同步的三种选择，分别是保存本地、使用配置仓库和暂时保留本地。 |
+## 显式恢复或启动时同步 <a id="restore-explicitly-or-synchronize-at-startup"></a>
 
-已启用的启动同步能够确认仅配置仓库发生更新时，记录的偏好已接受该同步方向；将应用绑定到精确检查过的内容：
+用户明确要求恢复时，只有本机存在匹配的成功同步记录，才可沿用已有绑定。否则先取得用户选择的仓库、分支和已有条目，并在[绑定](#bind-or-deliberately-change-a-source)前核实条目。满足[仓库访问条件](#bind-or-deliberately-change-a-source)后运行 `update`，检查具体的新增、覆盖和删除，再应用用户接受的恢复。检查恢复后的文件、[Git 处理方式](#keep-personal-configuration-out-of-business-git)和本地前提条件。仅恢复时，复制用户接受的原始内容后即结束。生成配置、完整 setup 和保存本地改动各自独立。
+
+启动同步默认关闭。已启用启动同步、绑定有效且有匹配同步记录的工作副本，可以刷新仓库后运行只读的 `reconcile`。只有 `source-updated` 能证明改动仅来自配置仓库时，才可使用本次检查的确切指纹直接应用。旧同步记录若缺少先前的清单，便无法证明这一点。结果为 `in-sync` 时，按需记录一致状态。只有本地有改动时，请用户选择保存或暂缓。启用状态无效时应报告。如果刷新失败或仍待用户选择，暂缓应用。
+
+### 按用户选择处理整次同步 <a id="apply-the-users-whole-synchronization-choice"></a>
+
+展示具体差异，包括二进制文件的差异。让用户选择保存已审阅的本地改动、应用已审阅的备份，或保留当前文件和同步记录。日常保存按[备份验证过的本地改动](#back-up-verified-local-changes)操作。应用有差异的备份时，使用本次检查的确切指纹。如果实际影响与此前审阅的内容不同，展示新差异并请用户重新选择。等待选择期间，暂缓受影响的同步，可以继续独立工作。
 
 ```text
 python "<maintain>" apply --target "<target-root>" --accept-existing "<inspect-fingerprint>"
 ```
 
-如果计划改变，或其仅本地变化的证据不再成立，检查新的状态并重新确认处理方式。`source_changes` 的键是确切的仓库相对路径。值是预期的内容摘要，删除时为 `null`。
+### 记录一致状态和启动同步偏好
 
-双方都变或方向不明时，用户显式选择保存本地内容，才允许对该选择涵盖的确切差异文件使用带保护的 `adopt`。取得选择前，审查对来源的覆盖和删除。如果指纹变化导致命令拒绝，重新检查并确认处理方式。执行应用以记录一致状态，然后将 `source_changes` 纳入发布范围。
-
-```text
-python "<maintain>" adopt --target "<target-root>" --accept-existing "<inspect-fingerprint>" --file ".agents/rules/project.md"
-```
-
-进行其他有意采纳时，检查当前来源和目标，确定预期结果，再保存已接受的范围：
-
-```text
-python "<maintain>" adopt --help
-python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --file ".agents/rules"
-python "<maintain>" adopt --target "<target-root>" --all
-```
-
-用可重复的 `--file` 指定确切的路径，或用 `--all` 刷新清单中已声明的文件和目录。使用 `--all` 时，从备份和清单中移除缺失的已声明文件，并保留目录声明。保留未选中的内容和无关的来源工作。发布前验证、应用并检查已接受的结果。
-
-### 备份经过验证的本地改动 <a id="back-up-verified-local-changes"></a>
-
-普通维护保存前先[刷新绑定的配置仓库](#refresh-the-repository-before-using-its-backup)，再执行不带采纳选项的[只读差异判定](#adopt-accepted-target-changes)。如有可靠的早期检查结果，对照 `source_fingerprint` 和 `scope`。离线工作后的首次检查无法证明来源是否变化。所选来源已经变化，或差异判定表明上游有更新、两边均有改动或方向不明时，先确定[整次同步选择](#apply-the-users-whole-synchronization-choice)，再保存。确认只有本地变化时，即使 `reconcile` 返回 `needs-choice`，既有授权仍涵盖它已指定或接受的确切文件，只要这些文件已验证。刷新、范围或必要选择尚未确定时，保留本地结果并暂缓保存。
-
-每次采纳前，检查采纳可能影响的确切来源路径，包括清单。对照已获取的分支，检查已暂存、未暂存、未跟踪的工作和待推送的变更，确定哪些属于本次操作。如果保存会覆盖归属不明或未经接受的待处理来源工作，暂缓保存。无关路径或条目的待处理工作不纳入范围。重新检查后，若发现来源状态变化，先对照原决定和本次操作已接受的写入核对，再沿用保存授权。
-
-保留[所选完整文件](#accept-the-complete-selected-content)经过验证的字节或摘要，并记录已接受删除的文件应当不存在。写入前，按最新检查结果将实际本地文件与这些证据核对。内容变化时，重新执行适用验证或暂缓保存。用 `adopt --file` 只指定已接受的差异文件，向 `--accept-existing` 传入本次检查的 `fingerprint`。该令牌覆盖两边已检查的状态，与条目的 `source_fingerprint` 含义不同。
-
-采纳前，确认预期的清单变更已包含在接受的保存范围内。即使所选范围未变，`adopt` 也可能规范清单格式或调整顺序。删除单独声明的文件会移除其声明，删除已声明目录中的文件则会保留目录声明。声明范围实际变化时需要明确接受。
-
-若要扩大到检查范围外，须明确接受，并另行使用确切路径采纳，因为保护令牌只覆盖报告中的差异文件。检查每个确切的来源目标路径是否存在及其实际内容，即使清单和 Git 状态中没有这些路径。只有相关来源状态和已验证的本地内容能在写入期间保持稳定时才继续。已接受的字节和范围本就一致时，跳过采纳。
-
-以 JSON 保留每次采纳结果，对照预期的文件和清单变更核对 `source_changes` 中的全部路径和摘要。重新检查整个备份范围，无剩余差异时用不带 `--accept-existing` 的 `apply` [记录一致状态](#record-verified-agreement-and-the-startup-preference)。保护检查失败、实际结果与已验证选择不符，或仍有其他差异时，保留本地和已经保存的备份工作，报告阻碍并暂缓发布。
+两侧一致后，`apply` 将本地同步记录写入 `.agents/project-config-sync.json`。如果应用后更新 Git 排除规则失败，分别检查实际文件、同步记录和排除规则。需要设置该工作副本的启动同步偏好时，使用 `--auto-sync on` 或 `--auto-sync off`。如果已同意应用有差异的内容，同时传入差异确认指纹。
 
 ## 仅在需要时生成本地配置 <a id="render-local-configuration-only-when-required"></a>
 
-既有本地同步仍可用于有意修改规范输入。它与整文件备份恢复分开处理，保留原有所有权及冲突保护：
+只需更新自动生成的 `Project rules` 段落时，使用范围较小的命令。`ruleEntry` 决定更新 `AGENTS.md` 还是 `AGENTS.local.md`。本地生成使用已有输入并检查归属，不会执行完整 setup。
 
 ```text
-python "<maintain>" sync-project --help
 python "<maintain>" sync-project --target "<target-root>"
-python "<maintain>" sync-project --target "<target-root>" --check
-```
-
-此路径生成已有发现入口及原生 Agent、MCP 和设置映射，不拉取、不编写蓝图，也不执行完整迁移。检查模式不写入。退出 0 表示一致，退出 1 表示存在差异，退出 2 表示失败。两种本地模式在编辑项目规范输入后直接使用此路径。
-
-schema 的 `ruleEntry` 选择 `AGENTS.md`（默认）或 `AGENTS.local.md` 作为生成 `Project rules` 章节的入口。两种本地同步路径管理所选文件中的该章节，保留其余字节和未选择的入口。修改选择不会移动或删除现有章节，也不会删除原入口。
-
-仅需更新该生成章节时，使用不要求完整初始化所有权的更窄路径：
-
-```text
 python "<maintain>" sync-project-rules --target "<target-root>"
-python "<maintain>" sync-project-rules --target "<target-root>" --check
 ```
 
-仓库模式下，两条命令都要求备份可读，且整个备份范围已与本地一致，`--check` 也一样。编辑已备份的文件可能因此阻碍必要的生成或验证。可以使用其他受支持且已获授权的本地检查，只要它能完成所需验证。必要的生成或验证仍无法完成时，保留本地改动，报告阻碍并暂缓采纳。生成改变了选中的已备份文件时，验证并采纳这些输出，再重新核对一致状态后发布。
-
-遵守前提和所有权失败。维护不自动调用完整初始化，也不通过其他工作流或回调间接调用。保留已保存的来源和目标工作，报告未满足前提；用户完成所属初始化工作流后，重新检查当前状态。
+在仓库模式下，两条命令都要求备份可读且与本地一致，只读的 `--check` 也一样。如果本地修改导致无法执行必要的生成或验证，仅在其他受支持的本地检查足以验证结果时才改用该检查。否则保留改动并暂缓备份。如果生成过程改动了选入备份的文件，先验证这些输出再保存。另行报告尚未满足的 setup 或迁移条件。
 
 ## 将个人配置排除在业务 Git 之外 <a id="keep-personal-configuration-out-of-business-git"></a>
 
-仅本机和仓库模式为配置范围、本地同步状态和已知生成输出维护目标本地的 Git 排除。仅本机模式还将所选 Rule 入口纳入这些排除。维护命令在绑定、应用和有意执行本地同步后管理排除。排除规则放在目标 worktree 的 Git `info/exclude` 中，由 Git 解析，并在业务仓库内正确锚定，包括 monorepo 内嵌项目。保留共享 `.gitignore` 和无关排除规则。
-
-排除仅影响未跟踪路径。保留并报告业务 Git 已跟踪的配置；选择个人模式不授权自动取消跟踪或改写历史。没有 Git worktree 时报告不适用。切换到项目共享仅移除经过验证、由 SmartKit 管理的当前目标规则块；保留并报告其他匹配排除。即使配置已保存，排除更新失败仍意味着模式落实未完成。
-
-检查有关目标相对路径，不根据空的已跟踪路径报告推断排除情况：
+个人模式使用目标项目限定范围的 Git `info/exclude` 规则。切换到项目共享模式时，只移除该目标由工具管理的规则区块。保留共享忽略文件和已经跟踪的配置。即使暂缓同步，也要检查相关路径，报告已经跟踪的文件和缺失的排除规则。绑定、应用和配置生成会维护这些规则。检查操作和 `--check` 都不会修复排除规则。
 
 ```text
 git -C "<target-root>" --literal-pathspecs ls-files -- "<configuration-path>"
 git -C "<target-root>" check-ignore -v -- "<configuration-path>"
 ```
 
-第一条命令报告已跟踪路径；第二条指出未跟踪路径所匹配的忽略规则，退出 1 表示无匹配。检查和 `--check` 不修复 Git 状态。
-
 ## 使用项目绑定维护 OpenWiki
 
-OpenWiki 继承所选项目的现有绑定。通过 `--target` 传入该项目，命令会找到 Wiki 文件所在的 Git 根目录。拥有独立绑定的 Git 根目录负责自己的 Wiki。有所有权冲突时，按该绑定处理。在仓库模式下，内嵌项目的 Wiki 备份存放在 `projects/<entry>/wiki/`，同步记录存放在 Git 根目录的 `.agents/openwiki-config-sync.json`。如果项目就在 Git 根目录，准备阶段使用普通项目快照。
+将已绑定的项目作为 `--target`。命令会找到其 Git 根目录，并遵循该处已有的独立绑定。嵌套项目在 `projects/<entry>/wiki/` 下保存仓库备份，并在 Git 根目录使用独立的同步记录。准备前，确认授权覆盖对 Git 根目录的写入。已有 Wiki 任务正在进行时，先恢复该任务，再准备或保存备份。
 
-新运行开始前，确认 Git 根目录的写入已获授权。仓库模式下，使用该绑定仍有效的刷新证据，或执行普通的 `update` 命令，然后准备 Wiki。`ready` 表示继承的 Git 处理方式已落实，并报告已应用的备份改动和已跟踪路径。结果为 `needs-choice` 时，按[整次同步选择](#apply-the-users-whole-synchronization-choice)处理。如果用户接受恢复，传入精确指纹。准备或保存 Wiki 备份前，先在所属工作树中续跑仍在进行的 Wiki 任务。
+仓库模式下，准备新一轮运行前先刷新仓库。结果为 `needs-choice` 时，按配置同步的方式处理。若用户已同意恢复有差异的内容，传入确切指纹。仓库模式下，验证已完成的 Wiki，审阅保存计划中的 `openwiki/`、`.openwikiignore`，以及明确选中的 Git 根目录 `AGENTS.md` 或 `CLAUDE.md`。保存时沿用相同的选择和已审阅的计划指纹。如果中断，将已保存内容与原计划核对，必要时通过 `wiki prepare` 记录一致状态。仅发布本次操作已验证的范围。
 
 ```text
 python "<maintain>" wiki prepare --target "<target-root>"
 python "<maintain>" wiki prepare --target "<target-root>" --accept-existing "<inspect-fingerprint>"
-```
-
-各模式下均由 Wiki 所有者验证完成结果。仓库模式下，`wiki save` 会为整个 `openwiki/` 目录和存在的 `.openwikiignore` 制定备份计划。如果 Git 根目录的 `AGENTS.md` 或现有 `CLAUDE.md` 发生改动且已接受整文件备份，对每个选中的文件添加一次 `--file`。审查确切选择及其内容，保留计划 JSON，再使用 `--accept-plan` 执行同一选择。保存命令会验证一致性并写入同步记录。
-
-```text
-python "<maintain>" wiki save --target "<target-root>" > "<wiki-save-plan.json>"
+python "<maintain>" wiki save --target "<target-root>" > "<wiki-plan.json>"
 python "<maintain>" wiki save --target "<target-root>" --accept-plan "<plan-fingerprint>"
+python "<maintain>" wiki publish --target "<target-root>" --plan "<wiki-plan.json>" --message "Back up OpenWiki"
 ```
 
-如果备份已写入但保存流程中断，按保留的计划核验已保存的来源。需要记录一致状态时，使用 `wiki prepare`，然后按原先接受的范围恢复发布。即使新计划为空，此前已确认归属本次操作的来源改动或保留提交仍待处理。对已确定的范围遵循[发布约定](#publish-an-exact-verified-scope)。
+## 按已验证的确切范围发布 <a id="publish-an-exact-verified-scope"></a>
+
+除非用户要求仅保存在本地，获准保存到配置仓库就包括按确切范围提交并正常推送。完成必要检查、确认两侧一致且满足[仓库访问条件](#bind-or-deliberately-change-a-source)后，用 `--plan` 传入已认可的采纳结果 JSON，或用 `--path` 逐个指定已认可的仓库相对路径。适用时将本次操作的导入、清单改动和删除一并纳入。没有新增改动时，可能没有内容需要发布。提交应排除无关的 Git 工作。命令会核验计划中的内容摘要、确切范围、两侧是否一致及远端结果。如果钩子修改了内容，重试前重新验证。
 
 ```text
-python "<maintain>" wiki publish --target "<target-root>" --plan "<wiki-save-plan.json>" --message "Back up OpenWiki"
-```
-
-## 发布经过验证的精确范围 <a id="publish-an-exact-verified-scope"></a>
-
-仓库模式下，已授权的配置写入操作在所需本地工作成功后包含一次精确范围提交和普通推送。除非用户要求本地结果或禁止发布，否则无需再单独确认发布。此默认不授权检查、普通业务项目编辑、其他条目或任何仅恢复操作的发布，无论恢复是手动还是自动；也不授权发版、强推或改写历史。两种本地模式均不向配置仓库发布。
-
-发布前确定本次操作已接受的来源变更和待推送提交，包括已接受的初始导入，以及归属经过验证、由本次操作保留的工作。尚无提交的分支也可能有新来源文件待发布。收集精确仓库相对文件，包括清单变化和删除；整个目录、无关暂存项和未经接受的已有内容不属于提交范围。操作既不拥有待处理来源变更，也没有保留的已验证提交时，无需创建空提交或发布更早的工作。
-
-已接受的采纳结果涵盖完整发布范围时，通过 `--plan` 传入其 JSON。命令会验证每个路径及其内容摘要。如果发布范围由调用方另行汇总，对每个已接受的文件使用一次 `--path`。`publish` 和 `wiki publish` 都支持这两种方式。
-
-适用检查通过、来源和目标一致，并满足[仓库访问前置条件](#bind-or-deliberately-change-a-source)后发布。普通维护先验证本地改动，再保存并记录一致状态。其他调用方在发布前满足各自的应用和生成前置条件。用户明确要求只保留本地结果时，保留已接受的来源工作并报告暂缓发布。
-
-```text
-python "<maintain>" publish --help
-python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"
 python "<maintain>" publish --target "<target-root>" --plan "<adoption-result.json>" --message "Update project configuration"
-```
-
-提交 hook 正常执行。重新验证 hook 改变的内容，将其恢复到目标，并在发布前重复相关检查。发布被拒绝时保留提交和诊断。在本次已接受的范围内处理路径不明确、待推送范围未验证或存在额外待推送提交的情况。
-
-### 恢复失败或结果不确定的发布
-
-推送失败或结果不确定时，可能仍有有效本地提交和已应用目标。重试保留的已验证提交前，先检查实际本地和远端结果：
-
-```text
+python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"
 python "<maintain>" publish --target "<target-root>" --commit "<verified-commit>"
 ```
 
-确认来源和已应用证据仍然一致。根据操作使用 `publish` 或 `wiki publish`，已有接受的计划证据时复用 `--plan`。远端推进或分叉时保留本地提交，解决分支状态后再受保护地重试。验证预期提交可从选定远端分支到达。
-
-### 报告已确认的结果
-
-分别报告来源编辑和验证、目标应用、任何有意执行的生成、排除与已跟踪配置、未满足前提和远端发布。仓库模式完成要求本地工作成功，并验证预期范围已发布；显式要求本地结果，或没有本次操作拥有的来源变化／提交需要发布时例外。推送失败保留已保存来源、保留提交、已应用目标和已完成的本地工作。报告本地成功及远端同步未完成。更广泛的完成结果由调用方负责。
+如果发布失败，检查返回的状态，并保留已经创建的提交。确认源、目标和远端状态都支持重试后，重试已核实的那次提交。若有已认可的计划，继续携带 `--plan`。Wiki 范围使用 `wiki publish`。报告本地修改、备份、同步记录和发布各自的实际结果。

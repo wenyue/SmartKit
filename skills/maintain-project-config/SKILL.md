@@ -6,34 +6,13 @@ disable-model-invocation: true
 
 # Maintain Project Config
 
-Maintain Agent configuration in the business project. Verify it there before saving selected complete files to a configuration repository.
+Edit and verify the configuration in the business project. In repository mode, back up the verified files and push them to the selected configuration repository.
 
-Resolve this directory from the loaded plugin as `<skill-root>`, the business project as `<target-root>`, and `<skill-root>/scripts/maintain.py` as `<maintain>`. Use the linked sections of [Project Configuration Maintenance](references/maintenance.md) for the operation you select. Report an unavailable command or required resource and leave dependent work pending.
+Resolve `<target-root>` to the business project and `<maintain>` to `skills/maintain-project-config/scripts/maintain.py` in the loaded plugin. Use the linked parts of [Project Configuration Maintenance](references/maintenance.md) for the operation at hand.
 
-## 1. Establish the operation
+1. **Work locally.** If initializing over existing configuration, obtain the [replacement decision](references/maintenance.md#choose-the-maintenance-mode) before editing. Use the project's own evidence and checks. For a Rule or Skill, use the actual project files as the Candidate for [Write Rules and Skills](../write-rules-and-skills/SKILL.md). Run [local rendering](references/maintenance.md#render-local-configuration-only-when-required) when needed. If a backup or conflict blocks synchronization, continue any independent local work already in scope.
+2. **Save in the selected mode.** Reuse the project's binding or present all three [maintenance modes](references/maintenance.md#choose-the-maintenance-mode) before binding. In either local mode, finish in the project. In repository mode, [save and push the verified changes](references/maintenance.md#back-up-verified-local-changes) or [import a new entry](references/maintenance.md#import-verified-files-into-a-new-entry). If a required check or the save fails, keep the local work and report where it stopped.
 
-```text
-python "<maintain>" inspect --target "<target-root>"
-```
+Check [Git treatment](references/maintenance.md#keep-personal-configuration-out-of-business-git) even when a save is deferred. Report the changed files, validation, outstanding prerequisites and actual backup or push result.
 
-This inspection reads the maintenance mode, binding, available scope and differences without fetching or writing. Preserve staged, unstaged, untracked and unpublished work in both checkouts. An inspection-only request ends with the findings and any unavailable evidence.
-
-For explicit restoration, follow the [source selection and restoration route](references/maintenance.md#restore-explicitly-or-synchronize-at-startup) and end with its result. Restoring a backup and saving local edits require separate authority.
-
-For an unbound project, present all three [maintenance modes](references/maintenance.md#choose-the-maintenance-mode) and obtain the user's choice before [binding](references/maintenance.md#bind-or-deliberately-change-a-source). Reuse a valid binding for later maintenance. If initializing over existing configuration, compare the actual contents, propose the concrete replacements and obtain the user's decision. An initial repository import belongs after local verification.
-
-## 2. Edit and verify the project
-
-Use the business project's evidence to choose what to change and how to verify it. Work on its actual configuration files. For a Rule or Skill, use those files as the Candidate for [Write Rules and Skills](../write-rules-and-skills/SKILL.md), with qualified project evidence.
-
-When the backup is inaccessible or a synchronization choice is pending, continue authorized local work in known scope that can be done independently. Complete the applicable checks on the actual result, including any [required rendering](references/maintenance.md#render-local-configuration-only-when-required). If a required check or render is blocked, retain the local work and report the missing verification before any backup.
-
-Check [Git treatment](references/maintenance.md#keep-personal-configuration-out-of-business-git) for the local result, even when the backup is deferred. Report tracked configuration and any outstanding exclusions, setup or migration prerequisites. In either local mode, finish with the verified local result.
-
-## 3. Back up the verified selection
-
-For an authorized repository save, follow the [initial import route](references/maintenance.md#import-verified-files-into-a-new-entry) for a new entry or [back up verified changes](references/maintenance.md#back-up-verified-local-changes) for an existing binding, including one just connected to an existing entry. Once agreement is recorded, verify Git treatment for the resulting scope and follow [exact-scope publication](references/maintenance.md#publish-an-exact-verified-scope).
-
-## Report the result
-
-Report the mode, source, accepted and preserved paths, checks performed and configuration files already tracked by business Git. Include the exact commit and verified publication outcome when applicable. If a later step is blocked, preserve completed work and distinguish the local result, saved backup, agreement receipt and any retained commit or pending publication.
+For an inspection-only request, stop after [inspection](references/maintenance.md#choose-the-maintenance-mode). For explicit restoration, use the [restore route](references/maintenance.md#restore-explicitly-or-synchronize-at-startup).

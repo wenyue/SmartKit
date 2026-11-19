@@ -1,286 +1,128 @@
 # Project Configuration Maintenance
 
-This reference owns the shared maintenance contract and command interface for callers that manage project configuration. Resolve `<plugin-root>` from the loaded Skill installation, `<target-root>` as the business project, and `<plugin-root>/skills/maintain-project-config/scripts/maintain.py` as `<maintain>`. Resources must come from the same supported plugin distribution; an unavailable command or required resource leaves dependent work incomplete. Reading this reference and using its supported commands does not invoke the user-only maintenance Skill.
-
-```text
-python "<maintain>" --help
-```
-
-Command help owns arguments and output details. The project schema at `<plugin-root>/setup-assets/catalog/project-config.schema.json` owns supported project declarations. The caller establishes its requested operation and prerequisites. Maintenance owns bindings, snapshots, application, deliberate local synchronization and configuration-repository publication. A restored snapshot does not establish successful setup of a fresh checkout.
+This reference and its commands serve maintenance, setup, startup synchronization and OpenWiki. Resolve `<maintain>` to `skills/maintain-project-config/scripts/maintain.py` in the loaded plugin and `<target-root>` to the business project. Use `python "<maintain>" --help` for command options and `setup-assets/catalog/project-config.schema.json` from that plugin for project declarations. Report unavailable resources and leave dependent work incomplete.
 
 ## Choose the maintenance mode
-
-The target's `.agents/config.json` records its mode and, in repository mode, the repository, branch and project entry. Present these three choices together in the user's language:
-
-| User-facing mode | Stored mode | Configuration and Git treatment |
-| --- | --- | --- |
-| Project shared | `local` | Canonical inputs stay in the business project for sharing through its Git repository. SmartKit adds no personal configuration exclusions. |
-| This machine only | `local-only` | Canonical inputs stay in the business project and configuration paths are excluded from business Git locally. No configuration-repository access is required. |
-| Separate configuration repository | `repository` | A personal private GitHub repository stores the selected complete configuration backup; target configuration paths are excluded from business Git locally. |
-
-Existing `local` bindings retain project-shared meaning. A missing choice is readable legacy state and requires the user's selection before binding. Both local modes retain existing authoring and rendering behavior; selecting project-shared mode does not stage, commit or push business-project files. A binding contains no machine-specific checkout path.
 
 ```text
 python "<maintain>" inspect --target "<target-root>"
 ```
 
-Inspection reads available binding, source, target and synchronization state without fetching, repairing exclusions or writing configuration. Report unavailable evidence instead of assuming a complete backup. Repository mode uses a persistent user-owned checkout and the entry `projects/<entry>/`; this checkout may contain the only copy of unpublished work and is not a disposable cache. Entries have independent scope.
+Inspection is read-only and works with locally available evidence. For an unbound project, present the three modes together in the user's language. Reuse a valid binding, and obtain the user's decision before replacing existing configuration during initialization.
 
-## Back up complete files and directories
-
-An entry has `manifest.json` and `files/`. Its manifest declares exact target-relative files in `files` and recursive directory roots in `directories`:
-
-```json
-{
-  "files": [".agents/config.json", ".cursor/mcp.json", ".codex/config.toml"],
-  "directories": [".agents/rules", ".agents/skills"]
-}
-```
-
-Only `files` and `directories` are supported manifest fields. Versioned manifests are unsupported; report the format error and preserve the source rather than converting it.
-
-The snapshot under `files/` preserves selected files byte for byte and selected directories recursively. Selecting `AGENTS.local.md` through `ruleEntry` does not by itself add that local file to an existing manifest; explicitly select it through the accepted backup-scope route when it needs restoration. Native MCP and settings files, project instructions and selected generated files can be backed up in full. Backup neither splits fields nor uses `smartkit.lock.json` to decide which bytes to copy. The lock and existing setup mechanisms retain their separate behavior; restoring a full-file snapshot requires no MCP regeneration. An explicit scope may include the lock as an ordinary complete file; defaults omit it and runtime state.
-
-### Accept the complete selected content
-
-Select the paths needed to restore the user's configuration. Review their full content before accepting the scope: selected files can contain credentials and machine paths, and backup performs no secret filtering. Keep credential values in their existing credential facilities and target-local synchronization state outside the backup.
-
-When selected, `.agents/config.json` is copied in full, including binding and `setupVersion`. A copied setup marker does not prove that this checkout completed setup. Its repository binding must match the selected source; resolve a mismatch rather than silently rewriting snapshot bytes.
-
-Snapshots support regular files and directories. Symlinks and paths rejected by command validation require resolution before proceeding. Report unavailable source content rather than treating it as an empty backup.
-
-Repeated `--file` arguments to binding and adoption accept files or directories. When creating an entry without explicit selections, the command selects existing default project configuration paths and directories; inspect that actual scope and the complete selected content before publication. The command help and inspection report provide the current selection. Defaults include project entry files, `.agents/config.json`, native MCP/settings files and project Rule, Skill and Agent directories; a default list is a starting scope, not evidence that every project-specific configuration is covered.
+| Mode | Stored value | Where configuration stays |
+| --- | --- | --- |
+| Project shared | `local` | In the project for sharing through business Git. |
+| This machine only | `local-only` | In the project with local Git exclusions. |
+| Separate configuration repository | `repository` | In the project with local exclusions, backed up in a personal private GitHub repository. |
 
 ## Bind or deliberately change a source
 
-Repository binding, refresh and publication use Git and the GitHub CLI (`gh`) authenticated as the owning personal account on the repository's github.com or GitHub Enterprise hostname. Binding and publication verify personal ownership and privacy. Refresh verifies the bound checkout and Git access to the selected branch. If current ownership or privacy is uncertain, verify it separately through authenticated GitHub metadata. Missing tools or access stops repository-dependent work while preserving existing state. Credentials stay in the user's credential facilities.
-
 ```text
-python "<maintain>" bind --help
 python "<maintain>" bind --target "<target-root>" --mode local
 python "<maintain>" bind --target "<target-root>" --mode local-only
 python "<maintain>" bind --target "<target-root>" --mode repository --repository "<repository>" --branch "<branch>" --entry "<entry>"
 ```
 
-Local modes accept no repository arguments or import selections. For repository mode, establish the user's personal private repository, branch and project entry; a remote default branch is a possible choice, not a value to assume. Creating a repository requires the user's specified identity and name and explicit `--create-repository`. Use `owner/repository` for github.com or a credential-free HTTPS GitHub Enterprise URL such as `https://github.example/owner/repository.git`. The hostname selects authentication and separates persistent checkouts of same-named repositories on different hosts.
+Repository operations use Git and `gh` authenticated as the owning personal account on the matching GitHub or GitHub Enterprise host. Confirm the repository, branch and entry. Use `owner/repository` for github.com or a credential-free HTTPS URL for the selected host. Use `--create-repository` only with explicit permission to create the named repository. `bind` and `publish` verify ownership and privacy. A successful `update` verifies the checkout and fetch, so check ownership or privacy separately if uncertain.
 
-Before binding, establish whether the selected entry exists or the user has authorized a new import. For an existing entry, use current authenticated read-only repository evidence and verify `projects/<entry>/manifest.json` in the state `bind` will use after refresh. For a fresh clone, check the selected remote branch. A reused persistent checkout can supply an accepted unpublished entry if refresh will preserve it. Defer binding if the entry is absent or its presence cannot be verified, since `bind` can initialize an absent entry from local files. Connect an existing entry without import selections. Use the [verified-local-changes route](#back-up-verified-local-changes) for subsequent routine saves.
+Before connecting an existing entry, verify its `projects/<entry>/manifest.json` in the state `bind` will use after refresh. Check the selected remote branch for a fresh clone, or the preserved entry in the existing checkout, which may contain accepted unpublished work. A missing or unverified entry blocks connection because `bind` can import local files into a new entry. Use `--replace-binding` only for an accepted switch. Resolve outstanding differences first, including a nested project's owned Git-root Wiki, and preserve existing work and entries.
 
-For a new entry, inspect existing target content and accept the complete backup scope before binding. A successful binding records the maintenance choice in the target, and an initial full-file backup of `.agents/config.json` includes the resulting bound document. If binding fails after saving source content, preserve and report that source work separately from the target outcome. For example, select complete MCP configuration and project Rules with `--file ".cursor/mcp.json" --file ".agents/rules"`.
+## Back up complete files and directories
 
-Use `--replace-binding` only for a deliberate mode or source switch. Inspect the old source, target and proposed source, preserve unpublished work, and establish the intended content before retrying a refused switch. A routine upgrade retains the binding. Switching neither deletes the old source nor authorizes discarding pending work; the binding command owns retirement of obsolete local synchronization state.
-
-For a nested project that owns the Git-root Wiki, a deliberate switch verifies agreement with the old Wiki backup before retiring its matching receipt. It preserves Wiki files and both source entries. A switch to project-shared mode clears the project's own root Wiki exclusions. Subsequent Wiki maintenance uses the new binding.
+Each entry's `manifest.json` selects target-relative `files` and recursive `directories` under `files/`. Review complete contents, including credentials and machine paths. Keep secrets in credential facilities and synchronization receipts out of the backup. Selected native settings, MCP files and `.agents/config.json` are copied in full. The configuration lock does not choose the scope, and `ruleEntry` alone does not add files to it. A copied setup marker does not prove local setup or readiness. Preserve and report unreadable or unsupported state, including versioned manifests and receipts.
 
 ### Import verified files into a new entry
 
-In routine maintenance, establish the [binding prerequisites](#bind-or-deliberately-change-a-source) and verify the [complete selected contents](#accept-the-complete-selected-content) in the project before `bind` imports them. Include the intended binding in verification of any selected `.agents/config.json`. After `bind`, verify the actual bound document, acceptance of the scope and the saved bytes. Retain the exact repository-relative paths and digests of the import, including `manifest.json`, for publication with repeated `--path`. Binding refreshes or clones the checkout; reuse that evidence while it remains current and preserve the accepted pending import.
+For ordinary maintenance, verify the [complete selected contents](#back-up-complete-files-and-directories) before the initial [`bind`](#bind-or-deliberately-change-a-source). Select exact files or directories with repeated `--file`, or review the actual default selections. Where selected, `.agents/config.json` in the backup includes the resulting binding. Verify the bound result and retain the exact imported files and manifest for [publication](#publish-an-exact-verified-scope) with `--path`. Use `apply` without a difference token to record agreement once the files match. A binding failure can leave saved source work. Report it separately from the business project's result.
 
-Inspect the complete scope and [record agreement](#record-verified-agreement-and-the-startup-preference) with `apply` without a difference-acceptance token when the files already agree. If they differ, preserve the source and target and resolve the difference before proceeding. A result with no further files to adopt still carries the initial import's exact publication scope.
+## Back up verified local changes
 
-## Restore explicitly or synchronize at startup
-
-For an explicit restoration, reuse an existing repository binding only when a matching local receipt records successful restoration in this checkout. Otherwise ask the user for the configuration-repository Git address, branch and existing project entry. A copied binding without a successful local receipt requires this selection too. Infer no source from business remotes, known repositories or other local checkouts. Follow the [existing-entry check](#bind-or-deliberately-change-a-source) before binding an unverified source. Inspect concrete target differences and obtain the user's choice before every differing application through the route below.
-
-Restore-only operations use binding, [refresh](#refresh-the-repository-before-using-its-backup), [inspection and application](#apply-the-authoritative-backup) to restore the selected backup's exact bytes, then check local prerequisites and [Git treatment](#keep-personal-configuration-out-of-business-git). They author no source, generate no configuration, invoke no full setup and publish no source changes. Report missing local tools, credentials or services separately from restored content; their absence does not authorize rewriting the snapshot.
-
-Automatic startup synchronization is an explicit local preference, defaulting to off. The session-start hook supplies synchronization guidance only for a bound repository checkout with a matching successful receipt and automatic synchronization enabled. Update the backup, run `reconcile` without `--adopt-local`, and follow the [reconciliation outcomes](#adopt-accepted-target-changes). Startup may restore a proven repository-only update without another question. Saving local changes requires the user's acceptance of that upload; automatic synchronization alone grants no upload authority. An unbound or disabled checkout stays silent. Report invalid enabled bindings or receipts. Explicit manual restoration remains available while automatic synchronization is off. Other readiness findings retain their own consent and setup requirements.
-
-## Refresh the repository before using its backup
-
-Establish the [repository access prerequisites](#bind-or-deliberately-change-a-source) before refreshing the backup.
+With the [repository access prerequisites](#bind-or-deliberately-change-a-source) met, refresh the configuration repository and check which side changed. Stop the backup if refresh fails. Full setup follows its own source-authoring route. Keep provenance for accepted source work already produced in the operation.
 
 ```text
 python "<maintain>" update --target "<target-root>"
+python "<maintain>" reconcile --target "<target-root>"
 ```
 
-`update` verifies the persistent checkout's repository and branch identity, then fetches and safely fast-forwards supported states. Preserve existing staged, unstaged, untracked and unpublished work before updating. Dirty, divergent or unfinished states may be refused; resolve the reported condition without reset, automatic stash, force push or history rewrite. If authentication, fetching or update fails, preserve existing state and defer backup-dependent work, including restoration and export. Authorized local work that can be completed independently may continue.
+`reconcile` compares both sides to the last agreement. Compare the entry's `source_fingerprint` and `scope` with any reliable earlier observation. When `local_updates_only` is true and no earlier evidence contradicts it, save the verified files already authorized by the task. If the entry changed upstream or the direction is unknown, review both sides and obtain the [synchronization choice](#apply-the-users-whole-synchronization-choice).
 
-Full setup retains its own source-authoring route after refresh. Initial import, setup and adoption can leave accepted source changes in the same operation. Retain their provenance through validation, application and publication without requiring another clean-checkout update between those steps.
-
-## Apply the authoritative backup
+Use the current inspection `fingerprint` to guard the exact selected differing files. Check that the [complete contents](#back-up-complete-files-and-directories) still match what was verified. Check staged, unstaged, untracked and outgoing changes on affected backup paths and the manifest. Defer any save that would overwrite pending work outside the task. Accept any actual scope change, including deletions that remove manifest declarations. Adoption can rewrite the manifest without changing its selection. A path outside the inspection needs an accepted expansion, with stable, reviewed local contents and source destination before exact-path adoption without the guard.
 
 ```text
-python "<maintain>" apply --help
-python "<maintain>" inspect --target "<target-root>"
+python "<maintain>" adopt --target "<target-root>" --accept-existing "<inspect-fingerprint>" --file ".agents/rules/project.md" > "<adoption-result.json>"
 python "<maintain>" apply --target "<target-root>"
 ```
 
-In repository mode, validate the accepted source and inspect its target effects. A differing application requires the user's whole-synchronization choice, except for a proven repository-only update during enabled startup synchronization. Show the changed paths and content differences, including additions, deletions, and binary differences, before asking for a choice. For authorized setup or maintenance that keeps newer local configuration, [resolve and adopt](#adopt-accepted-target-changes) accepted local updates before application. Defer the entire application while a choice is pending. Independent authorized work can continue, so reinspect both sides before proceeding with synchronization.
+The first command saves selected files to the backup. The second records agreement without accepting any differences. Keep the adoption result and use [exact-scope publication](#publish-an-exact-verified-scope). If the requested files and scope are already backed up, skip adoption and record agreement when needed. If differences remain, keep both sides and resolve them before publishing.
 
-### Apply the user's whole-synchronization choice
-
-**Save local to the configuration repository** accepts the reviewed local content and backup scope, including any overwrites or deletions of source files. In routine maintenance, follow the [verified-local-changes route](#back-up-verified-local-changes). Other callers follow their applicable adoption route, validate the accepted result and apply to record agreement. Acceptance includes publication of the exact verified scope, with one scoped commit and normal push unless the user requests a local result or forbids publication.
-
-**Keep local for now** skips this synchronization, preserving target contents and the prior synchronization receipt. Report the skipped synchronization and remaining differences. Independent work may continue; work requiring source/target convergence stays pending. This choice neither adopts local content nor publishes it to the configuration repository. Later synchronization still checks the differences.
-
-**Use the configuration repository** applies the complete reviewed restoration, passing `--accept-existing <inspect-fingerprint>` for the exact inspected state. If either side changes after inspection, inspect again, show the new differences, and obtain a new choice; a stale token is refused. No saved per-file history or three-way conflict resolution is involved. When source and target already agree, application needs no difference-acceptance token.
-
-### Record verified agreement and the startup preference
-
-Repository mode records successful agreement in the target-local `.agents/project-config-sync.json` with `binding`, `source`, `sourceFingerprint`, `sourceManifest`, `appliedPaths` and `automatic`, without a format version. The source fingerprint covers the selected entry's scope and actual snapshot contents, including accepted unpublished edits, rather than the entire repository commit. `sourceManifest` records that scope so reconciliation can verify the complete local baseline after the repository changes. Existing receipts without it remain readable, but cannot prove that only the repository changed; the next successful application records the scope. Changes to another project do not invalidate this receipt. Versioned receipts are unsupported; report the format error and preserve the state rather than migrating it.
-
-When selected files already agree, application can record the receipt without rewriting them. `appliedPaths` supports proposing deletion of formerly applied files that the backup has removed. The Git exclusion update follows application and can fail after the receipt advances. After a failure, inspect and report the actual content, receipt and exclusion outcomes.
-
-Set the checkout's subsequent startup preference explicitly through the supported application route, obtaining difference acceptance as above when needed:
+When a caller is authorized to save **all** proven local-only changes, it can use the reviewed plan route. Review its full file selection before applying the plan. An explicit `adopt --all` refreshes the entire declared scope and removes missing file declarations. Use it only when that whole refresh is authorized.
 
 ```text
-python "<maintain>" apply --target "<target-root>" --auto-sync on
-python "<maintain>" apply --target "<target-root>" --auto-sync off
-```
-
-Restoration copies the selected snapshot and verifies agreement; it does not render native outputs or establish full setup success. Keep separately required initialization or migration visible, and wait for the user to explicitly invoke its owning Skill. Preserve saved progress and report source, target and receipt outcomes separately when an operation fails.
-
-## Adopt accepted target changes
-
-After updating, use `reconcile` to classify differences against the last successful local receipt. A repository-only update requires the complete local contents to match the recorded baseline scope, with no differing local content overwritten by newly selected source paths. A changed repository fingerprint alone does not establish that the local configuration is behind. Local-only changes mean the repository snapshot still matches the receipt; additions, edits and deletions all count. When both sides changed or the baseline cannot establish the direction, obtain the user's choice even if the repository appears to contain the local changes.
-
-For local-only changes at startup, show the differences and ask whether to save them to the configuration repository or keep local for now. A caller authorized to save the complete set of proven local-only differences can pass `--adopt-local` to plan it. Review the plan's scope and complete selected content under the backup-scope contract. Retain the accepted `planned` JSON in private task state, then execute with its `plan_fingerprint` through `--accept-plan`.
-
-```text
-python "<maintain>" reconcile --target "<target-root>"
 python "<maintain>" reconcile --target "<target-root>" --adopt-local
 python "<maintain>" reconcile --target "<target-root>" --adopt-local --accept-plan "<plan-fingerprint>"
 ```
 
-| Result | Next action |
-| --- | --- |
-| `in-sync` | Apply the agreed snapshot when this operation needs to record agreement. |
-| `source-updated` | At enabled startup, apply with the exact inspection fingerprint without another question. An explicit manual restoration still requires the user's difference choice. |
-| `adopted` | Apply to record agreement. Retain `source_changes` for authorized publication. |
-| `planned` | Review the exact save and retain its JSON before executing it. |
-| `needs-choice` | For `local_updates_only`, obtain any missing authority to save the selected local changes. At startup, ask whether to save or keep local for now. For other differences, show them and offer the whole-synchronization choices: save local, use the repository, or keep local for now. |
+## Restore explicitly or synchronize at startup
 
-For a proven repository-only update at enabled startup, the recorded preference accepts the direction; bind application to the exact inspected contents:
+For explicit restoration, reuse the binding only with a matching successful local receipt. Otherwise obtain the chosen repository, branch and existing entry, and verify it before [binding](#bind-or-deliberately-change-a-source). Meet the [repository access prerequisites](#bind-or-deliberately-change-a-source), run `update`, then inspect concrete additions, overwrites and deletions before an accepted application. Check the restored files, [Git treatment](#keep-personal-configuration-out-of-business-git) and local prerequisites. Restore-only work copies the accepted bytes and ends there. Rendering, full setup and saving local changes are separate operations.
+
+Startup synchronization is off by default. An enabled checkout with a valid binding and matching receipt can refresh and run read-only `reconcile`. Apply `source-updated` without a fresh choice only when it proves repository-only changes, using the exact inspection fingerprint. A legacy receipt without the earlier manifest cannot prove that direction. For `in-sync`, apply when agreement needs recording. For local-only differences, ask whether to save or defer. Report invalid enabled state, and defer application when refresh fails or a choice is pending.
+
+### Apply the user's whole-synchronization choice
+
+Show the exact differences, including binary differences. Offer to save reviewed local changes, apply the reviewed backup, or leave files and receipt in place. A routine local save uses the [verified local change route](#back-up-verified-local-changes). Applying a differing backup uses the exact inspection fingerprint. If the reviewed effects change, show the new differences and obtain a fresh choice. A pending choice holds the affected synchronization while independent work can continue.
 
 ```text
 python "<maintain>" apply --target "<target-root>" --accept-existing "<inspect-fingerprint>"
 ```
 
-If the plan changes or its local-only evidence no longer holds, inspect the new state and reestablish the decision. The `source_changes` keys are exact repository-relative paths. Each value is the intended content digest, or `null` for a deletion.
+### Record verified agreement and the startup preference
 
-When both sides changed or the direction is unknown, an explicit choice to save local content permits guarded `adopt` for the exact differing files covered by that choice. Review source overwrites and deletions before obtaining it. If the guard refuses a changed fingerprint, inspect again and reestablish the decision. Apply to record agreement, then carry `source_changes` into publication.
-
-```text
-python "<maintain>" adopt --target "<target-root>" --accept-existing "<inspect-fingerprint>" --file ".agents/rules/project.md"
-```
-
-For other deliberate adoption, inspect current source and target and resolve the intended result before saving the accepted scope:
-
-```text
-python "<maintain>" adopt --help
-python "<maintain>" adopt --target "<target-root>" --file ".cursor/mcp.json" --file ".agents/rules"
-python "<maintain>" adopt --target "<target-root>" --all
-```
-
-Use repeated exact `--file` selections, or `--all` to refresh the files and directories already declared in the manifest. With `--all`, missing declared files are removed from the backup and manifest, and directory declarations remain. Preserve unselected content and unrelated source work. Validate, apply and verify the accepted result before publication.
-
-### Back up verified local changes
-
-For routine maintenance, [refresh the bound repository](#refresh-the-repository-before-using-its-backup) before saving and use [read-only reconciliation](#adopt-accepted-target-changes) without adoption options. Compare `source_fingerprint` and `scope` with a reliable earlier inspection if available. A first inspection after offline work does not show whether the source changed. If the selected source changed or reconciliation shows incoming changes, changes on both sides or an unknown direction, resolve the [whole-synchronization choice](#apply-the-users-whole-synchronization-choice) before saving. For proven local-only changes, existing authorization covers the exact verified files it names or accepts, even when `reconcile` returns `needs-choice`. If refresh, scope or a necessary choice is unresolved, retain the local result and defer saving.
-
-Before each adoption, inspect the exact source paths it can affect, including the manifest. Check staged, unstaged, untracked and outgoing work against the fetched branch and establish which changes belong to this operation. Defer a save that would overwrite pending source work of unknown or unaccepted ownership. Pending work on unrelated paths or entries stays outside the scope. When advancing to a fresh inspection, recheck any changed source state against the original decision and the operation's already accepted writes before reusing save authority.
-
-Retain the verified bytes or digests of the [complete selected files](#accept-the-complete-selected-content) and the expected absence of any accepted deletions. Compare actual local files with that evidence at the latest inspection before writing. If contents changed, repeat the applicable verification or defer the save. Name only the accepted differing files with `adopt --file` and pass that inspection's `fingerprint` as `--accept-existing`. This token covers the inspected state on both sides and is distinct from the entry's `source_fingerprint`.
-
-Before adoption, confirm that the expected manifest effect is covered by the accepted save. `adopt` can normalize formatting or reorder an unchanged selection. Removing an individually declared file removes its declaration, while a deletion inside a declared directory retains the directory. Actual changes to the declared scope require explicit acceptance.
-
-An expansion outside the inspected scope requires explicit acceptance and a separate exact-path adoption, since the guard covers only differing files in its report. Inspect the exact source destinations for bytes or absence, even outside the manifest or Git status. Proceed only if the relevant source state and verified local contents can stay stable through the write. Skip adoption when the accepted bytes and scope already agree.
-
-Retain each adoption result as JSON and check every `source_changes` path and digest against the expected file and manifest effects. Inspect the whole backup scope again and use `apply` without `--accept-existing` to [record agreement](#record-verified-agreement-and-the-startup-preference) when no differences remain. If a guard fails, any result differs from the verified selection, or other differences remain, preserve the local and saved backup work, report the blocker and leave publication pending.
+`apply` records the local receipt in `.agents/project-config-sync.json` once source and target agree. If Git exclusions fail after application, check the actual files, receipt and exclusions separately. To deliberately set the checkout's startup preference, use `--auto-sync on` or `--auto-sync off`, with the difference token when a differing application was accepted.
 
 ## Render local configuration only when required
 
-Existing local synchronization remains available for deliberate changes to canonical inputs. It is separate from full-file backup restoration and retains original ownership and collision protections:
+Use the narrow command when only the generated `Project rules` section needs updating. `ruleEntry` selects `AGENTS.md` or `AGENTS.local.md`. Local rendering uses existing inputs and ownership checks. It does not run full setup.
 
 ```text
-python "<maintain>" sync-project --help
 python "<maintain>" sync-project --target "<target-root>"
-python "<maintain>" sync-project --target "<target-root>" --check
-```
-
-This route renders established discovery and native Agent, MCP and settings mappings without fetching, blueprint authoring or full migration. Check mode writes nothing. Exit 0 means clean, exit 1 means drift, and exit 2 means failure. In either local mode, use this route directly after editing the project's canonical inputs.
-
-The schema's `ruleEntry` selects `AGENTS.md` (the default) or `AGENTS.local.md` for the generated `Project rules` section. Both local synchronization routes manage that section in the selected file, preserving its other bytes and the unselected entry. Changing the selection does not move or remove an existing section or delete the former entry.
-
-When only that generated section needs updating, use the narrower route, which does not require full setup ownership:
-
-```text
 python "<maintain>" sync-project-rules --target "<target-root>"
-python "<maintain>" sync-project-rules --target "<target-root>" --check
 ```
 
-In repository mode, both commands require a readable backup and agreement across its full scope, including in `--check` mode. Editing a backed-up file can therefore block required generation or verification. Use another supported, authorized local check if it establishes the required verification. If required generation or verification still cannot be completed, retain the local changes, report the blocker and defer adoption. When rendering changes selected backed-up files, verify and adopt those outputs before rechecking agreement for publication.
-
-Honor prerequisite and ownership failures. Maintenance neither invokes full setup automatically nor reaches it through another workflow or callback. Preserve saved source and target work, report the unmet prerequisite, and recheck current state after the user completes the owning setup workflow.
+Both commands, including read-only `--check`, require a readable, matching backup in repository mode. If a local edit makes required generation or verification unavailable, use a supported local check only when sufficient. Otherwise keep the edits and defer backup. If rendering changes selected files, verify those outputs before saving them. Report unmet setup or migration prerequisites separately.
 
 ## Keep personal configuration out of business Git
 
-Machine-only and repository modes maintain target-local Git exclusions for their configuration scope, local synchronization state and known generated outputs. Machine-only mode includes the selected Rule entry in those exclusions. The maintenance commands manage exclusions after binding, application and deliberate local synchronization. Exclusions belong in the target worktree's Git `info/exclude`, resolved by Git and anchored correctly within the business repository, including nested monorepo targets. Preserve shared `.gitignore` files and unrelated exclusion rules.
-
-Exclusions affect untracked paths only. Preserve and report configuration already tracked by business Git; choosing a personal mode grants no automatic untracking or history rewrite. Without a Git worktree, report exclusions as not applicable. Switching to project-shared mode retires only the verified SmartKit-managed block for this target; retain and report other matching exclusions. A failed exclusion update leaves mode enforcement incomplete even if configuration was saved.
-
-Check relevant target-relative paths rather than inferring exclusions from an empty tracked-path report:
+Personal modes use the target's scoped Git `info/exclude`. Switching to project shared retires only its managed block. Preserve shared ignore files and existing tracked configuration. Check relevant paths even when synchronization is deferred. Report any tracked files or missing exclusions. Binding, application and rendering manage exclusions. An inspection or `--check` does not repair them.
 
 ```text
 git -C "<target-root>" --literal-pathspecs ls-files -- "<configuration-path>"
 git -C "<target-root>" check-ignore -v -- "<configuration-path>"
 ```
 
-The first command reports tracked paths; the second identifies the matching ignore rule for an untracked path, with exit 1 meaning no match. Inspection and `--check` do not repair Git state.
-
 ## Maintain OpenWiki with the project binding
 
-OpenWiki inherits the selected project's established binding. Supply that project as `--target` so the commands derive the Git top-level for Wiki files. An independently bound Git root owns its Wiki. Resolve an ownership conflict under that binding. In repository mode, a nested project's Wiki backup lives under `projects/<entry>/wiki/` with its receipt at the Git root in `.agents/openwiki-config-sync.json`. When the project is the Git root, prepare uses the ordinary project snapshot.
+Use the bound project as `--target`. The commands locate its Git root and honor an independent binding there. A nested project's repository backup uses `projects/<entry>/wiki/` and a separate Git-root receipt. Establish authority for Git-root writes before preparation. Resume active Wiki work before preparing or saving its backup.
 
-Before a new run, establish authority for the Git-root writes. In repository mode, use current refresh evidence for this binding or run the ordinary `update` command. Then prepare the Wiki. `ready` establishes the inherited Git treatment and reports any applied backup changes and tracked paths. For `needs-choice`, use the [whole-synchronization choice](#apply-the-users-whole-synchronization-choice) and pass its exact fingerprint if the user accepts restoration. Resume an active Wiki run in its own worktree before preparing or saving its backup.
+Refresh repository mode before preparing a new run. Resolve `needs-choice` as for configuration, then pass the exact token for an accepted differing restoration. In repository mode, verify the finished Wiki and review the save plan for `openwiki/`, `.openwikiignore` and any explicitly selected Git-root `AGENTS.md` or `CLAUDE.md`. Save with the same selections and the reviewed plan fingerprint. If interrupted, verify saved contents against that plan and use `wiki prepare` to record agreement when needed. Publish only the current operation's verified scope.
 
 ```text
 python "<maintain>" wiki prepare --target "<target-root>"
 python "<maintain>" wiki prepare --target "<target-root>" --accept-existing "<inspect-fingerprint>"
-```
-
-The Wiki owner verifies the completed result in every mode. In repository mode, `wiki save` plans a backup of the complete `openwiki/` directory and any `.openwikiignore`. Add `--file` for each changed Git-root `AGENTS.md` or existing `CLAUDE.md` accepted for complete-file backup. Review the exact selection and content, retain the plan JSON, then execute the same selection with `--accept-plan`. Save verifies agreement and records the receipt.
-
-```text
-python "<maintain>" wiki save --target "<target-root>" > "<wiki-save-plan.json>"
+python "<maintain>" wiki save --target "<target-root>" > "<wiki-plan.json>"
 python "<maintain>" wiki save --target "<target-root>" --accept-plan "<plan-fingerprint>"
-```
-
-If saving stops after writing the backup, verify the saved source against the retained plan. Use `wiki prepare` to record agreement when needed and resume publication with the original accepted scope. An empty new plan leaves any previously owned source changes or retained commit pending. Use the [publication contract](#publish-an-exact-verified-scope) for the established scope.
-
-```text
-python "<maintain>" wiki publish --target "<target-root>" --plan "<wiki-save-plan.json>" --message "Back up OpenWiki"
+python "<maintain>" wiki publish --target "<target-root>" --plan "<wiki-plan.json>" --message "Back up OpenWiki"
 ```
 
 ## Publish an exact verified scope
 
-In repository mode, an authorized configuration-writing operation includes one exact-scope commit and normal push after required local work succeeds. Proceed without a separate publication confirmation unless the user requests a local result or forbids publication. This default grants no publication for inspection, ordinary business-project editing, other entries or any restore-only operation, whether manual or automatic, and grants no release, force push or history rewrite. Neither local mode publishes to a configuration repository.
-
-Establish the operation's accepted source changes and outgoing commits before publication, including accepted initial imports and retained current-operation work with verified provenance. An unborn branch can have new source files to publish. Collect exact repository-relative files, including changed manifests and deletions; whole directories, unrelated index entries and unaccepted preexisting content are outside the commit scope. If the operation owns neither pending source changes nor a retained verified commit, finish without an empty commit or publication of earlier work.
-
-When an accepted adoption result covers the complete publication scope, use its JSON with `--plan`. The command verifies every path and content digest. For a separately assembled scope, pass one `--path` per accepted file. These routes apply to both `publish` and `wiki publish`.
-
-Publish after applicable checks pass and source and target agree, with the [repository access prerequisites](#bind-or-deliberately-change-a-source) satisfied. In routine maintenance, verify local changes before saving them and record agreement afterward. Other callers satisfy their own application and rendering prerequisites before publication. An explicit local-result instruction leaves the accepted source work available and calls for reporting the deferred publication.
+An authorized repository save includes its scoped commit and normal push unless the user requests a local result. When required checks, agreement and [repository access](#bind-or-deliberately-change-a-source) are established, pass the accepted adoption JSON with `--plan` or name each accepted repository-relative path with `--path`. Include owned imports, manifest changes and deletions when applicable. A save may have nothing new to publish. Keep unrelated Git work out of the request. The command verifies plan digests, exact scope, convergence and the remote result. Revalidate any hook-altered content before retrying.
 
 ```text
-python "<maintain>" publish --help
-python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"
 python "<maintain>" publish --target "<target-root>" --plan "<adoption-result.json>" --message "Update project configuration"
-```
-
-Commit hooks run normally. Revalidate hook-altered content, restore it and repeat relevant checks before publication. Preserve the retained commit and diagnostic when publishing is refused. Resolve ambiguous selected paths, unverified outgoing scope or additional outgoing commits within the current accepted scope.
-
-### Recover a failed or uncertain publication
-
-A failed or uncertain push may leave a valid local commit and applied target. Inspect the actual local and remote outcome before retrying a retained verified commit:
-
-```text
+python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/files/.cursor/mcp.json" --message "Update project configuration"
 python "<maintain>" publish --target "<target-root>" --commit "<verified-commit>"
 ```
 
-Confirm that source and applied evidence still agree. Use the corresponding `publish` or `wiki publish` route and reuse `--plan` when the operation has accepted plan evidence. Preserve local commits when the remote advances or diverges and resolve branch state before a protected retry. Verify that the intended commit is reachable on the selected remote branch.
-
-### Report the established result
-
-Report source edits and validation, target application, any deliberate rendering, exclusions and tracked configuration, unmet prerequisites and remote publication separately. Repository-mode completion requires successful local work and verified publication of the intended scope, except for an explicitly requested local result or no owned source changes or commit to publish. A failed push preserves saved source, retained commits, applied target and completed local work. Report local success and incomplete remote synchronization. The caller owns any broader completion result.
+If publication fails, inspect the reported state and preserve any retained commit. Retry that verified commit once source, target and remote evidence support it, retaining `--plan` when there is accepted plan evidence. Use `wiki publish` for Wiki scope. Report whether local work, backup, receipt and publication actually completed.
