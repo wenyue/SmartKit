@@ -11,7 +11,7 @@ Use this Skill only between independent agent sessions. Each session is responsi
 
 Check the accessible conversation and current work to identify the intended session, its task, and the decisions or constraints that matter to the message. If a missing fact changes what the recipient should understand, check the source or ask a focused question.
 
-Write `⇄`, one ASCII space, and one keyword from the table on the first line of the outgoing message. Begin the body on the next line. Choose the keyword by what the message conveys, not by how important it is.
+Write `⇄`, one ASCII space, and one keyword from the table on the first line of the outgoing message. On the next line, go straight to the substance without restating what the keyword already signals.
 
 | Keyword | What to convey |
 | --- | --- |
@@ -32,10 +32,10 @@ Use a supported channel and share only what is authorized for that destination. 
 > The user directed the release session to keep column names and order unchanged in the default CSV export for this release, because existing spreadsheet imports depend on them.
 
 > ⇄ Authorization\
-> The user has allowed the release session to use the existing sample spreadsheet for local testing. That permission does not require a test run.
+> The user has allowed the release session to use the existing sample spreadsheet for local testing.
 
 > ⇄ Alignment\
-> The goal is for existing spreadsheets to import the default CSV without manual column edits. The importer reads fields by position, so preserving names alone leaves an important part of compatibility unresolved.
+> Existing spreadsheets should import the default CSV without manual column edits. The importer reads fields by position, so preserving names alone leaves an important part of compatibility unresolved.
 
 > ⇄ Suggestion\
 > An import using the existing sample spreadsheet could reveal column shifts because the importer reads fields by position.
@@ -61,7 +61,7 @@ After responding, decide whether to continue, pause, or finish based on your cur
 ### Example
 
 > ⇄ Response\
-> In reply to the export planning session's CSV compatibility message, I understand that existing spreadsheets should import the default CSV without manual edits. For the export I'm checking, success means the existing sample still imports with fields in the expected positions.
+> For the export planning session's default CSV compatibility check, the existing sample should still import without manual edits, with fields in the expected positions.
 
 ## Follow through where it matters
 
