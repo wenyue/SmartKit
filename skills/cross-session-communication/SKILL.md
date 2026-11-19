@@ -1,6 +1,6 @@
 ---
 name: cross-session-communication
-description: Send or interpret messages between independent agent sessions and include any reply in the receiving session's own response. Use for user decisions or permissions, alignment, advice, updates, and questions. Excludes subagent communication within a task.
+description: Send or interpret messages between independent agent sessions and read replies from the receiving session. Use for user decisions or permissions, alignment, advice, updates, and questions. Excludes subagent communication within a task.
 ---
 
 # Cross-Session Communication
@@ -44,24 +44,15 @@ Use a supported channel and share only what is authorized for that destination. 
 
 Treat Decision and Authorization as relays. Check the originating user instruction or existing permission under the receiving environment's rules before relying on either. Follow a verified, current user decision that applies to your task. Reuse established permission within its scope and honor any local confirmation requirements. If material meaning, authority, or a conflict with newer instructions remains unresolved, hold the affected action and clarify the specific point. Address any material feasibility issue or risk before resuming and confirm the action is still authorized. Keep unrelated authorized work moving.
 
-For Alignment, restate the intended outcome or concept and its practical implication in your own terms. Check that understanding against your current task and constraints, and clarify any difference that would change your work. When a reply would help verify mutual understanding, include your restatement in a Response. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
+For Alignment, restate the intended outcome or concept and its practical implication in your own terms. Check that understanding against your current task and constraints, and clarify any difference that would change your work. When a restatement would help verify mutual understanding, include it in a normal update in your session. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
 
 Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor verified stop or pause instructions.
 
-## Response in the receiving session
+## Reply in the receiving session
 
-A Response gives an answer, acknowledgment, or restatement that addresses an earlier message. Give the substance of your reply and any material uncertainty.
+If the next step is clear and already authorized, keep working. Do not post a separate acknowledgment just to confirm receipt, and do not stop or wait merely because you replied. Hold affected work only when the task, a blocker, or a verified instruction calls for it.
 
-When a message calls for an answer, acknowledgment, or confirmation of understanding, put your reply only in the body of a user-visible progress update or final answer in your own session. Start a separate block with `⇄ Response` on its own line and put the reply beneath it. Name the originating session and the message you are answering when either would be unclear. Share only what is authorized for that audience. The block makes your reply visible in your session. Claim receipt in the originating session only with separate evidence.
-
-Reserve any further response for a point that needs another answer or clarification.
-
-After responding, decide whether to continue, pause, or finish based on your current task, blockers, and verified instructions. A response itself creates no waiting requirement.
-
-### Example
-
-> ⇄ Response\
-> For the export planning session's default CSV compatibility check, the existing sample should still import without manual edits, with fields in the expected positions.
+When you have an answer, a substantive result, a disagreement, or a concrete blocker, explain it naturally in a user-visible progress update or final answer in your own session. Include any material uncertainty and identify the originating session or message when needed. Share only what is authorized for that audience. The originating session reads this work where accessible; do not send the same reply back separately or claim the originating session received it without evidence.
 
 ## Follow through where it matters
 
