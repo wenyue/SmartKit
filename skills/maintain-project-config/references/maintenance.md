@@ -86,7 +86,17 @@ python "<maintain>" update --target "<target-root>"
 
 The repository support verifies the personal private repository and persistent checkout identity, then fetches and safely fast-forwards supported states. Preserve existing staged, unstaged, untracked and unpublished work before updating. Dirty, divergent or unfinished states may be refused; resolve the reported condition without reset, automatic stash, force push or history rewrite. If authentication, fetching or update fails, preserve existing state and stop before application; a stale checkout cannot stand in for a successful update.
 
-After a successful update, edit or adopt the accepted source scope. Initial import, authoring or deliberate local generation can leave accepted source changes in the same operation; retain their provenance through validation, application and publication without requiring another clean-checkout update between those steps.
+Before authoring in the actual business project, inspect the refreshed binding and backup and record `source_fingerprint` and `scope`. If differences exist, use `reconcile` without adoption options to [classify them](#adopt-accepted-target-changes). Preserve local-only changes and continue local verification of those in scope. For an incoming source change, changes on both sides or an unknown direction, resolve the whole-synchronization choice first; authoring does not authorize restoration or adopting over upstream changes simply because they were present at first inspection. Explicit restore and full setup retain their own workflows. Initial import, adoption or setup can leave accepted backup changes in the same operation; retain their provenance rather than requiring another clean-checkout update before validation or publication.
+
+### Back up verified local authoring
+
+Export only after the actual project changes and applicable checks pass. While the backup checkout is still unmodified, update it again, inspect, and compare `source_fingerprint` and `scope` with the pre-authoring observation. If this entry’s source changed, its state cannot be verified, or a conflict remains unresolved, preserve the local result and resolve the differences before overwriting or publishing anything. An update to another entry alone is not a conflict for this entry.
+
+Before adopting, verify that the complete selected local files and deletions at the latest inspection match the verified result; exclude credentials and unrelated changes. For differing files in the declared scope, use exact file selections and pass the latest observation’s `fingerprint` to `adopt --accept-existing` through the [adoption route](#adopt-accepted-target-changes). That fingerprint includes local state; it is not the baseline for comparing source snapshots. Do not substitute `--all` or `reconcile --adopt-local`, which can adopt differences outside this operation’s selection. Skip adoption when the selected backup already contains the exact verified content and its scope is unchanged.
+
+A removal, deletion or expansion of backup scope must be explicitly accepted. For files outside the inspected scope, the inspection fingerprint does not cover them: review their full content and ensure that it remains stable until a separate explicit adoption of their exact paths completes. Stop if changes cannot be controlled. For multiple adoptions, refresh the inspection and check the selection each time. Retain each adoption result and check all returned source changes and content digests against the verified selection and accepted manifest changes. Stop without publishing on a mismatch.
+
+After adoption, verify that the source holds the verified bytes and inspect the entire backup scope again. Only when no differences remain, run `apply` without a difference-acceptance argument to [record agreement](#record-verified-agreement-and-the-startup-preference), without rewriting matching content. If differences remain, preserve the unselected work, do not restore or publish, and report both the blocker and any saved adoption.
 
 ## Apply the authoritative backup
 
@@ -235,7 +245,7 @@ Establish the operation's accepted source changes and outgoing commits before pu
 
 When an accepted adoption result covers the complete publication scope, use its JSON with `--plan`. The command verifies every path and content digest. For a separately assembled scope, pass one `--path` per accepted file. These routes apply to both `publish` and `wiki publish`.
 
-Publish after source validation, accepted application, any required deliberate local rendering and all applicable checks succeed. Confirm source-target agreement. The caller establishes completion of any additional prerequisites before using this publication route. A full-file restoration has no automatic renderer prerequisite. An explicit local-result instruction leaves the accepted source work available and reports intentional publication deferral.
+Publish after applicable validation succeeds and source and target agree. Local authoring validates the local result, including any deliberate rendering, before backup and records agreement afterward. Other workflows retain their own application or agreement requirements. The caller verifies that any other prerequisites have been met before publication. A full-file restoration has no automatic renderer prerequisite. An explicit local-result instruction leaves the accepted source work available and reports intentional publication deferral.
 
 ```text
 python "<maintain>" publish --help
