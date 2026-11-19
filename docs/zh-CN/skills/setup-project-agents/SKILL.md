@@ -33,7 +33,7 @@ disable-model-invocation: true
 
 ### 用户尚未选择操作时
 
-先确定本地状态，再推荐操作。阅读 [项目配置维护](../maintain-project-config/references/maintenance.md)，了解绑定、快照和本地同步记录证据，然后在获取来源或改变项目输入前运行以下只读检查：
+先确定本地状态，再推荐操作。使用 [维护项目配置](../maintain-project-config/SKILL.md)，了解绑定、快照和本地同步记录证据，然后在获取来源或改变项目输入前运行以下只读检查：
 
 ```text
 python "<skill-root>/scripts/workflow.py" inspect --help
@@ -54,7 +54,7 @@ python "<maintain>" inspect --target "<target-root>"
 
 ## 2. 确定项目状态及其维护模式 <a id="2-establish-project-state-and-its-maintenance-mode"></a>
 
-选定的初始化、升级或迁移路径，从这里的只读迁移检查开始。阅读 [完整会话协议](references/session-protocol.md)，了解效果权限、Matt 上下文、SmartKit 来源选择和恢复；阅读 [项目迁移](references/migrations.md)，了解基线和发布义务；阅读 [项目配置维护](../maintain-project-config/references/maintenance.md)，了解配置来源绑定、私有仓库访问、应用、发布和 Wiki 维护。Setup 使用维护参考、受支持命令和配置引擎，不调用这个仅限用户调用的 Skill。
+选定的初始化、升级或迁移路径，从这里的只读迁移检查开始。阅读 [完整会话协议](references/session-protocol.md)，了解效果权限、Matt 上下文、SmartKit 来源选择和恢复；阅读 [项目迁移](references/migrations.md)，了解基线和发布义务；使用 [维护项目配置](../maintain-project-config/SKILL.md)，了解配置来源绑定、私有仓库访问、应用、发布和 Wiki 维护。Setup 按已接受的范围和顺序调用维护 Skill 执行选定的配置操作。
 
 先运行 setup 检查。复用操作选择阶段仍然有效的结果，并在输入改变后刷新受影响的检查结果。命令帮助说明报告的检查和退出码：
 
@@ -77,7 +77,7 @@ python "<maintain>" inspect --target "<target-root>"
 
 ### 选择在哪里维护配置 <a id="choose-where-configuration-will-be-maintained"></a>
 
-检查报告 `selection_required` 且用户还未选定模式，或用户要求切换但未指定新模式时，按 [选择配置维护方式](references/choose-maintenance-mode.md) 处理。沿用已记录的模式、仓库、分支和条目，除非用户要求改变。模式、所需的仓库信息及初始备份范围均已接受后，通过维护命令的 `bind` 路径记录选择。用户要求切换时，先比较并保留旧来源和目标中的工作。Git 排除和已跟踪文件按维护参考处理。
+检查报告 `selection_required` 且用户还未选定模式，或用户要求切换但未指定新模式时，按 [选择配置维护方式](references/choose-maintenance-mode.md) 处理。沿用已记录的模式、仓库、分支和条目，除非用户要求改变。模式、所需的仓库信息及初始备份范围均已接受后，通过维护命令的 `bind` 路径记录选择。用户要求切换时，先比较并保留旧来源和目标中的工作。Git 排除和已跟踪文件按维护 Skill 处理。
 
 ### 确定来源并妥善处理现有工作
 
@@ -206,7 +206,7 @@ python "<skill-root>/scripts/workflow.py" finish --session "<SESSION>"
 
 ## 8. 发布配置结果
 
-本地结束流程成功后，仓库模式按经过验证的确切范围发布。已接受范围、必需检查、发布例外、常规推送验证和保留提交的恢复均遵循维护参考。两种本地维护模式都没有配置仓库推送。直接使用受支持命令：
+本地结束流程成功后，仓库模式按经过验证的确切范围发布。已接受范围、必需检查、发布例外、常规推送验证和保留提交的恢复均遵循维护 Skill。两种本地维护模式都没有配置仓库推送。直接使用受支持命令：
 
 ```text
 python "<maintain>" publish --help
@@ -232,7 +232,7 @@ python "<maintain>" publish --target "<target-root>" --path "projects/<entry>/ma
 
 ### 准备新运行
 
-Wiki 沿用所选项目的维护绑定。确认 Git 根目录写入已获授权，必要时按 [确认 Setup 操作权限](references/confirm-setup-effects.md) 处理。然后按维护参考中的 Wiki 命令操作，以 `<target-root>` 为项目目标。如果 Git 根目录已有独立绑定，则将受影响的 Wiki 写入留待该绑定的维护方处理。
+Wiki 沿用所选项目的维护绑定。确认 Git 根目录写入已获授权，必要时按 [确认 Setup 操作权限](references/confirm-setup-effects.md) 处理。然后按维护 Skill 中的 Wiki 命令操作，以 `<target-root>` 为项目目标。如果 Git 根目录已有独立绑定，则将受影响的 Wiki 写入留待该绑定的维护方处理。
 
 在任何普通配置写入前，在恢复记录中写明已接受的绑定或绑定变更以及来源范围。如果迁移检查已跳过，且 Wiki 需要项目建立首次绑定，使用[第 2 步的项目维护选择](#choose-where-configuration-will-be-maintained)。绑定或导入前，记录选定输入的摘要及预期生成的文件。验证生成的清单和绑定，并保留实际摘要。完成适用的来源、采纳和启动偏好步骤，再带着现有 setup 基线回到此处。
 
@@ -265,7 +265,7 @@ Wiki 沿用所选项目的维护绑定。确认 Git 根目录写入已获授权�
 
 ## 本地同步 <a id="local-synchronization"></a>
 
-使用已加载插件中的 `<maintain>`，同步前阅读其 [项目配置维护](../maintain-project-config/references/maintenance.md) 参考。这些命令使用维护拥有的引擎；setup 工作流中的 `project-config`、`sync-project` 和 `sync-project-rules` 阶段仍是转发至同一所有者的入口。此路径不执行获取、生成、模型评估、蓝图/共享/外部更新或 CodeGraph 准备。“所有权”定义前置条件及保留边界；`clean` 只证明配置收敛。
+使用已加载插件中的 `<maintain>`，通过[维护项目配置](../maintain-project-config/SKILL.md)执行选定的同步操作。这些命令使用维护拥有的引擎；setup 工作流中的 `project-config`、`sync-project` 和 `sync-project-rules` 阶段仍是转发至同一所有者的入口。此路径不执行获取、生成、模型评估、蓝图/共享/外部更新或 CodeGraph 准备。“所有权”定义前置条件及保留边界；`clean` 只证明配置收敛。
 
 1. 检查请求的范围：
 

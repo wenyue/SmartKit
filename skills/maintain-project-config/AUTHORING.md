@@ -1,8 +1,8 @@
 # Authoring Decisions
 
-## Keep the shared maintenance contract outside the user-only entry
+## Use one entry for maintenance operations
 
-Setup and enabled startup synchronization consume the supported reference and commands without invoking this user-only Skill. Keep binding, byte-preserving backup, application choices, receipts, and publication recovery in that shared owner. The entry guides an explicit maintenance task and relies on its required reference instead of duplicating every synchronization condition.
+Routine maintenance, Setup, enabled startup synchronization and OpenWiki use the same Skill entry so changes to the maintenance contract reach every caller. The entry selects only the requested operation. Callers retain authority over their workflow and effects, including full Setup's source-first order. Keep the common commands and their decisions here to avoid branches drifting into separate procedures.
 
 ## Preserve snapshots without claiming setup success
 

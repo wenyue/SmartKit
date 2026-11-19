@@ -33,7 +33,7 @@ Keep an operation already chosen in the conversation and any stated scope limit.
 
 ### When the user has not chosen an operation
 
-Establish local state before recommending one. Read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for binding, snapshot and local-receipt evidence, then run these read-only inspections before fetching sources or changing project inputs:
+Establish local state before recommending one. Use [Maintain Project Config](../maintain-project-config/SKILL.md) for binding, snapshot and local-receipt evidence, then run these read-only inspections before fetching sources or changing project inputs:
 
 ```text
 python "<skill-root>/scripts/workflow.py" inspect --help
@@ -54,7 +54,7 @@ Inspection failures block only decisions that need the missing evidence. Report 
 
 ## 2. Establish project state and its maintenance mode
 
-The selected initialization, upgrade or migration route starts here with a read-only migration gate. Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, SmartKit source selection and recovery; [Project Migrations](references/migrations.md) for baseline and release obligations; and [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) for configuration-source binding, private repository access, application, publication and Wiki maintenance. Setup uses the maintenance reference, supported commands and configuration engine without invoking that user-only Skill.
+The selected initialization, upgrade or migration route starts here with a read-only migration gate. Read [Full Session Protocol](references/session-protocol.md) for effect authority, Matt context, SmartKit source selection and recovery; [Project Migrations](references/migrations.md) for baseline and release obligations; and [Maintain Project Config](../maintain-project-config/SKILL.md) for configuration-source binding, private repository access, application, publication and Wiki maintenance. Invoke the maintenance Skill for the selected configuration operation within Setup's accepted scope and order.
 
 Run setup inspection first. Reuse still-current results from operation selection, and refresh affected findings after inputs change. Command help explains the reported checks and exits:
 
@@ -77,7 +77,7 @@ If an active OpenWiki queue blocks inspection or application of a backup that se
 
 ### Choose where configuration will be maintained
 
-Use [Choose the maintenance mode](references/choose-maintenance-mode.md) when inspection reports `selection_required` and the user has not chosen a mode, or when the user requests a mode switch without naming the new mode. Retain the recorded mode, repository, branch and entry unless the user requests a change. Once the mode and any required repository details and initial backup scope are accepted, record the choice through the maintenance command's `bind` route. For a requested switch, compare and preserve old source and target work first. Follow the maintenance reference for Git exclusions and already tracked files.
+Use [Choose the maintenance mode](references/choose-maintenance-mode.md) when inspection reports `selection_required` and the user has not chosen a mode, or when the user requests a mode switch without naming the new mode. Retain the recorded mode, repository, branch and entry unless the user requests a change. Once the mode and any required repository details and initial backup scope are accepted, record the choice through the maintenance command's `bind` route. For a requested switch, compare and preserve old source and target work first. Follow the maintenance Skill for Git exclusions and already tracked files.
 
 ### Establish the source and account for existing work
 
@@ -206,7 +206,7 @@ After a successful `finish`, confirm that the registered project Rules, Skills, 
 
 ## 8. Publish the configuration result
 
-After successful local finish, publish the exact verified scope in repository mode. Follow the maintenance reference for the accepted scope, required checks, publication exceptions, normal push verification and retained-commit recovery. Neither local maintenance mode has a configuration-repository push. Use the supported command directly:
+After successful local finish, publish the exact verified scope in repository mode. Follow the maintenance Skill for the accepted scope, required checks, publication exceptions, normal push verification and retained-commit recovery. Neither local maintenance mode has a configuration-repository push. Use the supported command directly:
 
 ```text
 python "<maintain>" publish --help
@@ -232,7 +232,7 @@ Match recovery notes to the worktree, accepted project binding or binding transi
 
 ### Prepare a new run
 
-The selected project's binding governs Wiki maintenance. Establish authority to write at the Git root, using [Confirm setup effects](references/confirm-setup-effects.md) if needed. Then follow the maintenance reference's Wiki commands with `<target-root>` as the project target. If the Git root has an independent binding, leave affected Wiki writes pending for that owner.
+The selected project's binding governs Wiki maintenance. Establish authority to write at the Git root, using [Confirm setup effects](references/confirm-setup-effects.md) if needed. Then follow the maintenance Skill's Wiki commands with `<target-root>` as the project target. If the Git root has an independent binding, leave affected Wiki writes pending for that owner.
 
 Record the accepted binding or transition and source scope in the recovery note before any ordinary configuration write. If the migration gate was skipped and Wiki work requires the first project binding, use [the project choice in step 2](#choose-where-configuration-will-be-maintained). Before binding or importing, record selected input digests and expected generated files. Verify the generated manifest and binding and retain their actual digests. Complete the applicable source, adoption and startup preference steps, then return here with the existing setup baseline.
 
@@ -265,7 +265,7 @@ Report full Setup complete when the configuration work required by the gate, app
 
 ## Local synchronization
 
-Use `<maintain>` from the loaded plugin and read its [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) reference before synchronization. These commands use the maintenance-owned engine; setup's `project-config`, `sync-project` and `sync-project-rules` workflow phases remain forwarding entry points to that same owner. This route performs no fetch, generation, model assessment, blueprint/shared/external refresh or CodeGraph preparation. Ownership defines the prerequisites and retained boundaries; `clean` establishes configuration convergence only.
+For the selected synchronization operation, use [Maintain Project Config](../maintain-project-config/SKILL.md) with `<maintain>` from the loaded plugin. These commands use the maintenance-owned engine; setup's `project-config`, `sync-project` and `sync-project-rules` workflow phases remain forwarding entry points to that same owner. This route performs no fetch, generation, model assessment, blueprint/shared/external refresh or CodeGraph preparation. Ownership defines the prerequisites and retained boundaries; `clean` establishes configuration convergence only.
 
 1. Check the requested scope:
 

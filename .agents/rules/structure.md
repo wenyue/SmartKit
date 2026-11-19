@@ -32,7 +32,7 @@ A shared command entry point alone does not establish runtime ownership. Manual 
 
 Keep Hook-required read-only parsing and project-state inspection in runtime so Skills can reuse it. Runtime must not import or invoke Skill implementation. It may read supported Skill-owned data and documentation or name Skill commands in output; the consuming workflow executes those commands under their authorization requirements.
 
-Project configuration maintenance belongs to [Maintain Project Config](../../skills/maintain-project-config/SKILL.md), including its reference, commands, and update engine. [Setup Project Agents](../../skills/setup-project-agents/SKILL.md) consumes that capability for full setup. Keep the dependency one-way: maintenance must not depend on setup implementation, command routes, or workflow invocation.
+Project configuration maintenance belongs to [Maintain Project Config](../../skills/maintain-project-config/SKILL.md), including its commands and update engine. [Setup Project Agents](../../skills/setup-project-agents/SKILL.md) consumes that capability for full setup. Keep the dependency one-way: maintenance must not depend on setup implementation, command routes, or workflow invocation.
 
 ## Find canonical inputs among derived files
 

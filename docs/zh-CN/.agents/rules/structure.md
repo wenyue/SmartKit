@@ -32,7 +32,7 @@
 
 将 Hook 所需的只读解析和项目状态检查留在 runtime，供 Skills 复用。runtime 不得导入或调用 Skill 实现。它可以读取受支持的 Skill 所有数据和文档，或在输出中列出 Skill 命令；这些命令由消费工作流按其授权要求执行。
 
-项目配置维护属于 [Maintain Project Config](../../skills/maintain-project-config/SKILL.md)，包括其参考资料、命令和更新引擎。[Setup Project Agents](../../skills/setup-project-agents/SKILL.md) 使用该能力完成完整 setup。保持依赖单向：维护不得依赖 setup 的实现、命令路径或工作流调用。
+项目配置维护属于 [Maintain Project Config](../../skills/maintain-project-config/SKILL.md)，包括其命令和更新引擎。[Setup Project Agents](../../skills/setup-project-agents/SKILL.md) 使用该能力完成完整 setup。保持依赖单向：维护不得依赖 setup 的实现、命令路径或工作流调用。
 
 ## 在派生文件中找到规范输入
 

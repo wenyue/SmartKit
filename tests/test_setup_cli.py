@@ -623,7 +623,7 @@ class SetupCliTest(unittest.TestCase):
                 'skills/maintain-project-config/scripts/project_config/repository.py',
                 'runtime/project_state/migrations.py',
                 'runtime/project_state/_vendor/tomli/_parser.py',
-                'skills/maintain-project-config/references/maintenance.md',
+                'skills/maintain-project-config/SKILL.md',
             ):
                 with self.subTest(relative=relative):
                     contract = source / relative

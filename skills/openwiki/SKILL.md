@@ -56,7 +56,7 @@ from operative Rules, execution Skills, and accepted ADRs. Link those owners
 when explaining their behavior. Write page titles, prose, diagram labels, and
 Claim statements in English; keep code and identifiers unchanged.
 
-Before a new run, read [Project Configuration Maintenance](../maintain-project-config/references/maintenance.md) and use the selected project's established binding. Setup supplies the project target and any current preparation evidence. In standalone use, establish which existing project binding applies. Use `wiki prepare` under that binding to reconcile the backup and establish Git treatment, and use its Git root for the OpenWiki lifecycle. Report a missing project binding as a prerequisite.
+Before a new run, use [Maintain Project Config](../maintain-project-config/SKILL.md) to prepare the Wiki under the selected project's established binding. Setup supplies the project target and any current preparation evidence. In standalone use, establish which existing project binding applies. Use `wiki prepare` under that binding to reconcile the backup and establish Git treatment, and use its Git root for the OpenWiki lifecycle. Report a missing project binding as a prerequisite.
 
 An active `openwiki/.run.json` belongs to its current worktree. Resume that run
 before restoring or adopting the Wiki; configuration backup refuses active
@@ -67,7 +67,7 @@ result. Preserve pending output through failures and worktree handoff.
 After a full successful run, preserve the complete `openwiki/` directory,
 including Claims, manifests, update metadata, and `INSTRUCTIONS.md`, plus the
 root `.openwikiignore` when present. Use project Git in `local` mode and local
-exclusions in `local-only` mode. In repository mode, follow the maintenance reference for `wiki save` and `wiki publish` under the same binding. When Setup owns the first-run recovery note, hand off the verified generation result so Setup can record the save plan before any backup write.
+exclusions in `local-only` mode. In repository mode, use the same Skill for `wiki save` and `wiki publish` under the same binding. When Setup owns the first-run recovery note, hand off the verified generation result so Setup can record the save plan before any backup write.
 A deferred-Claims run remains incomplete and must finish reconciliation before
 adoption. On `noop`, still close any pending accepted backup work. Report Wiki
 generation, saved backup, and remote synchronization according to their actual
