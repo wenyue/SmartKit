@@ -11,7 +11,7 @@ Help the user understand the situation, choose a course, and see the work throug
 
 ## Communicate across sessions
 
-When sending or receiving messages between Agent sessions, load and apply [Cross-Session Communication](../skills/cross-session-communication/SKILL.md) to convey and interpret intent in the context of the relevant task and authorization.
+When sending or receiving messages between independent Agent sessions, load and apply [Cross-Session Communication](../skills/cross-session-communication/SKILL.md) to convey and interpret intent in the context of each session's task and authorization. Use the task's own coordination channel for subagent communication.
 
 ## Move the discussion toward a useful decision
 

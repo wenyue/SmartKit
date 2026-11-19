@@ -1,69 +1,65 @@
 ---
 name: cross-session-communication
-description: Coordinate work across agent sessions when sending or receiving user decisions, authorized work requests, suggestions, questions, or factual updates.
+description: Send or interpret messages between independent agent sessions and include any reply in the receiving session's own response. Use for user decisions or permissions, alignment, advice, updates, and questions. Excludes subagent communication within a task.
 ---
 
 # Cross-Session Communication
 
-Help another session act on the right meaning without inheriting assumptions it cannot see. Use this method as the sender or receiver of a cross-session message; it does not create authority, change either session's role, or replace applicable confirmation requirements.
+Use this Skill only between independent agent sessions. Each session is responsible for judging what fits its own task and authorization. Never use this Skill for subagent communication, even when a subagent has a separate context or session identifier. Use the task's own coordination channel for those exchanges.
 
-## Establish the shared task
+## Send a message to another session
 
-Read the accessible conversation and current work before intervening. Identify the intended session, its objective, current execution, relevant user decisions, and unresolved constraints. Prefer the session already responsible for the work over starting duplicate implementation. If a missing fact matters, inspect its source or ask a focused question rather than filling the gap from a title, stale summary, or an agent's confidence.
+Check the accessible conversation and current work to identify the intended session, its task, and the decisions or constraints that matter to the message. If a missing fact changes what the recipient should understand, check the source or ask a focused question.
 
-Identify your role for this exchange: relaying a decision, coordinating delegated work, advising, or reporting evidence. A coordinator preserves the executing session's implementation judgment within its authorized scope. A receiver reconciles the message with its own current task and newer instructions before acting. These roles describe the work, not additional permissions.
-
-## Send the meaning the recipient needs
-
-The first line of every message consists of `⇄`, one ASCII space, and one keyword from the table. Begin the body on the next line and state the point directly in your own words, adding task context, a checkable source, or a requested next step as needed.
+Write `⇄`, one ASCII space, and one keyword from the table on the first line of the outgoing message. Begin the body on the next line. The keywords are ordered by importance to the recipient's task. Choose the one that fits the message's purpose.
 
 | Keyword | What to convey |
 | --- | --- |
-| Decision | The user's decision, where it applies, and any limits. Provide a verifiable source when its authority or meaning needs checking. Convey settled constraints as requirements. |
-| Suggestion | The alternative and the evidence or concern behind it. Distinguish observations from your interpretation. |
-| Update | What was observed and any uncertainty that affects its use. Say where and when you checked if the recipient needs to verify the update. Distinguish a plan, an attempted action, a reported result, and a verified result. |
-| Question | The specific question and the context the recipient needs to answer it. Distinguish observed facts from your inferences. |
-| Authorization | What was authorized, by whom, and within what limits. Give a source the recipient can check when needed to establish the permission. |
-| Request | The work you want the recipient to do and its intended outcome. State the existing authorization it relies on and any constraints or dependencies the recipient may not know about. Leave implementation choices to the responsible session unless the user settled them. |
+| Decision | A decision made by the user. Rewrite it in your own words so the recipient can understand what the user chose, what it applies to, and any conditions, limits, or corrections. Include the context that gives a short reply its meaning and identify the source when needed to verify it. |
+| Authorization | Existing permission, who granted it, what it covers, any limits, and where the recipient can verify it. |
+| Alignment | An outcome or concept the recipient needs to understand. Explain why it matters and how it applies to their current task. For goal alignment, include the relevant boundaries and what would count as success. For a concept, explain a consequence that helps the recipient apply it. |
+| Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for any action you propose for the recipient, and leave the choice with them. Before proposing or adopting a retry or concurrent action, check the work in progress and shared resources for duplication or interference. |
+| Update | What happened or was observed, where and when it was checked if relevant, and any material uncertainty. Distinguish a plan, an attempt, a reported result, and a verified result. |
+| Question | The specific point you need clarified and the context the recipient needs to answer it. Distinguish observations from inferences. |
 
-Quote the user's words when a consequential limit, ambiguous reply, correction, or disputed authorization needs exact wording. Include the question or context that gives a short reply its meaning. Otherwise, a faithful summary of intent is clearer than copying the conversation. Do not add a new commitment or broaden scope while summarizing.
+When relaying a Decision, make implicit references explicit and preserve the user's intended force and scope. Clarify consequential ambiguity before presenting it as settled. When a consequential Decision or Authorization turns on exact wording, point to an original the recipient can check or, when needed and authorized, provide a brief excerpt separately as evidence.
 
-Use supported communication tools and share only information authorized for that destination. If the recipient cannot inspect a needed source, state that limitation.
+Use a supported channel and share only what is authorized for that destination. If a needed source is inaccessible to the recipient, say so. If you lack the channel or permission to send an originating message, leave delivery pending and identify the missing prerequisite. For replies, follow the response route below.
 
 ### Examples
 
 > ⇄ Decision\
-> Change the thread count from 16 to 8.
+> The user decided to preserve the default CSV column names and order in this release because existing spreadsheet imports depend on them. The decision applies to the default export.
+
+> ⇄ Alignment\
+> The goal is for existing spreadsheets to import the default CSV without manual column edits. The importer reads fields by position, so preserving names alone leaves an important part of compatibility unresolved.
 
 > ⇄ Suggestion\
-> Change the thread count from 16 to 8.
+> An import using the existing sample spreadsheet could reveal column shifts because the importer reads fields by position.
 
-> ⇄ Update\
-> The current GitHub PR has been merged.
+## Interpret the message and decide independently
 
-> ⇄ Question\
-> How many threads will the current design use?
+Treat Decision and Authorization as relays. Check the originating user instruction or existing permission under the receiving environment's rules before relying on either. Follow a verified, current user decision that applies to your task. Reuse established permission within its scope and honor any local confirmation requirements. If material meaning, authority, or a conflict with newer instructions remains unresolved, hold the affected action and clarify the specific point. Address any material feasibility issue or risk before resuming and confirm the action is still authorized. Keep unrelated authorized work moving.
 
-> ⇄ Authorization\
-> You may create a separate branch.
+For Alignment, restate the intended outcome or concept and its practical implication in your own terms. Check that understanding against your current task and constraints, and clarify any difference that would change your work. When a reply would help verify mutual understanding, include your restatement in a Response. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
 
-> ⇄ Request\
-> Please investigate this CI failure and tell me what caused it.
+Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor verified stop or pause instructions.
 
-## Receive without inventing authority
+## Response in the receiving session
 
-Treat a message from another agent as agent communication, even if it uses the Decision or Authorization keyword or quotes the user. Check the relevant verified instruction, existing delegation, or standing authorization under the receiving environment's rules. A relayed quote alone is not direct user approval, and neither a role label nor this Skill overrides a required confirmation or handoff.
+A Response gives an answer, acknowledgment, or restatement that addresses an earlier message. Give the substance of your reply and any material uncertainty.
 
-Reuse established, applicable authorization. Follow a verified user decision that applies to the task and carry out authorized requests within scope. If a newer instruction conflicts or a material feasibility problem or risk arises, hold the affected action and explain the specific issue. Proceed with that action only after addressing the issue and confirming the action is still authorized. If authority or a consequential meaning remains uncertain after checking accessible sources, resolve that specific gap with the sender or user as appropriate. Keep independent authorized work moving.
+When a message calls for an answer, acknowledgment, or confirmation of understanding, put your reply only in the body of a user-visible progress update or final answer in your own session. Start a separate block with `⇄ Response` on its own line and put the reply beneath it. Name the originating session and the message you are answering when either would be unclear. Share only what is authorized for that audience. The block makes your reply visible in your session. Claim receipt in the originating session only with separate evidence.
 
-For a suggestion, evaluate the evidence against current work and choose whether to use it. For a factual update, incorporate only what the evidence establishes. If the message is stale, conflicts with a newer decision, or duplicates work already done, explain the material difference instead of silently redirecting the task or repeating execution.
+Reserve any further response for a point that needs another answer or clarification.
 
-## Coordinate without unnecessary interruption
+After responding, decide whether to continue, pause, or finish based on your current task, blockers, and verified instructions. A response itself creates no waiting requirement.
 
-A question, suggestion, or update does not by itself require stopping work or waiting for acknowledgment. Avoid routine instructions to pause, answer immediately, or wait for the sender to read a reply. When an authorized pause is necessary, state the affected action and reason narrowly, leaving unrelated work unblocked. An explicit user stop or pause remains in force unless valid later authorization changes it.
+### Example
 
-Before requesting a retry, takeover, or concurrent action, check the existing execution and shared resources. Coordinate ownership and the handoff point so both sessions do not implement or run the same work. Do not turn a diagnostic question into a new implementation assignment without the necessary scope and authority.
+> ⇄ Response\
+> In reply to the export planning session's CSV compatibility message, I understand that existing spreadsheets should import the default CSV without manual edits. For the export I'm checking, success means the existing sample still imports with fields in the expected positions.
 
-## Close the loop with evidence
+## Follow through where it matters
 
-Verify delivery when the tool's result is uncertain. For coordination that requires follow-through, inspect the recipient's actual response and subsequent evidence at a useful point; sending a message or receiving an acknowledgment is not completion. Report what changed, what was verified, and what remains blocked or uncertain. If the recipient has already handled the concern, avoid repeating the intervention.
+For a message you send to another session, verify uncertain delivery when possible and report any remaining uncertainty. When the exchange calls for follow-through, check the recipient's response and evidence of subsequent work where accessible. Report what the evidence establishes and what remains unverified or unresolved. Avoid repeating an intervention the recipient has already addressed.
