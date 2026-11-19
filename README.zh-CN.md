@@ -34,7 +34,6 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 | `to-questionnaire` | [Matt Pocock](https://github.com/mattpocock/skills) | 将尚不能回答的决策整理成问卷，供其他人补充信息。 |
 | `wayfinder` | [Matt Pocock](https://github.com/mattpocock/skills) | 将跨多个会话的大型工作整理成决策工单地图，逐项明确实施路径。 |
 | `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | 根据本地状态给出建议，初始化或升级项目 Agent 配置，或从配置仓库更新／恢复本地配置。 |
-| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | 维护项目共享、仅本机保存，或通过独立配置仓库同步的项目 Agent 配置。 |
 | `setup-matt-pocock-skills` | [Matt Pocock](https://github.com/mattpocock/skills) | 配置任务跟踪器、分诊标签和领域文档布局；首次使用 Matt Pocock 工程技能前运行。 |
 
 ### 用户可主动调用的任务 Skill
@@ -43,6 +42,7 @@ WenYue SmartKit 是适用于 Codex、Cursor、GitHub Copilot 和 Qoder 的插件
 
 | Skill | 出处 | 用途与使用时机 |
 | --- | --- | --- |
+| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | 维护项目共享、仅本机保存，或通过独立配置仓库同步的项目 Agent 配置。 |
 | `openwiki` | [OpenWiki](https://github.com/langchain-ai/openwiki) | 检索项目知识，或根据源码与测试生成、更新英文 Wiki。 |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | 对照可信的一手资料调查问题，将结论保存为仓库中的 Markdown 文档。 |
 | `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | 绘制架构图、流程图等 HTML/SVG 图解，支持 PNG 导出和已有图表导入；未配置或指定品牌时直接使用默认样式。 |
@@ -124,9 +124,9 @@ Agent 通常会在工作过程中自行选用这些辅助 Skill。用户也可�
 
 ### `maintain-project-config`
 
-手动调用此 Skill 来检查配置、维护并同步配置，或明确采纳项目中的选定修改到配置源。首次使用时，先通过 `setup-project-agents` 选择“项目共享”“仅本机”或“独立配置仓库”。最后一种使用个人私有 GitHub 仓库，一个配置库可以服务多个项目；维护时会核验应用结果，并将本次接受的修改保存到 GitHub。
+用户可以直接要求检查、修改、备份或恢复项目的 Agent 配置，助手会按任务选用此 Skill。日常修改先在业务项目中验证。使用个人配置仓库时，按所选范围保存并推送。
 
-例子：“用 `maintain-project-config` 更新这个项目的 Rules，并同步本次接受的修改。”
+例子：“帮我更新这个项目的 Rules，验证后把这次的改动备份到我的配置仓库。”
 
 ### `refactor-code`
 

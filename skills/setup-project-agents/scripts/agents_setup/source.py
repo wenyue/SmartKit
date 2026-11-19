@@ -88,7 +88,6 @@ _SOURCE_CONTRACT_FILES = (
     PurePosixPath('skills/maintain-project-config/scripts/project_config/project_configuration.py'),
     PurePosixPath('skills/maintain-project-config/scripts/project_config/project_configuration_cli.py'),
     PurePosixPath('skills/maintain-project-config/scripts/project_config/repository.py'),
-    PurePosixPath('skills/maintain-project-config/references/maintenance.md'),
 )
 _AUTHORING_DEPENDENCY_TREES = (
     PurePosixPath('runtime/project_state'),

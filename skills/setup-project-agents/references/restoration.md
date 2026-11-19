@@ -1,6 +1,6 @@
 # Restore Local Configuration
 
-Read this guide after the Setup entry selects restoration. Reuse its resolved `<skill-root>`, `<maintain>` and `<target-root>`, its Ownership guidance, and the accepted operation scope. This route recovers lost or changed local configuration or applies configuration-repository changes, in new checkouts or already configured projects. Read [Project Configuration Maintenance](../../maintain-project-config/references/maintenance.md) for binding, backup scope, restoration, Git exclusions and failure recovery. Use its supported commands directly without invoking the user-only maintenance Skill. This route needs neither full-session preflight nor Matt context, migrations, custom-Agent reassessment or generated authoring.
+Read this guide after the Setup entry selects restoration. Reuse its resolved `<skill-root>`, `<maintain>` and `<target-root>`, its Ownership guidance, and the accepted operation scope. This route recovers lost or changed local configuration or applies configuration-repository changes, in new checkouts or already configured projects. Use [Maintain Project Config](../../maintain-project-config/SKILL.md) for binding, backup scope, restoration, Git exclusions and failure recovery. Request restoration for the selected target and scope. This route needs neither full-session preflight nor Matt context, migrations, custom-Agent reassessment or generated authoring.
 
 1. **Establish which backup to use.** Reuse still-current local findings from operation selection in the Setup entry, or inspect the selected checkout when those findings are unavailable or stale:
 
@@ -11,7 +11,7 @@ Read this guide after the Setup entry selects restoration. Reuse its resolved `<
 
    With an established binding and matching successful local receipt, reuse its repository address, branch and entry unless the user requests a change. For any remaining selection or confirmation, including a requested change with a missing new value, use [Choose the configuration repository](choose-configuration-repository.md) and wait.
 
-   Before binding a source not already verified, use authenticated read-only repository evidence to verify the selected repository and branch contain `projects/<entry>/manifest.json` for the intended backup. If the entry is absent or its existence cannot be verified, stop before `bind`. Use the maintenance reference's repository `bind` route only when needed, preserving existing source and target work. A copied binding alone grants neither restoration nor automatic-sync authority.
+   Before binding a source not already verified, use authenticated read-only repository evidence to verify the selected repository and branch contain `projects/<entry>/manifest.json` for the intended backup. If the entry is absent or its existence cannot be verified, stop before `bind`. Use the maintenance Skill's repository `bind` route only when needed, preserving existing source and target work. A copied binding alone grants neither restoration nor automatic-sync authority.
 
 2. **Show what applying that backup will change.** Update the bound source, then inspect the actual effects:
 
@@ -36,7 +36,7 @@ Read this guide after the Setup entry selects restoration. Reuse its resolved `<
    python "<maintain>" inspect --target "<target-root>"
    ```
 
-   Use the recorded or newly accepted value for `--auto-sync`. Verify source-target agreement, the target-local synchronization receipt and applicable Git exclusions through the shared reference's read-only Git checks. The result is the restored snapshot's bytes. Copied `setupVersion` or ownership records establish neither successful full setup nor runtime readiness for this checkout.
+   Use the recorded or newly accepted value for `--auto-sync`. Verify source-target agreement, the target-local synchronization receipt and applicable Git exclusions through the maintenance Skill's read-only Git checks. The result is the restored snapshot's bytes. Copied `setupVersion` or ownership records establish neither successful full setup nor runtime readiness for this checkout.
 
 4. **Check whether this machine can use the restored configuration.** Use the owners' supported read-only checks for local tools, credentials and services. Report missing or unverifiable prerequisites without installing tools, starting services or rewriting the snapshot as part of restoration.
 

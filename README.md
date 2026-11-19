@@ -34,7 +34,6 @@ Ask for these skills by name; the assistant does not select them automatically.
 | `to-questionnaire` | [Matt Pocock](https://github.com/mattpocock/skills) | Turns an unresolved decision into a questionnaire for someone else to supply missing information. |
 | `wayfinder` | [Matt Pocock](https://github.com/mattpocock/skills) | Maps large work spanning multiple sessions into decision tickets and resolves the path to implementation. |
 | `setup-project-agents` | [SmartKit](https://github.com/wenyue/SmartKit) | Initializes or upgrades project agent configuration, or updates/restores local configuration from a configuration repository, with recommendations based on local state. |
-| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | Maintains project Agent configuration shared with the project, kept on this machine, or synchronized through a separate configuration repository. |
 | `setup-matt-pocock-skills` | [Matt Pocock](https://github.com/mattpocock/skills) | Configures the issue tracker, triage labels, and domain docs; run before first using Matt Pocock's engineering skills. |
 
 ### User-invokable task Skills
@@ -43,6 +42,7 @@ Use these Skills for a specific task. Ask for them by name, or let the assistant
 
 | Skill | Source | What it does and when to use it |
 | --- | --- | --- |
+| `maintain-project-config` | [SmartKit](https://github.com/wenyue/SmartKit) | Maintains project Agent configuration shared with the project, kept on this machine, or synchronized through a separate configuration repository. |
 | `openwiki` | [OpenWiki](https://github.com/langchain-ai/openwiki) | Searches repository knowledge or generates and updates an English Wiki from source and tests. |
 | `research` | [Matt Pocock](https://github.com/mattpocock/skills) | Investigates a question against trusted primary sources and saves the findings as a Markdown document in the repo. |
 | `diagram-design` | [Diagram Design](https://github.com/cathrynlavery/diagram-design) | Creates architecture diagrams, flowcharts, and other HTML/SVG figures, with PNG export and diagram imports; uses the default style immediately unless a brand is configured or requested. |
@@ -124,9 +124,9 @@ Examples: “Use `setup-project-agents` to upgrade this repository's agent confi
 
 ### `maintain-project-config`
 
-Manually invoke this Skill to check configuration, maintain and synchronize it, or explicitly adopt selected project edits into its source. First use `setup-project-agents` to choose Project shared, This machine only, or Separate configuration repository. The latter uses a private personal GitHub repository that can serve multiple projects; maintenance verifies the applied configuration and saves only the accepted changes to GitHub.
+Ask to inspect, edit, back up or restore a project’s Agent configuration. The assistant can select this Skill for the requested operation. Routine edits are verified in the project. When using a personal configuration repository, save and push the selected changes.
 
-Example: “Use `maintain-project-config` to update this project’s Rules and synchronize the accepted changes.”
+Example: “Update this project’s Rules, verify them, and back up these changes to my configuration repository.”
 
 ### `refactor-code`
 

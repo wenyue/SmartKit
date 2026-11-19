@@ -14,7 +14,7 @@ Prepare CodeGraph before `start` using the setup-owned `setup-codegraph` command
 
 ### Source selection
 
-Distinguish the selected SmartKit implementation source below from the project configuration authoring source. Repository-mode configuration uses authenticated GitHub/Git access and a persistent working copy under the maintenance-owned [Project Configuration Maintenance](../../maintain-project-config/references/maintenance.md) contract. Resolve and apply accepted input changes before freezing. That working copy can hold unique unpublished work and never belongs to private-session cleanup.
+Distinguish the selected SmartKit implementation source below from the project configuration authoring source. Repository-mode configuration uses authenticated GitHub/Git access and a persistent working copy under the maintenance-owned [Maintain Project Config](../../maintain-project-config/SKILL.md) contract. Resolve and apply accepted input changes before freezing. That working copy can hold unique unpublished work and never belongs to private-session cleanup.
 
 SmartKit and external Skill snapshot fetches contact only declared repositories and may create/remove private temporary checkouts. They run non-interactively without ambient Git configuration, credential helpers, proxies, SSH or askpass state. If the canonical fetch is unavailable, `start` may use the validated installed plugin root and reports a null `source_commit`; external sources retain their own network prerequisites.
 

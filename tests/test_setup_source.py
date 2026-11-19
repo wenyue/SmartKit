@@ -83,7 +83,6 @@ def write_valid_source(root: Path, *, version: str = '0.1.0') -> None:
         'skills/maintain-project-config/scripts/project_config/project_configuration.py',
         'skills/maintain-project-config/scripts/project_config/project_configuration_cli.py',
         'skills/maintain-project-config/scripts/project_config/repository.py',
-        'skills/maintain-project-config/references/maintenance.md',
     ):
         dependency = root / relative
         dependency.parent.mkdir(parents=True, exist_ok=True)
@@ -398,7 +397,7 @@ class SetupSourceTest(unittest.TestCase):
                 'SKILL.md', 'scripts/maintain.py', 'scripts/project_config/__init__.py',
                 'scripts/project_config/project_configuration.py',
                 'scripts/project_config/project_configuration_cli.py',
-                'scripts/project_config/repository.py', 'references/maintenance.md',
+                'scripts/project_config/repository.py',
             )):
                 with self.subTest(filename=filename):
                     source = Path(temp_dir) / f'source-{index}'

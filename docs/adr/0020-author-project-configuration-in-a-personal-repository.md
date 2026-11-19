@@ -2,7 +2,7 @@
 
 Status: Accepted source-authority decision
 
-> **Routine maintenance updated (2026-11-19).** Author and verify routine configuration changes in the business project, where the configuration is used. Independent local work can continue while the backup is unavailable. In repository mode, refresh the bound source and resolve relevant differences before saving the exact accepted, verified files. The configuration repository remains the source for explicit restoration and enabled startup synchronization. Full setup retains the repository-first workflow below.
+> **Routine maintenance updated (2026-11-19).** Agents may select Maintain Project Config for the requested operation. Author and verify routine configuration changes in the business project, where the configuration is used. Independent local work can continue while the backup is unavailable. In repository mode, refresh the bound source and resolve relevant differences before saving the exact accepted, verified files. The configuration repository remains the source for explicit restoration and enabled startup synchronization. Full setup retains the repository-first workflow below.
 
 ## Original decision
 

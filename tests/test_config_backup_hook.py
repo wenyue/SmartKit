@@ -80,7 +80,7 @@ class ConfigurationBackupHookTest(unittest.TestCase):
         self.write(self.target, '.agents/config.json', b'not JSON')
         self.assertEqual(self.checker.check_project_configuration(self.target), ((), ''))
 
-    def test_automatic_sync_delivers_authorized_update_before_apply_each_session(self):
+    def test_automatic_sync_routes_each_session_to_the_bundled_maintenance_skill(self):
         self.established(automatic=True)
         with mock.patch.object(self.checker, '_run_daily_hook', return_value=self.checker.HookResult(False)), \
                 mock.patch.object(self.checker, 'check_project_codegraph', return_value=()):
@@ -93,25 +93,9 @@ class ConfigurationBackupHookTest(unittest.TestCase):
                            else value['additional_context' if harness == 'cursor' else 'additionalContext'])
                 self.assertIn('authorizes startup synchronization', context)
                 self.assertIn('target ' + json.dumps(str(self.target)), context)
-                self.assertIn('Run `update`, then `reconcile` without `--adopt-local`', context)
-                self.assertIn(
-                    '| Update failure | Preserve both sides and report the failure; '
-                    'do not proceed to application. |', context)
-                self.assertIn(
-                    '| `source-updated` | Restore automatically with `apply --accept-existing` '
-                    'and the exact inspection fingerprint. |', context)
-                self.assertIn('| `in-sync` | Use `apply` to record agreement. |', context)
-                self.assertIn(
-                    '| `needs-choice` with `local_updates_only` | Show changed paths and content differences; '
-                    'ask whether to save local changes to the configuration repository or defer. |', context)
-                self.assertIn(
-                    '| Other `needs-choice` | Show changed paths and content differences; '
-                    'ask whether to save local, use the configuration repository or defer. |', context)
-                self.assertIn('normal commit/push without a second confirmation', context)
-                self.assertIn(
-                    'Deferral preserves local files and the prior receipt; report it and continue independent original work.',
-                    context)
-                self.assertNotIn('ask whether to restore or defer', context)
+                entry = 'skills/maintain-project-config/SKILL.md'
+                self.assertIn(f'startup synchronization operation in `{entry}`', context)
+                self.assertTrue((ROOT / entry).is_file())
 
     def test_enabled_receipt_accepts_a_valid_saved_scope(self):
         self.established(automatic=True)
