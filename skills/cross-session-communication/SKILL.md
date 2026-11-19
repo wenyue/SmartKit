@@ -24,7 +24,7 @@ Write `⇄`, one ASCII space, and one keyword from the table on the first line o
 
 When relaying a Decision, make implicit references explicit and preserve the user's intended force and scope. Clarify consequential ambiguity before presenting it as settled. When a consequential Decision or Authorization turns on exact wording, point to an original the recipient can check or, when needed and authorized, provide a brief excerpt separately as evidence.
 
-Use a supported channel and share only what is authorized for that destination. If a needed source is inaccessible to the recipient, say so. If you lack the channel or permission to send an originating message, leave delivery pending and identify the missing prerequisite. For replies, follow the response route below.
+Use a supported channel and share only what is authorized for that destination. If a needed source is inaccessible to the recipient, say so. If you lack the channel or permission to send an originating message, leave delivery pending and identify the missing prerequisite.
 
 ### Examples
 
@@ -44,15 +44,15 @@ Use a supported channel and share only what is authorized for that destination. 
 
 Treat Decision and Authorization as relays. Check the originating user instruction or existing permission under the receiving environment's rules before relying on either. Follow a verified, current user decision that applies to your task. Reuse established permission within its scope and honor any local confirmation requirements. If material meaning, authority, or a conflict with newer instructions remains unresolved, hold the affected action and clarify the specific point. Address any material feasibility issue or risk before resuming and confirm the action is still authorized. Keep unrelated authorized work moving.
 
-For Alignment, restate the intended outcome or concept and its practical implication in your own terms. Check that understanding against your current task and constraints, and clarify any difference that would change your work. When a restatement would help verify mutual understanding, include it in a normal update in your session. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
+For Alignment, check the intended outcome or concept against your task and constraints. Clarify differences that would change your work; restate your understanding when it helps resolve or verify them. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
 
 Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor verified stop or pause instructions.
 
 ## Reply in the receiving session
 
-If the next step is clear and already authorized, keep working. Do not post a separate acknowledgment just to confirm receipt, and do not stop or wait merely because you replied. Hold affected work only when the task, a blocker, or a verified instruction calls for it.
+Take the next clear, authorized step without a separate acknowledgment. Replying does not create a reason to wait.
 
-When you have an answer, a substantive result, a disagreement, or a concrete blocker, explain it naturally in a user-visible progress update or final answer in your own session. Include any material uncertainty and identify the originating session or message when needed. Share only what is authorized for that audience. The originating session reads this work where accessible; do not send the same reply back separately or claim the originating session received it without evidence.
+Give answers, results, material disagreements, or concrete blockers in the normal progress update or final answer of your own session. Include material uncertainty and name the originating session or message if the reference is unclear. Keep the reply in your session for the originating session to read, and share only what your audience may see. Claim receipt only with separate evidence.
 
 ## Follow through where it matters
 
