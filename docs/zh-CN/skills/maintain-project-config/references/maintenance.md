@@ -177,7 +177,7 @@ python "<maintain>" adopt --target "<target-root>" --all
 
 ### 备份经过验证的本地改动 <a id="back-up-verified-local-changes"></a>
 
-普通维护保存前先[刷新绑定的配置仓库](#refresh-the-repository-before-using-its-backup)，再用不带采纳选项的 `reconcile` [只读判断差异](#adopt-accepted-target-changes)。如有可靠的早期检查结果，对照 `source_fingerprint` 和 `scope`。离线工作后的首次检查无法证明来源是否变化。所选来源已经变化，或差异判定表明上游有更新、两边均有改动或方向不明时，先确定[整次同步选择](#apply-the-users-whole-synchronization-choice)，再保存。确认只有本地变化时，即使 `reconcile` 返回 `needs-choice`，既有授权仍涵盖它已指定或接受的确切文件，只要这些文件已验证。刷新、范围或必要选择尚未确定时，保留本地结果并暂缓保存。
+普通维护保存前先[刷新绑定的配置仓库](#refresh-the-repository-before-using-its-backup)，再执行不带采纳选项的[只读差异判定](#adopt-accepted-target-changes)。如有可靠的早期检查结果，对照 `source_fingerprint` 和 `scope`。离线工作后的首次检查无法证明来源是否变化。所选来源已经变化，或差异判定表明上游有更新、两边均有改动或方向不明时，先确定[整次同步选择](#apply-the-users-whole-synchronization-choice)，再保存。确认只有本地变化时，即使 `reconcile` 返回 `needs-choice`，既有授权仍涵盖它已指定或接受的确切文件，只要这些文件已验证。刷新、范围或必要选择尚未确定时，保留本地结果并暂缓保存。
 
 每次采纳前，检查采纳可能影响的确切来源路径，包括清单。对照已获取的分支，检查已暂存、未暂存、未跟踪的工作和待推送的变更，确定哪些属于本次操作。如果保存会覆盖归属不明或未经接受的待处理来源工作，暂缓保存。无关路径或条目的待处理工作不纳入范围。重新检查后，若发现来源状态变化，先对照原决定和本次操作已接受的写入核对，再沿用保存授权。
 
