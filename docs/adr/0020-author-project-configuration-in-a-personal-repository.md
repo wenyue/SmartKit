@@ -2,6 +2,10 @@
 
 Status: Accepted source-authority decision
 
+> **Routine maintenance updated (2026-11-19).** Author and verify routine configuration changes in the business project, where the configuration is used. Independent local work can continue while the backup is unavailable. In repository mode, refresh the bound source and resolve relevant differences before saving the exact accepted, verified files. The configuration repository remains the source for explicit restoration and enabled startup synchronization. Full setup retains the repository-first workflow below.
+
+## Original decision
+
 Personal project configuration needs to remain outside business repositories and be recoverable across machines. One user-owned private GitHub repository will hold configuration sources for multiple target projects, covering agent instructions, Skills, custom Agents, MCP declarations, and project-level Harness settings. The user selected authoring in that configuration repository and applying its sources to target projects over authoring in targets and exporting changes.
 
 For projects using the configuration repository, setup continues inspecting the business project and writes revised source configuration in the configuration repository before applying it to the target. Target `.agents/config.json` holds the binding and target-local setup state; applying portable configuration preserves those fields.

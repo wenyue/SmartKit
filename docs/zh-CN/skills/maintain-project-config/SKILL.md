@@ -6,64 +6,34 @@ disable-model-invocation: true
 
 # 维护项目配置
 
-根据业务项目的证据维护 Agent 配置。在仓库模式下，选中的文件和目录构成完整备份：编写已接受的快照，将其恢复到目标，再发布经过验证的精确范围。本地模式保留现有的编写和同步路径。
+在业务项目中维护 Agent 配置。先在项目中验证，再将选定文件完整保存到配置仓库。
 
-将本目录解析为 `<skill-root>`、所在插件解析为 `<plugin-root>`、业务项目解析为 `<target-root>`。使用 `<skill-root>/scripts/maintain.py` 作为 `<maintain>` 前，阅读[项目配置维护](references/maintenance.md)。该共享参考负责绑定、备份范围、恢复、本地同步和发布恢复。显式的 setup 恢复和已启用的启动同步使用该参考和受支持命令，不调用这个仅限用户调用的 Skill。从已加载的插件解析资源，不依赖目标工作目录。
+从已加载的插件确定此目录为 `<skill-root>`，业务项目为 `<target-root>`，`<skill-root>/scripts/maintain.py` 为 `<maintain>`。按选定操作阅读[项目配置维护](references/maintenance.md)中链接到的章节。命令或必需资源不可用时，报告缺失项并暂缓依赖它的工作。
 
-## 1. 明确预期结果和来源
-
-```text
-python "<maintain>" inspect --target "<target-root>"
-```
-
-检查为只读操作。确认维护模式、选定条目、备份范围、目标差异和未完成工作。仅要求检查时，到报告这些结果及不可用证据为止；这不授权更新、恢复、编辑或发布。
-
-| 情形 | 写入前需要明确的事项 |
-| --- | --- |
-| 未绑定项目 | 一起提供项目共享、仅本机和独立配置仓库三种模式；绑定前取得用户的模式选择。 |
-| 显式恢复 | 遵循参考中的来源选择路径：复用具有匹配本地成功恢复记录的有效绑定，或询问仓库、分支和条目。仅有复制的绑定不能确定本 checkout 的来源。 |
-| 同一 checkout 的后续维护 | 复用其有效绑定；不从业务远端或其他 checkout 推断仓库身份。 |
-| 在已有配置上初始化 | 分析实际内容和差异，提出具体方案，并取得用户的替换决定。 |
-
-## 2. 编辑前更新
-
-保留业务项目和配置 checkout 中已暂存、未暂存、未跟踪和未发布的工作。明确哪些待处理来源改动属于本次操作；其他条目不在范围内。仓库模式下，编写或恢复前更新持久 checkout：
-
-```text
-python "<maintain>" update --target "<target-root>"
-```
-
-仅在仓库身份、分支状态和访问权限经过验证后继续。更新失败不能证明来源是最新的；按照参考中的恢复路径处理，不恢复过时内容。两种本地模式均直接编写业务项目的规范输入，不需要访问配置仓库，也没有配置仓库发布步骤。
-
-## 3. 编写快照或采纳已接受的目标改动
-
-根据业务项目证据决定配置内容。配置仓库的布局只是存储事实，不是项目架构或必需检查的证据。备份前审阅选定路径及其完整内容，包括机器路径和凭据。整文件备份不转换字段，也不筛除秘密值。
-
-在仓库中编写时，编辑条目 `files/` 下选中的文件；已接受的范围变化时同时修改清单。完整保留每个选定文件，包括原生 MCP 和设置文件；备份不查阅 `smartkit.lock.json`，也不重新生成这些文件。本地同步记录不纳入备份。编写或修订 Rule 或 Skill 时，以来源文件作为 Candidate，并提供合格的业务项目证据，使用[编写 Rule 和 Skill](../write-rules-and-skills/SKILL.md)；保留其中的作者与评审职责。
-
-按参考中的[采纳流程](references/maintenance.md#adopt-accepted-target-changes)处理更新的本地配置，或保存明确选定的内容。保留已接受的完整结果 JSON，供按精确范围发布时使用。
-
-## 4. 验证并恢复
-
-通过适用检查验证已接受的配置。仓库模式下，检查拟应用到目标的差异并恢复已接受的备份：
+## 1. 确定要执行的操作
 
 ```text
 python "<maintain>" inspect --target "<target-root>"
-python "<maintain>" apply --target "<target-root>"
 ```
 
-两种本地模式的规范输入已位于目标中。直接使用下文既有的本地同步路径，不调用 `apply`，也不访问配置仓库。
+检查读取维护模式、绑定、可查明的范围和差异，不拉取也不写入。保留两个 checkout 中已暂存、未暂存、未跟踪和未发布的工作。只要求检查时，报告发现和无法取得的证据后结束。
 
-仓库应用存在差异时，先遵循参考中的[整次同步选择](references/maintenance.md#apply-the-users-whole-synchronization-choice)。采纳使来源与目标一致后，按[同步记录流程](references/maintenance.md#record-verified-agreement-and-the-startup-preference)记录一致状态。
+显式恢复时，按[来源选择和恢复流程](references/maintenance.md#restore-explicitly-or-synchronize-at-startup)执行并报告结果。恢复备份和保存本地改动各自需要授权。
 
-整文件快照恢复以目标精确一致并完成本地前置条件检查为终点。仅恢复的请求不编写来源、不生成配置、不执行完整初始化，也不发布。如果请求的配置变更还需要有意执行本地生成，使用参考中既有的 `sync-project` 或更窄的 `sync-project-rules` 路径及其所有权检查。将有意改变的已备份输出采纳到来源中，并在发布前重新确认一致。恢复和维护均不能证明完整初始化成功；尚未满足的初始化或迁移前提，仍需用户显式调用所属 Skill 处理。
+项目尚未绑定时，一起呈现三种[维护模式](references/maintenance.md#choose-the-maintenance-mode)，取得用户选择后再[绑定](references/maintenance.md#bind-or-deliberately-change-a-source)。后续维护沿用有效绑定。若要在已有配置上初始化，比较实际内容，提出具体的替换方案并取得用户决定。首次导入配置仓库应在本地验证之后进行。
 
-验证选定模式的 Git 处理，包括业务 Git 已跟踪的路径，并完成变更所需的语义或项目检查。后续步骤失败时保留已保存的来源和目标进度；报告实际恢复状态，不声称进行了跨仓库回滚。
+## 2. 在项目中编辑并验证
 
-## 5. 发布经过验证的来源范围
+根据业务项目的证据确定改动内容和验证方式，编辑项目实际使用的配置文件。编写或修订 Rule 或 Skill 时，使用[编写 Rule 和 Skill](../write-rules-and-skills/SKILL.md)，将这些文件作为 Candidate，并提供符合要求的项目证据。
 
-已授权的仓库写入按[精确范围发布](references/maintenance.md#publish-an-exact-verified-scope)执行，用户要求仅保留本地结果时除外。保留的 JSON 涵盖完整已接受范围时，通过 `--plan` 传入。范围来自直接编辑或多个操作时，按参考对各路径分别使用 `--path`。保留无关的暂存项和工作区改动。失败时遵循参考中的提交 hook 处理和保留提交恢复流程。
+备份不可访问或同步选择尚未确定时，可以继续范围已知、已获授权且能独立完成的本地工作。对实际结果完成适用检查，包括任何[必要的生成](references/maintenance.md#render-local-configuration-only-when-required)。必要检查或生成受阻时，保留本地工作，报告缺少的验证，暂缓备份。
 
-完成要求来源已验证、目标一致、适用检查通过，且发布结果明确：已验证远端发布、用户显式要求本地结果，或本次操作无需发布。本地模式不需要配置仓库发布。
+即使暂缓备份，也检查本地结果的 [Git 处理方式](references/maintenance.md#keep-personal-configuration-out-of-business-git)。报告已被 Git 跟踪的配置、尚未生效的排除规则，以及未满足的 setup 或迁移前提。两种本地模式均以经过验证的本地结果结束。
 
-报告模式和来源、接受和保留的路径、验证与恢复、任何有意执行的生成、Git 排除和已跟踪配置，以及适用时的精确提交和已验证远端结果。未完成时，分别说明已保存来源、保留提交、已应用目标、未满足前提和剩余远端同步。
+## 3. 备份经过验证的选定内容
+
+保存到配置仓库已获授权时，新条目走[首次导入流程](references/maintenance.md#import-verified-files-into-a-new-entry)。已有绑定走[备份经过验证的改动](references/maintenance.md#back-up-verified-local-changes)，刚连接到已有条目的绑定也适用。记录一致状态后，验证最终范围的 Git 处理方式，再按[精确范围发布](references/maintenance.md#publish-an-exact-verified-scope)。
+
+## 报告结果
+
+报告模式、来源、已接受和保留的路径、已执行的检查，以及业务 Git 已跟踪的配置文件。适用时附上确切的提交和经验证的发布结果。后续步骤受阻时，保留已完成的工作，分别报告本地结果、已保存的备份、一致性记录、保留的提交和待完成的发布。
