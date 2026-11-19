@@ -78,7 +78,7 @@ Restore-only operations use binding, update, inspection and application to resto
 
 Automatic startup synchronization is an explicit local preference, defaulting to off. The session-start hook supplies synchronization guidance only for a bound repository checkout with a matching successful receipt and automatic synchronization enabled. Update the backup, run `reconcile` without `--adopt-local`, and follow the [reconciliation outcomes](#adopt-accepted-target-changes). Startup may restore a proven repository-only update without another question. Saving local changes requires the user's acceptance of that upload; automatic synchronization alone grants no upload authority. An unbound or disabled checkout stays silent. Report invalid enabled bindings or receipts. Explicit manual restoration remains available while automatic synchronization is off. Other readiness findings retain their own consent and setup requirements.
 
-## Update before using the backup
+## Update before authoring or restoring
 
 ```text
 python "<maintain>" update --target "<target-root>"
@@ -86,19 +86,7 @@ python "<maintain>" update --target "<target-root>"
 
 The repository support verifies the personal private repository and persistent checkout identity, then fetches and safely fast-forwards supported states. Preserve existing staged, unstaged, untracked and unpublished work before updating. Dirty, divergent or unfinished states may be refused; resolve the reported condition without reset, automatic stash, force push or history rewrite. If authentication, fetching or update fails, preserve existing state and stop before application; a stale checkout cannot stand in for a successful update.
 
-An unavailable current backup does not block independent local authoring and verification in known, authorized scope. Explicit restoration and startup synchronization still require a successful update before application; full setup retains its own workflow. Initial import, adoption or setup can leave accepted backup changes in the same operation; retain their provenance rather than requiring another clean-checkout update before validation or publication.
-
-### Back up verified local authoring
-
-Change and verify the actual business project before export. Before writing to the backup, successfully update the bound checkout and inspect the current entry and scope. If the backup was refreshed and inspected before authoring, compare its `source_fingerprint` and `scope` with that observation to detect changes to this entry; a change to another entry alone is not a conflict. Without a reliable pre-authoring observation, do not treat the first source state seen as an unchanged baseline.
-
-Use `reconcile` without adoption options to [classify differences](#adopt-accepted-target-changes), and compare the exact current source and scope with the verified local result. Do not presume local-only changes or agreement because the work was done offline. If the baseline comparison shows source drift, or classification identifies incoming changes, changes on both sides or an unknown direction, resolve the whole-synchronization choice before adopting. Authoring does not authorize overwriting upstream changes or restoring local contents. If the current source or scope cannot be verified or a difference affecting synchronization cannot be resolved, preserve the verified local result without adoption, agreement receipt or publication.
-
-Before adopting, verify that the complete selected local files and deletions at the latest inspection match the verified result; exclude credentials and unrelated changes. For differing files in the declared scope, use exact file selections and pass the latest observation’s `fingerprint` to `adopt --accept-existing` through the [adoption route](#adopt-accepted-target-changes). That fingerprint includes local state; it is not the baseline for comparing source snapshots. Do not substitute `--all` or `reconcile --adopt-local`, which can adopt differences outside this operation’s selection. Skip adoption when the selected backup already contains the exact verified content and its scope is unchanged.
-
-A removal, deletion or expansion of backup scope must be explicitly accepted. For files outside the inspected scope, the inspection fingerprint does not cover them: review their full content and ensure that it remains stable until a separate explicit adoption of their exact paths completes. Stop if changes cannot be controlled. For multiple adoptions, refresh the inspection and check the selection each time. Retain each adoption result and check all returned source changes and content digests against the verified selection and accepted manifest changes. Stop without publishing on a mismatch.
-
-After adoption, verify that the source holds the verified bytes and inspect the entire backup scope again. Only when no differences remain, run `apply` without a difference-acceptance argument to [record agreement](#record-verified-agreement-and-the-startup-preference), without rewriting matching content. If differences remain, preserve the unselected work, do not restore or publish, and report both the blocker and any saved adoption.
+After a successful update, edit or adopt the accepted source scope. Initial import, authoring or deliberate local generation can leave accepted source changes in the same operation; retain their provenance through validation, application and publication without requiring another clean-checkout update between those steps.
 
 ## Apply the authoritative backup
 
@@ -189,8 +177,6 @@ python "<maintain>" sync-project --target "<target-root>" --check
 
 This route renders established discovery and native Agent, MCP and settings mappings without fetching, blueprint authoring or full migration. Check mode writes nothing: exit 0 means clean, exit 1 means drift, and exit 2 means failure. If rendering intentionally changes selected backed-up files, adopt those accepted results and reconfirm source-target agreement before publication. In either local mode, use this route directly after editing the project's canonical inputs.
 
-In repository mode, both `sync-project` and `sync-project-rules` require a readable backup and agreement across its scope before running, including in `--check` mode. If the backup is unavailable or differs, including because of the current local edits, continue only the work that can be done independently. Use another supported, authorized local check if it can establish the required result. Otherwise preserve the local changes, report the required rendering or validation that remains blocked, and defer export. Do not adopt unverified content or restore local files to satisfy the command’s prerequisite.
-
 The schema's `ruleEntry` selects `AGENTS.md` (the default) or `AGENTS.local.md` for the generated `Project rules` section. Both local synchronization routes manage that section in the selected file, preserving its other bytes and the unselected entry. Changing the selection does not move or remove an existing section or delete the former entry.
 
 When only that generated section needs updating, use the narrower route, which does not require full setup ownership:
@@ -249,7 +235,7 @@ Establish the operation's accepted source changes and outgoing commits before pu
 
 When an accepted adoption result covers the complete publication scope, use its JSON with `--plan`. The command verifies every path and content digest. For a separately assembled scope, pass one `--path` per accepted file. These routes apply to both `publish` and `wiki publish`.
 
-Publish after applicable validation succeeds and source and target agree. Local authoring validates the local result, including any deliberate rendering, before backup and records agreement afterward. Other workflows retain their own application or agreement requirements. The caller verifies that any other prerequisites have been met before publication. A full-file restoration has no automatic renderer prerequisite. An explicit local-result instruction leaves the accepted source work available and reports intentional publication deferral.
+Publish after source validation, accepted application, any required deliberate local rendering and all applicable checks succeed. Confirm source-target agreement. The caller establishes completion of any additional prerequisites before using this publication route. A full-file restoration has no automatic renderer prerequisite. An explicit local-result instruction leaves the accepted source work available and reports intentional publication deferral.
 
 ```text
 python "<maintain>" publish --help
