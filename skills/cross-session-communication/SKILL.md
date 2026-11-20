@@ -15,7 +15,7 @@ Write `⇄`, one ASCII space, and one keyword from the table on the first line o
 
 | Keyword | What to convey |
 | --- | --- |
-| Decision | State what the user actually decided or directed in your own words so it makes sense in the receiving session's context. Say what it applies to, including any conditions, limits, or corrections, and make implicit references clear. Keep direct quotes of the user's words out of the Decision body, including `The user said, “…”`. |
+| Decision | State what the user actually decided or directed in your own words so it makes sense in the receiving session's context. Say what it applies to, including any conditions, limits, or corrections, and make implicit references clear. Keep direct quotes of the user's words out of the Decision body (for example, The user said, “…”). |
 | Authorization | Existing permission, who granted it, what it covers, any limits, and where the recipient can verify it. Permission to act is not an instruction to act. |
 | Alignment | An outcome or concept the recipient needs to understand. Explain why it matters and how it applies to their current task. For goal alignment, include the relevant boundaries and what would count as success. For a concept, explain a consequence that helps the recipient apply it. |
 | Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for actions you propose yourself, including ways to implement a decision when the user left the method open. Leave the choice with the recipient. |
