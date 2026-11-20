@@ -50,6 +50,8 @@ Evaluate a Suggestion on its merits against your own task, current work, and aut
 
 ## Reply in the receiving session
 
-Take the next clear, authorized step without a separate acknowledgment. Replying does not create a reason to wait.
+Continue an active task in the same turn. When a follow-up needs a reply, answer it briefly in a progress update, then take the next clear, authorized step. If no reply is needed, take that step without a separate acknowledgment.
 
-Give answers, results, material disagreements, or concrete blockers in the normal progress update or final answer of your own session. Include material uncertainty and name the originating session or message if the reference is unclear. Keep the reply in your session for the originating session to read, and share only what your audience may see.
+If an action is blocked or needs a decision or permission, hold that action and continue useful authorized work that can proceed independently. End the turn when the task is complete, an applicable instruction stops or pauses it, or a concrete blocker leaves no useful authorized work. A standalone question can end with its answer.
+
+Report results, material disagreements, or concrete blockers in a progress update or the final answer as appropriate. Include material uncertainty and name the originating session or message if the reference is unclear. Keep the reply in your session for the originating session to read, and share only what your audience may see.
