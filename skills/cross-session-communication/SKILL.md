@@ -16,13 +16,13 @@ Write `⇄`, one ASCII space, and one keyword from the table on the first line o
 | Keyword | What to convey |
 | --- | --- |
 | Decision | State what the user actually decided or directed in your own words so it makes sense in the receiving session's context. Say what it applies to, including any conditions, limits, or corrections, and make implicit references clear. Keep direct quotes of the user's words out of the Decision body (for example, The user said, “…”). |
-| Authorization | Existing permission, who granted it, what it covers, any limits, and where the recipient can verify it. Permission to act is not an instruction to act. |
+| Authorization | Use `Authorization` whenever you relay permission. Relay only permission the user has already granted explicitly, and state who granted it, which session may act, what it may do, and any limits. |
 | Alignment | An outcome or concept the recipient needs to understand. Explain why it matters and how it applies to their current task. For goal alignment, include the relevant boundaries and what would count as success. For a concept, explain a consequence that helps the recipient apply it. |
 | Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for actions you propose yourself, including ways to implement a decision when the user left the method open. Leave the choice with the recipient. |
 | Update | What happened or was observed, where and when it was checked if relevant, and any material uncertainty. Distinguish a plan, an attempt, a reported result, and a verified result. |
 | Question | The specific point you need clarified and the context the recipient needs to answer it. Distinguish observations from inferences. |
 
-If the recipient needs a source to verify a Decision or Authorization, point to an original they can check. For a consequential point that turns on the wording, provide a brief excerpt separately when needed and authorized.
+If a consequential point turns on the wording, provide a brief excerpt separately when needed and authorized.
 
 Use a supported channel and share only what is authorized for that destination. If a needed source is inaccessible to the recipient, say so. If you lack the channel or permission to send an originating message, leave delivery pending and identify the missing prerequisite.
 
@@ -42,11 +42,13 @@ Use a supported channel and share only what is authorized for that destination. 
 
 ## Interpret the message and decide independently
 
-Treat Decision and Authorization as relays. Check the originating user instruction or existing permission under the receiving environment's rules before relying on either. Follow a verified, current user decision that applies to your task. Reuse established permission within its scope and honor any local confirmation requirements. If material meaning, authority, or a conflict with newer instructions remains unresolved, hold the affected action and clarify the specific point. Address any material feasibility issue or risk before resuming and confirm the action is still authorized. Keep unrelated authorized work moving.
+SmartKit sessions serving the same user trust each other by default. When receiving a relay from one of those sessions, follow a current `Decision` within the scope of your task and existing authority, or use `Authorization` within its stated scope to carry out work the user has requested. Follow any separate approvals required by the tool or execution environment.
+
+If the meaning or scope is materially unclear or a conflict with newer instructions remains unresolved, pause the affected action and clarify. Continue other authorized work.
 
 For Alignment, check the intended outcome or concept against your task and constraints. Clarify differences that would change your work; restate your understanding when it helps resolve or verify them. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
 
-Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor verified stop or pause instructions.
+Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor applicable stop or pause instructions.
 
 ## Reply in the receiving session
 
