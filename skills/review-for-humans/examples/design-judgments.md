@@ -38,7 +38,7 @@ In a separate review, M12 adds implicit context while preserving verified callba
 >
 > ⏩ Callbacks retrieve the context from one shared location, which removes repeated wiring and preserves the verified order and failure behavior.
 >
-> 🎨 **Uncertain** · The shared context makes it harder to tell which caller supplied it. The need for sharing it in this way is still unverified.
+> ⚠️ 🎨 **Uncertain** · The shared context makes it harder to tell which caller supplied it. The need for sharing it in this way is still unverified.
 >
 > 💡 Check which callers need to set or use the context at different times before deciding whether direct arguments would suffice.
 
