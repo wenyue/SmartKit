@@ -11,7 +11,7 @@ Use this Skill only between independent agent sessions. Each session is responsi
 
 Check the accessible conversation and current work to identify the intended session, its task, and the decisions or constraints that matter to the message. Write for the recipient's context. If a missing fact or ambiguity would change the meaning, check the source or ask a focused question.
 
-Begin each intent section with `⇄`, one ASCII space, and one keyword from the table. Put its substance on the next line without repeating what the keyword signals. Use one intent section for a single intent, or one per distinct intent when the same recipient needs several together. Separate intent sections with a blank line.
+Begin each intent section with `⇄`, one ASCII space, and one of the six intent keywords below. Put its substance on the next line without repeating what the keyword signals. Use one intent section for a single intent, or one per distinct intent when the same recipient needs several together. Separate intent sections with a blank line.
 
 | Keyword | What to convey |
 | --- | --- |
@@ -21,12 +21,11 @@ Begin each intent section with `⇄`, one ASCII space, and one keyword from the 
 | Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for actions you propose yourself, including ways to implement a decision when the user left the method open. Leave the choice with the recipient. |
 | Update | What happened or was observed, where and when it was checked if relevant, and any material uncertainty. Distinguish a plan, an attempt, a reported result, and a verified result. |
 | Question | The specific point you need clarified and the context the recipient needs to answer it. Distinguish observations from inferences. |
+| Restate | **Optional marker, not an intent.** For a consequential handoff, add a blank line and then `⇄ Restate` as the final line, with no body, if checking understanding could catch a material mismatch. It requests a reply, not permission to act or a pause. |
 
 If a consequential point turns on the wording, provide a brief excerpt separately when needed and authorized.
 
 Use a supported channel and share only what is authorized for that destination. If a needed source is inaccessible to the recipient, say so. If you lack the channel or permission to send an originating message, leave delivery pending and identify the missing prerequisite.
-
-For a consequential handoff, you can add a blank line and then `⇄ Restate` as the final line if checking understanding could catch a material mismatch. It has no body and does not count as an intent section. It requests a reply, not permission to act or a pause.
 
 ### Examples
 
