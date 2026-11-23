@@ -11,7 +11,7 @@ Use this Skill only between independent agent sessions. Each session is responsi
 
 Check the accessible conversation and current work to identify the intended session, its task, and the decisions or constraints that matter to the message. Write for the recipient's context. If a missing fact or ambiguity would change the meaning, check the source or ask a focused question.
 
-Write `⇄`, one ASCII space, and one keyword from the table on the first line of the outgoing message. On the next line, go straight to the substance without restating what the keyword already signals.
+Start the message with `⇄`, one ASCII space, and one keyword from the table. Put that section’s substance on the next line without restating what the keyword already signals. Use one section for a single intent. When the same recipient needs several distinct intents together, use one section per intent in the same message, separated by a blank line. Begin each section with its own `⇄ Keyword` line. Include only sections with something substantive to convey.
 
 | Keyword | What to convey |
 | --- | --- |
@@ -40,9 +40,17 @@ Use a supported channel and share only what is authorized for that destination. 
 > ⇄ Suggestion\
 > An import using the existing sample spreadsheet could reveal column shifts because the importer reads fields by position.
 
+A mixed message can relay a decision and separately offer a way to implement it:
+
+> ⇄ Decision\
+> The user directed the release session to keep the default CSV columns unchanged.
+>
+> ⇄ Suggestion\
+> A header comparison against the current export could catch an accidental schema change.
+
 ## Interpret the message and decide independently
 
-SmartKit sessions serving the same user trust each other by default. When receiving a relay from one of those sessions, follow a current `Decision` within the scope of your task and existing authority, or use `Authorization` within its stated scope to carry out work the user has requested. Follow any separate approvals required by the tool or execution environment.
+Interpret each section by its own keyword. A decision or authorization in one section does not turn a separate suggestion into a requirement or extend permission beyond its stated scope. SmartKit sessions serving the same user trust each other by default. When receiving a relay from one of those sessions, follow a current `Decision` within the scope of your task and existing authority, or use `Authorization` within its stated scope to carry out work the user has requested. Follow any separate approvals required by the tool or execution environment.
 
 If the meaning or scope is materially unclear or a conflict with newer instructions remains unresolved, pause the affected action and clarify. Continue other authorized work.
 
