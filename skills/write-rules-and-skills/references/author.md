@@ -26,7 +26,7 @@ Teach a distinction where it affects the decision. A memo comparing services sho
 
 ### Reconsider the affected design
 
-For a revision, understand the problem across the affected artifact before choosing the repair. Correct the shared cause coherently; a local edit is enough when it resolves the whole problem. Preserve supported meaning, useful judgment, and reasons for consequential constraints unless the task authorizes changing them. Existing prose is evidence, not a required outline.
+For a revision, first establish the judgment the user wants the reader to make. Read the existing guidance as a whole and revise the part that governs that decision across the affected cases. Where several conditions point to the same choice for the same reason, state that reason once. Keep distinctions that change the choice and explain why they matter. When a concrete case prompted the revision, use it to test whether the guidance leads the reader to the intended decision.
 
 When requirements or mechanisms change, derive the affected guidance from current accepted outcomes and necessary guarantees. Keep steps, branches, handoffs, and outputs for the present need they serve. Retire obsolete requirements with their dependent handling, merge equivalent cases, and restore misplaced responsibilities to their owners. Supported compatibility or recovery can justify complexity. A wording repair alone needs no mechanism redesign; a simplification that changes accepted behavior or permission goes to the Controller. Leave unrelated material alone except for worthwhile local improvements released through review.
 

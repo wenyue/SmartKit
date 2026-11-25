@@ -55,7 +55,7 @@ Consuming a failure or delegating reporting retains responsibility for remaining
 
 ## Choose the simplest acceptable recovery
 
-Reuse the simplest established recovery that preserves required state and work. A short wait or safe manual retry can suffice when those affected have a practical way to proceed. Add wrappers, fallback state, or automatic repair only to protect a required outcome or materially reduce failure's impact.
+Start with the direct path, which may end the attempt with the original failure. What would the caller lose if work stopped here? Choose recovery for the required outcome it preserves or the harm it materially reduces. Use the simplest established response that achieves that purpose. A short wait or a safe manual retry may suffice.
 
 Keep recovery feasible, bounded, and within the owner's authority. Establish accepted loss, remaining effects, and the outcome if recovery fails. Disclose material effects of accepted partial completion.
 
