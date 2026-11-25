@@ -5,7 +5,7 @@ description: Use for work involving operation outcomes or error behavior, includ
 
 # Error Handling
 
-Choose the simplest handling that fulfills the operation's promise, respects accepted loss and permission, and leaves valid state. Recovery that restores future usability does not by itself complete the failed operation.
+Start with a direct design that fulfills the operation's promise. Keep state valid and respect permissions and limits on acceptable loss. Weigh what users gain from preventing or mitigating a failure against the cost of building and maintaining the added protection. A minor inconvenience can be worth accepting to keep the normal path simple.
 
 ## Load the guidance for affected decisions
 
@@ -55,7 +55,7 @@ Consuming a failure or delegating reporting retains responsibility for remaining
 
 ## Choose the simplest acceptable recovery
 
-Reuse the simplest established recovery that preserves required state and work. A short wait or safe manual retry can suffice when those affected have a practical way to proceed. Add wrappers, fallback state, or automatic repair only to protect a required outcome or materially reduce failure's impact.
+An operation may end in failure. When recovery is needed, prefer a simple existing approach that meets the caller's needs. If a full disk prevents a save, keeping the user's unsaved edits so they can free up space and try again may be enough.
 
 Keep recovery feasible, bounded, and within the owner's authority. Establish accepted loss, remaining effects, and the outcome if recovery fails. Disclose material effects of accepted partial completion.
 
