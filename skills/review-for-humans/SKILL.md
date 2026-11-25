@@ -70,7 +70,7 @@ When a change shares a helper or moves side effects, what can callers observe th
 
 When reporting a defect, explain how its trigger can occur and which obligation or user outcome it compromises. A supported call sequence, an applicable contract, or a representative reproduction can establish that link.
 
-What does the change make possible for its callers? Compare keeping the existing behavior with adding the capability. Where the capability is needed, compare the chosen implementation with a simpler option and explain which guarantees and costs differ. Treat a proposal to change supported behavior as a scope decision.
+What problem does the change solve? Which outcomes do callers need, and does the existing behavior already provide them? Compare the chosen implementation with the original and consider whether a simpler design could meet the same requirements. Explain what each design guarantees callers and what it costs to maintain. Treat a proposal to change supported behavior as a scope decision.
 
 Inspect each added file and each boundary introduced or changed by a declaration or contract. What responsibility does it carry, and where did that responsibility live before? Trace who depends on it and for how long. Compare direct calls and existing owners where they could serve the same purpose. Give the most attention to consequential design choices and explain the concrete trade-off under the applicable rules.
 
