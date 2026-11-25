@@ -70,9 +70,9 @@ When a change shares a helper or moves side effects, what can callers observe th
 
 When reporting a defect, explain how its trigger can occur and which obligation or user outcome it compromises. A supported call sequence, an applicable contract, or a representative reproduction can establish that link.
 
-What problem does the change solve? Which outcomes do callers need, and does the existing behavior already provide them? Compare the chosen implementation with the original and consider whether a simpler design could meet the same requirements. Explain what each design guarantees callers and what it costs to maintain. Treat a proposal to change supported behavior as a scope decision.
+What problem does the change solve? Which outcomes do callers need, and does the existing behavior already provide them? Compare the chosen implementation with the original and consider whether a simpler design could meet the same requirements. Explain what each guarantees callers and what it costs to maintain. When endorsing added complexity, show what the simpler design would lose and why that matters enough under the accepted requirements to justify the cost. Treat a proposal to change supported behavior as a scope decision.
 
-Inspect each added file and each boundary introduced or changed by a declaration or contract. What responsibility does it carry, and where did that responsibility live before? Trace who depends on it and for how long. Compare direct calls and existing owners where they could serve the same purpose. Give the most attention to consequential design choices and explain the concrete trade-off under the applicable rules.
+What concrete purpose does each added file serve? Ask the same of new or changed functions, types, members, and state, including private members in existing files. For each new or changed boundary or contract, trace where its responsibility lived before, who depends on it, and for how long. Compare direct calls and existing owners where they could serve the same purpose. Give the most attention to consequential design choices and explain the concrete trade-off under the applicable rules.
 
 ### Judge each modification on both axes
 
