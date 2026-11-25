@@ -55,7 +55,7 @@ Consuming a failure or delegating reporting retains responsibility for remaining
 
 ## Choose the simplest acceptable recovery
 
-Reuse the simplest established recovery that preserves required state and work. A short wait or a safe manual retry may suffice. Recovery that restores future usability does not by itself complete the failed operation.
+An operation may end in failure. When recovery is needed, prefer a simple existing approach that meets the caller's needs. If a full disk prevents a save, keeping the user's unsaved edits so they can free up space and try again may be enough.
 
 Keep recovery feasible, bounded, and within the owner's authority. Establish accepted loss, remaining effects, and the outcome if recovery fails. Disclose material effects of accepted partial completion.
 
