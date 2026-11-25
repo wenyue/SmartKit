@@ -6,8 +6,6 @@ Return, await, or otherwise observe required work. Stop dependent work when its 
 
 Preserve the failure information that the user, caller, or maintainer needs to decide what to do next. When parallel tasks serve one operation, the first failure can represent the operation if it determines the response. Keep failures that require separate handling or diagnosis available to their owners.
 
-For example, app startup can stop and show one error if any required repository fails to initialize. A file import that supports selective retry needs to retain which files succeeded and which failed.
-
 Detached work needs a completion, failure, recovery, and lifetime owner with enough state and diagnostic context to finish after the initiator is disposed. A detached marker or callback alone establishes none of these responsibilities.
 
 ## Separate stopping observation from stopping effects
