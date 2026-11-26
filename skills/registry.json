@@ -17,6 +17,7 @@
     {"id": "smartkit/rule-error-handling", "path": "rule-error-handling"},
     {"id": "smartkit/rule-code-comment", "path": "rule-code-comment"},
     {"id": "smartkit/rule-cpp", "path": "rule-cpp"},
+    {"id": "smartkit/rule-dart", "path": "rule-dart"},
     {"id": "smartkit/rule-flutter", "path": "rule-flutter"},
     {"id": "smartkit/rule-go", "path": "rule-go"},
     {"id": "smartkit/rule-python", "path": "rule-python"}

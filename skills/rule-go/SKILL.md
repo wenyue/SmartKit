@@ -19,9 +19,21 @@ Initialize explicitly through constructors, `main`, or package-owned setup funct
 
 Bind every returned error to a named value, check it, and either handle or propagate it through the owning contract. Discarding an error through the blank identifier loses that decision.
 
-The package's public error contract determines which errors cross its boundary. Give those errors useful context and wrap them with `%w`; inspect them with `errors.Is` or `errors.As`.
+### Choose an error representation
 
-Choose what the caller can inspect deliberately. Wrapping exposes the underlying identity or type, so retain promised inspection behavior without unintentionally adding implementation details to the public API. Translate implementation-only errors at the boundary that owns that contract, preserving the cause and diagnostic evidence needed for final handling. Prefer an existing sentinel that expresses the contracted outcome before creating a dynamic error.
+Return an existing error directly when its identity and context already serve the caller. Use `fmt.Errorf` with one `%w` to add operation context when the cause belongs to the caller's inspection contract. A single `%w` supplies an `Unwrap() error` link.
+
+Use an existing sentinel when it expresses a stable condition callers match by identity. Define a sentinel when the contract needs a new identity. Choose a custom error type when the contract needs more than an ordinary error and wrapper can supply, such as caller-inspectable fields, a distinct type for `errors.As`, or custom matching. If the type exposes a single cause, implement `Unwrap() error`.
+
+### Match errors by identity or type
+
+Use `errors.Is` for sentinels and `errors.As` for types, including wrapped errors. Keep messages for diagnostics. Wrapping makes the underlying error inspectable by callers. Translate implementation-only failures at the owning boundary and preserve the original error, its cause chain, and diagnostic context needed for final handling through the established reporting path.
+
+### Preserve each relevant cause
+
+Keep an existing representation when it preserves the promised matches, cause links, and structured details. Preserve a single-cause link when callers rely on `Unwrap() error` or `errors.Unwrap`.
+
+Go 1.20 and later support error trees. Multiple `%w` verbs can add context while making both a sentinel and its underlying cause inspectable. `errors.Join` can retain separate relevant failures when each belongs in the returned error and must remain inspectable. Preserve any distinction the caller needs among those failures.
 
 ### Keep runtime checks and termination deliberate
 

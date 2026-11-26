@@ -1,0 +1,7 @@
+interface:
+  display_name: "Rule Dart"
+  short_description: "应用 Dart 语言的错误处理、代码组织和文件操作规范。"
+  icon_small: "./assets/rule.svg"
+  icon_large: "./assets/rule.svg"
+  brand_color: "#64748B"
+  default_prompt: "使用 $rule-dart，依据 Dart 语言规范检查我提供的代码。"

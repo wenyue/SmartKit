@@ -170,7 +170,7 @@ class PluginRuleContractTest(unittest.TestCase):
     def test_code_policies_use_skill_discovery_and_leave_harness_delivery_intact(self):
         expected = {
             'rule-code', 'rule-error-handling', 'rule-code-comment',
-            'rule-cpp', 'rule-flutter', 'rule-go', 'rule-python',
+            'rule-cpp', 'rule-dart', 'rule-flutter', 'rule-go', 'rule-python',
         }
         skills = json.loads((ROOT / 'skills/registry.json').read_text(encoding='utf-8'))
         registered = {
