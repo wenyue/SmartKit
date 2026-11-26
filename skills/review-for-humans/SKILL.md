@@ -18,7 +18,7 @@ Consult an example when you need to see the report layout or how verified facts 
 
 | Situation | Example |
 | --- | --- |
-| Format a first group with a purpose, before/after explanations, and independent observations | [Review group](examples/review-group.md) |
+| Vary explanation depth within a group, present independent observations, or expand a modification the user asks about | [Review group](examples/review-group.md) |
 | Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
 | Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
 | Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |
@@ -105,7 +105,7 @@ Keep an existing item's ID through supplementary review and repair. Additional s
 
 Every supported unreasonable finding and worthwhile optional improvement needs an actionable M item, using an existing item or adding one. Its judgments explain the concrete problem, severity when applicable, trigger, impact, and correction or benefit. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them. Associate each with the responsible M item.
 
-Internally size each main group by review units: a straightforward modification needing only the short explanations in Report Format counts as 1 unit. A modification needing more detail counts as 2. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
+Internally size each main group by review units: a straightforward modification needing only a short explanation counts as 1 unit. A modification needing more detail counts as 2. A user's request to expand an explanation does not resize the group. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
 
 Report progress using cumulative displayed main files out of eligible files, each once, and the actual cumulative number of displayed main modifications only. Supplementary items, repairs, and incidental observations add neither main-group units nor main progress. Progress implies neither successful delivery nor Viewed recording.
 

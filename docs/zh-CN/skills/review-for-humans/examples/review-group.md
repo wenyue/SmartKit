@@ -22,36 +22,25 @@ PR #42 的审阅版本为 `0123456` → `89abcde`。排除测试和已标为 Vie
 
 ---
 
-📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+14 / −4`
+📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+15 / −5`
 
 **M2** · **显示每个文件的上传结果**
 
-> ⏪ 页面只提示整批成功或失败，用户得自己判断哪些文件已经传到服务器。
+> ⏪ 只要一份文件失败，页面就提示整批上传失败，用户得自己判断哪些文件已经传到服务器。
 >
 > ⏩ `runUploads` 根据 [每个文件的上传结果](http://127.0.0.1:47821/diff?example=upload-results) 显示每份尝试上传的文件是成功还是失败。重试失败文件时，页面会保留之前成功的记录。
 
 **M3** · **只重试失败的文件**
 
-> ⏪ 点重试会重新发送所有选中的文件，即使其中有些已经上传成功。
+> ⏪ 一份文件传成功、另一份失败时，点重试会把两份都再传一遍。
 >
-> ```typescript
-> async function retryUploads() {
->   await runUploads(selectedFiles);
-> }
-> ```
+> ⏩ 现在，重试时会根据记录下来的失败结果选择要发送的文件。
 >
-> ⏩ 重试时会查找一项失败结果，把对应的文件交给 `runUploads`，目的是避免重传已经成功的文件。
+> ❌ ⚖️ **不合理** · **P2** · 如果两份文件上传失败，点重试会漏掉第二份。页面提供的是重试所有失败文件的操作，处理函数却用 `find` 查找，找到第一项失败就停了。
 >
-> ```typescript
-> async function retryUploads() {
->   const firstFailed = results.find(result => result.status === "failed");
->   if (firstFailed) await runUploads([firstFailed.file]);
-> }
-> ```
->
-> ❌ ⚖️ **不合理** · **P2** · 如果有两份或更多文件上传失败，点一次重试只会重新上传第一份失败的文件，其余失败文件没有再次发送。页面提供的是重试全部失败文件的操作，但 `find` 只返回第一项符合条件的结果。
->
-> 💡 找出所有失败结果，把对应的文件交给 `runUploads`，并在重试检查中覆盖同一批有多份文件失败的情况。
+> 💡 找出所有失败结果，把对应的文件一起交给 `runUploads`。用同一批有两份文件失败的用例验证重试行为。
+
+**M4** · **修正页面标题「Uploads」的拼写**
 
 **O1** · **沿用上传历史的排序规则**
 
@@ -73,9 +62,9 @@ PR #42 的审阅版本为 `0123456` → `89abcde`。排除测试和已标为 Vie
 
 M3 仍是 P2 不合理项。多份文件上传失败时，点一次重试会漏掉其中一些。O1 和 O2 分别建议共用比较器和文件大小格式化函数，让两种显示规则各有一处维护。
 
-源码检查确认，重试通过 `find` 只选中第一项失败结果。改动中的测试设置了三份文件，其中一份上传失败，并检查重试只发送这一份文件，同时保留之前成功的记录。测试未覆盖同一批有两份或更多文件失败的情况。本次只读审阅未运行测试或修复检查。
+我检查了重试处理函数和改动中的测试。测试设置了三份文件，其中一份上传失败，并检查重试只发送这一份，同时保留之前成功的记录。它没有覆盖同一批有两份或更多文件失败的情况。本次只读审阅未运行测试或修复检查。
 
-📊 **已审查 2 / 2 个文件，共 3 项修改。**
+📊 **已审查 2 / 2 个文件，共 4 项修改。**
 
 - A． **修复** （推荐）：让 M3 重试所有失败文件，运行必要检查并覆盖多份文件失败的情况，然后展示专门的复审报告。
 - B． **优化** ：实施 O1 和 O2，共用比较器和文件大小格式化函数，然后检查并复审这些改动。
@@ -83,4 +72,45 @@ M3 仍是 P2 不合理项。多份文件上传失败时，点一次重试会漏�
 
 ## M3 待处理时选择优化
 
-选择 B 授权处理两项已列明的观察。完成检查和复审后，M3 仍待处理，主进度仍为 2 / 2 个文件、3 项修改。
+选择 B 授权处理两项已列明的观察。完成检查和复审后，M3 仍待处理，主进度仍为 2 / 2 个文件、4 项修改。
+
+## 用户要求解释 M3 时
+
+**用户** · 展开讲讲 M3。改动前后点重试分别会发送哪些文件？要怎么修？
+
+**M3** · **只重试失败的文件**
+
+> ⏪ 假设你选了 `cover.jpg`、`map.png` 和 `notes.txt`，只有 `cover.jpg` 上传成功。此时点重试，旧的处理函数会按最初的选择，把三份文件都再传一遍。
+>
+> ```typescript
+> async function retryUploads() {
+>   await runUploads(selectedFiles);
+> }
+> ```
+>
+> ⏩ [改后的处理函数](http://127.0.0.1:47821/diff?example=upload-controller) 能读到[每个文件的上传结果](http://127.0.0.1:47821/diff?example=upload-results)。选择要重试的文件时，它会跳过已经传成功的 `cover.jpg`。
+>
+> ```typescript
+> async function retryUploads() {
+>   const firstFailed = results.find(result => result.status === "failed");
+>   if (firstFailed) await runUploads([firstFailed.file]);
+> }
+> ```
+>
+> ❌ ⚖️ **不合理** · **P2** · 当 `map.png` 和 `notes.txt` 都失败时，点重试只会发送 `map.png`。`find` 找到第一项失败就停止查找，这次重试根本没有把 `notes.txt` 交给 `runUploads`。
+>
+> 💡 建议先收集所有失败的文件，只要列表中有文件，就一次交给上传函数。
+>
+> ```typescript
+> async function retryUploads() {
+>   const failedFiles = results
+>     .filter(result => result.status === "failed")
+>     .map(result => result.file);
+>
+>   if (failedFiles.length > 0) {
+>     await runUploads(failedFiles);
+>   }
+> }
+> ```
+>
+> 针对这一批文件，回归测试应验证只发起一次上传，里面有 `map.png` 和 `notes.txt`，而 `cover.jpg` 仍显示为已上传。

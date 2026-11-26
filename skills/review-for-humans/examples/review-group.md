@@ -22,36 +22,25 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 ---
 
-📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+14 / −4`
+📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+15 / −5`
 
 **M2** · **Show each file's upload result**
 
-> ⏪ The screen shows one success or failure message for the whole batch, leaving users to work out which files reached the server.
+> ⏪ When one file fails, the screen shows a failure message for the whole batch, leaving users to work out which files reached the server.
 >
 > ⏩ `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to show whether each file it tried to upload succeeded or failed, keeping earlier successful rows when failed files are retried.
 
 **M3** · **Retry failed files without uploading successful ones again**
 
-> ⏪ Retry sends every selected file again, even when some already uploaded successfully.
+> ⏪ If one file uploads and another fails, choosing Retry sends both again.
 >
-> ```typescript
-> async function retryUploads() {
->   await runUploads(selectedFiles);
-> }
-> ```
+> ⏩ Retry now uses the recorded failures to choose what to upload.
 >
-> ⏩ Retry now looks for a failed result and sends its file to `runUploads`, aiming to leave successful uploads alone.
+> ❌ ⚖️ **Unreasonable** · **P2** · If two files fail, choosing Retry leaves the second file untouched. The handler uses `find`, which stops at the first failed result, even though the screen offers to retry all failed files.
 >
-> ```typescript
-> async function retryUploads() {
->   const firstFailed = results.find(result => result.status === "failed");
->   if (firstFailed) await runUploads([firstFailed.file]);
-> }
-> ```
->
-> ❌ ⚖️ **Unreasonable** · **P2** · If two or more files fail, choosing Retry attempts only the first failed file and leaves the others untouched. `find` returns one matching result, but the screen offers to retry all failed files.
->
-> 💡 Collect every failed result, pass their files to `runUploads`, and cover a batch with more than one failed file in the retry checks.
+> 💡 Collect all failed results, pass their files to `runUploads` together, and cover a batch with two failures in the retry checks.
+
+**M4** · **Correct the spelling of the “Uploads” heading**
 
 **O1** · **Reuse the existing upload-history ordering**
 
@@ -73,9 +62,9 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 M3 remains unreasonable at P2 because one Retry action leaves some failed files unattempted when several failed. O1 and O2 are optional improvements to reuse the history comparator and file-size formatter so each display policy has one owner.
 
-Source inspection traces the retry action to `find`, which selects only the first failed result. The changed test sets up three files with one failure and checks that retrying sends only that file while retaining the successful rows. It does not cover two or more failures in the same batch. No tests or repair checks were run for this read-only review.
+I inspected the retry handler and the changed test. The test sets up three files with one failure and checks that retrying sends only that file while retaining the successful rows. It does not cover two or more failures in the same batch. No tests or repair checks were run for this read-only review.
 
-📊 **Reviewed 2 / 2 files, with 3 modifications.**
+📊 **Reviewed 2 / 2 files, with 4 modifications.**
 
 - A. **Fix** (recommended): Make M3 retry every failed file, run required checks including the multiple-failure case, and show its dedicated re-review.
 - B. **Optimize**: Apply O1 and O2 to reuse the comparator and file-size formatter, then check and re-review those changes.
@@ -83,4 +72,45 @@ Source inspection traces the retry action to `find`, which selects only the firs
 
 ## Selecting Optimize while M3 is pending
 
-Choosing B authorizes work on the two named observations. After their checks and re-review, M3 remains pending and main progress remains 2 / 2 files with 3 modifications.
+Choosing B authorizes work on the two named observations. After their checks and re-review, M3 remains pending and main progress remains 2 / 2 files with 4 modifications.
+
+## When the user asks to explain M3
+
+**User** · Walk me through M3. What would Retry send before and after this change, and what would the fix look like?
+
+**M3** · **Retry failed files without uploading successful ones again**
+
+> ⏪ Suppose you select `cover.jpg`, `map.png`, and `notes.txt`. Only `cover.jpg` uploads successfully. Choosing Retry sends all three files again because the old handler uses the original selection.
+>
+> ```typescript
+> async function retryUploads() {
+>   await runUploads(selectedFiles);
+> }
+> ```
+>
+> ⏩ The [revised handler](http://127.0.0.1:47821/diff?example=upload-controller) can read the [outcome for each file](http://127.0.0.1:47821/diff?example=upload-results). It skips the successful upload of `cover.jpg` when choosing what to retry.
+>
+> ```typescript
+> async function retryUploads() {
+>   const firstFailed = results.find(result => result.status === "failed");
+>   if (firstFailed) await runUploads([firstFailed.file]);
+> }
+> ```
+>
+> ❌ ⚖️ **Unreasonable** · **P2** · When both `map.png` and `notes.txt` fail, choosing Retry sends only `map.png`. The call to `find` stops at that first match, so `notes.txt` never reaches `runUploads` on this attempt.
+>
+> 💡 This proposed fix collects every failed file and makes one upload call when the list has entries.
+>
+> ```typescript
+> async function retryUploads() {
+>   const failedFiles = results
+>     .filter(result => result.status === "failed")
+>     .map(result => result.file);
+>
+>   if (failedFiles.length > 0) {
+>     await runUploads(failedFiles);
+>   }
+> }
+> ```
+>
+> For this batch, a regression check should expect one upload call containing `map.png` and `notes.txt`, with `cover.jpg` still shown as uploaded.
