@@ -33,11 +33,7 @@ Fill the placeholders in the report language. The [worked review group](../examp
 
 📄 **[<PATH_1>](<URL_1>)** · `+1 / −1`
 
-**M1** · **<TITLE_1>**
-
-> ⏪ <PRIOR_BEHAVIOR_1>
->
-> ⏩ <CHANGED_BEHAVIOR_1>
+**M1** · **<ONE_LINE_CHANGE>**
 
 ---
 
@@ -47,15 +43,7 @@ Fill the placeholders in the report language. The [worked review group](../examp
 
 > ⏪ <PRIOR_BEHAVIOR_2>
 >
-> ```<LANGUAGE>
-> <PRIOR_CODE>
-> ```
->
 > ⏩ <CHANGED_BEHAVIOR_2>
->
-> ```<LANGUAGE>
-> <CHANGED_CODE>
-> ```
 >
 > ❌ ⚖️ **<VERDICT>** · **P2** · <FINDING>
 >
@@ -76,15 +64,18 @@ The progress line shown here belongs to an ordinary main group. Supplementary an
 
 ## Explain modifications at the needed depth
 
-Put the bold ID and bold title on one unindented line, separated by a plain middle dot. In one Markdown blockquote below it, start with ⏪ and describe the prior behavior and the concrete problem or limitation that motivated the change. Then use ⏩ to explain what changed and how it addresses that need. Start the prose immediately after each icon. When the old behavior already depends on a necessary guarantee, explain that guarantee and what prompted the proposed change.
+Choose depth for each modification after assessing it on both axes. Two changes in one file can warrant different treatment. Use the full walkthrough as the reference and keep only the parts the reader needs at each shorter depth.
 
-Give each item enough context to stand on its own for a reader new to the project. When behavior changes, explain its observable effects in the comparison. In a behavior finding, use everyday words to include both the trigger and what the user or caller sees or receives in the first sentence. Follow with the exact technical condition and cause. Explain unfamiliar terms where they first appear. When quoting UI text, use the wording displayed in the assessed version. Write paraphrases in plain language without quotation marks.
+- **At a glance.** For a tiny change you can confidently judge reasonable and elegant, state what changed on the ID and title line alone.
+- **Comparison.** For the remaining changes with no defect, worthwhile optional improvement, or material uncertainty to report, show ⏪ what happened before and why it mattered, then ⏩ what happens after and how it meets the need. Include a consequential mechanism or a guarantee callers still depend on when it explains the choice.
+- **Issue detail.** When a modification has a defect, keep ⏪ and ⏩ brief to leave room for what goes wrong in the assessed version. Open a behavior finding with its concrete trigger and what the user or caller sees, in everyday words. For a structural defect, identify the obligation it violates and the concrete consequence for callers or maintainers. Explain the cause and give an actionable remedy. Give a worthwhile optional improvement or material uncertainty comparable attention under its own judgment. For an improvement, explain the burden and the benefit of the proposed change. For uncertainty, explain what is known, what is at stake, and what evidence would settle it.
+- **Requested walkthrough.** Use the full explanation only when the user explicitly asks you to explain a particular file or modification, regardless of its verdict. Walk a concrete case through ⏪ the original behavior and ⏩ the assessed change. Follow the changed path far enough to answer the user's question, including any remaining issue and how its remedy would work. When code helps, show enough of the proposed implementation for the reader to follow the fix. A request to review a file or a general question uses the ordinary depths.
 
-For a straightforward modification without an actionable finding, worthwhile optional improvement, or material uncertainty, one natural sentence after each icon is enough. Use more detail for those findings and for consequential mechanisms the reader needs to understand. When code helps explain the behavior, show concise actual snippets beside the relevant explanation, retaining the error, state, or lifecycle context. Label illustrative simplifications. For a repair, compare the pre-repair and repaired contents. Separate items with ordinary paragraph spacing.
+Put the bold ID and bold title on one unindented line, separated by a plain middle dot. For items with a body, keep the comparison and any judgments together in one Markdown blockquote. Start the prose immediately after ⏪ and ⏩. Separate items with ordinary paragraph spacing. For repairs and optimizations, compare the pre-repair and repaired contents.
 
-After ⏩, show only actionable findings, worthwhile optional improvements, or material uncertainty. Write each issue once under the relevant axis, explaining the concrete cause and observable effect or trade-off. Use an example when it makes a trigger or consequence easier to understand. Prefix actual defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Within an item, prefix an **Uncertain** judgment with ⚠️ ⚖️ or ⚠️ 🎨. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone. Keep these paragraphs in the same blockquote.
+Give each item enough context to stand on its own. In a before/after explanation, illustrate an old bug that motivated the change with a simple trigger and outcome in ⏪. Where they make the case easier to grasp, favor concise excerpts of the actual before and after code, a diagram tracing paths or states, or suggested code illustrating a fix. Use plain prose when it is clearer or an excerpt would bury the point. Preserve relevant state, error, and lifecycle context in excerpts and label illustrative simplifications or proposed code. Define unfamiliar terms where they first appear. Quote UI text as displayed in the assessed version and leave paraphrases unquoted.
 
-Use the same item layout after repair or optimization. Keep any remaining actionable findings, material uncertainty, or consequential design choice visible.
+After ⏩, show only defects, worthwhile optional improvements, or material uncertainty as judgments. Explain each issue once under the relevant axis. Prefix defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Use 🎨 **Optional improvement** for a worthwhile optional remedy and ⚠️ ⚖️ or ⚠️ 🎨 for an **Uncertain** judgment. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone.
 
 ## Preserve identities and visible coverage
 
@@ -92,7 +83,7 @@ Show every changed non-test file in a repair report, including supporting files.
 
 Keep an existing item's ID and explain it once under its responsible file. Separately explained supporting modifications take the next unused M IDs from the entry's continuous sequence; connect them to the original repair in the introduction. For example, a repair after M1–M10 can contain M2, M11, and M12 across three files without changing main progress. References to M2 explain the relationship rather than creating another numbered item. Accompanying changes without a separate item can use a short file overview.
 
-In selected-O work, keep the selected O IDs and use file overviews for supporting changes; they create neither new O observations nor M items. Use the same before/after layout and surface any resulting finding under the responsible selected item.
+In selected-O work, keep the selected O IDs and use file overviews for supporting changes; they create neither new O observations nor M items. Choose depth for each selected item's modification and surface any resulting finding under the responsible selected item.
 
 Place incidental O items after M items under their source file. A file containing only O items has the same heading with a verified source link and follows the main file blocks. If no single-file attribution is useful, put the observations after the file blocks with a horizontal rule before them and before the closing. Include the entry's required evidence, impact, independence, and recommendation or benefit; any judgment lines follow the same icon and severity conventions. Placement changes neither main progress nor delivery or Viewed eligibility.
 
