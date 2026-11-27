@@ -25,11 +25,11 @@ Use those same bounds in review. An explicitly accepted consequence that still m
 
 ## Put the explanation at its owner
 
-Document caller obligations and observable guarantees at the API. Include significant invariants, lifecycle obligations, and edge cases a caller needs to act on. For a failure that affects a caller's choice, explain when it occurs, any stable way the contract provides to recognize it, and what state or partial result remains. This applies to returned errors, exceptions, and failures intentionally propagated from another layer. Promise an error type, category, or identity only as far as the contract supports it.
+Document caller obligations and observable behavior at the API. Distinguish outcomes callers may encounter from guarantees they can rely on. Include significant invariants, lifecycle obligations, and edge cases a caller needs to act on. For a failure that affects a caller's choice, explain when it occurs, any stable way the contract provides to recognize it, and what state or partial result remains. This applies to returned errors, exceptions, and failures intentionally propagated from another layer. Promise an error type, category, or identity only as far as the contract supports it.
 
 Keep implementation reasons, constraints, and trade-offs beside the code a maintainer might otherwise change. Put broader concepts in the documentation that owns them. A decision can affect both callers and maintainers. Give each audience the part it needs, reusing an adequate account at its owner.
 
-Establish which locations the task authorizes you to edit. Complete authorized comment changes and keep them aligned with related, separately authorized code changes. Comment work grants no authority to change behavior, names, types, or structure. For managed or generated content, establish the canonical edit route and authorization for its effects and required outputs. Recommend a move or correction that exceeds your authority, identifying the appropriate owner.
+Establish which locations the task authorizes you to edit. Complete authorized comment edits and keep them aligned with related code changes. In a comment-only task, every code change requires separate authorization, including edits that preserve behavior. For managed or generated content, establish the canonical edit route and authorization for its effects and required outputs. Recommend a move or correction that exceeds your authority, identifying the appropriate owner.
 
 ## Write and revise the whole comment
 
@@ -39,7 +39,7 @@ Choose detail to suit the reader. A brief section label can help someone find a 
 
 When touching a comment, read the whole affected block against the current code. Integrate the change, combine related points, and correct or remove stale or redundant prose. Before removing an explanation, make sure its still-valid meaning is clear in the code or documentation that owns it. Keep required directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
 
-If a refactor edits, moves, combines, or removes comments, trace the still-applicable trade-offs and their reasons to the code or documentation that now owns them. Carry the explanation to that owner wherever the reason would otherwise be lost.
+When a refactor changes where an explanation belongs or which parts still apply, preserve each trade-off that remains in effect and its rationale in the code or documentation that now owns it. Moving code can change where readers need the explanation even when the original comment stays in place.
 
 After any comment edit, read the result alongside the relevant code paths for accuracy and usefulness. For examples of how much to say and where, consult the optional [comment judgment examples](references/examples.md).
 
