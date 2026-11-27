@@ -1,86 +1,54 @@
 ---
 name: rule-code-comment
-description: Use when writing or reviewing code and documentation comments, assessing their coverage, or editing, moving, or removing comments during a refactor. Also use when a user specifies or confirms code behavior (including accepted trade-offs, limitations, or weaker guarantees) and when recording or reviewing those decisions.
+description: Use when writing or reviewing code and documentation comments, assessing their coverage, or editing, moving, or removing comments during a refactor. Also use when a user specifies or confirms code behavior, when recording or reviewing such decisions, or when a fix depends on a constraint a maintainer could easily overlook.
 ---
 
 # Code Comments
 
-Use comments to help a reader understand, use, or maintain the code. Unless the target specifies otherwise, write for someone who knows the language and framework but not this implementation.
+Write for the person who will call or change the code. Unless the project identifies another audience, assume the reader knows the language and framework and is meeting this implementation for the first time.
 
-## Establish the task and edit owner
+## Decide what the reader needs
 
-Establish the locations, owners, and review or edit authority. Complete authorized comment edits, keeping related comments aligned with independently authorized code changes. Comment work alone authorizes no changes to code, names, types, or structure; assessment-only work leaves files and structures unchanged.
+Consider what a reasonable reader might do after reading the names, types, implementation, and existing documentation. Could they retry an operation unsafely, remove an apparently unnecessary check, or open a repair task for a deliberately accepted limitation? Explain the missing fact where it would change that decision. An existing explanation that gives the reader what they need is sufficient.
 
-For managed or generated surfaces, establish the canonical edit route and authority for its effects and required outputs before editing.
+Honor explicit documentation requirements. Elsewhere, judge coverage by the code's purpose and users, the difficulty of its contract, and the reading experience in comparable code. A storage interface with a single caller can have retry obligations that deserve careful documentation. A public getter can be clear from its name and body. Nearby comments help establish useful style and detail without setting a quota or implying that neighboring code needs editing.
 
-## Decide what deserves a comment
+Consider the need for a comment in the course of implementation, fixes, and review. When the user specifies or confirms behavior, check what a later reader could infer without that conversation. When a fix or review correction turns on a subtle invariant, framework guarantee, or design choice that someone could readily undo, explain the verified basis beside the affected code. An adequate existing note, including one explaining a temporary shortcut, can serve that purpose.
 
-Meet explicit coverage requirements. For coverage and information choices, weigh these questions together:
+## Establish what is true
 
-- What is this code for, and who actually uses or shares it? Give shared and externally consumed contracts deliberate attention even when there is only one caller.
-- How complex is the contract or behavior, and what would remain unclear? Explain significant caller obligations, invariants, lifecycle constraints, and edge cases that names, types, signatures, and code do not adequately convey.
-- How does the explanation fit comparable local code? Consider comment presence and absence, style, detail, and visual coherence as evidence about the reading experience.
+Read the relevant paths and the contract that owns the behavior. Follow up on uncertainty that could change the explanation or its verification. If the code disagrees with its contract, describe the discrepancy accurately. Resolve it within the authorized task or report it to the owner. A comment promising the intended behavior would hide the discrepancy.
 
-These considerations have no fixed priority; local practice does not decide the answer by itself. Public visibility alone does not require a comment, and straightforward local code may need none. Adding or omitting a comment need not imply that neighboring choices are wrong.
+Ground a surprising trade-off in the implementation and its owning contract. Explain the behavior, the verified reason for retaining it, where it applies, and any material risk that remains. If the reason is unknown, say so. When describing or relying on a choice as explicitly accepted, consult relevant comments and referenced decisions and verify that claim against the decision itself. An accepted defect still carries its consequences, and a lasting choice needs no invented deadline for replacement.
 
-When a user specifies or confirms how code should behave, check whether the code and existing documentation convey the decision. Add a brief explanation at the owning destination below when a plausible misreading could lead a future maintainer to use or change the code incorrectly.
+Use those same bounds in review. An explicitly accepted consequence that still matches the decision needs no fresh repair item. New evidence, changed conditions, or effects outside the accepted scope deserve assessment on their own merits.
 
-When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
+## Put the explanation at its owner
 
-For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code and reuse an adequate explanation, including an existing comment for a bounded temporary shortcut. Describe lasting trade-offs in terms of their present scope and effects. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
+Document caller obligations and observable guarantees at the API. Include significant invariants, lifecycle obligations, and edge cases a caller needs to act on. For a failure that affects a caller's choice, explain when it occurs, any stable way the contract provides to recognize it, and what state or partial result remains. This applies to returned errors, exceptions, and failures intentionally propagated from another layer. Promise an error type, category, or identity only as far as the contract supports it.
 
-For failures that matter to callers' decisions, explain in API documentation the failure conditions, any stable recognition the contract promises through a native type, category, or identity, and material state after failure. Cover returned and thrown failures, including those intentionally propagated across the boundary. Apply the coverage judgment above without cataloging incidental lower-level failures or repeating an already clear contract.
+Keep implementation reasons, constraints, and trade-offs beside the code a maintainer might otherwise change. Put broader concepts in the documentation that owns them. A decision can affect both callers and maintainers. Give each audience the part it needs, reusing an adequate account at its owner.
 
-## Ground the explanation in the code
+Establish which locations the task authorizes you to edit. Complete authorized comment changes and keep them aligned with related, separately authorized code changes. Comment work grants no authority to change behavior, names, types, or structure. For managed or generated content, establish the canonical edit route and authorization for its effects and required outputs. Recommend a move or correction that exceeds your authority, identifying the appropriate owner.
 
-Use the current implementation and its owning contracts to establish what is true. Expand the evidence when uncertainty could change the comment or its validation.
+## Write and revise the whole comment
 
-When assessing such behavior or revising its explanation, read the relevant comments and referenced decisions. Verify claimed acceptance against the underlying decision and check that it still applies. Distinguish unchanged, explicitly accepted consequences from new evidence or effects outside that acceptance; the former do not become unresolved repair items merely because they look surprising.
+Use plain Google-style explanatory prose by default. Lead with the responsibility or behavior, then explain what matters for correct use or maintenance. Use the project's documentation language, syntax, and required formatting, or the language's native comment convention where no project convention applies. Use an established marker when it does a job, such as a `TODO` for a specific follow-up.
 
-If implementation and contract disagree, resolve the conflict within authorized scope or report it and its owner. Describe actual behavior truthfully; a comment must not present the intended contract as though it were already implemented.
+Choose detail to suit the reader. A brief section label can help someone find a coherent operation in a long function. A recovery algorithm may need several sentences to explain how an ordering decision prevents data loss. Omit generic praise, restatements of names, line-by-line narration, and edit history. State the necessary facts directly. Omit links and references to the project's own issues and pull requests, including their numbers. A repository decision document, external standard, or third-party issue can supply background if the comment stands on its own.
 
-## Put information where readers need it
+When touching a comment, read the whole affected block against the current code. Integrate the change, combine related points, and correct or remove stale or redundant prose. Before removing an explanation, make sure its still-valid meaning is clear in the code or documentation that owns it. Keep required directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
 
-Choose the destination by what the reader needs, wherever the current comment appears:
+If a refactor edits, moves, combines, or removes comments, trace the still-applicable trade-offs and their reasons to the code or documentation that now owns them. Carry the explanation to that owner wherever the reason would otherwise be lost.
 
-| Information | Owning destination |
-| --- | --- |
-| Caller obligations and observable behavior | API documentation |
-| Local reasons, constraints, and trade-offs | Implementation comments alongside the code |
-| Broader concepts | Their owning documentation |
+After any comment edit, read the result alongside the relevant code paths for accuracy and usefulness. For examples of how much to say and where, consult the optional [comment judgment examples](references/examples.md).
 
-Choose the useful destination, then establish authority to change it. Recommend corrections or moves that exceed the task's scope. Remove an original explanation only when its meaning is safely represented at an authorized destination.
+## Verify within the task
 
-## Write and maintain useful prose
+Use the parent task's checks and handoff for everyday code changes. Applying this rule adds no separate audit, report, or delegation step.
 
-Begin with concrete responsibility or behavior, followed by significant constraints on correct use. Spend detail in proportion to the reader's need: a longer account can clarify important relationships, while a sparse section label can help readers find a coherent part even without adding hidden knowledge.
+For a requested assessment, keep the work read-only and cover the requested boundary. Locate actionable omissions and misleading, stale, or redundant comments precisely. Explain the consequence and supporting evidence, including the owner of any recommended move or structural correction. Limit a no-finding conclusion to the area actually assessed.
 
-Use plain, precise explanatory prose in the Google style by default. Use an established marker for a concrete purpose, such as a `TODO` for a specific follow-up. Omit generic praise, line-by-line narration, redundant names, and edit history.
+For dedicated comment edits, run relevant owner-supported checks, including every required check for the authorized sources and managed outputs. Add a check when it materially improves confidence in the change or catches a likely regression. Report the locations covered, consequential decisions and evidence, actual check results, and any remaining uncertainty, untested paths, or work outside the authorized scope. Completion requires preserved target requirements and passing required checks.
 
-Keep comments understandable without the project's issue tracker or pull-request history. State the necessary behavior, reasons, constraints, and risks directly, and omit references to the project's own issues or pull requests, including numbers and links. References to repository-local decision documents, external standards, or third-party issues may supply useful background, but must not replace the explanation needed to maintain this code.
-
-Follow the target's documentation language, syntax, and explicit formatting requirements. Observed habits inform expression without becoming requirements. Where no convention applies, use an established native comment mechanism.
-
-When refactoring, preserve the meaning of still-applicable trade-offs and their rationale. Carry the explanation to the code or documentation that owns it after the change, including when the implementation moves or comments are combined or rewritten.
-
-Whenever you edit a comment, assess the entire affected comment block against the current code, its contract, and what the reader needs. Integrate the change with the surrounding explanation, merging related points where helpful and correcting or removing stale, redundant, or low-value prose in the same edit. Preserve still-valid meaning, including meaning already clear in code or another owning surface. Keep required machine directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
-
-Read the result alongside the code across relevant paths for usefulness, directness, and accuracy. For contrasting choices about information and voice, consult the optional [comment judgment examples](references/examples.md). Their stated contexts make the choices understandable; they supply neither policy, prescribed formats, nor facts about the target.
-
-## Verify and report at the task's scale
-
-In ordinary work, use the parent task's validation and handoff. Applying this Rule adds no separate comment audit, report, or subagent process. Requested assessments and dedicated comment work have the following completion needs.
-
-### Requested assessment
-
-For a requested assessment, cover the requested boundary using the coverage and evidence guidance above. Report actionable missing, misleading, stale, or redundant comments at precise locations. Explain their consequential meaning or conflict and the governing evidence; include recommended moves or structural corrections and their owners where relevant. A no-finding conclusion applies only to the assessed boundary.
-
-### Dedicated comment work
-
-For dedicated comment work, run relevant available owner-supported checks, including every required check for authorized targets and managed outputs. Add proportionate checks when they materially improve confidence in the change or a likely regression. Completion requires preserved owned requirements and passing required checks; a failed or unavailable required check leaves the work incomplete.
-
-For dedicated work, hand off covered locations, consequential decisions and evidence, actual validation results, and remaining limitations concisely. Include incomplete coverage, untested targets or paths, uncertainty, blocked action, ownership conflicts, and out-of-scope recommendations.
-
-### Missing prerequisites
-
-If necessary evidence, a required resource, ownership, a target requirement, access, or authority cannot be established, report the exact gap and pause dependent actions and conclusions. Continue independent authorized work where the owning workflow permits it.
+When evidence, ownership, authority, target requirements, access, or a required resource or check is missing, identify the specific gap. Pause the actions and conclusions that depend on it and continue independent authorized work. Report a failed or unavailable required check as incomplete verification.

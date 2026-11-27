@@ -1,54 +1,45 @@
 # Comment judgment examples
 
-These contrasting drafts illustrate information selection and voice. The stated context supplies each example's facts; it is not evidence about a target implementation or user-approved style. Adapt the judgment to the target's contracts, comment syntax, documentation language, and formatting requirements. The examples use English for illustration, not as a cross-project requirement. Snippets omit imports and surrounding declarations; their contexts establish the relevant contracts.
+Each case supplies its own facts. Use the examples to judge what a reader needs and where they will look for it. Their snippets illustrate possible wording in English. The target project supplies its own contracts, language, and format.
 
-## Simple interface or component
+## A decision that survives a move
 
-Context: the parent owns the selected tab. This component displays that selection and reports clicks; it holds no selection state. Comparable components have short documentation comments.
+The user accepted cached titles in a preview list so opening the list requires no network request. Cached titles can be up to one minute old. Opening an individual item fetches its current title. A maintainer looking at the list code could reasonably conclude that it is missing a refresh.
 
 ```dart
-/// Supplies the current selection and receives requests to select another tab.
-class TabStripProps {
-  const TabStripProps(this.tabs, this.selectedId, this.onSelect);
-
-  final List<Tab> tabs;
-  final String selectedId;
-  final void Function(String) onSelect;
-}
+// Use cached titles so opening the list needs no network request. Titles may
+// be up to one minute old. Opening an item fetches its current title.
+final previews = previewCache.readWithin(const Duration(minutes: 1));
 ```
 
-The comment explains the parent-facing boundary and distinguishes receiving a request from changing the selection. Repeating each property name or praising the component's flexibility would add little. A target requiring individual property documentation would still receive it.
+Suppose a refactor gives a preview repository responsibility for choosing how to load preview titles. That repository now owns the decision a maintainer could undo by adding a network request. Carry the reason and freshness bound there. If clients choose between preview and detail APIs based on freshness, document the observable difference at those APIs. The old list comment can go once the explanations are available to their readers.
 
-## Complex caller contract
+In review, a title that is forty seconds old fits the accepted behavior. Serving a cached list title for longer than a minute exceeds the accepted bound. Opening an item without fetching its current title would violate the separate detail contract. The prior decision helps evaluate these observations without turning either into a blanket claim about caching.
 
-Context: this interface crosses a storage boundary, currently with one caller. Its accepted contract requires atomic batches and permits retry after an uncertain network outcome only by reusing the same key and entries. Reusing a key with different entries is an error.
+## What callers need before a retry
+
+A ledger commits each batch atomically. A timeout can occur after the commit. A retry with the same key and entries commits the batch if the first attempt did not commit. If it did commit, the retry returns the existing receipt. Reusing a committed key with different entries fails. Even with only one caller, the signature leaves a consequential retry choice open.
 
 ```go
-type Ledger interface {
-	// Apply records all entries atomically. Repeating a key with identical entries
-	// returns the original receipt; reusing it with different entries fails.
-	// After a timeout, retry with the same key and entries: the first attempt
-	// may already have committed.
-	Apply(ctx context.Context, key string, entries []Entry) (Receipt, error)
-}
+// Apply records the batch atomically. A timeout can leave the commit outcome
+// unknown. Retry with the same key and entries. If the batch already
+// committed, the retry returns its receipt without applying it again.
+// Reusing a committed key with different entries fails.
+Apply(ctx context.Context, key string, entries []Entry) (Receipt, error)
 ```
 
-The contract matters despite having one caller. Atomicity and the timeout consequence guide correct use beyond the signature. The method-name opening fits local documentation practice; internal lock or database details belong with their implementation unless they affect this contract.
+The documentation belongs on the interface where the caller chooses the retry key. Naming the lock or transaction primitive would tie it to implementation details without answering that question.
 
-## Failure as part of the caller contract
+## Two ways callers recognize failure
 
-These examples document established failure contracts. Their comments tell callers what failed, how to recognize it, and what state remains; they do not choose a new error design.
-
-### Thrown and intentionally propagated failures
-
-Context: this method belongs to a read-only configuration reader whose `file` is a `File`. Its accepted contract requires a UTF-8 JSON object. Callers distinguish invalid content from failed access using the existing `FormatException` and `FileSystemException` categories. The reader neither repairs the file nor saves defaults.
+A read-only Dart configuration reader accepts UTF-8 JSON objects. Its callers can correct invalid content or handle a filesystem access problem. They also need to know whether a failed load wrote defaults.
 
 ```dart
-/// Loads configuration from a UTF-8 JSON object.
+/// Loads the configuration from a UTF-8 JSON object.
 ///
-/// Throws [FormatException] for invalid UTF-8, invalid JSON, or a non-object root.
-/// Propagates [FileSystemException] when the file cannot be read.
-/// Failure leaves stored bytes untouched; no defaults are written.
+/// Throws [FormatException] for invalid UTF-8, invalid JSON, or a non-object
+/// root. Propagates [FileSystemException] when the file cannot be read.
+/// On failure the stored bytes are unchanged.
 Map<String, dynamic> load() {
   final value = jsonDecode(utf8.decode(file.readAsBytesSync()));
   if (value is! Map<String, dynamic>) {
@@ -58,16 +49,12 @@ Map<String, dynamic> load() {
 }
 ```
 
-The categories let callers distinguish a content correction from an access problem. The read failure belongs in the comment even though this method intentionally lets it propagate. The remaining-state statement prevents callers from assuming that failure repaired or replaced the configuration. Naming decoder internals or listing incidental runtime failures would not help these caller decisions.
-
-### Returned failures with stable recognition
-
-Context: this resource API reads from a filesystem without changing stored content. Its accepted contract preserves the filesystem's error identities, including `fs.ErrNotExist` for a missing resource, and returns no data on failure even if the underlying read produced some bytes.
+A Go resource loader instead returns a wrapped filesystem error and discards partial data. Its contract preserves filesystem error identities so callers can use the native matching operation.
 
 ```go
-// LoadResource reads name without modifying stored content.
-// If name is absent, errors.Is(err, fs.ErrNotExist) is true.
-// Other read errors retain their identities. On error, data is nil.
+// LoadResource reads name without changing stored content. For a missing
+// resource, errors.Is(err, fs.ErrNotExist) is true. Other read errors retain
+// their identities. Every failure returns nil data.
 func LoadResource(fsys fs.FS, name string) ([]byte, error) {
 	data, err := fs.ReadFile(fsys, name)
 	if err != nil {
@@ -77,31 +64,26 @@ func LoadResource(fsys fs.FS, name string) ([]byte, error) {
 }
 ```
 
-The missing-resource condition and matching operation let callers decide whether to choose another resource. Other read failures propagate with context and retain the already-promised recognition. The no-data promise prevents a partial read from being mistaken for a usable result, while the read-only promise makes the remaining stored state clear. Listing filesystem implementation details or individual error-message strings would add no stable caller contract.
+Both callers get the condition, the recognition their API promises, and the relevant state after failure. Neither depends on matching an incidental error message.
 
-## Lifecycle
+## A caller obligation and a local implementation reason
 
-Context: this helper subscribes to a tick stream. The source may need asynchronous cleanup. The owner's `onClose` hook accepts cleanup callbacks returning `Future<void>`, awaits them, and surfaces cleanup failures. The registration lines run inside the owner's setup method.
+A stream subscription can stop delivering events before its source finishes cleaning up. The person cancelling it needs to know when resources are free.
 
 ```dart
 /// Delivers ticks until the caller cancels the returned subscription.
-/// Cancellation stops delivery immediately; await it to finish source cleanup.
+/// Cancellation stops delivery immediately. Await it to finish source cleanup.
 StreamSubscription<int> subscribeToTicks(
   Stream<int> ticks,
   void Function(int) onTick,
 ) {
   return ticks.listen(onTick);
 }
-
-final subscription = subscribeToTicks(ticks, refresh);
-owner.onClose(subscription.cancel);
 ```
 
-The comment exposes the caller's lifetime obligation and distinguishes stopping events from finishing cleanup. The registered cancellation method returns its future to the established owner, so cleanup completion and failure remain observable. Another comment narrating registration would add little. A lifecycle hook that cannot await cleanup would require a different ownership account.
+A caller can now pass the cancellation method to a shutdown hook that awaits its result. The documentation of the subscription explains the caller's obligation without assuming that every caller uses the same hook.
 
-## Local rationale
-
-Context: a callback may unsubscribe itself from the mutable listener set. Iterating the live set would fail if its size changed; callbacks in the initial snapshot must still receive this dispatch.
+In a different dispatcher, a listener may unsubscribe itself while receiving an event. A future maintainer might remove the snapshot as an unnecessary allocation. The reason belongs on the line where they would make that change.
 
 ```dart
 // Snapshot the listeners so callbacks can unsubscribe during dispatch.
@@ -110,61 +92,30 @@ for (final listener in listeners.toList()) {
 }
 ```
 
-The comment explains why the snapshot exists, instead of narrating conversion to a list. The dispatch contract owns the delivery guarantee; this local note need not duplicate it. In a longer function, a sparse label such as `// Publish notifications` could also help readers find a coherent section even when it adds no hidden rationale.
+## How much explanation earns its place
 
-## Explicitly accepted trade-off
-
-Context: the product owner explicitly accepted showing cached preview titles for up to one minute so opening the list needs no network request. Opening an item fetches its current title. This is a lasting product choice, not a temporary implementation shortcut; a future maintainer could otherwise mistake the absence of a list-time refresh for a bug.
+A component displays a selected tab and reports clicks to its parent. Its properties already identify the selected tab and the callback. A short interface comment can explain the ownership boundary in one sentence.
 
 ```dart
-// Use cached preview titles to open the list without a network request. Titles
-// may be stale for up to one minute. Opening an item fetches its current title.
-final previews = previewCache.readWithin(const Duration(minutes: 1));
-```
+/// Supplies the parent’s selected tab and receives requests to change it.
+class TabStripProps {
+  const TabStripProps(this.selectedId, this.onSelect);
 
-The comment exposes the accepted consequence and its boundary without requiring a tracker link. A new finding that titles stay stale beyond one minute would fall outside this decision. If the cache read moves during a refactor, carry the one-minute bound and the reason for caching to the new owner.
-
-## Necessary longer explanation
-
-Context: an append-only log stores checksummed records. Its recovery contract permits discarding a final incomplete record after a crash and rejects complete records with invalid checksums, including at the end. The reader returns `io.EOF` only between records and `io.ErrUnexpectedEOF` only for an incomplete final record. The fragment runs inside a recovery method returning `error`; `truncateToLastRecord` removes only that incomplete tail, and the other helpers do not truncate.
-
-```go
-// A crash can leave the last record incomplete, so recovery may discard that
-// trailing fragment. A complete record with a bad checksum is different: it
-// indicates corruption, and discarding it could silently lose committed data.
-// Check completeness before validating the checksum so only an interrupted
-// append takes the truncation path.
-for {
-	record, err := readRecord(input)
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-	if errors.Is(err, io.ErrUnexpectedEOF) {
-		if err := truncateToLastRecord(); err != nil {
-			return fmt.Errorf("discard incomplete log tail: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("read log record: %w", err)
-	}
-	if err := verifyChecksum(record); err != nil {
-		return fmt.Errorf("verify log record checksum: %w", err)
-	}
-	if err := replay(record); err != nil {
-		return fmt.Errorf("replay log record: %w", err)
-	}
+  final String selectedId;
+  final void Function(String) onSelect;
 }
 ```
 
-The relationship between crash recovery, corruption, and ordering earns the space. Compressing it to “handle partial records” would lose the reason the two paths differ. The failure returns keep read, checksum, replay, and truncation failures visible without treating them all as permission to truncate. The comment need not retell the format's full specification or its history.
-
-## Deliberate omission
-
-Context: a local collection wrapper has no additional validation, units, side effects, or caller obligations. Comparable helpers mix short useful comments with uncommented straightforward code; no explicit documentation requirement applies.
+A local collection wrapper with no extra validation, units, side effects, or obligations may need even less. Where no explicit coverage requirement applies, the declaration can stand on its own.
 
 ```dart
 bool get isEmpty => items.isEmpty;
 ```
 
-Leave it uncommented. The name and body already supply the useful account, so “returns whether items is empty” would repeat it. This choice follows the helper's purpose, simplicity, information value, and local context together; neither nearby absence nor public visibility decides it alone.
+By contrast, a recovery routine may truncate an incomplete final log record after a crash. A complete record with a bad checksum indicates corruption, even at the end of the log. Treating both cases as an interrupted append could silently discard committed data. Beside the code that decides whether to truncate, the relationship earns several sentences.
+
+```go
+// A crash can leave the final record incomplete. Only that trailing fragment
+// may be discarded. Check completeness before validating the checksum so a
+// corrupt but complete record is reported without truncating committed data.
+```
