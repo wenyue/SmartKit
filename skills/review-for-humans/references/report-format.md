@@ -33,13 +33,13 @@ Fill the placeholders in the report language. The [worked review group](../examp
 
 📄 **[<PATH_1>](<URL_1>)** · `+1 / −1`
 
-**M1 · Add | <NEW_CAPABILITY_AND_PURPOSE>**
+**M1** · Add | <NEW_CAPABILITY_AND_PURPOSE>
 
 ---
 
 📄 **[<PATH_2>](<URL_2>)** · `+9 / −4`
 
-**M2 · Modify | <CHANGED_BEHAVIOR>**
+**M2** · Modify | <CHANGED_BEHAVIOR>
 
 > ⏪ <PRIOR_BEHAVIOR_2>
 >
@@ -49,7 +49,7 @@ Fill the placeholders in the report language. The [worked review group](../examp
 >
 > 💡 <REMEDY>
 
-**M3 · Delete | <REMOVED_ENTRY_POINT>**
+**M3** · Delete | <REMOVED_ENTRY_POINT>
 
 > <REASON_AND_CALLER_IMPACT>
 
@@ -68,7 +68,7 @@ The progress line shown here belongs to an ordinary main group. Supplementary an
 
 ## Explain each change in its own terms
 
-Use one bold heading for each change item with its stable ID, its kind in the report language, and a concrete summary. For example, **M2 · Modify | Retry failed uploads**. In Chinese, the labels are 新增、修改、删除, as in **M2 · 修改｜重试失败的上传**. Choose the kind by tracing the behavior, responsibility, or contract in the assessed comparison. One file can contain several kinds, and a counterpart can live at another path. For a repair or optimization, use the contents immediately before and after that work.
+In each item heading, bold only the stable ID. For a change item, follow the ID with the kind in the report language and a concrete summary, as in “**M2** · Modify | Retry failed uploads”. In Chinese, use 新增、修改、删除, as in “**M2** · 修改｜重试失败的上传”. Choose the kind by tracing the behavior, responsibility, or contract in the assessed comparison. One file can contain several kinds, and a counterpart can live at another path. For a repair or optimization, use the contents immediately before and after that work.
 
 | Kind | What the reader needs |
 | --- | --- |

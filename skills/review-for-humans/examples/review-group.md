@@ -14,7 +14,7 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 📄 **[src/uploads/batch_upload.ts](http://127.0.0.1:47821/diff?example=upload-results)** · `+9 / −1`
 
-**M1 · Modify | Return an outcome for each file**
+**M1** · Modify | Return an outcome for each file
 
 > ⏪ Uploading several files returns only whether the whole batch succeeded, so the [upload screen](http://127.0.0.1:47821/diff?example=upload-controller) cannot tell the user which files need another attempt.
 >
@@ -24,13 +24,13 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+16 / −6`
 
-**M2 · Modify | Show each file's upload result**
+**M2** · Modify | Show each file's upload result
 
 > ⏪ When one file fails, the screen shows a failure message for the whole batch, leaving users to work out which files reached the server.
 >
 > ⏩ `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to show whether each file it tried to upload succeeded or failed, keeping earlier successful rows when failed files are retried.
 
-**M3 · Modify | Retry failed files without uploading successful ones again**
+**M3** · Modify | Retry failed files without uploading successful ones again
 
 > ⏪ If one file uploads and another fails, choosing Retry sends both again.
 >
@@ -40,13 +40,13 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 >
 > 💡 Collect all failed results, pass their files to `runUploads` together, and cover a batch with two failures in the retry checks.
 
-**M4 · Add | Label the file picker so screen-reader users can identify it**
+**M4** · Add | Label the file picker so screen-reader users can identify it
 
-**M5 · Delete | Retire the shortcut for resending the entire batch**
+**M5** · Delete | Retire the shortcut for resending the entire batch
 
 > The shortcut resends successful uploads along with failures. Keyboard users can tab to the Retry button and press Enter to retry failed uploads.
 
-**O1** · **Reuse the existing upload-history ordering**
+**O1** · Reuse the existing upload-history ordering
 
 > 🎨 **Optional improvement** · The `recentUploads` and `pinnedUploads` getters repeat the ordering from [upload history](https://example.test/repo/blob/0123456/src/uploads/upload_history.ts). Both getters and their callers match in the pinned base and head. The result display and retry paths use neither getter.
 >
@@ -56,7 +56,7 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 📄 **[src/uploads/upload_history.ts](https://example.test/repo/blob/0123456/src/uploads/upload_history.ts#L25)**
 
-**O2** · **Reuse the existing file-size formatter**
+**O2** · Reuse the existing file-size formatter
 
 > 🎨 **Optional improvement** · `formatRecentSize` and `formatArchivedSize` each repeat the display rules in the [existing file-size formatter](https://example.test/repo/blob/0123456/src/files/format_size.ts). Both functions, their callers, and the shared formatter match in the pinned base and head. Per-file upload results and retrying do not use these history labels.
 >
@@ -82,7 +82,7 @@ Choosing B authorizes work on the two named observations. After their checks and
 
 **User** · Walk me through M3. What would Retry send before and after this change, and what would the fix look like?
 
-**M3 · Modify | Retry failed files without uploading successful ones again**
+**M3** · Modify | Retry failed files without uploading successful ones again
 
 > ⏪ Suppose you select `cover.jpg`, `map.png`, and `notes.txt`. Only `cover.jpg` uploads successfully. Choosing Retry sends all three files again because the old handler uses the original selection.
 >

@@ -14,7 +14,7 @@ The only shared loading step for two configuration readers calls a third-party l
 
 A project's settings rule requires migrations and new installations to read the same published defaults.
 
-**M7 · Modify | Put the default timeout directly in the migration**
+**M7** · Modify | Put the default timeout directly in the migration
 
 > ⏪ The migration reads the timeout from the [settings defaults](https://example.test/repo/blob/0123456/src/settings/defaults.ts), the same source used for new installations.
 >
@@ -32,7 +32,7 @@ A parser starts rejecting a value the old version accepted. The new test proves 
 
 In a separate review, M12 adds implicit context while preserving verified callback order and error handling. Source and checks establish supported behavior, and the reason for this extra mechanism remains open. Pass is pending and all other delivery prerequisites are satisfied.
 
-**M12 · Modify | Share callback context**
+**M12** · Modify | Share callback context
 
 > ⏪ Callers pass context directly to each callback. New callbacks need to wire the same context again.
 >

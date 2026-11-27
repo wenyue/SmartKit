@@ -33,13 +33,13 @@
 
 📄 **[<PATH_1>](<URL_1>)** · `+1 / −1`
 
-**M1 · Add | <NEW_CAPABILITY_AND_PURPOSE>**
+**M1** · Add | <NEW_CAPABILITY_AND_PURPOSE>
 
 ---
 
 📄 **[<PATH_2>](<URL_2>)** · `+9 / −4`
 
-**M2 · Modify | <CHANGED_BEHAVIOR>**
+**M2** · Modify | <CHANGED_BEHAVIOR>
 
 > ⏪ <PRIOR_BEHAVIOR_2>
 >
@@ -49,7 +49,7 @@
 >
 > 💡 <REMEDY>
 
-**M3 · Delete | <REMOVED_ENTRY_POINT>**
+**M3** · Delete | <REMOVED_ENTRY_POINT>
 
 > <REASON_AND_CALLER_IMPACT>
 
@@ -68,7 +68,7 @@
 
 ## 按每项改动的类型说明
 
-每项改动用一个加粗标题，包含稳定编号、用报告语言写的类型和具体摘要。英文示例为 **M2 · Modify | Retry failed uploads** 。中文使用「新增」「修改」「删除」，例如 **M2 · 修改｜重试失败的上传** 。对照本次评估的版本，追踪相应的行为、职责或契约，据此选择类型。同一文件可以包含多种改动，能与当前改动对应的旧实现也可能位于另一个文件。报告修复或优化时，以本轮操作开始前和完成后的实际内容为准。
+每个条目的标题只加粗编号。改动项在编号后用报告语言写明类型和具体摘要，例如「 **M2** · Modify | Retry failed uploads」。中文使用「新增」「修改」「删除」，例如「 **M2** · 修改｜重试失败的上传」。对照本次评估的版本，追踪相应的行为、职责或契约，据此选择类型。同一文件可以包含多种改动，能与当前改动对应的旧实现也可能位于另一个文件。报告修复或优化时，以本轮操作开始前和完成后的实际内容为准。
 
 | 类型 | 应向读者说明什么 |
 | --- | --- |

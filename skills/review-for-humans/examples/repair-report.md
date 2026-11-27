@@ -8,7 +8,7 @@ M2 restores access to a category's saved list when its translated name changes. 
 
 📄 **[src/catalog/category_index.ts](http://127.0.0.1:47821/diff?example=repair-index)** · `+2 / −2`
 
-**M2 · Modify | Find category lists by stable identity**
+**M2** · Modify | Find category lists by stable identity
 
 > ⏪ The lookup compares names. After a rename, the caller sends the new name while the saved list still carries the old one, so the lookup returns an empty list even though the saved items are still there.
 >
@@ -30,7 +30,7 @@ M2 restores access to a category's saved list when its translated name changes. 
 
 📄 **[src/catalog/editor_controller.ts](http://127.0.0.1:47821/diff?example=repair-editor)** · `+1 / −1`
 
-**M11 · Modify | Keep the selected list when its name changes**
+**M11** · Modify | Keep the selected list when its name changes
 
 > The editor passes the category ID to the [lookup](http://127.0.0.1:47821/diff?example=repair-index) so a rename keeps the same list selected.
 
@@ -38,7 +38,7 @@ M2 restores access to a category's saved list when its translated name changes. 
 
 📄 **[src/catalog/gallery_controller.ts](http://127.0.0.1:47821/diff?example=repair-gallery)** · `+2 / −2`
 
-**M12 · Modify | Find the same list when opening or refreshing the gallery**
+**M12** · Modify | Find the same list when opening or refreshing the gallery
 
 > Both actions pass the category ID to the [lookup](http://127.0.0.1:47821/diff?example=repair-index) so they keep finding the saved items after a translation change.
 
@@ -59,4 +59,4 @@ If all three files were re-reviewed but the required application check could not
 
 ## The selected item was an independent observation
 
-If Optimize O1 standardizes an existing menu label across `draft_menu.ts` and `draft_toolbar.ts`, show **O1 · Modify | Use the same label for the draft action** once under the menu file. Describe the supporting change in the toolbar file's overview and report the label test with the verification evidence. Main counts stay unchanged.
+If Optimize O1 standardizes an existing menu label across `draft_menu.ts` and `draft_toolbar.ts`, show “**O1** · Modify | Use the same label for the draft action” once under the menu file. Describe the supporting change in the toolbar file's overview and report the label test with the verification evidence. Main counts stay unchanged.
