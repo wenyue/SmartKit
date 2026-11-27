@@ -14,7 +14,7 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 📄 **[src/uploads/batch_upload.ts](http://127.0.0.1:47821/diff?example=upload-results)** · `+9 / −1`
 
-**M1** · **Return an outcome for each file**
+**M1** · Modify | Return an outcome for each file
 
 > ⏪ Uploading several files returns only whether the whole batch succeeded, so the [upload screen](http://127.0.0.1:47821/diff?example=upload-controller) cannot tell the user which files need another attempt.
 >
@@ -22,27 +22,25 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 ---
 
-📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+15 / −5`
+📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+16 / −6`
 
-**M2** · **Show each file's upload result**
+**M2** · Modify | Show each file's upload result
 
-> ⏪ When one file fails, the screen shows a failure message for the whole batch, leaving users to work out which files reached the server.
->
-> ⏩ `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to show whether each file it tried to upload succeeded or failed, keeping earlier successful rows when failed files are retried.
+> The screen replaces its batch failure message with a status for each file. `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to update the rows for this attempt, keeping earlier successes visible when the user retries.
 
-**M3** · **Retry failed files without uploading successful ones again**
+**M3** · Modify | Retry failed files without uploading successful ones again
 
-> ⏪ If one file uploads and another fails, choosing Retry sends both again.
->
-> ⏩ Retry now uses the recorded failures to choose what to upload.
->
 > ❌ ⚖️ **Unreasonable** · **P2** · If two files fail, choosing Retry leaves the second file untouched. The handler uses `find`, which stops at the first failed result, even though the screen offers to retry all failed files.
 >
 > 💡 Collect all failed results, pass their files to `runUploads` together, and cover a batch with two failures in the retry checks.
 
-**M4** · **Correct the spelling of the “Uploads” heading**
+**M4** · Add | Label the file picker so screen-reader users can identify it
 
-**O1** · **Reuse the existing upload-history ordering**
+**M5** · Delete | Retire the shortcut for resending the entire batch
+
+> Removing the shortcut avoids resending successful files. Keyboard users can tab to Retry and press Enter to resend a failed file. M3 explains the limitation when several files fail.
+
+**O1** · Reuse the existing upload-history ordering
 
 > 🎨 **Optional improvement** · The `recentUploads` and `pinnedUploads` getters repeat the ordering from [upload history](https://example.test/repo/blob/0123456/src/uploads/upload_history.ts). Both getters and their callers match in the pinned base and head. The result display and retry paths use neither getter.
 >
@@ -52,7 +50,7 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 📄 **[src/uploads/upload_history.ts](https://example.test/repo/blob/0123456/src/uploads/upload_history.ts#L25)**
 
-**O2** · **Reuse the existing file-size formatter**
+**O2** · Reuse the existing file-size formatter
 
 > 🎨 **Optional improvement** · `formatRecentSize` and `formatArchivedSize` each repeat the display rules in the [existing file-size formatter](https://example.test/repo/blob/0123456/src/files/format_size.ts). Both functions, their callers, and the shared formatter match in the pinned base and head. Per-file upload results and retrying do not use these history labels.
 >
@@ -64,7 +62,7 @@ M3 remains unreasonable at P2 because one Retry action leaves some failed files 
 
 I inspected the retry handler and the changed test. The test sets up three files with one failure and checks that retrying sends only that file while retaining the successful rows. It does not cover two or more failures in the same batch. No tests or repair checks were run for this read-only review.
 
-📊 **Reviewed 2 / 2 files, with 4 modifications.**
+📊 **Reviewed 2 / 2 files, with 5 change items.**
 
 - A. **Fix** (recommended): Make M3 retry every failed file, run required checks including the multiple-failure case, and show its dedicated re-review.
 - B. **Optimize**: Apply O1 and O2 to reuse the comparator and file-size formatter, then check and re-review those changes.
@@ -72,13 +70,13 @@ I inspected the retry handler and the changed test. The test sets up three files
 
 ## Selecting Optimize while M3 is pending
 
-Choosing B authorizes work on the two named observations. After their checks and re-review, M3 remains pending and main progress remains 2 / 2 files with 4 modifications.
+Choosing B authorizes work on the two named observations. After their checks and re-review, M3 remains pending and main progress remains 2 / 2 files with 5 change items.
 
 ## When the user asks to explain M3
 
 **User** · Walk me through M3. What would Retry send before and after this change, and what would the fix look like?
 
-**M3** · **Retry failed files without uploading successful ones again**
+**M3** · Modify | Retry failed files without uploading successful ones again
 
 > ⏪ Suppose you select `cover.jpg`, `map.png`, and `notes.txt`. Only `cover.jpg` uploads successfully. Choosing Retry sends all three files again because the old handler uses the original selection.
 >
@@ -114,3 +112,11 @@ Choosing B authorizes work on the two named observations. After their checks and
 > ```
 >
 > For this batch, a regression check should expect one upload call containing `map.png` and `notes.txt`, with `cover.jpg` still shown as uploaded.
+
+## When the user asks about the removed shortcut
+
+**User** · I used the shortcut to resend all my files. If I tab to Retry and press Enter, will it send the whole batch?
+
+**M5** · Delete | Retire the shortcut for resending the entire batch
+
+> No. Enter activates Retry, which skips successful uploads. If `cover.jpg` uploaded and `map.png` failed, pressing Enter sends only `map.png`. If several files failed, the M3 defect limits that attempt to the first failure.

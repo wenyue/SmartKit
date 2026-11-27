@@ -33,21 +33,21 @@ Fill the placeholders in the report language. The [worked review group](../examp
 
 📄 **[<PATH_1>](<URL_1>)** · `+1 / −1`
 
-**M1** · **<ONE_LINE_CHANGE>**
+**M1** · Add | <NEW_CAPABILITY_AND_PURPOSE>
 
 ---
 
 📄 **[<PATH_2>](<URL_2>)** · `+9 / −4`
 
-**M2** · **<TITLE_2>**
+**M2** · Modify | <CHANGED_BEHAVIOR>
 
-> ⏪ <PRIOR_BEHAVIOR_2>
->
-> ⏩ <CHANGED_BEHAVIOR_2>
->
-> ❌ ⚖️ **<VERDICT>** · **P2** · <FINDING>
+> ❌ ⚖️ **<VERDICT>** · **P2** · <TRIGGER_AND_IMPACT>
 >
 > 💡 <REMEDY>
+
+**M3** · Delete | <REMOVED_ENTRY_POINT>
+
+> <REASON_AND_CALLER_IMPACT>
 
 ---
 
@@ -60,32 +60,42 @@ Fill the placeholders in the report language. The [worked review group](../examp
 <CHOICES_OR_AUTHORIZED_WORK>
 ````
 
-The progress line shown here belongs to an ordinary main group. Supplementary and repair reports state their own coverage and, when useful, that saved main progress is unchanged; they add no reviewed main files or modifications.
+The progress line shown here belongs to an ordinary main group. Supplementary and repair reports state their own coverage and, when useful, that saved main progress is unchanged; they add no reviewed main files or change items.
 
-## Explain modifications at the needed depth
+## Explain each change in its own terms
 
-Choose depth for each modification after assessing it on both axes. Two changes in one file can warrant different treatment. Use the full walkthrough as the reference and keep only the parts the reader needs at each shorter depth.
+In each item heading, bold only the stable ID. For a change item, follow it with the kind and a concrete summary in the report language. In Chinese, use 新增、修改、删除, as in “**M2** · 修改｜重试失败的上传”. Name the behavior, entry point, responsibility, or contract the item explains. Choose the kind by tracing what happened to it across the assessed versions, following callers to a counterpart at another path when needed. One file can contain several kinds. For a repair or optimization, compare the contents immediately before and after that work.
 
-- **At a glance.** For a tiny change you can confidently judge reasonable and elegant, state what changed on the ID and title line alone.
-- **Comparison.** For the remaining changes with no defect, worthwhile optional improvement, or material uncertainty to report, show ⏪ what happened before and why it mattered, then ⏩ what happens after and how it meets the need. Include a consequential mechanism or a guarantee callers still depend on when it explains the choice.
-- **Issue detail.** When a modification has a defect, keep ⏪ and ⏩ brief to leave room for what goes wrong in the assessed version. Open a behavior finding with its concrete trigger and what the user or caller sees, in everyday words. For a structural defect, identify the obligation it violates and the concrete consequence for callers or maintainers. Explain the cause and give an actionable remedy. Give a worthwhile optional improvement or material uncertainty comparable attention under its own judgment. For an improvement, explain the burden and the benefit of the proposed change. For uncertainty, explain what is known, what is at stake, and what evidence would settle it.
-- **Requested walkthrough.** Use the full explanation only when the user explicitly asks you to explain a particular file or modification, regardless of its verdict. Walk a concrete case through ⏪ the original behavior and ⏩ the assessed change. Follow the changed path far enough to answer the user's question, including any remaining issue and how its remedy would work. When code helps, show enough of the proposed implementation for the reader to follow the fix. A request to review a file or a general question uses the ordinary depths.
+| Kind | What the reader needs |
+| --- | --- |
+| **Add** | Name what is newly available and the purpose it serves. Identify who uses it or the problem it solves. |
+| **Modify** | Name the existing behavior or responsibility and what changed about it. Explain it directly, or use ⏪ for the specific prior behavior and ⏩ for its counterpart when pairing them makes the effect clearer. |
+| **Delete** | Name what was removed, why, and the material effect on existing callers. If an alternative exists, explain which uses it covers and what affected callers still need to do. |
 
-Put the bold ID and bold title on one unindented line, separated by a plain middle dot. For items with a body, keep the comparison and any judgments together in one Markdown blockquote. Start the prose immediately after ⏪ and ⏩. Separate items with ordinary paragraph spacing. For repairs and optimizations, compare the pre-repair and repaired contents.
+Explain additions and deletions directly. Ground the reason in requirements, callers, or the diff. When only the effect is established, report it. Call out missing rationale only when it affects a judgment. Keep any body and judgments together in one Markdown blockquote below the heading. When using arrows, start the prose immediately after each arrow. Separate items with ordinary paragraph spacing.
 
-Give each item enough context to stand on its own. In a before/after explanation, illustrate an old bug that motivated the change with a simple trigger and outcome in ⏪. Where they make the case easier to grasp, favor concise excerpts of the actual before and after code, a diagram tracing paths or states, or suggested code illustrating a fix. Use plain prose when it is clearer or an excerpt would bury the point. Preserve relevant state, error, and lifecycle context in excerpts and label illustrative simplifications or proposed code. Define unfamiliar terms where they first appear. Quote UI text as displayed in the assessed version and leave paraphrases unquoted.
+### Choose the depth the reader needs
 
-After ⏩, show only defects, worthwhile optional improvements, or material uncertainty as judgments. Explain each issue once under the relevant axis. Prefix defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Use 🎨 **Optional improvement** for a worthwhile optional remedy and ⚠️ ⚖️ or ⚠️ 🎨 for an **Uncertain** judgment. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone.
+Assess reasonableness and elegance before choosing how much to write. All four approaches apply to any kind. A request that only limits the review to a file uses ordinary review judgment.
+
+- **At a glance.** Use the heading alone when the change is tiny, you can confidently judge it reasonable and elegant, and the heading conveys everything the reader needs for its kind. For example, “**M6** · Modify | Correct the size label from KB to KiB to match the displayed 1,024-byte units” is a complete item.
+- **Ordinary explanation.** When the heading needs context, add the reason, mechanism, or consequence that helps the reader understand the change. Include a guarantee callers depend on when it explains the choice.
+- **Issue detail.** Whenever the assessment yields a defect, worthwhile optional improvement, or material uncertainty, put it under the item's heading. Give only the change context needed to understand the finding. For a behavior defect, open with the trigger and what the user or caller observes, then explain the cause and remedy. For a structural defect, identify the violated obligation, the consequence for callers or maintainers, and the correction. For an optional improvement, explain the burden, the remedy, and its benefit. For material uncertainty, give the known facts, which judgment depends on the missing evidence, and what would settle it.
+- **Requested walkthrough.** When the user explicitly asks to explain a particular file or item, answer their question directly. Trace a concrete case as far as needed. When expanding a reported change, keep its original heading, including the ID and kind, and carry forward any applicable finding. If the question concerns that finding, explain it once in the answer.
+
+Give each item enough context to stand alone. If an old bug motivated a modification, a simple trigger and outcome can make the comparison clear. Where they help, use concise actual excerpts, a diagram of paths or states, or enough proposed code to follow a fix. Preserve relevant state, error, and lifecycle context and label illustrative simplifications or proposed code. Define unfamiliar terms where they first appear. Quote UI text as displayed in the assessed version and leave paraphrases unquoted.
+
+Show only defects, worthwhile optional improvements, or material uncertainty as judgments. Explain each issue once under the relevant axis. Prefix defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Use 🎨 **Optional improvement** for a worthwhile optional remedy and ⚠️ ⚖️ or ⚠️ 🎨 for an **Uncertain** judgment. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone.
 
 ## Preserve identities and visible coverage
 
 Show every changed non-test file in a repair report, including supporting files. Tests appear with verification evidence under the repository's classification. Compact presentation does not narrow complete repair or affected-context assessment.
 
-Keep an existing item's ID and explain it once under its responsible file. Separately explained supporting modifications take the next unused M IDs from the entry's continuous sequence; connect them to the original repair in the introduction. For example, a repair after M1–M10 can contain M2, M11, and M12 across three files without changing main progress. References to M2 explain the relationship rather than creating another numbered item. Accompanying changes without a separate item can use a short file overview.
+Keep an existing item's ID and explain it once under its responsible file. Separately explained supporting changes take the next unused M IDs from the entry's continuous sequence; connect them to the original repair in the introduction. For example, a repair after M1–M10 can contain M2, M11, and M12 across three files without changing main progress. References to M2 explain the relationship rather than creating another numbered item. Accompanying changes without a separate item can use a short file overview.
 
-In selected-O work, keep the selected O IDs and use file overviews for supporting changes; they create neither new O observations nor M items. Choose depth for each selected item's modification and surface any resulting finding under the responsible selected item.
+In selected-O work, keep the selected O IDs and use file overviews for supporting changes; they create neither new O observations nor M items. Label and explain the implemented change under its selected O ID, with any resulting finding.
 
-Place incidental O items after M items under their source file. A file containing only O items has the same heading with a verified source link and follows the main file blocks. If no single-file attribution is useful, put the observations after the file blocks with a horizontal rule before them and before the closing. Include the entry's required evidence, impact, independence, and recommendation or benefit; any judgment lines follow the same icon and severity conventions. Placement changes neither main progress nor delivery or Viewed eligibility.
+Keep the ID and title for an incidental O observation without a change label. Place these O items after M items under their source file. A file containing only O items has the same heading with a verified source link and follows the main file blocks. If no single-file attribution is useful, put the observations after the file blocks with a horizontal rule before them and before the closing. Include the entry's required evidence, impact, independence, and recommendation or benefit; any judgment lines follow the same icon and severity conventions. Placement changes neither main progress nor delivery or Viewed eligibility.
 
 ## Close with the result and the next decision
 
@@ -93,7 +103,7 @@ Keep these four parts in order and omit empty categories:
 
 1. **Result and decisions.** State the group conclusion or the repair's actual completion status. Name pending unreasonable IDs with severity and impact, retained trade-offs, and outstanding optional remedies and benefits. Summarize material uncertainty separately with ⚠️, the corresponding item IDs, observed risks, and unresolved context.
 2. **Evidence and limits.** State the checks actually performed, results, and material gaps. When reporting a test coverage gap, check the existing cases and their setup paths. Name the specific condition or sequence left untested. For a repair, identify coverage of all changed non-test files and affected previously reviewed context, with verification records and available logs. Distinguish successful edits from unavailable required checks or incomplete re-review, which leave the dependent remedy incomplete. Tests remain evidence, and author-reported checks remain distinguishable from executed checks.
-3. **Progress or coverage.** For a main group, show only the cumulative reviewed-file fraction and actual main-modification count in the report language. For supplementary, repair, or selected-O work, state its coverage separately and preserve the saved main total and position.
+3. **Progress or coverage.** For a main group, show only the cumulative reviewed-file fraction and number of displayed main change items in the report language. For supplementary, repair, or selected-O work, state its coverage separately and preserve the saved main total and position.
 4. **Choices or remaining authorized work.** Render the entry's applicable menu with concrete IDs, effects, and next position. If delivery is already selected, retain its pending intent and use that decision table. When no new decision remains, state and continue the authorized work without asking for Pass again. Explain an unavailable prerequisite without a selectable remedy as a limitation, not an invented action choice.
 
 ## Render choices consistently
@@ -120,4 +130,4 @@ Use the same rendering for workspace menus. At scope end use Finish rather than 
 
 Confirm the first group places the standalone Change Overview section after verified scope and workspace context and before the horizontal rule that introduces the first file block. Check that the overview explains why the change is needed. Read each item on its own, then read each finding's first sentence by itself from the perspective of a reader new to the project. If understanding a behavior finding's trigger or outcome requires knowing an internal state name, storage operation, or project-specific term, rewrite the opening. Describe the concrete action or situation in everyday words and state what the user or caller observes. Put the exact technical condition and cause in the following explanation and briefly define unfamiliar terms there. Verify that quoted UI text matches the displayed wording.
 
-Check that file counts and link destinations match the assessed versions. Check that every required file has a usable link and that each screen, caller, or owner named from another file is linked at its mention. Check stable IDs, one standalone appearance per item, and judgments after the comparison with each issue explained once. Check O placement, accurate repair status and checks, unchanged main progress for additional coverage, visible uncertainty warnings, and the menu's punctuation, scope, recommendation, and effects.
+Check that file counts and link destinations match the assessed versions. Check that every required file has a usable link and that each screen, caller, or owner named from another file is linked at its mention. Check each item's ID and kind against the assessed change. Read additions and deletions for purpose and caller impact, and each before/after pair for a specific counterpart. Check that each item appears once with its judgments after the explanation. Check O placement, accurate repair status and checks, unchanged main progress for additional coverage, visible uncertainty warnings, and the menu's punctuation, scope, recommendation, and effects.
