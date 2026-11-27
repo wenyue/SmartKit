@@ -21,7 +21,7 @@ For a PR or remote-aligned branch, read [Preparation](references/preparation.md)
 
 Honor explicit alternative comparisons and historical versions. PR and branch comparisons exclude local uncommitted changes unless requested. For local review, exclude staged-only files, assess only the unstaged part of partially staged files, and recognize a worktree reversal of staged content as an unstaged change. Include untracked additions only when explicitly requested. These defaults prevail over different defaults in other review guidance.
 
-Use the repository's test classification to skip semantic review of test code, including unit, integration, and end-to-end tests, in main review, supplementary review, and repair re-review. Consult relevant tests as evidence. Apply the test exclusion and the selected-file, Viewed, and local filters before counting files, modifications, or progress. The delivery guide separately accounts for the complete submitted and outgoing scope. Review filters never narrow a commit or its required checks.
+Use the repository's test classification to skip semantic review of test code, including unit, integration, and end-to-end tests, in main review, supplementary review, and repair re-review. Consult relevant tests as evidence. Apply the test exclusion and the selected-file, Viewed, and local filters before counting files, change items, or progress. The delivery guide separately accounts for the complete submitted and outgoing scope. Review filters never narrow a commit or its required checks.
 
 Use source, test definitions, and existing valid results for read-only review and Viewed-only recording. Run unit tests or complete change-set verification when the user requests them or applicable project requirements call for them. Edits follow the repair procedure below. When execution evidence is missing, identify the affected judgments and continue independently supported assessment.
 
@@ -56,7 +56,7 @@ If a helper is shared or a side effect moves, trace each affected production ent
 
 ### Decide each axis independently
 
-Judge each modification on both axes. A definitive verdict, positive or negative, requires high confidence grounded in relevant evidence. Finding no defect or lacking the original conversation settles neither axis by itself.
+Judge each change on both axes. A definitive verdict, positive or negative, requires high confidence grounded in relevant evidence. Finding no defect or lacking the original conversation settles neither axis by itself.
 
 | Judgment | Basis |
 | --- | --- |
@@ -67,27 +67,27 @@ Judge each modification on both axes. A definitive verdict, positive or negative
 | 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent behavior-preserving alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
 | **Uncertain** on either axis | State the established facts, the material uncertainty, and what would resolve it. Keep any supported judgment on the other axis. |
 
-Give every supported defect and worthwhile optional improvement an actionable M item. Attach it to the responsible modification, with the trigger, consequence, and remedy or benefit. Include defects in unchanged code that this change introduces, triggers, or aggravates. One good modification cannot offset another's defect or burden. Omit low-benefit polish and personal preference.
+Give every supported defect and worthwhile optional improvement an actionable M item. Attach it to the responsible change, with the trigger, consequence, and remedy or benefit. Include defects in unchanged code that this change introduces, triggers, or aggravates. One good change cannot offset another's defect or burden. Omit low-benefit polish and personal preference.
 
 A behavioral defect alone establishes no structural defect. A violated structural obligation is both unreasonable and **Needs improvement**. Give it one ID, one explanation and one remedy. It requires Fix or explicit retention before advancement or delivery, including Viewed-only delivery. Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, and P3 lower-impact but worth correcting. An optional optimization preserves supported behavior.
 
-Functional correctness and user approval do not establish elegance. Separate a demonstrated burden from its justification and the user's acceptance. When missing rationale or requirements leave the necessity of complexity or the safety of its removal unresolved, mark the affected axis **Uncertain**. Keep uncertainty under its M ID, summarize it as a warning, and identify evidence that would settle it. It creates no O item, Fix scope, Optimize scope, or Optimize choice. Preserve independently supported judgments and remedies on that modification.
+Functional correctness and user approval do not establish elegance. Separate a demonstrated burden from its justification and the user's acceptance. When missing rationale or requirements leave the necessity of complexity or the safety of its removal unresolved, mark the affected axis **Uncertain**. Keep uncertainty under its M ID, summarize it as a warning, and identify evidence that would settle it. It creates no O item, Fix scope, Optimize scope, or Optimize choice. Preserve independently supported judgments and remedies on that change.
 
 ## Explain one complete group
 
-Read [Report Format](references/report-format.md) in full before the first report or action menu. Apply it to ordinary, supplementary, repair, and selected-O reports. Reuse its complete current content, restore it when missing, including after compaction, and reload it when it changes. It owns the opening change overview, file blocks, explanation depth for each item, closing disclosures, and menu rendering.
+Read [Report Format](references/report-format.md) in full before the first report or action menu. Apply it to ordinary, supplementary, repair, and selected-O reports. Reuse its complete current content, restore it when missing, including after compaction, and reload it when it changes. It owns the opening change overview, file blocks, change labels and explanation depth, closing disclosures, and menu rendering.
 
-Give modifications continuous M IDs across files and groups. Combine implementation steps that solve one problem and separate independent changes needing different explanations. One localization file is one modification. Minor accompanying edits without findings may stay in the overview or be omitted from explanation while remaining assessed. Present each item once in a report. Preserve its ID through supplementary review and repair. Separately explained supporting modifications take the next unused M IDs and retain their relationship to the original.
+Give displayed changes continuous M IDs across files and groups. Combine steps that solve one problem, including removing an old implementation as part of a replacement or extraction across files. Separate changes with independent effects, such as retiring an entry point callers could use directly. One localization file still counts as one change item. Minor accompanying edits without findings may stay in the overview or be omitted from explanation while remaining assessed. Present each item once in a report. Preserve its ID through supplementary review and repair. Separately explained supporting changes take the next unused M IDs and retain their relationship to the original.
 
-Size main groups internally. A straightforward modification needing a short explanation counts as 1 unit, one needing more detail counts as 2. Finish the complete file that brings the group to at least 20 units, reset the count for the next group, and show the shorter remainder at scope end. A request to expand an explanation does not resize the group.
+Size main groups internally. A straightforward change needing a short explanation counts as 1 unit, one needing more detail counts as 2. Finish the complete file that brings the group to at least 20 units, reset the count for the next group, and show the shorter remainder at scope end. A request to expand an explanation does not resize the group.
 
-Report the cumulative displayed main files out of eligible files, counting each once, and the actual cumulative number of displayed main modifications. Supplementary items, repair items, and incidental observations add no main units or progress. Keep the fixed evidence, group membership, judgments, findings, decisions, next position, and next M ID across replies. Totals change only with scope. A newly clean worktree cannot erase eligible undisplayed changes, and review progress alone establishes neither delivery nor Viewed status.
+Report the cumulative displayed main files out of eligible files, counting each once, and the actual cumulative number of displayed main change items. Supplementary items, repair items, and incidental observations add no main units or progress. Keep the fixed evidence, group membership, judgments, findings, decisions, next position, and next M ID across replies. Totals change only with scope. A newly clean worktree cannot erase eligible undisplayed changes, and review progress alone establishes neither delivery nor Viewed status.
 
 ### Report a genuinely independent observation
 
 When necessary reading reveals a pre-existing issue, establish evidence that the change neither introduced, triggered, nor aggravated it. Give it a separate continuous O ID, title, source link or location, evidence, impact, independence, and recommendation or benefit. Place it with its source file where attributable under Report Format. Keep the search within the task's necessary context.
 
-An O item adds no main file, modification, progress, or automatic Viewed eligibility. Bulk Fix, Optimize, Ignore, or acceptance excludes O items unless explicitly selected or brought into scope. Unselected O advice creates no review or delivery gate. Once selected, an O repair needs its own evidence, checks, and two-axis re-review of the change and affected context. Keep O identities and main progress. The changes enter delivery coverage, where new findings or failed checks can block delivery.
+An O item adds no main file, change item, progress, or automatic Viewed eligibility. Bulk Fix, Optimize, Ignore, or acceptance excludes O items unless explicitly selected or brought into scope. Unselected O advice creates no review or delivery gate. Once selected, an O repair needs its own evidence, checks, and two-axis re-review of the change and affected context. Keep O identities and main progress. The changes enter delivery coverage, where new findings or failed checks can block delivery.
 
 ## Offer the decision the group supports
 
@@ -161,7 +161,7 @@ Consult the example for the decision at hand. The current review's evidence and 
 
 | Situation | Example |
 | --- | --- |
-| Vary explanation depth within a group, present independent observations, or expand a modification the user asks about | [Review group](examples/review-group.md) |
+| Explain additions, modifications, and deletions at different depths, present independent observations, or expand an item on request | [Review group](examples/review-group.md) |
 | Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
 | Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
 | Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |

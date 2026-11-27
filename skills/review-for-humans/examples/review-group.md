@@ -14,7 +14,7 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 📄 **[src/uploads/batch_upload.ts](http://127.0.0.1:47821/diff?example=upload-results)** · `+9 / −1`
 
-**M1** · **Return an outcome for each file**
+**M1 · Modify | Return an outcome for each file**
 
 > ⏪ Uploading several files returns only whether the whole batch succeeded, so the [upload screen](http://127.0.0.1:47821/diff?example=upload-controller) cannot tell the user which files need another attempt.
 >
@@ -22,15 +22,15 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 ---
 
-📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+15 / −5`
+📄 **[src/uploads/upload_controller.ts](http://127.0.0.1:47821/diff?example=upload-controller)** · `+16 / −6`
 
-**M2** · **Show each file's upload result**
+**M2 · Modify | Show each file's upload result**
 
 > ⏪ When one file fails, the screen shows a failure message for the whole batch, leaving users to work out which files reached the server.
 >
 > ⏩ `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to show whether each file it tried to upload succeeded or failed, keeping earlier successful rows when failed files are retried.
 
-**M3** · **Retry failed files without uploading successful ones again**
+**M3 · Modify | Retry failed files without uploading successful ones again**
 
 > ⏪ If one file uploads and another fails, choosing Retry sends both again.
 >
@@ -40,7 +40,11 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 >
 > 💡 Collect all failed results, pass their files to `runUploads` together, and cover a batch with two failures in the retry checks.
 
-**M4** · **Correct the spelling of the “Uploads” heading**
+**M4 · Add | Label the file picker so screen-reader users can identify it**
+
+**M5 · Delete | Retire the shortcut for resending the entire batch**
+
+> The shortcut resends successful uploads along with failures. Keyboard users can tab to the Retry button and press Enter to retry failed uploads.
 
 **O1** · **Reuse the existing upload-history ordering**
 
@@ -64,7 +68,7 @@ M3 remains unreasonable at P2 because one Retry action leaves some failed files 
 
 I inspected the retry handler and the changed test. The test sets up three files with one failure and checks that retrying sends only that file while retaining the successful rows. It does not cover two or more failures in the same batch. No tests or repair checks were run for this read-only review.
 
-📊 **Reviewed 2 / 2 files, with 4 modifications.**
+📊 **Reviewed 2 / 2 files, with 5 change items.**
 
 - A. **Fix** (recommended): Make M3 retry every failed file, run required checks including the multiple-failure case, and show its dedicated re-review.
 - B. **Optimize**: Apply O1 and O2 to reuse the comparator and file-size formatter, then check and re-review those changes.
@@ -72,13 +76,13 @@ I inspected the retry handler and the changed test. The test sets up three files
 
 ## Selecting Optimize while M3 is pending
 
-Choosing B authorizes work on the two named observations. After their checks and re-review, M3 remains pending and main progress remains 2 / 2 files with 4 modifications.
+Choosing B authorizes work on the two named observations. After their checks and re-review, M3 remains pending and main progress remains 2 / 2 files with 5 change items.
 
 ## When the user asks to explain M3
 
 **User** · Walk me through M3. What would Retry send before and after this change, and what would the fix look like?
 
-**M3** · **Retry failed files without uploading successful ones again**
+**M3 · Modify | Retry failed files without uploading successful ones again**
 
 > ⏪ Suppose you select `cover.jpg`, `map.png`, and `notes.txt`. Only `cover.jpg` uploads successfully. Choosing Retry sends all three files again because the old handler uses the original selection.
 >

@@ -8,7 +8,7 @@ M2 restores access to a category's saved list when its translated name changes. 
 
 📄 **[src/catalog/category_index.ts](http://127.0.0.1:47821/diff?example=repair-index)** · `+2 / −2`
 
-**M2** · **Find category lists by stable identity**
+**M2 · Modify | Find category lists by stable identity**
 
 > ⏪ The lookup compares names. After a rename, the caller sends the new name while the saved list still carries the old one, so the lookup returns an empty list even though the saved items are still there.
 >
@@ -30,21 +30,17 @@ M2 restores access to a category's saved list when its translated name changes. 
 
 📄 **[src/catalog/editor_controller.ts](http://127.0.0.1:47821/diff?example=repair-editor)** · `+1 / −1`
 
-**M11** · **Keep the selected list when its name changes**
+**M11 · Modify | Keep the selected list when its name changes**
 
-> ⏪ The editor passes the name to the [lookup](http://127.0.0.1:47821/diff?example=repair-index), so changing the name can lose the selected list.
->
-> ⏩ The editor passes the category ID so selection continues to find the same list.
+> The editor passes the category ID to the [lookup](http://127.0.0.1:47821/diff?example=repair-index) so a rename keeps the same list selected.
 
 ---
 
 📄 **[src/catalog/gallery_controller.ts](http://127.0.0.1:47821/diff?example=repair-gallery)** · `+2 / −2`
 
-**M12** · **Find the same list when opening or refreshing the gallery**
+**M12 · Modify | Find the same list when opening or refreshing the gallery**
 
-> ⏪ Opening and refreshing the gallery send the translated name to the [lookup](http://127.0.0.1:47821/diff?example=repair-index), so a translation change can hide existing items.
->
-> ⏩ Both operations send the category ID so they keep finding the same items.
+> Both actions pass the category ID to the [lookup](http://127.0.0.1:47821/diff?example=repair-index) so they keep finding the saved items after a translation change.
 
 ---
 
@@ -52,7 +48,7 @@ M2's repair is complete, with no new findings or outstanding optional improvemen
 
 Required project checks passed on the repaired contents. Independent re-review covered all three changed non-test files and the affected previously reviewed category-selection paths. The [category lookup test](https://example.test/repo/blob/0123456/tests/catalog/category_lookup.test.ts) supplies evidence for renamed and missing categories. [Verification evidence](http://127.0.0.1:47821/evidence?example=repair-checks) records the procedures, results, and available logs.
 
-Repair coverage is three non-test files; main progress remains 4 / 9 files with 10 modifications. Commit, publication, and Viewed recording have not occurred.
+Repair coverage is three non-test files. Main progress remains 4 / 9 files with 10 change items. Commit, publication, and Viewed recording have not occurred.
 
 - A. **Pass** (recommended): Prepare and commit outstanding changes in `/work/catalog`, publish the complete outgoing scope to the PR source, and record eligible Viewed paths. Once only Viewed remains, review the next group read-only under the delivery guide.
 - B. **Continue**: Review the next group without delivery, keeping the local repair.
@@ -63,4 +59,4 @@ If all three files were re-reviewed but the required application check could not
 
 ## The selected item was an independent observation
 
-If Optimize O1 updates `draft_menu.ts`, `draft_toolbar.ts`, and a label test, show O1 once under the menu file and describe the supporting change in the toolbar file's overview. Report the test with the verification evidence and keep main counts unchanged.
+If Optimize O1 standardizes an existing menu label across `draft_menu.ts` and `draft_toolbar.ts`, show **O1 · Modify | Use the same label for the draft action** once under the menu file. Describe the supporting change in the toolbar file's overview and report the label test with the verification evidence. Main counts stay unchanged.
