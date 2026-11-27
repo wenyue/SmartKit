@@ -26,16 +26,10 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 **M2** · Modify | Show each file's upload result
 
-> ⏪ When one file fails, the screen shows a failure message for the whole batch, leaving users to work out which files reached the server.
->
-> ⏩ `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to show whether each file it tried to upload succeeded or failed, keeping earlier successful rows when failed files are retried.
+> The screen replaces its batch failure message with a status for each file. `runUploads` uses the [per-file outcomes](http://127.0.0.1:47821/diff?example=upload-results) to update the rows for this attempt, keeping earlier successes visible when the user retries.
 
 **M3** · Modify | Retry failed files without uploading successful ones again
 
-> ⏪ If one file uploads and another fails, choosing Retry sends both again.
->
-> ⏩ Retry now uses the recorded failures to choose what to upload.
->
 > ❌ ⚖️ **Unreasonable** · **P2** · If two files fail, choosing Retry leaves the second file untouched. The handler uses `find`, which stops at the first failed result, even though the screen offers to retry all failed files.
 >
 > 💡 Collect all failed results, pass their files to `runUploads` together, and cover a batch with two failures in the retry checks.
@@ -44,7 +38,7 @@ This PR aims to show which files succeeded and which failed, then let you retry 
 
 **M5** · Delete | Retire the shortcut for resending the entire batch
 
-> The shortcut resends successful uploads along with failures. Keyboard users can tab to the Retry button and press Enter to retry failed uploads.
+> Removing the shortcut avoids resending successful files. Keyboard users can tab to Retry and press Enter to resend a failed file. M3 explains the limitation when several files fail.
 
 **O1** · Reuse the existing upload-history ordering
 
@@ -118,3 +112,11 @@ Choosing B authorizes work on the two named observations. After their checks and
 > ```
 >
 > For this batch, a regression check should expect one upload call containing `map.png` and `notes.txt`, with `cover.jpg` still shown as uploaded.
+
+## When the user asks about the removed shortcut
+
+**User** · I used the shortcut to resend all my files. If I tab to Retry and press Enter, will it send the whole batch?
+
+**M5** · Delete | Retire the shortcut for resending the entire batch
+
+> No. Enter activates Retry, which skips successful uploads. If `cover.jpg` uploaded and `map.png` failed, pressing Enter sends only `map.png`. If several files failed, the M3 defect limits that attempt to the first failure.

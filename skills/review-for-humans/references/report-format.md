@@ -41,11 +41,7 @@ Fill the placeholders in the report language. The [worked review group](../examp
 
 **M2** · Modify | <CHANGED_BEHAVIOR>
 
-> ⏪ <PRIOR_BEHAVIOR_2>
->
-> ⏩ <CHANGED_BEHAVIOR_2>
->
-> ❌ ⚖️ **<VERDICT>** · **P2** · <FINDING>
+> ❌ ⚖️ **<VERDICT>** · **P2** · <TRIGGER_AND_IMPACT>
 >
 > 💡 <REMEDY>
 
@@ -68,28 +64,28 @@ The progress line shown here belongs to an ordinary main group. Supplementary an
 
 ## Explain each change in its own terms
 
-In each item heading, bold only the stable ID. For a change item, follow the ID with the kind in the report language and a concrete summary, as in “**M2** · Modify | Retry failed uploads”. In Chinese, use 新增、修改、删除, as in “**M2** · 修改｜重试失败的上传”. Choose the kind by tracing the behavior, responsibility, or contract in the assessed comparison. One file can contain several kinds, and a counterpart can live at another path. For a repair or optimization, use the contents immediately before and after that work.
+In each item heading, bold only the stable ID. For a change item, follow it with the kind and a concrete summary in the report language. In Chinese, use 新增、修改、删除, as in “**M2** · 修改｜重试失败的上传”. Name the behavior, entry point, responsibility, or contract the item explains. Choose the kind by tracing what happened to it across the assessed versions, following callers to a counterpart at another path when needed. One file can contain several kinds. For a repair or optimization, compare the contents immediately before and after that work.
 
 | Kind | What the reader needs |
 | --- | --- |
 | **Add** | Name what is newly available and the purpose it serves. Identify who uses it or the problem it solves. |
-| **Modify** | Name the existing behavior or responsibility and what changed about it. When the difference helps explain the change, show ⏪ the specific prior behavior and why it mattered, then ⏩ the corresponding change and its effect. A short direct explanation can suffice even when a counterpart exists. |
-| **Delete** | Name what was removed and why. Explain any material effect on existing callers, including a replacement when one exists. |
+| **Modify** | Name the existing behavior or responsibility and what changed about it. Explain it directly, or use ⏪ for the specific prior behavior and ⏩ for its counterpart when pairing them makes the effect clearer. |
+| **Delete** | Name what was removed, why, and the material effect on existing callers. If an alternative exists, explain which uses it covers and what affected callers still need to do. |
 
-Explain additions and deletions directly in prose. Ground the reason in the requirements, callers, or other review evidence. If the purpose remains unclear, say what the evidence establishes and what remains unknown. Keep any body and judgments together in one Markdown blockquote below the heading. When comparing a modification, start the prose immediately after each arrow. Separate items with ordinary paragraph spacing.
+Explain additions and deletions directly. Ground the reason in requirements, callers, or the diff. When only the effect is established, report it. Call out missing rationale only when it affects a judgment. Keep any body and judgments together in one Markdown blockquote below the heading. When using arrows, start the prose immediately after each arrow. Separate items with ordinary paragraph spacing.
 
 ### Choose the depth the reader needs
 
-Assess both axes before choosing depth. Two items of the same kind in one file can need different amounts of explanation.
+Assess reasonableness and elegance before choosing how much to write. All four approaches apply to any kind. A request that only limits the review to a file uses ordinary review judgment.
 
-- **At a glance.** For a tiny change confidently judged reasonable and elegant, let the heading carry the whole explanation, including the purpose of an addition or deletion.
-- **Ordinary explanation.** Explain the change and its purpose using the guidance for its kind. Include a consequential mechanism or a guarantee callers depend on when it explains the choice.
-- **Issue detail.** Keep the change explanation short. For a behavior defect, open with the concrete trigger and what the user or caller observes, then explain the cause and remedy. For a structural defect, identify the violated obligation and the consequence for callers or maintainers. For an optional improvement, explain the burden and the proposed benefit. For material uncertainty, give the known facts, what is at stake, and what evidence would settle it.
-- **Requested walkthrough.** When the user explicitly asks for an explanation of a particular file or item, follow a concrete case far enough to answer their question, whatever the verdict. For an addition, trace its use. For a deletion, follow an affected caller or explain why the removed code has no remaining caller. For a modification, compare the paths where that helps. Include any remaining issue and how its remedy would work. A request to review a file or a general question uses the ordinary depths.
+- **At a glance.** Use the heading alone when the change is tiny, you can confidently judge it reasonable and elegant, and the heading conveys everything the reader needs for its kind. For example, “**M6** · Modify | Correct the size label from KB to KiB to match the displayed 1,024-byte units” is a complete item.
+- **Ordinary explanation.** When the heading needs context, add the reason, mechanism, or consequence that helps the reader understand the change. Include a guarantee callers depend on when it explains the choice.
+- **Issue detail.** Whenever the assessment yields a defect, worthwhile optional improvement, or material uncertainty, put it under the item's heading. Give only the change context needed to understand the finding. For a behavior defect, open with the trigger and what the user or caller observes, then explain the cause and remedy. For a structural defect, identify the violated obligation, the consequence for callers or maintainers, and the correction. For an optional improvement, explain the burden, the remedy, and its benefit. For material uncertainty, give the known facts, which judgment depends on the missing evidence, and what would settle it.
+- **Requested walkthrough.** When the user explicitly asks to explain a particular file or item, answer their question directly. Trace a concrete case as far as needed. When expanding a reported change, keep its original heading, including the ID and kind, and carry forward any applicable finding. If the question concerns that finding, explain it once in the answer.
 
 Give each item enough context to stand alone. If an old bug motivated a modification, a simple trigger and outcome can make the comparison clear. Where they help, use concise actual excerpts, a diagram of paths or states, or enough proposed code to follow a fix. Preserve relevant state, error, and lifecycle context and label illustrative simplifications or proposed code. Define unfamiliar terms where they first appear. Quote UI text as displayed in the assessed version and leave paraphrases unquoted.
 
-After the explanation, show only defects, worthwhile optional improvements, or material uncertainty as judgments. Explain each issue once under the relevant axis. Prefix defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Use 🎨 **Optional improvement** for a worthwhile optional remedy and ⚠️ ⚖️ or ⚠️ 🎨 for an **Uncertain** judgment. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone.
+Show only defects, worthwhile optional improvements, or material uncertainty as judgments. Explain each issue once under the relevant axis. Prefix defects with ❌ ⚖️ or ❌ 🎨 and show their severity. A structural defect shown as ❌ 🎨 **Needs improvement** retains its classification as an unreasonable finding under the entry. Use 🎨 **Optional improvement** for a worthwhile optional remedy and ⚠️ ⚖️ or ⚠️ 🎨 for an **Uncertain** judgment. Prefix a concrete remedy or the evidence needed to resolve an uncertainty with 💡 alone.
 
 ## Preserve identities and visible coverage
 
