@@ -6,25 +6,11 @@ disable-model-invocation: true
 
 # Review for Humans
 
-Make fixed changes understandable enough for the human to judge them and choose what happens next. Establish why the behavior is needed before judging how it is implemented. Review authorizes evidence capture and link preparation. Explain complete file groups before acting on selected review remedies, delivery, or advancement.
-
-This entry owns review scope, assessment, findings, progress, and user decisions. Load [Preparation](references/preparation.md) for PR or remote-aligned branch evidence and workspace selection.
-
-Apply the complete [Report Format](references/report-format.md) to every ordinary, supplementary, repair, or selected-O report and action menu. Read it in full before first use; reuse its complete, current content already in context. Restore the full guide when content is missing, including after compaction, and reload it when it changes.
-
-Load [Delivery](references/delivery.md) when offering Pass, preparing or carrying out selected delivery, or determining whole-file Viewed eligibility when a repair touches a PR file not yet fully reviewed. An unavailable required guide leaves dependent work incomplete.
-
-Consult an example when you need to see the report layout or how verified facts support a decision. Use the applicable guide and evidence from the current review to determine judgments, report content, and available actions.
-
-| Situation | Example |
-| --- | --- |
-| Vary explanation depth within a group, present independent observations, or expand a modification the user asks about | [Review group](examples/review-group.md) |
-| Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
-| Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
-| Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |
-| Present a workspace choice or resolve missing Viewed evidence | [Review preparation](examples/review-preparation.md) |
+Help the reader decide whether a change solves the right problem, whether its implementation earns its cost, and what to do next. Pin the evidence, explain one complete group of files, then act on the user's choice. The review request authorizes evidence capture and link preparation. Repairs, delivery, and advancement take their authority from the selected action.
 
 ## Fix the comparison and reading order
+
+For a PR or remote-aligned branch, read [Preparation](references/preparation.md) before selecting a workspace or gathering version evidence. It owns workspace choices, source alignment, and the authenticated viewer's file filter. For deliberately local branch or unstaged work, use the corresponding comparison below. If a required guide is unavailable, report the gap and leave its dependent work incomplete.
 
 | Request | Comparison and initial evidence |
 | --- | --- |
@@ -56,27 +42,21 @@ Supply each file's full repository-relative `path` with forward slashes and omit
 
 Preparation supplies PR metadata and verified display mode. Local and deliberately local branch reviews need no remote alignment; branch-only links bind to the exact verified display workspace without PR context. Bind every live link to its verified workspace and disclose dirty or differing live contents without changing the assessment or Viewed eligibility. A generated link does not prove editor display. If link generation fails, preserve the comparison and chosen mode while resolving it; the dependent report waits.
 
-## Judge the need, then the implementation
+## Judge the need and what changed for callers
 
-Inspect the whole scoped change and its necessary context: affected callers, existing owners, comparable patterns, contracts, and lifetimes. Give elegance more effort than reasonableness. Review every non-test change on both axes, including documentation and translations, whether or not it gets a displayed modification item. Distinguish checks actually performed from author-reported results and retain material task or standards findings.
+Read the whole scoped change and the context needed to judge it, including callers, comparable implementations, contracts, owners, and lifetimes. Assess every eligible change on both reasonableness and elegance, including documentation, translations, and minor edits that need no separate explanation. Apply project rules and accepted user decisions. Retain material task and standards findings, distinguishing evidence you verified from author-reported results. A passing test demonstrates behavior under the conditions and assumptions it exercised.
 
-Judge the change against the applicable rules, the user's accepted decisions, and the behavior promised to callers. Use the questions below to focus inspection. Explain each judgment in terms of the expectation that applies and the evidence from actual use, source, or framework guarantees. A passing test shows what happens under its assumptions.
+Establish the purpose before evaluating the design. What does the caller need, what did the original provide, and what does the proposed change add or remove? Compare a simpler implementation under the same requirements. To endorse extra complexity, show what that alternative would lose and why it matters. A proposal to change supported behavior needs a scope decision.
 
-For each input to changed derived state, identify its owner and use source references to find every relevant production entry point that updates, removes, or resets the input or its source entity, including paths outside the diff. Keep an internal, source-backed check for each entry point. Record which owners update or clear their state and which can retain an earlier value. For each path, trace what the consumer receives before and after the change, including when one input updates or clears while another retains its earlier value. Carry material gaps in this coverage into the assessment as uncertainty.
+Spend more effort on elegance than reasonableness. Trace the purpose of each added file and each new or changed function, type, member, or piece of state, including private members. For a changed boundary or contract, establish who held the responsibility before, who depends on it now and for how long, and whether direct calls or an existing owner could serve those callers. Explain the consequential trade-off.
 
-For changes to derived state or asynchronous feedback, use source and contracts to trace the relevant entry points that write, clear, or mark the state as handled, including other owners of its inputs. Check permitted event orders from when a result becomes available to when it reaches the user or caller. Include writes, clears, handling, interruption, or dismissal that can occur in between. A test that separates those events establishes the order it exercises.
+For derived state, start with the owner of each input. Use source references to find every relevant production entry point that updates, removes, or resets the input or its source entity, including outside the diff. For each such entry point, keep an internal, source-backed account of what each owner writes, clears, or retains and what reaches the consumer before and after the change. Include the case where one input clears or updates while another retains its value. For derived state or asynchronous feedback, trace permitted orders from availability to delivery, including intervening writes, clears, handling, interruption, or dismissal. Check the relevant production entry points that write or clear the state or mark it as handled, including other owners of its inputs. Carry material gaps as uncertainty. A test establishes the order it exercised.
 
-When a change shares a helper or moves side effects, what can callers observe through each affected production entry point and its input paths? Consider where a newly introduced operation can fail on a path that previously would have succeeded. Trace what is saved and what the caller receives, then compare that outcome with the behavior the caller accepts.
+If a helper is shared or a side effect moves, trace each affected production entry point and input path. Could a new operation fail where that caller previously succeeded? Establish what is saved, what reaches the caller, and whether that outcome is supported. For any defect, connect a reachable trigger to the affected obligation or user experience using source, a supported call sequence, an applicable contract, or a representative reproduction.
 
-When reporting a defect, explain how its trigger can occur and which obligation or user outcome it compromises. A supported call sequence, an applicable contract, or a representative reproduction can establish that link.
+### Decide each axis independently
 
-What problem does the change solve? Which outcomes do callers need, and does the existing behavior already provide them? Compare the chosen implementation with the original and consider whether a simpler design could meet the same requirements. Explain what each guarantees callers and what it costs to maintain. When endorsing added complexity, show what the simpler design would lose and why that matters enough under the accepted requirements to justify the cost. Treat a proposal to change supported behavior as a scope decision.
-
-What concrete purpose does each added file serve? Ask the same of new or changed functions, types, members, and state, including private members in existing files. For each new or changed boundary or contract, trace where its responsibility lived before, who depends on it, and for how long. Compare direct calls and existing owners where they could serve the same purpose. Give the most attention to consequential design choices and explain the concrete trade-off under the applicable rules.
-
-### Judge each modification on both axes
-
-Give a definitive verdict only with high confidence grounded in relevant evidence. This applies to positive and negative judgments, including optional improvements; finding no defect does not establish reasonableness or elegance. Judge the axes independently, using **Uncertain** only where a material unknown prevents a confident conclusion. Missing original conversation alone need not undermine otherwise sufficient evidence.
+Judge each modification on both axes. A definitive verdict, positive or negative, requires high confidence grounded in relevant evidence. Finding no defect or lacking the original conversation settles neither axis by itself.
 
 | Judgment | Basis |
 | --- | --- |
@@ -87,86 +67,35 @@ Give a definitive verdict only with high confidence grounded in relevant evidenc
 | 🎨 **Optional improvement** | The structure meets supported obligations, but a simpler or more consistent behavior-preserving alternative offers enough benefit for its change cost. Explain the burden, remedy, and benefit; optimization remains optional. |
 | **Uncertain** on either axis | State the established facts, the material uncertainty, and what would resolve it. Keep any supported judgment on the other axis. |
 
-Assess both axes for each modification and follow Report Format for what to show. Attach each finding to the responsible modification and establish its cause and user or caller consequences. One good change cannot cancel another change's defect, burden, or uncertainty. Explicit retention preserves the judgment and consequences; an unchanged accepted burden does not need another optimization request.
+Give every supported defect and worthwhile optional improvement an actionable M item. Attach it to the responsible modification, with the trigger, consequence, and remedy or benefit. Include defects in unchanged code that this change introduces, triggers, or aggravates. One good modification cannot offset another's defect or burden. Omit low-benefit polish and personal preference.
 
-Functional correctness or user approval does not establish elegant structure. Distinguish an observed burden from its justification and acceptance. When missing requirements, rationale, or user decisions materially affect whether the complexity is necessary or a simplification is safe, mark the affected judgment **Uncertain** rather than presuming acceptance, needless complexity, or a remedy.
+A behavioral defect alone establishes no structural defect. A violated structural obligation is both unreasonable and **Needs improvement**. Give it one ID, one explanation and one remedy. It requires Fix or explicit retention before advancement or delivery, including Viewed-only delivery. Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, and P3 lower-impact but worth correcting. An optional optimization preserves supported behavior.
 
-A behavioral defect alone does not prove poor structure. A structural requirement violation is a correctness finding with unreasonable status. Apply the same treatment as for other unreasonable findings in Fix, Pass, Continue/Finish, and delivery, including Viewed-only delivery. Keep the defect under its modification's ID with one explanation and one remedy, even when it affects both axes. Omit preference and low-benefit polish.
+Functional correctness and user approval do not establish elegance. Separate a demonstrated burden from its justification and the user's acceptance. When missing rationale or requirements leave the necessity of complexity or the safety of its removal unresolved, mark the affected axis **Uncertain**. Keep uncertainty under its M ID, summarize it as a warning, and identify evidence that would settle it. It creates no O item, Fix scope, Optimize scope, or Optimize choice. Preserve independently supported judgments and remedies on that modification.
 
-Keep uncertainty about a scoped modification under its M ID and summarize it as a warning. It is not an established finding or optional improvement: exclude it from Fix and Optimize scopes, and create neither an incidental O item nor an Optimize choice from it. Retain independently supported judgments and remedies on the same modification.
+## Explain one complete group
 
-Assign severity only to unreasonable findings: P0 critical/immediate, P1 serious/prompt correction, P2 normal priority, P3 lower-impact but worth correcting. Optimization is always optional. A correction necessary to meet a supported obligation is Fix, even when the defect is structural.
+Read [Report Format](references/report-format.md) in full before the first report or action menu. Apply it to ordinary, supplementary, repair, and selected-O reports. Reuse its complete current content, restore it when missing, including after compaction, and reload it when it changes. It owns the opening change overview, file blocks, explanation depth for each item, closing disclosures, and menu rendering.
 
-## Explain complete groups and preserve their identity
+Give modifications continuous M IDs across files and groups. Combine implementation steps that solve one problem and separate independent changes needing different explanations. One localization file is one modification. Minor accompanying edits without findings may stay in the overview or be omitted from explanation while remaining assessed. Present each item once in a report. Preserve its ID through supplementary review and repair. Separately explained supporting modifications take the next unused M IDs and retain their relationship to the original.
 
-Use Report Format for the applicable report kind. Assign continuous M IDs across files and groups, grouping implementation steps by the problem they solve and separating independent changes that cannot share one explanation. One localization file is one modification. Minor accompanying edits without findings may stay in the overview or be omitted from explanation; they remain within assessment coverage.
+Size main groups internally. A straightforward modification needing a short explanation counts as 1 unit, one needing more detail counts as 2. Finish the complete file that brings the group to at least 20 units, reset the count for the next group, and show the shorter remainder at scope end. A request to expand an explanation does not resize the group.
 
-Keep an existing item's ID through supplementary review and repair. Additional separately explained supporting modifications receive the next unused M IDs and retain their relationship to the original finding. Present each item once in a report; a supporting file does not repeat the original item as another numbered item. Repair and supplementary IDs share the continuous sequence but add no main progress. Selected-O work retains the separate identity below.
+Report the cumulative displayed main files out of eligible files, counting each once, and the actual cumulative number of displayed main modifications. Supplementary items, repair items, and incidental observations add no main units or progress. Keep the fixed evidence, group membership, judgments, findings, decisions, next position, and next M ID across replies. Totals change only with scope. A newly clean worktree cannot erase eligible undisplayed changes, and review progress alone establishes neither delivery nor Viewed status.
 
-Every supported unreasonable finding and worthwhile optional improvement needs an actionable M item, using an existing item or adding one. Its judgments explain the concrete problem, severity when applicable, trigger, impact, and correction or benefit. Defects in unchanged code belong here when this change introduces, triggers, or aggravates them. Associate each with the responsible M item.
+### Report a genuinely independent observation
 
-Internally size each main group by review units: a straightforward modification needing only a short explanation counts as 1 unit. A modification needing more detail counts as 2. A user's request to expand an explanation does not resize the group. End the group after the complete file that brings its total to at least 20 units, never midway through a file. Reset the unit count for the next group, and show the shorter remainder at scope end. Keep this unit accounting internal.
+When necessary reading reveals a pre-existing issue, establish evidence that the change neither introduced, triggered, nor aggravated it. Give it a separate continuous O ID, title, source link or location, evidence, impact, independence, and recommendation or benefit. Place it with its source file where attributable under Report Format. Keep the search within the task's necessary context.
 
-Report progress using cumulative displayed main files out of eligible files, each once, and the actual cumulative number of displayed main modifications only. Supplementary items, repairs, and incidental observations add neither main-group units nor main progress. Progress implies neither successful delivery nor Viewed recording.
+An O item adds no main file, modification, progress, or automatic Viewed eligibility. Bulk Fix, Optimize, Ignore, or acceptance excludes O items unless explicitly selected or brought into scope. Unselected O advice creates no review or delivery gate. Once selected, an O repair needs its own evidence, checks, and two-axis re-review of the change and affected context. Keep O identities and main progress. The changes enter delivery coverage, where new findings or failed checks can block delivery.
 
-Close the group with its conclusion and progress, actual checks and limits, pending unreasonable IDs with severity and impact, accepted trade-offs, and optional suggestions with remedies and benefits. Retain evidence, judgments, findings and decisions, group membership, next position, and next M ID across replies. Change totals only when scope changes; a commit that cleans the worktree does not erase undisplayed fixed evidence.
+## Offer the decision the group supports
 
-### Separate incidental observations
+After displaying the complete group, include unresolved items from earlier groups. Close with conclusions, actual checks and limitations, pending unreasonable IDs with severity and impact, accepted trade-offs, and optional remedies and benefits. A completed, checked and re-reviewed repair uses the same decision here unless delivery or another compound action is already pending.
 
-Necessary reading may reveal an unrelated pre-existing issue. Establish both its evidence and that the selected change neither introduced, triggered, nor aggravated it; this is not an audit of unrelated history or the repository.
+Pass and Continue/Finish both need current version and correctness evidence, successful applicable repair or explicitly requested verification checks, completed affected re-review, and resolution or explicit retention of pending unreasonable findings. Elegance uncertainty alone can travel as a warning. Optional improvements and unselected O advice remain optional. Investigate derivable facts first. Ask directly for a genuinely user-owned missing fact or scope decision. Explain a verified blocker without a supported remedy instead of inventing an action.
 
-Give it a continuous O ID, title, source link or location, evidence and impact, independence, and recommendation or benefit. Report Format places it with its source file when attributable. It adds no main file, modification, progress, or automatic Viewed eligibility. Unselected O advice creates no main-review or delivery gate.
-
-Bulk Fix, Optimize, Ignore, and acceptance exclude O items unless the user explicitly expands scope or selects them. A selected O repair receives separate evidence, checks, and re-review of its change and affected context. Assess both axes and follow Report Format, retaining O IDs and main progress. Its changes enter delivery coverage; resulting failures or unresolved findings can block delivery. Delivery determines any whole-file Viewed eligibility.
-
-## Turn the findings into a real choice
-
-After explaining a complete group, use its result to choose the next step:
-
-1. Establish what remains unresolved. Correctness evidence, applicable required checks, and pending unreasonable findings constrain advancement; optional improvements and elegance uncertainty alone do not.
-2. Present the applicable [group or repaired-result choices](#after-a-review-group-or-completed-repair). Resolve derivable facts first; ask directly for a genuinely user-owned missing fact or scope/preservation decision. A fact question is not an action menu, and a verified external blocker with no supported remedy needs an explanation rather than an invented Wait/Resolve choice.
-3. Carry out the selected effect. A remedy goes through [checks and re-review](#establish-the-repaired-result) before the updated decision. Pass enters Delivery; Continue/Finish advances or ends without delivery. If delivery is already pending, use the [supplementary-review decisions](#during-supplementary-review-for-selected-delivery) instead of asking for Pass again.
-
-### Interpret actions and their authority
-
-| Action | Selected effect |
-| --- | --- |
-| **Fix** | Repair unreasonable findings, check, and re-review. |
-| **Optimize** | Implement selected optional improvements, preserving supported behavior and contracts, then check and re-review. |
-| **Fix and optimize** | A compound request combining both explicitly named remedy sets, rather than a separate routine menu option. Bare Fix keeps its narrower meaning. |
-| **Ignore** | Leave explicitly selected defects, burdens, or optional improvements unchanged, recording their consequences and the user's acceptance or decline. |
-| **Pass** | Prepare and complete applicable delivery, including supplementary review and required checks; advance or finish under Delivery's concurrency and completion rules. |
-| **Continue** / **Finish** | Advance or end the fully displayed review without delivery. |
-
-Delivery determines the applicable commit, publication, and Viewed effects. Accept explicit “deliver” or “only deliver” requests as the same delivery while keeping the current review position; advance only when the user selects Pass or explicitly requests continuation. Delivery alone is not a separate routine menu option. Neither delivery action grants PR approval or merge authority.
-
-Interpret letters case-insensitively against the latest applicable menu. Clear natural language, subsets, and compound requests can select disclosed effects. An unambiguous menu option supplies its stated scope: “Optimize” can select an option explicitly naming O1. With several matching alternatives, ask which IDs. Without a clear menu scope, bare Fix selects all displayed pending unreasonable M findings, and bare Optimize selects all displayed outstanding optional M improvements, including earlier groups.
-
-Ignore must identify the items and consequences to be retained or declined; clear natural-language acceptance or decline suffices. Ask when either the items or decision is ambiguous. IDs alone identify items, not an action. Retained items cease to be outstanding while their assessed content and effects stay unchanged. Ignoring neither waives checks nor advances the review.
-
-When recording a user's decision about code behavior, apply `rule-code-comment` to decide whether it needs a source comment.
-
-A ready selected action proceeds without routine reconfirmation. Recommendations, sole options, questions, and disagreement grant no additional authority. An explicit change of request, pause, or stop takes precedence; report completed and residual work when stopping. Menus omit Stop and Cancel without limiting the user's ability to request them.
-
-### Apply the decision principles
-
-Pass and Continue/Finish share the reviewed-group prerequisites: current correctness/version evidence, successful applicable repair or explicitly requested verification checks, completed affected re-review, and resolution or explicit retention of pending unreasonable findings, including earlier groups. Elegance uncertainty alone does not block advancement or delivery; a warning does not waive missing correctness evidence or required checks. Optional improvements and unselected O advice remain optional.
-
-Offer Pass proactively alongside Continue/Finish when applicable delivery effects remain. A prior delivery request and finished delivery preparation are not prerequisites for offering it. Describe the selected workspace, applicable full-workspace commit/outgoing publication/Viewed effects, and subsequent advancement. Unreviewed local or staged changes, uncovered outgoing commits, and remaining delivery checks are work that selecting Pass starts. They do not by themselves remove the choice. Verified limitations and user-owned unresolved scope decisions still constrain the effects that can be offered; use these principles for cases outside the common tables.
-
-Selecting Pass starts Delivery's inventory, supplementary review, and checks; explicit preparation requests can start that work without authorizing writes. Disclose the resulting concrete plan before executing its effects, reusing the selection's authority while scope, destination, and effects remain within it. If supplementary review has no new actionable finding or optional improvement, complete the prerequisites and deliver without a second Pass question. New items require the supplementary-review decision below. Pass explicitly retains only the assessed optional items named in its choice; Continue can defer them without declining them.
-
-Use one option per action type. Offer Optimize when at least one concrete, outstanding optional improvement has been disclosed for selection. State the default selected IDs and effects inside that option. Subsets and compound requests remain available in natural language. Consolidate supported M and O remedies under the same Fix or Optimize label, while distinguishing the default M scope from O items requiring explicit selection. An option can explicitly select named O items when that is its disclosed scope. Merely mentioning O alternatives does not add them to a bulk M action. Unselected O advice does not delay an already authorized delivery.
-
-The common-case tables fix recommendation and choice order for recurring situations. Apply the principles to other situations rather than extending the tables with exhaustive combinations. Use the applicable row, label its choices consecutively with the recommended choice at A, and include each applicable action once. Describe concrete IDs, consequences, and effects. A recommendation or sole option never selects itself.
-
-Render these choices using Report Format. Use Continue with its purpose and next position in the description, and Finish at scope end. Preparation supplies the first table, for workspace choices before review. The tables below cover group or repaired results and supplementary review during delivery.
-
-### After a review group or completed repair
-
-Use the same choices for an ordinary group and a checked, re-reviewed repair result. Include still-outstanding items from earlier groups. After a remedy, first complete its required checks, affected re-review, and dedicated repair report; a failed or unavailable required check leaves dependent work incomplete, not ready for Pass or Continue. A completed remedy does not itself advance or deliver. With delivery pending, retain that request and use the supplementary-review table instead; preserve any other explicit compound request.
-
-The improvement rows also cover selectable O improvements under their separate scope rules; unselected O defects do not create a main-review gate.
+When delivery effects remain, read [Delivery](references/delivery.md) and proactively offer Pass alongside Continue/Finish wherever advancement is available. Describe the selected workspace, applicable full-workspace commit, outgoing publication, Viewed effects, and subsequent advancement. Outstanding staged or local work, uncovered outgoing commits, and remaining delivery checks can be part of what Pass starts. Prior delivery selection or completed preparation is unnecessary. Offer only effects supported by known conditions and resolved scope.
 
 | Current situation | Recommended action | Choices, in order |
 | --- | --- | --- |
@@ -175,37 +104,63 @@ The improvement rows also cover selectable O improvements under their separate s
 | Only optional improvements are offered | **Optimize** | **Optimize**; **Pass**; **Continue** |
 | No outstanding finding or improvement is offered | **Pass** | **Pass**; **Continue** |
 
-### During supplementary review for selected delivery
+For these common cases use the listed recommendation and choice order among applicable actions. For other cases apply the same principles. Use Finish at scope end and state the purpose and next position of Continue. The improvement rows can include selectable O improvements under their separate scope. Preparation owns the corresponding workspace-choice table.
 
-Pause delivery writes for new actionable findings or worthwhile optional improvements in required delivery coverage. Present the applicable choices below without adding Pass or Continue: delivery is already selected. Previously retained items stay resolved while their assessed content and effects remain valid; unselected O advice stays outside the gate.
+Render one option per applicable action type with consecutive letters and the recommendation at A. In each option name its default IDs, consequences, and effects. Consolidate available M and O remedies under Fix or Optimize while making clear which O items would require explicit selection. Offer Optimize only for a concrete, disclosed outstanding improvement. Recommendations and sole options do not select themselves.
+
+### Interpret what the user selects
+
+Read letters case-insensitively against the latest applicable menu. Clear natural language may select subsets and compound effects. An unambiguous option supplies its disclosed scope, including O items it explicitly selects. Merely mentioning O alternatives leaves them outside bulk M actions. Ask which IDs when several alternatives match. IDs alone specify items without selecting an action.
+
+- **Fix** repairs selected unreasonable findings. Without a clear menu scope, bare Fix covers all displayed pending unreasonable M findings, including earlier groups.
+- **Optimize** implements selected optional improvements while preserving supported behavior and contracts. Without a clear menu scope, bare Optimize covers all displayed outstanding optional M improvements, including earlier groups. **Fix and optimize** explicitly selects both remedy sets and is available in natural language.
+- **Ignore** records explicitly selected items, their consequences, and the user's acceptance or decline. Clear natural-language retention suffices. Clarify ambiguous items or intent. A retained item ceases to be outstanding while its assessed content and effects remain unchanged. Its judgment stands; the same accepted burden needs no fresh optimization request. Ignore alone neither advances nor waives checks.
+- **Pass** prepares and completes applicable delivery, then advances or finishes under Delivery's completion and concurrency rules. Its selection explicitly retains only assessed optional items named in that choice. A request to **deliver** or **only deliver** selects the same delivery while preserving the current review position unless continuation is also selected. Delivery alone needs no routine menu entry. Neither action authorizes PR approval or merging.
+- **Continue** advances the fully displayed group without delivery. **Finish** ends the fully displayed review without delivery. Optional items may remain deferred without being declined.
+
+When recording a user's decision about code behavior, apply `rule-code-comment` to decide whether it needs a source comment.
+
+Act on a ready selection without routine reconfirmation. A question, recommendation, or disagreement grants no new authority. Honor an explicit change of request, pause, or stop, and report completed and residual work when stopping. The user can stop or cancel without a menu option.
+
+## Check a selected repair before resuming
+
+Carry the selected findings, supporting paths, verified reasons for corrections, accepted trade-offs, and disclosed effects into the repair. Preserve the fixed comparison, workspace, IDs, groups, saved position, and any pending compound request through the work and interruptions.
+
+Limit edits to the selected remedy and necessary supporting changes. Within that scope, consider whether the verified reason for retaining behavior warrants a comment under the applicable guidance. Retention alone grants no comment-edit authority. Recommend a comment in a read-only review, under an explicit no-edit instruction, or for an unrelated unselected item. If a preservation request could cover either behavior or all edits, clarify it before the affected edit.
+
+When any repair touches a PR file not yet fully reviewed, read [Delivery](references/delivery.md) before determining whole-file Viewed eligibility.
+
+Run required checks on the repaired contents through the project's supported verification methods. Refresh before/after evidence and links. Reuse complete applicable guidance and retain supporting records, including full logs where available. Reuse evidence only while valid for the exact contents, dependencies, and effects; it cannot waive a required check. Pinned PR evidence describes the fixed comparison. Establish unpublished repairs separately.
+
+Independently re-review every changed non-test file, including necessary supporting and unexpected changes, and affected previously reviewed parts. Tests retain their evidence and required-check role. Give the repair its own reply covering every changed non-test file under Report Format, apart from unseen main files and without recounting main progress. A repair or optimization is complete only when checks and affected re-review confirm it. A failed or unavailable required check leaves dependent work incomplete.
+
+A single Fix, Optimize, or Ignore ends at the updated decision. If another effect was explicitly selected, continue its remaining authorized work after any required checks, dedicated repair report, and re-review. For pending delivery, use the decision below.
+
+## Complete a selected delivery
+
+Use [Delivery](references/delivery.md) for inventory, checks and coverage, physical effects, concurrency, and recovery. An explicit preparation request can start that work without authorizing writes. For Pass or only-deliver, preserve the original selection through supplementary review and interruptions. Disclose the concrete plan before execution. Reuse the selection's authority while the scope, destination, and effects remain within it.
+
+Pause writes for any unresolved unreasonable finding in required coverage, including earlier findings whose assessments are reused. Newly disclosed worthwhile optional improvements in that coverage also need a decision. Apply these conditions to selected O work. The earlier Pass neither accepts later findings nor authorizes unselected repairs. Previously retained items stay resolved while their assessed contents and effects remain valid. Unselected O advice stays outside the gate. Use this table while delivery is pending:
 
 | Current situation | Recommended action | Choices, in order |
 | --- | --- | --- |
-| Supplementary review finds unreasonable findings only | **Fix** | **Fix**; **Ignore** |
-| Supplementary review finds unreasonable findings and optional improvements | **Fix** | **Fix**; **Optimize**; **Ignore** |
-| Supplementary review finds optional improvements only | **Optimize** | **Optimize**; **Ignore** |
+| Required coverage has unresolved unreasonable findings only | **Fix** | **Fix**; **Ignore** |
+| Required coverage has unresolved unreasonable findings and optional improvements awaiting a decision | **Fix** | **Fix**; **Optimize**; **Ignore** |
+| Only optional improvements in required coverage await a decision | **Optimize** | **Optimize**; **Ignore** |
 | Required coverage has no unresolved finding or improvement | Complete the selected delivery | No new choice; finish prerequisites and resume automatically |
 
-Fix or Optimize can leave other items unresolved. After the selected remedy and its checks and re-review, resolve those remaining decisions through this table. Ignore records explicit retention without waiving checks. Once the required coverage and prerequisites are satisfied, execute the original Pass or only-deliver request without asking for delivery again.
+Offer only the applicable remedies and retention choices. Fix or Optimize may resolve only some items. After checks, dedicated report, and re-review, use this table for any remaining decisions. Once findings and prerequisites are resolved, complete the original Pass or only-deliver without asking again or substituting Continue/Finish.
 
-## Execute, re-review, and resume the selected request
+Preserve confirmed effects and ask for a concrete decision about changed effects outside existing authority. After applicable commit and publication complete, Pass can start the saved next group read-only while only Viewed remains, following Delivery's version and process rules. Only-deliver stays at the saved position unless continuation was selected. Report confirmed, unknown, and remaining effects, preserving incomplete delivery and its intent for supported resume.
 
-### Carry the review forward
+## Worked examples
 
-Keep the fixed comparison, selected workspace, item and group identities, and saved review position. Carry the selected findings and their supporting paths and context, verified review corrections and their reasons, accepted trade-offs, and disclosed effects into the repair. Retain any pending compound request, including the distinction between Pass and only-deliver, through supplementary review, repairs, and interruptions.
+Consult the example for the decision at hand. The current review's evidence and applicable guide determine judgments and available actions.
 
-Retaining behavior and forbidding edits are different decisions. Within an authorized repair or its necessary supporting changes, assess whether the verified reason for retaining behavior calls for a comment under applicable guidance. Retention alone grants no comment-edit authority: in read-only review, under an explicit no-edit instruction, or for an unrelated unselected item, recommend rather than edit. If a preservation request leaves unclear whether behavior or all edits must remain untouched, clarify that boundary before the affected edit.
-
-Reuse complete applicable guidance and supported verification procedures, and reuse evidence only while it remains valid for the exact contents, dependencies, and effects being assessed. Keep its supporting records, including full logs where available. Pinned PR evidence continues to describe the fixed comparison; verification of unpublished repairs must establish the repaired contents separately.
-
-### Establish the repaired result
-
-Limit edits to selected remedies and necessary supporting changes. After reviewed content changes, including selected O work, run required checks through the project's supported verification methods and refresh before/after evidence and links. Reusing evidence never waives a check required on the repaired contents. Independently re-review every changed non-test file, including necessary supporting and unexpected changes, and affected previously reviewed parts. Tests retain their evidence and required-check role under the repository's classification. Failed or unavailable required checks leave dependent work incomplete.
-
-Report the repair in a dedicated reply apart from unseen main files using Report Format's common file layout. Cover every changed non-test file and retain existing IDs and groups without recounting main progress. A repair or optimization is complete only when checks and re-review confirm it; retained burdens remain trade-offs.
-
-### Resume the remaining authorized work
-
-Without pending delivery or an explicit compound request, a single Fix, Optimize, or Ignore ends at the updated decision. With a pending request, complete the dedicated re-review and continue its remaining authorized effects. Delivery pauses for unresolved unreasonable findings or newly disclosed optional improvements awaiting a decision in its required coverage, including selected O work. Resolve these through an authorized remedy or explicit retention; an earlier Pass neither accepts later findings nor authorizes unselected repairs. Once the findings and prerequisites are resolved, resume the original request without asking for Pass again or substituting Continue/Finish.
-
-Use Delivery for execution, concurrent Viewed recording, and recovery. Changed effects outside existing authority need a concrete decision; preserve confirmed effects while unresolved work remains pending. Pass may start the saved next group read-only once only Viewed remains; only-deliver stays unless continuation was selected. Report confirmed, unknown, and remaining effects, retaining incomplete delivery and its intent for supported resume.
+| Situation | Example |
+| --- | --- |
+| Vary explanation depth within a group, present independent observations, or expand a modification the user asks about | [Review group](examples/review-group.md) |
+| Judge an added boundary or decide whether uncertainty blocks advancement | [Design judgments](examples/design-judgments.md) |
+| Format a repair across supporting files or report a missing required check | [Repair report](examples/repair-report.md) |
+| Resume selected delivery after supplementary findings or partial Viewed recording | [Delivery follow-through](examples/delivery-follow-through.md) |
+| Present a workspace choice or resolve missing Viewed evidence | [Review preparation](examples/review-preparation.md) |
