@@ -10,11 +10,11 @@ Help the reader decide whether a change solves the right problem, whether its im
 
 ## Fix the comparison and reading order
 
-For a PR or remote-aligned branch, read [Preparation](references/preparation.md) before selecting a workspace or gathering version evidence. It owns workspace choices, source alignment, and the authenticated viewer's file filter. For deliberately local branch or unstaged work, use the corresponding comparison below. If a required guide is unavailable, report the gap and leave its dependent work incomplete.
+For a PR or remote-aligned branch, read [Preparation](references/preparation.md) before selecting a workspace or gathering version evidence. It owns workspace choices, source alignment, and the authenticated viewer's file filter. For a deliberately local branch, use the comparison below and read Preparation if you need to choose a workspace to display it. For unstaged work, use the local comparison below. If a required guide is unavailable, report the gap and leave its dependent work incomplete.
 
 | Request | Comparison and initial evidence |
 | --- | --- |
-| PR | Preparation verifies source identity and workspace, pins base/head, and obtains the authenticated viewer's complete file-level Viewed filter. |
+| PR | Preparation verifies PR identity, pins base/head, and obtains the authenticated viewer's complete file-level Viewed filter when it applies. It verifies a worktree when the selected route needs one. |
 | Branch | Pin the tip and merge-base with a reliably established comparison base. Ask for an unknown base instead of assuming `main`. |
 | Local changes or no stated scope | Compare index to worktree: unstaged changes only. |
 | Selected files | Restrict the applicable comparison to those paths. |
@@ -23,7 +23,7 @@ Honor explicit alternative comparisons and historical versions. PR and branch co
 
 Use the repository's test classification to skip semantic review of test code, including unit, integration, and end-to-end tests, in main review, supplementary review, and repair re-review. Consult relevant tests as evidence. Apply the test exclusion and the selected-file, Viewed, and local filters before counting files, modifications, or progress. The delivery guide separately accounts for the complete submitted and outgoing scope. Review filters never narrow a commit or its required checks.
 
-Read-only review uses source, test definitions, and existing valid results. Finishing a file group or review, or recording Viewed alone, does not trigger UT or complete change-set verification. Changes made during this review follow the repaired-result checks below; an explicit verification request retains its stated scope. Missing execution evidence limits the judgments that depend on it: identify those limits and continue independently supported assessment.
+Use source, test definitions, and existing valid results for read-only review and Viewed-only recording. Run unit tests or complete change-set verification when the user requests them or applicable project requirements call for them. Edits follow the repair procedure below. When execution evidence is missing, identify the affected judgments and continue independently supported assessment.
 
 Order files like GitHub's directory tree: recursively list changed files in subdirectories before direct files, preserving observed sibling order or otherwise sorting sibling directories and direct files by name. Thus `src/z/api.dart` precedes `src/a.dart`. Retain the ordered eligible list, pinned commits, complete before/after content, and PR viewer/filter evidence. For local review retain the original index baseline even when another before version is selected.
 
@@ -31,16 +31,16 @@ State the comparison and exclusions before the first group. Empty scope ends wit
 
 ### Provide links to the assessed version
 
-Resolve `local_web` from loaded SmartKit resources and read its supported interface:
+For local display, resolve `local_web` from loaded SmartKit resources and read its supported interface:
 
 ```text
 python "<local_web>" --help
 python "<local_web>" diff --input "<batch.json>"
 ```
 
-Supply each file's full repository-relative `path` with forward slashes and omit `title`. Associate the returned Markdown by ID and use it unchanged as the filename link, preserving its full label, escaping, and URL binding. Capture index-based local links with the snapshot. Fixed comparisons supply the verified before commit, existing blob, or genuine absence and rename paths.
+When using `local_web`, supply each file's full repository-relative `path` with forward slashes and omit `title`. Associate the returned Markdown by ID and use it unchanged as the filename link, preserving its full label, escaping, and URL binding. Capture index-based local links with the snapshot. Fixed comparisons supply the verified before commit, existing blob, or genuine absence and rename paths.
 
-Preparation supplies PR metadata and verified display mode. Local and deliberately local branch reviews need no remote alignment; branch-only links bind to the exact verified display workspace without PR context. Bind every live link to its verified workspace and disclose dirty or differing live contents without changing the assessment or Viewed eligibility. A generated link does not prove editor display. If link generation fails, preserve the comparison and chosen mode while resolving it; the dependent report waits.
+Use the verified display mode from Preparation for PR reviews. Bind branch-only and local links to the exact verified display workspace without PR context. Disclose dirty or differing live contents while preserving the assessment and Viewed eligibility. Verify that the link serves the intended comparison. For a PR Snapshot with unavailable local display, disclose the limitation and use a display route verified to show the same file and fixed versions if one is available. When a required link is unavailable, keep the chosen mode, fixed evidence, and supported assessment, and leave any report that requires the link pending.
 
 ## Judge the need and what changed for callers
 
@@ -125,6 +125,8 @@ Act on a ready selection without routine reconfirmation. A question, recommendat
 ## Check a selected repair before resuming
 
 Carry the selected findings, supporting paths, verified reasons for corrections, accepted trade-offs, and disclosed effects into the repair. Preserve the fixed comparison, workspace, IDs, groups, saved position, and any pending compound request through the work and interruptions.
+
+At the start of a selected repair, establish the target project's applicable verification process in the workspace being edited. Complete any required initialization or baseline checks before editing, and pause dependent edits if a required prerequisite is unavailable.
 
 Limit edits to the selected remedy and necessary supporting changes. Within that scope, consider whether the verified reason for retaining behavior warrants a comment under the applicable guidance. Retention alone grants no comment-edit authority. Recommend a comment in a read-only review, under an explicit no-edit instruction, or for an unrelated unselected item. If a preservation request could cover either behavior or all edits, clarify it before the affected edit.
 
