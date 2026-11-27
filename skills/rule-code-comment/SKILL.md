@@ -1,6 +1,6 @@
 ---
 name: rule-code-comment
-description: Use when a user specifies or confirms how code should behave, including accepting limitations or weaker guarantees. Also use to record or review such decisions or to write, review, or assess coverage of code and documentation comments.
+description: Use when refactoring code or when a user specifies or confirms how code should behave, including accepting limitations or weaker guarantees. Also use to record or review such decisions or to write, review, or assess coverage of code and documentation comments.
 ---
 
 # Code Comments
@@ -27,9 +27,7 @@ When a user specifies or confirms how code should behave, check whether the code
 
 When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
 
-For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code; reuse an adequate explanation rather than copying the discussion or creating a separate record by default. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
-
-Use SmartKit's `DECISION: <accepted behavior or trade-off>` marker sparingly for these easily misjudged decisions, followed by the necessary explanation in ordinary prose. Leave ordinary comments unmarked; this is not a reason to label existing comments in bulk. The marker records a verified decision, not proof of acceptance or a defect exemption. For a bounded temporary shortcut already documented in the `shortcut / trigger / upgrade` format, the existing marker is sufficient. An accepted lasting trade-off needs no invented revisit condition or promise to replace it.
+For explicitly accepted behavior or limitations that a future reader could reasonably mistake for an overlooked defect, record the actual behavior, verified reason for retaining it, applicability, and material remaining risks at the owning destination below. Keep a local explanation beside the relevant code and reuse an adequate explanation, including an existing comment for a bounded temporary shortcut. Describe lasting trade-offs in terms of their present scope and effects. Leave a missing reason explicit, and describe an accepted defect as a retained risk, not a correction or guarantee.
 
 For failures that matter to callers' decisions, explain in API documentation the failure conditions, any stable recognition the contract promises through a native type, category, or identity, and material state after failure. Cover returned and thrown failures, including those intentionally propagated across the boundary. Apply the coverage judgment above without cataloging incidental lower-level failures or repeating an already clear contract.
 
@@ -37,7 +35,7 @@ For failures that matter to callers' decisions, explain in API documentation the
 
 Use the current implementation and its owning contracts to establish what is true. Expand the evidence when uncertainty could change the comment or its validation.
 
-When assessing such behavior or revising its explanation, read the relevant comments and referenced decisions and verify that they still apply. Distinguish unchanged, explicitly accepted consequences from new evidence or effects outside that acceptance; the former do not become unresolved repair items merely because they look surprising.
+When assessing such behavior or revising its explanation, read the relevant comments and referenced decisions. Verify claimed acceptance against the underlying decision and check that it still applies. Distinguish unchanged, explicitly accepted consequences from new evidence or effects outside that acceptance; the former do not become unresolved repair items merely because they look surprising.
 
 If implementation and contract disagree, resolve the conflict within authorized scope or report it and its owner. Describe actual behavior truthfully; a comment must not present the intended contract as though it were already implemented.
 
@@ -57,11 +55,13 @@ Choose the useful destination, then establish authority to change it. Recommend 
 
 Begin with concrete responsibility or behavior, followed by significant constraints on correct use. Spend detail in proportion to the reader's need: a longer account can clarify important relationships, while a sparse section label can help readers find a coherent part even without adding hidden knowledge.
 
-Use natural, precise, ordinary language. Omit generic praise, line-by-line narration, redundant names, and edit history.
+Use plain, precise explanatory prose in the Google style by default. Use an established marker for a concrete purpose, such as a `TODO` for a specific follow-up. Omit generic praise, line-by-line narration, redundant names, and edit history.
 
 Keep comments understandable without the project's issue tracker or pull-request history. State the necessary behavior, reasons, constraints, and risks directly, and omit references to the project's own issues or pull requests, including numbers and links. References to repository-local decision documents, external standards, or third-party issues may supply useful background, but must not replace the explanation needed to maintain this code.
 
 Follow the target's documentation language, syntax, and explicit formatting requirements. Observed habits inform expression without becoming requirements. Where no convention applies, use an established native comment mechanism.
+
+When refactoring, preserve the meaning of still-applicable trade-offs and their rationale. Carry the explanation to the code or documentation that owns it after the change, including when the implementation moves or comments are combined or rewritten.
 
 Whenever you edit a comment, assess the entire affected comment block against the current code, its contract, and what the reader needs. Integrate the change with the surrounding explanation, merging related points where helpful and correcting or removing stale, redundant, or low-value prose in the same edit. Preserve still-valid meaning, including meaning already clear in code or another owning surface. Keep required machine directives, generated markers, protocol tokens, machine-readable forms, and externally fixed wording intact.
 

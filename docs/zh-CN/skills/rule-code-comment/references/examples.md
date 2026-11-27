@@ -117,13 +117,12 @@ for (final listener in listeners.toList()) {
 背景：产品负责人已明确接受预览标题最多滞后一分钟，以便打开列表时无需发起网络请求。打开条目时会获取其当前标题。这是一项长期产品选择，而不是临时实现捷径；否则，后续维护者可能会把打开列表时不刷新误认为缺陷。
 
 ```dart
-// DECISION: Preview titles may be stale for up to one minute.
-// The list uses the cache to open without a network request; opening an item
-// fetches its current title. A rename may therefore appear later in the list.
+// Use cached preview titles to open the list without a network request. Titles
+// may be stale for up to one minute. Opening an item fetches its current title.
 final previews = previewCache.readWithin(const Duration(minutes: 1));
 ```
 
-注释直接呈现已接受的后果及其边界，无需依赖工单链接。如果新发现表明标题滞后超过一分钟，就超出了这项决定的范围。标记让这项容易被误判的选择便于查找；上面的监听器快照等普通说明仍不加标记。
+注释直接呈现已接受的后果及其边界，无需依赖工单链接。如果新发现表明标题滞后超过一分钟，就超出了这项决定的范围。如果重构时把读取缓存的逻辑移到了别处，也要在那里写清楚一分钟的上限和使用缓存的理由。
 
 ## 必要的较长解释
 
