@@ -18,9 +18,9 @@ description: 处理操作结果或错误行为时使用，也适用于用户要�
 | 需要决定的事项 | 必读参考 |
 | --- | --- |
 | 解释、迁移、丢弃或恢复存储或序列化的数据，或者确定持久化保证。 | [持久化](references/persistence.md) |
-| 决定如何发起文件系统、网络、子进程或其他外部操作，确定其影响，或者决定是否重放、核对或补偿。 | [外部操作](references/external-operations.md) |
+| 解释文件系统、网络、子进程或其他外部操作的结果，决定如何发起操作、确定其影响，或决定是否重放、核对或补偿。 | [外部操作](references/external-operations.md) |
 | 确定并发或延迟工作中的完成、取消、超时、过期结果、流行为或清理方式。 | [异步工作与流](references/async-and-streaming.md) |
-| 处理认证、授权、完整性检查、安全回退，或含凭据或私密载荷的诊断信息。 | [身份与安全](references/identity-and-security.md) |
+| 处理认证、授权、完整性检查、安全回退，或含凭据或私密信息的诊断信息。当返回的错误或反馈可能泄露这些信息时，决定可以披露哪些内容。 | [身份与安全](references/identity-and-security.md) |
 | 保留用户输入、提供补救操作、评估人工修复或交接是否可行，或依靠人工修复或交接来恢复。 | [用户恢复](references/user-recovery.md) |
 
 ## 选择失败的处置方式

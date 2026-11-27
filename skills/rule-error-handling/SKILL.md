@@ -18,9 +18,9 @@ Before choosing, changing, or reviewing how to handle an affected operation, rea
 | Decision | Required reading |
 | --- | --- |
 | Interpret, migrate, discard, or recover stored or serialized data, or establish persistence guarantees. | [Persistence](references/persistence.md) |
-| Choose how to dispatch a filesystem, network, subprocess, or other external operation, determine its effects, or decide whether to replay, reconcile, or compensate. | [External operations](references/external-operations.md) |
+| Interpret the outcome of a filesystem, network, subprocess, or other external operation, choose how to dispatch it, determine its effects, or decide whether to replay, reconcile, or compensate. | [External operations](references/external-operations.md) |
 | Determine completion, cancellation, timeout, stale results, stream behavior, or cleanup for concurrent or deferred work. | [Async work and streaming](references/async-and-streaming.md) |
-| Handle authentication, authorization, integrity checks, security fallback, or diagnostics containing credentials or private payloads. | [Identity and security](references/identity-and-security.md) |
+| Handle authentication, authorization, integrity checks, security fallback, or diagnostics containing credentials or private information. Decide what to disclose when returned errors or feedback could expose that information. | [Identity and security](references/identity-and-security.md) |
 | Preserve user input, offer a remedial action, assess the feasibility of human repair or handoff, or rely on either for recovery. | [User recovery](references/user-recovery.md) |
 
 ## Choose what to do with a failure
