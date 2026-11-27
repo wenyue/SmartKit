@@ -1,6 +1,6 @@
 ---
 name: rule-code-comment
-description: Use when refactoring code or when a user specifies or confirms how code should behave, including accepting limitations or weaker guarantees. Also use to record or review such decisions or to write, review, or assess coverage of code and documentation comments.
+description: Use when writing or reviewing code and documentation comments, assessing their coverage, or editing, moving, or removing comments during a refactor. Also use when a user specifies or confirms code behavior (including accepted trade-offs, limitations, or weaker guarantees) and when recording or reviewing those decisions.
 ---
 
 # Code Comments
