@@ -1,6 +1,6 @@
 ---
 name: rule-code-comment
-description: Use when a user explicitly accepts a limitation, weaker guarantee, or other code behavior that could be mistaken for a defect. Also use to record or review those decisions or to write, review, or assess coverage of code and documentation comments.
+description: Use when a user specifies or confirms how code should behave, including accepting limitations or weaker guarantees. Also use to record or review such decisions or to write, review, or assess coverage of code and documentation comments.
 ---
 
 # Code Comments
@@ -22,6 +22,8 @@ Meet explicit coverage requirements. For coverage and information choices, weigh
 - How does the explanation fit comparable local code? Consider comment presence and absence, style, detail, and visual coherence as evidence about the reading experience.
 
 These considerations have no fixed priority; local practice does not decide the answer by itself. Public visibility alone does not require a comment, and straightforward local code may need none. Adding or omitting a comment need not imply that neighboring choices are wrong.
+
+When a user specifies or confirms how code should behave, check whether the code and existing documentation convey the decision. Add a brief explanation at the owning destination below when a plausible misreading could lead a future maintainer to use or change the code incorrectly.
 
 When a fix or review correction relies on a non-obvious constraint, framework guarantee, or design rationale that a future maintainer could readily misjudge again, add a brief comment beside the relevant code explaining the verified basis.
 
