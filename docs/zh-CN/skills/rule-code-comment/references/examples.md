@@ -1,54 +1,45 @@
-# 注释判断样例
+# 注释判断示例
 
-这些对照草稿展示信息取舍和作者口吻。各样例的事实来自所述背景；这些背景不是目标实现的证据，样例也不是用户已认可的风格。根据目标的契约、注释语法、文档语言和格式要求调整判断。样例用英文演示，并不构成跨项目的语言要求。代码片段省略导入和外围声明，相关契约由各自的背景说明。
+每个示例都交代了自己的事实背景。用它们判断读者需要什么信息，以及会在哪里找这些信息。代码片段展示可用的英文写法。实际契约、语言和格式以目标项目为准。
 
-## 简单接口或组件
+## 移动代码时保留决定
 
-背景：父组件管理当前选中的标签页。这个组件显示该选择并报告点击，不持有选择状态。类似组件有简短的文档注释。
+用户接受在预览列表显示缓存标题，这样打开列表就不需要发起网络请求。缓存标题最多可滞后一分钟。打开单个条目时会获取其当前标题。维护者看到列表代码时，可能会以为漏做了刷新。
 
 ```dart
-/// Supplies the current selection and receives requests to select another tab.
-class TabStripProps {
-  const TabStripProps(this.tabs, this.selectedId, this.onSelect);
-
-  final List<Tab> tabs;
-  final String selectedId;
-  final void Function(String) onSelect;
-}
+// Use cached titles so opening the list needs no network request. Titles may
+// be up to one minute old. Opening an item fetches its current title.
+final previews = previewCache.readWithin(const Duration(minutes: 1));
 ```
 
-注释说明了面向父组件的边界，并区分接收请求与改变选择。重复各属性名称或称赞组件的灵活性，都没有多少信息增量。如果目标要求逐一记录属性，仍应提供这些文档。
+假设重构后，由预览仓库负责决定如何加载预览标题。维护者今后可能在这个仓库里通过加网络请求改变原决定，所以使用缓存的理由和有效期上限也应移到那里。如果调用者会根据标题的新鲜程度在预览和详情 API 之间选择，就在这两个 API 分别说明可观察的差异。读者能在新的位置看到这些解释后，就可以删掉列表中的旧注释。
 
-## 复杂调用契约
+审查时，落后四十秒的标题符合已接受的行为。列表继续显示超过一分钟的缓存标题，则超出了接受范围。打开条目时未获取当前标题，会违反详情 API 的独立契约。已有决定可以帮助分别判断这些情况。
 
-背景：这个接口跨越存储边界，目前只有一个调用者。已接受的契约要求批次具有原子性，网络操作结果不确定时，只有复用同一键和同一组条目才能重试。同一键搭配不同条目会报错。
+## 调用者在重试前需要知道什么
+
+账本以原子方式提交每批条目。超时可能发生在提交之后。如果第一次尝试未提交，用相同的键和条目重试会提交该批次。如果第一次已经提交，重试会返回已有回执。使用已提交的键搭配不同条目会失败。即使只有一个调用者，签名也不足以让其知道如何选择重试参数。
 
 ```go
-type Ledger interface {
-	// Apply records all entries atomically. Repeating a key with identical entries
-	// returns the original receipt; reusing it with different entries fails.
-	// After a timeout, retry with the same key and entries: the first attempt
-	// may already have committed.
-	Apply(ctx context.Context, key string, entries []Entry) (Receipt, error)
-}
+// Apply records the batch atomically. A timeout can leave the commit outcome
+// unknown. Retry with the same key and entries. If the batch already
+// committed, the retry returns its receipt without applying it again.
+// Reusing a committed key with different entries fails.
+Apply(ctx context.Context, key string, entries []Entry) (Receipt, error)
 ```
 
-即使只有一个调用者，契约也很重要。原子性和超时的后果提供了签名之外、指导正确使用的信息。以方法名开头符合本地文档惯例；内部锁或数据库细节应放在实现处，除非它们影响这个契约。
+说明应放在接口上，调用者会在那里决定重试用的键。描述锁或事务原语会把解释绑在实现细节上，调用者仍然不知道应该用哪个键。
 
-## 失败也是调用者契约的一部分
+## 两种识别失败的方式
 
-这些样例描述已经成立的失败契约。注释告诉调用者什么失败了、如何识别，以及留下了什么状态，并不选择新的错误设计。
-
-### 抛出和有意传播的失败
-
-背景：这个方法属于只读配置读取器，其 `file` 是一个 `File`。已接受的契约要求内容为 UTF-8 编码的 JSON 对象。调用者使用既有的 `FormatException` 和 `FileSystemException` 类别，区分内容无效与访问失败。读取器既不修复文件，也不保存默认值。
+一个只读的 Dart 配置读取器接收 UTF-8 编码的 JSON 对象。调用者需要区分内容无效和文件系统访问失败，也需要知道加载失败时是否写入了默认值。
 
 ```dart
-/// Loads configuration from a UTF-8 JSON object.
+/// Loads the configuration from a UTF-8 JSON object.
 ///
-/// Throws [FormatException] for invalid UTF-8, invalid JSON, or a non-object root.
-/// Propagates [FileSystemException] when the file cannot be read.
-/// Failure leaves stored bytes untouched; no defaults are written.
+/// Throws [FormatException] for invalid UTF-8, invalid JSON, or a non-object
+/// root. Propagates [FileSystemException] when the file cannot be read.
+/// On failure the stored bytes are unchanged.
 Map<String, dynamic> load() {
   final value = jsonDecode(utf8.decode(file.readAsBytesSync()));
   if (value is! Map<String, dynamic>) {
@@ -58,16 +49,12 @@ Map<String, dynamic> load() {
 }
 ```
 
-这些类别让调用者能够区分需要纠正内容还是解决访问问题。即使方法有意让读取失败向上传播，这类失败也应写进注释。关于残留状态的说明，可以避免调用者误以为失败时已经修复或替换了配置。列出解码器内部细节或偶发的运行时失败，无助于这些调用决策。
-
-### 具有稳定识别方式的返回失败
-
-背景：这个资源 API 从文件系统读取内容，不改变已存储的内容。已接受的契约保留文件系统的错误标识，包括资源缺失时的 `fs.ErrNotExist`；即使底层读取已经产生部分字节，失败时也不返回数据。
+一个 Go 资源加载器则包装并返回文件系统错误，同时丢弃部分数据。契约保留错误标识，因此调用者可以使用语言原生的匹配方式。
 
 ```go
-// LoadResource reads name without modifying stored content.
-// If name is absent, errors.Is(err, fs.ErrNotExist) is true.
-// Other read errors retain their identities. On error, data is nil.
+// LoadResource reads name without changing stored content. For a missing
+// resource, errors.Is(err, fs.ErrNotExist) is true. Other read errors retain
+// their identities. Every failure returns nil data.
 func LoadResource(fsys fs.FS, name string) ([]byte, error) {
 	data, err := fs.ReadFile(fsys, name)
 	if err != nil {
@@ -77,31 +64,26 @@ func LoadResource(fsys fs.FS, name string) ([]byte, error) {
 }
 ```
 
-资源缺失条件和匹配操作，让调用者能够决定是否选择其他资源。其他读取失败在传播时带有上下文，并保留已经承诺的识别方式。不返回数据的承诺，避免部分读取结果被误当成可用结果；只读承诺则说明了存储中的残留状态。列出文件系统的实现细节或逐条错误消息字符串，不会增加稳定的调用者契约。
+两处注释都写明了失败条件、API 承诺的识别方式以及失败后与调用者有关的状态。调用者据此判断，无需匹配偶发的错误消息。
 
-## 生命周期
+## 调用者义务和局部实现理由
 
-背景：这个辅助函数订阅一个 tick 流。数据源可能需要异步清理。所有者的 `onClose` 钩子接收返回 `Future<void>` 的清理回调，等待它们完成，并暴露清理失败。注册语句在所有者的初始化方法中执行。
+流订阅可以在数据源完成清理之前停止投递事件。取消订阅的人需要知道何时已经释放资源。
 
 ```dart
 /// Delivers ticks until the caller cancels the returned subscription.
-/// Cancellation stops delivery immediately; await it to finish source cleanup.
+/// Cancellation stops delivery immediately. Await it to finish source cleanup.
 StreamSubscription<int> subscribeToTicks(
   Stream<int> ticks,
   void Function(int) onTick,
 ) {
   return ticks.listen(onTick);
 }
-
-final subscription = subscribeToTicks(ticks, refresh);
-owner.onClose(subscription.cancel);
 ```
 
-注释说明调用者的生命周期义务，并区分停止事件与完成清理。注册的取消方法将其 future 返回给已经明确的所有者，因此清理是否完成以及是否失败仍然可见。再加一条复述注册过程的注释，信息增量很小。如果生命周期钩子不能等待清理，就需要另行说明责任如何归属。
+调用者可以把取消方法传给会等待其结果的关闭钩子。订阅文档解释了调用者的义务，无需假设所有调用者都使用同一个钩子。
 
-## 局部原因
-
-背景：回调可能从可变监听器集合中取消自身订阅。直接遍历集合时，如果集合大小改变，遍历就会失败；初始快照中的回调仍必须收到本次派发。
+在另一个分发器中，监听器可能在接收事件时取消自己的订阅。维护者可能会把快照当成多余的分配而删掉。这一理由应该写在维护者会改动的那行代码旁。
 
 ```dart
 // Snapshot the listeners so callbacks can unsubscribe during dispatch.
@@ -110,62 +92,30 @@ for (final listener in listeners.toList()) {
 }
 ```
 
-注释解释为什么需要快照，而不是复述转换为列表的操作。派发契约负责定义投递保证，这条局部说明无需重复。在较长的函数中，`// Publish notifications` 这样的简短标题即使不增加隐藏的原因，也能帮助读者找到一个完整的逻辑段落。
+## 需要多少说明
 
-## 明确接受的取舍
-
-背景：产品负责人已明确接受预览标题最多滞后一分钟，以便打开列表时无需发起网络请求。打开条目时会获取其当前标题。这是一项长期产品选择，而不是临时实现捷径；否则，后续维护者可能会把打开列表时不刷新误认为缺陷。
+一个组件显示当前选中的标签页，并把点击报告给父组件。属性已经表明哪个值是当前标签页，哪个是回调。简短的接口注释可以用一句话说明由谁管理选中状态。
 
 ```dart
-// DECISION: Preview titles may be stale for up to one minute.
-// The list uses the cache to open without a network request; opening an item
-// fetches its current title. A rename may therefore appear later in the list.
-final previews = previewCache.readWithin(const Duration(minutes: 1));
-```
+/// Supplies the parent’s selected tab and receives requests to change it.
+class TabStripProps {
+  const TabStripProps(this.selectedId, this.onSelect);
 
-注释直接呈现已接受的后果及其边界，无需依赖工单链接。如果新发现表明标题滞后超过一分钟，就超出了这项决定的范围。标记让这项容易被误判的选择便于查找；上面的监听器快照等普通说明仍不加标记。
-
-## 必要的较长解释
-
-背景：只追加日志存储带校验和的记录。其恢复契约允许丢弃崩溃后最后一条不完整记录，但拒绝校验和无效的完整记录，即使它位于末尾也一样。读取器仅在记录之间返回 `io.EOF`，仅在最后一条记录不完整时返回 `io.ErrUnexpectedEOF`。片段运行在返回 `error` 的恢复方法内；`truncateToLastRecord` 只删除该不完整尾部，其他辅助函数不执行截断。
-
-```go
-// A crash can leave the last record incomplete, so recovery may discard that
-// trailing fragment. A complete record with a bad checksum is different: it
-// indicates corruption, and discarding it could silently lose committed data.
-// Check completeness before validating the checksum so only an interrupted
-// append takes the truncation path.
-for {
-	record, err := readRecord(input)
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-	if errors.Is(err, io.ErrUnexpectedEOF) {
-		if err := truncateToLastRecord(); err != nil {
-			return fmt.Errorf("discard incomplete log tail: %w", err)
-		}
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("read log record: %w", err)
-	}
-	if err := verifyChecksum(record); err != nil {
-		return fmt.Errorf("verify log record checksum: %w", err)
-	}
-	if err := replay(record); err != nil {
-		return fmt.Errorf("replay log record: %w", err)
-	}
+  final String selectedId;
+  final void Function(String) onSelect;
 }
 ```
 
-崩溃恢复、数据损坏和处理顺序之间的关系值得用这些篇幅解释。压缩成“处理不完整记录”会丢失两条路径为何不同的原因。返回的错误让读取、校验和验证、重放和截断失败保持可见，而不会把它们都当成允许截断的条件。注释无需复述完整的格式规范或其历史。
-
-## 有意省略
-
-背景：这个局部集合包装器没有额外的校验、单位、副作用或调用义务。类似辅助方法中，有的带简短而有用的注释，有的代码直白、没有注释；没有适用的明确文档要求。
+如果一个局部集合包装器没有额外校验、单位、副作用或调用义务，需要的说明可能更少。没有明确覆盖要求时，声明本身就可以说明行为。
 
 ```dart
 bool get isEmpty => items.isEmpty;
 ```
 
-保持不加注释。名称和函数体已经提供了有用的说明，“返回 items 是否为空”只会重复。这一选择综合考虑了辅助方法的用途、简单程度、信息价值和局部背景；附近没有注释或 public 可见性，都不能单独决定结果。
+恢复程序则可能在崩溃后截断最后一条未写完整的日志记录。完整记录的校验和有误，即使出现在日志末尾，也是数据损坏的表现。把这两种情况都当作写入中断，可能会悄悄丢掉已经提交的数据。决定是否截断的代码旁值得用几句解释这层关系。
+
+```go
+// A crash can leave the final record incomplete. Only that trailing fragment
+// may be discarded. Check completeness before validating the checksum so a
+// corrupt but complete record is reported without truncating committed data.
+```

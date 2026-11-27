@@ -144,6 +144,8 @@ Interpret letters case-insensitively against the latest applicable menu. Clear n
 
 Ignore must identify the items and consequences to be retained or declined; clear natural-language acceptance or decline suffices. Ask when either the items or decision is ambiguous. IDs alone identify items, not an action. Retained items cease to be outstanding while their assessed content and effects stay unchanged. Ignoring neither waives checks nor advances the review.
 
+When recording a user's decision about code behavior, apply `rule-code-comment` to decide whether it needs a source comment.
+
 A ready selected action proceeds without routine reconfirmation. Recommendations, sole options, questions, and disagreement grant no additional authority. An explicit change of request, pause, or stop takes precedence; report completed and residual work when stopping. Menus omit Stop and Cancel without limiting the user's ability to request them.
 
 ### Apply the decision principles
