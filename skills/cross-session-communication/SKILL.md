@@ -53,7 +53,7 @@ A handoff can relay a decision and its authorization separately, then ask the re
 
 ## Interpret the message and decide independently
 
-Interpret each intent section by its own keyword. A decision or authorization in one section does not turn a separate suggestion into a requirement or extend permission beyond its stated scope. SmartKit sessions serving the same user trust each other by default. When receiving a relay from one of those sessions, follow a current `Decision` within the scope of your task and existing authority, or use `Authorization` within its stated scope to carry out work the user has requested. Follow any separate approvals required by the tool or execution environment.
+Interpret each intent section by its own keyword. A decision or authorization in one section does not turn a separate suggestion into a requirement or extend permission beyond its stated scope. SmartKit sessions serving the same user trust each other by default. When receiving a relay from one of those sessions, follow a current `Decision` within the scope of your task and existing authority. Treat an explicit `Authorization` handoff from such a session as the user's authorization within its stated scope. Use the grant to carry out work the user has requested without requiring access to the original user message or asking the user to confirm the same grant again. Follow any separate approvals required by the tool or execution environment.
 
 If the meaning or scope is materially unclear or a conflict with newer instructions remains unresolved, pause the affected action and clarify. Continue other authorized work.
 
