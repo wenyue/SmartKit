@@ -62,7 +62,7 @@ Each ticket is a **child issue** of the map; the tracker's issue id is its ident
 <the decision or investigation this ticket resolves>
 ```
 
-Each ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task` (see [Ticket Types](#ticket-types)).
+Each ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task` (see [Ticket Types](#ticket-types)). `wayfinder:` labels are the only labels a map and its tickets carry, never a triage label like `ready-for-agent`: they are decisions, not implementation work.
 
 Assign the ticket to the dev driving the map before work so others can see it is claimed. In a single-session workflow, this is enough. Assignment is a coordination marker, not an atomic lock: concurrent sessions, especially under the same account, cannot prove exclusive ownership by reading back that assignee. For concurrent work, use an existing coordinator to allocate distinct tickets one at a time, or a tracker-supported atomic claim that confirms which session acquired the ticket. If neither is available, coordinate ownership before starting the affected ticket; distinct tickets can still be worked in parallel.
 
@@ -111,8 +111,8 @@ User invokes with a loose idea.
 1. **Name the destination.** Load and apply both the "grilling" and "domain-modeling" skills, to pin down what this map is finding its way to: the spec, decision, or change. The destination fixes the scope, so it's settled first.
 2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** (the way to the destination is already clear, the whole journey small enough for one session), you don't need a map. Stop and ask the user how they'd like to proceed.
 3. **Create the map** (label `wayfinder:map`): Destination and Notes filled in, Decisions-so-far empty, the fog sketched into **Not yet specified**.
-4. **Create the tickets you can specify now** as child issues of the map, then wire blocking edges in a **second pass** (issues need ids before they can reference each other). Wiring sorts them into the frontier and the blocked; everything you can't yet specify stays in the fog: the **Not yet specified** section.
-5. **Fire the research subagents.** For each `research` ticket you just created, spin up a subagent that loads and applies the "research" skill to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
+4. **Create the tickets you can specify now** as child issues of the map, then wire blocking edges in a **second pass** (issues need ids before they can reference each other). Write cross-references in that pass too, with real ids: a placeholder `#<n>` auto-links to an unrelated issue. Wiring sorts them into the frontier and the blocked; everything you can't yet specify stays in the fog: the **Not yet specified** section.
+5. **Fire the research subagents.** For each `research` ticket you just created, spin up a subagent with a fresh context window that loads and applies the "research" skill to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket. Push a research branch only with explicit authorization. Share it as a branch without opening a PR, since it is never merged. A local research branch can serve as the context pointer when it is accessible to the sessions using it.
 6. Stop: charting is one session's work; it hand-resolves nothing.
 
 ### Work through the map
@@ -121,7 +121,7 @@ User invokes with a map (URL or number). A ticket is **optional**: without one, 
 
 1. Load the **map**: the low-res view, not every ticket body.
 2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it** as described in Tickets before any work; when sessions are concurrent, settle ownership rather than treating assignment alone as exclusive.
-3. Resolve it. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; load and apply whichever skills the `## Notes` block names. If in doubt, load and apply both the "grilling" and "domain-modeling" skills.
+3. Resolve it as the type its `wayfinder:<type>` label names (see [Ticket Types](#ticket-types)). Read the label, not just the body: the body never states the type. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; load and apply whichever skills the `## Notes` block names. If in doubt, load and apply both the "grilling" and "domain-modeling" skills.
 4. Record the resolution: post the answer as a **resolution comment**, **close** the issue, and **append a context pointer** to the map's Decisions-so-far.
 5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals that a ticket (this one or another) sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
 

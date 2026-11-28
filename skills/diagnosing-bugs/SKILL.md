@@ -103,7 +103,7 @@ If no correct test seam is available, record the verification gap and why the al
 If a correct seam exists:
 
 1. Turn the reproduction or supported bug pattern into a failing test at that seam.
-2. Watch it fail.
+2. Watch it fail. If you forced the red by mutating code or a fixture, `diff` against a pristine copy to prove the mutation landed before you trust it.
 3. Apply the fix.
 4. Watch it pass.
 5. Re-run the original scenario when available and the relevant regression checks. If it remains unavailable, state what the test proves and what still needs verification.

@@ -647,17 +647,17 @@ class PluginManifestTest(unittest.TestCase):
         self.assertEqual([skill['source_path'] for skill in openwiki['skills']], ['integrations/openwiki'])
         matt = lock['sources'][0]
         self.assertEqual(matt['id'], 'mattpocock/skills')
-        self.assertEqual(matt['requested_ref'], 'v1.3.1')
+        self.assertEqual(matt['requested_ref'], 'v1.3.2')
         self.assertEqual(
             matt['commit'],
-            '24fe0ef7737efae15c87225755e9f6f5965e4888',
+            'd1478fcb140db0b93c0c8df17bcfd311844749d0',
         )
         self.assertEqual(
             {skill['id'].split('/', 1)[1]: skill['source_path'] for skill in matt['skills']},
             MATT_PROMOTED,
         )
         ponytail = next(source for source in lock['sources'] if source['id'] == 'DietrichGebert/ponytail')
-        self.assertEqual(ponytail['commit'], '16352ac229eb08a9598dcae48fe9f2b342567d86')
+        self.assertEqual(ponytail['commit'], '7801d061243d7b753bad0e0b3c057cd250b11755')
         self.assertEqual({skill['id'].split('/', 1)[1] for skill in ponytail['skills']},
                          PONYTAIL_PROMOTED)
         for record in ponytail['skills']:
