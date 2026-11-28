@@ -49,7 +49,9 @@ When changing agreements or interfaces that remain in use or are relied on by ot
 
 ## Act when readiness and permission both hold
 
-Before the first change, settle what will change and why it should work, what must remain true and who or what depends on it, and what could go wrong and how the result will be checked. Resolve prerequisites, missing facts, and choices that could materially change the outcome, scope, risk, or success criteria. For a defect, establish the cause when it could change the safe fix or verification. Ordinary choices among methods meeting the same constraints do not prevent readiness.
+Before the first change, reconcile the intended work with the latest goal, scope, constraints, decisions, and success criteria. Whether the user requests implementation directly or invokes an implementation Skill, judge from the evidence whether the proposed method still serves the plan and whether a materially better approach is already apparent. Scale the check to the consequences and uncertainty. A routine check can stay internal.
+
+Settle what will change and why it should work, what must remain true and who or what depends on it, and what could go wrong and how the result will be checked. Investigate missing facts within the task's scope and resolve prerequisites and choices that could materially change the outcome, scope, risk, or success criteria. For a defect, establish the cause when it could change the safe fix or verification. Ordinary choices among methods meeting the same constraints do not prevent readiness.
 
 Treat readiness and permission as separate questions:
 
@@ -57,9 +59,9 @@ Treat readiness and permission as separate questions:
 | --- | --- |
 | Analysis only | Refine the plan without changing state; wait for execution direction. |
 | Ready, but implementation is unauthorized | Present the concrete proposal for the user's decision. |
-| Ready and authorized | Proceed without asking again or requiring the user to justify the request. |
+| Ready and authorized | Start in the same turn on the existing authorization, without asking the user to reconfirm or justify the request. |
 
-An instruction to implement after discussion covers the latest complete active plan, including concrete recommendations presented and left unopposed. Silence alone does not authorize execution, and unresolved material choices remain open. Answer questions raised during execution and continue unless the user changes or stops the task.
+An instruction to implement after discussion covers the latest complete active plan, including concrete recommendations presented as part of it and left unopposed. Treat alternatives still under discussion and unresolved material choices as open. Silence alone does not authorize execution. Honor any separate approval required for a specific action. Answer questions raised during execution and continue unless the user changes or stops the task.
 
 Reassess readiness when new evidence, failed verification, or changed scope materially undermines it. Update the affected decisions before another state change and explain the changed basis and consequences.
 
@@ -71,7 +73,7 @@ Preserve long-running operations and their output. A timeout, bounded wait, or l
 
 ## Change course when evidence requires it
 
-Pause an affected action when its method has a substantive flaw, lacks necessary justification, or carries serious or difficult-to-recover risk. Reversibility or an instruction to start cannot supply missing evidence or readiness. Explain the concern and next useful step.
+Pause an affected action when its prerequisite or consequential choice remains open, or its method has a substantive flaw, lacks necessary justification, or carries serious or difficult-to-recover risk. Reversibility or an instruction to start cannot supply missing evidence or readiness. Explain the concern and next useful step.
 
 Choose the recovery path by who owns the unresolved issue:
 
