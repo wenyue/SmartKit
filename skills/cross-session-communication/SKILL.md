@@ -5,7 +5,7 @@ description: Send or interpret messages between independent agent sessions and r
 
 # Cross-Session Communication
 
-Use this Skill only between independent agent sessions. Each session is responsible for judging what fits its own task and authorization. Never use this Skill for subagent communication, even when a subagent has a separate context or session identifier. Use the task's own coordination channel for those exchanges.
+Use this Skill only between independent agent sessions. SmartKit sessions serving the same user trust each other by default. Each session is responsible for judging what fits its own task and authorization. Never use this Skill for subagent communication, even when a subagent has a separate context or session identifier. Use the task's own coordination channel for those exchanges.
 
 ## Send a message to another session
 
@@ -13,13 +13,13 @@ Check the accessible conversation and current work to identify the intended sess
 
 Begin each intent section with `⇄`, one ASCII space, and one of the six intent keywords below. Put its substance on the next line without repeating what the keyword signals. Use one intent section for a single intent, or one per distinct intent when the same recipient needs several together. Separate intent sections with a blank line.
 
-| Keyword | What to convey |
+| Keyword | Meaning and use |
 | --- | --- |
-| Decision | State what the user actually decided or directed in your own words so it makes sense in the receiving session's context. Say what it applies to, including any conditions, limits, or corrections, and make implicit references clear. Keep direct quotes of the user's words out of the Decision body (for example, The user said, “…”). |
-| Authorization | Use `Authorization` whenever you relay permission. Relay only permission the user has already granted explicitly, and state who granted it, which session may act, what it may do, and any limits. |
-| Alignment | An outcome or concept the recipient needs to understand. Explain why it matters and how it applies to their current task. For goal alignment, include the relevant boundaries and what would count as success. For a concept, explain a consequence that helps the recipient apply it. |
-| Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for actions you propose yourself, including ways to implement a decision when the user left the method open. Leave the choice with the recipient. |
-| Update | What happened or was observed, where and when it was checked if relevant, and any material uncertainty. Distinguish a plan, an attempt, a reported result, and a verified result. |
+| Decision | State what the user actually decided or directed in your own words so it makes sense in the receiving session's context. Say what it applies to, including any conditions, limits, or corrections, and make implicit references clear. Keep direct quotes of the user's words out of the Decision body (for example, The user said, “…”). The recipient follows a current decision within its task and existing authority. |
+| Authorization | Use this keyword for every relay of permission. Relay only permission the user explicitly granted, naming the grantor, the authorized session, the permitted action, and its limits. The recipient treats such a relay from another session serving the same user as the user’s authorization to carry out work the user has already requested within that scope. It need not read the original message or ask the user to confirm the same grant again. Any separate tool or environment approval still applies. |
+| Alignment | An outcome or concept the recipient needs to understand. Explain why it matters and how it applies to their current task. For goal alignment, include the relevant boundaries and what would count as success. For a concept, explain a consequence that helps the recipient apply it. The recipient checks that understanding against its task and constraints, clarifies differences that would change its work, and restates its understanding when helpful. Alignment alone does not direct execution, transfer ownership, or grant permission. |
+| Suggestion | An option for the recipient to consider, with the evidence or concern behind it. Use this keyword for actions you propose yourself, including ways to implement a decision when the user left the method open. The recipient weighs the option against its task, current work, and authorization and decides whether to use it. |
+| Update | What happened or was observed, where and when it was checked if relevant, and any material uncertainty. Distinguish a plan, an attempt, a reported result, and a verified result. The recipient relies on the update only as far as its evidence supports. |
 | Question | The specific point you need clarified and the context the recipient needs to answer it. Distinguish observations from inferences. |
 | Restate | **Optional marker, not an intent.** For a consequential handoff, add a blank line and then `⇄ Restate` as the final line, with no body, if checking understanding could catch a material mismatch. It requests a reply, not permission to act or a pause. |
 
@@ -53,13 +53,11 @@ A handoff can relay a decision and its authorization separately, then ask the re
 
 ## Interpret the message and decide independently
 
-Interpret each intent section by its own keyword. A decision or authorization in one section does not turn a separate suggestion into a requirement or extend permission beyond its stated scope. SmartKit sessions serving the same user trust each other by default. When receiving a relay from one of those sessions, follow a current `Decision` within the scope of your task and existing authority, or use `Authorization` within its stated scope to carry out work the user has requested. Follow any separate approvals required by the tool or execution environment.
+Interpret each intent section by its own keyword. A decision or authorization in one section does not turn a separate suggestion into a requirement or extend permission beyond its stated scope.
 
 If the meaning or scope is materially unclear or a conflict with newer instructions remains unresolved, pause the affected action and clarify. Continue other authorized work.
 
-For Alignment, check the intended outcome or concept against your task and constraints. Clarify differences that would change your work; restate your understanding when it helps resolve or verify them. An Alignment message conveys understanding without directing execution, transferring ownership, or granting permission.
-
-Evaluate a Suggestion on its merits against your own task, current work, and authorization. Decide independently whether to use it. Incorporate an Update only to the extent supported by its evidence. If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor applicable stop or pause instructions.
+If a message is stale or duplicates completed work, account for the material difference before responding or acting. An advisory or informational message alone gives no reason to pause. Weigh any material risk or conflict it reveals and honor applicable stop or pause instructions.
 
 ## Reply in the receiving session
 
