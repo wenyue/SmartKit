@@ -3,10 +3,10 @@
     {
       "id": "mattpocock/skills",
       "url": "https://github.com/mattpocock/skills",
-      "requested_ref": "v1.3.1",
-      "resolved_ref": "v1.3.1",
+      "requested_ref": "v1.3.2",
+      "resolved_ref": "v1.3.2",
       "ref_kind": "tag",
-      "commit": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+      "commit": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
       "license": {
         "spdx": "MIT",
         "source_path": "LICENSE",
@@ -20,7 +20,7 @@
           "destination": "skills/ask-matt",
           "files": {
             "PHASE-BOUNDARIES.md": "a8aa20158609ef39e2b308b6ba0660c91066838d07a867202e63a7744a88a3ed",
-            "SKILL.md": "95d9060aafd6c9ba95c092e893eb1cebc1b9ba195e81095bafa07c686e73f8f0",
+            "SKILL.md": "32771316d28c338d21425c5f108360373ed8ef812a97542eee3517474e7ad02e",
             "agents/openai.yaml": "1c9997eacc0026d963d54f6ec2dc0b005257ab3ebbacf5c008ccdd325adf3beb",
             "assets/icon.svg": "fc5e830b132ca1f62a4c69bee4f24641dc374d9ab51b73e30a432fbc9ef739c3"
           },
@@ -40,7 +40,7 @@
           "source_path": "skills/engineering/diagnosing-bugs",
           "destination": "skills/diagnosing-bugs",
           "files": {
-            "SKILL.md": "480cb44cd488d77d621adc4f78fb2ab81dc0d92060dc71ec49e33d1df39bb9d7",
+            "SKILL.md": "190aad0ef22c2e6c646307afea2b3638253a39ae84e53fd6916e3a6b9a716d01",
             "agents/openai.yaml": "175da994ec187c1ad6e0e7d759f9913f4f2a10542ac84626d5cab0932af63b7f",
             "assets/icon.svg": "41c0daec81dad52b3b6a9ff068f82da1d4740f3239a023bf6cf61afce615258b",
             "scripts/hitl-loop.template.sh": "35103539fc36873eea36074769ad454f9379d6fc8b2dc0e26ce987fd3bfe5503"
@@ -52,7 +52,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/diagnosing-bugs.evidence.patch",
-              "sha256": "4be9bba6ad379c6407d40f0b70c6007f7bd0be95d5328cd5a30dd7864b47b278"
+              "sha256": "6a40daf75abfeafcf2d2e4910faa2a4fd6bb13ffff9d16f7e2827fed62ccc224"
             }
           ]
         },
@@ -104,7 +104,7 @@
           "destination": "skills/improve-codebase-architecture",
           "files": {
             "HTML-REPORT.md": "b0face240a17600bfbe030a13da74af6232d03a21bf94f651403c747991a7385",
-            "SKILL.md": "7c1040f84a471e5d4c37e4b6a1a3b9e9259a833e21f80db0d5d1e90bcdb9904d",
+            "SKILL.md": "0716690ebf92737f3647934d4ec4bac6042427ea780d6ba463904aa34335bb14",
             "agents/openai.yaml": "95c7c9ec988b09f662a6410ba9d9c955ac9684e66df799a68794737f146f5ff8",
             "assets/icon.svg": "0b7128dba97087ecf8f899b276974020732d1fe308d6915251b908c1a0eb6309"
           },
@@ -128,11 +128,11 @@
             "agents/openai.yaml": "34180db7cf7d077e79c0c4af3276bc01cc9b52b4db6f3a1ddfd8d4e314640d13",
             "assets/icon.svg": "63647c44c5f883a08a06f5785c06297f8defdc3e87c27372671076e1803297ea",
             "domain.md": "593a7042218689f1d24df89df14eaf0a20e19e0d0a7d479a01947ac78f0784b9",
-            "issue-tracker-github.md": "afd6852a80185217bd28aa5cbe456bef1e85be25be7bd1fba382d5b8ee428325",
-            "issue-tracker-gitlab.md": "ea175f73d193b3f55819c0ed9bbccf6ee0e70ad8f928e3d7607596c53380acd6",
+            "issue-tracker-github.md": "6fdb3e9b00b7b0b115ecac3b1c00e3790f637f190abf598815368722c0a94692",
+            "issue-tracker-gitlab.md": "947602d33a80f98f939fb990995b8f95a3459b114b919c4221d08bd75d7cffe0",
             "issue-tracker-local.md": "7dcda20a2eb4bdc89b95d1143423c0691309921cadae3132e6424f371030506e",
-            "references/project-context.md": "dc229eb2996d3c726c7d369e821d0357abfeb97227fb21e5d28cdfd6ddf7a0d9",
-            "triage-labels.md": "4f53c9b40ce2651e3611aa090eaedbd6dbc9b71ef8c5f7e65eac0d8263190d0d"
+            "references/project-context.md": "474527156ae57eb05b987a0e747fe48037d3f0de0c9222ae1992fc376a952e74",
+            "triage-labels.md": "ae512af838c78b8750471c42cd2b20fa32319553e61d84c9a23d171b40ce14aa"
           },
           "patches": [
             {
@@ -141,7 +141,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/setup-matt-pocock-skills.workflow.patch",
-              "sha256": "4f917ca41c2500fce5174a03a26b1d8fc748da5108f0936ab0ed1ee55bc76aa1"
+              "sha256": "db4b274a75ce6eb9a1569d6397066b2ae0e76f7e1f3178547aa06bc6b869e6d4"
             }
           ]
         },
@@ -150,7 +150,7 @@
           "source_path": "skills/engineering/tdd",
           "destination": "skills/tdd",
           "files": {
-            "SKILL.md": "5404c6338e1beaa5af80ef4d47fb8df1c4746f4158684ecb4a7d1f6ab2179737",
+            "SKILL.md": "ff823de87c4c03ac3456643cf7ee664d8a06f073f7602fc9d62a7eb088eb49c9",
             "agents/openai.yaml": "f869775131e143be89f8ec1b6b80894be4ab96976820bd084f4a750dfd1fa234",
             "assets/icon.svg": "bbe2a9567c7a3de57f04bb3fe0519d495b33098fd5c1ef52eb8b266fa472cfb5",
             "mocking.md": "3ceb807fdf4a47d6a93d4d9a891e5ba6d362a6247bd08adc451feebfc17361ef",
@@ -163,7 +163,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/tdd.harness.patch",
-              "sha256": "765ee454538524e741d0eef1fd412dc9d613f98153ca447df2575cfe9774f48b"
+              "sha256": "2dc2ea10d42f298ea1719e41fa337dbb996092ffdf70aba33a25b02ca9f6aa43"
             }
           ]
         },
@@ -192,7 +192,7 @@
           "source_path": "skills/engineering/to-tickets",
           "destination": "skills/to-tickets",
           "files": {
-            "SKILL.md": "5c9fba69845c2519b9b35b9af42ae5142c21f8ca15ac2123dc2722002c8058ae",
+            "SKILL.md": "688d909d011ddc7b38d0ddf126acdb9875e6d9b334fc853b329b19f281c90060",
             "agents/openai.yaml": "9ea195cd2821a81d95493c7f8f6c4899c91e250e3eb7be03652e76966bddd828",
             "assets/icon.svg": "397b262968a039696cead44f71ae532029234adda411ede52d76990e1bdddba4"
           },
@@ -200,6 +200,10 @@
             {
               "path": "vendor/patches/mattpocock/to-tickets.openai.patch",
               "sha256": "e3dcf88f9c86ac5d20b71a6a32c019d1d536f2e9b1bff28e590a0aeb678262e3"
+            },
+            {
+              "path": "vendor/patches/mattpocock/to-tickets.tracker.patch",
+              "sha256": "b0009a5b3cc6dbdb3de3076386a5d26096f422e0437304a8eeadda9824757bc0"
             }
           ]
         },
@@ -208,7 +212,7 @@
           "source_path": "skills/engineering/wayfinder",
           "destination": "skills/wayfinder",
           "files": {
-            "SKILL.md": "4777875531268cc857092f7b3695efaca83d923aa890c9e58a7f8d83fea110ff",
+            "SKILL.md": "d41f86e70fcde80580b50b6fd6d54421ba5358b5d054b057d9fbcde0f692a3a5",
             "agents/openai.yaml": "cbeb430a3ab074878e1ee5d7597f1447be2500ba2de1755f7e7fde0e2a8c1f50",
             "assets/icon.svg": "b0be5fe2925dfe7a3d2c2f2eafd4f2705937a06e8641c2f7d95785bef9f8fe40"
           },
@@ -219,11 +223,11 @@
             },
             {
               "path": "vendor/patches/mattpocock/wayfinder.harness.patch",
-              "sha256": "b9cc67cb445877d9a55d2f264578b5bba820be9218a721ce68e457149dc17878"
+              "sha256": "5fe4d3cfaae3fbe3bd91c4b0b362ae9776df5c87f2668fc1b35103fe190147e4"
             },
             {
               "path": "vendor/patches/mattpocock/wayfinder.claims.patch",
-              "sha256": "837bed5501b3d5a138830cfb8414659673cf8a1026779d032de19c55a5bffbb9"
+              "sha256": "fb43875c80844191b04c5e6d35a9ef74200916c9804f63b1671ae0d7354207c8"
             }
           ]
         },
@@ -232,7 +236,7 @@
           "source_path": "skills/engineering/implement",
           "destination": "skills/implement",
           "files": {
-            "SKILL.md": "6d3fd9e83b8f36e5213854779db49b256a457a7ebb4a503e53fa7dcff696adc3",
+            "SKILL.md": "ec358bb17c17c99af01b6b4c8b0912b791467b6af03b6fc625314aa2a13233bb",
             "agents/openai.yaml": "b4070c029eebcea9504aef8fe210529e62679202d1122a4dd3028e495ed55724",
             "assets/icon.svg": "d50ef214bbb9898ba6f3cadd0bad56489a495b38c87283af01640c4ccd700d85"
           },
@@ -240,6 +244,10 @@
             {
               "path": "vendor/patches/mattpocock/implement.openai.patch",
               "sha256": "b29edeb3b0898322821cd77f8c9cf0a2313490014dcba6c8b231a1c46c859262"
+            },
+            {
+              "path": "vendor/patches/mattpocock/implement.harness.patch",
+              "sha256": "f139a323f8a000faf5b648651e91ade0146a884f0e287ba71480a84fbaaf2df9"
             }
           ]
         },
@@ -248,7 +256,7 @@
           "source_path": "skills/engineering/implement-spec",
           "destination": "skills/implement-spec",
           "files": {
-            "SKILL.md": "b72f4c989f8b183593d445ca903af05cc4452cb666c103f2d976d891751403d3",
+            "SKILL.md": "1f202f169f4d95bef6ea3f27699b06c3d58fca183c94f442c63eea3311386914",
             "agents/openai.yaml": "5e8f2f78b5f4bba8c85be2696aa041b47023ef1e9bdac2f7ac1242bc4e17f8bc",
             "assets/icon.svg": "ae37af3b099a132178636434c4ef4f7a81ef7e096704d62ff0cea012d157d767"
           },
@@ -331,7 +339,7 @@
           "source_path": "skills/engineering/research",
           "destination": "skills/research",
           "files": {
-            "SKILL.md": "985569f15739c713d6784887c3d186d4ef9ac85bec5ad9c068d25bf0739928e4",
+            "SKILL.md": "1f629e18ab899412683bc6a1c4efb4339999e27c2fdac328f26ee10a8c031d33",
             "agents/openai.yaml": "b54a3d7f84e5e2cb3a411aa3c1388ec684ad506f58e656df57cddbad8e34031d",
             "assets/icon.svg": "950f02e99008a3d8c0946ca369f225aedef5821ca42730fe298c98e06a0df404"
           },
@@ -370,7 +378,7 @@
           "destination": "skills/codebase-design",
           "files": {
             "DEEPENING.md": "f3dd099ce99289bd213914d8ee3e2429b78309c3957ca4583f7659551b1d53c1",
-            "DESIGN-IT-TWICE.md": "52b52e75655a27aea59c6966b410bac82448968ad46ef1ebb9f07c274e3ae010",
+            "DESIGN-IT-TWICE.md": "c222ab5a82e0405672eb9062d62496139a08828e45d07fc5f18e4952c10fac1a",
             "SKILL.md": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2",
             "agents/openai.yaml": "31563a73b024cec6ef46bf0cde33ca92abaa0e48cc596c6ed8b03203ce07e197",
             "assets/icon.svg": "9fef2a8941739f0c815118d4e96e6f3d077653c87adf614dfbbf560b1e93111d"
@@ -387,7 +395,7 @@
           "source_path": "skills/engineering/code-review",
           "destination": "skills/code-review",
           "files": {
-            "SKILL.md": "7acf746e2f75864f3eb9d6c1f9bc2f722cf2451f100d565748fa3481482aab08",
+            "SKILL.md": "0104d3a6303312f83ef7d4676d92086d030bbbf8573edc283c81e63da2bde8ec",
             "agents/openai.yaml": "916063ab21aacbc1666dde564264160357ab07314c638b3a7f56f37de8d72e22",
             "assets/icon.svg": "109246fe7fcd65c6856938511d8f0072aff5ceee2cc7ebe23b9dabae4e63a0b7"
           },
@@ -402,7 +410,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/code-review.findings.patch",
-              "sha256": "a79112fad3c6862939948a3323eb450ed84e70dad6f01b57e27f4a8a45aa3aad"
+              "sha256": "61239d66c0f22af7b8b751d39d4f02249fcb1cdc8ecc3310fead5c83206f0e39"
             }
           ]
         },
@@ -414,7 +422,7 @@
             "SKILL.md": "63ba3ea3763987dc67286bfc986e971efb8f39d61ebb05fd59969198830aecf0",
             "agents/openai.yaml": "8c8518a611523c2ba068e4db2569d26b8d1c1c821c9422ff47302b5cb0e32d84",
             "assets/icon.svg": "28d21f0784ea9c07ccb433b6f805bfa0e59834534ecf471735e262f137e1bb70",
-            "template.sh": "e11c9575e11e52812d0be98435d4ee02a140f00ef450a7c8c14c897b905323c2"
+            "template.sh": "c2b7817b02a6194848712b526cb7f80061509ed95ec5726c8fd5e6cda8fc510f"
           },
           "patches": [
             {
@@ -448,7 +456,7 @@
           "source_path": "skills/productivity/grilling",
           "destination": "skills/grilling",
           "files": {
-            "SKILL.md": "3816c36755af908c4485030066ab332b470912cf7f7767365a4b145dfcd40e32",
+            "SKILL.md": "68c05e9fd4790bf919f1d76bcf394c5ba3221c531f7d84656827d57f0b5fe885",
             "agents/openai.yaml": "fd0674679b7a81296e3b50b242a8e3c0adbb4435290bab5b06c75a0f20cb665f",
             "assets/background.svg": "5963bc9b3d3c766a896f2b36c756a556dec1dabf198c789edec160c4e39696d4"
           },
@@ -468,7 +476,7 @@
           "source_path": "skills/productivity/handoff",
           "destination": "skills/handoff",
           "files": {
-            "SKILL.md": "b69ed04143743449806b7c982c7f50614bbf731c04370ac867ad53398f5bf436",
+            "SKILL.md": "f788581ced13155f80f989fa1be5384fa5a5f224a71349f229da0173995112ad",
             "agents/openai.yaml": "a01d70ca253f12314c1382dda06138486db0c9ff9b0b5185216505fa959d9841",
             "assets/icon.svg": "ee5225597b85ec2c1da1d2bc461262386b8028d39e2bafe396de80d8dd118114"
           },
@@ -479,7 +487,7 @@
             },
             {
               "path": "vendor/patches/mattpocock/handoff.harness.patch",
-              "sha256": "0beb63b7942d9ccf3fd49583e62830417e6eed9aa01a095edc747c82bb3f5be6"
+              "sha256": "a159c779ba693c371438aa8c1902b7de8a541feb65911890624b6bd6062cdc58"
             }
           ]
         },
@@ -492,7 +500,7 @@
             "LEARNING-RECORD-FORMAT.md": "701fa34b6748aa89e6c960ffb815257f481a7d77fb2900f9028f7edf3fdd6052",
             "MISSION-FORMAT.md": "8cacbb3c0644d3ae0ea4965564797099401a6930a23f7cf462918576587f2418",
             "RESOURCES-FORMAT.md": "e9cacf34026e11a8d1c8f9de88abe5bcbf654f4ebdb25cae8c0de0d5f48f44ec",
-            "SKILL.md": "a32df9dcdfc0c4fdc1c98e1ed3940c5f56b84c1aa90ff60346f32b8b53915b43",
+            "SKILL.md": "550482c2d674b085c9043b87bfdc14a8f2ec453c736119e7fcbb1e9332bffeba",
             "agents/openai.yaml": "792d75f31ff03982eefed6dde6cfd1a7f5d8a0e033dc40f50cfd040175449194",
             "assets/icon.svg": "5be2216994e67d47fde6b93d62674353a02a1be56627780cf0acc4ea8219f146"
           },
@@ -561,10 +569,10 @@
     {
       "id": "DietrichGebert/ponytail",
       "url": "https://github.com/DietrichGebert/ponytail",
-      "requested_ref": "16352ac229eb08a9598dcae48fe9f2b342567d86",
-      "resolved_ref": "16352ac229eb08a9598dcae48fe9f2b342567d86",
+      "requested_ref": "7801d061243d7b753bad0e0b3c057cd250b11755",
+      "resolved_ref": "7801d061243d7b753bad0e0b3c057cd250b11755",
       "ref_kind": "commit",
-      "commit": "16352ac229eb08a9598dcae48fe9f2b342567d86",
+      "commit": "7801d061243d7b753bad0e0b3c057cd250b11755",
       "license": {
         "spdx": "MIT",
         "source_path": "LICENSE",

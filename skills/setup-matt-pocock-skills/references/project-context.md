@@ -20,7 +20,7 @@ Look at the current repo to understand its starting state. Read whatever exists;
 
 - `git remote -v` and `.git/config`: is this a GitHub repo? Which one?
 - `AGENTS.md` and `CLAUDE.md` at the repo root: does either exist? Is there already an `## Agent skills` section in either?
-- `GLOSSARY.md` and `GLOSSARY-MAP.md` at the repo root
+- `GLOSSARY.md` and `GLOSSARY-MAP.md` at the repo root, and legacy `CONTEXT.md` / `CONTEXT-MAP.md`. If the caller supports migration, offer to rename the legacy files to their `GLOSSARY` names and update references in `docs/agents/domain.md`. Include the requested renames and reference edits in the draft and apply them through the caller’s authorized route.
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/`: does this skill's prior output already exist?
 - `.scratch/`: a sign that a local-markdown issue tracker convention is already in use
@@ -49,6 +49,8 @@ Default posture: these skills were designed for GitHub. If a `git remote` points
 - **Other** (Jira, Linear, etc.): ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
 
 Record the choice in `docs/agents/issue-tracker.md`. For a new GitHub or GitLab document, keep the template's "PRs as a request surface" flag **off** without raising another question; a user who wants external PRs in the triage queue can flip the flag in the file later. Preserve an established value in an existing document.
+
+When setting up GitHub or GitLab, check whether the target checkout can resolve the intended project with `gh repo view` or `glab repo view`. Report a missing or unreachable connection. If the user requests connecting the checkout and the caller permits it, obtain the target repository URL and include the proposed Git setup or remote change in the draft. Keep a missing connection visible even when the project documents can be prepared.
 
 **Section B: Triage label vocabulary.** Skip this section entirely if the `triage` skill isn't installed (exploration told you), since an uninstalled skill needs no labels.
 
@@ -112,6 +114,10 @@ Write only the accepted new or changed content. Use the seed templates in the pa
 - [domain.md](../domain.md): domain doc consumer rules + layout
 
 For a missing "other" issue tracker document, write `docs/agents/issue-tracker.md` from the user's description; retain accepted project-specific instructions when supplementing an existing document.
+
+Apply a proposed Git setup or remote configuration change only when the user explicitly authorizes that operation and the caller permits it. Verify the connection from the target checkout.
+
+If the user explicitly authorizes creating tracker labels as part of setup and the caller permits remote writes, verify the intended GitHub or GitLab project and create only labels missing from the accepted mapping with `gh label create` or `glab label create`.
 
 ### 5. Done
 

@@ -26,7 +26,7 @@
     {
       "id": "mattpocock/skills",
       "url": "https://github.com/mattpocock/skills",
-      "ref": "v1.3.1",
+      "ref": "v1.3.2",
       "license": {"spdx": "MIT", "path": "LICENSE"},
       "skills": [
         {"id": "mattpocock/ask-matt", "path": "skills/engineering/ask-matt", "patches": ["vendor/patches/mattpocock/ask-matt.openai.patch", "vendor/patches/mattpocock/ask-matt.diagnosis.patch"]},
@@ -37,9 +37,9 @@
         {"id": "mattpocock/setup-matt-pocock-skills", "path": "skills/engineering/setup-matt-pocock-skills", "patches": ["vendor/patches/mattpocock/setup-matt-pocock-skills.openai.patch", "vendor/patches/mattpocock/setup-matt-pocock-skills.workflow.patch"]},
         {"id": "mattpocock/tdd", "path": "skills/engineering/tdd", "patches": ["vendor/patches/mattpocock/tdd.openai.patch", "vendor/patches/mattpocock/tdd.harness.patch"]},
         {"id": "mattpocock/to-spec", "path": "skills/engineering/to-spec", "patches": ["vendor/patches/mattpocock/to-spec.openai.patch", "vendor/patches/mattpocock/to-spec.synthesis.patch"]},
-        {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.openai.patch"]},
+        {"id": "mattpocock/to-tickets", "path": "skills/engineering/to-tickets", "patches": ["vendor/patches/mattpocock/to-tickets.openai.patch", "vendor/patches/mattpocock/to-tickets.tracker.patch"]},
         {"id": "mattpocock/wayfinder", "path": "skills/engineering/wayfinder", "patches": ["vendor/patches/mattpocock/wayfinder.openai.patch", "vendor/patches/mattpocock/wayfinder.harness.patch", "vendor/patches/mattpocock/wayfinder.claims.patch"]},
-        {"id": "mattpocock/implement", "path": "skills/engineering/implement", "patches": ["vendor/patches/mattpocock/implement.openai.patch"]},
+        {"id": "mattpocock/implement", "path": "skills/engineering/implement", "patches": ["vendor/patches/mattpocock/implement.openai.patch", "vendor/patches/mattpocock/implement.harness.patch"]},
         {"id": "mattpocock/implement-spec", "path": "skills/engineering/implement-spec", "patches": ["vendor/patches/mattpocock/implement-spec.openai.patch", "vendor/patches/mattpocock/implement-spec.harness.patch", "vendor/patches/mattpocock/implement-spec.worktree.patch"]},
         {"id": "mattpocock/pr", "path": "skills/engineering/pr", "patches": ["vendor/patches/mattpocock/pr.openai.patch"]},
         {"id": "mattpocock/retro", "path": "skills/engineering/retro", "patches": ["vendor/patches/mattpocock/retro.openai.patch", "vendor/patches/mattpocock/retro.harness.patch", "vendor/patches/mattpocock/retro.review-context.patch"]},
@@ -61,7 +61,7 @@
     {
       "id": "DietrichGebert/ponytail",
       "url": "https://github.com/DietrichGebert/ponytail",
-      "ref": "16352ac229eb08a9598dcae48fe9f2b342567d86",
+      "ref": "7801d061243d7b753bad0e0b3c057cd250b11755",
       "license": {"spdx": "MIT", "path": "LICENSE"},
       "skills": [
         {"id": "DietrichGebert/ponytail", "path": "skills/ponytail", "patches": ["vendor/patches/ponytail/ponytail.patch", "vendor/patches/ponytail/ponytail.openai.patch"]},

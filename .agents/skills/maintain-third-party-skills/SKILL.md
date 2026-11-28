@@ -1,13 +1,23 @@
 ---
 name: maintain-third-party-skills
-description: Assess or implement adoption, upgrades, and local modifications of third-party Skills maintained by this repository, preserving upstream intent with justified, restrained adaptations.
+description: Check this repository's third-party Skills. Assess or implement adoption, upgrades, and restrained local adaptations while preserving upstream intent.
 ---
 
 # Maintain Third-Party Skills
 
-Evaluate what upstream Skills will make consumers do, settle necessary local adaptations, then generate and verify the repository snapshots. Preserve accepted local behavior until a change is chosen. Investigate consequential risks proactively and recommend a supported course: a clean patch application establishes mechanical compatibility, not sound adoption.
+Preserve accepted local behavior until a change is chosen. For proposed changes, evaluate what upstream Skills will make consumers do, investigate consequential risks, and identify necessary local adaptations. A clean patch application establishes mechanical compatibility. Base adoption decisions on the resulting behavior, then generate and verify the repository snapshots when implementing an authorized change.
 
-This project-local Skill serves both assessment and implementation. Assessment authorizes investigation and a proposal; a request to add, upgrade, or modify also authorizes ready implementation within its accepted scope. Neither automatically authorizes publication or installation into user environments.
+Assessment authorizes investigation and a proposal. A request to add, upgrade, or modify also authorizes ready implementation within its accepted scope. Publication and installation into user environments require separate authorization.
+
+## Check the Skills currently in use
+
+Use this read-only workflow for a check of the current third-party Skills without a named comparison target. A bare invocation defaults to this check when the conversation supplies no other task. Use the requested source or Skill scope, or check all configured sources and selected Skills if no scope is given.
+
+1. Match the external-source declarations and Skill selections in [the Skill registry](../../../skills/registry.json) to the [lock records](../../../vendor/external-skills.lock.json). Use the locked commits as the installed upstream baselines and identify missing or inconsistent provenance.
+2. Run `python scripts/update_external_skills.py --check` from the repository root to compare regenerated snapshots and lock records with the repository. For a scoped check, use `--source <owner/repository>` for each source in scope. If a source-specific failure stops the full check, retry other sources with this option where the lock permits. Attribute diagnostics by path because a selected-source check still inspects other installed snapshots against their existing locks. When the updater reports drift or cannot verify a source, compare its installed file inventories, file hashes, and license hash with its own lock record wherever possible.
+3. Find each source's latest stable upstream release and resolve it to a commit. Use stable version tags when upstream publishes its stable releases through tags. Compare the release commit with the locked commit and flag selected Skills that are missing or have moved at the stable target. If the source has no stable release or the target cannot be verified, report which applies and continue checking the other sources.
+
+Report each source's locked revision, snapshot verification, and stable-release comparison with upstream evidence. Where verifiable, state whether the stable commit matches the locked commit, is ahead or behind it in Git history, or diverges from it. Distinguish installed drift against existing lock records, differences exposed by regeneration, and checks that remain incomplete. The check ends with these findings. Use the workflow below for a detailed assessment or change, including any requested comparison with a prerelease or unreleased revision.
 
 ## Establish the source and affected scope
 
@@ -24,7 +34,9 @@ A missing lock record is normal for a genuinely new source or selection. Install
 
 The registry and patches are canonical inputs. [The updater](../../../scripts/update_external_skills.py) derives distributed Skill trees, licenses, and lock records; express adaptations through those inputs.
 
-Identify the requested source, selection, revision, and outcome. For adoption or upgrade, verify the target against current upstream releases and repository content, distinguish a release from unreleased branch work, and record its resolved commit. If the target is open, recommend a supported release or revision and explain consequential trade-offs between stability and needed unreleased work. Missing or unverifiable target evidence blocks adoption while independent investigation may continue.
+Identify the requested source, selection, revision, and outcome. For adoption or upgrade, verify the target against current upstream releases and repository content, distinguish stable releases, prereleases, and unreleased revisions, and record its resolved commit. Missing or unverifiable target evidence blocks adoption while independent investigation may continue.
+
+When the request leaves the target open, use the stable-release criteria above. For an upgrade, recommend retaining the locked revision when the stable commit matches it or is its ancestor. Assess divergent histories before recommending a switch. Explain consequential trade-offs when the requested outcome requires a prerelease or unreleased revision.
 
 The registry revision and updater's `--source` operate on an entire upstream repository. Account for every selected Skill affected by a revision change. A newly selected Skill uses that same revision; if it needs a newer one, assess all existing selections and resolve any unavoidable scope expansion before implementation.
 
