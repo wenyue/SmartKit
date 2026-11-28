@@ -30,6 +30,14 @@ Keep failure handling with its owning operation. Catch/log/default repetition al
 
 Align public interfaces with stable product or domain capabilities. Meet test and call-site needs through the owning contract rather than widening APIs, moving owner-local logic, or adding indirection solely for convenience.
 
+## Add tests that catch meaningful failures
+
+Meet applicable testing requirements, including required cases, checks, and coverage thresholds. When deciding whether to add a unit or integration test, identify a plausible regression in supported behavior that would matter to a user or caller, and inspect the relevant existing tests. Reuse or extend an existing test when it can supply the needed protection. Add an optional case only if it fills a coverage gap for that regression or materially improves diagnosis. Apply the same criterion when choosing extra inputs and test levels.
+
+Choose the simplest reliable test that exercises the boundary where the failure can occur. A unit test may suffice for behavior that can be verified in isolation, such as a calculation or state transition. Use an integration test when the risk depends on an interaction, such as component wiring or transaction rollback, and exercise the interaction that can fail.
+
+Assert an observable result or effect against expectations derived from the contract or a known example. When practical, verify that a regression test fails for the original bug on the pre-fix code. Use relevant coverage reports, when available, to look for behavior that still lacks protection.
+
 ## Make state, effects, and lifetimes visible
 
 Provide dependencies through visible owners and keep state placement consistent with that ownership. Give each unit only the capabilities it needs, with dependency direction and cross-layer boundaries explicit.
